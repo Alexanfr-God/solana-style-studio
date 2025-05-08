@@ -7,9 +7,15 @@ import { cn } from "@/lib/utils"
 
 const Accordion = AccordionPrimitive.Root
 
+// Add explicit support for children and className props
+interface AccordionItemProps extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item> {
+  children: React.ReactNode;
+  className?: string;
+}
+
 const AccordionItem = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
+  AccordionItemProps
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Item
     ref={ref}
@@ -21,9 +27,15 @@ const AccordionItem = React.forwardRef<
 ))
 AccordionItem.displayName = "AccordionItem"
 
+// Add explicit support for children and className props
+interface AccordionTriggerProps extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> {
+  children: React.ReactNode;
+  className?: string;
+}
+
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
+  AccordionTriggerProps
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Header className="flex">
     <AccordionPrimitive.Trigger
@@ -41,9 +53,15 @@ const AccordionTrigger = React.forwardRef<
 ))
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName
 
+// Add explicit support for children and className props
+interface AccordionContentProps extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content> {
+  children: React.ReactNode;
+  className?: string;
+}
+
 const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
+  AccordionContentProps
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}

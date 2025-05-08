@@ -25,6 +25,13 @@ if (!viteBin) {
   process.exit(1);
 }
 
+// Make the file executable
+try {
+  fs.chmodSync(viteBin, '755');
+} catch (error) {
+  console.warn(`Could not make ${viteBin} executable: ${error.message}`);
+}
+
 // Spawn vite process
 const viteProcess = spawn(viteBin, process.argv.slice(2), { 
   stdio: 'inherit',

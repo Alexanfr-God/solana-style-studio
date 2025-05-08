@@ -4,9 +4,14 @@ import * as SeparatorPrimitive from "@radix-ui/react-separator"
 
 import { cn } from "@/lib/utils"
 
+// Add explicit support for children prop
+interface SeparatorProps extends React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root> {
+  children?: React.ReactNode;
+}
+
 const Separator = React.forwardRef<
   React.ElementRef<typeof SeparatorPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>
+  SeparatorProps
 >(
   (
     { className, orientation = "horizontal", decorative = true, children, ...props },

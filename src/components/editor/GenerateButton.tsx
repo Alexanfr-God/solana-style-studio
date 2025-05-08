@@ -37,7 +37,7 @@ const GenerateButton = () => {
         description: generatedStyle.styleNotes 
           ? `Applied style: ${generatedStyle.styleNotes}` 
           : `New style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
-        className: "bg-black/80 border-green-400 text-white",
+        // Remove className as it's not supported in the toast interface
       });
     } catch (error) {
       toast({

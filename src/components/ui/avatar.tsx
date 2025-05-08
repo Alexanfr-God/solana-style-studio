@@ -4,9 +4,14 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar"
 
 import { cn } from "@/lib/utils"
 
+// Add explicit support for children prop
+interface AvatarProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> {
+  children: React.ReactNode;
+}
+
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+  AvatarProps
 >(({ className, children, ...props }, ref) => (
   <AvatarPrimitive.Root
     ref={ref}
@@ -21,9 +26,14 @@ const Avatar = React.forwardRef<
 ))
 Avatar.displayName = AvatarPrimitive.Root.displayName
 
+// Extended interface with alt prop
+interface AvatarImageProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image> {
+  alt: string;
+}
+
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
+  AvatarImageProps
 >(({ className, alt, ...props }, ref) => (
   <AvatarPrimitive.Image
     ref={ref}
@@ -34,9 +44,14 @@ const AvatarImage = React.forwardRef<
 ))
 AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
+// Add explicit support for children prop
+interface AvatarFallbackProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback> {
+  children: React.ReactNode;
+}
+
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
+  AvatarFallbackProps
 >(({ className, children, ...props }, ref) => (
   <AvatarPrimitive.Fallback
     ref={ref}
