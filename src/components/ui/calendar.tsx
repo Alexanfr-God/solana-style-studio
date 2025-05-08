@@ -53,7 +53,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Navigation: CustomNavigation
+        NavigationButton: CustomNavigation
       }}
       {...props}
     />

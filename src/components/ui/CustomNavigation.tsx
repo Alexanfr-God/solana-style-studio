@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { NavigationProps } from "react-day-picker"; 
+import { DayPickerNavigationProps } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -10,7 +10,7 @@ export function CustomNavigation({
   nextMonth,
   previousMonth,
   ...props
-}: NavigationProps) {
+}: DayPickerNavigationProps) {
   return (
     <div className="space-x-1 flex items-center" {...props}>
       <button

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useCustomizationStore } from '../stores/customizationStore';
 import { useToast } from '@/components/ui/use-toast';
 import { generateStyle } from '../services/apiService';
-import { WandSparkles } from 'lucide-react';
+import { Wand } from 'lucide-react';
 
 const GenerateButton = () => {
   const { 
@@ -53,7 +53,7 @@ const GenerateButton = () => {
       className="w-full"
       disabled={isGenerating || !prompt}
     >
-      <WandSparkles className="mr-2 h-4 w-4" />
+      <Wand className="mr-2 h-4 w-4" />
       {isGenerating ? 'Generating...' : 'Generate Style'}
     </Button>
   );

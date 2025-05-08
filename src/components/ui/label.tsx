@@ -9,10 +9,9 @@ const labelVariants = cva(
   "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 )
 
-// Add explicit support for children prop
 interface LabelProps extends React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>,
   VariantProps<typeof labelVariants> {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const Label = React.forwardRef<

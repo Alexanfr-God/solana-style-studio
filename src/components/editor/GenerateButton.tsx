@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useCustomizationStore } from '../../stores/customizationStore';
 import { useToast } from '@/hooks/use-toast';
 import { generateStyle } from '../../services/apiService';
-import { WandSparkles, Loader2 } from 'lucide-react';
+import { Wand, Loader2 } from 'lucide-react';
 
 const GenerateButton = () => {
   const { 
@@ -37,7 +37,6 @@ const GenerateButton = () => {
         description: generatedStyle.styleNotes 
           ? `Applied style: ${generatedStyle.styleNotes}` 
           : `New style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
-        // Remove className as it's not supported in the toast interface
       });
     } catch (error) {
       toast({
@@ -63,7 +62,7 @@ const GenerateButton = () => {
         </>
       ) : (
         <>
-          <WandSparkles className="mr-2 h-4 w-4" />
+          <Wand className="mr-2 h-4 w-4" />
           Generate Style
         </>
       )}

@@ -7,7 +7,7 @@ import {
   Send, 
   Download, 
   Home, 
-  Grid2X2, 
+  LayoutGrid, 
   Clock, 
   Search, 
   Copy,
@@ -328,7 +328,7 @@ export const WalletScreen = ({ style }: { style: WalletStyle }) => {
           className={`flex flex-col items-center justify-center ${activeTab === 'apps' ? 'opacity-100' : 'opacity-50'}`}
           onClick={() => setActiveTab('apps')}
         >
-          <Grid2X2 className={`h-6 w-6 ${activeTab === 'apps' ? 'text-[#9b87f5]' : 'text-gray-500'}`} />
+          <LayoutGrid className={`h-6 w-6 ${activeTab === 'apps' ? 'text-[#9b87f5]' : 'text-gray-500'}`} />
         </button>
         <button 
           className={`flex flex-col items-center justify-center ${activeTab === 'swap' ? 'opacity-100' : 'opacity-50'}`}
