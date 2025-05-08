@@ -5,7 +5,7 @@ import UploadImage from './UploadImage';
 import PromptInput from './PromptInput';
 import GenerateButton from './GenerateButton';
 import ResetButton from './ResetButton';
-import WalletPreview from '../wallet/WalletPreview';
+import DualWalletPreview from '../wallet/DualWalletPreview';
 import EditorHeader from './EditorHeader';
 import WalletRider from './WalletRider';
 import EditorTabs from './EditorTabs';
@@ -64,7 +64,7 @@ const V1Customizer = () => {
           <div className="lg:col-span-2">
             <Card className="h-full bg-black/30 backdrop-blur-md border-white/10 p-4">
               <div className="h-full flex items-center justify-center">
-                <WalletPreview />
+                <DualWalletPreview />
               </div>
             </Card>
           </div>
