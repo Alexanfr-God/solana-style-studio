@@ -47,7 +47,7 @@ const generateImageWithOpenAI = async (prompt: string): Promise<string> => {
 };
 
 // Function to extract colors and style information from the prompt
-const extractColorsFromPrompt = (prompt: string): {
+const extractStyleFromPrompt = (prompt: string, imageUrl: string | null): {
   backgroundColor: string;
   textColor: string; 
   accentColor: string;
@@ -85,6 +85,11 @@ const extractColorsFromPrompt = (prompt: string): {
   // If we have style terms, join them
   if (styleTerms.length > 0) {
     result.styleNotes = styleTerms.join(", ");
+  }
+  
+  // If image is provided, add that to style notes
+  if (imageUrl) {
+    result.styleNotes += ", image-inspired";
   }
   
   // Background color detection
@@ -148,9 +153,9 @@ const extractColorsFromPrompt = (prompt: string): {
 // Convert image to style object based on prompt
 const generateStyleFromImage = (imageUrl: string, prompt: string, layerType: string): Record<string, any> => {
   // Extract style information from prompt
-  const styleInfo = extractColorsFromPrompt(prompt);
+  const styleInfo = extractStyleFromPrompt(prompt, imageUrl);
   
-  // Create the final style object
+  // Create the final style object that matches the required structure
   return {
     backgroundColor: styleInfo.backgroundColor,
     backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
@@ -161,9 +166,15 @@ const generateStyleFromImage = (imageUrl: string, prompt: string, layerType: str
     borderRadius: styleInfo.borderRadius,
     fontFamily: "Inter, sans-serif",
     boxShadow: styleInfo.boxShadow,
-    imageUrl,
     styleNotes: styleInfo.styleNotes,
-    generatedAt: new Date().toISOString()
+    
+    // Additional fields required in the updated structure
+    background: imageUrl || styleInfo.backgroundColor,
+    fontColor: styleInfo.textColor,
+    
+    // Metadata for internal use
+    generatedAt: new Date().toISOString(),
+    layerType: layerType
   };
 };
 
