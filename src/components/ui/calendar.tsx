@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker, type NavigationProps } from "react-day-picker";
+import { DayPicker } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,36 +14,6 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  const Navigation = ({ 
-    onPreviousClick, 
-    onNextClick, 
-    ...navigationProps 
-  }: NavigationProps) => {
-    return (
-      <div className="flex items-center justify-between px-1">
-        <button
-          onClick={onPreviousClick}
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-          )}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <div className="text-sm font-medium">{navigationProps.children}</div>
-        <button
-          onClick={onNextClick}
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-          )}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-    );
-  };
-
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -83,7 +53,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Navigation
+        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+        IconRight: () => <ChevronRight className="h-4 w-4" />,
       }}
       {...props}
     />
