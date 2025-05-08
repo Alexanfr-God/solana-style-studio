@@ -1,16 +1,23 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPickerNavigationProps } from "react-day-picker";
+import { DayPickerBase } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+
+// Define proper props type
+interface CustomNavigationProps extends React.HTMLAttributes<HTMLDivElement> {
+  goToMonth: (month: Date) => void;
+  nextMonth: Date | undefined;
+  previousMonth: Date | undefined;
+}
 
 export function CustomNavigation({
   goToMonth,
   nextMonth,
   previousMonth,
   ...props
-}: DayPickerNavigationProps) {
+}: CustomNavigationProps) {
   return (
     <div className="space-x-1 flex items-center" {...props}>
       <button
