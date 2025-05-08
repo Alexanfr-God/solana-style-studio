@@ -59,8 +59,8 @@ const WalletRider = () => {
           </svg>
         </div>
         
-        {/* Speech Bubble */}
-        <div className="absolute top-0 left-full ml-4 w-64">
+        {/* Speech Bubble - Fixed with z-index and position */}
+        <div className="absolute top-0 left-full ml-4 w-64 z-50">
           <div
             className={`relative bg-black/80 text-white p-3 rounded-xl transition-opacity duration-1000 ${
               showQuote ? 'opacity-100' : 'opacity-0'
