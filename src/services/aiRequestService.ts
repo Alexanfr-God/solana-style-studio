@@ -1,12 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+
+type Json = Database['public']['Tables']['ai_requests']['Row']['style_result'];
 
 export interface AIRequest {
   id?: string;
   user_id?: string;
   image_url?: string | null;
   prompt?: string | null;
-  layer_type?: 'login' | 'wallet' | null;
+  layer_type?: string | null; // Changed from 'login' | 'wallet' | null to string | null
   status?: 'pending' | 'completed' | 'failed' | null;
   style_result?: Record<string, any> | null;
   created_at?: string | null;
