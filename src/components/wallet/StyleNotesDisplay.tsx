@@ -2,7 +2,7 @@
 import React from 'react';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { Badge } from '@/components/ui/badge';
-import { InfoCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 const StyleNotesDisplay = () => {
   const { activeLayer, loginStyle, walletStyle } = useCustomizationStore();
@@ -16,7 +16,7 @@ const StyleNotesDisplay = () => {
   return (
     <div className="mt-4 space-y-2">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <InfoCircle className="h-3.5 w-3.5" />
+        <Info className="h-3.5 w-3.5" />
         <span>Generated Style:</span>
       </div>
       
