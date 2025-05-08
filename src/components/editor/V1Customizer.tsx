@@ -7,7 +7,7 @@ import GenerateButton from './GenerateButton';
 import ResetButton from './ResetButton';
 import WalletPreview from '../wallet/WalletPreview';
 import EditorHeader from './EditorHeader';
-import WalletStylist from './WalletStylist';
+import WalletRider from './WalletRider';
 import EditorTabs from './EditorTabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -21,7 +21,7 @@ const V1Customizer = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
             <div className="flex flex-col space-y-8">
-              <WalletStylist />
+              <WalletRider />
               
               <EditorTabs />
               
