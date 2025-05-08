@@ -3,7 +3,7 @@ import { LayerType, WalletStyle } from '../stores/customizationStore';
 
 export async function generateStyle(prompt: string, image: string | null, layer: LayerType): Promise<WalletStyle> {
   try {
-    // This is a mock implementation
+    // This is a mock implementation that will be replaced with actual AI API
     console.log(`Generating style for ${layer} with prompt: ${prompt}`);
     
     // Simulate API call
@@ -23,34 +23,34 @@ export async function generateStyle(prompt: string, image: string | null, layer:
         };
         
         // Add some variation based on prompt words
-        if (prompt.includes('rounded') || prompt.includes('soft')) {
+        if (prompt.toLowerCase().includes('rounded') || prompt.toLowerCase().includes('soft')) {
           mockStyle.borderRadius = '24px';
         }
         
-        if (prompt.includes('sharp') || prompt.includes('angular')) {
+        if (prompt.toLowerCase().includes('sharp') || prompt.toLowerCase().includes('angular')) {
           mockStyle.borderRadius = '4px';
         }
         
-        if (prompt.includes('dark') || prompt.includes('black')) {
+        if (prompt.toLowerCase().includes('dark') || prompt.toLowerCase().includes('black')) {
           mockStyle.backgroundColor = '#0A0A0A';
         }
         
-        if (prompt.includes('light') || prompt.includes('white')) {
+        if (prompt.toLowerCase().includes('light') || prompt.toLowerCase().includes('white')) {
           mockStyle.backgroundColor = '#F0F0F0';
           mockStyle.textColor = '#121212';
         }
         
-        if (prompt.includes('blue')) {
+        if (prompt.toLowerCase().includes('blue')) {
           mockStyle.accentColor = '#3B82F6';
           mockStyle.buttonColor = '#3B82F6';
         }
         
-        if (prompt.includes('green')) {
+        if (prompt.toLowerCase().includes('green')) {
           mockStyle.accentColor = '#10B981';
           mockStyle.buttonColor = '#10B981';
         }
         
-        if (prompt.includes('red')) {
+        if (prompt.toLowerCase().includes('red')) {
           mockStyle.accentColor = '#EF4444';
           mockStyle.buttonColor = '#EF4444';
         }

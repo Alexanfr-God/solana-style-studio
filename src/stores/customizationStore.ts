@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { defaultLoginStyle, defaultWalletStyle } from '../constants/defaultWalletStyles';
 
 export type LayerType = 'login' | 'wallet';
 
@@ -22,6 +23,7 @@ interface CustomizationState {
   isGenerating: boolean;
   prompt: string;
   uploadedImage: string | null;
+  stylingTip: string;
   
   setActiveLayer: (layer: LayerType) => void;
   setStyleForLayer: (layer: LayerType, style: WalletStyle) => void;
@@ -29,30 +31,16 @@ interface CustomizationState {
   setPrompt: (prompt: string) => void;
   setUploadedImage: (imageUrl: string | null) => void;
   setIsGenerating: (isGenerating: boolean) => void;
+  setStylingTip: (tip: string) => void;
 }
 
-// Default styles
-const defaultLoginStyle: WalletStyle = {
-  backgroundColor: '#1E1E2E',
-  accentColor: '#9945FF',
-  textColor: '#FFFFFF',
-  buttonColor: '#9945FF',
-  buttonTextColor: '#FFFFFF',
-  borderRadius: '12px',
-  fontFamily: 'Inter, sans-serif',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
-};
-
-const defaultWalletStyle: WalletStyle = {
-  backgroundColor: '#1E1E2E',
-  accentColor: '#14F195',
-  textColor: '#FFFFFF',
-  buttonColor: '#14F195',
-  buttonTextColor: '#1E1E2E',
-  borderRadius: '16px',
-  fontFamily: 'Inter, sans-serif',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
-};
+const stylingTips = [
+  "Try 'neon cyberpunk with blue accents' for a futuristic look!",
+  "For a clean professional look, try 'minimal white with subtle gradients'",
+  "Want something fun? Try 'playful with bright colors and rounded corners'",
+  "For luxury feel, try 'dark mode with gold accents and glass effect'",
+  "Nature inspired? Try 'forest theme with earthy tones and organic shapes'"
+];
 
 export const useCustomizationStore = create<CustomizationState>((set) => ({
   activeLayer: 'login',
@@ -61,6 +49,7 @@ export const useCustomizationStore = create<CustomizationState>((set) => ({
   isGenerating: false,
   prompt: '',
   uploadedImage: null,
+  stylingTip: stylingTips[Math.floor(Math.random() * stylingTips.length)],
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),
   
@@ -80,5 +69,7 @@ export const useCustomizationStore = create<CustomizationState>((set) => ({
   
   setUploadedImage: (imageUrl) => set({ uploadedImage: imageUrl }),
   
-  setIsGenerating: (isGenerating) => set({ isGenerating })
+  setIsGenerating: (isGenerating) => set({ isGenerating }),
+  
+  setStylingTip: (tip) => set({ stylingTip: tip })
 }));
