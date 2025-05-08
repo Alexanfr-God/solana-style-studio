@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import WalletSelector from '../wallet/WalletSelector';
 
 const EditorHeader = () => {
   return (
@@ -22,8 +23,8 @@ const EditorHeader = () => {
               <path d="M57 105.829V94.6147C40.214 94.6147 26.143 80.5785 26.143 63.9144H37.585C37.585 63.9144 21.487 47.6005 21.1292 47.2667C20.1524 46.323 18.5583 46.3387 17.5652 47.2667L3.41602 63.9144H14.858C14.858 87.0941 33.786 105.829 57 105.829Z" fill="white"/>
               <defs>
                 <linearGradient id="paint0_linear_6_33" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#9945FF"/>
-                  <stop offset="1" stop-color="#14F195"/>
+                  <stop stopColor="#9945FF"/>
+                  <stop offset="1" stopColor="#14F195"/>
                 </linearGradient>
               </defs>
             </svg>
@@ -34,9 +35,7 @@ const EditorHeader = () => {
           </span>
         </Button>
         
-        <Button className="bg-gradient-to-r from-purple-600 to-blue-500">
-          Select Wallet
-        </Button>
+        <WalletSelector />
       </div>
     </header>
   );

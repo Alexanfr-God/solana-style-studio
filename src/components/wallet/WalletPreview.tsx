@@ -3,6 +3,7 @@ import React from 'react';
 import { useCustomizationStore, WalletStyle, LayerType } from '../../stores/customizationStore';
 import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 // Render Login Screen UI
 const LoginScreen = ({ style }: { style: WalletStyle }) => {
@@ -228,7 +229,12 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
 
 const WalletPreview = () => {
   const { activeLayer, loginStyle, walletStyle } = useCustomizationStore();
+  const { connected, publicKey } = useWallet();
   const currentStyle = activeLayer === 'login' ? loginStyle : walletStyle;
+
+  const getShortenedAddress = (address: string) => {
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  };
 
   return (
     <div className="flex items-center justify-center p-4 h-full w-full">
@@ -242,24 +248,26 @@ const WalletPreview = () => {
         <div className="absolute top-4 right-4 flex gap-2">
           <Button size="sm" variant="secondary" className="bg-black/30 backdrop-blur-sm text-white">
             <span className="flex items-center">
-              Not Connected
+              {connected ? 'Connected' : 'Not Connected'}
             </span>
           </Button>
         </div>
         
-        <div className="absolute top-20 left-4">
-          <div className="bg-black/30 backdrop-blur-sm p-2 rounded-lg flex items-center gap-2">
-            <div className="text-xs text-white">
-              <div>Wallet address</div>
-              <div className="flex items-center gap-1">
-                <span className="font-mono">8AoK...dH2Y</span>
-                <Button size="icon" variant="ghost" className="h-6 w-6 text-white">
-                  <Copy className="h-3 w-3" />
-                </Button>
+        {connected && publicKey && (
+          <div className="absolute top-20 left-4">
+            <div className="bg-black/30 backdrop-blur-sm p-2 rounded-lg flex items-center gap-2">
+              <div className="text-xs text-white">
+                <div>Wallet address</div>
+                <div className="flex items-center gap-1">
+                  <span className="font-mono">{getShortenedAddress(publicKey.toString())}</span>
+                  <Button size="icon" variant="ghost" className="h-6 w-6 text-white">
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
