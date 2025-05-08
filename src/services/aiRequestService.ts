@@ -40,7 +40,8 @@ export const aiRequestService = {
     return {
       ...data,
       layer_type: data.layer_type as 'login' | 'wallet' | null,
-      status: data.status as 'pending' | 'completed' | 'failed' | null
+      status: data.status as 'pending' | 'completed' | 'failed' | null,
+      style_result: data.style_result as Record<string, any> | null
     };
   },
 
@@ -62,7 +63,8 @@ export const aiRequestService = {
     return (data || []).map(row => ({
       ...row,
       layer_type: row.layer_type as 'login' | 'wallet' | null,
-      status: row.status as 'pending' | 'completed' | 'failed' | null
+      status: row.status as 'pending' | 'completed' | 'failed' | null,
+      style_result: row.style_result as Record<string, any> | null
     }));
   },
 
@@ -86,7 +88,8 @@ export const aiRequestService = {
     return {
       ...data,
       layer_type: data.layer_type as 'login' | 'wallet' | null,
-      status: data.status as 'pending' | 'completed' | 'failed' | null
+      status: data.status as 'pending' | 'completed' | 'failed' | null,
+      style_result: data.style_result as Record<string, any> | null
     };
   }
 };
