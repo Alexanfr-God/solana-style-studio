@@ -4,9 +4,26 @@
 // Simple script to run vite from node_modules
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
-// Path to node_modules/.bin/vite
-const viteBin = path.resolve(__dirname, 'node_modules', '.bin', 'vite');
+// Check for vite in different possible paths
+const possibleVitePaths = [
+  path.resolve(__dirname, 'node_modules', '.bin', 'vite'),
+  path.resolve(__dirname, 'node_modules', 'vite', 'bin', 'vite.js')
+];
+
+let viteBin;
+for (const path of possibleVitePaths) {
+  if (fs.existsSync(path)) {
+    viteBin = path;
+    break;
+  }
+}
+
+if (!viteBin) {
+  console.error('Could not find vite binary. Make sure vite is installed.');
+  process.exit(1);
+}
 
 // Spawn vite process
 const viteProcess = spawn(viteBin, process.argv.slice(2), { 

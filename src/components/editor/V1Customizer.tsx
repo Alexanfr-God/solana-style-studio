@@ -33,14 +33,14 @@ const V1Customizer = () => {
                   <div className="space-y-6">
                     <LayerSelector />
                     
-                    <Separator className="bg-white/10" />
+                    <Separator orientation="horizontal" />
                     
                     <div>
                       <h3 className="text-sm font-medium mb-4 text-white">Upload your own image to generate a custom theme</h3>
                       <UploadImage />
                     </div>
                     
-                    <Separator className="bg-white/10" />
+                    <Separator orientation="horizontal" />
                     
                     <div className="space-y-4">
                       <h3 className="text-md font-medium text-white flex items-center gap-2">

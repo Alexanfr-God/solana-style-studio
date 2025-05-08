@@ -6,7 +6,7 @@ import { FileImage, SlidersHorizontal, Layers } from 'lucide-react';
 const EditorTabs = () => {
   return (
     <div className="mb-6">
-      <Tabs defaultValue="create-style" className="w-full">
+      <Tabs defaultValue="create-style">
         <TabsList className="grid grid-cols-3 w-full bg-black/20 backdrop-blur-sm">
           <TabsTrigger 
             value="create-style" 

@@ -16,7 +16,7 @@ const PromptInput = () => {
     <div className="flex flex-col space-y-2">
       <div className="flex items-center space-x-2">
         <FileText className="h-5 w-5" />
-        <Label htmlFor="prompt" className="text-sm font-medium">Style Description</Label>
+        <Label htmlFor="prompt">Style Description</Label>
       </div>
       <Textarea
         id="prompt"

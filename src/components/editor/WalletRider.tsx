@@ -37,8 +37,8 @@ const WalletRider = () => {
     <div className="flex flex-col items-center justify-center">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-md opacity-50"></div>
-        <Avatar className="w-40 h-40 border-3 border-white/20"> {/* Increased by 25% from w-32 h-32 */}
-          <AvatarImage src="/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png" />
+        <Avatar className="w-40 h-40 border-3 border-white/20">
+          <AvatarImage alt="Wallet Rider" src="/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png" />
           <AvatarFallback className="bg-gradient-to-r from-purple-600 to-blue-500">WR</AvatarFallback>
         </Avatar>
         <div className="absolute -bottom-1 -right-1 bg-purple-600 rounded-full p-1.5">

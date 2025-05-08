@@ -18,7 +18,7 @@ const LayerSelector = () => {
         <Layers className="h-5 w-5" />
         <h3 className="text-sm font-medium">Layer</h3>
       </div>
-      <Tabs value={activeLayer} onValueChange={handleLayerChange} className="w-full">
+      <Tabs value={activeLayer} onValueChange={handleLayerChange}>
         <TabsList className="w-full">
           <TabsTrigger 
             value="login" 
