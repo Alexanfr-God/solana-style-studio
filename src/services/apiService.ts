@@ -1,65 +1,80 @@
 
 import { LayerType, WalletStyle } from '../stores/customizationStore';
+import { supabase } from '@/integrations/supabase/client';
+import { aiRequestService } from './aiRequestService';
 
 export async function generateStyle(prompt: string, image: string | null, layer: LayerType): Promise<WalletStyle> {
   try {
-    // This is a mock implementation that will be replaced with actual AI API
     console.log(`Generating style for ${layer} with prompt: ${prompt}`);
     
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Generate mock style based on the layer and prompt
-        const mockStyle: WalletStyle = {
-          backgroundColor: layer === 'login' ? '#1A103D' : '#0E1C36',
-          backgroundImage: image ? `url(${image})` : undefined,
-          accentColor: layer === 'login' ? '#9945FF' : '#14F195',
-          textColor: '#FFFFFF',
-          buttonColor: layer === 'login' ? '#9945FF' : '#14F195',
-          buttonTextColor: '#FFFFFF',
-          borderRadius: '12px',
-          fontFamily: 'Inter, sans-serif',
-          boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)'
-        };
-        
-        // Add some variation based on prompt words
-        if (prompt.toLowerCase().includes('rounded') || prompt.toLowerCase().includes('soft')) {
-          mockStyle.borderRadius = '24px';
-        }
-        
-        if (prompt.toLowerCase().includes('sharp') || prompt.toLowerCase().includes('angular')) {
-          mockStyle.borderRadius = '4px';
-        }
-        
-        if (prompt.toLowerCase().includes('dark') || prompt.toLowerCase().includes('black')) {
-          mockStyle.backgroundColor = '#0A0A0A';
-        }
-        
-        if (prompt.toLowerCase().includes('light') || prompt.toLowerCase().includes('white')) {
-          mockStyle.backgroundColor = '#F0F0F0';
-          mockStyle.textColor = '#121212';
-        }
-        
-        if (prompt.toLowerCase().includes('blue')) {
-          mockStyle.accentColor = '#3B82F6';
-          mockStyle.buttonColor = '#3B82F6';
-        }
-        
-        if (prompt.toLowerCase().includes('green')) {
-          mockStyle.accentColor = '#10B981';
-          mockStyle.buttonColor = '#10B981';
-        }
-        
-        if (prompt.toLowerCase().includes('red')) {
-          mockStyle.accentColor = '#EF4444';
-          mockStyle.buttonColor = '#EF4444';
-        }
-        
-        resolve(mockStyle);
-      }, 1500); // Simulate network delay
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+    
+    // Create a pending AI request
+    const requestData = await aiRequestService.createRequest({
+      prompt,
+      image_url: image,
+      layer_type: layer,
+      status: 'pending'
     });
+
+    // Call our edge function
+    const { data, error } = await supabase.functions.invoke('generate-style', {
+      body: {
+        prompt,
+        image_url: image,
+        layer_type: layer,
+        user_id: userId
+      }
+    });
+
+    if (error) {
+      console.error('Edge function error:', error);
+      throw new Error('Failed to generate style: ' + error.message);
+    }
+
+    console.log('Generated style data:', data);
+    
+    // Map the style result to our WalletStyle format
+    const generatedStyle: WalletStyle = {
+      backgroundColor: data.style.backgroundColor || '#131313',
+      backgroundImage: data.style.backgroundImage,
+      accentColor: data.style.accentColor || '#9945FF',
+      textColor: data.style.textColor || '#FFFFFF',
+      buttonColor: data.style.buttonColor || '#9945FF',
+      buttonTextColor: data.style.buttonTextColor || '#FFFFFF',
+      borderRadius: data.style.borderRadius || '12px',
+      fontFamily: data.style.fontFamily || 'Inter, sans-serif',
+      boxShadow: data.style.boxShadow || '0 4px 12px rgba(0, 0, 0, 0.25)'
+    };
+
+    return generatedStyle;
   } catch (error) {
     console.error('Error generating style:', error);
-    throw new Error('Failed to generate style');
+    // Return a default style in case of error
+    if (layer === 'login') {
+      return {
+        backgroundColor: '#131313',
+        accentColor: '#9945FF',
+        textColor: '#FFFFFF',
+        buttonColor: '#9945FF',
+        buttonTextColor: '#000000',
+        borderRadius: '100px',
+        fontFamily: 'Inter, sans-serif',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+      };
+    } else {
+      return {
+        backgroundColor: '#131313',
+        accentColor: '#9945FF',
+        textColor: '#FFFFFF',
+        buttonColor: 'rgba(40, 40, 40, 0.8)',
+        buttonTextColor: '#9945FF',
+        borderRadius: '16px',
+        fontFamily: 'Inter, sans-serif',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+      };
+    }
   }
 }
