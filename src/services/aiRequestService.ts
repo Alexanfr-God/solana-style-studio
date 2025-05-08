@@ -9,7 +9,7 @@ export interface AIRequest {
   user_id?: string;
   image_url?: string | null;
   prompt?: string | null;
-  layer_type?: string | null; // Changed from 'login' | 'wallet' | null to string | null
+  layer_type?: 'login' | 'wallet' | null; // Keeping the strict union type for our internal usage
   status?: 'pending' | 'completed' | 'failed' | null;
   style_result?: Record<string, any> | null;
   created_at?: string | null;
@@ -36,7 +36,12 @@ export const aiRequestService = {
       return null;
     }
 
-    return data;
+    // Use type assertion to ensure the return value matches AIRequest type
+    return {
+      ...data,
+      layer_type: data.layer_type as 'login' | 'wallet' | null,
+      status: data.status as 'pending' | 'completed' | 'failed' | null
+    };
   },
 
   /**
@@ -53,7 +58,12 @@ export const aiRequestService = {
       return [];
     }
 
-    return data || [];
+    // Map each row from Supabase to AIRequest with type assertions
+    return (data || []).map(row => ({
+      ...row,
+      layer_type: row.layer_type as 'login' | 'wallet' | null,
+      status: row.status as 'pending' | 'completed' | 'failed' | null
+    }));
   },
 
   /**
@@ -72,6 +82,11 @@ export const aiRequestService = {
       return null;
     }
 
-    return data;
+    // Use type assertion to ensure the return value matches AIRequest type
+    return {
+      ...data,
+      layer_type: data.layer_type as 'login' | 'wallet' | null,
+      status: data.status as 'pending' | 'completed' | 'failed' | null
+    };
   }
 };
