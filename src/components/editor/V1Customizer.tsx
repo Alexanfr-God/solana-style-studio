@@ -9,6 +9,7 @@ import DualWalletPreview from '../wallet/DualWalletPreview';
 import EditorHeader from './EditorHeader';
 import WalletRider from './WalletRider';
 import EditorTabs from './EditorTabs';
+import StyleNotesDisplay from '../wallet/StyleNotesDisplay';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
@@ -49,6 +50,7 @@ const V1Customizer = () => {
                         AI Style Generator
                       </h3>
                       <PromptInput />
+                      <StyleNotesDisplay />
                     </div>
                     
                     <div className="flex flex-col space-y-3">

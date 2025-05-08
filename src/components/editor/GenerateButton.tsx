@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useCustomizationStore } from '../../stores/customizationStore';
 import { useToast } from '@/hooks/use-toast';
 import { generateStyle } from '../../services/apiService';
-import { WandSparkles } from 'lucide-react';
+import { WandSparkles, Loader2 } from 'lucide-react';
 
 const GenerateButton = () => {
   const { 
@@ -34,7 +34,10 @@ const GenerateButton = () => {
       
       toast({
         title: "Style generated",
-        description: `New style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
+        description: generatedStyle.styleNotes 
+          ? `Applied style: ${generatedStyle.styleNotes}` 
+          : `New style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
+        className: "bg-black/80 border-green-400 text-white",
       });
     } catch (error) {
       toast({
@@ -50,11 +53,20 @@ const GenerateButton = () => {
   return (
     <Button
       onClick={handleGenerate}
-      className="w-full"
+      className="w-full transition-all duration-200"
       disabled={isGenerating || (!prompt && !uploadedImage)}
     >
-      <WandSparkles className="mr-2 h-4 w-4" />
-      {isGenerating ? 'Generating...' : 'Generate Style'}
+      {isGenerating ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Generating Style...
+        </>
+      ) : (
+        <>
+          <WandSparkles className="mr-2 h-4 w-4" />
+          Generate Style
+        </>
+      )}
     </Button>
   );
 };

@@ -14,6 +14,7 @@ export interface WalletStyle {
   borderRadius: string;
   fontFamily: string;
   boxShadow?: string;
+  styleNotes?: string;
 }
 
 interface CustomizationState {

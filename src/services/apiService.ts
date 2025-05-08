@@ -46,7 +46,8 @@ export async function generateStyle(prompt: string, image: string | null, layer:
       buttonTextColor: data.style.buttonTextColor || '#FFFFFF',
       borderRadius: data.style.borderRadius || '12px',
       fontFamily: data.style.fontFamily || 'Inter, sans-serif',
-      boxShadow: data.style.boxShadow || '0 4px 12px rgba(0, 0, 0, 0.25)'
+      boxShadow: data.style.boxShadow || '0 4px 12px rgba(0, 0, 0, 0.25)',
+      styleNotes: data.style.styleNotes
     };
 
     return generatedStyle;
@@ -62,7 +63,8 @@ export async function generateStyle(prompt: string, image: string | null, layer:
         buttonTextColor: '#000000',
         borderRadius: '100px',
         fontFamily: 'Inter, sans-serif',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+        styleNotes: 'default style (error fallback)'
       };
     } else {
       return {
@@ -73,7 +75,8 @@ export async function generateStyle(prompt: string, image: string | null, layer:
         buttonTextColor: '#9945FF',
         borderRadius: '16px',
         fontFamily: 'Inter, sans-serif',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+        styleNotes: 'default style (error fallback)'
       };
     }
   }
