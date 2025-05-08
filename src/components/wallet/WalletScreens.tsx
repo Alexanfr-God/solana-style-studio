@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
 import { 
@@ -13,7 +12,9 @@ import {
   Copy,
   HelpCircle, 
   ChevronDown,
-  Check
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,90 +36,213 @@ export const LoginScreen = ({ style }: { style: WalletStyle }) => {
     });
   };
   
-  return (
-    <div 
-      className="wallet-preview flex flex-col rounded-2xl overflow-hidden w-full max-w-[320px]"
-      style={{
-        backgroundColor: style.backgroundColor || '#131313',
+  // Apply background styles with more advanced effects based on style
+  const getBackgroundStyle = () => {
+    if (style.backgroundImage) {
+      return {
         backgroundImage: style.backgroundImage,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+      };
+    }
+    
+    // Create a more sophisticated background if no image
+    return {
+      background: `linear-gradient(135deg, ${style.backgroundColor || '#131313'} 0%, ${style.accentColor || '#9945FF'}33 100%)`,
+    };
+  };
+
+  // Get custom text shadow based on theme
+  const getTextShadow = () => {
+    const isDark = style.backgroundColor?.includes('#13') || style.backgroundColor?.includes('rgb(19');
+    return isDark ? '0 0 10px rgba(255,255,255,0.3)' : '0 0 10px rgba(0,0,0,0.2)';
+  };
+  
+  return (
+    <div 
+      className="wallet-preview flex flex-col rounded-2xl overflow-hidden w-full max-w-[320px] relative"
+      style={{
+        ...getBackgroundStyle(),
         color: style.textColor || '#FFFFFF',
         fontFamily: style.fontFamily,
-        boxShadow: style.boxShadow,
+        boxShadow: style.boxShadow || '0 10px 25px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
       }}
     >
-      {/* Header with help icon */}
-      <div className="p-5 flex justify-between items-center">
-        <div className="text-lg font-medium text-gray-400">phantom</div>
-        <HelpCircle className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-300" />
+      {/* Animated overlay for extra visual effect */}
+      <div 
+        className="absolute inset-0 z-0 opacity-20" 
+        style={{
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z\' fill=\'%23${style.accentColor?.replace('#', '') || '9945FF'}\' fill-opacity=\'0.1\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
+        }}
+      />
+
+      {/* Header with branding and help icon */}
+      <div className="p-5 flex justify-between items-center relative z-10">
+        <div 
+          className="text-lg font-medium" 
+          style={{ 
+            background: `linear-gradient(to right, ${style.textColor || '#FFFFFF'}, ${style.accentColor || '#9945FF'})`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontWeight: 'bold',
+            letterSpacing: '1px',
+            textTransform: 'lowercase'
+          }}
+        >
+          phantom
+        </div>
+        <HelpCircle 
+          className="h-5 w-5 cursor-pointer transition-transform hover:scale-110 hover:rotate-12" 
+          style={{ 
+            color: style.accentColor || '#9945FF', 
+            filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))' 
+          }} 
+        />
       </div>
       
-      {/* Ghost Logo */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 pt-8">
-        <div className="mb-8">
+      {/* Logo and Content area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 pt-8 relative z-10">
+        {/* Animated Ghost Logo */}
+        <div className="mb-8 relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
           <img 
             src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
             alt="Phantom Ghost Logo" 
             width="100" 
             height="100" 
-            className="max-w-[100px]"
+            className="max-w-[100px] animate-pulse-slow"
+            style={{
+              filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
+            }}
+          />
+          <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
+            style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
           />
         </div>
         
-        <h2 className="text-2xl font-medium mb-8 text-white">Enter your password</h2>
+        {/* Login Title */}
+        <h2 
+          className="text-2xl font-medium mb-8" 
+          style={{ 
+            color: style.textColor || '#FFFFFF', 
+            textShadow: getTextShadow(),
+            letterSpacing: '0.5px'
+          }}
+        >
+          Enter your password
+        </h2>
         
-        {/* Password field */}
+        {/* Password field with enhanced styling */}
         <div className="w-full max-w-xs mb-6">
           <div 
-            className="h-12 rounded-full px-4 flex items-center w-full relative"
+            className="h-12 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
             style={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.07)',
               borderRadius: style.borderRadius || '100px',
+              border: `1px solid ${style.accentColor}40`,
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease'
             }}
           >
             <input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-white"
+              className="w-full bg-transparent border-none outline-none text-white transition-colors"
               placeholder="Password"
+              style={{
+                caretColor: style.accentColor || '#9945FF',
+              }}
             />
             {password.length > 0 && (
               <button 
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 text-gray-400 hover:text-white"
+                className="absolute right-4 text-gray-400 hover:text-white transition-colors flex items-center justify-center"
+                style={{ color: style.accentColor || '#9945FF' }}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             )}
+            
+            {/* Line animation for focus effect */}
+            <div className="absolute bottom-0 left-0 w-full h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform"
+              style={{ backgroundColor: style.accentColor || '#9945FF' }}
+            />
           </div>
         </div>
         
+        {/* Forgot password link */}
         <div 
           className="w-full max-w-xs mb-8 text-center"
           onClick={handleForgotPassword}
         >
-          <span className="text-gray-400 text-sm cursor-pointer hover:text-gray-300">Forgot password?</span>
+          <span 
+            className="text-gray-400 text-sm cursor-pointer hover:text-gray-300 relative group"
+            style={{ transition: 'all 0.3s ease' }}
+          >
+            Forgot password?
+            <span 
+              className="absolute left-0 right-0 bottom-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform" 
+              style={{ backgroundColor: style.accentColor || '#9945FF' }}
+            />
+          </span>
         </div>
         
-        {/* Button */}
+        {/* Enhanced Unlock Button */}
         <div className="w-full max-w-xs mt-4">
           <button 
             onClick={handleUnlock}
-            className="w-full h-12 font-medium text-center transition-colors active:bg-opacity-80 active:scale-[0.98]"
+            className="w-full h-12 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98]"
             style={{ 
               backgroundColor: style.buttonColor || '#9b87f5',
               color: style.buttonTextColor || '#000000',
               borderRadius: style.borderRadius || '100px',
+              boxShadow: `0 4px 10px ${style.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
             }}
           >
-            Unlock
+            {/* Button shine effect */}
+            <span 
+              className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{
+                background: `linear-gradient(45deg, transparent 25%, ${style.accentColor || '#9b87f5'}40 50%, transparent 75%)`,
+                backgroundSize: '200% 200%',
+                animation: 'shine 1.5s infinite linear'
+              }}
+            />
+            
+            <span className="relative z-10">Unlock</span>
           </button>
         </div>
       </div>
     </div>
   );
+};
+
+// Helper function to calculate hue rotation based on accent color
+const getHueRotate = (color: string): number => {
+  // Extract RGB components from hex or rgb string
+  let r = 0, g = 0, b = 0;
+  
+  if (color.startsWith('#')) {
+    // Handle hex format
+    const hex = color.replace('#', '');
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+  } else if (color.startsWith('rgb')) {
+    // Handle rgb format
+    const match = color.match(/\d+/g);
+    if (match && match.length >= 3) {
+      r = parseInt(match[0]);
+      g = parseInt(match[1]);
+      b = parseInt(match[2]);
+    }
+  }
+  
+  // Calculate hue (simplified)
+  const baseHue = 280; // Purple hue for #9945FF (phantom's default)
+  const targetHue = ((r * 0.3) + (g * 0.6) + (b * 0.1)) % 360;
+  
+  return targetHue - baseHue;
 };
 
 export const WalletScreen = ({ style }: { style: WalletStyle }) => {
