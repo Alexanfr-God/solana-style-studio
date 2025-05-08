@@ -57,9 +57,13 @@ export const LoginScreen = ({ style }: { style: WalletStyle }) => {
       {/* Ghost Logo */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 pt-8">
         <div className="mb-8">
-          <svg width="100" height="100" viewBox="0 0 250 250" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M235.979 78.872C227.055 39.9227 184.481 1 125.009 1C60.3743 1 1 50.7818 1 132.457C1 175.602 19.3409 213.32 53.0853 241.976C55.9253 244.26 61.7537 246.544 65.7073 239.618C69.6609 232.692 65.0609 225.767 60.3743 224.198C31.8155 211.608 22.1814 174.106 22.1814 132.383C22.1814 84.599 52.0278 44.351 78.002 30.562C106.024 15.625 123.537 18.043 142.685 26.14C161.833 34.237 186.784 60.588 188.011 90.909C189.239 121.23 172.598 136.617 147.66 136.912C122.721 137.208 122.721 115.4 122.721 107.229C122.721 97.472 115.271 94.236 109.173 94.236C78.5866 94.236 57.0389 170.056 125.009 171.552C193.106 173.047 213.153 119.864 214.898 98.271C216.643 76.7518 211.352 69.909 235.979 78.872Z" fill="white"/>
-          </svg>
+          <img 
+            src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
+            alt="Phantom Ghost Logo" 
+            width="100" 
+            height="100" 
+            className="max-w-[100px]"
+          />
         </div>
         
         <h2 className="text-2xl font-medium mb-8 text-white">Enter your password</h2>
