@@ -1,0 +1,7 @@
+
+[install]
+timeout = "10m"
+cache = true
+
+[install.scopes]
+"*" = { production = false }
