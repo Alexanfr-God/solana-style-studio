@@ -1,7 +1,4 @@
 
-#!/usr/bin/env node
-
-// Simple script to run vite from node_modules
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
