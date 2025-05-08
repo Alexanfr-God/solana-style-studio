@@ -8,15 +8,15 @@ const WalletStylist = () => {
     <div className="flex flex-col items-center justify-center">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-md opacity-50"></div>
-        <Avatar className="w-24 h-24 border-2 border-white/20">
-          <AvatarImage src="/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png" />
+        <Avatar className="w-32 h-32 border-3 border-white/20">
+          <AvatarImage src="/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png" />
           <AvatarFallback className="bg-gradient-to-r from-purple-600 to-blue-500">WS</AvatarFallback>
         </Avatar>
-        <div className="absolute -bottom-1 -right-1 bg-purple-600 rounded-full p-1">
+        <div className="absolute -bottom-1 -right-1 bg-purple-600 rounded-full p-1.5">
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
-            width="16" 
-            height="16" 
+            width="18" 
+            height="18" 
             viewBox="0 0 24 24" 
             fill="none" 
             stroke="currentColor" 
