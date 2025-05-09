@@ -11,14 +11,18 @@ const labelVariants = cva(
 
 export interface LabelProps
   extends React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>,
-    VariantProps<typeof labelVariants> {}
+    VariantProps<typeof labelVariants> {
+  // Add htmlFor to the interface to fix the TypeScript error
+  htmlFor?: string;
+}
 
 const Label = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   LabelProps
->(({ className, ...props }, ref) => (
+>(({ className, htmlFor, ...props }, ref) => (
   <LabelPrimitive.Root
     ref={ref}
+    htmlFor={htmlFor}
     className={cn(labelVariants(), className)}
     {...props}
   />
