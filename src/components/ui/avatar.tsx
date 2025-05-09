@@ -4,15 +4,10 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar"
 
 import { cn } from "@/lib/utils"
 
-// Add explicit support for children prop
-interface AvatarProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> {
-  children: React.ReactNode;
-}
-
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
-  AvatarProps
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
@@ -20,39 +15,26 @@ const Avatar = React.forwardRef<
       className
     )}
     {...props}
-  >
-    {children}
-  </AvatarPrimitive.Root>
+  />
 ))
 Avatar.displayName = AvatarPrimitive.Root.displayName
 
-// Extended interface with alt prop
-interface AvatarImageProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image> {
-  alt: string;
-}
-
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
-  AvatarImageProps
->(({ className, alt, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
+>(({ className, ...props }, ref) => (
   <AvatarPrimitive.Image
     ref={ref}
     className={cn("aspect-square h-full w-full", className)}
-    alt={alt}
     {...props}
   />
 ))
 AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
-// Add explicit support for children prop
-interface AvatarFallbackProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback> {
-  children: React.ReactNode;
-}
-
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
-  AvatarFallbackProps
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
+>(({ className, ...props }, ref) => (
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
@@ -60,9 +42,7 @@ const AvatarFallback = React.forwardRef<
       className
     )}
     {...props}
-  >
-    {children}
-  </AvatarPrimitive.Fallback>
+  />
 ))
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
