@@ -25,7 +25,9 @@ const WalletSelector = () => {
     publicKey 
   } = useWallet();
 
-  const hasPhantomWallet = wallets.some(w => w.adapter.name === 'Phantom');
+  // Fix: Check if Phantom wallet exists using WalletName type
+  const hasPhantomWallet = wallets.some(w => 
+    w.adapter.name === ('Phantom' as WalletName));
 
   const handleSelectWallet = useCallback((name: WalletName) => {
     select(name);
@@ -96,7 +98,7 @@ const WalletSelector = () => {
         {hasPhantomWallet ? (
           <DropdownMenuItem 
             onClick={() => {
-              // Fix: Cast the string to WalletName using 'as' to satisfy TypeScript
+              // Ensure all instances use proper type casting
               handleSelectWallet('Phantom' as WalletName);
               handleConnectWallet();
             }}
