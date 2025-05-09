@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletName, WalletReadyState } from '@solana/wallet-adapter-base';
@@ -95,7 +96,8 @@ const WalletSelector = () => {
         {hasPhantomWallet ? (
           <DropdownMenuItem 
             onClick={() => {
-              handleSelectWallet('Phantom');
+              // Fix: Cast the string to WalletName using 'as' to satisfy TypeScript
+              handleSelectWallet('Phantom' as WalletName);
               handleConnectWallet();
             }}
             disabled={connecting}
