@@ -67,22 +67,24 @@ const V1Customizer = () => {
           
           <div className="lg:col-span-2">
             <Card className="h-full bg-black/30 backdrop-blur-md border-white/10 p-4">
-              <div className="h-full flex items-center justify-center">
-                <DualWalletPreview />
+              <div className="h-full flex flex-col">
+                <div className="flex-1 flex items-center justify-center">
+                  <DualWalletPreview />
+                </div>
+                
+                {/* Mint as NFT Button - moved inside this container */}
+                <div className="mt-6 flex justify-center">
+                  <Button 
+                    className="bg-solana-purple hover:bg-solana-purple/90 text-white font-medium py-2 px-8 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(153,69,255,0.5)]"
+                    size="lg"
+                  >
+                    <Star className="w-5 h-5 mr-2" /> 
+                    Mint as NFT
+                  </Button>
+                </div>
               </div>
             </Card>
           </div>
-        </div>
-        
-        {/* Mint as NFT Button */}
-        <div className="mt-8 mb-6 flex justify-center">
-          <Button 
-            className="bg-solana-purple hover:bg-solana-purple/90 text-white font-medium py-2 px-8 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(153,69,255,0.5)]"
-            size="lg"
-          >
-            <Star className="w-5 h-5 mr-2" /> 
-            Mint as NFT
-          </Button>
         </div>
       </div>
     </div>
