@@ -11,11 +11,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// OpenAI image generation function
+// OpenAI image generation function with enhanced prompt sanitization
 const generateImageWithOpenAI = async (prompt: string, layerType: string): Promise<string> => {
   console.log("Calling OpenAI API with prompt:", prompt);
   
-  // Sanitize prompt to prevent UI elements from appearing
+  // Thorough prompt sanitization to prevent UI elements from appearing
   const sanitizedPrompt = prompt
     .replace(/enter\s+(?:your\s+)?password/gi, '')
     .replace(/unlock/gi, '')
@@ -25,9 +25,11 @@ const generateImageWithOpenAI = async (prompt: string, layerType: string): Promi
     .replace(/button/gi, '')
     .replace(/field/gi, '')
     .replace(/input/gi, '')
+    .replace(/login/gi, '')
+    .replace(/username/gi, '')
     .trim();
   
-  // Create layer-specific prompts
+  // Enhanced layer-specific prompt engineering
   let enhancedPrompt = "";
   
   if (layerType === "login") {
@@ -82,35 +84,95 @@ const generateImageWithOpenAI = async (prompt: string, layerType: string): Promi
   }
 };
 
-// Utility function to extract dominant color from an image URL
+// Improved function to extract dominant color from an image URL
 const extractDominantColor = async (imageUrl: string): Promise<string> => {
   try {
-    // We need to get the image data first
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error('Failed to fetch image');
-    }
+    // We can't use client-side color extraction libraries directly in Deno
+    // So we'll use the image URL's hash to create a deterministic but relevant color
+    // In production, you would use a proper image analysis API or service
     
-    // Since we can't use color-thief directly in Deno, we'll use a simpler approach
-    // This is a placeholder implementation that returns a color based on the image URL's hash
-    // In a production environment, you would use a proper image processing library or API
+    // Get the last 100 characters of the URL to use for hashing
+    const urlEnd = imageUrl.slice(-100);
     
-    // Generate a deterministic but varied color from the URL
+    // Create a deterministic hash from the URL
     let hash = 0;
-    for (let i = 0; i < imageUrl.length; i++) {
-      hash = ((hash << 5) - hash) + imageUrl.charCodeAt(i);
+    for (let i = 0; i < urlEnd.length; i++) {
+      hash = ((hash << 5) - hash) + urlEnd.charCodeAt(i);
       hash |= 0; // Convert to 32bit integer
     }
     
-    // Generate RGB values between 30 and 230 to avoid too dark or too light colors
-    const r = Math.abs(hash % 200) + 30;
-    const g = Math.abs((hash >> 8) % 200) + 30;
-    const b = Math.abs((hash >> 16) % 200) + 30;
+    // Generate RGB values with good saturation and brightness
+    // Make sure we get vibrant colors that work well for UI elements
+    const h = Math.abs(hash % 360); // Hue: 0-359
+    const s = 65 + Math.abs((hash >> 8) % 25); // Saturation: 65-90%
+    const l = 45 + Math.abs((hash >> 16) % 15); // Lightness: 45-60%
     
-    return `rgb(${r}, ${g}, ${b})`;
+    // Convert HSL to RGB (simplified algorithm)
+    const c = (1 - Math.abs(2 * l / 100 - 1)) * s / 100;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l / 100 - c / 2;
+    
+    let r, g, b;
+    if (h < 60) {
+      [r, g, b] = [c, x, 0];
+    } else if (h < 120) {
+      [r, g, b] = [x, c, 0];
+    } else if (h < 180) {
+      [r, g, b] = [0, c, x];
+    } else if (h < 240) {
+      [r, g, b] = [0, x, c];
+    } else if (h < 300) {
+      [r, g, b] = [x, 0, c];
+    } else {
+      [r, g, b] = [c, 0, x];
+    }
+    
+    const red = Math.round((r + m) * 255);
+    const green = Math.round((g + m) * 255);
+    const blue = Math.round((b + m) * 255);
+    
+    return `rgb(${red}, ${green}, ${blue})`;
   } catch (error) {
     console.error("Error extracting dominant color:", error);
-    return "rgb(153, 69, 255)"; // Default purple color
+    return "rgb(153, 69, 255)"; // Default accent color as fallback
+  }
+};
+
+// Enhanced function to extract a contrasting accent color
+const extractAccentColor = async (imageUrl: string, dominantColor: string): Promise<string> => {
+  try {
+    // Create a complementary color to the dominant color
+    // First extract RGB components from the dominant color
+    const rgbMatch = dominantColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/i);
+    if (!rgbMatch) return "#9945FF"; // Default accent
+    
+    const r = parseInt(rgbMatch[1], 10);
+    const g = parseInt(rgbMatch[2], 10);
+    const b = parseInt(rgbMatch[3], 10);
+    
+    // Generate a complementary or analogous color
+    // Using image URL to determine if we use complementary or analogous
+    const urlSum = imageUrl.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    
+    let r2, g2, b2;
+    if (urlSum % 2 === 0) {
+      // Complementary (opposite on color wheel)
+      r2 = 255 - r;
+      g2 = 255 - g;
+      b2 = 255 - b;
+    } else {
+      // Analogous (similar but distinct)
+      const shift = 30 + (urlSum % 60);
+      // Rotate the hue a bit and adjust saturation/brightness
+      r2 = Math.min(255, Math.max(0, r + shift - 30));
+      g2 = Math.min(255, Math.max(0, g + shift - 10));
+      b2 = Math.min(255, Math.max(0, b + shift + 20));
+    }
+    
+    return `rgb(${r2}, ${g2}, ${b2})`;
+  } catch (error) {
+    console.error("Error extracting accent color:", error);
+    return "rgb(255, 102, 0)"; // Default secondary accent
   }
 };
 
@@ -133,6 +195,73 @@ const getContrastColor = (color: string): string => {
   return luminance > 0.5 ? "#000000" : "#ffffff";
 };
 
+// Function to determine font family based on style attributes
+const determineFontFamily = (prompt: string, imageUrl: string, layerType: string): string => {
+  const promptLower = prompt.toLowerCase();
+  
+  // Analyze the prompt keywords to determine an appropriate font
+  if (promptLower.includes("futuristic") || promptLower.includes("sci-fi") || promptLower.includes("tech")) {
+    return "Space Grotesk, sans-serif";
+  } else if (promptLower.includes("elegant") || promptLower.includes("luxury") || promptLower.includes("serif")) {
+    return "Playfair Display, serif";
+  } else if (promptLower.includes("playful") || promptLower.includes("fun") || promptLower.includes("cartoon")) {
+    return "Comic Neue, sans-serif";
+  } else if (promptLower.includes("crypto") || promptLower.includes("code") || promptLower.includes("developer")) {
+    return "JetBrains Mono, monospace";
+  } else if (promptLower.includes("minimal") || promptLower.includes("clean")) {
+    return "Inter, sans-serif";
+  } else if (promptLower.includes("bold") || promptLower.includes("strong")) {
+    return "Montserrat, sans-serif";
+  } else if (promptLower.includes("retro") || promptLower.includes("vintage")) {
+    return "DM Serif Display, serif";
+  } else if (promptLower.includes("graffiti") || promptLower.includes("urban")) {
+    return "Permanent Marker, cursive";
+  }
+  
+  // Default fonts based on layer type
+  return layerType === "login" ? "Space Grotesk, sans-serif" : "Inter, sans-serif";
+};
+
+// Determine border radius based on style keywords
+const determineBorderRadius = (prompt: string, layerType: string): string => {
+  const promptLower = prompt.toLowerCase();
+  
+  if (promptLower.includes("sharp") || promptLower.includes("angular") || promptLower.includes("square")) {
+    return "4px";
+  } else if (promptLower.includes("pill") || promptLower.includes("rounded") || promptLower.includes("circular")) {
+    return "100px";
+  } else if (promptLower.includes("organic") || promptLower.includes("blob") || promptLower.includes("curved")) {
+    return "24px";
+  } else if (promptLower.includes("minimal") || promptLower.includes("clean")) {
+    return "8px";
+  }
+  
+  // Default border radius based on layer type
+  return layerType === "login" ? "16px" : "12px";
+};
+
+// Determine box shadow style based on visual theme
+const determineBoxShadow = (prompt: string, layerType: string): string => {
+  const promptLower = prompt.toLowerCase();
+  
+  if (promptLower.includes("glass") || promptLower.includes("glassmorphism")) {
+    return "0 8px 32px rgba(31, 38, 135, 0.2)";
+  } else if (promptLower.includes("neon") || promptLower.includes("glow")) {
+    return "0 0 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(120, 0, 255, 0.2)";
+  } else if (promptLower.includes("flat") || promptLower.includes("minimal")) {
+    return "0 2px 6px rgba(0, 0, 0, 0.1)";
+  } else if (promptLower.includes("floating") || promptLower.includes("3d")) {
+    return "0 20px 40px rgba(0, 0, 0, 0.3)";
+  } else if (promptLower.includes("dark") || promptLower.includes("cyber")) {
+    return "0 8px 16px rgba(0, 0, 0, 0.5)";
+  }
+  
+  // Default shadow based on layer type
+  return layerType === "login" 
+    ? "0 8px 20px rgba(0, 0, 0, 0.25)" 
+    : "0 4px 10px rgba(0, 0, 0, 0.15)";
+};
+
 // Function to extract colors and style information from the prompt and image
 const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, layerType: string): Promise<{
   backgroundColor: string;
@@ -145,7 +274,7 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
   fontFamily: string;
   styleNotes: string;
 }> => {
-  // Initialize with sensible defaults based on layer type
+  // Initialize with layer-specific defaults
   let result = layerType === "login" ? 
     // Login defaults: more expressive
     {
@@ -172,26 +301,29 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
       styleNotes: "minimal, functional"
     };
   
-  // Extract dominant color from image if available
+  // Extract colors from image if available
   if (imageUrl) {
     const dominantColor = await extractDominantColor(imageUrl);
+    const accentColor = await extractAccentColor(imageUrl, dominantColor);
     
-    // Set accent and button colors based on the dominant color
+    // Apply colors based on layer type
     if (layerType === "login") {
-      result.accentColor = dominantColor;
+      // For login, use dominant color for buttons and UI elements
+      result.accentColor = accentColor;
       result.buttonColor = dominantColor;
       result.buttonTextColor = getContrastColor(dominantColor);
     } else {
+      // For wallet, use more subtle approach
       result.accentColor = dominantColor;
-      // For wallet, keep the button color subtle but with accent color text
+      // Keep button color subtle but use accent color for text
       result.buttonTextColor = dominantColor;
     }
   }
   
-  // Color extraction logic from prompt
+  // Extract style notes and customize UI based on prompt content
   const promptLower = prompt.toLowerCase();
   
-  // Extract style notes based on prompt content
+  // Build style terms for notes
   const styleTerms = [];
   if (promptLower.includes("futuristic")) styleTerms.push("futuristic");
   if (promptLower.includes("minimal") || promptLower.includes("clean")) styleTerms.push("minimalist");
@@ -205,20 +337,16 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
   if (promptLower.includes("cosmic") || promptLower.includes("galaxy")) styleTerms.push("cosmic");
   if (promptLower.includes("nft") || promptLower.includes("digital art")) styleTerms.push("NFT aesthetic");
   
-  // Custom font selection based on style
-  if (promptLower.includes("futuristic") || promptLower.includes("cyber")) {
-    result.fontFamily = "Space Grotesk, sans-serif";
-  } else if (promptLower.includes("minimal") || promptLower.includes("clean")) {
-    result.fontFamily = "Inter, sans-serif";
-  } else if (promptLower.includes("elegant") || promptLower.includes("luxury")) {
-    result.fontFamily = "Playfair Display, serif";
-  } else if (promptLower.includes("tech") || promptLower.includes("code")) {
-    result.fontFamily = "JetBrains Mono, monospace";
-  } else if (promptLower.includes("bold") || promptLower.includes("strong")) {
-    result.fontFamily = "Montserrat, sans-serif";
-  }
+  // Apply font family based on visual theme
+  result.fontFamily = determineFontFamily(prompt, imageUrl || "", layerType);
   
-  // If we have style terms, join them
+  // Determine border radius based on style
+  result.borderRadius = determineBorderRadius(prompt, layerType);
+  
+  // Determine box shadow style
+  result.boxShadow = determineBoxShadow(prompt, layerType);
+  
+  // Join style terms into notes
   if (styleTerms.length > 0) {
     result.styleNotes = styleTerms.join(", ");
   } else {
@@ -228,12 +356,12 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
       "minimal wallet interface";
   }
   
-  // If image is provided, add that to style notes
+  // Add image-inspired note if image is provided
   if (imageUrl) {
     result.styleNotes += ", image-inspired";
   }
   
-  // Background color detection
+  // Background color detection from prompt
   if (promptLower.includes("dark")) {
     result.backgroundColor = "#121212";
     result.textColor = "#ffffff";
@@ -242,7 +370,7 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
     result.textColor = "#121212";
   }
   
-  // Accent color detection from prompt keywords with more color options
+  // Extract specific colors from prompt keywords
   if (promptLower.includes("blue")) {
     result.accentColor = "#3B82F6";
   } else if (promptLower.includes("green")) {
@@ -263,70 +391,38 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
     result.accentColor = "#22D3EE";
   } else if (promptLower.includes("lime")) {
     result.accentColor = "#84CC16";
-  } else if (promptLower.includes("gold") || promptLower.includes("yellow")) {
+  } else if (promptLower.includes("gold")) {
     result.accentColor = "#F59E0B";
-  } else if (promptLower.includes("black")) {
-    result.accentColor = "#000000";
-  } else if (promptLower.includes("white")) {
-    result.accentColor = "#FFFFFF";
-  } else if (promptLower.includes("gray") || promptLower.includes("grey")) {
-    result.accentColor = "#6B7280";
   }
   
   // Layer-specific UI customization
   if (layerType === "login") {
-    // Login screen - potentially more flashy UI
+    // For login screens, button color typically matches accent color
     result.buttonColor = result.accentColor;
     
+    // Special UI treatments based on style
     if (promptLower.includes("glass")) {
       result.buttonColor = "rgba(255, 255, 255, 0.1)";
       result.boxShadow = "0 8px 32px rgba(31, 38, 135, 0.15)";
-      result.borderRadius = "24px";
-    } else if (promptLower.includes("sharp") || promptLower.includes("angular")) {
-      result.borderRadius = "4px";
-    } else if (promptLower.includes("rounded") || promptLower.includes("soft")) {
-      result.borderRadius = "32px";
     }
   } else {
-    // Wallet screen - more subdued UI
-    // For wallet, we often want more subtle buttons
+    // For wallet screens, usually more subdued UI
+    // Button colors are more subtle
     result.buttonColor = "rgba(40, 40, 40, 0.8)";
-    result.borderRadius = "12px";
-    result.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.15)";
   }
   
-  // Button text color logic - determine if text should be dark or light based on button color
-  const accentColorHex = result.buttonColor.startsWith("rgba") ? result.accentColor : result.buttonColor;
-  if (accentColorHex.startsWith("rgb")) {
-    result.buttonTextColor = getContrastColor(accentColorHex);
-  } else {
-    const hexColor = accentColorHex.replace("#", "");
-    
-    if (hexColor.length >= 6) {
-      // Simple luminance check (very approximate)
-      const r = parseInt(hexColor.substring(0, 2), 16);
-      const g = parseInt(hexColor.substring(2, 4), 16);
-      const b = parseInt(hexColor.substring(4, 6), 16);
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      
-      result.buttonTextColor = luminance > 0.5 ? "#000000" : "#ffffff";
-    } else {
-      // Default contrast for rgba values or invalid hex
-      result.buttonTextColor = result.buttonColor.includes("rgba") && 
-                              result.buttonColor.includes("255, 255, 255") ? 
-                              "#000000" : "#ffffff";
-    }
-  }
+  // Button text color calculation for contrast
+  result.buttonTextColor = getContrastColor(result.buttonColor.startsWith("rgba") ? result.accentColor : result.buttonColor);
   
   return result;
 };
 
-// Convert image to style object based on prompt
+// Generate full style object based on image and prompt
 const generateStyleFromImage = async (imageUrl: string, prompt: string, layerType: string): Promise<Record<string, any>> => {
   // Extract style information from prompt and image
   const styleInfo = await extractStyleFromPrompt(prompt, imageUrl, layerType);
   
-  // Create the final style object that matches the required structure
+  // Create the final style object with all required properties
   return {
     backgroundColor: styleInfo.backgroundColor,
     backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
@@ -339,11 +435,11 @@ const generateStyleFromImage = async (imageUrl: string, prompt: string, layerTyp
     boxShadow: styleInfo.boxShadow,
     styleNotes: styleInfo.styleNotes,
     
-    // Additional fields required in the updated structure
+    // Additional fields for the API structure
     background: imageUrl || styleInfo.backgroundColor,
     fontColor: styleInfo.textColor,
     
-    // Metadata for internal use
+    // Metadata
     generatedAt: new Date().toISOString(),
     layerType: layerType
   };
@@ -359,7 +455,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { prompt, image_url, layer_type, user_id } = await req.json();
 
-    // Sanitize the prompt to prevent UI elements from being included in the generated image
+    // Sanitize the prompt to prevent UI elements from being included
     const sanitizedPrompt = prompt
       .replace(/enter\s+(?:your\s+)?password/gi, '')
       .replace(/unlock/gi, '')
