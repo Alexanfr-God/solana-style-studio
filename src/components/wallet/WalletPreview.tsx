@@ -4,6 +4,7 @@ import { useCustomizationStore, WalletStyle, LayerType } from '../../stores/cust
 import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { toast } from 'sonner';
 
 // Render Login Screen UI
 const LoginScreen = ({ style }: { style: WalletStyle }) => {
@@ -236,6 +237,14 @@ const WalletPreview = () => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
+  const handleCopyAddress = () => {
+    if (!publicKey) return;
+    
+    navigator.clipboard.writeText(publicKey.toString())
+      .then(() => toast.success('Address copied to clipboard'))
+      .catch(err => console.error('Failed to copy address', err));
+  };
+
   return (
     <div className="flex items-center justify-center p-4 h-full w-full">
       <div className="relative max-w-[320px]">
@@ -246,9 +255,13 @@ const WalletPreview = () => {
         )}
         
         <div className="absolute top-4 right-4 flex gap-2">
-          <Button size="sm" variant="secondary" className="bg-black/30 backdrop-blur-sm text-white">
+          <Button 
+            size="sm" 
+            variant={connected ? "default" : "secondary"} 
+            className={connected ? "bg-green-700/80 text-white hover:bg-green-700" : "bg-black/30 backdrop-blur-sm text-white"}
+          >
             <span className="flex items-center">
-              {connected ? 'Connected' : 'Not Connected'}
+              {connected ? '✓ Connected' : '✗ Not Connected'}
             </span>
           </Button>
         </div>
@@ -260,7 +273,12 @@ const WalletPreview = () => {
                 <div>Wallet address</div>
                 <div className="flex items-center gap-1">
                   <span className="font-mono">{getShortenedAddress(publicKey.toString())}</span>
-                  <Button size="icon" variant="ghost" className="h-6 w-6 text-white">
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-6 w-6 text-white"
+                    onClick={handleCopyAddress}
+                  >
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>

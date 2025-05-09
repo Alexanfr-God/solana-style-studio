@@ -5,6 +5,7 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
+import { toast } from "sonner";
 
 // Import the styles for the modal
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -25,9 +26,19 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
     new PhantomWalletAdapter(),
   ], []);
 
+  // Show wallet connection status notifications
+  const onError = (error: any) => {
+    toast.error(`Wallet error: ${error?.message || 'Unknown error'}`);
+    console.error(error);
+  };
+
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider 
+        wallets={wallets} 
+        autoConnect={false}
+        onError={onError}
+      >
         <WalletModalProvider>
           {children}
         </WalletModalProvider>

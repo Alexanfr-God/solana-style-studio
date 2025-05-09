@@ -1,6 +1,6 @@
-
-import React from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletName, WalletReadyState } from '@solana/wallet-adapter-base';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,30 +9,60 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from "sonner";
 
 const WalletSelector = () => {
-  const { wallet, connect, disconnect, connected, publicKey } = useWallet();
-  
-  const handleConnect = async () => {
-    try {
-      if (wallet) await connect();
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-    }
-  };
+  const { 
+    wallets, 
+    select, 
+    wallet, 
+    connect, 
+    connecting, 
+    connected, 
+    disconnect, 
+    disconnecting,
+    publicKey 
+  } = useWallet();
 
-  const handleDisconnect = async () => {
+  const hasPhantomWallet = wallets.some(w => w.adapter.name === 'Phantom');
+
+  const handleSelectWallet = useCallback((name: WalletName) => {
+    select(name);
+  }, [select]);
+  
+  const handleConnectWallet = useCallback(async () => {
     try {
+      if (wallet && !connecting && !connected) {
+        await connect();
+        toast.success("Wallet connected successfully!");
+      }
+    } catch (error: any) {
+      console.error('Failed to connect wallet:', error);
+      toast.error(`Connection failed: ${error?.message || 'Unknown error'}`);
+    }
+  }, [wallet, connecting, connected, connect]);
+
+  const handleDisconnectWallet = useCallback(async () => {
+    try {
+      if (disconnecting) return;
       await disconnect();
+      toast.info("Wallet disconnected");
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
     }
-  };
+  }, [disconnect, disconnecting]);
+
+  useEffect(() => {
+    if (wallet) {
+      console.log("Selected wallet:", wallet.adapter.name);
+    }
+  }, [wallet]);
 
   const getShortenedAddress = (address: string) => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
+  // If connected, show the address and a disconnect button
   if (connected && publicKey) {
     return (
       <div className="flex items-center gap-2">
@@ -42,41 +72,75 @@ const WalletSelector = () => {
         <Button 
           variant="destructive" 
           size="sm" 
-          onClick={handleDisconnect}
+          onClick={handleDisconnectWallet}
+          disabled={disconnecting}
           className="text-white"
         >
-          Disconnect
+          {disconnecting ? 'Disconnecting...' : 'Disconnect'}
         </Button>
       </div>
     );
   }
 
+  // If not connected, show the connect options
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button className="bg-gradient-to-r from-purple-600 to-blue-500">
-          Select Wallet
+          {connecting ? 'Connecting...' : 'Connect Wallet'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-black/80 backdrop-blur-md text-white border-white/20">
-        <DropdownMenuItem 
-          onClick={handleConnect}
-          className="cursor-pointer hover:bg-white/10 flex items-center gap-2"
-        >
-          <svg width="20" height="20" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="128" height="128" rx="24" fill="url(#paint0_linear_phantom)"/>
-            <path d="M110.584 64.9142H99.142C99.142 41.8335 80.214 23 57 23V34.214C73.786 34.214 87.857 48.2502 87.857 64.9142H76.415C76.415 64.9142 92.513 81.2282 92.8708 81.5619C93.8476 82.5057 95.4417 82.49 96.4348 81.5619L110.584 64.9142Z" fill="white"/>
-            <path d="M57 105.829V94.6147C40.214 94.6147 26.143 80.5785 26.143 63.9144H37.585C37.585 63.9144 21.487 47.6005 21.1292 47.2667C20.1524 46.323 18.5583 46.3387 17.5652 47.2667L3.41602 63.9144H14.858C14.858 87.0941 33.786 105.829 57 105.829Z" fill="white"/>
-            <defs>
-              <linearGradient id="paint0_linear_phantom" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#9945FF"/>
-                <stop offset="1" stopColor="#14F195"/>
-              </linearGradient>
-            </defs>
-          </svg>
-          Phantom
-        </DropdownMenuItem>
+        {/* Phantom wallet */}
+        {hasPhantomWallet ? (
+          <DropdownMenuItem 
+            onClick={() => {
+              handleSelectWallet('Phantom');
+              handleConnectWallet();
+            }}
+            disabled={connecting}
+            className="cursor-pointer hover:bg-white/10 flex items-center gap-2"
+          >
+            <svg width="20" height="20" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="128" height="128" rx="24" fill="url(#paint0_linear_phantom)"/>
+              <path d="M110.584 64.9142H99.142C99.142 41.8335 80.214 23 57 23V34.214C73.786 34.214 87.857 48.2502 87.857 64.9142H76.415C76.415 64.9142 92.513 81.2282 92.8708 81.5619C93.8476 82.5057 95.4417 82.49 96.4348 81.5619L110.584 64.9142Z" fill="white"/>
+              <path d="M57 105.829V94.6147C40.214 94.6147 26.143 80.5785 26.143 63.9144H37.585C37.585 63.9144 21.487 47.6005 21.1292 47.2667C20.1524 46.323 18.5583 46.3387 17.5652 47.2667L3.41602 63.9144H14.858C14.858 87.0941 33.786 105.829 57 105.829Z" fill="white"/>
+              <defs>
+                <linearGradient id="paint0_linear_phantom" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#9945FF"/>
+                  <stop offset="1" stopColor="#14F195"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            Phantom {connecting ? '(Connecting...)' : ''}
+          </DropdownMenuItem>
+        ) : (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="px-2 py-1.5 text-sm opacity-50 flex items-center gap-2 cursor-not-allowed">
+                  <svg width="20" height="20" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="128" height="128" rx="24" fill="url(#paint0_linear_phantom)"/>
+                    <path d="M110.584 64.9142H99.142C99.142 41.8335 80.214 23 57 23V34.214C73.786 34.214 87.857 48.2502 87.857 64.9142H76.415C76.415 64.9142 92.513 81.2282 92.8708 81.5619C93.8476 82.5057 95.4417 82.49 96.4348 81.5619L110.584 64.9142Z" fill="white"/>
+                    <path d="M57 105.829V94.6147C40.214 94.6147 26.143 80.5785 26.143 63.9144H37.585C37.585 63.9144 21.487 47.6005 21.1292 47.2667C20.1524 46.323 18.5583 46.3387 17.5652 47.2667L3.41602 63.9144H14.858C14.858 87.0941 33.786 105.829 57 105.829Z" fill="white"/>
+                    <defs>
+                      <linearGradient id="paint0_linear_phantom" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#9945FF"/>
+                        <stop offset="1" stopColor="#14F195"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  Phantom (Not Installed)
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="bg-black/80 text-white">
+                <p>Please install Phantom wallet extension</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
 
+        {/* Other wallet options remain as placeholder/demo items */}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -127,6 +191,19 @@ const WalletSelector = () => {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        {/* Instructions for users without wallet */}
+        <div className="mt-2 border-t border-white/10 pt-2 px-2 text-xs opacity-70">
+          <p>Don't have Phantom?</p>
+          <a 
+            href="https://phantom.app/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-purple-400 hover:text-purple-300 mt-1 block"
+          >
+            → Install Phantom Wallet
+          </a>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
