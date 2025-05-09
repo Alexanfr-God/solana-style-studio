@@ -12,6 +12,8 @@ import EditorTabs from './EditorTabs';
 import StyleNotesDisplay from '../wallet/StyleNotesDisplay';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Star } from 'lucide-react';
 
 const V1Customizer = () => {
   return (
@@ -70,6 +72,17 @@ const V1Customizer = () => {
               </div>
             </Card>
           </div>
+        </div>
+        
+        {/* Mint as NFT Button */}
+        <div className="mt-8 mb-6 flex justify-center">
+          <Button 
+            className="bg-solana-purple hover:bg-solana-purple/90 text-white font-medium py-2 px-8 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(153,69,255,0.5)]"
+            size="lg"
+          >
+            <Star className="w-5 h-5 mr-2" /> 
+            Mint as NFT
+          </Button>
         </div>
       </div>
     </div>
