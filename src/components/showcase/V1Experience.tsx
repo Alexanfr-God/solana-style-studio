@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   Carousel, 
@@ -20,7 +19,6 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
   const walletScreens = [
     '/lovable-uploads/dee86368-28b2-44f6-a28e-a13e40b49386.png',
     '/lovable-uploads/fc482f64-4257-45a3-8925-2e671d1b857c.png',
-    '/lovable-uploads/7098234e-0407-4d0f-a4e8-8fbadf4154cd.png',
     '/lovable-uploads/a5f8972f-b18d-4f17-8799-eeb025813f3b.png',
   ];
   
