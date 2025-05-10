@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import V1Customizer from '../components/editor/V1Customizer';
 import AnimatedStars from '@/components/ui/animated-stars';
 import ShowcaseSection from '@/components/showcase/ShowcaseSection';
+import Footer from '@/components/layout/Footer';
 
 const Index = () => {
   return (
@@ -11,6 +12,7 @@ const Index = () => {
       <AnimatedStars />
       <V1Customizer />
       <ShowcaseSection />
+      <Footer />
       <Toaster />
     </>
   );

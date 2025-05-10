@@ -113,6 +113,10 @@
   animation: shine 3s linear infinite;
 }
 
+.text-shadow-glow {
+  text-shadow: 0 0 8px rgba(153, 69, 255, 0.7);
+}
+
 /* Custom Animation Classes */
 .animate-slide-in-left {
   animation: slideInLeft 0.8s ease forwards;
@@ -156,3 +160,4 @@
     opacity: 1;
   }
 }
+
