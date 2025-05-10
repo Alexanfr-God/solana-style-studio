@@ -10,6 +10,7 @@ import {
 import { Card } from '@/components/ui/card';
 import useEmblaCarousel from 'embla-carousel-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface V1ExperienceProps {
   inView: boolean;
@@ -18,6 +19,7 @@ interface V1ExperienceProps {
 const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
   const [autoplaySpeed] = useState(5000); // 5 seconds per slide
   const [currentIndex, setCurrentIndex] = useState(0);
+  const isMobile = useIsMobile();
   
   const walletScreens = [
     '/lovable-uploads/dee86368-28b2-44f6-a28e-a13e40b49386.png',
@@ -35,6 +37,7 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
     loop: true,
     align: "center",
     skipSnaps: false,
+    containScroll: "trimSnaps",
   });
 
   const onSelect = useCallback(() => {
@@ -68,8 +71,8 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
   }, [inView, autoplaySpeed, emblaApi]);
   
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-      <div className={`space-y-6 transition-all duration-1000 delay-200 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center">
+      <div className="lg:col-span-5 space-y-6 transition-all duration-1000 delay-200 px-4 lg:px-0 z-10">
         <div>
           <h2 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-purple-500 mb-2">
             V1 Experience
@@ -84,8 +87,8 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
         </div>
       </div>
       
-      <div className={`transition-all duration-1000 delay-500 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
-        <div className="overflow-visible px-4 relative">
+      <div className="lg:col-span-7 transition-all duration-1000 delay-500 z-0">
+        <div className="max-w-full relative">
           <div className="relative w-full" ref={emblaRef}>
             <div className="flex py-8">
               {walletScreens.map((screen, index) => {
@@ -94,15 +97,17 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
                   <div 
                     key={index} 
                     className={cn(
-                      "relative flex-[0_0_80%] md:flex-[0_0_60%] lg:flex-[0_0_40%] min-w-0 pl-4 transition-all duration-500 ease-in-out", 
-                      isCenter ? "z-10" : "z-0"
+                      "relative min-w-0 transition-all duration-500 ease-in-out",
+                      isMobile 
+                        ? "flex-[0_0_80%] pl-4" 
+                        : "flex-[0_0_40%] pl-4"
                     )}
                   >
                     <div 
                       className={cn(
                         "bg-black/30 backdrop-blur-sm border border-white/10 overflow-hidden rounded-lg transition-all duration-500 ease-in-out",
                         isCenter 
-                          ? "scale-110 shadow-[0_0_25px_rgba(255,255,255,0.15)]" 
+                          ? "scale-105 shadow-[0_0_25px_rgba(255,255,255,0.15)]" 
                           : "scale-90 opacity-70"
                       )}
                     >
@@ -123,7 +128,7 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
             </div>
           </div>
           
-          <div className="absolute top-1/2 -left-4 -translate-y-1/2 hidden md:block">
+          <div className="absolute top-1/2 left-0 -translate-y-1/2 hidden md:block z-10">
             <button 
               onClick={() => emblaApi?.scrollPrev()} 
               className="h-8 w-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-all"
@@ -135,7 +140,7 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
             </button>
           </div>
           
-          <div className="absolute top-1/2 -right-4 -translate-y-1/2 hidden md:block">
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 hidden md:block z-10">
             <button 
               onClick={() => emblaApi?.scrollNext()} 
               className="h-8 w-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-all"
