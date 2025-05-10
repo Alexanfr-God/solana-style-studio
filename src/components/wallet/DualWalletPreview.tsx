@@ -2,6 +2,7 @@
 import React from 'react';
 import { useCustomizationStore, WalletStyle } from '@/stores/customizationStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
+import { Badge } from '@/components/ui/badge';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
@@ -16,6 +17,15 @@ const DualWalletPreview = () => {
           <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center">
             <LoginScreen style={loginStyle} />
           </div>
+        </div>
+        
+        {/* DEMO Badge */}
+        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+          <Badge 
+            className="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(153,69,255,0.5)] border-white/20 rotate-[-10deg] scale-125"
+          >
+            DEMO
+          </Badge>
         </div>
         
         <div className="flex flex-col h-full">
