@@ -38,11 +38,11 @@ const V3Drop: React.FC<V3DropProps> = ({ inView }) => {
   
   return (
     <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-[500px]">
-      <div className={`relative h-[500px] md:h-[550px] lg:h-[600px] overflow-hidden rounded-xl transition-all duration-1000 transform ${inView && elementInView ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}>
+      <div className={`relative h-[600px] md:h-[650px] lg:h-[700px] overflow-visible transition-all duration-1000 transform ${inView && elementInView ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}>
         <img 
-          src="/lovable-uploads/7098234e-0407-4d0f-a4e8-8fbadf4154cd.png" 
-          alt="Character wallet" 
-          className="h-full w-full object-cover object-center animate-float"
+          src="/lovable-uploads/58a93618-7faf-4812-9de1-fec30544610f.png" 
+          alt="Phantom cat wallet" 
+          className="h-full w-full object-contain object-center animate-float drop-shadow-[0_0_15px_rgba(153,69,255,0.3)]"
         />
       </div>
       
