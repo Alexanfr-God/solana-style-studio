@@ -8,7 +8,7 @@ import {
   CarouselPrevious
 } from "@/components/ui/carousel";
 import { Card } from '@/components/ui/card';
-import { useEmblaCarousel } from 'embla-carousel-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { cn } from '@/lib/utils';
 
 interface V1ExperienceProps {
