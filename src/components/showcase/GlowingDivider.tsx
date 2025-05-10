@@ -11,8 +11,12 @@ const GlowingDivider = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    canvas.width = canvas.offsetWidth;
-    canvas.height = 2;
+    const resizeCanvas = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = 2;
+    };
+    
+    resizeCanvas();
     
     // Particles array
     const particles: Array<{x: number, speed: number, opacity: number}> = [];
@@ -27,6 +31,7 @@ const GlowingDivider = () => {
     }
     
     // Animation function
+    let animationId: number;
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
@@ -54,18 +59,21 @@ const GlowingDivider = () => {
         }
       });
       
-      requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
     };
     
     animate();
     
     // Handle resize
     const handleResize = () => {
-      canvas.width = canvas.offsetWidth;
+      resizeCanvas();
     };
     
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
+    };
   }, []);
   
   return (

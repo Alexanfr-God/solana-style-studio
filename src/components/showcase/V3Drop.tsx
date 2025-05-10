@@ -20,23 +20,25 @@ const V3Drop: React.FC<V3DropProps> = ({ inView }) => {
     
     const badge = badgeRef.current;
     let shimmerPosition = -100;
+    let animationId: number;
+    
     const animateShimmer = () => {
       shimmerPosition += 0.8;
       if (shimmerPosition > 200) shimmerPosition = -100;
       
       if (badge) {
         badge.style.backgroundPosition = `${shimmerPosition}% 0`;
-        requestAnimationFrame(animateShimmer);
+        animationId = requestAnimationFrame(animateShimmer);
       }
     };
     
-    const animationId = requestAnimationFrame(animateShimmer);
+    animationId = requestAnimationFrame(animateShimmer);
     return () => cancelAnimationFrame(animationId);
   }, [elementInView]);
   
   return (
-    <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-      <div className={`relative h-[500px] overflow-hidden rounded-xl transition-all duration-1000 ${inView && elementInView ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}>
+    <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-[500px]">
+      <div className={`relative h-[500px] md:h-[550px] lg:h-[600px] overflow-hidden rounded-xl transition-all duration-1000 transform ${inView && elementInView ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}>
         <img 
           src="/lovable-uploads/7098234e-0407-4d0f-a4e8-8fbadf4154cd.png" 
           alt="Character wallet" 

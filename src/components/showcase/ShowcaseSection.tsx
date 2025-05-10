@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import GlowingDivider from './GlowingDivider';
 import V1Experience from './V1Experience';
 import V3Drop from './V3Drop';
@@ -14,7 +14,7 @@ const ShowcaseSection = () => {
   return (
     <section 
       ref={sectionRef} 
-      className="w-full bg-gradient-to-br from-black via-purple-950/90 to-black py-16"
+      className="w-full bg-gradient-to-br from-black via-purple-950/90 to-black py-16 min-h-[90vh]"
     >
       <div className="max-w-screen-xl mx-auto px-4">
         <GlowingDivider />

@@ -3,7 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { 
   Carousel, 
   CarouselContent, 
-  CarouselItem 
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious
 } from "@/components/ui/carousel";
 import { Card } from '@/components/ui/card';
 
@@ -23,13 +25,17 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
   ];
   
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (inView) {
-        setCurrentIndex((prev) => (prev + 1) % walletScreens.length);
-      }
-    }, autoplaySpeed);
+    let interval: number | undefined;
     
-    return () => clearInterval(interval);
+    if (inView) {
+      interval = window.setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % walletScreens.length);
+      }, autoplaySpeed);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [inView, walletScreens.length, autoplaySpeed]);
   
   return (
@@ -50,17 +56,17 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
       </div>
       
       <div className={`transition-all duration-1000 delay-500 ${inView ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
-        <div className="overflow-hidden px-4">
+        <div className="overflow-visible px-4 relative">
           <Carousel
             opts={{
-              align: "start",
+              align: "center",
               loop: true,
-              slidesToScroll: 1,
             }}
+            className="w-full"
           >
             <CarouselContent>
               {walletScreens.map((screen, index) => (
-                <CarouselItem key={index} className="sm:basis-1/1 md:basis-2/3 lg:basis-1/2">
+                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
                   <Card className="bg-black/30 backdrop-blur-sm border border-white/10 overflow-hidden">
                     <div className="aspect-[9/16] relative overflow-hidden rounded-md">
                       <img 
@@ -73,6 +79,10 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
                 </CarouselItem>
               ))}
             </CarouselContent>
+            <div className="hidden md:block">
+              <CarouselPrevious className="absolute -left-12" />
+              <CarouselNext className="absolute -right-12" />
+            </div>
           </Carousel>
           
           <div className="flex justify-center mt-4 gap-2">
