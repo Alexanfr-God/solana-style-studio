@@ -22,6 +22,10 @@ const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
       
       toast.info('Minting NFT for wallet design...');
       
+      // In a real app, you would capture the wallet design as an image and upload to IPFS
+      // For this example, we're using a placeholder image URL
+      const imageUrl = "https://gateway.pinata.cloud/ipfs/QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco";
+      
       // Define the style data as a proper object
       const styleData = {
         bgColor: '#000000',
@@ -29,7 +33,10 @@ const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
         image: 'https://placekitten.com/400/400'
       };
       
-      // Call the Edge Function to mint the NFT
+      // Example Solana wallet address - in a real app, this would come from a connected wallet
+      const userWallet = "solana:5FHwkrdxD3iWVBewGpyQ2NwJHcQNcleK9vw6jD9ai1vn";
+      
+      // Call the Edge Function to mint the NFT via Crossmint
       const response = await fetch('https://opxordptvpvzmhakvdde.supabase.co/functions/v1/mint_wallet_skin_nft', {
         method: 'POST',
         headers: {
@@ -37,8 +44,9 @@ const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: 'demo_user_1',
-          styleData: styleData  // This is directly passing the object, not stringified
+          userWallet,
+          imageUrl,
+          styleData
         }),
       });
       
@@ -48,9 +56,10 @@ const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
       
       // Show success message
       if (result.success) {
-        toast.success(`Successfully minted NFT with ID: ${result.skinId}`);
-        if (result.isExisting) {
-          toast.info('This design was already minted before.');
+        toast.success(`Successfully minted NFT via Crossmint!`);
+        // If you have an explorer URL you can share it
+        if (result.crossmintResponse && result.crossmintResponse.id) {
+          toast.info('Your NFT will appear in your wallet shortly');
         }
       } else {
         toast.error(`Failed to mint NFT: ${result.error || 'Unknown error'}`);

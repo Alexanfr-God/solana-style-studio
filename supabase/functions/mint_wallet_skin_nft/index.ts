@@ -1,7 +1,5 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 
 // Configure CORS headers
 const corsHeaders = {
@@ -9,11 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Get Crossmint API key from environment variables
+const crossmintApiKey = Deno.env.get('CROSSMINT_API_KEY') || '';
+const collectionId = "default-solana"; // Replace with your actual collection ID if different
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -30,81 +26,91 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, styleData } = await req.json();
+    const { userWallet, imageUrl, styleData } = await req.json();
 
     // Validate input
-    if (!userId || !styleData) {
-      console.error('Missing required fields:', { userId, styleData });
+    if (!userWallet || !imageUrl || !styleData) {
+      console.error('Missing required fields:', { userWallet, imageUrl, styleData });
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Check if a similar record already exists
-    // Using filter on individual JSON properties instead of direct comparison
-    const { data: existingData, error: searchError } = await supabase
-      .from('wallet_skins')
-      .select('id')
-      .eq('user_id', userId)
-      .filter('style_data->bgColor', 'eq', styleData.bgColor)
-      .filter('style_data->textColor', 'eq', styleData.textColor)
-      .filter('style_data->image', 'eq', styleData.image);
-
-    if (searchError) {
-      console.error('Error searching for existing wallet skin:', searchError);
-      return new Response(JSON.stringify({ error: searchError.message }), { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Generate description based on style data
+    let description = "Custom wallet skin with ";
+    if (styleData.bgColor) {
+      description += `${styleData.bgColor} background`;
     }
-
-    // If a matching record exists, return the existing skinId
-    if (existingData && existingData.length > 0) {
-      console.log('Found existing wallet skin, returning:', existingData[0].id);
-      return new Response(JSON.stringify({ 
-        skinId: existingData[0].id, 
-        success: true,
-        isExisting: true
-      }), { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    if (styleData.textColor) {
+      description += styleData.bgColor ? `, ${styleData.textColor} text` : `${styleData.textColor} text`;
     }
-
-    // If no matching record exists, create a new one
-    // Generate a unique ID for the skin
-    const skinId = nanoid();
-
-    // Insert the wallet skin into the database
-    const { data, error } = await supabase
-      .from('wallet_skins')
-      .insert({
-        id: skinId,
-        user_id: userId,
-        style_data: styleData
-      });
-
-    if (error) {
-      console.error('Error inserting wallet skin:', error);
-      return new Response(JSON.stringify({ error: error.message }), { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    console.log('Successfully created new wallet skin with ID:', skinId);
     
-    // Return success response with skinId
+    console.log('Minting NFT via Crossmint API with data:', {
+      recipient: userWallet,
+      imageUrl: imageUrl,
+      styleDataKeys: Object.keys(styleData)
+    });
+
+    // Make request to Crossmint API
+    const crossmintResponse = await fetch(`https://www.crossmint.io/api/2022-06-09/collections/${collectionId}/nfts`, {
+      method: "POST",
+      headers: {
+        "x-api-key": crossmintApiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        recipient: userWallet,
+        metadata: {
+          name: "Wallet Skin",
+          image: imageUrl,
+          description: description,
+          attributes: Object.entries(styleData).map(([key, value]) => ({ 
+            trait_type: key, 
+            value: String(value) 
+          }))
+        },
+        reuploadLinkedFiles: false
+      })
+    });
+
+    // Handle Crossmint API response
+    if (!crossmintResponse.ok) {
+      const errorData = await crossmintResponse.json().catch(() => ({}));
+      console.error('Crossmint API error:', { 
+        status: crossmintResponse.status, 
+        statusText: crossmintResponse.statusText,
+        body: errorData 
+      });
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `Crossmint API error: ${crossmintResponse.status} ${crossmintResponse.statusText}`
+      }), { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const crossmintData = await crossmintResponse.json();
+    console.log('Crossmint API response:', crossmintData);
+    
+    // Return success response
     return new Response(JSON.stringify({ 
-      skinId, 
-      success: true 
+      success: true, 
+      message: "NFT minted via Crossmint",
+      crossmintResponse: crossmintData
     }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
     console.error('Unexpected error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), { 
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }), { 
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
