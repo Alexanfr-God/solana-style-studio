@@ -34,12 +34,41 @@ serve(async (req) => {
 
     // Validate input
     if (!userId || !styleData) {
+      console.error('Missing required fields:', { userId, styleData });
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
+    // Check if a similar record already exists
+    const { data: existingData, error: searchError } = await supabase
+      .from('wallet_skins')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('style_data', styleData);
+
+    if (searchError) {
+      console.error('Error searching for existing wallet skin:', searchError);
+      return new Response(JSON.stringify({ error: searchError.message }), { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // If a matching record exists, return the existing skinId
+    if (existingData && existingData.length > 0) {
+      console.log('Found existing wallet skin, returning:', existingData[0].id);
+      return new Response(JSON.stringify({ 
+        skinId: existingData[0].id, 
+        success: true,
+        isExisting: true
+      }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // If no matching record exists, create a new one
     // Generate a unique ID for the skin
     const skinId = nanoid();
 
@@ -60,6 +89,8 @@ serve(async (req) => {
       });
     }
 
+    console.log('Successfully created new wallet skin with ID:', skinId);
+    
     // Return success response with skinId
     return new Response(JSON.stringify({ 
       skinId, 
