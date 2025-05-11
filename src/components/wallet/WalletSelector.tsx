@@ -23,7 +23,7 @@ const WALLET_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function WalletSelector() {
-  const { wallets, select, connecting, connected, wallet, disconnect } = useWallet();
+  const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
 
   // Filter and sort wallets by readiness
   const availableWallets = useMemo(() => {
@@ -35,6 +35,40 @@ export default function WalletSelector() {
     );
     return [...installed, ...notDetected];
   }, [wallets]);
+
+  // Show welcome toast after successful connection
+  useEffect(() => {
+    if (connected && publicKey) {
+      // Use setTimeout to ensure the toast appears after the UI updates
+      setTimeout(() => {
+        toast.custom((t) => (
+          <div className={`${
+            t.visible ? 'animate-enter' : 'animate-leave'
+          } max-w-md w-full bg-gradient-to-br from-black/90 via-purple-950/90 to-black/90 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-purple-500/30 p-4`}>
+            <div className="flex-1 w-0">
+              <div className="flex items-start">
+                <div className="ml-3 flex-1">
+                  <p className="text-lg font-medium text-white mb-1">
+                    Welcome to Wallet Coast Customs ⚡
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    Your identity, your style, your wallet. Let's customize the future.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex border-l border-purple-500/30 pl-4 ml-4 items-center">
+              <div className="h-10 w-10 rounded-full bg-purple-700/50 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-purple-500/80 flex items-center justify-center animate-pulse">
+                  {WALLET_ICONS[wallet?.adapter.name || 'Phantom']}
+                </div>
+              </div>
+            </div>
+          </div>
+        ), { duration: 5000 });
+      }, 500);
+    }
+  }, [connected, publicKey, wallet]);
 
   // Handle disconnect with toast notification
   const handleDisconnect = useCallback(async () => {
@@ -51,7 +85,6 @@ export default function WalletSelector() {
     async (walletName: WalletName) => {
       try {
         select(walletName);
-        toast.success(`${walletName} selected`);
       } catch (error: any) {
         toast.error(`Error selecting wallet: ${error?.message || 'Unknown error'}`);
       }
@@ -59,28 +92,39 @@ export default function WalletSelector() {
     [select]
   );
 
+  // Helper function to shorten wallet address
+  const shortenAddress = (address: string) => {
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  };
+
   return (
     <div className="relative z-10">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button 
+            variant={connected ? "default" : "outline"} 
+            className={`flex items-center gap-2 transition-all duration-300 ${
+              connected ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-black/30 backdrop-blur-sm'
+            }`}
+          >
             {connecting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Connecting...</span>
               </>
             ) : connected && wallet ? (
-              <>
+              <div className="flex items-center gap-2 wallet-connect-animation">
                 {WALLET_ICONS[wallet.adapter.name] || null}
-                <span>{wallet.adapter.name}</span>
-              </>
+                <span>{shortenAddress(publicKey?.toString() || '')}</span>
+                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              </div>
             ) : (
               <span>Connect Wallet</span>
             )}
           </Button>
         </DropdownMenuTrigger>
         
-        <DropdownMenuContent align="end" className="bg-background border border-border w-56">
+        <DropdownMenuContent align="end" className="bg-background border border-border w-56 wallet-dropdown-animation">
           {!connected ? (
             availableWallets.map((item) => {
               const isInstalled = item.readyState === WalletReadyState.Installed;
