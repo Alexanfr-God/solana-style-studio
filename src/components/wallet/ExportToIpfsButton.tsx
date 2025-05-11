@@ -1,99 +1,77 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader } from 'lucide-react';
+import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
-import { captureElementAsImage, uploadToIpfs } from '@/utils/imageExport';
 
-interface ExportToIpfsProps {
+interface MintNftButtonProps {
   targetRef: React.RefObject<HTMLElement>;
-  onSuccess?: (ipfsUrl: string, imageUrl: string) => void;
 }
 
-const ExportToIpfsButton: React.FC<ExportToIpfsProps> = ({ targetRef, onSuccess }) => {
-  const [isExporting, setIsExporting] = useState(false);
-  const [pinataJWT, setPinataJWT] = useState('');
-  const [showTokenInput, setShowTokenInput] = useState(false);
+const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
+  const [isMinting, setIsMinting] = useState(false);
   
-  const handleExport = async () => {
+  const handleMintNft = async () => {
     if (!targetRef.current) {
       toast.error('Could not find wallet element to capture');
       return;
     }
     
     try {
-      setIsExporting(true);
+      setIsMinting(true);
       
-      // Step 1: Capture the wallet as an image
-      toast.info('Capturing wallet design...');
-      const imageBlob = await captureElementAsImage(targetRef.current);
+      toast.info('Minting NFT for wallet design...');
       
-      // Step 2: Upload to IPFS via Pinata
-      toast.info('Uploading to IPFS via Pinata...');
+      // Call the Edge Function to mint the NFT
+      const response = await fetch('https://opxordptvpvzmhakvdde.supabase.co/functions/v1/mint_wallet_skin_nft', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9weG9yZHB0dnB2em1oYWt2ZGRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTY2NjgsImV4cCI6MjA2MjI5MjY2OH0.uHDqEycZqhQ02zMvmikDjMXsqeVU792Ei61ceavk6iw',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'demo_user_1',
+          styleData: {
+            bgColor: '#000000',
+            textColor: '#ffffff',
+            image: 'https://placekitten.com/400/400'
+          }
+        }),
+      });
       
-      const { ipfsUrl, imageUrl } = await uploadToIpfs(imageBlob, pinataJWT);
+      const result = await response.json();
       
-      // Step 3: Show success message
-      toast.success('Successfully uploaded to IPFS!');
+      console.log('Mint NFT response:', result);
       
-      if (onSuccess) {
-        onSuccess(ipfsUrl, imageUrl);
+      // Show success message
+      if (result.success) {
+        toast.success(`Successfully minted NFT with ID: ${result.skinId}`);
+        if (result.isExisting) {
+          toast.info('This design was already minted before.');
+        }
+      } else {
+        toast.error(`Failed to mint NFT: ${result.error || 'Unknown error'}`);
       }
       
-      // Hide the token input after successful upload
-      setShowTokenInput(false);
-      
     } catch (error) {
-      console.error('Export error:', error);
-      toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Mint NFT error:', error);
+      toast.error(`Mint failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setIsExporting(false);
+      setIsMinting(false);
     }
   };
   
   return (
-    <>
-      {showTokenInput ? (
-        <div className="flex flex-col gap-2">
-          <input
-            type="password"
-            placeholder="Enter Pinata JWT Token"
-            className="px-3 py-2 border rounded-md bg-black/20 backdrop-blur-sm text-white border-white/20"
-            value={pinataJWT}
-            onChange={(e) => setPinataJWT(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleExport} 
-              disabled={isExporting || !pinataJWT} 
-              className="flex-1"
-              variant="default"
-            >
-              {isExporting ? <Loader className="mr-2 animate-spin" /> : <Upload className="mr-2" />}
-              {isExporting ? 'Exporting...' : 'Upload with this token'}
-            </Button>
-            <Button 
-              onClick={() => setShowTokenInput(false)}
-              variant="outline"
-              className="border-white/20"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button
-          onClick={() => setShowTokenInput(true)}
-          disabled={isExporting}
-          className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all"
-          size="lg"
-        >
-          {isExporting ? <Loader className="mr-2 animate-spin" /> : <Upload className="mr-2" />}
-          Export to IPFS
-        </Button>
-      )}
-    </>
+    <Button
+      onClick={handleMintNft}
+      disabled={isMinting}
+      className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all"
+      size="lg"
+    >
+      {isMinting ? <Loader className="mr-2 animate-spin" /> : <Diamond className="mr-2" />}
+      Mint as NFT
+    </Button>
   );
 };
 
-export default ExportToIpfsButton;
+export default MintNftButton;

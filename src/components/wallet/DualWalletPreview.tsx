@@ -1,9 +1,9 @@
 
 import React, { useRef } from 'react';
-import { useCustomizationStore, WalletStyle } from '@/stores/customizationStore';
+import { useCustomizationStore } from '@/stores/customizationStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
-import ExportToIpfsButton from './ExportToIpfsButton';
+import MintNftButton from './ExportToIpfsButton';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
@@ -40,10 +40,10 @@ const DualWalletPreview = () => {
         </div>
       </div>
       
-      {/* Export to IPFS Button */}
+      {/* Mint as NFT Button */}
       <div className="mt-6 flex justify-center">
         <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3">
-          <ExportToIpfsButton targetRef={dualPreviewRef} />
+          <MintNftButton targetRef={dualPreviewRef} />
         </div>
       </div>
     </div>
