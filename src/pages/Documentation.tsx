@@ -54,7 +54,7 @@ const sections = [
             <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q2 2025 — MVP Is Here</span></p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
               <li>Launch of V1: AI-generated login screen skins for Phantom</li>
-              <li>NFT minting pipeline prepared (Crossmint integration in progress)</li>
+              <li>Developing our own custom Solana smart contract for native NFT minting with royalty control and unique wallet skin logic</li>
               <li>First 1-of-1 skins live for early testing & community feedback</li>
               <li>🎯 Participating in <strong>Solana Breakout Hackathon</strong> to showcase tech & secure visibility</li>
             </ul>
