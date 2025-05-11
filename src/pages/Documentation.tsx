@@ -47,10 +47,54 @@ const sections = [
     title: 'Roadmap',
     content: (
       <>
-        <p className="mb-2">Q2 2025 – MVP launch with custom minting</p>
-        <p className="mb-2">Q3 2025 – Public beta with royalty splits & gallery</p>
-        <p className="mb-2">Q4 2025 – Marketplace integrations and partner drops</p>
-        <p>2026 – Full Phantom API integration (planned)</p>
+        <h2 className="text-xl font-bold mb-4">Roadmap</h2>
+        
+        <div className="space-y-6">
+          <div>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q2 2025 — MVP Is Here</span></p>
+            <ul className="list-disc pl-5 mb-2 space-y-1">
+              <li>Launch of V1: AI-generated login screen skins for Phantom</li>
+              <li>NFT minting pipeline prepared (Crossmint integration in progress)</li>
+              <li>First 1-of-1 skins live for early testing & community feedback</li>
+              <li>🎯 Participating in <strong>Solana Breakout Hackathon</strong> to showcase tech & secure visibility</li>
+            </ul>
+          </div>
+          
+          <div>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q3 2025 — Opening the Gates</span></p>
+            <ul className="list-disc pl-5 mb-2 space-y-1">
+              <li>Public beta goes live 🌍</li>
+              <li>NFT royalties, revenue-sharing logic & wallet linking</li>
+              <li>Community Gallery: display trending skins, collections, and limited drops</li>
+              <li>🧠 <strong>Private fundraising round begins</strong> (angels + micro-funds)</li>
+              <li>🛠️ Actively recruiting top-tier developers, AI engineers & Web3 visionaries to scale the core product</li>
+            </ul>
+          </div>
+          
+          <div>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q4 2025 — Ecosystem Expansion</span></p>
+            <ul className="list-disc pl-5 mb-2 space-y-1">
+              <li>Partner drops with meme coins, creators, and Solana-native brands</li>
+              <li>Integration with marketplaces: Magic Eden, Tensor, and others</li>
+              <li>Skin rarity, user profiles, creator leaderboards</li>
+              <li>📣 <strong>Seed fundraising round</strong> (for scaling custom GPT, AI infra & BD hires)</li>
+            </ul>
+          </div>
+          
+          <div>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">2026 — Beyond Phantom</span></p>
+            <ul className="list-disc pl-5 mb-2 space-y-1">
+              <li>Full Phantom API integration for live wallet theming</li>
+              <li>Animated wallets: motion-reactive styles powered by AI ✨</li>
+              <li>Cross-wallet skin layers: Backpack, Solflare, and more</li>
+              <li>Omnichain ownership via <strong>LayerZero integration</strong> 🌐</li>
+            </ul>
+          </div>
+          
+          <blockquote className="border-l-4 border-purple-500 pl-4 py-1 italic text-white/80">
+            🚀 This isn't just a roadmap — it's the DNA of a protocol where wallets become culture.
+          </blockquote>
+        </div>
       </>
     )
   },
