@@ -120,7 +120,7 @@ const sections = [{
       </>
 }, {
   id: 'contract',
-  title: 'Smart Contract',
+  title: 'Smart Contract (In Progress)',
   content: <>
         <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
         
@@ -143,6 +143,7 @@ const sections = [{
   title: 'Royalties & Profit Split',
   content: 'Creators earn a % on every resale. The platform also earns a service fee. All logic is transparent and on-chain.'
 }];
+
 const DocSidebar = ({
   activeSection,
   setActiveSection,
