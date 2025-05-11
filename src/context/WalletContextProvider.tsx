@@ -5,11 +5,12 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { 
   PhantomWalletAdapter,
   SolflareWalletAdapter,
-  BackpackWalletAdapter,
-  BraveWalletAdapter,
-  CoinbaseWalletAdapter,
   LedgerWalletAdapter,
-  SlopeWalletAdapter
+  CoinbaseWalletAdapter,
+  TorusWalletAdapter,
+  CloverWalletAdapter,
+  MathWalletAdapter,
+  SolletWalletAdapter
 } from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -33,11 +34,12 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter(),
-    new BackpackWalletAdapter(),
-    new BraveWalletAdapter(),
     new CoinbaseWalletAdapter(),
-    new SlopeWalletAdapter(),
     new LedgerWalletAdapter(),
+    new TorusWalletAdapter(),
+    new CloverWalletAdapter(),
+    new MathWalletAdapter(),
+    new SolletWalletAdapter()
   ], []);
 
   // Show wallet connection status notifications
