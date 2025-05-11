@@ -12,6 +12,8 @@ const crossmintApiKey = Deno.env.get('CROSSMINT_API_KEY') || '';
 const collectionId = "default-solana"; // Replace with your actual collection ID if different
 
 serve(async (req) => {
+  console.log("Mint NFT process started");
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -19,7 +21,7 @@ serve(async (req) => {
 
   // Only allow POST requests
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { 
+    return new Response(JSON.stringify({ error: 'Method not allowed', step: "request started" }), { 
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -31,7 +33,10 @@ serve(async (req) => {
     // Validate input
     if (!userWallet || !imageUrl || !styleData) {
       console.error('Missing required fields:', { userWallet, imageUrl, styleData });
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), { 
+      return new Response(JSON.stringify({ 
+        error: 'Missing required fields', 
+        step: "request started" 
+      }), { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -49,7 +54,8 @@ serve(async (req) => {
     console.log('Minting NFT via Crossmint API with data:', {
       recipient: userWallet,
       imageUrl: imageUrl,
-      styleDataKeys: Object.keys(styleData)
+      styleDataKeys: Object.keys(styleData),
+      step: "request started"
     });
 
     // Make request to Crossmint API
@@ -85,7 +91,8 @@ serve(async (req) => {
       
       return new Response(JSON.stringify({ 
         success: false, 
-        error: `Crossmint API error: ${crossmintResponse.status} ${crossmintResponse.statusText}`
+        error: `Crossmint API error: ${crossmintResponse.status} ${crossmintResponse.statusText}`,
+        step: "request started"
       }), { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -99,7 +106,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       message: "NFT minted via Crossmint",
-      crossmintResponse: crossmintData
+      crossmintResponse: crossmintData,
+      step: "request started"
     }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -109,7 +117,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
+      step: "request started"
     }), { 
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
