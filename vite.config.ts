@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     // Add this to make Buffer available globally
-    global: {},
+    global: 'globalThis',
   },
   optimizeDeps: {
     include: [
@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => ({
       '@solana/wallet-adapter-react',
       '@solana/wallet-adapter-base',
       '@solana/web3.js',
+      'buffer',
     ],
     esbuildOptions: {
       // Node.js global to browser globalThis
