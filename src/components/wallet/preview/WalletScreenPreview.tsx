@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, Copy } from 'lucide-react';
+import { ChevronDown, Copy, Search } from 'lucide-react';
 import WalletAssetItem from './WalletAssetItem';
 import WalletActionButtons from './WalletActionButtons';
 import WalletNavigation from './WalletNavigation';
