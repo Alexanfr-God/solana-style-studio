@@ -21,7 +21,7 @@ const sections = [
         
         <p className="mb-4">The current release — <strong>v1</strong> — enables basic customization of the wallet's login view. Users can upload an image and describe their desired vibe to generate a personalized design powered by AI.</p>
         
-        <p className="mb-4">We are currently integrating <strong>Crossmint API</strong>, which will allow real NFT minting directly on the Solana blockchain.</p>
+        <p className="mb-4">We are currently developing our own Solana smart contract to enable native NFT minting, royalty control, and seamless wallet skin integration — without relying on third-party APIs.</p>
         
         <p className="mb-4"><strong>Coming soon:</strong></p>
         <ul className="list-disc pl-5 mb-4 space-y-2">
