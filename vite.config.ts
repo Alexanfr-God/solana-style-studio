@@ -19,17 +19,31 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    // Add this to make Buffer available globally
+    global: {},
+  },
   optimizeDeps: {
     include: [
       '@solana/wallet-adapter-wallets',
       '@solana/wallet-adapter-react',
       '@solana/wallet-adapter-base',
       '@solana/web3.js',
-    ]
+    ],
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis',
+      },
+    }
   },
   build: {
     commonjsOptions: {
       transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      // Enable the node polyfills plugin
+      plugins: []
     }
   }
 }));
