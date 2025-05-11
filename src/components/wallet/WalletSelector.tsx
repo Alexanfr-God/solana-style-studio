@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletName, WalletReadyState } from '@solana/wallet-adapter-base';
@@ -13,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from "sonner";
 import { Loader2 } from 'lucide-react';
 import { PhantomIcon, SolflareIcon, BackpackIcon, BraveIcon, MetaMaskIcon } from './WalletIcons';
+import { useExtendedWallet } from '@/context/WalletContextProvider';
 
 const WALLET_ICONS: Record<string, React.ReactNode> = {
   'Phantom': <PhantomIcon />,
@@ -24,6 +24,7 @@ const WALLET_ICONS: Record<string, React.ReactNode> = {
 
 export default function WalletSelector() {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
+  const { signMessageOnConnect, isAuthenticating, isAuthenticated } = useExtendedWallet();
 
   // Filter and sort wallets by readiness
   const availableWallets = useMemo(() => {
@@ -36,12 +37,19 @@ export default function WalletSelector() {
     return [...installed, ...notDetected];
   }, [wallets]);
 
+  // Trigger sign message after wallet is connected
+  useEffect(() => {
+    if (connected && publicKey && !isAuthenticated && !isAuthenticating) {
+      signMessageOnConnect(publicKey.toString());
+    }
+  }, [connected, publicKey, signMessageOnConnect, isAuthenticated, isAuthenticating]);
+
   // Show welcome toast after successful connection
   useEffect(() => {
     if (connected && publicKey) {
       // Use setTimeout to ensure the toast appears after the UI updates
       setTimeout(() => {
-        toast.custom((t) => (
+        toast.custom((t: any) => (
           <div className={`${
             t.visible ? 'animate-enter' : 'animate-leave'
           } max-w-md w-full bg-gradient-to-br from-black/90 via-purple-950/90 to-black/90 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-purple-500/30 p-4`}>
@@ -106,11 +114,12 @@ export default function WalletSelector() {
             className={`flex items-center gap-2 transition-all duration-300 ${
               connected ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-black/30 backdrop-blur-sm'
             }`}
+            disabled={isAuthenticating}
           >
-            {connecting ? (
+            {connecting || isAuthenticating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Connecting...</span>
+                <span>{isAuthenticating ? 'Signing...' : 'Connecting...'}</span>
               </>
             ) : connected && wallet ? (
               <div className="flex items-center gap-2 wallet-connect-animation">
