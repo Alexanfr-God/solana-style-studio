@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletName, WalletReadyState } from '@solana/wallet-adapter-base';
@@ -44,39 +45,7 @@ export default function WalletSelector() {
     }
   }, [connected, publicKey, signMessageOnConnect, isAuthenticated, isAuthenticating]);
 
-  // Show welcome toast after successful connection
-  useEffect(() => {
-    if (connected && publicKey) {
-      // Use setTimeout to ensure the toast appears after the UI updates
-      setTimeout(() => {
-        toast.custom((t: any) => (
-          <div className={`${
-            t.visible ? 'animate-enter' : 'animate-leave'
-          } max-w-md w-full bg-gradient-to-br from-black/90 via-purple-950/90 to-black/90 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-purple-500/30 p-4`}>
-            <div className="flex-1 w-0">
-              <div className="flex items-start">
-                <div className="ml-3 flex-1">
-                  <p className="text-lg font-medium text-white mb-1">
-                    Welcome to Wallet Coast Customs ⚡
-                  </p>
-                  <p className="text-sm text-gray-300">
-                    Your identity, your style, your wallet. Let's customize the future.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex border-l border-purple-500/30 pl-4 ml-4 items-center">
-              <div className="h-10 w-10 rounded-full bg-purple-700/50 flex items-center justify-center">
-                <div className="h-8 w-8 rounded-full bg-purple-500/80 flex items-center justify-center animate-pulse">
-                  {WALLET_ICONS[wallet?.adapter.name || 'Phantom']}
-                </div>
-              </div>
-            </div>
-          </div>
-        ), { duration: 5000 });
-      }, 500);
-    }
-  }, [connected, publicKey, wallet]);
+  // Removed the toast.custom effect that showed the purple vertical bar
 
   // Handle disconnect with toast notification
   const handleDisconnect = useCallback(async () => {
