@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
@@ -156,36 +157,41 @@ const sections = [{
   id: 'architecture',
   title: 'Architecture & Tech Stack',
   content: <>
-        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
-        <p className="mb-4">Content coming soon...</p>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Architecture & Tech Stack</h3>
+        
+        <p className="mb-4">Content for this section is coming soon...</p>
       </>
 }, {
   id: 'ai-model',
   title: 'AI Model & Prompting Strategy',
   content: <>
-        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
-        <p className="mb-4">Content coming soon...</p>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">AI Model & Prompting Strategy</h3>
+        
+        <p className="mb-4">Content for this section is coming soon...</p>
       </>
 }, {
   id: 'monetization',
   title: 'Monetization Strategy',
   content: <>
-        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
-        <p className="mb-4">Content coming soon...</p>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Monetization Strategy</h3>
+        
+        <p className="mb-4">Content for this section is coming soon...</p>
       </>
 }, {
   id: 'community',
   title: 'Community & Growth Plan',
   content: <>
-        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
-        <p className="mb-4">Content coming soon...</p>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Community & Growth Plan</h3>
+        
+        <p className="mb-4">Content for this section is coming soon...</p>
       </>
 }, {
   id: 'security',
   title: 'Security & Ownership',
   content: <>
-        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
-        <p className="mb-4">Content coming soon...</p>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Security & Ownership</h3>
+        
+        <p className="mb-4">Content for this section is coming soon...</p>
       </>
 }];
 
