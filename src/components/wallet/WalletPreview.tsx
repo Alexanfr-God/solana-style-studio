@@ -1,11 +1,10 @@
-
 import React, { useRef, useState } from 'react';
 import { useCustomizationStore, WalletStyle, LayerType } from '../../stores/customizationStore';
 import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { toast } from 'sonner';
-import ExportToIpfsButton from './ExportToIpfsButton';
+import MintNftButton from './ExportToIpfsButton';
 import WalletNftCard from './WalletNftCard';
 
 // Render Login Screen UI
@@ -312,10 +311,7 @@ const WalletPreview = () => {
         {!nftData && (
           <div className="absolute bottom-4 right-4">
             <div className="bg-black/30 backdrop-blur-sm p-2 rounded-lg">
-              <ExportToIpfsButton 
-                targetRef={walletPreviewRef} 
-                onSuccess={handleExportSuccess}
-              />
+              <MintNftButton targetRef={walletPreviewRef} />
             </div>
           </div>
         )}

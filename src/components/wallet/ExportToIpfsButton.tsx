@@ -22,6 +22,13 @@ const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
       
       toast.info('Minting NFT for wallet design...');
       
+      // Define the style data as a proper object
+      const styleData = {
+        bgColor: '#000000',
+        textColor: '#ffffff',
+        image: 'https://placekitten.com/400/400'
+      };
+      
       // Call the Edge Function to mint the NFT
       const response = await fetch('https://opxordptvpvzmhakvdde.supabase.co/functions/v1/mint_wallet_skin_nft', {
         method: 'POST',
@@ -31,11 +38,7 @@ const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
         },
         body: JSON.stringify({
           userId: 'demo_user_1',
-          styleData: {
-            bgColor: '#000000',
-            textColor: '#ffffff',
-            image: 'https://placekitten.com/400/400'
-          }
+          styleData: styleData
         }),
       });
       
