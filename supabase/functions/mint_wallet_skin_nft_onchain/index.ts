@@ -3,8 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as web3 from "https://esm.sh/@solana/web3.js@1.73.0";
 import { Metaplex } from "https://esm.sh/@metaplex-foundation/js@0.18.3";
-// Using deno.land CDN for arbundles as specified
-import * as arbundles from "https://deno.land/x/arbundles@0.6.20/mod.ts";
 
 // Configure CORS headers
 const corsHeaders = {
