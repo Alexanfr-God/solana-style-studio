@@ -10,3 +10,5 @@ verify_jwt = false
 [functions.get_wallet_skins_by_user]
 verify_jwt = false
 
+[functions.mint_wallet_skin_nft_onchain]
+verify_jwt = false
