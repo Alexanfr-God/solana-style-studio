@@ -41,7 +41,7 @@ const sections = [{
   id: 'roadmap',
   title: 'Roadmap',
   content: <>
-        <h2 className="text-xl font-bold mb-4">Roadmap</h2>
+        <h2 className="text-xl font-bold mb-4"></h2>
         
         <div className="space-y-6">
           <div>
