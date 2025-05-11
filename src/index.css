@@ -117,6 +117,23 @@
   text-shadow: 0 0 8px rgba(153, 69, 255, 0.7);
 }
 
+/* Wallet selector styles */
+.wallet-option {
+  @apply flex items-center gap-3 px-3 py-2 rounded-lg transition-all;
+}
+
+.wallet-option-enabled {
+  @apply cursor-pointer hover:bg-white/10;
+}
+
+.wallet-option-disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.wallet-icon {
+  @apply flex-shrink-0 w-6 h-6;
+}
+
 /* Custom Animation Classes */
 .animate-slide-in-left {
   animation: slideInLeft 0.8s ease forwards;
@@ -160,4 +177,3 @@
     opacity: 1;
   }
 }
-
