@@ -122,7 +122,7 @@ const sections = [{
   id: 'contract',
   title: 'Smart Contract',
   content: <>
-        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🧾 Smart Contract (In Progress)</h3>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
         
         <p className="mb-4">Each wallet skin will be bound to a custom Solana smart contract — designed not just to store metadata, but to act as a programmable UI layer protocol for wallets.</p>
         
@@ -143,7 +143,6 @@ const sections = [{
   title: 'Royalties & Profit Split',
   content: 'Creators earn a % on every resale. The platform also earns a service fee. All logic is transparent and on-chain.'
 }];
-
 const DocSidebar = ({
   activeSection,
   setActiveSection,
