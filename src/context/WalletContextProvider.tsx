@@ -2,7 +2,15 @@
 import { FC, ReactNode, useMemo } from 'react';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { 
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+  BackpackWalletAdapter,
+  BraveWalletAdapter,
+  CoinbaseWalletAdapter,
+  LedgerWalletAdapter,
+  SlopeWalletAdapter
+} from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { toast } from "sonner";
@@ -24,6 +32,12 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
   // @solana/wallet-adapter-wallets imports all the adapters but supports tree shaking
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
+    new SolflareWalletAdapter(),
+    new BackpackWalletAdapter(),
+    new BraveWalletAdapter(),
+    new CoinbaseWalletAdapter(),
+    new SlopeWalletAdapter(),
+    new LedgerWalletAdapter(),
   ], []);
 
   // Show wallet connection status notifications
