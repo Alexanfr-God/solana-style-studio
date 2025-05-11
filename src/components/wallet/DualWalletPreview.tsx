@@ -1,15 +1,17 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { useCustomizationStore, WalletStyle } from '@/stores/customizationStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
+import ExportToIpfsButton from './ExportToIpfsButton';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
+  const dualPreviewRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full" ref={dualPreviewRef}>
         <div className="flex flex-col h-full">
           <div className="text-center mb-2">
             <h3 className="text-lg font-medium text-white/90">Login View</h3>
@@ -35,6 +37,13 @@ const DualWalletPreview = () => {
           <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center">
             <WalletScreen style={walletStyle} />
           </div>
+        </div>
+      </div>
+      
+      {/* Export to IPFS Button */}
+      <div className="mt-6 flex justify-center">
+        <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3">
+          <ExportToIpfsButton targetRef={dualPreviewRef} />
         </div>
       </div>
     </div>

@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useCustomizationStore, WalletStyle, LayerType } from '../../stores/customizationStore';
 import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { toast } from 'sonner';
+import ExportToIpfsButton from './ExportToIpfsButton';
+import WalletNftCard from './WalletNftCard';
 
 // Render Login Screen UI
 const LoginScreen = ({ style }: { style: WalletStyle }) => {
@@ -232,6 +234,8 @@ const WalletPreview = () => {
   const { activeLayer, loginStyle, walletStyle } = useCustomizationStore();
   const { connected, publicKey } = useWallet();
   const currentStyle = activeLayer === 'login' ? loginStyle : walletStyle;
+  const walletPreviewRef = useRef<HTMLDivElement>(null);
+  const [nftData, setNftData] = useState<{ ipfsUrl: string, imageUrl: string } | null>(null);
 
   const getShortenedAddress = (address: string) => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
@@ -245,13 +249,31 @@ const WalletPreview = () => {
       .catch(err => console.error('Failed to copy address', err));
   };
 
+  const handleExportSuccess = (ipfsUrl: string, imageUrl: string) => {
+    setNftData({ ipfsUrl, imageUrl });
+  };
+
+  const closeNftCard = () => {
+    setNftData(null);
+  };
+
   return (
     <div className="flex items-center justify-center p-4 h-full w-full">
       <div className="relative max-w-[320px]">
-        {activeLayer === 'login' ? (
-          <LoginScreen style={currentStyle} />
+        {nftData ? (
+          <WalletNftCard 
+            ipfsUrl={nftData.ipfsUrl} 
+            imageUrl={nftData.imageUrl} 
+            onClose={closeNftCard} 
+          />
         ) : (
-          <WalletScreen style={currentStyle} />
+          <div ref={walletPreviewRef}>
+            {activeLayer === 'login' ? (
+              <LoginScreen style={currentStyle} />
+            ) : (
+              <WalletScreen style={currentStyle} />
+            )}
+          </div>
         )}
         
         <div className="absolute top-4 right-4 flex gap-2">
@@ -283,6 +305,17 @@ const WalletPreview = () => {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {!nftData && (
+          <div className="absolute bottom-4 right-4">
+            <div className="bg-black/30 backdrop-blur-sm p-2 rounded-lg">
+              <ExportToIpfsButton 
+                targetRef={walletPreviewRef} 
+                onSuccess={handleExportSuccess}
+              />
             </div>
           </div>
         )}
