@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
@@ -152,6 +151,41 @@ const sections = [{
         <p className="mb-4">In open edition drops (e.g., 10,000 mints), a dynamic minting page is generated with real-time stats: minted count, remaining supply, and a live preview of the wallet skin. These collections come with a unique link, making them easy to promote and track. In the future, verified collections will gain access to customizable landing pages, advanced analytics, and boost options.</p>
         
         <p className="mb-4">This system is designed to fairly reward creators, foster viral drops, and ensure the long-term sustainability of the platform.</p>
+      </>
+}, {
+  id: 'architecture',
+  title: 'Architecture & Tech Stack',
+  content: <>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
+        <p className="mb-4">Content coming soon...</p>
+      </>
+}, {
+  id: 'ai-model',
+  title: 'AI Model & Prompting Strategy',
+  content: <>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
+        <p className="mb-4">Content coming soon...</p>
+      </>
+}, {
+  id: 'monetization',
+  title: 'Monetization Strategy',
+  content: <>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
+        <p className="mb-4">Content coming soon...</p>
+      </>
+}, {
+  id: 'community',
+  title: 'Community & Growth Plan',
+  content: <>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
+        <p className="mb-4">Content coming soon...</p>
+      </>
+}, {
+  id: 'security',
+  title: 'Security & Ownership',
+  content: <>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
+        <p className="mb-4">Content coming soon...</p>
       </>
 }];
 
