@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface MintNftButtonProps {
+interface ExportToIpfsButtonProps {
   targetRef: React.RefObject<HTMLElement>;
 }
 
-const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
+const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef }) => {
   const [isMinting, setIsMinting] = useState(false);
   
   const handleMintNft = async () => {
@@ -86,4 +86,4 @@ const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
   );
 };
 
-export default MintNftButton;
+export default ExportToIpfsButton;
