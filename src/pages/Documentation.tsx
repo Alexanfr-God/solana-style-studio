@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
@@ -101,7 +100,33 @@ const sections = [
   {
     id: 'mint',
     title: 'How Mint Works',
-    content: 'Once you design a wallet skin, you can mint it as an NFT with one click. You own the token, and it can be traded or used as a verified skin in supported wallets.'
+    content: (
+      <>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🛠️ How Mint Works</h3>
+        
+        <p className="mb-4">When a user finalizes their wallet skin design, it can be minted as a fully functional NFT with one click.</p>
+        
+        <p className="mb-4"><strong>Each NFT includes:</strong></p>
+        
+        <ul className="list-disc pl-5 mb-4 space-y-2">
+          <li><strong>🖼️ Visual Layer (PNG):</strong> What users and marketplaces see — the static design preview.</li>
+          <li><strong>🧬 Data Layer (JSON):</strong> Embedded inside the NFT — includes style metadata such as background color, text color, fonts, layout, and theme version (v1, v2, or v3).</li>
+        </ul>
+        
+        <p className="mb-4">This dual-layer approach allows the skin to function like a dynamic theme:</p>
+        
+        <ul className="list-disc pl-5 mb-4 space-y-2">
+          <li>On marketplaces, it behaves like a visual collectible.</li>
+          <li>Inside supported wallets and apps, it <strong>unpacks into a living UI skin</strong> powered by the metadata.</li>
+        </ul>
+        
+        <p className="mb-4">We are building the infrastructure to render these skins live inside wallet interfaces, unlocking utility far beyond static images.</p>
+        
+        <p className="font-semibold text-lg text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
+          This isn't just art — it's <strong>programmable wallet fashion</strong>.
+        </p>
+      </>
+    )
   },
   {
     id: 'contract',
