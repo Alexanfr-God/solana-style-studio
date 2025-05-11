@@ -9,8 +9,7 @@ import {
   CoinbaseWalletAdapter,
   TorusWalletAdapter,
   CloverWalletAdapter,
-  MathWalletAdapter,
-  SolletWalletAdapter
+  MathWalletAdapter
 } from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -38,8 +37,7 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
     new LedgerWalletAdapter(),
     new TorusWalletAdapter(),
     new CloverWalletAdapter(),
-    new MathWalletAdapter(),
-    new SolletWalletAdapter()
+    new MathWalletAdapter()
   ], []);
 
   // Show wallet connection status notifications
