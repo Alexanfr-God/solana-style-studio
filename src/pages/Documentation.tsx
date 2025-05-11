@@ -15,7 +15,32 @@ const sections = [
   {
     id: 'about',
     title: 'About the Project',
-    content: 'Wallet Coast Customs lets anyone create personalized skins for Phantom wallets, powered by AI and minted as NFTs. Skins can be one-of-ones or trending collections, with full resale functionality.'
+    content: (
+      <>
+        <p className="mb-4"><strong>Wallet Coast Customs (WCC)</strong> is the first AI-powered platform that allows anyone to generate, customize, and tokenize Web3 wallet interfaces. The project empowers users to create unique login screen skins for Phantom Wallet and mint them as NFTs. Each skin becomes a tradable digital asset with resale functionality.</p>
+        
+        <p className="mb-4">The current release — <strong>v1</strong> — enables basic customization of the wallet's login view. Users can upload an image and describe their desired vibe to generate a personalized design powered by AI.</p>
+        
+        <p className="mb-4">We are currently integrating <strong>Crossmint API</strong>, which will allow real NFT minting directly on the Solana blockchain.</p>
+        
+        <p className="mb-4"><strong>Coming soon:</strong></p>
+        <ul className="list-disc pl-5 mb-4 space-y-2">
+          <li><strong>v3 – Wallet Masks</strong>: visual elements that decorate the wallet exterior — memes, characters, custom frames. This pushes customization into the realm of signature style.</li>
+          <li><strong>v2 – UI Style Editor</strong>: after generating a base skin, our AI will extract colors and fonts to let users fine-tune the interface style — typography, buttons, backgrounds, etc.</li>
+        </ul>
+        
+        <p className="mb-4">All styles are stored as NFTs and can belong to exclusive drops, 1-of-1s, or trending collections.</p>
+        
+        <p className="mb-4"><strong>The tech stack includes:</strong></p>
+        <ul className="list-disc pl-5 mb-4 space-y-2">
+          <li>Supabase (Edge Functions + Auth)</li>
+          <li>Lovable (interface and AI integration)</li>
+          <li>In future: LayerZero for cross-chain wallet skins (Solana ↔ Ethereum, Arbitrum, etc.)</li>
+        </ul>
+        
+        <p><strong>Wallet Coast Customs</strong> isn't just wallet styling — it's a new form of Web3 identity. Your wallet should look as iconic as your PFP.</p>
+      </>
+    )
   },
   {
     id: 'roadmap',
