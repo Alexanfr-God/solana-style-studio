@@ -3,6 +3,7 @@ import React from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Twitter, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const { ref, inView } = useInView({
@@ -28,14 +29,12 @@ const Footer = () => {
         <div className="hidden md:flex justify-between items-center">
           {/* Left: Docs */}
           <div className="flex-1">
-            <a 
-              href="https://docs.lovable.dev/" 
-              target="_blank" 
-              rel="noopener noreferrer"
+            <Link 
+              to="/documentation" 
               className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300"
             >
               Docs
-            </a>
+            </Link>
           </div>
           
           {/* Center: Brand */}
@@ -74,14 +73,12 @@ const Footer = () => {
           </p>
           
           {/* Docs */}
-          <a 
-            href="https://docs.lovable.dev/" 
-            target="_blank" 
-            rel="noopener noreferrer"
+          <Link 
+            to="/documentation" 
             className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300"
           >
             Docs
-          </a>
+          </Link>
           
           {/* Social Icons */}
           <div className="flex justify-center gap-4">
