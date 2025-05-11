@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
 import { useToast } from '@/hooks/use-toast';
@@ -80,7 +79,7 @@ export const WalletScreenPreview = ({ style }: { style: WalletStyle }) => {
         
         {/* Asset Items */}
         <WalletAssetItem
-          image="data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjUxMiIgd2lkdGg9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Zz48cGF0aCBkPSJtMCAwaDQwLjc3M3YxNDIuNjkzaC00MC43NzN6IiB0cmFuc2Zvcm09Im1hdHJpeCgwIDEgLTEgMCA0NDguNzg5IDI3MikiIGZpbGw9IiM5OTQ1ZmYiLz48cGF0aCBkPSJtNDA3LjIyNyAwaDQwLjc3M3YxNDIuNjkzaC00MC43NzN6IiB0cmFuc2Zvcm09Im1hdHJpeCgwIDEgLTEgMCA1OTEuNDgxIDI3MikiIGZpbGw9IiNmYjVyNWIiLz48cGF0aCBkPSJtMCAxNjkuMzA3aDQwLjc3M3YxNDIuNjkzaC00MC43NzN6IiB0cmFuc2Zvcm09Im1hdHJpeCgwIDEgLTEgMCA0NDguNzg5IDY3Ny43NjcpIiBmaWxsPSIjMTRmMTk1Ii8+PC9nPjwvc3ZnPg=="
+          image="data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjUxMiIgd2lkdGg9IjUxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Zz48cGF0aCBkPSJtMCAwaDQwLjc3M3YxNDIuNjkzaC00MC43NzN6IiB0cmFuc2Zvcm09Im1hdHJpeCgwIDEgLTEgMCA0NDguNzg5IDI3MikiIGZpbGw9IiM5OTQ1ZmYiLz48cGF0aCBkPSJtNDA3LjIyNyAwaDQwLjc3M3YxNDIuNjkzaC00MC43NzN6IiB0cmFuc2Zvcm09Im1hdHJpeCgwIDEgLTEgMCA1OTEuNDgxIDI3MikiIGZpbGw9IiNmYjVyNWIiLz48cGF0aCBkPSJtMCAxNjkuMzA3aDQwLjc3M3YxNDIuNjkzaC00MC43NzN6IiB0cmFuc2Zvcm09Im1hdHJpeCgwIDEgLTEgMCA0NDguNzg5IDY3Ny43NjciIiBmaWxsPSIjMTRmMTk1Ii8+PC9nPjwvc3ZnPg=="
           name="Solana"
           ticker="SOL"
           amount="5.03737"
