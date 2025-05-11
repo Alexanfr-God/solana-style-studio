@@ -1,6 +1,5 @@
 
 import html2canvas from 'html2canvas';
-import { NFTStorage } from 'nft.storage';
 
 // Capture a DOM element as an image and return a blob
 export const captureElementAsImage = async (element: HTMLElement): Promise<Blob> => {
@@ -27,36 +26,61 @@ export const captureElementAsImage = async (element: HTMLElement): Promise<Blob>
   }
 };
 
-// Upload a blob to IPFS using NFT.Storage
+// Upload a blob to IPFS using Pinata
 export const uploadToIpfs = async (
-  imageBlob: Blob, 
-  name: string = "Wallet Skin", 
+  imageBlob: Blob,
+  pinataJWT: string,
+  name: string = "Wallet Skin",
   description: string = "Custom Solana Wallet Design by Wallet Coast Customs"
 ): Promise<{ipfsUrl: string, imageUrl: string}> => {
   try {
-    // NFT.Storage API key should be provided as environment variable or via UI
-    const apiKey = process.env.NFT_STORAGE_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error("NFT.Storage API key is not available");
+    if (!pinataJWT) {
+      throw new Error("Pinata JWT token is not available");
     }
     
-    const client = new NFTStorage({ token: apiKey });
+    // Create a FormData object and append the image blob
+    const formData = new FormData();
+    const file = new File([imageBlob], 'wallet-skin.png', { type: 'image/png' });
+    formData.append('file', file);
     
-    // Create a File object from Blob with metadata
-    const imageFile = new File([imageBlob], 'wallet-skin.png', { type: 'image/png' });
-    
-    // Store the file on IPFS
-    const metadata = await client.store({
+    // Add metadata for Pinata
+    const metadata = JSON.stringify({
       name,
-      description,
-      image: imageFile,
+      keyvalues: {
+        description,
+        createdAt: new Date().toISOString()
+      }
+    });
+    formData.append('pinataMetadata', metadata);
+    
+    // Add options for Pinata (optional)
+    const options = JSON.stringify({
+      cidVersion: 1
+    });
+    formData.append('pinataOptions', options);
+    
+    // Upload to Pinata
+    const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${pinataJWT}`
+      },
+      body: formData
     });
     
-    // Return both the IPFS URL to the metadata and the direct image URL
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('Pinata API error:', errorData);
+      throw new Error(`Pinata API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    // Return both the IPFS gateway URL and the raw IPFS URL
+    const hash = result.IpfsHash;
     return {
-      ipfsUrl: metadata.url,
-      imageUrl: metadata.data.image.href
+      ipfsUrl: `ipfs://${hash}`,
+      imageUrl: `https://gateway.pinata.cloud/ipfs/${hash}`
     };
   } catch (error) {
     console.error('Error uploading to IPFS:', error);

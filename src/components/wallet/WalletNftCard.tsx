@@ -27,12 +27,12 @@ const WalletNftCard: React.FC<WalletNftCardProps> = ({ ipfsUrl, imageUrl, onClos
       <div className="flex flex-col gap-4">
         <div className="text-center">
           <h3 className="text-xl font-bold text-white">Your Wallet NFT is Ready!</h3>
-          <p className="text-sm text-white/70">Your design has been uploaded to IPFS</p>
+          <p className="text-sm text-white/70">Your design has been uploaded to IPFS via Pinata</p>
         </div>
         
         <div className="relative aspect-square max-w-xs mx-auto p-2 bg-gradient-to-r from-purple-500/30 to-blue-500/30 rounded-lg">
           <img 
-            src={imageUrl.replace('ipfs://', 'https://nftstorage.link/ipfs/')} 
+            src={imageUrl} 
             alt="Wallet NFT" 
             className="rounded-md w-full h-full object-contain"
           />
@@ -40,7 +40,7 @@ const WalletNftCard: React.FC<WalletNftCardProps> = ({ ipfsUrl, imageUrl, onClos
         
         <div className="space-y-3">
           <div className="flex items-center justify-between bg-black/30 p-2 rounded-md">
-            <div className="text-xs text-white/70">IPFS Metadata</div>
+            <div className="text-xs text-white/70">IPFS URL</div>
             <div className="flex items-center gap-2">
               <div className="text-xs font-mono text-white/90 truncate max-w-[180px]">
                 {ipfsUrl}
@@ -52,7 +52,7 @@ const WalletNftCard: React.FC<WalletNftCardProps> = ({ ipfsUrl, imageUrl, onClos
           </div>
           
           <div className="flex items-center justify-between bg-black/30 p-2 rounded-md">
-            <div className="text-xs text-white/70">Image URL</div>
+            <div className="text-xs text-white/70">Gateway URL</div>
             <div className="flex items-center gap-2">
               <div className="text-xs font-mono text-white/90 truncate max-w-[180px]">
                 {imageUrl}

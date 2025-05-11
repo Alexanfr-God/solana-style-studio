@@ -12,8 +12,8 @@ interface ExportToIpfsProps {
 
 const ExportToIpfsButton: React.FC<ExportToIpfsProps> = ({ targetRef, onSuccess }) => {
   const [isExporting, setIsExporting] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [pinataJWT, setPinataJWT] = useState('');
+  const [showTokenInput, setShowTokenInput] = useState(false);
   
   const handleExport = async () => {
     if (!targetRef.current) {
@@ -28,13 +28,10 @@ const ExportToIpfsButton: React.FC<ExportToIpfsProps> = ({ targetRef, onSuccess 
       toast.info('Capturing wallet design...');
       const imageBlob = await captureElementAsImage(targetRef.current);
       
-      // Step 2: Upload to IPFS via NFT.Storage
-      toast.info('Uploading to IPFS...');
+      // Step 2: Upload to IPFS via Pinata
+      toast.info('Uploading to IPFS via Pinata...');
       
-      // Set NFT.Storage API key for this session
-      process.env.NFT_STORAGE_API_KEY = apiKey;
-      
-      const { ipfsUrl, imageUrl } = await uploadToIpfs(imageBlob);
+      const { ipfsUrl, imageUrl } = await uploadToIpfs(imageBlob, pinataJWT);
       
       // Step 3: Show success message
       toast.success('Successfully uploaded to IPFS!');
@@ -43,8 +40,8 @@ const ExportToIpfsButton: React.FC<ExportToIpfsProps> = ({ targetRef, onSuccess 
         onSuccess(ipfsUrl, imageUrl);
       }
       
-      // Hide the API key input after successful upload
-      setShowApiKeyInput(false);
+      // Hide the token input after successful upload
+      setShowTokenInput(false);
       
     } catch (error) {
       console.error('Export error:', error);
@@ -56,27 +53,27 @@ const ExportToIpfsButton: React.FC<ExportToIpfsProps> = ({ targetRef, onSuccess 
   
   return (
     <>
-      {showApiKeyInput ? (
+      {showTokenInput ? (
         <div className="flex flex-col gap-2">
           <input
             type="password"
-            placeholder="Enter NFT.Storage API Key"
+            placeholder="Enter Pinata JWT Token"
             className="px-3 py-2 border rounded-md bg-black/20 backdrop-blur-sm text-white border-white/20"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
+            value={pinataJWT}
+            onChange={(e) => setPinataJWT(e.target.value)}
           />
           <div className="flex gap-2">
             <Button 
               onClick={handleExport} 
-              disabled={isExporting || !apiKey} 
+              disabled={isExporting || !pinataJWT} 
               className="flex-1"
               variant="default"
             >
               {isExporting ? <Loader className="mr-2 animate-spin" /> : <Upload className="mr-2" />}
-              {isExporting ? 'Exporting...' : 'Upload with this key'}
+              {isExporting ? 'Exporting...' : 'Upload with this token'}
             </Button>
             <Button 
-              onClick={() => setShowApiKeyInput(false)}
+              onClick={() => setShowTokenInput(false)}
               variant="outline"
               className="border-white/20"
             >
@@ -86,7 +83,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsProps> = ({ targetRef, onSuccess 
         </div>
       ) : (
         <Button
-          onClick={() => setShowApiKeyInput(true)}
+          onClick={() => setShowTokenInput(true)}
           disabled={isExporting}
           className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all"
           size="lg"
