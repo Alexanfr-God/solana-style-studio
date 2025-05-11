@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
+import { captureElementAsImage } from '@/utils/imageExport';
 
 interface ExportToIpfsButtonProps {
   targetRef: React.RefObject<HTMLElement>;
@@ -19,28 +20,39 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef }) =>
     
     try {
       setIsMinting(true);
+      toast.info('Capturing wallet design...');
+      
+      // Capture the wallet design as an image
+      // For demo purposes, using a placeholder image
+      let imageUrl = "https://gateway.pinata.cloud/ipfs/QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco";
+      
+      try {
+        // Try to capture the actual element if possible
+        const blob = await captureElementAsImage(targetRef.current);
+        const localImageUrl = URL.createObjectURL(blob);
+        if (localImageUrl) {
+          imageUrl = localImageUrl;
+        }
+      } catch (error) {
+        console.warn('Could not capture element, using placeholder:', error);
+      }
       
       toast.info('Minting NFT for wallet design...');
-      
-      // In a real app, you would capture the wallet design as an image and upload to IPFS
-      // For this example, we're using a placeholder image URL
-      const imageUrl = "https://gateway.pinata.cloud/ipfs/QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco";
       
       // Define the style data as a proper object
       const styleData = {
         bgColor: '#000000',
         textColor: '#ffffff',
-        image: 'https://placekitten.com/400/400'
+        image: imageUrl
       };
       
-      // Example Solana wallet address - in a real app, this would come from a connected wallet
-      const userWallet = "solana:5FHwkrdxD3iWVBewGpyQ2NwJHcQNcleK9vw6jD9ai1vn";
+      // Use a dummy wallet address for testing
+      const userWallet = "5FHwkrdxD3iWVBewGpyQ2NwJHcQNcleK9vw6jD9ai1vn"; // Example Solana address
       
       // Call the Edge Function to mint the NFT via Crossmint
       const response = await fetch('https://opxordptvpvzmhakvdde.supabase.co/functions/v1/mint_wallet_skin_nft', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9weG9yZHB0dnB2em1oYWt2ZGRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTY2NjgsImV4cCI6MjA2MjI5MjY2OH0.uHDqEycZqhQ02zMvmikDjMXsqeVU792Ei61ceavk6iw',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -54,11 +66,10 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef }) =>
       
       console.log('Mint NFT response:', result);
       
-      // Show success message
+      // Show success message based on the response
       if (result.success) {
-        toast.success(`Successfully minted NFT via Crossmint!`);
-        // If you have an explorer URL you can share it
-        if (result.crossmintResponse && result.crossmintResponse.id) {
+        toast.success(`Successfully minted NFT!`);
+        if (result.result && result.result.id) {
           toast.info('Your NFT will appear in your wallet shortly');
         }
       } else {
