@@ -38,7 +38,7 @@ const MintNftButton: React.FC<MintNftButtonProps> = ({ targetRef }) => {
         },
         body: JSON.stringify({
           userId: 'demo_user_1',
-          styleData: styleData
+          styleData: styleData  // This is directly passing the object, not stringified
         }),
       });
       

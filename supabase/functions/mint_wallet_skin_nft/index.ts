@@ -42,11 +42,14 @@ serve(async (req) => {
     }
 
     // Check if a similar record already exists
+    // Using filter on individual JSON properties instead of direct comparison
     const { data: existingData, error: searchError } = await supabase
       .from('wallet_skins')
       .select('id')
       .eq('user_id', userId)
-      .eq('style_data', styleData);
+      .filter('style_data->bgColor', 'eq', styleData.bgColor)
+      .filter('style_data->textColor', 'eq', styleData.textColor)
+      .filter('style_data->image', 'eq', styleData.image);
 
     if (searchError) {
       console.error('Error searching for existing wallet skin:', searchError);
