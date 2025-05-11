@@ -121,12 +121,29 @@ const sections = [{
 }, {
   id: 'contract',
   title: 'Smart Contract',
-  content: 'Every skin is linked to a smart contract storing metadata, style values, and creator info. Supports both 1/1 and multi-mint logic with royalty split.'
+  content: <>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🧾 Smart Contract (In Progress)</h3>
+        
+        <p className="mb-4">Each wallet skin will be bound to a custom Solana smart contract — designed not just to store metadata, but to act as a programmable UI layer protocol for wallets.</p>
+        
+        <p className="mb-4"><strong>Core features (in development):</strong></p>
+        
+        <ul className="list-disc pl-5 mb-4 space-y-2">
+          <li><strong>🧬 On-chain Style Registry:</strong> Each minted skin includes structured style data — such as color schemes, layout, version info, and visual assets — embedded in immutable NFT metadata.</li>
+          <li><strong>👤 Creator Attribution & Royalties:</strong> Each skin will be linked to its creator, with customizable royalty logic for both single mints and collections.</li>
+          <li><strong>🔁 Single & Multi-Mint Support:</strong> Whether it's a unique design (1/1) or a collection drop, the contract will handle mint supply, uniqueness tracking, and ownership records.</li>
+          <li><strong>💼 Ownership Hook for Wallet UI:</strong> The smart contract will enable frontends and wallets to dynamically apply skins if the NFT is detected in the connected wallet.</li>
+          <li><strong>🌉 Cross-Chain Expandability (Planned):</strong> Future versions may integrate with LayerZero to support skin migration and recognition across EVM and Solana-compatible wallets.</li>
+        </ul>
+        
+        <p className="mb-4">This contract architecture transforms wallet skins from simple NFTs into a verifiable, interoperable UI protocol — redefining what wallet personalization can look like in Web3.</p>
+      </>
 }, {
   id: 'royalties',
   title: 'Royalties & Profit Split',
   content: 'Creators earn a % on every resale. The platform also earns a service fee. All logic is transparent and on-chain.'
 }];
+
 const DocSidebar = ({
   activeSection,
   setActiveSection,
