@@ -42,6 +42,27 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_skins: {
+        Row: {
+          created_at: string
+          id: string
+          style_data: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          style_data: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          style_data?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

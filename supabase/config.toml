@@ -3,3 +3,6 @@ project_id = "opxordptvpvzmhakvdde"
 
 [functions.generate-style]
 verify_jwt = false
+
+[functions.mint_wallet_skin_nft]
+verify_jwt = false
