@@ -10,8 +10,13 @@ import './polyfills';
 // This fixes the 'Buffer is not defined' error
 window.Buffer = Buffer;
 
+// Add console log for debugging
+console.log('Main rendering started');
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
 );
+
+console.log('Main rendering completed');

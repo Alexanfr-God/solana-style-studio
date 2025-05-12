@@ -8,9 +8,11 @@ import Footer from '@/components/layout/Footer';
 
 const Index = () => {
   return (
-    <div className="w-full overflow-x-hidden">
-      <AnimatedStars />
-      <V1Customizer />
+    <div className="flex flex-col min-h-screen w-full">
+      <div className="relative w-full">
+        <AnimatedStars />
+        <V1Customizer />
+      </div>
       <ShowcaseSection />
       <Footer />
       <Toaster />
