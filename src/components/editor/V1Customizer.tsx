@@ -15,19 +15,19 @@ import { Separator } from '@/components/ui/separator';
 
 const V1Customizer = () => {
   return (
-    <div className="min-h-screen bg-black bg-[url('/stars-bg.png')] bg-repeat p-4 md:p-6 overflow-hidden">
+    <div className="py-4 md:py-6 px-2 md:px-6 bg-black bg-[url('/stars-bg.png')] bg-repeat">
       <div className="max-w-screen-xl mx-auto">
         <EditorHeader />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           <div className="lg:col-span-1">
-            <div className="flex flex-col space-y-8">
+            <div className="flex flex-col space-y-6 md:space-y-8">
               <WalletRider />
               
               <EditorTabs />
               
               <Card className="bg-black/30 backdrop-blur-md border-white/10">
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <h2 className="text-xl font-bold mb-4 text-white">Create Your Base Style</h2>
                   
                   <div className="space-y-6">
@@ -64,11 +64,9 @@ const V1Customizer = () => {
           </div>
           
           <div className="lg:col-span-2">
-            <Card className="h-full bg-black/30 backdrop-blur-md border-white/10 p-4">
-              <div className="h-full flex flex-col">
-                <div className="flex-1 flex items-center justify-center">
-                  <DualWalletPreview />
-                </div>
+            <Card className="bg-black/30 backdrop-blur-md border-white/10 p-2 md:p-4">
+              <div className="flex items-center justify-center py-4">
+                <DualWalletPreview />
               </div>
             </Card>
           </div>

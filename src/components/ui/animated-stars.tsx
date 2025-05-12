@@ -3,7 +3,7 @@ import React from 'react';
 
 const AnimatedStars = () => {
   return (
-    <div className="stars-container fixed inset-0 z-[-1] overflow-hidden">
+    <div className="stars-container absolute inset-0 z-[-1]">
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes move-stars {
@@ -18,6 +18,8 @@ const AnimatedStars = () => {
           .stars-container {
             background: transparent url('/stars-bg.png') repeat top center;
             z-index: -1;
+            height: 100%;
+            width: 100%;
           }
           
           .stars-container:after {

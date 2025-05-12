@@ -6,16 +6,17 @@
   text-align: center;
 }
 
+/* Only apply padding on larger screens */
 @media (min-width: 768px) {
   #root {
-    padding: 1rem;
+    padding: 0.5rem;
   }
 }
 
 @media (min-width: 1280px) {
   #root {
     max-width: 1280px;
-    padding: 2rem;
+    padding: 1rem;
   }
 }
 
