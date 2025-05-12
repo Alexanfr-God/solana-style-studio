@@ -1,0 +1,6 @@
+
+/* Import all CSS files */
+@import './base.css';
+@import './animations.css';
+@import './effects.css';
+@import './wallet.css';

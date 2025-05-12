@@ -1,18 +1,17 @@
 
-// Import polyfills first
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.tsx';
+import './styles/index.css';
+import './App.css';
+import { Buffer } from 'buffer';
 import './polyfills';
 
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+// This fixes the 'Buffer is not defined' error
+window.Buffer = Buffer;
 
-// Make sure to wrap the app in React.StrictMode
-const rootElement = document.getElementById('root');
-if (!rootElement) throw new Error('Root element not found');
-
-createRoot(rootElement).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );
