@@ -6,15 +6,25 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
+  // Set a very low threshold to ensure it triggers on mobile
   const { ref, inView } = useInView({
     triggerOnce: true,
-    threshold: 0.1,
+    threshold: 0.01,
+    rootMargin: '100px 0px',
   });
+
+  // Debug the footer visibility
+  React.useEffect(() => {
+    console.log('Footer mounted');
+    console.log('Footer inView:', inView);
+  }, [inView]);
 
   return (
     <footer 
       ref={ref}
       className="w-full bg-gradient-to-br from-black via-purple-950/90 to-black py-6 relative"
+      // Add debugging id
+      id="footer-component"
     >
       {/* Ambient glow effect */}
       <div className="absolute inset-0 bg-purple-900/10 blur-xl -top-4 opacity-30 pointer-events-none"></div>
@@ -22,7 +32,8 @@ const Footer = () => {
       <div 
         className={cn(
           "w-full max-w-screen-xl mx-auto px-3 md:px-4 transition-all duration-1000",
-          inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          // Make sure it's always visible, even before intersection
+          "opacity-100"
         )}
       >
         {/* Desktop layout */}

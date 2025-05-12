@@ -1,13 +1,5 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious
-} from "@/components/ui/carousel";
-import { Card } from '@/components/ui/card';
 import useEmblaCarousel from 'embla-carousel-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,6 +12,7 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
   const [autoplaySpeed] = useState(5000); // 5 seconds per slide
   const [currentIndex, setCurrentIndex] = useState(0);
   const isMobile = useIsMobile();
+  const [hasError, setHasError] = useState(false);
   
   const walletScreens = [
     '/lovable-uploads/dee86368-28b2-44f6-a28e-a13e40b49386.png',
@@ -33,6 +26,7 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
     '/lovable-uploads/e53d0d83-93dd-41e8-8644-9dce1599f998.png',
   ];
   
+  // Add error handling to embla carousel
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: "center",
@@ -40,20 +34,61 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
     containScroll: "trimSnaps",
   });
 
+  // Debug logging for carousel
+  useEffect(() => {
+    console.log('V1Experience mounted, isMobile:', isMobile);
+    console.log('V1Experience inView:', inView);
+    console.log('Embla API initialized:', !!emblaApi);
+    
+    // Check if images are loading
+    const imageLoadCheck = async () => {
+      try {
+        const results = await Promise.all(walletScreens.map(src => {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = src;
+          });
+        }));
+        
+        console.log('Image load results:', results);
+      } catch (error) {
+        console.error('Error checking images:', error);
+      }
+    };
+    
+    imageLoadCheck();
+    
+    // Error recovery mechanism
+    if (!emblaApi && !hasError) {
+      console.log('Attempting to recover from Embla initialization failure');
+      setHasError(true);
+    }
+  }, [emblaApi, inView, isMobile, hasError, walletScreens]);
+
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
-    setCurrentIndex(emblaApi.selectedScrollSnap());
+    try {
+      setCurrentIndex(emblaApi.selectedScrollSnap());
+    } catch (err) {
+      console.error('Error in embla onSelect:', err);
+    }
   }, [emblaApi]);
 
   useEffect(() => {
     if (!emblaApi) return;
     
-    emblaApi.on('select', onSelect);
-    onSelect();
-    
-    return () => {
-      emblaApi.off('select', onSelect);
-    };
+    try {
+      emblaApi.on('select', onSelect);
+      onSelect();
+      
+      return () => {
+        emblaApi.off('select', onSelect);
+      };
+    } catch (err) {
+      console.error('Error setting up embla event listeners:', err);
+    }
   }, [emblaApi, onSelect]);
   
   useEffect(() => {
@@ -61,7 +96,12 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
     
     if (inView && emblaApi) {
       interval = window.setInterval(() => {
-        emblaApi.scrollNext();
+        try {
+          emblaApi.scrollNext();
+        } catch (err) {
+          console.error('Error in autoplay scroll:', err);
+          clearInterval(interval);
+        }
       }, autoplaySpeed);
     }
     
@@ -69,6 +109,46 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
       if (interval) clearInterval(interval);
     };
   }, [inView, autoplaySpeed, emblaApi]);
+  
+  // Fallback rendering in case of errors
+  if (hasError) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center">
+        <div className="lg:col-span-5 space-y-6 px-4 lg:px-0">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-purple-500 mb-2">
+              V1 Experience
+            </h2>
+            <h3 className="text-xl md:text-2xl font-medium text-white/90 mb-4">
+              Minimal, Memetic, Instantly Customizable.
+            </h3>
+            <p className="text-white/70">
+              For meme lovers and brand fans – instantly apply custom login screens. 
+              Inspired by community creativity.
+            </p>
+          </div>
+        </div>
+        
+        <div className="lg:col-span-7">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {walletScreens.slice(0, 3).map((screen, index) => (
+              <div key={index} className="aspect-[9/16] relative overflow-hidden rounded-lg bg-black/30 border border-white/10">
+                <img 
+                  src={screen} 
+                  alt={`Wallet screen ${index + 1}`}
+                  className="w-full h-full object-cover object-center"
+                  onError={(e) => {
+                    console.error(`Failed to load image: ${screen}`);
+                    e.currentTarget.src = '/placeholder.svg';
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center">
@@ -119,6 +199,10 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
                             "w-full h-full object-cover object-center transition-opacity duration-300",
                             inView ? "opacity-100" : "opacity-0"
                           )}
+                          onError={(e) => {
+                            console.error(`Failed to load image: ${screen}`);
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
                         />
                       </div>
                     </div>

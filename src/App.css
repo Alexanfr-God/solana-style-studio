@@ -6,6 +6,12 @@
   text-align: center;
 }
 
+/* Make sure there's no overflow hidden that could cut content */
+body, html, #root {
+  overflow-x: hidden; /* Only hide horizontal overflow */
+  overflow-y: auto;   /* Allow vertical scrolling */
+}
+
 /* Only apply padding on larger screens */
 @media (min-width: 768px) {
   #root {
@@ -20,6 +26,7 @@
   }
 }
 
+/* Existing styles */
 .logo {
   height: 6em;
   padding: 1.5em;

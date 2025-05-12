@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 
 const V1Customizer = () => {
   return (
-    <div className="py-4 md:py-6 px-2 md:px-6 bg-black bg-[url('/stars-bg.png')] bg-repeat">
+    <div className="w-full py-4 md:py-6 px-2 md:px-6 bg-black">
       <div className="max-w-screen-xl mx-auto">
         <EditorHeader />
         
