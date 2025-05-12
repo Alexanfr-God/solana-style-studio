@@ -14,14 +14,14 @@ const Footer = () => {
   return (
     <footer 
       ref={ref}
-      className="w-full bg-gradient-to-br from-black via-purple-950/90 to-black py-6 relative"
+      className="w-full bg-gradient-to-br from-black via-purple-950/90 to-black py-6 relative mt-6"
     >
       {/* Ambient glow effect */}
       <div className="absolute inset-0 bg-purple-900/10 blur-xl -top-4 opacity-30 pointer-events-none"></div>
       
       <div 
         className={cn(
-          "max-w-screen-xl mx-auto px-4 transition-all duration-1000",
+          "max-w-full sm:max-w-screen-xl mx-auto px-4 transition-all duration-1000",
           inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         )}
       >

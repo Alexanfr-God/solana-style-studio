@@ -8,13 +8,13 @@ import Footer from '@/components/layout/Footer';
 
 const Index = () => {
   return (
-    <>
+    <div className="w-full overflow-x-hidden">
       <AnimatedStars />
       <V1Customizer />
       <ShowcaseSection />
       <Footer />
       <Toaster />
-    </>
+    </div>
   );
 };
 
