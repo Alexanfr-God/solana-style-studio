@@ -58,7 +58,7 @@ const Footer = () => {
           {/* Right: Social Icons */}
           <div className="flex-1 flex justify-end gap-4">
             <a 
-              href="https://twitter.com" 
+              href="https://x.com/wacocuapp" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300"
@@ -94,7 +94,7 @@ const Footer = () => {
           {/* Social Icons */}
           <div className="flex justify-center gap-4 py-2">
             <a 
-              href="https://twitter.com" 
+              href="https://x.com/wacocuapp" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300"

@@ -42,6 +42,39 @@ export type Database = {
         }
         Relationships: []
       }
+      nfts: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string
+          metadata_uri: string | null
+          mint_address: string | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          metadata_uri?: string | null
+          mint_address?: string | null
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          metadata_uri?: string | null
+          mint_address?: string | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wallet_skins: {
         Row: {
           created_at: string
