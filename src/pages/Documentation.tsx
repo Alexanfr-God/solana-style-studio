@@ -61,7 +61,7 @@ const sections = [{
               <li>or 1-of-1s</li>
             </ul>
             
-            <div className="p-4 bg-gradient-to-r from-black/60 to-solana-purple/10 border-l-4 border-solana-purple rounded-md mb-4">
+            <div className="p-4 bg-gradient-to-r from-black/60 to-solana-purple/10 rounded-md mb-4">
               <p className="mb-2"><strong className="text-solana-purple">🌊 Our Mission</strong><br />
               Wallet Coast Customs is not just customization.</p>
               
@@ -262,6 +262,7 @@ const DocSidebar = ({
       <h2 className="text-xl font-bold mb-6 text-center lg:text-left text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
         WCC Documentation
       </h2>
+      
       
       <div className="space-y-1">
         {sections.map(section => <button key={section.id} onClick={() => setActiveSection(section.id)} className={cn("w-full text-left py-3 px-4 rounded-lg transition-all duration-300", "hover:bg-white/10 hover:shadow-[0_0_10px_rgba(153,69,255,0.2)]", activeSection === section.id ? "bg-white/5 shadow-[0_0_15px_rgba(153,69,255,0.3)] border border-purple-500/30" : "border border-transparent")}>
