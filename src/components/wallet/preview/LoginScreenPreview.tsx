@@ -66,7 +66,7 @@ const getTextContrast = (backgroundColor: string): string => {
 };
 
 // New helper function to determine optimal text styling based on background
-const getOptimalTextStyle = (backgroundColor: string, accentColor: string, hasBackgroundImage: boolean) => {
+const getOptimalTextStyle = (backgroundColor: string, accentColor: string, hasBackgroundImage: boolean): React.CSSProperties => {
   // Get basic contrast color
   const contrastColor = getTextContrast(backgroundColor);
   
@@ -86,7 +86,7 @@ const getOptimalTextStyle = (backgroundColor: string, accentColor: string, hasBa
       WebkitTextFillColor: 'transparent',
       textShadow: needsGlow ? `0 0 8px ${glowColor}` : 'none',
       letterSpacing: '1px',
-      textTransform: 'lowercase',
+      textTransform: 'lowercase' as 'lowercase', // Type assertion to match React.CSSProperties
       fontSize: '1.25rem', // text-lg equivalent
       fontWeight: 'bold',
     };
@@ -96,7 +96,7 @@ const getOptimalTextStyle = (backgroundColor: string, accentColor: string, hasBa
       color: contrastColor,
       textShadow: needsGlow ? `0 0 8px ${glowColor}, 0 0 12px ${accentColor}80` : 'none',
       letterSpacing: '1px',
-      textTransform: 'lowercase',
+      textTransform: 'lowercase' as 'lowercase', // Type assertion to match React.CSSProperties
       fontSize: '1.35rem', // slightly larger for better visibility
       fontWeight: 'bold',
     };
