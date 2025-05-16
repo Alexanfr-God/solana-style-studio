@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -42,44 +43,55 @@ const generateImageWithOpenAI = async (prompt: string, layerType: string): Promi
     
     if (isMemeStyle) {
       styleGuidance = `
-        - Create a cartoon/meme style with clear lines and bold color areas
-        - Focus on a central character or icon that fits the theme
-        - Use vibrant, fun colors with good contrast
-        - Keep the center area relatively clear for text overlay
-        - Style: playful, expressive, memorable
+        - Create a CARTOON/MEME style with BOLD COLORS and CLEAR OUTLINES
+        - Include a CENTRAL CHARACTER or MASCOT (like Pepe, Doge, or a funny character)
+        - Use FLAT COLOR AREAS with minimal shading
+        - Include playful, expressive visual elements
+        - The art style should be BOLD, EXPRESSIVE, and FUN
+        - Make it collectible, like an NFT-worthy design
+        - Style: playful, internet meme culture, collectible
       `;
     } else if (isLuxuryStyle) {
       styleGuidance = `
-        - Create a luxury branding style with soft gradients and golden tones
-        - Use minimalist, elegant design elements
-        - Keep everything center-aligned and sophisticated
-        - Incorporate subtle texture or pattern if appropriate
-        - Style: premium, expensive, refined
+        - Create a LUXURY PREMIUM design with GOLD/METALLIC accents
+        - Use ELEGANT GRADIENTS and minimal design elements
+        - Include subtle luxury patterns or textures (like marble, leather, or gold)
+        - Keep everything SOPHISTICATED with perfect symmetry
+        - Add subtle shimmer or reflection effects
+        - Make it feel expensive and exclusive
+        - Style: premium, high-end, elegant, VIP
       `;
     } else if (isCosmicStyle) {
       styleGuidance = `
-        - Create a galaxy-like background with cosmic elements
-        - Include subtle glows and layered visual elements
-        - Use deep blues, purples and cosmic colors
-        - Add subtle symbolic elements that fit the theme
-        - Style: mystical, expansive, awe-inspiring
+        - Create a COSMIC MYSTICAL background with GALAXY elements
+        - Include LAYERED COSMIC effects (nebulae, stars, cosmic energy)
+        - Add subtle SACRED GEOMETRY or mystical symbols
+        - Use DEEP SPACE COLORS with glowing accents
+        - Create a sense of infinite depth and wonder
+        - Make it feel spiritual and transcendent
+        - Style: mystical, cosmic, transcendent, spiritual
       `;
     } else {
       styleGuidance = `
-        - Create a professional crypto wallet login background
-        - Use 2-3 colors for a cohesive look
-        - Create subtle artistic background with soft visual depth
-        - Style: modern, sophisticated, subtle
+        - Create a visually STRIKING and THEMED crypto wallet background
+        - Use BOLD VISUAL ELEMENTS that feel collectible and unique
+        - Create an ARTISTIC COMPOSITION with clear focal points
+        - Include subtle VISUAL STORYTELLING elements
+        - Make it feel like a PREMIUM DIGITAL COLLECTIBLE
+        - Add depth through layered visual elements
+        - Style: bold, collectible, thematic, premium
       `;
     }
     
-    enhancedPrompt = `Create a professional crypto wallet login background with these requirements:
+    enhancedPrompt = `Create a COLLECTIBLE CRYPTO WALLET LOGIN BACKGROUND with these requirements:
     - Based on this style description: ${sanitizedPrompt}
     ${styleGuidance}
-    - DO NOT include ANY user interface elements like input fields, buttons, or text prompts
-    - NO text fields, buttons, password inputs, or login elements
-    - No geometric shapes that would compete with UI elements
-    - Create ONLY a BACKGROUND DESIGN, not a complete UI`;
+    - ABSOLUTELY NO USER INTERFACE ELEMENTS - DO NOT include ANY buttons, input fields, or text prompts
+    - NO text fields, NO buttons, NO password inputs, NO login elements
+    - NO words, text, or labels of any kind in the image
+    - Create PURELY A BACKGROUND DESIGN or CHARACTER ARTWORK
+    - Leave central area relatively clear for UI overlay
+    - The image should feel like a PREMIUM DIGITAL COLLECTIBLE`;
   } else {
     enhancedPrompt = `Create an extremely minimal and neutral background for a crypto wallet interface:
     - Based on this style description: ${sanitizedPrompt}

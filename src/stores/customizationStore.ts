@@ -59,8 +59,8 @@ export const useCustomizationStore = create<CustomizationState>((set) => ({
   
   setStyleForLayer: (layer, style) => set((state) => ({
     ...(layer === 'login' 
-      ? { loginStyle: { ...state.loginStyle, ...style } } 
-      : { walletStyle: { ...state.walletStyle, ...style } })
+      ? { loginStyle: { ...state.loginStyle, ...style }, isGenerating: false } 
+      : { walletStyle: { ...state.walletStyle, ...style }, isGenerating: false })
   })),
   
   resetLayer: (layer) => set((state) => ({

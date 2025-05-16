@@ -172,7 +172,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
       
       {/* Logo and Content area */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 pt-8 relative z-10">
-        {/* Animated Ghost Logo - conditionally displayed based on generation state */}
+        {/* Animated Ghost Logo - only displayed when NOT generating */}
         {!isGenerating && (
           <div className="mb-8 relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
             <img 
@@ -191,12 +191,12 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
           </div>
         )}
         
-        {/* Semi-transparent backdrop for better readability if needed */}
+        {/* Semi-transparent backdrop for better readability if needed - made more subtle */}
         <div 
-          className={`absolute inset-0 z-0 ${needsBackdrop() ? 'opacity-40' : 'opacity-0'}`} 
+          className={`absolute inset-0 z-0 ${needsBackdrop() ? 'opacity-20' : 'opacity-0'}`} 
           style={{ 
             backgroundColor: '#000000',
-            backdropFilter: 'blur(3px)',
+            backdropFilter: 'blur(2px)',
           }}
         />
         
