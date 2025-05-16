@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
@@ -34,7 +33,7 @@ const sections = [{
         <p className="mb-4"><strong>⚙️ Tech Stack</strong></p>
         <ul className="list-disc pl-5 mb-4 space-y-2">
           <li>Supabase Edge Functions – server logic for theme generation and control</li>
-          <li>Custom GPT (Wallet Coast Customs) – AI-generated UI layout in JSON</li>
+          <li><a href="https://chatgpt.com/g/g-6825f681e12c8191a9e193a6a2104b46-wallet-coast-customs" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">Custom GPT (Wallet Coast Customs)</a> – AI-generated UI layout in JSON</li>
           <li>OpenAI DALL·E API – visual style rendering</li>
           <li>Solana Smart Contract – our own contract for NFT minting, royalties, and collections</li>
           <li>Lovable – used as early-stage dev playground and UI builder</li>
