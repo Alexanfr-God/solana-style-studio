@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
 import { 
   Eye,
@@ -62,7 +62,45 @@ const getTextContrast = (backgroundColor: string): string => {
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   
   // Return white for dark backgrounds, black for light backgrounds
-  return luminance > 0.6 ? '#000000' : '#FFFFFF';
+  return luminance > 0.6 ? "#000000" : "#FFFFFF";
+};
+
+// New helper function to determine optimal text styling based on background
+const getOptimalTextStyle = (backgroundColor: string, accentColor: string, hasBackgroundImage: boolean) => {
+  // Get basic contrast color
+  const contrastColor = getTextContrast(backgroundColor);
+  
+  // Determine if we need a glow effect (especially useful for dark backgrounds with images)
+  const needsGlow = hasBackgroundImage || backgroundColor.includes('#13') || backgroundColor.includes('rgb(19');
+  
+  // Determine if we should use a gradient or solid color
+  const useGradient = !hasBackgroundImage || Math.random() > 0.5; // Randomize for some variety
+  
+  // Calculate a suitable glow color (opposite of text for maximum effect)
+  const glowColor = contrastColor === '#000000' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
+  
+  if (useGradient) {
+    return {
+      background: `linear-gradient(to right, ${contrastColor}, ${accentColor})`,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      textShadow: needsGlow ? `0 0 8px ${glowColor}` : 'none',
+      letterSpacing: '1px',
+      textTransform: 'lowercase',
+      fontSize: '1.25rem', // text-lg equivalent
+      fontWeight: 'bold',
+    };
+  } else {
+    // For better visibility on complex backgrounds, use solid color with optional glow
+    return {
+      color: contrastColor,
+      textShadow: needsGlow ? `0 0 8px ${glowColor}, 0 0 12px ${accentColor}80` : 'none',
+      letterSpacing: '1px',
+      textTransform: 'lowercase',
+      fontSize: '1.35rem', // slightly larger for better visibility
+      fontWeight: 'bold',
+    };
+  }
 };
 
 export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
@@ -70,6 +108,17 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const { isGenerating } = useCustomizationStore();
+  const [textStyle, setTextStyle] = useState<React.CSSProperties>({});
+
+  // Recalculate optimal text style whenever the background or accent color changes
+  useEffect(() => {
+    const hasBackgroundImage = Boolean(style.backgroundImage);
+    setTextStyle(getOptimalTextStyle(
+      style.backgroundColor || '#131313', 
+      style.accentColor || '#9945FF',
+      hasBackgroundImage
+    ));
+  }, [style.backgroundColor, style.accentColor, style.backgroundImage]);
 
   const handleUnlock = () => {
     toast({
@@ -148,17 +197,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
 
       {/* Header with centered phantom branding */}
       <div className="p-5 flex justify-center items-center relative z-10">
-        <div 
-          className="text-lg font-bold tracking-wide"
-          style={{ 
-            background: `linear-gradient(to right, ${getPhantomLabelColor()}, ${style.accentColor || '#9945FF'})`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '1px',
-            textTransform: 'lowercase',
-            textShadow: getTextShadow(),
-          }}
-        >
+        <div className="text-center" style={textStyle}>
           phantom
         </div>
         <HelpCircle 
