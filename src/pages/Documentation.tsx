@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Card, CardContent } from '@/components/ui/card';
 import Footer from '@/components/layout/Footer';
 
 // Define the documentation sections
@@ -14,55 +15,66 @@ const sections = [{
   id: 'about',
   title: 'About the Project',
   content: <>
-        <p className="mb-4"><strong>Wallet Coast Customs (WCC)</strong> is the world's first AI-powered platform that lets anyone customize the look of their Web3 wallet and turn it into a collectible NFT. We're creating a new layer of digital identity — your wallet shouldn't look like everyone else's. It should look like you.</p>
-        
-        <p className="mb-4"><strong>🔥 Version v1 – Live and Working</strong><br />
-        In v1, we launched a basic login screen customization tool for Phantom Wallet via Supabase Edge Function. Users upload an image, describe a desired vibe, and AI generates a personalized design.</p>
-        
-        <p className="mb-4">This first version is far from perfect — but it works, and it proves the concept. We're actively improving how the system interprets prompts and processes images to generate cleaner, more cohesive results.</p>
-        
-        <p className="mb-4"><strong>🤖 Beyond Visuals: Structured AI Design</strong><br />
-        We built our own custom GPT — Wallet Coast Customs GPT — that not only generates visual skins but also outputs a complete UI structure in JSON:</p>
-        
-        <p className="mb-4">background, buttons, logo, text — every element layered as a PNG,</p>
-        
-        <p className="mb-4">ready to mint as an NFT and later apply as a skin to your wallet.</p>
-        
-        <p className="mb-4">We've already received positive feedback from the OpenAI team, and we're awaiting early API access — ready to bring our GPT into the world of Web3 customization.</p>
-        
-        <p className="mb-4"><strong>⚙️ Tech Stack</strong></p>
-        <ul className="list-disc pl-5 mb-4 space-y-2">
-          <li>Supabase Edge Functions – server logic for theme generation and control</li>
-          <li><a href="https://chatgpt.com/g/g-6825f681e12c8191a9e193a6a2104b46-wallet-coast-customs" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">Custom GPT (Wallet Coast Customs)</a> – AI-generated UI layout in JSON</li>
-          <li>OpenAI DALL·E API – visual style rendering</li>
-          <li>Solana Smart Contract – our own contract for NFT minting, royalties, and collections</li>
-          <li>Lovable – used as early-stage dev playground and UI builder</li>
-        </ul>
-        
-        <p className="mb-4"><strong>🚀 Coming Soon</strong></p>
-        <p className="mb-4"><strong>v2 – UI Style Editor</strong><br />
-        After skin generation, our AI will extract fonts and color palettes. Users can manually fine-tune the interface — text, background, buttons, borders.</p>
-        
-        <p className="mb-4"><strong>v3 – Wallet Masks</strong><br />
-        Visual add-ons that decorate the wallet exterior — memes, frames, characters, art. Wallets become expressive and iconic.</p>
-        
-        <p className="mb-4">All styles are saved as NFTs and can belong to:</p>
-        <ul className="list-disc pl-5 mb-4 space-y-2">
-          <li>exclusive drops</li>
-          <li>curated collections</li>
-          <li>or 1-of-1s</li>
-        </ul>
-        
-        <p className="mb-4"><strong>🌊 Our Mission</strong><br />
-        Wallet Coast Customs is not just customization.</p>
-        
-        <p className="mb-4">It's self-expression.<br />
-        It's Web3 identity.<br />
-        It's your personality in pixels.</p>
-        
-        <p className="mb-4">Your PFP is unique.<br />
-        Your NFTs are a statement.<br />
-        Now your wallet can be iconic too.</p>
+        <Card className="bg-black/40 border-white/5 shadow-lg">
+          <CardContent className="p-6">
+            <p className="mb-4"><strong>Wallet Coast Customs (WCC)</strong> is the world's first AI-powered platform that lets anyone customize the look of their Web3 wallet and turn it into a collectible NFT. We're creating a new layer of digital identity — your wallet shouldn't look like everyone else's. It should look like you.</p>
+            
+            <p className="mb-4"><strong className="text-solana-purple">🔥 Version v1 – Live and Working</strong><br />
+            In v1, we launched a basic login screen customization tool for Phantom Wallet via Supabase Edge Function. Users upload an image, describe a desired vibe, and AI generates a personalized design.</p>
+            
+            <p className="mb-4">This first version is far from perfect — but it works, and it proves the concept. We're actively improving how the system interprets prompts and processes images to generate cleaner, more cohesive results.</p>
+            
+            <p className="mb-4"><strong className="text-solana-purple">🤖 Beyond Visuals: Structured AI Design</strong><br />
+            We built our own custom GPT — Wallet Coast Customs GPT — that not only generates visual skins but also outputs a complete UI structure in JSON:</p>
+            
+            <div className="pl-4 border-l-2 border-solana-purple/30 mb-4">
+              <p className="mb-2">background, buttons, logo, text — every element layered as a PNG,</p>
+              <p className="mb-2">ready to mint as an NFT and later apply as a skin to your wallet.</p>
+            </div>
+            
+            <p className="mb-4">We've already received positive feedback from the OpenAI team, and we're awaiting early API access — ready to bring our GPT into the world of Web3 customization.</p>
+            
+            <p className="mb-4"><strong className="text-solana-purple">⚙️ Tech Stack</strong></p>
+            <ul className="list-disc pl-5 mb-4 space-y-2">
+              <li>Supabase Edge Functions – server logic for theme generation and control</li>
+              <li><a href="https://chatgpt.com/g/g-6825f681e12c8191a9e193a6a2104b46-wallet-coast-customs" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">Custom GPT (Wallet Coast Customs)</a> – AI-generated UI layout in JSON</li>
+              <li>OpenAI DALL·E API – visual style rendering</li>
+              <li>Solana Smart Contract – our own contract for NFT minting, royalties, and collections</li>
+              <li>Lovable – used as early-stage dev playground and UI builder</li>
+            </ul>
+            
+            <p className="mb-4"><strong className="text-solana-purple">🚀 Coming Soon</strong></p>
+            <div className="mb-4">
+              <p className="mb-2"><strong>v2 – UI Style Editor</strong><br />
+              After skin generation, our AI will extract fonts and color palettes. Users can manually fine-tune the interface — text, background, buttons, borders.</p>
+            </div>
+            
+            <div className="mb-4">
+              <p className="mb-2"><strong>v3 – Wallet Masks</strong><br />
+              Visual add-ons that decorate the wallet exterior — memes, frames, characters, art. Wallets become expressive and iconic.</p>
+            </div>
+            
+            <p className="mb-4">All styles are saved as NFTs and can belong to:</p>
+            <ul className="list-disc pl-5 mb-4 space-y-2">
+              <li>exclusive drops</li>
+              <li>curated collections</li>
+              <li>or 1-of-1s</li>
+            </ul>
+            
+            <div className="p-4 bg-gradient-to-r from-black/60 to-solana-purple/10 border-l-4 border-solana-purple rounded-md mb-4">
+              <p className="mb-2"><strong className="text-solana-purple">🌊 Our Mission</strong><br />
+              Wallet Coast Customs is not just customization.</p>
+              
+              <p className="mb-2">It's self-expression.<br />
+              It's Web3 identity.<br />
+              It's your personality in pixels.</p>
+              
+              <p>Your PFP is unique.<br />
+              Your NFTs are a statement.<br />
+              Now your wallet can be iconic too.</p>
+            </div>
+          </CardContent>
+        </Card>
       </>
 }, {
   id: 'roadmap',
