@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
@@ -19,12 +20,12 @@ const sections = [{
           <CardContent className="p-6 max-h-[70vh] overflow-y-auto scrollbar-custom">
             <p className="mb-4"><strong>Wallet Coast Customs (WCC)</strong> is the world's first AI-powered platform that lets anyone customize the look of their Web3 wallet and turn it into a collectible NFT. We're creating a new layer of digital identity — your wallet shouldn't look like everyone else's. It should look like you.</p>
             
-            <p className="mb-4"><strong className="text-solana-purple">🔥 Version v1 – Live and Working</strong><br />
+            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🔥 Version v1 – Live and Working</h3>
             In v1, we launched a basic login screen customization tool for Phantom Wallet via Supabase Edge Function. Users upload an image, describe a desired vibe, and AI generates a personalized design.</p>
             
             <p className="mb-4">This first version is far from perfect — but it works, and it proves the concept. We're actively improving how the system interprets prompts and processes images to generate cleaner, more cohesive results.</p>
             
-            <p className="mb-4"><strong className="text-solana-purple">🤖 Beyond Visuals: Structured AI Design</strong><br />
+            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🤖 Beyond Visuals: Structured AI Design</h3>
             We built our own custom GPT — <a href="https://chatgpt.com/g/g-6825f681e12c8191a9e193a6a2104b46-wallet-coast-customs" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">Wallet Coast Customs GPT</a> — that not only generates visual skins but also outputs a complete UI structure in JSON:</p>
             
             <div className="pl-4 border-l-2 border-solana-purple/30 mb-4">
@@ -34,7 +35,7 @@ const sections = [{
             
             <p className="mb-4">We've already received positive feedback from the OpenAI team, and we're awaiting early API access — ready to bring our GPT into the world of Web3 customization.</p>
             
-            <p className="mb-4"><strong className="text-solana-purple">⚙️ Tech Stack</strong></p>
+            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">⚙️ Tech Stack</h3></p>
             <ul className="list-disc pl-5 mb-4 space-y-2">
               <li>Supabase Edge Functions – server logic for theme generation and control</li>
               <li><a href="https://chatgpt.com/g/g-6825f681e12c8191a9e193a6a2104b46-wallet-coast-customs" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">Custom GPT (Wallet Coast Customs)</a> – AI-generated UI layout in JSON</li>
@@ -43,7 +44,7 @@ const sections = [{
               <li>Lovable – used as early-stage dev playground and UI builder</li>
             </ul>
             
-            <p className="mb-4"><strong className="text-solana-purple">🚀 Coming Soon</strong></p>
+            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🚀 Coming Soon</h3></p>
             <div className="mb-4">
               <p className="mb-2"><strong>v2 – UI Style Editor</strong><br />
               After skin generation, our AI will extract fonts and color palettes. Users can manually fine-tune the interface — text, background, buttons, borders.</p>
@@ -62,8 +63,8 @@ const sections = [{
             </ul>
             
             <div className="p-4 bg-gradient-to-r from-black/60 to-solana-purple/10 rounded-md mb-4">
-              <p className="mb-2"><strong className="text-solana-purple">🌊 Our Mission</strong><br />
-              Wallet Coast Customs is not just customization.</p>
+              <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🌊 Our Mission</h3>
+              <p className="mb-2">Wallet Coast Customs is not just customization.</p>
               
               <p className="mb-2">It's self-expression.<br />
               It's Web3 identity.<br />
