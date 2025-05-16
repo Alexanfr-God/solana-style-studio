@@ -155,16 +155,6 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
     return isDark ? '0 0 10px rgba(255,255,255,0.3)' : '0 0 10px rgba(0,0,0,0.2)';
   };
   
-  // Determine if we need a backdrop for better readability
-  const needsBackdrop = () => {
-    // If there's a background image, we likely need a backdrop
-    if (style.backgroundImage) return true;
-    
-    // If background is very similar to text color, we need a backdrop
-    // This is a simplified check for demonstration
-    return false;
-  };
-  
   // Get appropriate phantom label color (with contrast)
   const getPhantomLabelColor = () => {
     const phantomColor = style.textColor || '#FFFFFF';
@@ -187,7 +177,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         boxShadow: style.boxShadow || '0 10px 25px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
       }}
     >
-      {/* Animated overlay for extra visual effect */}
+      {/* Animated overlay for extra visual effect - kept low opacity */}
       <div 
         className="absolute inset-0 z-0 opacity-20" 
         style={{
@@ -229,15 +219,6 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             />
           </div>
         )}
-        
-        {/* Semi-transparent backdrop for better readability if needed - made more subtle */}
-        <div 
-          className={`absolute inset-0 z-0 ${needsBackdrop() ? 'opacity-20' : 'opacity-0'}`} 
-          style={{ 
-            backgroundColor: '#000000',
-            backdropFilter: 'blur(2px)',
-          }}
-        />
         
         {/* Content container with consistent spacing */}
         <div className="w-full flex flex-col items-center space-y-6 relative z-10">

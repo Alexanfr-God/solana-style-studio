@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -39,59 +38,45 @@ const generateImageWithOpenAI = async (prompt: string, layerType: string): Promi
   let enhancedPrompt = "";
   
   if (layerType === "login") {
-    let styleGuidance = "";
-    
-    if (isMemeStyle) {
-      styleGuidance = `
-        - Create a CARTOON/MEME style with BOLD COLORS and CLEAR OUTLINES
-        - Include a CENTRAL CHARACTER or MASCOT (like Pepe, Doge, or a funny character)
-        - Use FLAT COLOR AREAS with minimal shading
-        - Include playful, expressive visual elements
-        - The art style should be BOLD, EXPRESSIVE, and FUN
-        - Make it collectible, like an NFT-worthy design
-        - Style: playful, internet meme culture, collectible
-      `;
-    } else if (isLuxuryStyle) {
-      styleGuidance = `
-        - Create a LUXURY PREMIUM design with GOLD/METALLIC accents
-        - Use ELEGANT GRADIENTS and minimal design elements
-        - Include subtle luxury patterns or textures (like marble, leather, or gold)
-        - Keep everything SOPHISTICATED with perfect symmetry
-        - Add subtle shimmer or reflection effects
-        - Make it feel expensive and exclusive
-        - Style: premium, high-end, elegant, VIP
-      `;
-    } else if (isCosmicStyle) {
-      styleGuidance = `
-        - Create a COSMIC MYSTICAL background with GALAXY elements
-        - Include LAYERED COSMIC effects (nebulae, stars, cosmic energy)
-        - Add subtle SACRED GEOMETRY or mystical symbols
-        - Use DEEP SPACE COLORS with glowing accents
-        - Create a sense of infinite depth and wonder
-        - Make it feel spiritual and transcendent
-        - Style: mystical, cosmic, transcendent, spiritual
-      `;
-    } else {
-      styleGuidance = `
-        - Create a visually STRIKING and THEMED crypto wallet background
-        - Use BOLD VISUAL ELEMENTS that feel collectible and unique
-        - Create an ARTISTIC COMPOSITION with clear focal points
-        - Include subtle VISUAL STORYTELLING elements
-        - Make it feel like a PREMIUM DIGITAL COLLECTIBLE
-        - Add depth through layered visual elements
-        - Style: bold, collectible, thematic, premium
-      `;
-    }
-    
-    enhancedPrompt = `Create a COLLECTIBLE CRYPTO WALLET LOGIN BACKGROUND with these requirements:
-    - Based on this style description: ${sanitizedPrompt}
-    ${styleGuidance}
-    - ABSOLUTELY NO USER INTERFACE ELEMENTS - DO NOT include ANY buttons, input fields, or text prompts
-    - NO text fields, NO buttons, NO password inputs, NO login elements
-    - NO words, text, or labels of any kind in the image
-    - Create PURELY A BACKGROUND DESIGN or CHARACTER ARTWORK
-    - Leave central area relatively clear for UI overlay
-    - The image should feel like a PREMIUM DIGITAL COLLECTIBLE`;
+    enhancedPrompt = `
+Design a collectible login screen background for a crypto wallet.
+
+Prompt theme: ${sanitizedPrompt}
+
+Instructions:
+- Draw a vertical composition where the top is clean for the word "phantom" and center is reserved for the login box.
+- Leave the center-bottom area visually balanced and unobstructed (for UI overlays).
+${isMemeStyle ? `
+- Create a CARTOON/MEME style with BOLD COLORS and CLEAR OUTLINES
+- Include a CENTRAL CHARACTER or MASCOT (like Pepe, Doge, or a fun character)
+- Use FLAT COLOR AREAS with minimal shading
+- Add playful, expressive visual elements
+- Make the art style BOLD, EXPRESSIVE, and FUN
+- Style: playful, internet meme culture, collectible
+` : ''}
+${isLuxuryStyle ? `
+- Create a LUXURY PREMIUM design with GOLD/METALLIC accents
+- Use ELEGANT GRADIENTS and minimal design elements
+- Include subtle luxury patterns or textures (like marble, leather, or gold)
+- Keep everything SOPHISTICATED with perfect symmetry
+- Add subtle shimmer or reflection effects
+- Make it feel expensive and exclusive
+- Style: premium, high-end, elegant, VIP
+` : ''}
+${isCosmicStyle ? `
+- Create a COSMIC MYSTICAL background with GALAXY elements
+- Include LAYERED COSMIC effects (nebulae, stars, cosmic energy)
+- Add subtle SACRED GEOMETRY or mystical symbols
+- Use DEEP SPACE COLORS with glowing accents
+- Create a sense of infinite depth and wonder
+- Style: mystical, cosmic, transcendent, spiritual
+` : ''}
+- NO text in image. NO 'password', 'login', 'unlock', etc.
+- DO NOT include buttons, inputs, or labels
+- DO NOT add shadows or overlays – design should look like a clean background
+- Make the design collectible and NFT-worthy
+- Strong visual appeal for digital wallet skin
+`;
   } else {
     enhancedPrompt = `Create an extremely minimal and neutral background for a crypto wallet interface:
     - Based on this style description: ${sanitizedPrompt}
