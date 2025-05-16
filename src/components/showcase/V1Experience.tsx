@@ -1,23 +1,25 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 interface V1ExperienceProps {
   inView: boolean;
 }
 
 const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
+  // Core state
   const [autoplaySpeed] = useState(5000); // 5 seconds per slide
   const [currentIndex, setCurrentIndex] = useState(0);
   const isMobile = useIsMobile();
   const [hasError, setHasError] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [initAttempts, setInitAttempts] = useState(0);
+  const carouselContainerRef = useRef<HTMLDivElement>(null);
   
-  // Add the new images to the existing collection
+  // Collection of wallet screens
   const walletScreens = [
     // Original images
     '/lovable-uploads/dee86368-28b2-44f6-a28e-a13e40b49386.png',
@@ -39,7 +41,7 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
     '/lovable-uploads/f4b10743-aa1f-4567-ad24-07f80f14b668.png',
   ];
   
-  // Add error handling to embla carousel
+  // Carousel initialization with better error handling
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: "center",
@@ -47,89 +49,197 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
     containScroll: "trimSnaps",
   });
 
-  // Debug logging for carousel
+  // Preload all images before initializing carousel
   useEffect(() => {
-    console.log('V1Experience mounted, isMobile:', isMobile);
-    console.log('V1Experience inView:', inView);
-    console.log('Embla API initialized:', !!emblaApi);
-    
-    // Check if images are loading
-    const imageLoadCheck = async () => {
+    console.log('Starting image preloading');
+    const preloadImages = async () => {
       try {
-        const results = await Promise.all(walletScreens.map(src => {
-          return new Promise((resolve) => {
+        const imagePromises = walletScreens.map((src) => {
+          return new Promise((resolve, reject) => {
             const img = new Image();
-            img.onload = () => resolve(true);
-            img.onerror = () => resolve(false);
+            img.onload = () => {
+              console.log(`Image loaded successfully: ${src}`);
+              resolve(true);
+            };
+            img.onerror = (err) => {
+              console.error(`Failed to load image: ${src}`, err);
+              reject(new Error(`Failed to load image: ${src}`));
+            };
             img.src = src;
           });
-        }));
-        
-        console.log('Image load results:', results);
+        });
+
+        try {
+          await Promise.all(imagePromises);
+          console.log('All images preloaded successfully');
+          setImagesLoaded(true);
+        } catch (loadError) {
+          console.error('Error loading images:', loadError);
+          // Continue anyway after reporting errors
+          setImagesLoaded(true);
+        }
       } catch (error) {
-        console.error('Error checking images:', error);
+        console.error('Error in image preloading:', error);
+        setImagesLoaded(true); // Continue despite errors
       }
     };
+
+    preloadImages();
+  }, [walletScreens]);
+
+  // Enhanced debug logging for component lifecycle
+  useEffect(() => {
+    console.log('V1Experience component mounted');
+    console.log('V1Experience inView:', inView);
+    console.log('V1Experience isMobile:', isMobile);
+    console.log('Container dimensions:', {
+      width: carouselContainerRef.current?.offsetWidth,
+      height: carouselContainerRef.current?.offsetHeight,
+    });
     
-    imageLoadCheck();
+    // Log browser environment
+    console.log('Browser info:', {
+      userAgent: navigator.userAgent,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    });
     
-    // Error recovery mechanism
-    if (!emblaApi && !hasError) {
-      console.log('Attempting to recover from Embla initialization failure');
+    return () => {
+      console.log('V1Experience component unmounting');
+    };
+  }, [inView, isMobile]);
+  
+  // Embla API monitoring and error recovery
+  useEffect(() => {
+    console.log('Embla API state:', { 
+      initialized: !!emblaApi, 
+      hasError, 
+      initAttempts,
+      imagesLoaded 
+    });
+    
+    // Recovery mechanism - attempt to reinitialize if needed
+    if (!emblaApi && imagesLoaded && initAttempts < 3) {
+      const timer = setTimeout(() => {
+        console.log(`Attempting to recover carousel (attempt ${initAttempts + 1})`);
+        setInitAttempts(prev => prev + 1);
+        // Force re-render to trigger reinit of carousel
+      }, 500 * (initAttempts + 1)); // Increasing backoff
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // Set error state if all recovery attempts failed
+    if (!emblaApi && initAttempts >= 3 && !hasError) {
+      console.log('All recovery attempts failed, setting error state');
       setHasError(true);
     }
-  }, [emblaApi, inView, isMobile, hasError, walletScreens]);
+  }, [emblaApi, hasError, initAttempts, imagesLoaded]);
 
+  // Handle slide selection and tracking
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     try {
-      setCurrentIndex(emblaApi.selectedScrollSnap());
+      const newIndex = emblaApi.selectedScrollSnap();
+      console.log('Carousel slide changed to:', newIndex);
+      setCurrentIndex(newIndex);
     } catch (err) {
       console.error('Error in embla onSelect:', err);
+      setHasError(true);
     }
   }, [emblaApi]);
 
+  // Setup event listeners for the carousel
   useEffect(() => {
     if (!emblaApi) return;
     
     try {
+      console.log('Setting up embla event listeners');
       emblaApi.on('select', onSelect);
       onSelect();
       
+      // Test if scrolling works
+      setTimeout(() => {
+        try {
+          emblaApi.scrollNext();
+          console.log('Initial scroll test succeeded');
+        } catch (e) {
+          console.error('Initial scroll test failed:', e);
+        }
+      }, 100);
+      
       return () => {
+        console.log('Removing embla event listeners');
         emblaApi.off('select', onSelect);
       };
     } catch (err) {
       console.error('Error setting up embla event listeners:', err);
+      setHasError(true);
+      return undefined;
     }
   }, [emblaApi, onSelect]);
   
+  // Autoplay functionality
   useEffect(() => {
     let interval: number | undefined;
     
-    if (inView && emblaApi) {
+    if (inView && emblaApi && !hasError) {
+      console.log('Starting autoplay');
       interval = window.setInterval(() => {
         try {
           emblaApi.scrollNext();
         } catch (err) {
           console.error('Error in autoplay scroll:', err);
           clearInterval(interval);
+          setHasError(true);
         }
       }, autoplaySpeed);
     }
     
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        console.log('Stopping autoplay');
+        clearInterval(interval);
+      }
     };
-  }, [inView, autoplaySpeed, emblaApi]);
+  }, [inView, autoplaySpeed, emblaApi, hasError]);
 
-  // Style classes for buttons
-  const buttonClass = "carousel-button flex items-center justify-center rounded-full backdrop-blur-sm shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-30";
-  const desktopButtonClass = "h-10 w-10 bg-white/10 hover:bg-white/20 border border-white/20 text-white";
-  const mobileButtonClass = "h-8 w-8 bg-white/15 hover:bg-white/25 border border-white/15 text-white";
+  // Style classes with animations for buttons
+  const buttonClass = "carousel-button flex items-center justify-center rounded-full backdrop-blur-sm shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-30 animate-fadeIn";
+  const desktopButtonClass = "h-10 w-10 bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:shadow-[0_0_10px_rgba(255,255,255,0.3)]";
+  const mobileButtonClass = "h-8 w-8 bg-white/15 hover:bg-white/25 border border-white/15 text-white hover:shadow-[0_0_8px_rgba(255,255,255,0.25)]";
+  
+  // Helper functions for carousel navigation
+  const scrollPrev = () => {
+    try {
+      emblaApi?.scrollPrev();
+      console.log('Manual prev navigation');
+    } catch (e) {
+      console.error('Error in manual prev navigation:', e);
+    }
+  };
+  
+  const scrollNext = () => {
+    try {
+      emblaApi?.scrollNext();
+      console.log('Manual next navigation');
+    } catch (e) {
+      console.error('Error in manual next navigation:', e);
+    }
+  };
+  
+  const scrollTo = (index: number) => {
+    try {
+      emblaApi?.scrollTo(index);
+      console.log('Manual navigation to slide:', index);
+    } catch (e) {
+      console.error(`Error navigating to slide ${index}:`, e);
+    }
+  };
   
   // Fallback rendering in case of errors
   if (hasError) {
+    // Enhanced fallback with more accessible controls
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center">
         <div className="lg:col-span-5 space-y-6 px-4 lg:px-0">
@@ -148,26 +258,38 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
         </div>
         
         <div className="lg:col-span-7">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {walletScreens.slice(0, 3).map((screen, index) => (
-              <div key={index} className="aspect-[9/16] relative overflow-hidden rounded-lg bg-black/30 border border-white/10">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 overflow-hidden relative">
+            {walletScreens.slice(0, 6).map((screen, index) => (
+              <div key={index} className="aspect-[9/16] relative overflow-hidden rounded-lg bg-black/30 border border-white/10 transition-all duration-300 hover:scale-105">
                 <img 
                   src={screen} 
                   alt={`Wallet screen ${index + 1}`}
                   className="w-full h-full object-cover object-center"
+                  loading="eager"
                   onError={(e) => {
-                    console.error(`Failed to load image: ${screen}`);
+                    console.error(`Failed to load image in fallback: ${screen}`);
                     e.currentTarget.src = '/placeholder.svg';
                   }}
                 />
               </div>
             ))}
+            
+            {/* Simple navigation in fallback mode */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+              <button 
+                className={`${buttonClass} ${mobileButtonClass}`}
+                aria-label="View more designs"
+              >
+                <span className="text-xs font-medium px-2">View all designs</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
   
+  // Main component rendering
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-center">
       <div className="lg:col-span-5 space-y-6 transition-all duration-1000 delay-200 px-4 lg:px-0 z-10">
@@ -186,120 +308,141 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
       </div>
       
       <div className="lg:col-span-7 transition-all duration-1000 delay-500 z-0">
-        <div className="max-w-full relative">
-          <div className="relative w-full" ref={emblaRef}>
-            <div className="flex py-8">
-              {walletScreens.map((screen, index) => {
-                const isCenter = index === currentIndex;
-                return (
-                  <div 
-                    key={index} 
-                    className={cn(
-                      "relative min-w-0 transition-all duration-500 ease-in-out",
-                      isMobile 
-                        ? "flex-[0_0_80%] pl-4" 
-                        : "flex-[0_0_40%] pl-4"
-                    )}
-                  >
+        <div className="max-w-full relative" ref={carouselContainerRef}>
+          {imagesLoaded ? (
+            <div className="relative w-full" ref={emblaRef}>
+              <div className="flex py-8">
+                {walletScreens.map((screen, index) => {
+                  const isCenter = index === currentIndex;
+                  return (
                     <div 
+                      key={index} 
                       className={cn(
-                        "bg-black/30 backdrop-blur-sm border border-white/10 overflow-hidden rounded-lg transition-all duration-500 ease-in-out",
-                        isCenter 
-                          ? "scale-105 shadow-[0_0_25px_rgba(255,255,255,0.15)]" 
-                          : "scale-90 opacity-70"
+                        "relative min-w-0 transition-all duration-500 ease-in-out",
+                        isMobile 
+                          ? "flex-[0_0_80%] pl-4" 
+                          : "flex-[0_0_40%] pl-4"
                       )}
                     >
-                      <div className="aspect-[9/16] relative overflow-hidden rounded-md">
-                        <img 
-                          src={screen} 
-                          alt={`Wallet screen ${index + 1}`} 
-                          className={cn(
-                            "w-full h-full object-cover object-center transition-opacity duration-300",
-                            inView ? "opacity-100" : "opacity-0"
-                          )}
-                          onError={(e) => {
-                            console.error(`Failed to load image: ${screen}`);
-                            e.currentTarget.src = '/placeholder.svg';
-                          }}
-                        />
+                      <div 
+                        className={cn(
+                          "bg-black/30 backdrop-blur-sm border border-white/10 overflow-hidden rounded-lg transition-all duration-500 ease-in-out",
+                          isCenter 
+                            ? "scale-105 shadow-[0_0_25px_rgba(255,255,255,0.15)]" 
+                            : "scale-90 opacity-70"
+                        )}
+                      >
+                        <div className="aspect-[9/16] relative overflow-hidden rounded-md">
+                          <img 
+                            src={screen} 
+                            alt={`Wallet screen ${index + 1}`} 
+                            className={cn(
+                              "w-full h-full object-cover object-center transition-opacity duration-300",
+                              inView ? "opacity-100" : "opacity-0"
+                            )}
+                            loading="eager"
+                            onError={(e) => {
+                              console.error(`Failed to load image: ${screen}`);
+                              e.currentTarget.src = '/placeholder.svg';
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          
-          {/* Desktop navigation buttons */}
-          <div className="absolute top-1/2 left-4 -translate-y-1/2 hidden md:block z-10">
-            <button 
-              onClick={() => emblaApi?.scrollPrev()} 
-              className={`${buttonClass} ${desktopButtonClass}`}
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <div className="absolute top-1/2 right-4 -translate-y-1/2 hidden md:block z-10">
-            <button 
-              onClick={() => emblaApi?.scrollNext()} 
-              className={`${buttonClass} ${desktopButtonClass}`}
-              aria-label="Next slide"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
-          
-          {/* Mobile navigation buttons - shown at bottom for better mobile UX */}
-          <div className="flex justify-between items-center mt-4 px-4 md:hidden">
-            <button 
-              onClick={() => emblaApi?.scrollPrev()} 
-              className={`${buttonClass} ${mobileButtonClass}`}
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            
-            <div className="flex justify-center gap-1.5">
-              {walletScreens.map((_, index) => (
-                <button
-                  key={index}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    currentIndex === index 
-                      ? 'bg-purple-500 w-4' 
-                      : 'bg-white/30 w-2'
-                  }`}
-                  onClick={() => emblaApi?.scrollTo(index)}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
+          ) : (
+            // Loading state while images preload
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-pulse flex space-x-4">
+                <div className="h-48 w-32 bg-white/10 rounded-lg"></div>
+                <div className="h-48 w-32 bg-white/20 rounded-lg"></div>
+                <div className="h-48 w-32 bg-white/10 rounded-lg"></div>
+              </div>
             </div>
-            
-            <button 
-              onClick={() => emblaApi?.scrollNext()} 
-              className={`${buttonClass} ${mobileButtonClass}`}
-              aria-label="Next slide"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          )}
           
-          {/* Desktop indicator dots */}
-          <div className="hidden md:flex justify-center mt-4 gap-2">
-            {walletScreens.map((_, index) => (
-              <button
-                key={index}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  currentIndex === index 
-                    ? 'bg-purple-500 w-6' 
-                    : 'bg-white/30 w-2 hover:bg-white/50'
-                }`}
-                onClick={() => emblaApi?.scrollTo(index)}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
+          {/* Desktop navigation buttons with enhanced styling and animations */}
+          {imagesLoaded && (
+            <>
+              <div className="absolute top-1/2 left-4 -translate-y-1/2 hidden md:block z-10">
+                <button 
+                  onClick={scrollPrev} 
+                  className={`${buttonClass} ${desktopButtonClass} hover:animate-pulse`}
+                  aria-label="Previous slide"
+                  style={{animation: "buttonGlow 2s infinite"}}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="absolute top-1/2 right-4 -translate-y-1/2 hidden md:block z-10">
+                <button 
+                  onClick={scrollNext} 
+                  className={`${buttonClass} ${desktopButtonClass} hover:animate-pulse`}
+                  aria-label="Next slide"
+                  style={{animation: "buttonGlow 2s infinite"}}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+              
+              {/* Mobile navigation buttons - shown at bottom for better mobile UX */}
+              <div className="flex justify-between items-center mt-4 px-4 md:hidden">
+                <button 
+                  onClick={scrollPrev} 
+                  className={`${buttonClass} ${mobileButtonClass} hover:animate-pulse`}
+                  aria-label="Previous slide"
+                  style={{animation: "buttonGlow 2s infinite"}}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                
+                <div className="flex justify-center gap-1.5">
+                  {walletScreens.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        currentIndex === index 
+                          ? 'bg-purple-500 w-4 animate-dotPulse' 
+                          : 'bg-white/30 w-2 hover:bg-white/50'
+                      }`}
+                      onClick={() => scrollTo(index)}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+                
+                <button 
+                  onClick={scrollNext} 
+                  className={`${buttonClass} ${mobileButtonClass} hover:animate-pulse`}
+                  aria-label="Next slide"
+                  style={{animation: "buttonGlow 2s infinite"}}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              
+              {/* Desktop indicator dots with animation */}
+              <div className="hidden md:flex justify-center mt-4 gap-2">
+                {walletScreens.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      currentIndex === index 
+                        ? 'bg-purple-500 w-6 animate-dotPulse' 
+                        : 'bg-white/30 w-2 hover:bg-white/50'
+                    }`}
+                    onClick={() => scrollTo(index)}
+                    aria-label={`Go to slide ${index + 1}`}
+                    style={currentIndex === index ? {animation: "dotPulse 1.5s infinite"} : {}}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
