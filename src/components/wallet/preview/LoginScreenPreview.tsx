@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
 import { 
@@ -73,34 +72,21 @@ const getOptimalTextStyle = (backgroundColor: string, accentColor: string, hasBa
   // Determine if we need a glow effect (especially useful for dark backgrounds with images)
   const needsGlow = hasBackgroundImage || backgroundColor.includes('#13') || backgroundColor.includes('rgb(19');
   
-  // Determine if we should use a gradient or solid color
-  const useGradient = !hasBackgroundImage || Math.random() > 0.5; // Randomize for some variety
-  
-  // Calculate a suitable glow color (opposite of text for maximum effect)
-  const glowColor = contrastColor === '#000000' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)';
-  
-  if (useGradient) {
-    return {
-      background: `linear-gradient(to right, ${contrastColor}, ${accentColor})`,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      textShadow: needsGlow ? `0 0 8px ${glowColor}` : 'none',
-      letterSpacing: '1px',
-      textTransform: 'lowercase' as 'lowercase', // Type assertion to match React.CSSProperties
-      fontSize: '1.25rem', // text-lg equivalent
-      fontWeight: 'bold',
-    };
-  } else {
-    // For better visibility on complex backgrounds, use solid color with optional glow
-    return {
-      color: contrastColor,
-      textShadow: needsGlow ? `0 0 8px ${glowColor}, 0 0 12px ${accentColor}80` : 'none',
-      letterSpacing: '1px',
-      textTransform: 'lowercase' as 'lowercase', // Type assertion to match React.CSSProperties
-      fontSize: '1.35rem', // slightly larger for better visibility
-      fontWeight: 'bold',
-    };
-  }
+  // For better visibility and more reliable rendering, prioritize solid styling with optional effects
+  return {
+    color: needsGlow ? accentColor : contrastColor,
+    textShadow: needsGlow ? `0 0 8px ${accentColor}80, 0 0 4px rgba(0,0,0,0.3)` : 'none',
+    letterSpacing: '0.5px',
+    textTransform: 'lowercase' as 'lowercase',
+    fontSize: '1.35rem',
+    fontWeight: 'bold',
+    position: 'relative',
+    zIndex: 10,
+    padding: '0.25rem 0.5rem',
+    borderRadius: '0.25rem',
+    transition: 'all 0.3s ease',
+    display: 'inline-block',
+  };
 };
 
 export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
@@ -187,8 +173,20 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
 
       {/* Header with centered phantom branding */}
       <div className="p-5 flex justify-center items-center relative z-10">
-        <div className="text-center" style={textStyle}>
+        <div 
+          className="text-center relative" 
+          style={textStyle}
+        >
           phantom
+          {/* Add subtle animated accent line below text for better visibility */}
+          <div 
+            className="absolute bottom-0 left-0 w-full h-[2px] transform origin-left"
+            style={{ 
+              backgroundColor: style.accentColor || '#9945FF',
+              animation: 'pulseWidth 3s infinite alternate',
+              opacity: 0.6
+            }}
+          />
         </div>
         <HelpCircle 
           className="h-5 w-5 cursor-pointer transition-transform hover:scale-110 hover:rotate-12 absolute right-5" 
