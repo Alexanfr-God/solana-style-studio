@@ -31,15 +31,21 @@ const Index = () => {
     logViewportInfo();
     window.addEventListener('resize', logViewportInfo);
     
-    // Check if elements are visible
+    // Check if showcase carousel is visible and properly loaded
     setTimeout(() => {
       const showcaseEl = document.querySelector('#showcase-section');
+      const carouselEl = document.querySelector('.embla');
       const footerEl = document.querySelector('footer');
+      
       console.log('Showcase section visible:', !!showcaseEl);
+      console.log('Carousel element visible:', !!carouselEl);
       console.log('Footer visible:', !!footerEl);
       
       if (showcaseEl) {
         console.log('Showcase position:', showcaseEl.getBoundingClientRect());
+      }
+      if (carouselEl) {
+        console.log('Carousel position:', carouselEl.getBoundingClientRect());
       }
       if (footerEl) {
         console.log('Footer position:', footerEl.getBoundingClientRect());

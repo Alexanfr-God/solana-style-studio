@@ -3,6 +3,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 interface V1ExperienceProps {
   inView: boolean;
@@ -14,7 +17,9 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
   const isMobile = useIsMobile();
   const [hasError, setHasError] = useState(false);
   
+  // Add the new images to the existing collection
   const walletScreens = [
+    // Original images
     '/lovable-uploads/dee86368-28b2-44f6-a28e-a13e40b49386.png',
     '/lovable-uploads/fc482f64-4257-45a3-8925-2e671d1b857c.png',
     '/lovable-uploads/a5f8972f-b18d-4f17-8799-eeb025813f3b.png',
@@ -24,6 +29,14 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
     '/lovable-uploads/6c5f6524-8f98-4e95-add5-5a11710f4d4e.png',
     '/lovable-uploads/54546cd9-bd65-488c-bdb0-f7944c4cafe5.png',
     '/lovable-uploads/e53d0d83-93dd-41e8-8644-9dce1599f998.png',
+    // New images
+    '/lovable-uploads/a8a0aa8b-cabe-4031-b6c4-c3fd3c4007cd.png',
+    '/lovable-uploads/d4fc8532-6040-450a-a8cf-d1d459c42e46.png',
+    '/lovable-uploads/7cbac3b4-b6e4-4b03-bd16-6d11f9a0a6fd.png',
+    '/lovable-uploads/16a1428b-9786-4800-9d26-897ce3db78af.png',
+    '/lovable-uploads/ac5b7bea-562a-4609-a80b-c37750039adc.png',
+    '/lovable-uploads/9dd9ce9c-2158-40cf-98ee-2e189bd56595.png',
+    '/lovable-uploads/f4b10743-aa1f-4567-ad24-07f80f14b668.png',
   ];
   
   // Add error handling to embla carousel
@@ -109,6 +122,11 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
       if (interval) clearInterval(interval);
     };
   }, [inView, autoplaySpeed, emblaApi]);
+
+  // Style classes for buttons
+  const buttonClass = "carousel-button flex items-center justify-center rounded-full backdrop-blur-sm shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-30";
+  const desktopButtonClass = "h-10 w-10 bg-white/10 hover:bg-white/20 border border-white/20 text-white";
+  const mobileButtonClass = "h-8 w-8 bg-white/15 hover:bg-white/25 border border-white/15 text-white";
   
   // Fallback rendering in case of errors
   if (hasError) {
@@ -212,35 +230,71 @@ const V1Experience: React.FC<V1ExperienceProps> = ({ inView }) => {
             </div>
           </div>
           
-          <div className="absolute top-1/2 left-0 -translate-y-1/2 hidden md:block z-10">
+          {/* Desktop navigation buttons */}
+          <div className="absolute top-1/2 left-4 -translate-y-1/2 hidden md:block z-10">
             <button 
               onClick={() => emblaApi?.scrollPrev()} 
-              className="h-8 w-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-all"
+              className={`${buttonClass} ${desktopButtonClass}`}
               aria-label="Previous slide"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
+              <ChevronLeft className="h-5 w-5" />
             </button>
           </div>
           
-          <div className="absolute top-1/2 right-0 -translate-y-1/2 hidden md:block z-10">
+          <div className="absolute top-1/2 right-4 -translate-y-1/2 hidden md:block z-10">
             <button 
               onClick={() => emblaApi?.scrollNext()} 
-              className="h-8 w-8 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/70 transition-all"
+              className={`${buttonClass} ${desktopButtonClass}`}
               aria-label="Next slide"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
+              <ChevronRight className="h-5 w-5" />
             </button>
           </div>
           
-          <div className="flex justify-center mt-4 gap-2">
+          {/* Mobile navigation buttons - shown at bottom for better mobile UX */}
+          <div className="flex justify-between items-center mt-4 px-4 md:hidden">
+            <button 
+              onClick={() => emblaApi?.scrollPrev()} 
+              className={`${buttonClass} ${mobileButtonClass}`}
+              aria-label="Previous slide"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            <div className="flex justify-center gap-1.5">
+              {walletScreens.map((_, index) => (
+                <button
+                  key={index}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    currentIndex === index 
+                      ? 'bg-purple-500 w-4' 
+                      : 'bg-white/30 w-2'
+                  }`}
+                  onClick={() => emblaApi?.scrollTo(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+            
+            <button 
+              onClick={() => emblaApi?.scrollNext()} 
+              className={`${buttonClass} ${mobileButtonClass}`}
+              aria-label="Next slide"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          
+          {/* Desktop indicator dots */}
+          <div className="hidden md:flex justify-center mt-4 gap-2">
             {walletScreens.map((_, index) => (
               <button
                 key={index}
-                className={`h-2 rounded-full transition-all duration-300 ${currentIndex === index ? 'bg-purple-500 w-6' : 'bg-gray-600 w-2'}`}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentIndex === index 
+                    ? 'bg-purple-500 w-6' 
+                    : 'bg-white/30 w-2 hover:bg-white/50'
+                }`}
                 onClick={() => emblaApi?.scrollTo(index)}
                 aria-label={`Go to slide ${index + 1}`}
               />
