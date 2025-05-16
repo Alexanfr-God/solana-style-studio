@@ -18,3 +18,29 @@
 .text-shadow-glow {
   text-shadow: 0 0 8px rgba(153, 69, 255, 0.7);
 }
+
+/* Custom Scrollbar */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  margin: 4px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: rgba(153, 69, 255, 0.5);
+  border-radius: 10px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: rgba(153, 69, 255, 0.8);
+}
+
+/* For Firefox */
+.scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(153, 69, 255, 0.5) rgba(0, 0, 0, 0.2);
+}

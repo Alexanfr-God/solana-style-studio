@@ -16,7 +16,7 @@ const sections = [{
   title: 'About the Project',
   content: <>
         <Card className="bg-black/40 border-white/5 shadow-lg">
-          <CardContent className="p-6">
+          <CardContent className="p-6 max-h-[70vh] overflow-y-auto scrollbar-custom">
             <p className="mb-4"><strong>Wallet Coast Customs (WCC)</strong> is the world's first AI-powered platform that lets anyone customize the look of their Web3 wallet and turn it into a collectible NFT. We're creating a new layer of digital identity — your wallet shouldn't look like everyone else's. It should look like you.</p>
             
             <p className="mb-4"><strong className="text-solana-purple">🔥 Version v1 – Live and Working</strong><br />
@@ -25,7 +25,7 @@ const sections = [{
             <p className="mb-4">This first version is far from perfect — but it works, and it proves the concept. We're actively improving how the system interprets prompts and processes images to generate cleaner, more cohesive results.</p>
             
             <p className="mb-4"><strong className="text-solana-purple">🤖 Beyond Visuals: Structured AI Design</strong><br />
-            We built our own custom GPT — Wallet Coast Customs GPT — that not only generates visual skins but also outputs a complete UI structure in JSON:</p>
+            We built our own custom GPT — <a href="https://chatgpt.com/g/g-6825f681e12c8191a9e193a6a2104b46-wallet-coast-customs" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">Wallet Coast Customs GPT</a> — that not only generates visual skins but also outputs a complete UI structure in JSON:</p>
             
             <div className="pl-4 border-l-2 border-solana-purple/30 mb-4">
               <p className="mb-2">background, buttons, logo, text — every element layered as a PNG,</p>
