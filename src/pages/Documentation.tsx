@@ -15,28 +15,55 @@ const sections = [{
   id: 'about',
   title: 'About the Project',
   content: <>
-        <p className="mb-4"><strong>Wallet Coast Customs (WCC)</strong> is the first AI-powered platform that allows anyone to generate, customize, and tokenize Web3 wallet interfaces. The project empowers users to create unique login screen skins for Phantom Wallet and mint them as NFTs. Each skin becomes a tradable digital asset with resale functionality.</p>
+        <p className="mb-4"><strong>Wallet Coast Customs (WCC)</strong> is the world's first AI-powered platform that lets anyone customize the look of their Web3 wallet and turn it into a collectible NFT. We're creating a new layer of digital identity — your wallet shouldn't look like everyone else's. It should look like you.</p>
         
-        <p className="mb-4">The current release — <strong>v1</strong> — enables basic customization of the wallet's login view. Users can upload an image and describe their desired vibe to generate a personalized design powered by AI.</p>
+        <p className="mb-4"><strong>🔥 Version v1 – Live and Working</strong><br />
+        In v1, we launched a basic login screen customization tool for Phantom Wallet via Supabase Edge Function. Users upload an image, describe a desired vibe, and AI generates a personalized design.</p>
         
-        <p className="mb-4">We are currently developing our own Solana smart contract to enable native NFT minting, royalty control, and seamless wallet skin integration — without relying on third-party APIs.</p>
+        <p className="mb-4">This first version is far from perfect — but it works, and it proves the concept. We're actively improving how the system interprets prompts and processes images to generate cleaner, more cohesive results.</p>
         
-        <p className="mb-4"><strong>Coming soon:</strong></p>
+        <p className="mb-4"><strong>🤖 Beyond Visuals: Structured AI Design</strong><br />
+        We built our own custom GPT — Wallet Coast Customs GPT — that not only generates visual skins but also outputs a complete UI structure in JSON:</p>
+        
+        <p className="mb-4">background, buttons, logo, text — every element layered as a PNG,</p>
+        
+        <p className="mb-4">ready to mint as an NFT and later apply as a skin to your wallet.</p>
+        
+        <p className="mb-4">We've already received positive feedback from the OpenAI team, and we're awaiting early API access — ready to bring our GPT into the world of Web3 customization.</p>
+        
+        <p className="mb-4"><strong>⚙️ Tech Stack</strong></p>
         <ul className="list-disc pl-5 mb-4 space-y-2">
-          <li><strong>v3 – Wallet Masks</strong>: visual elements that decorate the wallet exterior — memes, characters, custom frames. This pushes customization into the realm of signature style.</li>
-          <li><strong>v2 – UI Style Editor</strong>: after generating a base skin, our AI will extract colors and fonts to let users fine-tune the interface style — typography, buttons, backgrounds, etc.</li>
+          <li>Supabase Edge Functions – server logic for theme generation and control</li>
+          <li>Custom GPT (Wallet Coast Customs) – AI-generated UI layout in JSON</li>
+          <li>OpenAI DALL·E API – visual style rendering</li>
+          <li>Solana Smart Contract – our own contract for NFT minting, royalties, and collections</li>
+          <li>Lovable – used as early-stage dev playground and UI builder</li>
         </ul>
         
-        <p className="mb-4">All styles are stored as NFTs and can belong to exclusive drops, 1-of-1s, or trending collections.</p>
+        <p className="mb-4"><strong>🚀 Coming Soon</strong></p>
+        <p className="mb-4"><strong>v2 – UI Style Editor</strong><br />
+        After skin generation, our AI will extract fonts and color palettes. Users can manually fine-tune the interface — text, background, buttons, borders.</p>
         
-        <p className="mb-4"><strong>The tech stack includes:</strong></p>
+        <p className="mb-4"><strong>v3 – Wallet Masks</strong><br />
+        Visual add-ons that decorate the wallet exterior — memes, frames, characters, art. Wallets become expressive and iconic.</p>
+        
+        <p className="mb-4">All styles are saved as NFTs and can belong to:</p>
         <ul className="list-disc pl-5 mb-4 space-y-2">
-          <li>Supabase (Edge Functions + Auth)</li>
-          <li>Lovable (interface and AI integration)</li>
-          <li>In future: LayerZero for cross-chain wallet skins (Solana ↔ Ethereum, Arbitrum, etc.)</li>
+          <li>exclusive drops</li>
+          <li>curated collections</li>
+          <li>or 1-of-1s</li>
         </ul>
         
-        <p><strong>Wallet Coast Customs</strong> isn't just wallet styling — it's a new form of Web3 identity. Your wallet should look as iconic as your PFP.</p>
+        <p className="mb-4"><strong>🌊 Our Mission</strong><br />
+        Wallet Coast Customs is not just customization.</p>
+        
+        <p className="mb-4">It's self-expression.<br />
+        It's Web3 identity.<br />
+        It's your personality in pixels.</p>
+        
+        <p className="mb-4">Your PFP is unique.<br />
+        Your NFTs are a statement.<br />
+        Now your wallet can be iconic too.</p>
       </>
 }, {
   id: 'roadmap',
