@@ -40,7 +40,10 @@ const stylingTips = [
   "For a clean professional look, try 'minimal white with subtle gradients'",
   "Want something fun? Try 'playful with bright colors and rounded corners'",
   "For luxury feel, try 'dark mode with gold accents and glass effect'",
-  "Nature inspired? Try 'forest theme with earthy tones and organic shapes'"
+  "Nature inspired? Try 'forest theme with earthy tones and organic shapes'",
+  "Try 'cartoon pepe wallet' for a meme-inspired design",
+  "For luxury theme try 'gold dubai luxury wallet'",
+  "For cosmic feel try 'space galaxy cosmic wallet'"
 ];
 
 export const useCustomizationStore = create<CustomizationState>((set) => ({
@@ -62,8 +65,8 @@ export const useCustomizationStore = create<CustomizationState>((set) => ({
   
   resetLayer: (layer) => set((state) => ({
     ...(layer === 'login' 
-      ? { loginStyle: { ...defaultLoginStyle } } 
-      : { walletStyle: { ...defaultWalletStyle } })
+      ? { loginStyle: { ...defaultLoginStyle }, isGenerating: false } 
+      : { walletStyle: { ...defaultWalletStyle }, isGenerating: false })
   })),
   
   setPrompt: (prompt) => set({ prompt }),

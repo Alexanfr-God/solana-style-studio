@@ -29,19 +29,56 @@ const generateImageWithOpenAI = async (prompt: string, layerType: string): Promi
     .replace(/username/gi, '')
     .trim();
   
+  // Detect style category from prompt
+  const isMemeStyle = /pepe|meme|cartoon|anime|comic|doge|fun/i.test(sanitizedPrompt);
+  const isLuxuryStyle = /luxury|gold|premium|expensive|elite|dubai|trump|high-end|vip/i.test(sanitizedPrompt);
+  const isCosmicStyle = /space|cosmos|galaxy|spiritual|cosmic|universe|nebula|star/i.test(sanitizedPrompt);
+  
   // Layer-specific prompt engineering for consistent results
   let enhancedPrompt = "";
   
   if (layerType === "login") {
+    let styleGuidance = "";
+    
+    if (isMemeStyle) {
+      styleGuidance = `
+        - Create a cartoon/meme style with clear lines and bold color areas
+        - Focus on a central character or icon that fits the theme
+        - Use vibrant, fun colors with good contrast
+        - Keep the center area relatively clear for text overlay
+        - Style: playful, expressive, memorable
+      `;
+    } else if (isLuxuryStyle) {
+      styleGuidance = `
+        - Create a luxury branding style with soft gradients and golden tones
+        - Use minimalist, elegant design elements
+        - Keep everything center-aligned and sophisticated
+        - Incorporate subtle texture or pattern if appropriate
+        - Style: premium, expensive, refined
+      `;
+    } else if (isCosmicStyle) {
+      styleGuidance = `
+        - Create a galaxy-like background with cosmic elements
+        - Include subtle glows and layered visual elements
+        - Use deep blues, purples and cosmic colors
+        - Add subtle symbolic elements that fit the theme
+        - Style: mystical, expansive, awe-inspiring
+      `;
+    } else {
+      styleGuidance = `
+        - Create a professional crypto wallet login background
+        - Use 2-3 colors for a cohesive look
+        - Create subtle artistic background with soft visual depth
+        - Style: modern, sophisticated, subtle
+      `;
+    }
+    
     enhancedPrompt = `Create a professional crypto wallet login background with these requirements:
     - Based on this style description: ${sanitizedPrompt}
-    - Use ONLY 2-3 colors for a cohesive, clean look
-    - Create a subtle, artistic background with soft visual depth (blurred gradients or textures)
-    - If logo elements are present, integrate them subtly
+    ${styleGuidance}
     - DO NOT include ANY user interface elements like input fields, buttons, or text prompts
     - NO text fields, buttons, password inputs, or login elements
     - No geometric shapes that would compete with UI elements
-    - Style: modern, sophisticated, subtle
     - Create ONLY a BACKGROUND DESIGN, not a complete UI`;
   } else {
     enhancedPrompt = `Create an extremely minimal and neutral background for a crypto wallet interface:
@@ -211,10 +248,24 @@ const getContrastColor = (color: string): string => {
 const determineFontFamily = (prompt: string, layerType: string): string => {
   const promptLower = prompt.toLowerCase();
   
-  // Analyze prompt keywords for appropriate font selection
+  // Detect style category from prompt more comprehensively
+  const isMemeStyle = /pepe|meme|cartoon|anime|comic|doge|fun/i.test(promptLower);
+  const isLuxuryStyle = /luxury|gold|premium|expensive|elite|dubai|trump|high-end|vip/i.test(promptLower);
+  const isCosmicStyle = /space|cosmos|galaxy|spiritual|cosmic|universe|nebula|star/i.test(promptLower);
+  
+  // Assign specific fonts based on style categories
+  if (isMemeStyle) {
+    return "Comic Neue, sans-serif";
+  } else if (isLuxuryStyle) {
+    return "Playfair Display, serif";
+  } else if (isCosmicStyle) {
+    return "Space Grotesk, sans-serif";
+  } 
+  
+  // If no specific category matched, fallback to keyword analysis
   if (promptLower.includes("futuristic") || promptLower.includes("sci-fi") || promptLower.includes("tech")) {
     return "Space Grotesk, sans-serif";
-  } else if (promptLower.includes("elegant") || promptLower.includes("luxury") || promptLower.includes("serif")) {
+  } else if (promptLower.includes("elegant") || promptLower.includes("serif")) {
     return "Playfair Display, serif";
   } else if (promptLower.includes("playful") || promptLower.includes("fun") || promptLower.includes("cartoon")) {
     return "Comic Neue, sans-serif";
@@ -307,6 +358,31 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
       styleNotes: "minimal, functional"
     };
   
+  // Detect style category from prompt
+  const isMemeStyle = /pepe|meme|cartoon|anime|comic|doge|fun/i.test(prompt.toLowerCase());
+  const isLuxuryStyle = /luxury|gold|premium|expensive|elite|dubai|trump|high-end|vip/i.test(prompt.toLowerCase());
+  const isCosmicStyle = /space|cosmos|galaxy|spiritual|cosmic|universe|nebula|star/i.test(prompt.toLowerCase());
+  
+  // Apply style-specific defaults
+  if (isMemeStyle) {
+    // For cartoon/meme styles, use bolder colors and comic font
+    result.fontFamily = "Comic Neue, sans-serif";
+    result.borderRadius = "16px";
+    result.styleNotes = "cartoon, meme, expressive";
+  } else if (isLuxuryStyle) {
+    // For luxury themes, use elegant fonts and gold tones
+    result.fontFamily = "Playfair Display, serif";
+    result.accentColor = "#D4AF37"; // Gold
+    result.buttonColor = "#D4AF37";
+    result.buttonTextColor = "#000000";
+    result.styleNotes = "luxury, premium, elegant";
+  } else if (isCosmicStyle) {
+    // For cosmic themes, use Space Grotesk and glowing effects
+    result.fontFamily = "Space Grotesk, sans-serif";
+    result.boxShadow = "0 0 20px rgba(255, 255, 255, 0.15), 0 0 40px rgba(120, 0, 255, 0.1)";
+    result.styleNotes = "cosmic, mystical, expansive";
+  }
+  
   // Extract colors from image if available
   if (imageUrl) {
     const dominantColor = await extractDominantColor(imageUrl);
@@ -350,8 +426,8 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
   // Join style terms into notes
   if (styleTerms.length > 0) {
     result.styleNotes = styleTerms.join(", ");
-  } else {
-    // Default style notes based on layer type
+  } else if (result.styleNotes === "modern, expressive" || result.styleNotes === "minimal, functional") {
+    // Default style notes based on layer type if not already set by style category
     result.styleNotes = layerType === "login" ? 
       "custom crypto login design" : 
       "minimal wallet interface";
@@ -388,6 +464,8 @@ const extractStyleFromPrompt = async (prompt: string, imageUrl: string | null, l
     result.accentColor = "#FBBF24";
   } else if (promptLower.includes("teal")) {
     result.accentColor = "#14B8A6";
+  } else if (promptLower.includes("gold") || promptLower.includes("luxury")) {
+    result.accentColor = "#D4AF37";
   }
   
   // Button text color calculation for contrast
