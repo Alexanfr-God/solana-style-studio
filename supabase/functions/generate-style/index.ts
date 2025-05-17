@@ -31,22 +31,23 @@ serve(async (req) => {
     console.log(`Starting style generation for ${layer_type} layer`);
     console.log(`Prompt: ${prompt}`);
     
-    // Enhance the prompt for better image generation results
+    // Enhanced prompt for better background generation
     const enhancedPrompt = `
-      Design a collectible login screen background for a crypto wallet.
+      Design a collectible vertical background for a crypto wallet login screen.
       
       Prompt theme: ${prompt}
       
       Instructions:
-      - Draw a vertical composition where the top is clean for the word "phantom" and center is reserved for the login box.
-      - Leave the center-bottom area visually balanced and unobstructed (for UI overlays).
-      - Use a cartoon / meme art style if applicable (e.g., for 'pepe')
-      - Apply fashion brand theme if mentioned (e.g., Gucci = green/red stripes, luxury pattern)
-      - NO text in image. NO 'password', 'login', 'unlock', etc.
-      - DO NOT include buttons, inputs, or labels
-      - DO NOT add shadows or overlays – design should look like a clean background
-      - Make the design collectible and NFT-worthy
-      - Strong visual appeal for digital wallet skin
+      - Create a vertical collectible background for a wallet login screen.
+      - DO NOT draw buttons, inputs, "Password", "Forgot password", or any other UI elements.
+      - DO NOT add any shadows, overlays, gradients, or lighting effects.
+      - Leave the center area (40-60% of vertical space) visually calm and clean for login box placement.
+      - Use clear vertical composition with strong visual balance.
+      - Top area should have empty space for the word "phantom".
+      - If a character (like a cat or meme) is involved, it should be integrated artistically into the background and NOT interact with the login box directly.
+      - Background must be stylish and NFT-worthy.
+      - If the prompt includes a fashion brand (e.g., Gucci), apply color themes and abstract patterns only — do NOT add logos unless stylized as part of the visual texture.
+      - Use a consistent visual style (e.g., cartoon or luxury-inspired), and avoid low-effort or clipart-like rendering.
     `;
 
     // Generate background image if no image was uploaded
