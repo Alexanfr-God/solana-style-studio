@@ -1,4 +1,3 @@
-
 #root {
   width: 100%;
   margin: 0 auto;
@@ -7,9 +6,13 @@
 }
 
 /* Make sure there's no overflow hidden that could cut content */
-body, html, #root {
-  overflow-x: hidden; /* Only hide horizontal overflow */
-  overflow-y: auto;   /* Allow vertical scrolling */
+body,
+html,
+#root {
+  overflow-x: hidden;
+  /* Only hide horizontal overflow */
+  overflow-y: auto;
+  /* Allow vertical scrolling */
 }
 
 /* Only apply padding on larger screens */
@@ -33,9 +36,11 @@ body, html, #root {
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -44,6 +49,7 @@ body, html, #root {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -54,6 +60,7 @@ body, html, #root {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -65,10 +72,12 @@ body, html, #root {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.05);
     opacity: 0.9;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -91,4 +100,41 @@ body, html, #root {
 
 .read-the-docs {
   color: #888;
+}
+
+/* New styles for golden buttons */
+.golden-button {
+  background: linear-gradient(45deg, #ffd700, #ffa500, #ffd700);
+  background-size: 200% 100%;
+  animation: shine 3s linear infinite;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.golden-button:hover {
+  transform: scale(1.05);
+}
+
+.golden-button:active {
+  transform: scale(0.95);
+}
+
+/* New styles for NFT cards */
+.nft-card {
+  border: 2px solid #ffd700;
+  border-radius: 10px;
+  padding: 15px;
+  margin: 10px;
+  background-color: #333;
+  color: #fff;
+}
+
+.nft-card img {
+  width: 100%;
+  border-radius: 5px;
 }
