@@ -2,7 +2,7 @@
 
 This is the official repository for **Wallet Style Studio**, a frontend app that allows users to **generate fully custom Phantom wallet UI styles** using AI and visual prompts.
 
-🌐 Live Preview: [Open Project in Lovable](https://lovable.dev/projects/9431a51c-2ffc-4f3e-8eb5-115819bf2c10)
+🌐 Live Preview: (https://www.wacocu.app/)
 
 ---
 
