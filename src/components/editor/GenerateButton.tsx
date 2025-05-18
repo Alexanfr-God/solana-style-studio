@@ -27,21 +27,28 @@ const GenerateButton = () => {
       return;
     }
 
+    // Show initial generation toast
+    toast({
+      title: `Generating ${activeLayer === 'login' ? 'Login' : 'Wallet'} Style`,
+      description: "Creating a custom background and color scheme. This may take a moment...",
+    });
+    
     setIsGenerating(true);
     try {
       const generatedStyle = await generateStyle(prompt, uploadedImage, activeLayer);
       setStyleForLayer(activeLayer, generatedStyle);
       
       toast({
-        title: "Style generated",
+        title: "Style generated successfully",
         description: generatedStyle.styleNotes 
           ? `Applied style: ${generatedStyle.styleNotes}` 
-          : `New style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
+          : `New collectible style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
       });
     } catch (error) {
+      console.error("Generation error:", error);
       toast({
         title: "Generation failed",
-        description: "Failed to generate style. Please try again.",
+        description: "Failed to generate style. Please try again with a different prompt.",
         variant: "destructive",
       });
     } finally {
