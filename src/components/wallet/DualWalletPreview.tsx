@@ -4,16 +4,10 @@ import { useCustomizationStore } from '@/stores/customizationStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import MintNftButton from './ExportToIpfsButton';
-import { useMaskEditorStore } from '@/stores/maskEditorStore';
-import { useEditorStore } from '@/stores/editorStore';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
-  const { maskImageUrl, safeZoneVisible } = useMaskEditorStore();
-  const { editorMode } = useEditorStore();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
-
-  const showMaskOverlay = editorMode === 'decorate' && maskImageUrl;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -22,19 +16,8 @@ const DualWalletPreview = () => {
           <div className="text-center mb-2">
             <h3 className="text-lg font-medium text-white/90">Login View</h3>
           </div>
-          <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center relative">
+          <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center">
             <LoginScreen style={loginStyle} />
-            
-            {/* V3 Mask overlay for Login View */}
-            {showMaskOverlay && (
-              <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-                <img 
-                  src={maskImageUrl} 
-                  alt="Decoration mask" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
           </div>
         </div>
         
@@ -51,19 +34,8 @@ const DualWalletPreview = () => {
           <div className="text-center mb-2">
             <h3 className="text-lg font-medium text-white/90">Wallet View</h3>
           </div>
-          <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center relative">
+          <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center">
             <WalletScreen style={walletStyle} />
-            
-            {/* V3 Mask overlay for Wallet View */}
-            {showMaskOverlay && (
-              <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
-                <img 
-                  src={maskImageUrl} 
-                  alt="Decoration mask" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>
