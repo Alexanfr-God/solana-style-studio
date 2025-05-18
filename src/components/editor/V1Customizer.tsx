@@ -17,7 +17,7 @@ const V1Customizer = () => {
     <div className="p-6 rounded-xl bg-black/20 backdrop-blur-md space-y-6">
       <EditorTabs />
       
-      {editorMode === 'create-style' ? (
+      {editorMode === 'create-style' && (
         <div className="space-y-6">
           <LayerSelector />
           <PromptInput />
@@ -28,9 +28,20 @@ const V1Customizer = () => {
             <StylingTip />
           </div>
         </div>
-      ) : editorMode === 'decorate' ? (
-        <V3EditorContainer />
-      ) : null}
+      )}
+      
+      {editorMode === 'fine-tune' && (
+        <div className="space-y-6">
+          <div className="p-8 flex flex-col items-center justify-center text-center">
+            <h3 className="text-lg font-medium text-white mb-2">Fine-tune Editor</h3>
+            <p className="text-sm text-white/70">
+              The UI/UX customization feature will be available soon.
+            </p>
+          </div>
+        </div>
+      )}
+      
+      {editorMode === 'decorate' && <V3EditorContainer />}
     </div>
   );
 };
