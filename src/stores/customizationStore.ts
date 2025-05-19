@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { defaultLoginStyle, defaultWalletStyle } from '../constants/defaultWalletStyles';
 
 export type LayerType = 'login' | 'wallet';
+export type EditorModeType = 'create-style' | 'fine-tune' | 'decorate';
 
 export interface WalletStyle {
   backgroundColor: string;
@@ -25,6 +26,7 @@ interface CustomizationState {
   prompt: string;
   uploadedImage: string | null;
   stylingTip: string;
+  editorMode: EditorModeType;
   
   setActiveLayer: (layer: LayerType) => void;
   setStyleForLayer: (layer: LayerType, style: WalletStyle) => void;
@@ -33,6 +35,7 @@ interface CustomizationState {
   setUploadedImage: (imageUrl: string | null) => void;
   setIsGenerating: (isGenerating: boolean) => void;
   setStylingTip: (tip: string) => void;
+  setEditorMode: (mode: EditorModeType) => void;
 }
 
 const stylingTips = [
@@ -54,6 +57,7 @@ export const useCustomizationStore = create<CustomizationState>((set) => ({
   prompt: '',
   uploadedImage: null,
   stylingTip: stylingTips[Math.floor(Math.random() * stylingTips.length)],
+  editorMode: 'create-style',
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),
   
@@ -75,5 +79,7 @@ export const useCustomizationStore = create<CustomizationState>((set) => ({
   
   setIsGenerating: (isGenerating) => set({ isGenerating }),
   
-  setStylingTip: (tip) => set({ stylingTip: tip })
+  setStylingTip: (tip) => set({ stylingTip: tip }),
+  
+  setEditorMode: (mode) => set({ editorMode: mode }),
 }));

@@ -1,12 +1,19 @@
 
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FileImage, SlidersHorizontal, Layers } from 'lucide-react';
+import { useCustomizationStore } from '@/stores/customizationStore';
 
 const EditorTabs = () => {
+  const { setEditorMode, editorMode } = useCustomizationStore();
+
+  const handleTabChange = (value: string) => {
+    setEditorMode(value);
+  };
+
   return (
     <div className="mb-6">
-      <Tabs defaultValue="create-style">
+      <Tabs value={editorMode} onValueChange={handleTabChange}>
         <TabsList className="grid grid-cols-3 w-full bg-black/20 backdrop-blur-sm">
           <TabsTrigger 
             value="create-style" 
@@ -33,7 +40,6 @@ const EditorTabs = () => {
           
           <TabsTrigger 
             value="decorate" 
-            disabled 
             className="flex items-center gap-2"
           >
             <Layers className="h-4 w-4" />

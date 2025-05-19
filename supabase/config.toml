@@ -1,14 +1,6 @@
 
 project_id = "opxordptvpvzmhakvdde"
-
 [functions.generate-style]
-verify_jwt = false
-
-[functions.mint_wallet_skin_nft]
-verify_jwt = false
-
-[functions.get_wallet_skins_by_user]
-verify_jwt = false
-
-[functions.mint_wallet_skin_nft_onchain]
-verify_jwt = false
+verify_jwt = true
+[functions.generate-style-v3]
+verify_jwt = true
