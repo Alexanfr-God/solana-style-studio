@@ -20,10 +20,10 @@ interface MaskLayout {
 }
 
 interface SafeZone {
-  x: string;
-  y: string;
-  width: string;
-  height: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 interface MaskRequest {
@@ -53,10 +53,10 @@ interface LayoutAnalysis {
 
 // Define safe zone - precise coordinates based on wallet UI dimensions
 const WALLET_SAFE_ZONE: SafeZone = {
-  x: "80px",
-  y: "108px", 
-  width: "160px",
-  height: "336px"
+  x: 80,
+  y: 108, 
+  width: 160,
+  height: 336
 };
 
 // Main function handler
@@ -219,12 +219,14 @@ You are designing a decorative mask for a crypto wallet login screen.
 
 The CENTER AREA MUST remain COMPLETELY EMPTY and TRANSPARENT.
 Exact pixel measurements:
-- X offset: 80px from left edge
-- Y offset: 108px from top edge
-- Width: 160px
-- Height: 336px
+- X offset: ${WALLET_SAFE_ZONE.x}px from left edge
+- Y offset: ${WALLET_SAFE_ZONE.y}px from top edge
+- Width: ${WALLET_SAFE_ZONE.width}px
+- Height: ${WALLET_SAFE_ZONE.height}px
 
-Inside the center of the image (rectangle: 160px × 336px, starting at x=80px, y=108px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
+Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}px, y=${WALLET_SAFE_ZONE.y}px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
+
+❌ Do NOT draw anything inside the transparent center zone (${WALLET_SAFE_ZONE.width}x${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}). This area is reserved for the login interface and must remain visually empty.
 
 ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
 This is a UI skin, not an illustration. The center must remain fully transparent.`;
@@ -259,12 +261,14 @@ You are designing a decorative mask for a crypto wallet login screen.
 
 The CENTER AREA MUST remain COMPLETELY EMPTY and TRANSPARENT.
 Exact pixel measurements:
-- X offset: 80px from left edge
-- Y offset: 108px from top edge
-- Width: 160px
-- Height: 336px
+- X offset: ${WALLET_SAFE_ZONE.x}px from left edge
+- Y offset: ${WALLET_SAFE_ZONE.y}px from top edge
+- Width: ${WALLET_SAFE_ZONE.width}px
+- Height: ${WALLET_SAFE_ZONE.height}px
 
-Inside the center of the image (rectangle: 160px × 336px, starting at x=80px, y=108px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
+Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}px, y=${WALLET_SAFE_ZONE.y}px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
+
+❌ Do NOT draw anything inside the transparent center zone (${WALLET_SAFE_ZONE.width}x${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}). This area is reserved for the login interface and must remain visually empty.
 
 ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
 This is a UI skin, not an illustration. The center must remain fully transparent.`;
@@ -406,12 +410,24 @@ function buildDallePrompt(
     .filter(element => element !== "")
     .join(", ");
   
-  // Build enhanced prompt for DALL-E using the new, clearer format
-  return `Design a high-quality, collectible-style decorative frame for a crypto wallet login screen. The canvas is 1024x1024 pixels. Your goal is to fully decorate the outer regions (top, bottom, left, right), leaving the center area visually untouched and transparent.
+  // Build enhanced prompt for DALL-E with improved instructions
+  return `You are designing a UI mask (frame) for a crypto wallet screen. The image should be a full 1024x1024 PNG with transparent areas.
+
+🚫 The center of the canvas (${WALLET_SAFE_ZONE.width}x${WALLET_SAFE_ZONE.height}px starting at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) MUST be empty — this is the wallet's login area. Nothing should appear in this zone.
+
+❌ Do NOT draw anything inside the transparent center zone (${WALLET_SAFE_ZONE.width}x${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}). This area is reserved for the login interface and must remain visually empty.
+
+✅ Create visual decorations ONLY around the top, bottom, left, and right edges — as if framing the wallet.
+
+This is not a background. This is not a full-screen illustration. It is a UI mask with a transparent center.
+
+Use flat, collectible design. No UI components. No text or buttons. Style must reflect the user's prompt: "${userPrompt}"
+
+Design a high-quality, collectible-style decorative frame for a crypto wallet login screen. The canvas is 1024x1024 pixels. Your goal is to fully decorate the outer regions (top, bottom, left, right), leaving the center area visually untouched and transparent.
 
 🔴 IMPORTANT:
 - DO NOT place any elements in the center.
-- Imagine the center (160px wide and 336px tall, positioned at x=80px, y=108px) as a glowing transparent rectangle — this is the forbidden zone.
+- Imagine the center (${WALLET_SAFE_ZONE.width}px wide and ${WALLET_SAFE_ZONE.height}px tall, positioned at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) as a glowing transparent rectangle — this is the forbidden zone.
 - This is not a general illustration. It's a UI skin.
 - Focus your design ONLY on the edges — think of it as a frame that "hugs" the wallet screen.
 - There should be a clear visual balance between all 4 sides.
@@ -449,7 +465,7 @@ async function generateImageWithDallE(
         n: 1,
         size: "1024x1024",
         response_format: "url",
-        quality: "standard"
+        quality: "hd" // Changed from "standard" to "hd" for better quality
       })
     });
 

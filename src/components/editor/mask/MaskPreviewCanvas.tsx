@@ -11,10 +11,10 @@ const MaskPreviewCanvas = () => {
 
   // Define precise safe zone based on the edge function dimensions
   const safeZone = selectedMask?.safeZone || {
-    x: "80px",
-    y: "108px", 
-    width: "160px",
-    height: "336px"
+    x: 80,
+    y: 108, 
+    width: 160,
+    height: 336
   };
 
   return (
@@ -31,8 +31,8 @@ const MaskPreviewCanvas = () => {
             className="absolute top-0 left-0 w-full h-full pointer-events-none z-20"
             style={{
               background: `
-                linear-gradient(to right, rgba(255,0,0,0.1) 0%, rgba(255,0,0,0.1) ${safeZone.x}, transparent ${safeZone.x}, transparent calc(${safeZone.x} + ${safeZone.width}), rgba(255,0,0,0.1) calc(${safeZone.x} + ${safeZone.width}), rgba(255,0,0,0.1) 100%),
-                linear-gradient(to bottom, rgba(255,0,0,0.1) 0%, rgba(255,0,0,0.1) ${safeZone.y}, transparent ${safeZone.y}, transparent calc(${safeZone.y} + ${safeZone.height}), rgba(255,0,0,0.1) calc(${safeZone.y} + ${safeZone.height}), rgba(255,0,0,0.1) 100%)
+                linear-gradient(to right, rgba(255,0,0,0.1) 0%, rgba(255,0,0,0.1) ${safeZone.x}px, transparent ${safeZone.x}px, transparent calc(${safeZone.x}px + ${safeZone.width}px), rgba(255,0,0,0.1) calc(${safeZone.x}px + ${safeZone.width}px), rgba(255,0,0,0.1) 100%),
+                linear-gradient(to bottom, rgba(255,0,0,0.1) 0%, rgba(255,0,0,0.1) ${safeZone.y}px, transparent ${safeZone.y}px, transparent calc(${safeZone.y}px + ${safeZone.height}px), rgba(255,0,0,0.1) calc(${safeZone.y}px + ${safeZone.height}px), rgba(255,0,0,0.1) 100%)
               `,
               boxShadow: 'inset 0 0 0 1px rgba(255,0,0,0.3)'
             }}

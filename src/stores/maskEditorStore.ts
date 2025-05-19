@@ -4,10 +4,10 @@ import { create } from 'zustand';
 export type MaskLayerType = 'login' | 'wallet';
 
 export interface SafeZone {
-  x: string;
-  y: string;
-  width: string;
-  height: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface MaskLayout {
@@ -47,10 +47,10 @@ interface MaskEditorState {
 }
 
 const defaultSafeZone: SafeZone = {
-  x: "80px",
-  y: "108px",
-  width: "160px",
-  height: "336px"
+  x: 80,
+  y: 108,
+  width: 160,
+  height: 336
 };
 
 export const useMaskEditorStore = create<MaskEditorState>((set) => ({
