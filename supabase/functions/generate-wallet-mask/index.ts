@@ -4,11 +4,13 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
+// Constants
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Types
 interface MaskLayout {
   top: string | null;
   bottom: string | null;
@@ -43,6 +45,12 @@ interface MaskResponse {
   input_type: "image" | "prompt" | "image+prompt";
 }
 
+interface LayoutAnalysis {
+  layout: MaskLayout;
+  style: string;
+  color_palette: string[];
+}
+
 const DEFAULT_SAFE_ZONE: SafeZone = {
   x: "20%",
   y: "20%",
@@ -50,6 +58,7 @@ const DEFAULT_SAFE_ZONE: SafeZone = {
   height: "60%"
 };
 
+// Main function handler
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -66,67 +75,16 @@ serve(async (req) => {
     const { image_url, prompt, layer, user_id } = await req.json() as MaskRequest;
     
     // Validate input parameters
-    if (!image_url && !prompt) {
-      return new Response(
-        JSON.stringify({ error: "Either image_url or prompt must be provided" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!layer || (layer !== "login" && layer !== "wallet")) {
-      return new Response(
-        JSON.stringify({ error: "Valid layer (login or wallet) must be specified" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    validateInputParameters(image_url, prompt, layer);
 
     console.log(`Processing mask request for layer: ${layer}`);
     console.log(`Input: ${image_url ? "image_url: ✓" : "image_url: ✗"}, ${prompt ? "prompt: ✓" : "prompt: ✗"}`);
 
     // Determine input type
-    const inputType = image_url && prompt 
-      ? "image+prompt" 
-      : image_url 
-        ? "image" 
-        : "prompt";
+    const inputType = determineInputType(image_url, prompt);
 
-    // Step 1: Analyze image or interpret prompt with GPT-4o
-    let layoutAnalysis;
-    let enhancedPrompt;
-    
-    if (inputType === "image" || inputType === "image+prompt") {
-      layoutAnalysis = await analyzeImageWithGPT(image_url!, prompt, openAiKey);
-    } else {
-      layoutAnalysis = await interpretPromptWithGPT(prompt!, openAiKey);
-    }
-    
-    console.log("Layout analysis complete:", layoutAnalysis);
-
-    // Step 2: Generate mask image with DALL-E 3
-    enhancedPrompt = buildDallePrompt(layoutAnalysis, prompt || "");
-    console.log("Enhanced prompt for DALL-E:", enhancedPrompt);
-    
-    // Generate image with DALL-E
-    const maskImageUrl = await generateImageWithDallE(enhancedPrompt, openAiKey);
-    console.log("Image generated successfully");
-
-    // Prepare response
-    const response: MaskResponse = {
-      mask_image_url: maskImageUrl,
-      layout_json: {
-        layout: layoutAnalysis.layout,
-        style: layoutAnalysis.style,
-        color_palette: layoutAnalysis.color_palette,
-        safe_zone: DEFAULT_SAFE_ZONE
-      },
-      prompt_used: enhancedPrompt,
-      input_type: inputType as "image" | "prompt" | "image+prompt"
-    };
-
-    // Store result in database if user_id is provided
-    if (user_id) {
-      await storeMaskResult(user_id, response, image_url, prompt || "", layer);
-    }
+    // Process the request
+    const response = await processRequest(inputType, image_url, prompt, openAiKey, layer, user_id);
 
     return new Response(
       JSON.stringify(response),
@@ -149,15 +107,76 @@ serve(async (req) => {
   }
 });
 
+// Helper functions
+function validateInputParameters(image_url?: string, prompt?: string, layer?: string): void {
+  if (!image_url && !prompt) {
+    throw new Error("Either image_url or prompt must be provided");
+  }
+
+  if (!layer || (layer !== "login" && layer !== "wallet")) {
+    throw new Error("Valid layer (login or wallet) must be specified");
+  }
+}
+
+function determineInputType(image_url?: string, prompt?: string): "image" | "prompt" | "image+prompt" {
+  if (image_url && prompt) return "image+prompt";
+  if (image_url) return "image";
+  return "prompt";
+}
+
+async function processRequest(
+  inputType: "image" | "prompt" | "image+prompt",
+  image_url: string | undefined,
+  prompt: string | undefined,
+  openAiKey: string,
+  layer: string,
+  user_id?: string
+): Promise<MaskResponse> {
+  // Step 1: Analyze image or interpret prompt with GPT-4o
+  let layoutAnalysis;
+  
+  if (inputType === "image" || inputType === "image+prompt") {
+    layoutAnalysis = await analyzeImageWithGPT(image_url!, prompt, openAiKey);
+  } else {
+    layoutAnalysis = await interpretPromptWithGPT(prompt!, openAiKey);
+  }
+  
+  console.log("Layout analysis complete:", layoutAnalysis);
+
+  // Step 2: Generate mask image with DALL-E 3
+  const enhancedPrompt = buildDallePrompt(layoutAnalysis, prompt || "");
+  console.log("Enhanced prompt for DALL-E:", enhancedPrompt);
+  
+  // Generate image with DALL-E
+  const maskImageUrl = await generateImageWithDallE(enhancedPrompt, openAiKey);
+  console.log("Image generated successfully");
+
+  // Prepare response
+  const response: MaskResponse = {
+    mask_image_url: maskImageUrl,
+    layout_json: {
+      layout: layoutAnalysis.layout,
+      style: layoutAnalysis.style,
+      color_palette: layoutAnalysis.color_palette,
+      safe_zone: DEFAULT_SAFE_ZONE
+    },
+    prompt_used: enhancedPrompt,
+    input_type: inputType
+  };
+
+  // Store result in database if user_id is provided
+  if (user_id) {
+    await storeMaskResult(user_id, response, image_url, prompt || "", layer);
+  }
+
+  return response;
+}
+
 async function analyzeImageWithGPT(
   imageUrl: string, 
   additionalPrompt: string | undefined, 
   apiKey: string
-): Promise<{
-  layout: MaskLayout;
-  style: string;
-  color_palette: string[];
-}> {
+): Promise<LayoutAnalysis> {
   const promptBase = `Analyze this image and describe how it could be used as a decorative frame or character around a crypto wallet UI.
 
 I need these specific details:
@@ -171,6 +190,32 @@ ${additionalPrompt ? `Additional context: ${additionalPrompt}` : ''}
 Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
 The "core" property in layout should be "untouched" to indicate the center remains clear.`;
 
+  return await callOpenAIVisionAPI(apiKey, promptBase, imageUrl);
+}
+
+async function interpretPromptWithGPT(
+  prompt: string, 
+  apiKey: string
+): Promise<LayoutAnalysis> {
+  const promptBase = `Based on this description: "${prompt}", design a decorative frame or character that could surround a crypto wallet UI.
+
+I need these specific details:
+1. Subject - What would be the main subject/character?
+2. Style - What visual style would work best (cartoon, photorealistic, anime, etc)?
+3. Color palette - Suggest 3-5 main colors (in hex codes)
+4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement)
+
+Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
+The "core" property in layout should be "untouched" to indicate the center remains clear.`;
+
+  return await callOpenAITextAPI(apiKey, promptBase);
+}
+
+async function callOpenAIVisionAPI(
+  apiKey: string,
+  promptText: string,
+  imageUrl: string
+): Promise<LayoutAnalysis> {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -183,7 +228,7 @@ The "core" property in layout should be "untouched" to indicate the center remai
         {
           role: "user",
           content: [
-            { type: "text", text: promptBase },
+            { type: "text", text: promptText },
             {
               type: "image_url",
               image_url: { url: imageUrl }
@@ -195,61 +240,13 @@ The "core" property in layout should be "untouched" to indicate the center remai
     })
   });
 
-  const data = await response.json();
-  if (!response.ok) {
-    console.error("OpenAI API error:", data);
-    throw new Error(`OpenAI API error: ${data.error?.message || "Unknown error"}`);
-  }
-
-  try {
-    const result = JSON.parse(data.choices[0].message.content);
-    return {
-      layout: {
-        top: result.layout.top || null,
-        bottom: result.layout.bottom || null,
-        left: result.layout.left || null,
-        right: result.layout.right || null,
-        core: "untouched"
-      },
-      style: result.style || "undefined style",
-      color_palette: Array.isArray(result.color_palette) ? result.color_palette : ["#000000", "#FFFFFF"]
-    };
-  } catch (e) {
-    console.error("Error parsing GPT response:", e);
-    // Fallback layout if parsing fails
-    return {
-      layout: {
-        top: "character element",
-        bottom: "supporting elements",
-        left: null,
-        right: null,
-        core: "untouched"
-      },
-      style: "general",
-      color_palette: ["#000000", "#FFFFFF", "#888888"]
-    };
-  }
+  return processOpenAIResponse(response);
 }
 
-async function interpretPromptWithGPT(
-  prompt: string, 
-  apiKey: string
-): Promise<{
-  layout: MaskLayout;
-  style: string;
-  color_palette: string[];
-}> {
-  const promptBase = `Based on this description: "${prompt}", design a decorative frame or character that could surround a crypto wallet UI.
-
-I need these specific details:
-1. Subject - What would be the main subject/character?
-2. Style - What visual style would work best (cartoon, photorealistic, anime, etc)?
-3. Color palette - Suggest 3-5 main colors (in hex codes)
-4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement)
-
-Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
-The "core" property in layout should be "untouched" to indicate the center remains clear.`;
-
+async function callOpenAITextAPI(
+  apiKey: string,
+  promptText: string
+): Promise<LayoutAnalysis> {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -261,13 +258,17 @@ The "core" property in layout should be "untouched" to indicate the center remai
       messages: [
         {
           role: "user",
-          content: promptBase
+          content: promptText
         }
       ],
       response_format: { type: "json_object" }
     })
   });
 
+  return processOpenAIResponse(response);
+}
+
+async function processOpenAIResponse(response: Response): Promise<LayoutAnalysis> {
   const data = await response.json();
   if (!response.ok) {
     console.error("OpenAI API error:", data);
@@ -305,11 +306,7 @@ The "core" property in layout should be "untouched" to indicate the center remai
 }
 
 function buildDallePrompt(
-  layoutAnalysis: {
-    layout: MaskLayout;
-    style: string;
-    color_palette: string[];
-  },
+  layoutAnalysis: LayoutAnalysis,
   userPrompt: string
 ): string {
   // Extract elements that should be included
