@@ -10,20 +10,21 @@ const GenerateMaskButton = () => {
   const { 
     prompt, 
     activeLayer, 
+    maskImageUrl,
     setSelectedMask, 
     isGenerating, 
     setIsGenerating 
   } = useMaskEditorStore();
 
   const handleGenerate = async () => {
-    if (!prompt) {
-      toast.error("Please enter a mask description first");
+    if (!prompt && !maskImageUrl) {
+      toast.error("Please enter a description or upload an image first");
       return;
     }
 
     setIsGenerating(true);
     try {
-      const generatedMask = await generateMask(prompt, activeLayer);
+      const generatedMask = await generateMask(prompt, activeLayer, maskImageUrl);
       setSelectedMask(generatedMask);
       
       toast.success("Wallet costume generated successfully");
@@ -39,7 +40,7 @@ const GenerateMaskButton = () => {
     <Button
       onClick={handleGenerate}
       className="w-full"
-      disabled={isGenerating || !prompt}
+      disabled={isGenerating || (!prompt && !maskImageUrl)}
     >
       <Wand className="mr-2 h-4 w-4" />
       {isGenerating ? 'Generating Costume...' : 'Generate Costume'}
