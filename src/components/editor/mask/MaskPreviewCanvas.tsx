@@ -20,6 +20,21 @@ const MaskPreviewCanvas = () => {
   return (
     <div className="relative w-full h-[800px] flex items-center justify-center">
       <div className="relative max-w-[320px]">
+        {/* Background to represent the actual canvas where designs should appear */}
+        {safeZoneVisible && (
+          <div 
+            className="absolute z-0" 
+            style={{
+              width: '250%',
+              height: '250%',
+              top: '-75%',
+              left: '-75%',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark background representing the canvas
+              border: '1px dashed rgba(255, 255, 255, 0.3)'
+            }}
+          />
+        )}
+        
         {/* Base wallet UI */}
         <div className="relative z-10">
           <LoginScreen style={loginStyle} />
@@ -35,47 +50,27 @@ const MaskPreviewCanvas = () => {
               height: '100%'
             }}
           >
-            {/* Dark overlay for the entire area */}
-            <div 
-              className="absolute inset-0" 
-              style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-            />
-            
             {/* Red highlight for the DO NOT DRAW zone */}
             <div
               className="absolute"
               style={{
-                top: `${safeZone.y / 1024 * 100}%`,
-                left: `${safeZone.x / 1024 * 100}%`,
-                width: `${safeZone.width / 1024 * 100}%`,
-                height: `${safeZone.height / 1024 * 100}%`,
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
                 backgroundColor: 'rgba(255,0,0,0.3)',
                 border: '2px dashed red'
               }}
             >
-              {/* "DO NOT DRAW" label */}
+              {/* "DO NOT DRAW HERE" label */}
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                ❌ DO NOT DRAW
+                ❌ DO NOT DRAW HERE
               </div>
-            </div>
-            
-            {/* "DRAW HERE" labels for the four sides */}
-            <div className="absolute top-[10%] left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-              ✅ DRAW HERE
-            </div>
-            <div className="absolute bottom-[10%] left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-              ✅ DRAW HERE
-            </div>
-            <div className="absolute left-[10%] top-1/2 transform -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-              ✅ DRAW HERE
-            </div>
-            <div className="absolute right-[10%] top-1/2 transform -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-              ✅ DRAW HERE
-            </div>
-            
-            {/* Add dimensions display */}
-            <div className="absolute bottom-0 right-0 m-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
-              Safe Zone: {safeZone.width} × {safeZone.height} at ({safeZone.x}, {safeZone.y})
+              
+              {/* Add dimensions display */}
+              <div className="absolute bottom-0 right-0 m-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+                Wallet UI: {safeZone.width} × {safeZone.height}
+              </div>
             </div>
           </div>
         )}

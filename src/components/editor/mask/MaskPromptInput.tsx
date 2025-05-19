@@ -23,6 +23,10 @@ const MaskPromptInput = () => {
         disabled={isGenerating}
         rows={3}
       />
+      <p className="text-xs text-white/60 mt-2">
+        Describe a design that frames the wallet UI. The design will appear around the wallet, 
+        not on top of it. Think of the wallet as floating on the canvas.
+      </p>
     </div>
   );
 };
