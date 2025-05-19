@@ -31,8 +31,8 @@ const SafeZoneToggle = () => {
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             <p>
-              When enabled, this shows the central area where UI elements will be displayed. 
-              The costume should be designed around this area, not over it.
+              Visualizes the central area where UI elements will be displayed. 
+              The costume design should be created around this area, not over it.
             </p>
           </TooltipContent>
         </Tooltip>

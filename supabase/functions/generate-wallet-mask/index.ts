@@ -406,66 +406,29 @@ function buildDallePrompt(
     .filter(element => element !== "")
     .join(", ");
   
-  // Safe zone description with precise pixel measurements
-  const safeZoneDescription = `
-*** CRITICAL INSTRUCTION: WALLET UI SAFETY ZONE ***
-You are designing a decorative UI skin for a crypto wallet interface.
+  // Build enhanced prompt for DALL-E using the new, clearer format
+  return `Design a high-quality, collectible-style decorative frame for a crypto wallet login screen. The canvas is 1024x1024 pixels. Your goal is to fully decorate the outer regions (top, bottom, left, right), leaving the center area visually untouched and transparent.
 
-The CENTER AREA MUST REMAIN COMPLETELY EMPTY AND TRANSPARENT.
-Exact center measurements:
-- X offset: 80px from left edge
-- Y offset: 108px from top edge
-- Width: 160px
-- Height: 336px
+🔴 IMPORTANT:
+- DO NOT place any elements in the center.
+- Imagine the center (160px wide and 336px tall, positioned at x=80px, y=108px) as a glowing transparent rectangle — this is the forbidden zone.
+- This is not a general illustration. It's a UI skin.
+- Focus your design ONLY on the edges — think of it as a frame that "hugs" the wallet screen.
+- There should be a clear visual balance between all 4 sides.
+- The style must match the user's prompt: "${userPrompt}"
 
-Inside the center of the image (rectangle: 160px × 336px, starting at x=80px, y=108px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
+🧩 The result must look like a customizable visual skin — a border that frames the UI, not an illustration over it.
 
-DO NOT draw anything within this central rectangle (160px x 336px in the middle).
-ONLY create decorative elements AROUND the edges that frame but never overlap the central wallet interface.
-The result should look like a character or decorative elements "hugging" around the wallet screen.
+📦 Output must use full PNG transparency.
 
-This is a UI skin, not a general illustration. The transparency must be obvious in the center.
-`;
-  
-  // Build enhanced prompt for DALL-E
-  return `${safeZoneDescription}
+Specific design elements to include:
+${placementDescription}
 
-You are designing a UI mask for a crypto wallet login screen.
+Style: ${layoutAnalysis.style}
+Color palette: ${layoutAnalysis.color_palette.join(", ")}
 
-⚠️ This is NOT a general illustration or art piece. This is a **decorative UI frame**, and it will be applied as a PNG skin directly over the login screen.
-
-📐 Canvas dimensions: 1024x1024 pixels  
-🔴 IMPORTANT: The **center area must remain 100% EMPTY and TRANSPARENT**  
-This center area represents the actual login interface (wallet inputs, buttons, etc.).
-
-🟥 Forbidden zone ("safe zone") rectangle:
-- Top-left corner: (80px, 108px)
-- Width: 160px
-- Height: 336px
-
-DO NOT place any content in this area.  
-Instead, your design should go **around** this area — top, bottom, left, and right only — as a decorative frame.
-
-🎯 Think of this like a sticker or ornate border wrapping around the center interface.
-
-DO:
-- Use visual balance — top and bottom decoration, side accents in ${layoutAnalysis.style} style.
-- Treat the center like a physical cutout.
-- Use full transparency in the center.
-- Include elements that hug the edges or corners (${placementDescription}).
-- Use these colors: ${layoutAnalysis.color_palette.join(", ")}.
-${userPrompt ? `- Style based on this prompt: ${userPrompt}` : ""}
-
-DON'T:
-- Draw buttons, text fields, or UI components.
-- Place anything in the center area.
-- Make the image chaotic or messy.
-
-🎨 Style goal: Clean, UI-friendly, collectible-worthy.
-
-The final image must look like a **custom UI costume** that will be overlaid onto the wallet. Not a painting — a product.
-
-Output must be a 1024x1024 PNG with a fully transparent center zone (as defined above).`;
+Do not include any UI components like buttons or input fields.
+Do not draw anything inside the central rectangle.`;
 }
 
 async function generateImageWithDallE(
