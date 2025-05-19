@@ -1,10 +1,30 @@
 
 import React from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+// Create a custom toggle component instead of using the Switch directly
+const SimpleToggle = ({ checked, onCheckedChange }: { checked: boolean, onCheckedChange: (checked: boolean) => void }) => {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+        checked ? 'bg-primary' : 'bg-input'
+      }`}
+      onClick={() => onCheckedChange(!checked)}
+    >
+      <span 
+        className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${
+          checked ? 'translate-x-5' : 'translate-x-0'
+        }`} 
+      />
+    </button>
+  );
+};
 
 const SafeZoneToggle = () => {
   const { safeZoneVisible, setSafeZoneVisible } = useMaskEditorStore();
@@ -23,8 +43,7 @@ const SafeZoneToggle = () => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Switch
-              id="safe-zone"
+            <SimpleToggle
               checked={safeZoneVisible}
               onCheckedChange={handleToggle}
             />
