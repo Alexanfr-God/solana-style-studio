@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
@@ -30,7 +29,7 @@ const GenerateMaskButton = () => {
     }
 
     setIsGenerating(true);
-    // Show safe zone during generation to help the user understand the process
+    // Always show safe zone during generation to help the user understand the process
     setSafeZoneVisible(true);
     
     try {
@@ -49,6 +48,7 @@ const GenerateMaskButton = () => {
       );
     } finally {
       setIsGenerating(false);
+      // Keep safe zone visible after generation so user can see the result in context
     }
   };
 

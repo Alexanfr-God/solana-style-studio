@@ -9,12 +9,12 @@ const MaskPreviewCanvas = () => {
   const { selectedMask, safeZoneVisible } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
-  // Define a more precise safe zone based on actual wallet UI dimensions
+  // Define precise safe zone based on the edge function dimensions
   const safeZone = selectedMask?.safeZone || {
-    x: "25%",
-    y: "18%", 
-    width: "50%",
-    height: "56%"
+    x: "80px",
+    y: "108px", 
+    width: "160px",
+    height: "336px"
   };
 
   return (
