@@ -26,10 +26,10 @@ const GenerateMaskButton = () => {
       const generatedMask = await generateMask(prompt, activeLayer);
       setSelectedMask(generatedMask);
       
-      toast.success("Mask generated successfully");
+      toast.success("Wallet costume generated successfully");
     } catch (error) {
       console.error("Error generating mask:", error);
-      toast.error("Failed to generate mask. Please try again.");
+      toast.error("Failed to generate costume. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -42,7 +42,7 @@ const GenerateMaskButton = () => {
       disabled={isGenerating || !prompt}
     >
       <Wand className="mr-2 h-4 w-4" />
-      {isGenerating ? 'Generating Mask...' : 'Generate Mask'}
+      {isGenerating ? 'Generating Costume...' : 'Generate Costume'}
     </Button>
   );
 };

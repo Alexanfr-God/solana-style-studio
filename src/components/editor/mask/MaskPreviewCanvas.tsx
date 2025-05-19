@@ -10,14 +10,14 @@ const MaskPreviewCanvas = () => {
   const { loginStyle } = useCustomizationStore();
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
+    <div className="relative w-full h-[800px] flex items-center justify-center">
       <div className="relative max-w-[320px]">
         {/* Base wallet UI */}
         <div className="relative z-10">
           <LoginScreen style={loginStyle} />
         </div>
         
-        {/* Safe zone overlay */}
+        {/* Safe zone overlay - only visible in dev mode with safeZoneVisible flag */}
         {safeZoneVisible && (
           <div
             className="absolute top-0 left-0 w-full h-full pointer-events-none z-20"
@@ -35,17 +35,23 @@ const MaskPreviewCanvas = () => {
           </div>
         )}
         
-        {/* Mask overlay */}
+        {/* Mask overlay - centered and sized to accommodate the mask content */}
         {selectedMask && (
           <div 
-            className="absolute top-0 left-0 w-full h-full pointer-events-none z-30"
-            style={{
-              backgroundImage: `url(${selectedMask.imageUrl})`,
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
-            }}
-          />
+            className="absolute top-0 left-0 w-full h-full pointer-events-none z-30 flex items-center justify-center"
+          >
+            <div
+              style={{
+                position: 'absolute',
+                width: '150%', // Expanded to allow mask to grow around the wallet
+                height: '150%', // Expanded to allow mask to grow around the wallet
+                backgroundImage: `url(${selectedMask.imageUrl})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              }}
+            />
+          </div>
         )}
         
         {/* DEMO Badge */}

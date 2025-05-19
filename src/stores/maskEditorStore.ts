@@ -59,7 +59,7 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   maskImageUrl: null,
   selectedMask: null,
   previewVisible: true,
-  safeZoneVisible: true,
+  safeZoneVisible: false, // Changed to false by default
   isGenerating: false,
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),

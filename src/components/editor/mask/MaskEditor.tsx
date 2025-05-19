@@ -28,7 +28,7 @@ const MaskEditor = () => {
         <div className="flex flex-col space-y-6 md:space-y-8">
           <Card className="bg-black/30 backdrop-blur-md border-white/10">
             <CardContent className="p-4 md:p-6">
-              <h2 className="text-xl font-bold mb-4 text-white">Create Custom Mask</h2>
+              <h2 className="text-xl font-bold mb-4 text-white">Create Wallet Costume</h2>
               
               <div className="space-y-6">
                 <MaskLayerSelector />
@@ -36,7 +36,7 @@ const MaskEditor = () => {
                 <Separator orientation="horizontal" />
                 
                 <div>
-                  <h3 className="text-sm font-medium mb-4 text-white">Upload your own mask image</h3>
+                  <h3 className="text-sm font-medium mb-4 text-white">Upload your own wallet skin</h3>
                   <MaskUploadImage />
                 </div>
                 
@@ -44,12 +44,10 @@ const MaskEditor = () => {
                 
                 <div className="space-y-4">
                   <h3 className="text-md font-medium text-white flex items-center gap-2">
-                    AI Mask Generator
+                    AI Mask Creator
                   </h3>
                   <MaskPromptInput />
                 </div>
-                
-                <SafeZoneToggle />
                 
                 <div className="flex flex-col space-y-3">
                   <GenerateMaskButton />

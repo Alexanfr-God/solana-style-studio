@@ -12,9 +12,9 @@ const ApplyMaskButton = () => {
     // In a real implementation, this would save the mask to the main application state
     // For now, we'll just show a toast
     if (selectedMask) {
-      toast.success("Mask applied successfully");
+      toast.success("Wallet costume applied successfully");
     } else {
-      toast.error("No mask selected to apply");
+      toast.error("No costume selected to apply");
     }
   };
 
@@ -26,7 +26,7 @@ const ApplyMaskButton = () => {
       variant="default"
     >
       <Check className="mr-2 h-4 w-4" />
-      Apply Mask
+      Apply Costume
     </Button>
   );
 };
