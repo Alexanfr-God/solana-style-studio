@@ -1,133 +1,143 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Upload, Loader2 } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { UploadCloud, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 
 const MaskUploadImage = () => {
-  const { setMaskImageUrl, maskImageUrl } = useMaskEditorStore();
+  const { maskImageUrl, setMaskImageUrl } = useMaskEditorStore();
   const [isUploading, setIsUploading] = useState(false);
-
-  const uploadImageToSupabase = async (file: File): Promise<string | null> => {
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `mask-uploads/${fileName}`;
-      
-      // Create the bucket if it doesn't exist
-      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('mask-uploads');
-      
-      if (bucketError && bucketError.message.includes('does not exist')) {
-        await supabase.storage.createBucket('mask-uploads', {
-          public: true,
-        });
-      }
-      
-      // Upload the file
-      const { error: uploadError } = await supabase.storage
-        .from('mask-uploads')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-        
-      if (uploadError) {
-        throw uploadError;
-      }
-      
-      // Get public URL
-      const { data } = supabase.storage
-        .from('mask-uploads')
-        .getPublicUrl(filePath);
-        
-      return data.publicUrl;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      return null;
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // Check file type
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validImageTypes.includes(file.type)) {
+      toast.error("Please upload a valid image (JPEG, PNG, GIF, WEBP)");
+      return;
+    }
 
     // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image too large. Please select an image under 5MB");
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      toast.error("Image size exceeds 5MB limit");
       return;
     }
 
     setIsUploading(true);
-    
     try {
-      // First upload to Supabase Storage
-      const publicUrl = await uploadImageToSupabase(file);
-      
-      if (!publicUrl) {
-        toast.error("Failed to upload image. Please try again.");
-        setIsUploading(false);
-        return;
+      // Create a unique filename to prevent collisions
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `mask-uploads/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('public-assets')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        throw new Error(`Upload failed: ${error.message}`);
       }
 
-      // Set the public URL in the store
-      setMaskImageUrl(publicUrl);
+      // Get the public URL for the uploaded file
+      const { data: urlData } = supabase.storage
+        .from('public-assets')
+        .getPublicUrl(filePath);
+
+      if (!urlData.publicUrl) {
+        throw new Error("Failed to get public URL for uploaded image");
+      }
+
+      // Set the public URL to the store
+      setMaskImageUrl(urlData.publicUrl);
       toast.success("Image uploaded successfully");
+
     } catch (error) {
-      console.error('Error during upload:', error);
-      toast.error("Upload failed. Please try again.");
+      console.error("Upload error:", error);
+      toast.error(
+        error instanceof Error 
+          ? `Upload failed: ${error.message}` 
+          : "Upload failed: Unknown error"
+      );
     } finally {
       setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
+  const handleRemoveImage = () => {
+    setMaskImageUrl(null);
+    toast.info("Image removed");
+  };
+
   return (
-    <div className="w-full">
-      <label 
-        htmlFor="mask-upload" 
-        className={`cursor-pointer block w-full ${isUploading ? 'pointer-events-none' : ''}`}
-      >
-        <Card className={`border-2 border-dashed border-white/20 shadow-none hover:border-primary/50 transition-colors ${maskImageUrl ? 'bg-black/40' : 'bg-black/20'}`}>
-          <CardContent className="flex flex-col items-center justify-center p-4 space-y-2">
-            {isUploading ? (
-              <div className="py-8 flex flex-col items-center">
-                <Loader2 className="w-8 h-8 text-white/70 animate-spin mb-2" />
-                <p className="text-sm text-white/70">
-                  Uploading image...
-                </p>
-              </div>
-            ) : maskImageUrl ? (
-              <div className="w-full aspect-square relative">
-                <img 
-                  src={maskImageUrl} 
-                  alt="Uploaded wallet skin" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ) : (
-              <>
-                <UploadCloud className="w-8 h-8 text-white/70" />
-                <p className="text-sm text-white/70">
-                  Click to upload a wallet skin
-                </p>
-                <p className="text-xs text-white/50">
-                  PNG with transparent center recommended
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </label>
-      <input 
-        type="file" 
-        id="mask-upload" 
-        accept="image/*" 
-        className="sr-only" 
-        onChange={handleImageUpload}
-        disabled={isUploading}
-      />
+    <div className="space-y-3">
+      <div className="border-2 border-dashed border-white/10 rounded-lg p-4 flex flex-col items-center justify-center bg-black/20">
+        {maskImageUrl ? (
+          <div className="w-full space-y-3">
+            <div className="aspect-square w-full overflow-hidden rounded-md relative">
+              <img 
+                src={maskImageUrl} 
+                alt="Uploaded mask" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <Button 
+              variant="destructive" 
+              onClick={handleRemoveImage} 
+              className="w-full"
+              size="sm"
+            >
+              Remove Image
+            </Button>
+          </div>
+        ) : (
+          <>
+            <input 
+              type="file" 
+              className="hidden" 
+              onChange={handleFileChange} 
+              ref={fileInputRef}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              disabled={isUploading}
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="border-white/10 text-white w-full"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Image
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-white/40 mt-2 text-center">
+              Upload an image to use as a reference
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 };

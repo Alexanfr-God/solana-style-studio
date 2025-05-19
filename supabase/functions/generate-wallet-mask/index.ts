@@ -1,3 +1,4 @@
+
 // Import required modules
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -50,6 +51,7 @@ interface LayoutAnalysis {
   color_palette: string[];
 }
 
+// Define safe zone - center must remain clean for wallet UI
 const DEFAULT_SAFE_ZONE: SafeZone = {
   x: "20%",
   y: "20%",
@@ -209,18 +211,26 @@ async function analyzeImageWithGPT(
   additionalPrompt: string | undefined, 
   apiKey: string
 ): Promise<LayoutAnalysis> {
+  const safeZoneInstructions = `
+CRITICAL INSTRUCTION: You are designing a decorative frame/overlay for a wallet app UI.
+The center area (${DEFAULT_SAFE_ZONE.x} to ${parseInt(DEFAULT_SAFE_ZONE.x) + parseInt(DEFAULT_SAFE_ZONE.width)}%, ${DEFAULT_SAFE_ZONE.y} to ${parseInt(DEFAULT_SAFE_ZONE.y) + parseInt(DEFAULT_SAFE_ZONE.height)}%) MUST remain completely empty and transparent.
+ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
+Think of it as creating a decorative border that surrounds but never overlaps the central wallet UI.`;
+
   const promptBase = `Analyze this image and describe how it could be used as a decorative frame or character around a crypto wallet UI.
+
+${safeZoneInstructions}
 
 I need these specific details:
 1. Subject - What is the main subject/character in the image?
 2. Style - What visual style is used (cartoon, photorealistic, anime, etc)?
 3. Color palette - List 3-5 main colors (in hex codes)
-4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement)
+4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement ONLY, keeping the center completely empty)
 
 ${additionalPrompt ? `Additional context: ${additionalPrompt}` : ''}
 
 Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
-The "core" property in layout should be "untouched" to indicate the center remains clear.`;
+The "core" property in layout must ALWAYS be "untouched" to indicate the center remains completely empty and transparent.`;
 
   return await callOpenAIVisionAPI(apiKey, promptBase, imageUrl);
 }
@@ -229,16 +239,24 @@ async function interpretPromptWithGPT(
   prompt: string, 
   apiKey: string
 ): Promise<LayoutAnalysis> {
+  const safeZoneInstructions = `
+CRITICAL INSTRUCTION: You are designing a decorative frame/overlay for a wallet app UI.
+The center area (${DEFAULT_SAFE_ZONE.x} to ${parseInt(DEFAULT_SAFE_ZONE.x) + parseInt(DEFAULT_SAFE_ZONE.width)}%, ${DEFAULT_SAFE_ZONE.y} to ${parseInt(DEFAULT_SAFE_ZONE.y) + parseInt(DEFAULT_SAFE_ZONE.height)}%) MUST remain completely empty and transparent.
+ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
+Think of it as creating a decorative border that surrounds but never overlaps the central wallet UI.`;
+
   const promptBase = `Based on this description: "${prompt}", design a decorative frame or character that could surround a crypto wallet UI.
+
+${safeZoneInstructions}
 
 I need these specific details:
 1. Subject - What would be the main subject/character?
 2. Style - What visual style would work best (cartoon, photorealistic, anime, etc)?
 3. Color palette - Suggest 3-5 main colors (in hex codes)
-4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement)
+4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement ONLY, keeping the center completely empty)
 
 Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
-The "core" property in layout should be "untouched" to indicate the center remains clear.`;
+The "core" property in layout must ALWAYS be "untouched" to indicate the center remains completely empty and transparent.`;
 
   return await callOpenAITextAPI(apiKey, promptBase);
 }
@@ -364,15 +382,28 @@ function buildDallePrompt(
     .filter(element => element !== "")
     .join(", ");
   
-  // Build enhanced prompt for DALL-E
-  return `Design a clean visual frame or character-based decoration to surround a crypto wallet interface in ${layoutAnalysis.style} style. The design will have ${placementDescription}.
+  // Safe zone description
+  const safeZoneDescription = `
+*** CRITICAL INSTRUCTION: SAFE ZONE REQUIREMENT ***
+You are generating a decorative mask/frame for a crypto wallet interface.
+The CENTER AREA (${DEFAULT_SAFE_ZONE.x} to ${parseInt(DEFAULT_SAFE_ZONE.x) + parseInt(DEFAULT_SAFE_ZONE.width)}%, ${DEFAULT_SAFE_ZONE.y} to ${parseInt(DEFAULT_SAFE_ZONE.y) + parseInt(DEFAULT_SAFE_ZONE.height)}%) MUST REMAIN COMPLETELY EMPTY AND TRANSPARENT.
 
-IMPORTANT: Keep the center area COMPLETELY EMPTY AND TRANSPARENT. This is where the wallet UI will be displayed.
+DO NOT draw anything in the center of the image where the wallet UI will be.
+ONLY create decorative elements AROUND the edges that frame but never overlap the center.
+The result should look like a character or decorative elements "hugging" around the wallet screen.
+`;
+  
+  // Build enhanced prompt for DALL-E
+  return `${safeZoneDescription}
+
+Design a clean visual frame or character-based decoration to surround a crypto wallet interface in ${layoutAnalysis.style} style. The design will have ${placementDescription}.
+
+The output must be a decorative UI frame or mask with a completely transparent center, resembling a customization skin for a wallet app.
 Use these colors: ${layoutAnalysis.color_palette.join(", ")}.
-The output should look like a decorative UI frame or mask with a transparent center, resembling a customization skin for a wallet app.
 ${userPrompt ? `User's specific request: ${userPrompt}` : ""}
 
-Make the edges clean and the transparency obvious. This is a UI element, not a background.`;
+Make the edges clean and the transparency obvious. This is a UI element, not a background.
+Remember: NO ELEMENTS in the center area (${DEFAULT_SAFE_ZONE.width} x ${DEFAULT_SAFE_ZONE.height} in the middle)!`;
 }
 
 async function generateImageWithDallE(
