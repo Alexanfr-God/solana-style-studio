@@ -2,12 +2,12 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FileImage, SlidersHorizontal, Layers } from 'lucide-react';
-import { useCustomizationStore } from '@/stores/customizationStore';
+import { useCustomizationStore, EditorModeType } from '@/stores/customizationStore';
 
 const EditorTabs = () => {
   const { setEditorMode, editorMode } = useCustomizationStore();
 
-  const handleTabChange = (value: string) => {
+  const handleTabChange = (value: EditorModeType) => {
     setEditorMode(value);
   };
 
