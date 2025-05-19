@@ -3,7 +3,7 @@ import { Mask, MaskLayerType } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-// Generate a mask using our new edge function
+// Generate a mask using our edge function
 export const generateMask = async (prompt: string, layerType: MaskLayerType, imageUrl?: string | null): Promise<Mask> => {
   console.log(`Generating mask with prompt: ${prompt} for layer: ${layerType}`);
   
