@@ -47,10 +47,10 @@ interface MaskEditorState {
 }
 
 const defaultSafeZone: SafeZone = {
-  x: '20%',
-  y: '20%',
-  width: '60%',
-  height: '60%'
+  x: '25%',
+  y: '18%',
+  width: '50%',
+  height: '56%'
 };
 
 export const useMaskEditorStore = create<MaskEditorState>((set) => ({

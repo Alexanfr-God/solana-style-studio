@@ -51,12 +51,13 @@ interface LayoutAnalysis {
   color_palette: string[];
 }
 
-// Define safe zone - center must remain clean for wallet UI
+// Define safe zone - precise coordinates based on wallet UI dimensions
+// For login screen with width 320px and proportional height
 const DEFAULT_SAFE_ZONE: SafeZone = {
-  x: "20%",
-  y: "20%",
-  width: "60%",
-  height: "60%"
+  x: "25%",
+  y: "18%", 
+  width: "50%",
+  height: "56%"
 };
 
 // Main function handler
@@ -211,9 +212,19 @@ async function analyzeImageWithGPT(
   additionalPrompt: string | undefined, 
   apiKey: string
 ): Promise<LayoutAnalysis> {
+  // Calculate pixel values for clarity in instructions
+  const pixelValues = {
+    x: "80px", // 25% of 320px
+    y: "108px", // 18% of 600px
+    width: "160px", // 50% of 320px
+    height: "336px", // 56% of 600px
+  };
+
   const safeZoneInstructions = `
-CRITICAL INSTRUCTION: You are designing a decorative frame/overlay for a wallet app UI.
-The center area (${DEFAULT_SAFE_ZONE.x} to ${parseInt(DEFAULT_SAFE_ZONE.x) + parseInt(DEFAULT_SAFE_ZONE.width)}%, ${DEFAULT_SAFE_ZONE.y} to ${parseInt(DEFAULT_SAFE_ZONE.y) + parseInt(DEFAULT_SAFE_ZONE.height)}%) MUST remain completely empty and transparent.
+CRITICAL INSTRUCTION: You are designing a decorative frame/overlay for a crypto wallet app UI.
+The center area MUST remain completely empty and transparent.
+Exact center measurements: X: ${pixelValues.x} from left, Y: ${pixelValues.y} from top, Width: ${pixelValues.width}, Height: ${pixelValues.height}
+
 ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
 Think of it as creating a decorative border that surrounds but never overlaps the central wallet UI.`;
 
@@ -239,9 +250,19 @@ async function interpretPromptWithGPT(
   prompt: string, 
   apiKey: string
 ): Promise<LayoutAnalysis> {
+  // Calculate pixel values for clarity in instructions
+  const pixelValues = {
+    x: "80px", // 25% of 320px
+    y: "108px", // 18% of 600px
+    width: "160px", // 50% of 320px
+    height: "336px", // 56% of 600px
+  };
+
   const safeZoneInstructions = `
-CRITICAL INSTRUCTION: You are designing a decorative frame/overlay for a wallet app UI.
-The center area (${DEFAULT_SAFE_ZONE.x} to ${parseInt(DEFAULT_SAFE_ZONE.x) + parseInt(DEFAULT_SAFE_ZONE.width)}%, ${DEFAULT_SAFE_ZONE.y} to ${parseInt(DEFAULT_SAFE_ZONE.y) + parseInt(DEFAULT_SAFE_ZONE.height)}%) MUST remain completely empty and transparent.
+CRITICAL INSTRUCTION: You are designing a decorative frame/overlay for a crypto wallet app UI.
+The center area MUST remain completely empty and transparent.
+Exact center measurements: X: ${pixelValues.x} from left, Y: ${pixelValues.y} from top, Width: ${pixelValues.width}, Height: ${pixelValues.height}
+
 ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
 Think of it as creating a decorative border that surrounds but never overlaps the central wallet UI.`;
 
@@ -382,14 +403,30 @@ function buildDallePrompt(
     .filter(element => element !== "")
     .join(", ");
   
-  // Safe zone description
+  // Calculate pixel values for absolute clarity in DALL-E instructions
+  const pixelValues = {
+    x: "80px", // 25% of 320px
+    y: "108px", // 18% of 600px
+    width: "160px", // 50% of 320px
+    height: "336px", // 56% of 600px
+    centerX: "160px", // center x of image
+    centerY: "300px", // center y of image
+  };
+  
+  // Safe zone description with precise pixel measurements
   const safeZoneDescription = `
-*** CRITICAL INSTRUCTION: SAFE ZONE REQUIREMENT ***
+*** CRITICAL INSTRUCTION: WALLET UI SAFETY ZONE ***
 You are generating a decorative mask/frame for a crypto wallet interface.
-The CENTER AREA (${DEFAULT_SAFE_ZONE.x} to ${parseInt(DEFAULT_SAFE_ZONE.x) + parseInt(DEFAULT_SAFE_ZONE.width)}%, ${DEFAULT_SAFE_ZONE.y} to ${parseInt(DEFAULT_SAFE_ZONE.y) + parseInt(DEFAULT_SAFE_ZONE.height)}%) MUST REMAIN COMPLETELY EMPTY AND TRANSPARENT.
 
-DO NOT draw anything in the center of the image where the wallet UI will be.
-ONLY create decorative elements AROUND the edges that frame but never overlap the center.
+The CENTER AREA MUST REMAIN COMPLETELY EMPTY AND TRANSPARENT.
+Exact center measurements:
+- X offset: ${pixelValues.x} from left edge
+- Y offset: ${pixelValues.y} from top edge
+- Width: ${pixelValues.width}
+- Height: ${pixelValues.height}
+
+DO NOT draw anything within this central rectangle (${pixelValues.width} x ${pixelValues.height} in the middle).
+ONLY create decorative elements AROUND the edges that frame but never overlap the central wallet interface.
 The result should look like a character or decorative elements "hugging" around the wallet screen.
 `;
   
@@ -403,7 +440,7 @@ Use these colors: ${layoutAnalysis.color_palette.join(", ")}.
 ${userPrompt ? `User's specific request: ${userPrompt}` : ""}
 
 Make the edges clean and the transparency obvious. This is a UI element, not a background.
-Remember: NO ELEMENTS in the center area (${DEFAULT_SAFE_ZONE.width} x ${DEFAULT_SAFE_ZONE.height} in the middle)!`;
+Remember: NO ELEMENTS in the center area (${pixelValues.width} x ${pixelValues.height} rectangle with its top-left corner at ${pixelValues.x},${pixelValues.y})!`;
 }
 
 async function generateImageWithDallE(
@@ -476,3 +513,4 @@ async function storeMaskResult(
     // Don't throw here, just log the error to avoid breaking the main flow
   }
 }
+

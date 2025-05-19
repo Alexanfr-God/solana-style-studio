@@ -13,7 +13,8 @@ const GenerateMaskButton = () => {
     maskImageUrl,
     setSelectedMask, 
     isGenerating, 
-    setIsGenerating 
+    setIsGenerating,
+    setSafeZoneVisible
   } = useMaskEditorStore();
 
   const handleGenerate = async () => {
@@ -29,6 +30,9 @@ const GenerateMaskButton = () => {
     }
 
     setIsGenerating(true);
+    // Show safe zone during generation to help the user understand the process
+    setSafeZoneVisible(true);
+    
     try {
       toast.info("Generating wallet costume. This may take a moment...");
       
