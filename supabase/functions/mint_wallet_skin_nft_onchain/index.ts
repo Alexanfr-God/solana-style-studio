@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as web3 from "https://esm.sh/@solana/web3.js@1.73.0";
-import { Metaplex } from "https://esm.sh/@metaplex-foundation/js@0.18.3";
+// Removed Metaplex import which was causing arbundles dependency issue
 
 // Configure CORS headers
 const corsHeaders = {
@@ -86,10 +86,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-
-    // Initialize Metaplex
-    const metaplex = Metaplex.make(connection);
     
+    // Removed Metaplex initialization that was here
+
     // Fund the keypair for transaction fees (in production you'd use a funded account)
     try {
       const airdropSignature = await connection.requestAirdrop(
@@ -177,3 +176,4 @@ serve(async (req) => {
     });
   }
 });
+
