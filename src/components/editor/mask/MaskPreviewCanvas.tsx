@@ -9,10 +9,10 @@ const MaskPreviewCanvas = () => {
   const { selectedMask, safeZoneVisible } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
-  // Define precise safe zone based on the edge function dimensions
+  // Define precise safe zone based on DALL-E canvas dimensions (1024x1024)
   const safeZone = selectedMask?.safeZone || {
-    x: 80,
-    y: 108, 
+    x: 432, // center X - width/2
+    y: 344, // center Y - height/2
     width: 160,
     height: 336
   };
@@ -30,20 +30,52 @@ const MaskPreviewCanvas = () => {
           <div
             className="absolute top-0 left-0 w-full h-full pointer-events-none z-20"
             style={{
-              background: `
-                linear-gradient(to right, rgba(255,0,0,0.1) 0%, rgba(255,0,0,0.1) ${safeZone.x}px, transparent ${safeZone.x}px, transparent calc(${safeZone.x}px + ${safeZone.width}px), rgba(255,0,0,0.1) calc(${safeZone.x}px + ${safeZone.width}px), rgba(255,0,0,0.1) 100%),
-                linear-gradient(to bottom, rgba(255,0,0,0.1) 0%, rgba(255,0,0,0.1) ${safeZone.y}px, transparent ${safeZone.y}px, transparent calc(${safeZone.y}px + ${safeZone.height}px), rgba(255,0,0,0.1) calc(${safeZone.y}px + ${safeZone.height}px), rgba(255,0,0,0.1) 100%)
-              `,
-              boxShadow: 'inset 0 0 0 1px rgba(255,0,0,0.3)'
+              position: 'relative',
+              width: '100%',
+              height: '100%'
             }}
           >
-            <div className="absolute top-0 left-0 m-1 bg-black/50 text-red-400 text-xs px-1.5 py-0.5 rounded">
-              Safe Zone
+            {/* Dark overlay for the entire area */}
+            <div 
+              className="absolute inset-0" 
+              style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+            />
+            
+            {/* Red highlight for the DO NOT DRAW zone */}
+            <div
+              className="absolute"
+              style={{
+                top: `${safeZone.y / 1024 * 100}%`,
+                left: `${safeZone.x / 1024 * 100}%`,
+                width: `${safeZone.width / 1024 * 100}%`,
+                height: `${safeZone.height / 1024 * 100}%`,
+                backgroundColor: 'rgba(255,0,0,0.3)',
+                border: '2px dashed red'
+              }}
+            >
+              {/* "DO NOT DRAW" label */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                ❌ DO NOT DRAW
+              </div>
+            </div>
+            
+            {/* "DRAW HERE" labels for the four sides */}
+            <div className="absolute top-[10%] left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+              ✅ DRAW HERE
+            </div>
+            <div className="absolute bottom-[10%] left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+              ✅ DRAW HERE
+            </div>
+            <div className="absolute left-[10%] top-1/2 transform -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+              ✅ DRAW HERE
+            </div>
+            <div className="absolute right-[10%] top-1/2 transform -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+              ✅ DRAW HERE
             </div>
             
             {/* Add dimensions display */}
-            <div className="absolute bottom-0 right-0 m-1 bg-black/50 text-red-400 text-xs px-1.5 py-0.5 rounded">
-              {safeZone.width} × {safeZone.height}
+            <div className="absolute bottom-0 right-0 m-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+              Safe Zone: {safeZone.width} × {safeZone.height} at ({safeZone.x}, {safeZone.y})
             </div>
           </div>
         )}

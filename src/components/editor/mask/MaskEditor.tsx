@@ -49,6 +49,8 @@ const MaskEditor = () => {
                   <MaskPromptInput />
                 </div>
                 
+                <SafeZoneToggle />
+                
                 <div className="flex flex-col space-y-3">
                   <GenerateMaskButton />
                   <ApplyMaskButton />

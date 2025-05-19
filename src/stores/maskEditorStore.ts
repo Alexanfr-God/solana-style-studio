@@ -46,9 +46,10 @@ interface MaskEditorState {
   resetEditor: () => void;
 }
 
+// Updated safe zone coordinates to match DALL-E canvas
 const defaultSafeZone: SafeZone = {
-  x: 80,
-  y: 108,
+  x: 432, // center X - width/2
+  y: 344, // center Y - height/2
   width: 160,
   height: 336
 };
@@ -59,7 +60,7 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   maskImageUrl: null,
   selectedMask: null,
   previewVisible: true,
-  safeZoneVisible: false, // Changed to false by default
+  safeZoneVisible: true, // Changed to true by default for clarity
   isGenerating: false,
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),

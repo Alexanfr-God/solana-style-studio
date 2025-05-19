@@ -17,7 +17,7 @@ const SafeZoneToggle = () => {
     <div className="flex items-center justify-between space-x-2">
       <div className="flex items-center space-x-2">
         <Shield className="h-4 w-4 text-white" />
-        <Label htmlFor="safe-zone" className="text-white text-sm">Show Safe Zone</Label>
+        <Label htmlFor="safe-zone" className="text-white text-sm">Show Safe Zone Guide</Label>
       </div>
       
       <TooltipProvider>
@@ -31,7 +31,8 @@ const SafeZoneToggle = () => {
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             <p>
-              Visualizes the central area where UI elements will be displayed. 
+              Visualizes the safe zone guidance. The <span className="text-red-400">RED</span> area indicates where NOT to draw.
+              This is the central UI area that must remain transparent. 
               The costume design should be created around this area, not over it.
             </p>
           </TooltipContent>

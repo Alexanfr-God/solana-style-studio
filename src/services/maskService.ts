@@ -1,4 +1,5 @@
 
+
 import { Mask, MaskLayerType } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +18,7 @@ export const generateMask = async (prompt: string, layerType: MaskLayerType, ima
     // Call the edge function
     const { data, error } = await supabase.functions.invoke('generate-wallet-mask', {
       body: {
-        prompt: prompt,
+        prompt,
         image_url: imageUrl, // This should now be a public URL from Supabase Storage
         layer: layerType,
         user_id: user?.id

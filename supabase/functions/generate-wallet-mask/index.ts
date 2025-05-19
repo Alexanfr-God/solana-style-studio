@@ -52,9 +52,10 @@ interface LayoutAnalysis {
 }
 
 // Define safe zone - precise coordinates based on wallet UI dimensions
+// Updated to use the centerpoint-relative coordinates for 1024x1024 DALL-E canvas
 const WALLET_SAFE_ZONE: SafeZone = {
-  x: 80,
-  y: 108, 
+  x: 432, // center X - width/2
+  y: 344, // center Y - height/2
   width: 160,
   height: 336
 };
@@ -213,23 +214,23 @@ async function analyzeImageWithGPT(
 ): Promise<LayoutAnalysis> {
   
   const safeZoneInstructions = `
-You are designing a decorative mask for a crypto wallet login screen.
+🧠 DESIGN CONTEXT: 
+You are generating a decorative mask (UI frame) for a wallet login screen.
 
-⚠️ CRITICAL INSTRUCTION: UI SAFETY ZONE ⚠️
+⚠️ DO NOT DRAW in the center:
+- Forbidden area size: ${WALLET_SAFE_ZONE.width}px wide, ${WALLET_SAFE_ZONE.height}px tall
+- Located at: x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y} (top-left corner of the forbidden rectangle)
 
-The CENTER AREA MUST remain COMPLETELY EMPTY and TRANSPARENT.
-Exact pixel measurements:
-- X offset: ${WALLET_SAFE_ZONE.x}px from left edge
-- Y offset: ${WALLET_SAFE_ZONE.y}px from top edge
-- Width: ${WALLET_SAFE_ZONE.width}px
-- Height: ${WALLET_SAFE_ZONE.height}px
+✅ Draw ONLY decorative elements around the edges:
+- Top, bottom, left, right
+- No characters or visuals in the center zone
 
-Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}px, y=${WALLET_SAFE_ZONE.y}px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
+❌ The central rectangle (${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) must remain completely empty and transparent. This area is reserved for the login interface.
 
-❌ Do NOT draw anything inside the transparent center zone (${WALLET_SAFE_ZONE.width}x${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}). This area is reserved for the login interface and must remain visually empty.
+🎨 Use transparency for everything inside the forbidden zone.
+📐 Output size: 1024×1024 PNG with clear framing and transparent center.
 
-ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
-This is a UI skin, not an illustration. The center must remain fully transparent.`;
+Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.`;
 
   const promptBase = `Analyze this image and describe how it could be used as a decorative frame or character around a crypto wallet UI.
 
@@ -255,23 +256,23 @@ async function interpretPromptWithGPT(
 ): Promise<LayoutAnalysis> {
   
   const safeZoneInstructions = `
-You are designing a decorative mask for a crypto wallet login screen.
+🧠 DESIGN CONTEXT: 
+You are generating a decorative mask (UI frame) for a wallet login screen.
 
-⚠️ CRITICAL INSTRUCTION: UI SAFETY ZONE ⚠️
+⚠️ DO NOT DRAW in the center:
+- Forbidden area size: ${WALLET_SAFE_ZONE.width}px wide, ${WALLET_SAFE_ZONE.height}px tall
+- Located at: x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y} (top-left corner of the forbidden rectangle)
 
-The CENTER AREA MUST remain COMPLETELY EMPTY and TRANSPARENT.
-Exact pixel measurements:
-- X offset: ${WALLET_SAFE_ZONE.x}px from left edge
-- Y offset: ${WALLET_SAFE_ZONE.y}px from top edge
-- Width: ${WALLET_SAFE_ZONE.width}px
-- Height: ${WALLET_SAFE_ZONE.height}px
+✅ Draw ONLY decorative elements around the edges:
+- Top, bottom, left, right
+- No characters or visuals in the center zone
 
-Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}px, y=${WALLET_SAFE_ZONE.y}px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
+❌ The central rectangle (${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) must remain completely empty and transparent. This area is reserved for the login interface.
 
-❌ Do NOT draw anything inside the transparent center zone (${WALLET_SAFE_ZONE.width}x${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}). This area is reserved for the login interface and must remain visually empty.
+🎨 Use transparency for everything inside the forbidden zone.
+📐 Output size: 1024×1024 PNG with clear framing and transparent center.
 
-ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
-This is a UI skin, not an illustration. The center must remain fully transparent.`;
+Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.`;
 
   const promptBase = `Based on this description: "${prompt}", design a decorative frame or character that could surround a crypto wallet UI.
 
@@ -411,13 +412,22 @@ function buildDallePrompt(
     .join(", ");
   
   // Build enhanced prompt for DALL-E with improved instructions
-  return `You are designing a UI mask (frame) for a crypto wallet screen. The image should be a full 1024x1024 PNG with transparent areas.
+  return `🧠 DESIGN CONTEXT: 
+You are generating a decorative mask (UI frame) for a wallet login screen.
 
-🚫 The center of the canvas (${WALLET_SAFE_ZONE.width}x${WALLET_SAFE_ZONE.height}px starting at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) MUST be empty — this is the wallet's login area. Nothing should appear in this zone.
+⚠️ DO NOT DRAW in the center:
+- Forbidden area size: ${WALLET_SAFE_ZONE.width}px wide, ${WALLET_SAFE_ZONE.height}px tall
+- Located at: x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y} (top-left corner of the forbidden rectangle)
 
-❌ Do NOT draw anything inside the transparent center zone (${WALLET_SAFE_ZONE.width}x${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}). This area is reserved for the login interface and must remain visually empty.
+✅ Draw ONLY decorative elements around the edges:
+- Top, bottom, left, right
+- No characters or visuals in the center zone
 
-✅ Create visual decorations ONLY around the top, bottom, left, and right edges — as if framing the wallet.
+🎨 Use transparency for everything inside the forbidden zone.
+📐 Output size: 1024×1024 PNG with clear framing and transparent center.
+
+❌ Do NOT include UI elements, buttons, or backgrounds.
+✔️ This is a UI SKIN, not a standalone image.
 
 This is not a background. This is not a full-screen illustration. It is a UI mask with a transparent center.
 
@@ -465,7 +475,7 @@ async function generateImageWithDallE(
         n: 1,
         size: "1024x1024",
         response_format: "url",
-        quality: "hd" // Changed from "standard" to "hd" for better quality
+        quality: "hd" // Updated from "standard" to "hd" for better quality
       })
     });
 
