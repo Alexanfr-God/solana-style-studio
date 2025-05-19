@@ -213,17 +213,21 @@ async function analyzeImageWithGPT(
 ): Promise<LayoutAnalysis> {
   
   const safeZoneInstructions = `
-CRITICAL INSTRUCTION: You are designing a UI skin for a crypto wallet app.
+You are designing a decorative mask for a crypto wallet login screen.
 
-The center area MUST remain completely empty and transparent.
-Do not place ANY visual elements in the center rectangle: 160px × 336px, starting at x=80px, y=108px from top-left.
+⚠️ CRITICAL INSTRUCTION: UI SAFETY ZONE ⚠️
+
+The CENTER AREA MUST remain COMPLETELY EMPTY and TRANSPARENT.
+Exact pixel measurements:
+- X offset: 80px from left edge
+- Y offset: 108px from top edge
+- Width: 160px
+- Height: 336px
 
 Inside the center of the image (rectangle: 160px × 336px, starting at x=80px, y=108px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
 
 ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
-Think of it as creating a decorative border that surrounds but never overlaps the central wallet UI.
-
-This is a UI skin, not an illustration. Transparency must be obvious in the center.`;
+This is a UI skin, not an illustration. The center must remain fully transparent.`;
 
   const promptBase = `Analyze this image and describe how it could be used as a decorative frame or character around a crypto wallet UI.
 
@@ -249,17 +253,21 @@ async function interpretPromptWithGPT(
 ): Promise<LayoutAnalysis> {
   
   const safeZoneInstructions = `
-CRITICAL INSTRUCTION: You are designing a UI skin for a crypto wallet app.
+You are designing a decorative mask for a crypto wallet login screen.
 
-The center area MUST remain completely empty and transparent.
-Do not place ANY visual elements in the center rectangle: 160px × 336px, starting at x=80px, y=108px from top-left.
+⚠️ CRITICAL INSTRUCTION: UI SAFETY ZONE ⚠️
+
+The CENTER AREA MUST remain COMPLETELY EMPTY and TRANSPARENT.
+Exact pixel measurements:
+- X offset: 80px from left edge
+- Y offset: 108px from top edge
+- Width: 160px
+- Height: 336px
 
 Inside the center of the image (rectangle: 160px × 336px, starting at x=80px, y=108px), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.
 
 ONLY design decorative elements around the edges (top, bottom, left, right borders) that frame this empty center space.
-Think of it as creating a decorative border that surrounds but never overlaps the central wallet UI.
-
-This is a UI skin, not an illustration. Transparency must be obvious in the center.`;
+This is a UI skin, not an illustration. The center must remain fully transparent.`;
 
   const promptBase = `Based on this description: "${prompt}", design a decorative frame or character that could surround a crypto wallet UI.
 
@@ -401,7 +409,7 @@ function buildDallePrompt(
   // Safe zone description with precise pixel measurements
   const safeZoneDescription = `
 *** CRITICAL INSTRUCTION: WALLET UI SAFETY ZONE ***
-You are generating a decorative UI skin for a crypto wallet interface.
+You are designing a decorative UI skin for a crypto wallet interface.
 
 The CENTER AREA MUST REMAIN COMPLETELY EMPTY AND TRANSPARENT.
 Exact center measurements:
@@ -422,14 +430,42 @@ This is a UI skin, not a general illustration. The transparency must be obvious 
   // Build enhanced prompt for DALL-E
   return `${safeZoneDescription}
 
-Design a clean visual frame or character-based decoration to surround a crypto wallet interface in ${layoutAnalysis.style} style. The design will have ${placementDescription}.
+You are designing a UI mask for a crypto wallet login screen.
 
-The output must be a decorative UI skin with a completely transparent center, resembling a customization layer for a wallet app.
-Use these colors: ${layoutAnalysis.color_palette.join(", ")}.
-${userPrompt ? `User's specific request: ${userPrompt}` : ""}
+⚠️ This is NOT a general illustration or art piece. This is a **decorative UI frame**, and it will be applied as a PNG skin directly over the login screen.
 
-Make the edges clean and the transparency obvious. This is a UI element, not a background or illustration.
-Remember: NO ELEMENTS in the center area (160px x 336px rectangle with its top-left corner at 80px,108px)!`;
+📐 Canvas dimensions: 1024x1024 pixels  
+🔴 IMPORTANT: The **center area must remain 100% EMPTY and TRANSPARENT**  
+This center area represents the actual login interface (wallet inputs, buttons, etc.).
+
+🟥 Forbidden zone ("safe zone") rectangle:
+- Top-left corner: (80px, 108px)
+- Width: 160px
+- Height: 336px
+
+DO NOT place any content in this area.  
+Instead, your design should go **around** this area — top, bottom, left, and right only — as a decorative frame.
+
+🎯 Think of this like a sticker or ornate border wrapping around the center interface.
+
+DO:
+- Use visual balance — top and bottom decoration, side accents in ${layoutAnalysis.style} style.
+- Treat the center like a physical cutout.
+- Use full transparency in the center.
+- Include elements that hug the edges or corners (${placementDescription}).
+- Use these colors: ${layoutAnalysis.color_palette.join(", ")}.
+${userPrompt ? `- Style based on this prompt: ${userPrompt}` : ""}
+
+DON'T:
+- Draw buttons, text fields, or UI components.
+- Place anything in the center area.
+- Make the image chaotic or messy.
+
+🎨 Style goal: Clean, UI-friendly, collectible-worthy.
+
+The final image must look like a **custom UI costume** that will be overlaid onto the wallet. Not a painting — a product.
+
+Output must be a 1024x1024 PNG with a fully transparent center zone (as defined above).`;
 }
 
 async function generateImageWithDallE(
