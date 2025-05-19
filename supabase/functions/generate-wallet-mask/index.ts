@@ -1,4 +1,3 @@
-
 // Import required modules
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -74,6 +73,29 @@ serve(async (req) => {
     // Parse request body
     const { image_url, prompt, layer, user_id } = await req.json() as MaskRequest;
     
+    // Log input parameters for debugging
+    console.log(`Request received for ${layer} mask`);
+    console.log(`Input type: ${image_url ? "image_url" : ""}${prompt ? (image_url ? "+prompt" : "prompt") : ""}`);
+    if (image_url) {
+      console.log(`Image URL provided: ${image_url.substring(0, 50)}...`);
+      
+      // Validate the image URL - make sure it's not a blob URL
+      if (image_url.startsWith('blob:')) {
+        throw new Error("Invalid image URL format. Blob URLs are not accessible by the API. Please use a publicly accessible URL.");
+      }
+      
+      // Check if URL is accessible
+      try {
+        const imageResponse = await fetch(image_url, { method: 'HEAD' });
+        if (!imageResponse.ok) {
+          throw new Error(`Image URL is not accessible (status: ${imageResponse.status})`);
+        }
+      } catch (error) {
+        console.error("Error checking image URL:", error);
+        throw new Error("Unable to access the provided image URL. Please ensure it's publicly accessible.");
+      }
+    }
+    
     // Validate input parameters
     validateInputParameters(image_url, prompt, layer);
 
@@ -132,44 +154,54 @@ async function processRequest(
   layer: string,
   user_id?: string
 ): Promise<MaskResponse> {
+  console.log(`Processing ${inputType} request for ${layer} layer`);
+  
   // Step 1: Analyze image or interpret prompt with GPT-4o
   let layoutAnalysis;
   
-  if (inputType === "image" || inputType === "image+prompt") {
-    layoutAnalysis = await analyzeImageWithGPT(image_url!, prompt, openAiKey);
-  } else {
-    layoutAnalysis = await interpretPromptWithGPT(prompt!, openAiKey);
-  }
+  try {
+    if (inputType === "image" || inputType === "image+prompt") {
+      console.log("Analyzing image with GPT-4o...");
+      layoutAnalysis = await analyzeImageWithGPT(image_url!, prompt, openAiKey);
+    } else {
+      console.log("Interpreting prompt with GPT-4o...");
+      layoutAnalysis = await interpretPromptWithGPT(prompt!, openAiKey);
+    }
   
-  console.log("Layout analysis complete:", layoutAnalysis);
+    console.log("Layout analysis complete:", layoutAnalysis);
 
-  // Step 2: Generate mask image with DALL-E 3
-  const enhancedPrompt = buildDallePrompt(layoutAnalysis, prompt || "");
-  console.log("Enhanced prompt for DALL-E:", enhancedPrompt);
-  
-  // Generate image with DALL-E
-  const maskImageUrl = await generateImageWithDallE(enhancedPrompt, openAiKey);
-  console.log("Image generated successfully");
+    // Step 2: Generate mask image with DALL-E 3
+    const enhancedPrompt = buildDallePrompt(layoutAnalysis, prompt || "");
+    console.log("Enhanced prompt for DALL-E:", enhancedPrompt);
+    
+    // Generate image with DALL-E
+    console.log("Generating image with DALL-E 3...");
+    const maskImageUrl = await generateImageWithDallE(enhancedPrompt, openAiKey);
+    console.log("Image generated successfully");
 
-  // Prepare response
-  const response: MaskResponse = {
-    mask_image_url: maskImageUrl,
-    layout_json: {
-      layout: layoutAnalysis.layout,
-      style: layoutAnalysis.style,
-      color_palette: layoutAnalysis.color_palette,
-      safe_zone: DEFAULT_SAFE_ZONE
-    },
-    prompt_used: enhancedPrompt,
-    input_type: inputType
-  };
+    // Prepare response
+    const response: MaskResponse = {
+      mask_image_url: maskImageUrl,
+      layout_json: {
+        layout: layoutAnalysis.layout,
+        style: layoutAnalysis.style,
+        color_palette: layoutAnalysis.color_palette,
+        safe_zone: DEFAULT_SAFE_ZONE
+      },
+      prompt_used: enhancedPrompt,
+      input_type: inputType
+    };
 
-  // Store result in database if user_id is provided
-  if (user_id) {
-    await storeMaskResult(user_id, response, image_url, prompt || "", layer);
+    // Store result in database if user_id is provided
+    if (user_id) {
+      await storeMaskResult(user_id, response, image_url, prompt || "", layer);
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Error in processRequest:", error);
+    throw error; // Re-throw to be handled by the main handler
   }
-
-  return response;
 }
 
 async function analyzeImageWithGPT(
@@ -216,56 +248,68 @@ async function callOpenAIVisionAPI(
   promptText: string,
   imageUrl: string
 ): Promise<LayoutAnalysis> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: promptText },
-            {
-              type: "image_url",
-              image_url: { url: imageUrl }
-            }
-          ]
-        }
-      ],
-      response_format: { type: "json_object" }
-    })
-  });
+  console.log("Calling OpenAI Vision API...");
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: promptText },
+              {
+                type: "image_url",
+                image_url: { url: imageUrl }
+              }
+            ]
+          }
+        ],
+        response_format: { type: "json_object" }
+      })
+    });
 
-  return processOpenAIResponse(response);
+    return await processOpenAIResponse(response);
+  } catch (error) {
+    console.error("Error calling OpenAI Vision API:", error);
+    throw new Error(`OpenAI Vision API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 async function callOpenAITextAPI(
   apiKey: string,
   promptText: string
 ): Promise<LayoutAnalysis> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: promptText
-        }
-      ],
-      response_format: { type: "json_object" }
-    })
-  });
+  console.log("Calling OpenAI Text API...");
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: promptText
+          }
+        ],
+        response_format: { type: "json_object" }
+      })
+    });
 
-  return processOpenAIResponse(response);
+    return await processOpenAIResponse(response);
+  } catch (error) {
+    console.error("Error calling OpenAI Text API:", error);
+    throw new Error(`OpenAI Text API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 async function processOpenAIResponse(response: Response): Promise<LayoutAnalysis> {
@@ -335,29 +379,36 @@ async function generateImageWithDallE(
   prompt: string,
   apiKey: string
 ): Promise<string> {
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "dall-e-3",
-      prompt: prompt,
-      n: 1,
-      size: "1024x1024",
-      response_format: "url",
-      quality: "standard"
-    })
-  });
+  console.log("Generating image with DALL-E 3...");
+  try {
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        response_format: "url",
+        quality: "standard"
+      })
+    });
 
-  const data = await response.json();
-  if (!response.ok) {
-    console.error("DALL-E API error:", data);
-    throw new Error(`DALL-E API error: ${data.error?.message || "Unknown error"}`);
+    const data = await response.json();
+    if (!response.ok) {
+      console.error("DALL-E API error:", data);
+      throw new Error(`DALL-E API error: ${data.error?.message || "Unknown error"}`);
+    }
+
+    console.log("DALL-E image generated successfully");
+    return data.data[0].url;
+  } catch (error) {
+    console.error("Error generating image with DALL-E:", error);
+    throw error;
   }
-
-  return data.data[0].url;
 }
 
 async function storeMaskResult(

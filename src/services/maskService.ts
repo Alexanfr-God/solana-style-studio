@@ -6,6 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 // Generate a mask using our edge function
 export const generateMask = async (prompt: string, layerType: MaskLayerType, imageUrl?: string | null): Promise<Mask> => {
   console.log(`Generating mask with prompt: ${prompt} for layer: ${layerType}`);
+  if (imageUrl) {
+    console.log(`Using image URL: ${imageUrl}`);
+  }
   
   try {
     // Get current user
@@ -15,7 +18,7 @@ export const generateMask = async (prompt: string, layerType: MaskLayerType, ima
     const { data, error } = await supabase.functions.invoke('generate-wallet-mask', {
       body: {
         prompt: prompt,
-        image_url: imageUrl,
+        image_url: imageUrl, // This should now be a public URL from Supabase Storage
         layer: layerType,
         user_id: user?.id
       }
@@ -47,28 +50,14 @@ export const generateMask = async (prompt: string, layerType: MaskLayerType, ima
     return generatedMask;
   } catch (error) {
     console.error('Error generating mask:', error);
-    toast.error("Failed to generate mask. Please try again.");
     
-    // Return a fallback mask in case of error
-    return {
-      imageUrl: "https://solana-style-studio.vercel.app/placeholder-mask.png",
-      layout: {
-        top: "Character ears and hair",
-        bottom: "Character hands holding wallet",
-        left: null,
-        right: null,
-        core: "untouched"
-      },
-      theme: "Character-based",
-      style: "cartoon",
-      colorPalette: ["#f4d03f", "#222222", "#ffffff"],
-      safeZone: {
-        x: "20%",
-        y: "20%",
-        width: "60%",
-        height: "60%"
-      }
-    };
+    // Check if error is related to image URLs
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('image_url') || errorMessage.includes('blob:')) {
+      throw new Error("Invalid image URL. Make sure the image is fully uploaded before generating.");
+    }
+    
+    throw error;
   }
 };
 
