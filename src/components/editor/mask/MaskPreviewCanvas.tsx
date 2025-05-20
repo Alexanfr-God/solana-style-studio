@@ -42,12 +42,12 @@ const MaskPreviewCanvas = () => {
         
         {/* Base wallet UI */}
         <div className="relative z-10">
-          {/* Top Layer Overlay - Adjusted to be 50px lower than before */}
+          {/* Top Layer Overlay - Positioned to slightly overlap the top of wallet */}
           {topLayer && (
             <div 
               className="absolute w-full pointer-events-none z-20"
               style={{
-                top: '-205px', // Changed from -255px to -205px (50px lower)
+                top: '-205px', // Position adjusted to slightly overlap the top edge
                 left: 0,
                 height: '40px',
                 overflow: 'visible'
@@ -63,7 +63,7 @@ const MaskPreviewCanvas = () => {
           
           <LoginScreen style={loginStyle} />
           
-          {/* Bottom Layer Overlay - Adjusted to be fully visible */}
+          {/* Bottom Layer Overlay - Positioned to align perfectly with the bottom edge */}
           {bottomLayer && (
             <div 
               className="absolute w-full pointer-events-none z-20"

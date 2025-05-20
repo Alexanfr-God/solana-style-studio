@@ -329,12 +329,12 @@ const TryV3BetaButton = () => {
               <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
                 {/* Base wallet UI */}
                 <div className="w-[320px] relative">
-                  {/* Top Layer - adjusted to be 50px lower than before */}
+                  {/* Top Layer - Positioned to slightly overlap the top of wallet */}
                   {topLayer && (
                     <div 
                       className="absolute w-full pointer-events-none z-10"
                       style={{
-                        top: '-205px', // Changed from -255px to -205px (50px lower)
+                        top: '-205px', // Position adjusted to slightly overlap the top edge
                         left: 0,
                         height: '40px',
                         overflow: 'visible'
@@ -350,12 +350,12 @@ const TryV3BetaButton = () => {
                   
                   <LoginScreen style={loginStyle} />
                   
-                  {/* Bottom Layer - adjusted positioning */}
+                  {/* Bottom Layer - Positioned to align perfectly with the bottom edge */}
                   {bottomLayer && (
                     <div 
                       className="absolute w-full pointer-events-none z-10"
                       style={{
-                        bottom: '-5px', // Better positioned at bottom
+                        bottom: '-5px', // Positioned at the bottom edge
                         left: 0,
                         height: '40px',
                         overflow: 'visible'
