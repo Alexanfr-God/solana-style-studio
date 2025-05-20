@@ -42,12 +42,12 @@ const MaskPreviewCanvas = () => {
         
         {/* Base wallet UI */}
         <div className="relative z-10">
-          {/* Top Layer Overlay - Positioned much higher (200px higher) */}
+          {/* Top Layer Overlay - Adjusted to be 50px lower than before */}
           {topLayer && (
             <div 
               className="absolute w-full pointer-events-none z-20"
               style={{
-                top: '-255px', // Positioned 200px higher than the previous -55px
+                top: '-205px', // Changed from -255px to -205px (50px lower)
                 left: 0,
                 height: '40px',
                 overflow: 'visible'

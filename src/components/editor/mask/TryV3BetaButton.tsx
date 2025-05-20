@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -330,12 +329,12 @@ const TryV3BetaButton = () => {
               <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
                 {/* Base wallet UI */}
                 <div className="w-[320px] relative">
-                  {/* Top Layer - positioned 200px higher than before */}
+                  {/* Top Layer - adjusted to be 50px lower than before */}
                   {topLayer && (
                     <div 
                       className="absolute w-full pointer-events-none z-10"
                       style={{
-                        top: '-255px', // Changed from -55px to move 200px higher
+                        top: '-205px', // Changed from -255px to -205px (50px lower)
                         left: 0,
                         height: '40px',
                         overflow: 'visible'
