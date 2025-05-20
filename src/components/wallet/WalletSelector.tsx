@@ -25,7 +25,7 @@ const WALLET_ICONS: Record<string, React.ReactNode> = {
 
 export default function WalletSelector() {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
-  const { signMessageOnConnect, isAuthenticating, isAuthenticated } = useExtendedWallet();
+  const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
 
   // Filter and sort wallets by readiness
   const availableWallets = useMemo(() => {
@@ -40,12 +40,10 @@ export default function WalletSelector() {
 
   // Trigger sign message after wallet is connected
   useEffect(() => {
-    if (connected && publicKey && !isAuthenticated && !isAuthenticating) {
+    if (connected && publicKey && !isAuthenticated && !isAuthenticating && !hasRejectedSignature) {
       signMessageOnConnect(publicKey.toString());
     }
-  }, [connected, publicKey, signMessageOnConnect, isAuthenticated, isAuthenticating]);
-
-  // Removed the toast.custom effect that showed the purple vertical bar
+  }, [connected, publicKey, signMessageOnConnect, isAuthenticated, isAuthenticating, hasRejectedSignature]);
 
   // Handle disconnect with toast notification
   const handleDisconnect = useCallback(async () => {
@@ -140,4 +138,4 @@ export default function WalletSelector() {
       </DropdownMenu>
     </div>
   );
-}
+};

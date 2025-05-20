@@ -23,12 +23,14 @@ interface WalletContextExtendedProps {
   signMessageOnConnect: (publicKey: string) => Promise<void>;
   isAuthenticating: boolean;
   isAuthenticated: boolean;
+  hasRejectedSignature: boolean;
 }
 
 const WalletContextExtended = createContext<WalletContextExtendedProps>({
   signMessageOnConnect: async () => {},
   isAuthenticating: false,
   isAuthenticated: false,
+  hasRejectedSignature: false
 });
 
 export const useExtendedWallet = () => useContext(WalletContextExtended);
@@ -83,9 +85,10 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { connected, publicKey, signMessage } = useWallet();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasRejectedSignature, setHasRejectedSignature] = useState(false);
   
   const signMessageOnConnect = useCallback(async (publicKeyStr: string) => {
-    if (!signMessage || !publicKey) return;
+    if (!signMessage || !publicKey || hasRejectedSignature) return;
     
     try {
       setIsAuthenticating(true);
@@ -99,20 +102,23 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       
       // If we got here, the user signed the message successfully
       setIsAuthenticated(true);
+      setHasRejectedSignature(false);
       console.log("Message signed successfully:", signature);
     } catch (error: any) {
       console.error("Error signing message:", error);
+      setHasRejectedSignature(true);
       toast.error(`Signature error: ${error?.message || 'User declined to sign'}`);
     } finally {
       setIsAuthenticating(false);
     }
-  }, [publicKey, signMessage]);
+  }, [publicKey, signMessage, hasRejectedSignature]);
 
   const value = useMemo(() => ({
     signMessageOnConnect,
     isAuthenticating,
-    isAuthenticated
-  }), [signMessageOnConnect, isAuthenticating, isAuthenticated]);
+    isAuthenticated,
+    hasRejectedSignature
+  }), [signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature]);
 
   return (
     <WalletContextExtended.Provider value={value}>
