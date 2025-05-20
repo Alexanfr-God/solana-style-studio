@@ -45,7 +45,7 @@ export const MaskExamplesSection = ({
         // Apply the Pepe meme as a single unified custom mask
         setTopLayer(null);
         setBottomLayer(null);
-        setCustomMask('/lovable-uploads/72224164-59bd-4fc3-abf5-d57bbdbee278.png');
+        setCustomMask('/lovable-uploads/f57c7d94-7776-485c-8d15-e2da5c9c80b4.png');
         toast.success('Crypto Meme mask applied');
         break;
       case 'pepe':
