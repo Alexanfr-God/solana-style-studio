@@ -15,16 +15,16 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
-        {/* Base wallet UI */}
+        {/* Base wallet UI with fixed dimensions */}
         <div className="w-[320px] relative">
           {/* Top Layer - Positioned to slightly overlap the top of wallet */}
           {topLayer && (
             <div 
-              className="absolute w-full pointer-events-none z-10"
+              className="absolute pointer-events-none z-10"
               style={{
                 top: '-205px', // Position adjusted to slightly overlap the top edge
                 left: 0,
-                height: '40px',
+                width: '100%',
                 overflow: 'visible'
               }}
             >
@@ -41,11 +41,11 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
           {/* Bottom Layer - Positioned to align perfectly with the bottom edge */}
           {bottomLayer && (
             <div 
-              className="absolute w-full pointer-events-none z-10"
+              className="absolute pointer-events-none z-10"
               style={{
                 bottom: '-5px', // Positioned at the bottom edge
                 left: 0,
-                height: '40px',
+                width: '100%',
                 overflow: 'visible'
               }}
             >

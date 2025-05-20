@@ -42,7 +42,7 @@ export const MaskExamplesSection = ({
         toast.success('Cute Cats mask applied');
         break;
       case 'crypto':
-        // Apply the Pepe meme as a single unified custom mask
+        // Apply the crypto meme as a single unified custom mask
         setTopLayer(null);
         setBottomLayer(null);
         setCustomMask('/lovable-uploads/f57c7d94-7776-485c-8d15-e2da5c9c80b4.png');

@@ -46,11 +46,11 @@ const MaskPreviewCanvas = () => {
           {/* Top Layer Overlay - Positioned to slightly overlap the top of wallet */}
           {topLayer && (
             <div 
-              className="absolute w-full pointer-events-none z-20"
+              className="absolute pointer-events-none z-20"
               style={{
                 top: '-205px', // Position adjusted to slightly overlap the top edge
                 left: 0,
-                height: '40px',
+                width: '100%',
                 overflow: 'visible'
               }}
             >
@@ -67,11 +67,11 @@ const MaskPreviewCanvas = () => {
           {/* Bottom Layer Overlay - Positioned to align perfectly with the bottom edge */}
           {bottomLayer && (
             <div 
-              className="absolute w-full pointer-events-none z-20"
+              className="absolute pointer-events-none z-20"
               style={{
                 bottom: '-5px', // Better positioned at bottom
                 left: 0,
-                height: '40px',
+                width: '100%',
                 overflow: 'visible'
               }}
             >
@@ -151,12 +151,14 @@ const MaskPreviewCanvas = () => {
             <div
               style={{
                 position: 'absolute',
-                width: '150%', // Expanded to allow mask to grow around the wallet
-                height: '150%', // Expanded to allow mask to grow around the wallet
+                width: '150%',
+                height: 'auto',
                 backgroundImage: `url(${selectedMask.imageUrl})`,
                 backgroundSize: 'contain',
                 backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
+                backgroundRepeat: 'no-repeat',
+                top: '-25%',
+                left: '-25%'
               }}
             />
           </div>
