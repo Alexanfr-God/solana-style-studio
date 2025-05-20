@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload, BadgeAlert } from 'lucide-react';
+import { Upload, BadgeAlert, ExternalLink, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
@@ -12,6 +12,7 @@ const TryV3BetaButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [customMask, setCustomMask] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showJson, setShowJson] = useState(false);
   const { loginStyle } = useCustomizationStore();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +52,16 @@ const TryV3BetaButton = () => {
     toast.info('Mask removed');
   };
 
+  const handleTryExampleMask = () => {
+    // Use a sample Pepe-style mask image
+    setCustomMask('/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png');
+    toast.success('Example mask applied');
+  };
+
+  const handleToggleJson = () => {
+    setShowJson(!showJson);
+  };
+
   return (
     <>
       <Button 
@@ -63,7 +74,7 @@ const TryV3BetaButton = () => {
       </Button>
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-4xl bg-black border border-white/10">
+        <DialogContent className="max-w-5xl bg-black border border-white/10">
           <DialogHeader>
             <DialogTitle className="text-xl text-white flex items-center gap-2">
               <BadgeAlert className="h-5 w-5 text-yellow-400" />
@@ -78,6 +89,37 @@ const TryV3BetaButton = () => {
           </DialogHeader>
           
           <Separator className="bg-white/10" />
+          
+          {/* How it works instructions */}
+          <div className="bg-black/40 rounded-lg border border-white/10 p-4">
+            <h3 className="text-white font-medium mb-3">How it works</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white/80">
+              <div className="flex flex-col items-center text-center p-2 rounded-lg bg-black/20 border border-white/5">
+                <span className="text-2xl mb-2">🎨</span>
+                <p className="text-sm font-medium">1. Generate your custom mask with AI</p>
+                <a 
+                  href="https://chatgpt.com/g/g-682a38c975b881918621ac1517cf68db-wallet-coast-customs-v3" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="mt-2 text-xs flex items-center justify-center gap-1 text-purple-400 hover:text-purple-300"
+                >
+                  Open Mask Generator <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+              
+              <div className="flex flex-col items-center text-center p-2 rounded-lg bg-black/20 border border-white/5">
+                <span className="text-2xl mb-2">⬆️</span>
+                <p className="text-sm font-medium">2. Upload the PNG file you created</p>
+                <span className="mt-2 text-xs text-white/40">Use PNG with transparency</span>
+              </div>
+              
+              <div className="flex flex-col items-center text-center p-2 rounded-lg bg-black/20 border border-white/5">
+                <span className="text-2xl mb-2">✨</span>
+                <p className="text-sm font-medium">3. Apply it to the wallet interface</p>
+                <span className="mt-2 text-xs text-white/40">See your design come to life</span>
+              </div>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-2">
             <div className="space-y-4">
@@ -127,6 +169,57 @@ const TryV3BetaButton = () => {
                     </div>
                   )}
                 </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                  <Button
+                    onClick={handleTryExampleMask}
+                    className="bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white"
+                  >
+                    Try Example Mask
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={handleRemoveMask}
+                    className="border-white/10 text-white flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove Mask
+                  </Button>
+                </div>
+                
+                <Separator className="my-4 bg-white/10" />
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/60">Show JSON</span>
+                  <Button
+                    variant="ghost"
+                    onClick={handleToggleJson}
+                    size="sm"
+                    className={`${showJson ? 'bg-purple-500/20 text-purple-300' : 'bg-transparent text-white/40'}`}
+                  >
+                    {showJson ? 'Hide' : 'Show'}
+                  </Button>
+                </div>
+                
+                {showJson && (
+                  <div className="mt-3 bg-black/50 border border-white/10 rounded p-3 overflow-auto max-h-40">
+                    <pre className="text-xs text-green-400">
+                      {JSON.stringify({
+                        name: "Custom Wallet Mask",
+                        styles: {
+                          mask: customMask ? "applied" : "none",
+                          theme: "dark",
+                          scale: 1.0
+                        },
+                        metadata: {
+                          version: "v3-beta",
+                          generated: new Date().toISOString()
+                        }
+                      }, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
               
               <div className="rounded-lg border border-white/10 p-4 bg-black/30 flex flex-col space-y-3">
@@ -146,7 +239,7 @@ const TryV3BetaButton = () => {
             </div>
             
             <div className="flex flex-col items-center justify-center">
-              <div className="relative">
+              <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
                 {/* Base wallet UI */}
                 <div className="w-[320px]">
                   <LoginScreen style={loginStyle} />
