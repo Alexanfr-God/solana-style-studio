@@ -10,7 +10,8 @@ const MaskPreviewCanvas = () => {
     selectedMask, 
     safeZoneVisible, 
     topLayer, 
-    bottomLayer 
+    bottomLayer,
+    maskImageUrl // This will be used for custom full masks
   } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
@@ -78,6 +79,28 @@ const MaskPreviewCanvas = () => {
                 src={bottomLayer} 
                 alt="Bottom mask layer" 
                 className="w-full h-auto"
+              />
+            </div>
+          )}
+          
+          {/* Full mask overlay for custom uploads */}
+          {maskImageUrl && (
+            <div 
+              className="absolute pointer-events-none z-20"
+              style={{
+                top: '-205px', // Position as requested
+                left: 0,
+                width: '100%',
+                overflow: 'visible'
+              }}
+            >
+              <img 
+                src={maskImageUrl} 
+                alt="Full mask overlay" 
+                className="w-full h-auto object-contain"
+                style={{
+                  maxWidth: '100%'
+                }}
               />
             </div>
           )}

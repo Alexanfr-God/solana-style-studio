@@ -60,17 +60,20 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
           {/* Full mask overlay - only shown when using the custom upload or example mask */}
           {customMask && (
             <div 
-              className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none z-10"
+              className="absolute pointer-events-none z-10"
+              style={{
+                top: '-205px', // Position as requested
+                left: 0,
+                width: '100%',
+                overflow: 'visible'
+              }}
             >
               <img 
                 src={customMask} 
                 alt="Mask overlay" 
-                className="max-width-150% max-height-150%"
+                className="w-full h-auto object-contain"
                 style={{
-                  position: 'absolute',
-                  width: '150%', // Make it larger than the wallet to show framing
-                  height: 'auto',
-                  objectFit: 'contain'
+                  maxWidth: '100%'
                 }}
               />
             </div>
