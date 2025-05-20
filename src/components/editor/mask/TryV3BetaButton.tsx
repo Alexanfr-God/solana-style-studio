@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -329,12 +330,12 @@ const TryV3BetaButton = () => {
               <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
                 {/* Base wallet UI */}
                 <div className="w-[320px] relative">
-                  {/* Top Layer - correctly positioned relative to wallet */}
+                  {/* Top Layer - correctly positioned relative to wallet with minimal overlap */}
                   {topLayer && (
                     <div 
                       className="absolute w-full pointer-events-none z-10"
                       style={{
-                        top: '-30px', // Positioned higher to simulate cat leaning over
+                        top: '-55px', // Positioned much higher to only have 10-15px overlap
                         left: 0,
                         height: '40px',
                         overflow: 'visible'
