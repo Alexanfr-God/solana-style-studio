@@ -17,7 +17,7 @@ import V3Beta from './V3Beta';
 
 const V1Customizer = () => {
   const [activeTab, setActiveTab] = useState<'style-editor' | 'mask-editor' | 'rider'>('style-editor');
-  const { customization } = useCustomizationStore();
+  const { editorMode } = useCustomizationStore();
 
   const renderEditorContent = () => {
     switch (activeTab) {
@@ -97,7 +97,6 @@ const V1Customizer = () => {
 
   // Show dual wallet preview when in normal mode with viewport width >= 1280px
   const showDualPreview = 
-    customization.viewMode === 'normal' && 
     typeof window !== 'undefined' && 
     window.innerWidth >= 1280;
 
@@ -106,8 +105,10 @@ const V1Customizer = () => {
       {/* Editor Header */}
       <EditorHeader />
       
-      {/* Editor Tabs */}
-      <EditorTabs activeTab={activeTab} onSelectTab={setActiveTab} />
+      {/* Editor Tabs - fixed prop passing */}
+      <div className="mb-6">
+        <EditorTabs />
+      </div>
       
       <div className="mt-6">
         {/* Main Editor Content */}
