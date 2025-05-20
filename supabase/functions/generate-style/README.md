@@ -21,10 +21,13 @@ The function is organized in a modular structure:
 2. **Layout-Aware Prompt Generation**:
    - Creates enhanced prompts that respect the layout of UI components
    - Different configurations for login screens vs. wallet interfaces
+   - Ensures the central area (336x336px) remains visually clear
+   - Positions character elements in the top 30-40% of the image
    
 3. **Background Image Generation**:
    - Generates a suitable background image using DALL-E if none provided
    - Respects UI layout zones to ensure usability
+   - Follows NFT portrait/Web3 avatar composition guidelines
    
 4. **Image Analysis**:
    - Extracts dominant colors from uploaded images
@@ -51,3 +54,4 @@ curl -X POST https://your-project.functions.supabase.co/generate-style \
 - Integrate with user preferences
 - Support additional style attributes
 - Create theme variation generation
+

@@ -32,48 +32,53 @@ export async function createLayoutAwarePrompt(
   
   const layoutConfig = walletCanvasConfig[layerType as keyof typeof walletCanvasConfig] || {};
   
-  // Base background generation instructions
+  // Base background generation instructions with improved composition guidance
   let enhancedPrompt = `
-    Design a collectible vertical background for a crypto wallet ${layerType === "login" ? "login screen" : "interface"}.
-    
-    Prompt theme: ${prompt}
+    Draw a collectible wallet background in NFT style.
+
+    Position subject's head and shoulders in the top 40% of the image. 
+    Leave the center (middle 336x336) visually clear of any objects or faces.
+
+    Theme: ${prompt}
     
     Instructions:
-    - Create a vertical collectible background for a wallet ${layerType === "login" ? "login screen" : "interface"}.
-    - DO NOT draw buttons, inputs, "Password", "Forgot password", "Unlock", or any other UI elements.
-    - DO NOT add any text, labels, or words of any kind to the image.
-    - DO NOT add any shadows, overlays, gradients, or lighting effects that would interfere with UI readability.
-    - Use a clean, professional cartoon or comic-inspired art style.
-    - Avoid oversaturated or harsh neon colors unless specifically requested.
-    - Create a smooth visual flow that respects these layout zones:
+    - Create a vertical collectible background for a ${layerType === "login" ? "login screen" : "wallet interface"}.
+    - DO NOT draw UI elements like buttons, input fields, or "Password"/"Forgot password"/"Unlock" labels.
+    - DO NOT add any text, logos, or words of any kind to the image.
+    - Design with a clean, professional comic or illustration style.
+    - Keep the center area (middle 336x336 pixels) visually clear and simple for UI elements.
+    - Place character elements, faces, or focal points in the top 30-40% of the image.
+    - Use bottom 30% for decorative elements, textures, or lower body parts if characters are included.
+    - Left and right edges can have background elements but avoid text or small details there.
   `;
 
   // Add layout-specific instructions based on layer type
   if (layerType === "login") {
     enhancedPrompt += `
-      * Top ${layoutConfig.topLogoZone}: leave empty space for the "phantom" logo
-      * Next ${layoutConfig.titleZone}: visually interesting but not distracting area
-      * Middle ${layoutConfig.inputZone}: calm, clean area for password input field
-      * Next ${layoutConfig.supportTextZone}: subtle visual elements
-      * Bottom ${layoutConfig.actionButtonZone}: area that will contain the unlock button
+      * Top ${layoutConfig.topLogoZone}: suitable for character's head or decorative elements
+      * Next ${layoutConfig.titleZone}: visually interesting area above the center
+      * Middle ${layoutConfig.inputZone}: MUST remain visually clean and simple (central 336x336 area)
+      * Next ${layoutConfig.supportTextZone}: subtle visual elements below center
+      * Bottom ${layoutConfig.actionButtonZone}: decorative area for lower portions of characters or designs
     `;
   } else {
     enhancedPrompt += `
-      * Top ${layoutConfig.headerZone}: header area with subtle decoration
-      * Next ${layoutConfig.balanceZone}: area for displaying wallet balance  
-      * Middle ${layoutConfig.actionsZone}: clean space for action buttons
-      * Next ${layoutConfig.assetsZone}: visual area for assets list
-      * Bottom ${layoutConfig.navigationZone}: footer area for navigation
+      * Top ${layoutConfig.headerZone}: area for character's head or upper design elements
+      * Next ${layoutConfig.balanceZone}: transition area with minimal detail  
+      * Middle ${layoutConfig.actionsZone}: MUST remain visually clean and simple (central 336x336 area)
+      * Next ${layoutConfig.assetsZone}: subtle visual elements below center
+      * Bottom ${layoutConfig.navigationZone}: decorative footer area
     `;
   }
 
   // Additional style guidance
   enhancedPrompt += `
-    - If a character (like a cat or meme) is involved, it should be positioned elegantly around the layout zones, not directly in input areas.
-    - If the prompt includes a fashion brand (e.g., Gucci), apply color themes and abstract patterns only — do NOT add logos unless stylized as part of the visual texture.
-    - The background should feel collectible, stylish, and premium — not childish.
-    - Ensure the final image will be suitable as a professional wallet background.
-    - Create something visually similar to high-quality collectible NFT art.
+    - If a character (like Pepe, Mia Khalifa, Trump, etc.) is involved, position their face/head in the top portion.
+    - Any character should be positioned so their face/head is in the top 30-40% of the canvas.
+    - If the prompt includes a fashion or luxury theme (e.g., Gucci), apply color themes and patterns tastefully.
+    - The background should feel collectible and premium — like a high-quality NFT portrait or Web3 avatar.
+    - Ensure the final image has a clean composition with the center area visually clear.
+    - The art style should be clean, polished, and suitable for a professional wallet application.
   `;
 
   return { 
