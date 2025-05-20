@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -331,12 +332,14 @@ const TryV3BetaButton = () => {
                 <div className="w-[320px] relative">
                   <LoginScreen style={loginStyle} />
                   
-                  {/* Top Layer */}
+                  {/* Top Layer - adjusted positioning */}
                   {topLayer && (
                     <div 
                       className="absolute top-0 left-0 w-full pointer-events-none z-10"
                       style={{
-                        height: '40px'
+                        height: '40px',
+                        transform: 'translateY(-30px)', // Move up by 30px so only paws hang over
+                        overflow: 'visible'
                       }}
                     >
                       <img 
@@ -347,12 +350,14 @@ const TryV3BetaButton = () => {
                     </div>
                   )}
                   
-                  {/* Bottom Layer */}
+                  {/* Bottom Layer - adjusted positioning */}
                   {bottomLayer && (
                     <div 
                       className="absolute bottom-0 left-0 w-full pointer-events-none z-10"
                       style={{
-                        height: '40px'
+                        height: '40px',
+                        transform: 'translateY(-5px)', // Move up slightly to ensure visibility
+                        overflow: 'visible'
                       }}
                     >
                       <img 
