@@ -42,15 +42,14 @@ const MaskPreviewCanvas = () => {
         
         {/* Base wallet UI */}
         <div className="relative z-10">
-          <LoginScreen style={loginStyle} />
-          
-          {/* Top Layer Overlay (V3 Beta) - Adjusted to hang over */}
+          {/* Top Layer Overlay - Now correctly positioned relative to wallet UI */}
           {topLayer && (
             <div 
-              className="absolute top-0 left-0 w-full pointer-events-none z-20"
+              className="absolute w-full pointer-events-none z-20"
               style={{
+                top: '-30px', // Positioned higher to simulate cat leaning over
+                left: 0,
                 height: '40px',
-                transform: 'translateY(-30px)', // Move up by 30px so only paws hang over
                 overflow: 'visible'
               }}
             >
@@ -62,13 +61,16 @@ const MaskPreviewCanvas = () => {
             </div>
           )}
           
-          {/* Bottom Layer Overlay (V3 Beta) - Adjusted to be fully visible */}
+          <LoginScreen style={loginStyle} />
+          
+          {/* Bottom Layer Overlay - Adjusted to be fully visible */}
           {bottomLayer && (
             <div 
-              className="absolute bottom-0 left-0 w-full pointer-events-none z-20"
+              className="absolute w-full pointer-events-none z-20"
               style={{
+                bottom: '-5px', // Better positioned at bottom
+                left: 0,
                 height: '40px',
-                transform: 'translateY(-5px)', // Move up slightly to ensure visibility
                 overflow: 'visible'
               }}
             >

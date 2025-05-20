@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -330,15 +329,14 @@ const TryV3BetaButton = () => {
               <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
                 {/* Base wallet UI */}
                 <div className="w-[320px] relative">
-                  <LoginScreen style={loginStyle} />
-                  
-                  {/* Top Layer - adjusted positioning */}
+                  {/* Top Layer - correctly positioned relative to wallet */}
                   {topLayer && (
                     <div 
-                      className="absolute top-0 left-0 w-full pointer-events-none z-10"
+                      className="absolute w-full pointer-events-none z-10"
                       style={{
+                        top: '-30px', // Positioned higher to simulate cat leaning over
+                        left: 0,
                         height: '40px',
-                        transform: 'translateY(-30px)', // Move up by 30px so only paws hang over
                         overflow: 'visible'
                       }}
                     >
@@ -350,13 +348,16 @@ const TryV3BetaButton = () => {
                     </div>
                   )}
                   
+                  <LoginScreen style={loginStyle} />
+                  
                   {/* Bottom Layer - adjusted positioning */}
                   {bottomLayer && (
                     <div 
-                      className="absolute bottom-0 left-0 w-full pointer-events-none z-10"
+                      className="absolute w-full pointer-events-none z-10"
                       style={{
+                        bottom: '-5px', // Better positioned at bottom
+                        left: 0,
                         height: '40px',
-                        transform: 'translateY(-5px)', // Move up slightly to ensure visibility
                         overflow: 'visible'
                       }}
                     >
