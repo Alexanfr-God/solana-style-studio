@@ -36,6 +36,10 @@ interface MaskEditorState {
   safeZoneVisible: boolean;
   isGenerating: boolean;
   
+  // New beta mask properties
+  topLayer: string | null;
+  bottomLayer: string | null;
+  
   setActiveLayer: (layer: MaskLayerType) => void;
   setPrompt: (prompt: string) => void;
   setMaskImageUrl: (imageUrl: string | null) => void;
@@ -43,6 +47,12 @@ interface MaskEditorState {
   setPreviewVisible: (visible: boolean) => void;
   setSafeZoneVisible: (visible: boolean) => void;
   setIsGenerating: (isGenerating: boolean) => void;
+  
+  // New beta mask setters
+  setTopLayer: (imageUrl: string | null) => void;
+  setBottomLayer: (imageUrl: string | null) => void;
+  resetLayers: () => void;
+  
   resetEditor: () => void;
 }
 
@@ -63,6 +73,10 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   safeZoneVisible: true, // Changed to true by default for clarity
   isGenerating: false,
   
+  // Initialize beta mask properties
+  topLayer: null,
+  bottomLayer: null,
+  
   setActiveLayer: (layer) => set({ activeLayer: layer }),
   setPrompt: (prompt) => set({ prompt }),
   setMaskImageUrl: (imageUrl) => set({ maskImageUrl: imageUrl }),
@@ -70,10 +84,18 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   setPreviewVisible: (visible) => set({ previewVisible: visible }),
   setSafeZoneVisible: (visible) => set({ safeZoneVisible: visible }),
   setIsGenerating: (isGenerating) => set({ isGenerating: isGenerating }),
+  
+  // Beta mask setters
+  setTopLayer: (imageUrl) => set({ topLayer: imageUrl }),
+  setBottomLayer: (imageUrl) => set({ bottomLayer: imageUrl }),
+  resetLayers: () => set({ topLayer: null, bottomLayer: null }),
+  
   resetEditor: () => set({
     prompt: '',
     maskImageUrl: null,
     selectedMask: null,
-    isGenerating: false
+    isGenerating: false,
+    topLayer: null,
+    bottomLayer: null
   })
 }));

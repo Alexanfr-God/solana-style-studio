@@ -6,7 +6,12 @@ import { useCustomizationStore } from '@/stores/customizationStore';
 import { Badge } from '@/components/ui/badge';
 
 const MaskPreviewCanvas = () => {
-  const { selectedMask, safeZoneVisible } = useMaskEditorStore();
+  const { 
+    selectedMask, 
+    safeZoneVisible, 
+    topLayer, 
+    bottomLayer 
+  } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
   // Define precise safe zone based on DALL-E canvas dimensions (1024x1024)
@@ -38,6 +43,38 @@ const MaskPreviewCanvas = () => {
         {/* Base wallet UI */}
         <div className="relative z-10">
           <LoginScreen style={loginStyle} />
+          
+          {/* Top Layer Overlay (V3 Beta) */}
+          {topLayer && (
+            <div 
+              className="absolute top-0 left-0 w-full pointer-events-none z-20"
+              style={{
+                height: '40px'
+              }}
+            >
+              <img 
+                src={topLayer} 
+                alt="Top mask layer" 
+                className="w-full h-auto"
+              />
+            </div>
+          )}
+          
+          {/* Bottom Layer Overlay (V3 Beta) */}
+          {bottomLayer && (
+            <div 
+              className="absolute bottom-0 left-0 w-full pointer-events-none z-20"
+              style={{
+                height: '40px'
+              }}
+            >
+              <img 
+                src={bottomLayer} 
+                alt="Bottom mask layer" 
+                className="w-full h-auto"
+              />
+            </div>
+          )}
         </div>
         
         {/* Safe zone overlay - only visible when safeZoneVisible is true */}

@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Upload, BadgeAlert, ExternalLink, Trash2 } from 'lucide-react';
+import { Upload, BadgeAlert, ExternalLink, Trash2, Cat, CreditCard, Flame } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 const TryV3BetaButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +15,8 @@ const TryV3BetaButton = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showJson, setShowJson] = useState(false);
   const { loginStyle } = useCustomizationStore();
+  const [topLayer, setTopLayer] = useState<string | null>(null);
+  const [bottomLayer, setBottomLayer] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
@@ -36,6 +39,10 @@ const TryV3BetaButton = () => {
         setCustomMask(e.target.result);
         setIsUploading(false);
         toast.success('Mask uploaded successfully');
+        
+        // Clear any layers when uploading a custom mask
+        setTopLayer(null);
+        setBottomLayer(null);
       }
     };
     
@@ -49,17 +56,45 @@ const TryV3BetaButton = () => {
   
   const handleRemoveMask = () => {
     setCustomMask(null);
+    setTopLayer(null);
+    setBottomLayer(null);
     toast.info('Mask removed');
   };
 
   const handleTryExampleMask = () => {
     // Use a sample Pepe-style mask image
     setCustomMask('/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png');
+    setTopLayer(null);
+    setBottomLayer(null);
     toast.success('Example mask applied');
   };
 
   const handleToggleJson = () => {
     setShowJson(!showJson);
+  };
+
+  const applyMaskLayers = (maskType: 'cats' | 'crypto' | 'pepe') => {
+    // Clear any custom mask
+    setCustomMask(null);
+    
+    // Set top and bottom layers based on the selected mask type
+    switch (maskType) {
+      case 'cats':
+        setTopLayer('/lovable-uploads/6646952f-a2b0-4eca-b1b0-69a84dea8fd8.png');
+        setBottomLayer('/lovable-uploads/7cbac3b4-b6e4-4b03-bd16-6d11f9a0a6fd.png');
+        toast.success('Cute Cats mask applied');
+        break;
+      case 'crypto':
+        setTopLayer('/lovable-uploads/a8a0aa8b-cabe-4031-b6c4-c3fd3c4007cd.png');
+        setBottomLayer('/lovable-uploads/58a93618-7faf-4812-9de1-fec30544610f.png');
+        toast.success('Crypto Meme mask applied');
+        break;
+      case 'pepe':
+        setTopLayer('/lovable-uploads/d4fc8532-6040-450a-a8cf-d1d459c42e46.png');
+        setBottomLayer('/lovable-uploads/a5f8972f-b18d-4f17-8799-eeb025813f3b.png');
+        toast.success('Pepe Hacker mask applied');
+        break;
+    }
   };
 
   return (
@@ -190,6 +225,56 @@ const TryV3BetaButton = () => {
                 
                 <Separator className="my-4 bg-white/10" />
                 
+                {/* Example Masks (V3 Beta) Section */}
+                <div className="rounded-lg border border-white/10 p-4 bg-black/30 mt-4">
+                  <h3 className="text-white font-medium mb-3 flex items-center gap-2">
+                    🎨 Try Example Mask
+                  </h3>
+                  <p className="text-sm text-white/60 mb-4">
+                    This is a demo of how custom Wallet Masks will work. Only the top and bottom are used — the center stays visible for the login UI. Try it now!
+                  </p>
+                  
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex flex-col items-center py-4 border-white/10 bg-black/20 hover:bg-black/40"
+                      onClick={() => applyMaskLayers('cats')}
+                    >
+                      <Cat className="h-8 w-8 mb-2 text-purple-300" />
+                      <span className="text-xs text-white/80">Cute Cats</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="flex flex-col items-center py-4 border-white/10 bg-black/20 hover:bg-black/40"
+                      onClick={() => applyMaskLayers('crypto')}
+                    >
+                      <CreditCard className="h-8 w-8 mb-2 text-blue-300" />
+                      <span className="text-xs text-white/80">Crypto Meme</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="flex flex-col items-center py-4 border-white/10 bg-black/20 hover:bg-black/40"
+                      onClick={() => applyMaskLayers('pepe')}
+                    >
+                      <Flame className="h-8 w-8 mb-2 text-green-400" />
+                      <span className="text-xs text-white/80">Pepe Hacker</span>
+                    </Button>
+                  </div>
+                  
+                  <Button
+                    variant="destructive"
+                    onClick={handleRemoveMask}
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove Mask
+                  </Button>
+                </div>
+                
+                <Separator className="my-4 bg-white/10" />
+                
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-white/60">Show JSON</span>
                   <Button
@@ -208,7 +293,9 @@ const TryV3BetaButton = () => {
                       {JSON.stringify({
                         name: "Custom Wallet Mask",
                         styles: {
-                          mask: customMask ? "applied" : "none",
+                          mask: customMask ? "full" : "none",
+                          topLayer: topLayer ? topLayer.split('/').pop() : null,
+                          bottomLayer: bottomLayer ? bottomLayer.split('/').pop() : null,
                           theme: "dark",
                           scale: 1.0
                         },
@@ -241,28 +328,60 @@ const TryV3BetaButton = () => {
             <div className="flex flex-col items-center justify-center">
               <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
                 {/* Base wallet UI */}
-                <div className="w-[320px]">
+                <div className="w-[320px] relative">
                   <LoginScreen style={loginStyle} />
-                </div>
-                
-                {/* Mask overlay */}
-                {customMask && (
-                  <div 
-                    className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none"
-                  >
-                    <img 
-                      src={customMask} 
-                      alt="Mask overlay" 
-                      className="max-width-150% max-height-150%"
+                  
+                  {/* Top Layer */}
+                  {topLayer && (
+                    <div 
+                      className="absolute top-0 left-0 w-full pointer-events-none z-10"
                       style={{
-                        position: 'absolute',
-                        width: '150%', // Make it larger than the wallet to show framing
-                        height: 'auto',
-                        objectFit: 'contain'
+                        height: '40px'
                       }}
-                    />
-                  </div>
-                )}
+                    >
+                      <img 
+                        src={topLayer} 
+                        alt="Top mask layer" 
+                        className="w-full h-auto"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Bottom Layer */}
+                  {bottomLayer && (
+                    <div 
+                      className="absolute bottom-0 left-0 w-full pointer-events-none z-10"
+                      style={{
+                        height: '40px'
+                      }}
+                    >
+                      <img 
+                        src={bottomLayer} 
+                        alt="Bottom mask layer" 
+                        className="w-full h-auto"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Full mask overlay - only shown when using the custom upload or example mask */}
+                  {customMask && (
+                    <div 
+                      className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none z-10"
+                    >
+                      <img 
+                        src={customMask} 
+                        alt="Mask overlay" 
+                        className="max-width-150% max-height-150%"
+                        style={{
+                          position: 'absolute',
+                          width: '150%', // Make it larger than the wallet to show framing
+                          height: 'auto',
+                          objectFit: 'contain'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="mt-4">
