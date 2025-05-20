@@ -65,15 +65,17 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
                 top: '-205px', // Position as requested
                 left: 0,
                 width: '100%',
+                height: 'auto',
                 overflow: 'visible'
               }}
             >
               <img 
                 src={customMask} 
                 alt="Mask overlay" 
-                className="w-full h-auto object-contain"
+                className="w-full h-auto"
                 style={{
-                  maxWidth: '100%'
+                  maxWidth: '100%',
+                  maxHeight: 'unset'
                 }}
               />
             </div>
