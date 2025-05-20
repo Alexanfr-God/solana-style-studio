@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { useCustomizationStore, WalletStyle, LayerType } from '../../stores/customizationStore';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { toast } from 'sonner';
 import MintNftButton from './ExportToIpfsButton';
 import WalletNftCard from './WalletNftCard';
-import V3MaskOverlay from './V3MaskOverlay';
 
 // Render Login Screen UI
 const LoginScreen = ({ style }: { style: WalletStyle }) => {
@@ -268,15 +266,12 @@ const WalletPreview = () => {
             onClose={closeNftCard} 
           />
         ) : (
-          <div ref={walletPreviewRef} className="relative">
+          <div ref={walletPreviewRef}>
             {activeLayer === 'login' ? (
               <LoginScreen style={currentStyle} />
             ) : (
               <WalletScreen style={currentStyle} />
             )}
-            
-            {/* V3 Mask Overlay */}
-            <V3MaskOverlay />
           </div>
         )}
         
