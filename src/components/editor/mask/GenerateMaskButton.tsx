@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
@@ -5,7 +6,11 @@ import { toast } from 'sonner';
 import { Wand, Loader2 } from 'lucide-react';
 import { generateMask } from '@/services/maskService';
 
-const GenerateMaskButton = () => {
+interface GenerateMaskButtonProps {
+  disabled?: boolean;
+}
+
+const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   const { 
     prompt, 
     activeLayer, 
@@ -56,7 +61,7 @@ const GenerateMaskButton = () => {
     <Button
       onClick={handleGenerate}
       className="w-full"
-      disabled={isGenerating || (!prompt && !maskImageUrl)}
+      disabled={isGenerating || (!prompt && !maskImageUrl) || disabled}
     >
       {isGenerating ? (
         <>

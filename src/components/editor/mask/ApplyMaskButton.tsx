@@ -5,7 +5,11 @@ import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import { Check } from 'lucide-react';
 
-const ApplyMaskButton = () => {
+interface ApplyMaskButtonProps {
+  disabled?: boolean;
+}
+
+const ApplyMaskButton = ({ disabled = false }: ApplyMaskButtonProps) => {
   const { selectedMask } = useMaskEditorStore();
 
   const handleApplyMask = () => {
@@ -22,7 +26,7 @@ const ApplyMaskButton = () => {
     <Button
       onClick={handleApplyMask}
       className="w-full"
-      disabled={!selectedMask}
+      disabled={!selectedMask || disabled}
       variant="default"
     >
       <Check className="mr-2 h-4 w-4" />

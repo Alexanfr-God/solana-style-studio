@@ -70,7 +70,7 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   maskImageUrl: null,
   selectedMask: null,
   previewVisible: true,
-  safeZoneVisible: true, // Changed to true by default for clarity
+  safeZoneVisible: false, // Changed to false by default
   isGenerating: false,
   
   // Initialize beta mask properties

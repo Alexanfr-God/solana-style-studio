@@ -7,7 +7,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 
-const MaskUploadImage = () => {
+interface MaskUploadImageProps {
+  disabled?: boolean;
+}
+
+const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
   const { maskImageUrl, setMaskImageUrl } = useMaskEditorStore();
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +104,7 @@ const MaskUploadImage = () => {
               onClick={handleRemoveImage} 
               className="w-full"
               size="sm"
+              disabled={disabled}
             >
               Remove Image
             </Button>
@@ -112,12 +117,12 @@ const MaskUploadImage = () => {
               onChange={handleFileChange} 
               ref={fileInputRef}
               accept="image/jpeg,image/png,image/gif,image/webp"
-              disabled={isUploading}
+              disabled={isUploading || disabled}
             />
             <Button
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
+              disabled={isUploading || disabled}
               className="border-white/10 text-white w-full"
             >
               {isUploading ? (

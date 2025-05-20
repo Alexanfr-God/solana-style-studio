@@ -5,8 +5,12 @@ import { Label } from '@/components/ui/label';
 import { Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+interface SafeZoneToggleProps {
+  disabled?: boolean;
+}
+
 // Create a custom toggle component instead of using the Switch directly
-const SimpleToggle = ({ checked, onCheckedChange }: { checked: boolean, onCheckedChange: (checked: boolean) => void }) => {
+const SimpleToggle = ({ checked, onCheckedChange, disabled }: { checked: boolean, onCheckedChange: (checked: boolean) => void, disabled?: boolean }) => {
   return (
     <button
       type="button"
@@ -14,8 +18,9 @@ const SimpleToggle = ({ checked, onCheckedChange }: { checked: boolean, onChecke
       aria-checked={checked}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
         checked ? 'bg-primary' : 'bg-input'
-      }`}
-      onClick={() => onCheckedChange(!checked)}
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      onClick={() => !disabled && onCheckedChange(!checked)}
+      disabled={disabled}
     >
       <span 
         className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${
@@ -26,7 +31,7 @@ const SimpleToggle = ({ checked, onCheckedChange }: { checked: boolean, onChecke
   );
 };
 
-const SafeZoneToggle = () => {
+const SafeZoneToggle = ({ disabled = false }: SafeZoneToggleProps) => {
   const { safeZoneVisible, setSafeZoneVisible } = useMaskEditorStore();
 
   const handleToggle = (checked: boolean) => {
@@ -44,8 +49,9 @@ const SafeZoneToggle = () => {
         <Tooltip>
           <TooltipTrigger asChild>
             <SimpleToggle
-              checked={safeZoneVisible}
+              checked={false}
               onCheckedChange={handleToggle}
+              disabled={disabled}
             />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
