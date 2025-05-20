@@ -4,6 +4,7 @@ import { useCustomizationStore } from '@/stores/customizationStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import MintNftButton from './ExportToIpfsButton';
+import V3MaskOverlay from './V3MaskOverlay';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
@@ -17,7 +18,10 @@ const DualWalletPreview = () => {
             <h3 className="text-lg font-medium text-white/90">Login View</h3>
           </div>
           <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center">
-            <LoginScreen style={loginStyle} />
+            <div className="relative">
+              <LoginScreen style={loginStyle} />
+              <V3MaskOverlay />
+            </div>
           </div>
         </div>
         
@@ -35,7 +39,10 @@ const DualWalletPreview = () => {
             <h3 className="text-lg font-medium text-white/90">Wallet View</h3>
           </div>
           <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center">
-            <WalletScreen style={walletStyle} />
+            <div className="relative">
+              <WalletScreen style={walletStyle} />
+              <V3MaskOverlay />
+            </div>
           </div>
         </div>
       </div>
