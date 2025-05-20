@@ -9,6 +9,7 @@ import GenerateMaskButton from './GenerateMaskButton';
 import SafeZoneToggle from './SafeZoneToggle';
 import ApplyMaskButton from './ApplyMaskButton';
 import MaskPreviewCanvas from './MaskPreviewCanvas';
+import TryV3BetaButton from './TryV3BetaButton';
 import { Button } from '@/components/ui/button';
 import { RotateCcw } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
@@ -28,7 +29,10 @@ const MaskEditor = () => {
         <div className="flex flex-col space-y-6 md:space-y-8">
           <Card className="bg-black/30 backdrop-blur-md border-white/10">
             <CardContent className="p-4 md:p-6">
-              <h2 className="text-xl font-bold mb-4 text-white">Create Wallet Costume</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-white">Create Wallet Costume</h2>
+                <TryV3BetaButton />
+              </div>
               
               <div className="space-y-6">
                 <MaskLayerSelector />
