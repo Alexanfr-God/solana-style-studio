@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { toast } from 'sonner';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useMaskEditorStore } from '@/stores/maskEditorStore';
 
 const TryV3BetaButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,8 +15,7 @@ const TryV3BetaButton = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showJson, setShowJson] = useState(false);
   const { loginStyle } = useCustomizationStore();
-  const [topLayer, setTopLayer] = useState<string | null>(null);
-  const [bottomLayer, setBottomLayer] = useState<string | null>(null);
+  const { setTopLayer, setBottomLayer, topLayer, bottomLayer } = useMaskEditorStore();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
@@ -80,8 +79,9 @@ const TryV3BetaButton = () => {
     // Set top and bottom layers based on the selected mask type
     switch (maskType) {
       case 'cats':
-        setTopLayer('/lovable-uploads/6646952f-a2b0-4eca-b1b0-69a84dea8fd8.png');
-        setBottomLayer('/lovable-uploads/7cbac3b4-b6e4-4b03-bd16-6d11f9a0a6fd.png');
+        // Updated paths to the new cat mask assets
+        setTopLayer('/lovable-uploads/9388ce6f-be1d-42c8-b4d3-8d38453996a9.png');
+        setBottomLayer('/lovable-uploads/8c936683-1e0b-407a-a7a4-425b5b6cb4b8.png');
         toast.success('Cute Cats mask applied');
         break;
       case 'crypto':
