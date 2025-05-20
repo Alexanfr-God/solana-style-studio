@@ -2,3 +2,6 @@
 project_id = "opxordptvpvzmhakvdde"
 [functions.generate-wallet-mask]
 verify_jwt = true
+
+[functions.generate-style]
+verify_jwt = true
