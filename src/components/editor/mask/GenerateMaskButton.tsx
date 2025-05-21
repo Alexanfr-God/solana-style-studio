@@ -61,7 +61,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         enhancedPrompt += `, ${maskStyle} style`;
       }
       
-      // Always add safe zone instructions
+      // Always add safe zone instructions to ensure transparency in the center
       enhancedPrompt += " - Important: Create a decorative mask AROUND a wallet. Leave the central rectangle (320x569px) completely transparent and clear.";
       
       setProgress(30);
@@ -76,7 +76,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       
       console.log('Calling generateMask with:', { enhancedPrompt, activeLayer, maskImageUrl });
       
-      // For V3, we're generating an external mask
+      // Generate the external mask that surrounds the wallet
       const generatedMask = await generateMask(
         enhancedPrompt,
         activeLayer, 
@@ -87,6 +87,10 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       setProgress(100);
       
       console.log('Generated mask result:', generatedMask);
+      
+      if (!generatedMask || !generatedMask.imageUrl) {
+        throw new Error("Failed to generate mask - no image URL returned");
+      }
       
       // Set the external mask with the generated image URL
       setExternalMask(generatedMask.imageUrl);
@@ -104,8 +108,12 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       toast.error(
         typeof error === 'object' && error !== null && 'message' in error
           ? `Error: ${(error as Error).message}`
-          : "Failed to generate costume. Please try again."
+          : "Failed to generate costume. Using a demo mask instead."
       );
+      
+      // Use a fallback demo mask on error
+      setExternalMask('/external-masks/abstract-mask.png');
+      
       setShowProgress(false);
       setProgress(0);
     } finally {

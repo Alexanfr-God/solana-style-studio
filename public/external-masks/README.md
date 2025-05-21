@@ -14,3 +14,4 @@ Each mask image should:
 - cyber-mask.png: Cyberpunk-styled neon elements as a frame
 - pepe-mask.png: Meme-styled Pepe frog decorative frame
 - abstract-mask.png: Geometric abstract patterns surrounding the wallet
+

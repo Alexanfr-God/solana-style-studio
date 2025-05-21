@@ -1,4 +1,2 @@
-
-// This is a binary file. It should be a PNG with a transparent center area (320x569) and opaque surroundings.
-// Since we can't directly create binary files here, we'll point to an existing file or create a placeholder.
-// In reality, you would need to create this image separately and place it in the public folder.
+// This is a binary file. In reality, we need to upload an actual PNG image with white surroundings and a transparent center.
+// This file acts as a "mask" for CSS mask-image property.

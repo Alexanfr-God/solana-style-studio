@@ -66,7 +66,7 @@ export const MaskExamplesSection = ({
       {/* Example Masks (V3 Beta) Section */}
       <div className="rounded-lg border border-white/10 p-4 bg-black/30">
         <h3 className="text-white font-medium mb-3 flex items-center gap-2">
-          🎨 Try Example Mask
+          🎨 Try Example Masks
         </h3>
         <p className="text-sm text-white/60 mb-4">
           This is a demo of how custom Wallet Masks work. The masks appear around the wallet UI, leaving the center transparent. Try it now!
