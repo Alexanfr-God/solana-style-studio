@@ -33,9 +33,8 @@ const V3MaskPreviewCanvas = () => {
                 maskPosition: 'center',
                 WebkitMaskPosition: 'center',
                 maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskMode: 'luminance',
-                WebkitMaskMode: 'luminance'
+                WebkitMaskRepeat: 'no-repeat'
+                // Removed the incorrect WebkitMaskMode property
               }}
             >
               <img 
@@ -60,9 +59,8 @@ const V3MaskPreviewCanvas = () => {
                 maskPosition: 'center',
                 WebkitMaskPosition: 'center',
                 maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskMode: 'luminance',
-                WebkitMaskMode: 'luminance'
+                WebkitMaskRepeat: 'no-repeat'
+                // Removed the incorrect WebkitMaskMode property
               }}
             >
               <img 
