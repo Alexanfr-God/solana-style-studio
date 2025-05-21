@@ -11,19 +11,24 @@ interface MaskPromptInputProps {
 const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
   const { prompt, setPrompt } = useMaskEditorStore();
 
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrompt(e.target.value);
+  };
+
   return (
     <div className="space-y-2">
-      <Label htmlFor="prompt" className="text-sm font-medium text-white">
-        Costume Description
-      </Label>
+      <Label htmlFor="mask-prompt" className="text-sm text-white/80">Describe your wallet costume</Label>
       <Textarea
-        id="prompt"
+        id="mask-prompt"
+        placeholder="Example: A cute cat hugging the wallet, digital art style"
         value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Describe the wallet costume you want (e.g. 'A cyberpunk Wallet with neon colors and digital effects')"
-        className="min-h-[80px] bg-black/20 border-white/10 placeholder:text-white/30 text-white"
+        onChange={handlePromptChange}
         disabled={disabled}
+        className="resize-none h-24 bg-black/20 border-white/10 placeholder:text-white/30 focus-visible:ring-purple-500"
       />
+      <p className="text-xs text-white/50 italic mt-1">
+        Tip: Describe decorative elements that go around the wallet UI, like animals, characters, or abstract designs.
+      </p>
     </div>
   );
 };

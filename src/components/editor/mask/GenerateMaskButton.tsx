@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
@@ -15,7 +14,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     prompt, 
     activeLayer, 
     maskImageUrl,
-    setSelectedMask, 
+    setExternalMask,
     isGenerating, 
     setIsGenerating,
     setSafeZoneVisible
@@ -40,8 +39,16 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     try {
       toast.info("Generating wallet costume. This may take a moment...");
       
-      const generatedMask = await generateMask(prompt, activeLayer, maskImageUrl);
-      setSelectedMask(generatedMask);
+      // For V3, we're generating an external mask
+      // In a real implementation, this would send instructions to keep the central wallet UI area clear
+      const generatedMask = await generateMask(
+        prompt + " - Important: Create a decorative mask AROUND a wallet. Leave the central rectangle (320x569px) completely transparent and clear.",
+        activeLayer, 
+        maskImageUrl
+      );
+      
+      // Set the external mask with the generated image URL
+      setExternalMask(generatedMask.imageUrl);
       
       toast.success("Wallet costume generated successfully");
     } catch (error) {
@@ -60,7 +67,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   return (
     <Button
       onClick={handleGenerate}
-      className="w-full"
+      className="w-full bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600"
       disabled={isGenerating || (!prompt && !maskImageUrl) || disabled}
     >
       {isGenerating ? (

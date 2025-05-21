@@ -1,148 +1,112 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import { Upload, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2 } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
 
 interface MaskUploadImageProps {
   disabled?: boolean;
 }
 
 const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
-  const { maskImageUrl, setMaskImageUrl } = useMaskEditorStore();
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { setExternalMask, externalMask, maskImageUrl, setMaskImageUrl } = useMaskEditorStore();
+  
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
   
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check file type
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validImageTypes.includes(file.type)) {
-      toast.error("Please upload a valid image (JPEG, PNG, GIF, WEBP)");
+    if (!/image\/(png|jpg|jpeg|webp|svg\+xml)/.test(file.type)) {
+      toast.error('Please upload an image file (PNG, JPG, JPEG, WEBP, SVG)');
       return;
     }
-
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      toast.error("Image size exceeds 5MB limit");
-      return;
-    }
-
-    setIsUploading(true);
+    
+    setIsLoading(true);
+    
     try {
-      // Create a unique filename to prevent collisions
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `mask-uploads/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('public-assets')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        throw new Error(`Upload failed: ${error.message}`);
-      }
-
-      // Get the public URL for the uploaded file
-      const { data: urlData } = supabase.storage
-        .from('public-assets')
-        .getPublicUrl(filePath);
-
-      if (!urlData.publicUrl) {
-        throw new Error("Failed to get public URL for uploaded image");
-      }
-
-      // Set the public URL to the store
-      setMaskImageUrl(urlData.publicUrl);
-      toast.success("Image uploaded successfully");
-
+      const imageUrl = URL.createObjectURL(file);
+      // For V3, we set both for compatibility
+      setExternalMask(imageUrl);
+      setMaskImageUrl(imageUrl);
+      
+      toast.success('Image uploaded successfully');
     } catch (error) {
-      console.error("Upload error:", error);
-      toast.error(
-        error instanceof Error 
-          ? `Upload failed: ${error.message}` 
-          : "Upload failed: Unknown error"
-      );
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image. Please try again.');
     } finally {
-      setIsUploading(false);
-      // Reset file input
+      setIsLoading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
-
+  
   const handleRemoveImage = () => {
+    setExternalMask(null);
     setMaskImageUrl(null);
-    toast.info("Image removed");
   };
-
+  
+  const hasImage = externalMask || maskImageUrl;
+  
   return (
-    <div className="space-y-3">
-      <div className="border-2 border-dashed border-white/10 rounded-lg p-4 flex flex-col items-center justify-center bg-black/20">
-        {maskImageUrl ? (
-          <div className="w-full space-y-3">
-            <div className="aspect-square w-full overflow-hidden rounded-md relative">
-              <img 
-                src={maskImageUrl} 
-                alt="Uploaded mask" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <Button 
-              variant="destructive" 
-              onClick={handleRemoveImage} 
-              className="w-full"
-              size="sm"
-              disabled={disabled}
-            >
-              Remove Image
-            </Button>
-          </div>
-        ) : (
-          <>
-            <input 
-              type="file" 
-              className="hidden" 
-              onChange={handleFileChange} 
-              ref={fileInputRef}
-              accept="image/jpeg,image/png,image/gif,image/webp"
-              disabled={isUploading || disabled}
+    <div className="w-full">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+        className="hidden"
+      />
+      
+      {hasImage ? (
+        <div className="flex flex-col gap-2">
+          <div className="w-full h-32 bg-black/20 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden">
+            <img
+              src={externalMask || maskImageUrl || ''}
+              alt="Uploaded mask"
+              className="max-w-full max-h-full object-contain"
             />
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading || disabled}
-              className="border-white/10 text-white w-full"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Image
-                </>
-              )}
-            </Button>
-            <p className="text-xs text-white/40 mt-2 text-center">
-              Upload an image to use as a reference
-            </p>
-          </>
-        )}
-      </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full border-white/10"
+            onClick={handleRemoveImage}
+            disabled={disabled || isLoading}
+          >
+            <X className="mr-2 h-4 w-4" />
+            Remove Image
+          </Button>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          className="w-full h-32 border-dashed border-white/20 flex flex-col items-center justify-center gap-2"
+          onClick={handleUploadClick}
+          disabled={disabled || isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="text-sm">Uploading...</span>
+            </>
+          ) : (
+            <>
+              <Upload className="h-6 w-6" />
+              <span className="text-sm">Upload your own mask image</span>
+              <span className="text-xs text-white/50">(PNG, JPG, SVG or WEBP)</span>
+            </>
+          )}
+        </Button>
+      )}
     </div>
   );
 };
