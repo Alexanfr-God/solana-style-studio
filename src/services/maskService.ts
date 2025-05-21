@@ -39,63 +39,101 @@ export const generateMask = async (
   referenceImageUrl?: string | null,
 ): Promise<GeneratedMask> => {
   try {
-    // For demo purposes, we're using hardcoded sample images
-    // In production, this would call an actual AI service that creates masks with transparent centers
-    
-    // Sample image URLs for different types of prompts - with transparent centers
-    const sampleMasks = [
-      '/external-masks/cats-mask.png',  // Cute cats
-      '/external-masks/cyber-mask.png', // Cyberpunk
-      '/external-masks/pepe-mask.png',  // Pepe style
-      '/external-masks/abstract-mask.png', // Abstract
-    ];
+    console.log('Calling generate-wallet-mask function with:', { prompt, layer, referenceImageUrl });
     
     // Enhanced prompt to ensure AI generates a mask with transparent center
     const enhancedPrompt = `${prompt}. IMPORTANT: Create a decorative frame/mask that SURROUNDS a central wallet UI. The central area (320×569px) MUST BE TRANSPARENT, showing no elements. Only create decorative elements AROUND this central area.`;
     
-    // For demo - select an image based on the prompt content
-    let selectedMaskIndex = 0;
+    // Call the Supabase Edge Function to generate the mask
+    const { data, error } = await supabase.functions.invoke('generate-wallet-mask', {
+      body: { 
+        prompt: enhancedPrompt, // Use enhanced prompt emphasizing transparent center
+        layer,
+        referenceImageUrl,
+        safeZone: DEFAULT_SAFE_ZONE // Pass safe zone dimensions to ensure transparent center
+      }
+    });
     
-    if (prompt.toLowerCase().includes('cyber') || prompt.toLowerCase().includes('hack')) {
-      selectedMaskIndex = 1;
-    } else if (prompt.toLowerCase().includes('abstract') || prompt.toLowerCase().includes('geometric')) {
-      selectedMaskIndex = 3;
-    } else if (prompt.toLowerCase().includes('pepe') || prompt.toLowerCase().includes('meme')) {
-      selectedMaskIndex = 2;
+    if (error) {
+      console.error('Error calling generate-wallet-mask function:', error);
+      // Use fallback for demo/testing purposes if the edge function fails
+      return useFallbackMaskGeneration(prompt, layer);
     }
     
-    // In a real implementation, we would call the AI service here with the enhanced prompt
-    // const { data, error } = await supabase.functions.invoke('generate-wallet-mask', {
-    //   body: { 
-    //     prompt: enhancedPrompt, // Use enhanced prompt emphasizing transparent center
-    //     layer,
-    //     referenceImageUrl,
-    //     safeZone: DEFAULT_SAFE_ZONE // Pass safe zone dimensions to ensure transparent center
-    //   }
-    // });
+    if (!data || !data.mask_image_url) {
+      console.error('Invalid response from generate-wallet-mask function:', data);
+      // Use fallback if the response is invalid
+      return useFallbackMaskGeneration(prompt, layer);
+    }
     
-    // Use the mock data for now
-    const mockResponse = {
+    console.log('Mask generated successfully:', data);
+    
+    // Format response from the edge function
+    const response = {
       id: uuidv4(),
-      imageUrl: sampleMasks[selectedMaskIndex],
+      imageUrl: data.mask_image_url,
       prompt: enhancedPrompt,
       layer
     };
     
     // Save the generated mask to the ai_requests table
     await saveMaskToDatabase({
-      id: mockResponse.id,
-      image_url: mockResponse.imageUrl,
+      id: response.id,
+      image_url: response.imageUrl,
       prompt: prompt,
       layer_type: layer,
       status: 'completed'
     });
     
-    return mockResponse;
+    return response;
   } catch (error) {
     console.error('Error in generateMask:', error);
-    throw error;
+    
+    // Fallback to sample masks if the API call fails
+    return useFallbackMaskGeneration(prompt, layer);
   }
+};
+
+/**
+ * Fallback function to use sample masks when the API call fails
+ * This is useful for demo purposes or when the edge function is not available
+ */
+const useFallbackMaskGeneration = (prompt: string, layer: string): GeneratedMask => {
+  console.log('Using fallback mask generation');
+  
+  // Sample image URLs for different types of prompts - with transparent centers
+  const sampleMasks = [
+    '/external-masks/cats-mask.png',  // Cute cats
+    '/external-masks/cyber-mask.png', // Cyberpunk
+    '/external-masks/pepe-mask.png',  // Pepe style
+    '/external-masks/abstract-mask.png', // Abstract
+  ];
+  
+  // Select an image based on the prompt content
+  let selectedMaskIndex = 0;
+  
+  if (prompt.toLowerCase().includes('cyber') || prompt.toLowerCase().includes('hack')) {
+    selectedMaskIndex = 1;
+  } else if (prompt.toLowerCase().includes('abstract') || prompt.toLowerCase().includes('geometric')) {
+    selectedMaskIndex = 3;
+  } else if (prompt.toLowerCase().includes('pepe') || prompt.toLowerCase().includes('meme')) {
+    selectedMaskIndex = 2;
+  }
+  
+  // Create mock response
+  const mockResponse = {
+    id: uuidv4(),
+    imageUrl: sampleMasks[selectedMaskIndex],
+    prompt: prompt,
+    layer
+  };
+  
+  // Log that we're using a fallback
+  toast.warning('Using demo mask - API generation unavailable', {
+    description: 'The mask generation API is currently unavailable. Using a demo mask instead.'
+  });
+  
+  return mockResponse;
 };
 
 /**
@@ -119,6 +157,8 @@ const saveMaskToDatabase = async (maskData: MaskData): Promise<void> => {
       console.error('Error saving mask to database:', error);
       throw error;
     }
+    
+    console.log('Mask saved to database successfully');
   } catch (error) {
     console.error('Error in saveMaskToDatabase:', error);
     // Don't throw here to prevent blocking the user experience

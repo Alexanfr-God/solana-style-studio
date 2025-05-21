@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
-import { Wand, Loader2, RotateCcw } from 'lucide-react';
+import { Wand, Loader2, RotateCcw, AlertCircle } from 'lucide-react';
 import { generateMask } from '@/services/maskService';
 import { Progress } from '@/components/ui/progress';
 
@@ -26,12 +26,16 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   
   const [progress, setProgress] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
+  const [hasGenerationError, setHasGenerationError] = useState(false);
 
   const handleGenerate = async () => {
     if (!prompt && !maskImageUrl) {
       toast.error("Please enter a description or upload an image first");
       return;
     }
+
+    // Reset error state
+    setHasGenerationError(false);
 
     // Validate image URL if provided
     if (maskImageUrl && maskImageUrl.startsWith('blob:')) {
@@ -70,6 +74,8 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         });
       }, 1000);
       
+      console.log('Calling generateMask with:', { enhancedPrompt, activeLayer, maskImageUrl });
+      
       // For V3, we're generating an external mask
       const generatedMask = await generateMask(
         enhancedPrompt,
@@ -79,6 +85,8 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       
       clearInterval(progressInterval);
       setProgress(100);
+      
+      console.log('Generated mask result:', generatedMask);
       
       // Set the external mask with the generated image URL
       setExternalMask(generatedMask.imageUrl);
@@ -92,6 +100,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       }, 1000);
     } catch (error) {
       console.error("Error generating mask:", error);
+      setHasGenerationError(true);
       toast.error(
         typeof error === 'object' && error !== null && 'message' in error
           ? `Error: ${(error as Error).message}`
@@ -135,6 +144,13 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
              progress < 60 ? "Creating artwork..." : 
              progress < 90 ? "Finalizing mask..." : "Almost done!"}
           </p>
+        </div>
+      )}
+      
+      {hasGenerationError && (
+        <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-md flex items-center text-xs text-red-300">
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Generation error. Using fallback mask. Check console for details.
         </div>
       )}
       
