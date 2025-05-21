@@ -77,7 +77,7 @@ const V3MaskPreviewCanvas = () => {
               DEMO
             </Badge>
           </div>
-        </div>
+        </WalletSceneContainer>
       </div>
     </div>
   );
