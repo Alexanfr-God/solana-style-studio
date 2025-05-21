@@ -4,7 +4,7 @@ import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { InfoCircle, Sparkles } from 'lucide-react';
+import { Info, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface MaskPromptInputProps {
@@ -46,7 +46,7 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <InfoCircle className="h-4 w-4 text-white/50 cursor-help" />
+                <Info className="h-4 w-4 text-white/50 cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="max-w-[250px]">
                 <p className="text-xs">Select an art style to guide the AI generation. This will be added to your prompt.</p>

@@ -1,6 +1,6 @@
 
 import React, { useRef, useState } from 'react';
-import { Upload, Loader2, X, ImageIcon, ZoomIn } from 'lucide-react';
+import { Upload, Loader2, X, Image as ImageIcon, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';

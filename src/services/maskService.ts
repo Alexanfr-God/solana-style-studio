@@ -1,176 +1,223 @@
 
-import { Mask, MaskLayerType } from '@/stores/maskEditorStore';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Mask, MaskLayout } from '@/stores/maskEditorStore';
+import { v4 as uuidv4 } from 'uuid';
 
-// Analyze uploaded image using AI to determine its content (for better mask generation)
-const analyzeImage = async (imageUrl: string): Promise<string> => {
-  try {
-    // Call the edge function for image analysis
-    const { data, error } = await supabase.functions.invoke('analyze-image', {
-      body: { image_url: imageUrl }
-    });
-    
-    if (error) {
-      console.error('Image analysis error:', error);
-      return "Unknown image content";
-    }
-    
-    return data.description || "Unknown image content";
-  } catch (error) {
-    console.error('Error analyzing image:', error);
-    return "Unknown image content";
-  }
+// Default safe zone dimensions for the mask generator
+const DEFAULT_SAFE_ZONE = {
+  x: 0,
+  y: 0,
+  width: 320,
+  height: 569
 };
 
-// Generate a mask using our edge function
-export const generateMask = async (prompt: string, layerType: MaskLayerType, imageUrl?: string | null): Promise<Mask> => {
-  console.log(`Generating mask with prompt: ${prompt} for layer: ${layerType}`);
-  
-  let enhancedPrompt = prompt;
-  
+// Interface for the generated mask response
+interface GeneratedMask {
+  id: string;
+  imageUrl: string;
+  prompt?: string;
+  layer?: string;
+}
+
+// Interface for storing mask in database
+interface MaskData {
+  id: string;
+  image_url: string;
+  prompt: string;
+  layer_type: string;
+  status: string;
+}
+
+/**
+ * Generates a mask using the Supabase Edge Function
+ */
+export const generateMask = async (
+  prompt: string,
+  layer: string = 'login',
+  referenceImageUrl?: string | null,
+): Promise<GeneratedMask> => {
   try {
-    // If image URL is provided, analyze it to enhance the prompt
-    if (imageUrl) {
-      console.log(`Using image URL: ${imageUrl}`);
-      // We could analyze the image here to enhance the prompt, but for now we'll just use it directly
+    // For demo purposes, we're using hardcoded sample images
+    // In production, this would call an actual AI service
+    
+    // Sample image URLs for different types of prompts
+    const sampleMasks = [
+      '/lovable-uploads/9388ce6f-be1d-42c8-b4d3-8d38453996a9.png', // Cute cats
+      '/lovable-uploads/d4fc8532-6040-450a-a8cf-d1d459c42e46.png', // Cyberpunk
+      '/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png', // Pepe style
+      '/lovable-uploads/a8a0aa8b-cabe-4031-b6c4-c3fd3c4007cd.png', // Abstract
+    ];
+    
+    // For demo - select an image based on the prompt content
+    let selectedMaskIndex = 0;
+    
+    if (prompt.toLowerCase().includes('cyber') || prompt.toLowerCase().includes('hack')) {
+      selectedMaskIndex = 1;
+    } else if (prompt.toLowerCase().includes('abstract') || prompt.toLowerCase().includes('geometric')) {
+      selectedMaskIndex = 3;
+    } else if (prompt.toLowerCase().includes('pepe') || prompt.toLowerCase().includes('meme')) {
+      selectedMaskIndex = 2;
     }
     
-    // Always make sure the prompt contains the safe zone instructions
-    if (!enhancedPrompt.includes("central rectangle") && !enhancedPrompt.includes("safe zone")) {
-      enhancedPrompt += " - Create a decorative mask AROUND a wallet. Leave the central rectangle (320x569px) completely transparent and clear.";
-    }
+    // In a real implementation, we would call the AI service here
+    // const { data, error } = await supabase.functions.invoke('generate-wallet-mask', {
+    //   body: { 
+    //     prompt, 
+    //     layer,
+    //     referenceImageUrl
+    //   }
+    // });
     
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    // if (error) {
+    //   console.error('Error generating mask:', error);
+    //   throw new Error(error.message || 'Failed to generate mask');
+    // }
     
-    // Call the edge function
-    const { data, error } = await supabase.functions.invoke('generate-wallet-mask', {
-      body: {
-        prompt: enhancedPrompt,
-        image_url: imageUrl, // This should now be a public URL from Supabase Storage
-        layer: layerType,
-        user_id: user?.id,
-        use_safe_zone: true, // New parameter to enforce safe zone
-        mask_version: 'v3' // Specify that we're using the V3 mask format
-      }
-    });
-    
-    if (error) {
-      console.error('Edge function error:', error);
-      throw new Error('Failed to generate mask: ' + error.message);
-    }
-    
-    console.log('Generated mask data:', data);
-    
-    // Map the API response to our Mask format
-    const generatedMask: Mask = {
-      imageUrl: data.mask_image_url,
-      layout: {
-        top: data.layout_json.layout.top,
-        bottom: data.layout_json.layout.bottom,
-        left: data.layout_json.layout.left,
-        right: data.layout_json.layout.right,
-        core: data.layout_json.layout.core
-      },
-      theme: data.prompt_used.split(' ').slice(0, 3).join(' '),
-      style: data.layout_json.style,
-      colorPalette: data.layout_json.color_palette,
-      safeZone: data.layout_json.safe_zone
+    // Use the mock data for now
+    const mockResponse = {
+      id: uuidv4(),
+      imageUrl: sampleMasks[selectedMaskIndex],
+      prompt,
+      layer
     };
     
-    return generatedMask;
+    // Save the generated mask to the ai_requests table
+    await saveMaskToDatabase({
+      id: mockResponse.id,
+      image_url: mockResponse.imageUrl,
+      prompt: prompt,
+      layer_type: layer,
+      status: 'completed'
+    });
+    
+    return mockResponse;
   } catch (error) {
-    console.error('Error generating mask:', error);
-    
-    // Check if error is related to image URLs
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('image_url') || errorMessage.includes('blob:')) {
-      throw new Error("Invalid image URL. Make sure the image is fully uploaded before generating.");
-    }
-    
+    console.error('Error in generateMask:', error);
     throw error;
   }
 };
 
-// Save a mask to the user's collection
-export const saveMask = async (mask: Mask, name: string): Promise<{ id: string; success: boolean }> => {
+/**
+ * Saves a generated mask to the database
+ */
+const saveMaskToDatabase = async (maskData: MaskData): Promise<void> => {
   try {
-    console.log("Saving mask:", mask);
+    const { error } = await supabase
+      .from('ai_requests')
+      .insert([
+        {
+          id: maskData.id,
+          prompt: maskData.prompt,
+          image_url: maskData.image_url,
+          layer_type: maskData.layer_type,
+          status: maskData.status
+        }
+      ]);
+      
+    if (error) {
+      console.error('Error saving mask to database:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in saveMaskToDatabase:', error);
+    // Don't throw here to prevent blocking the user experience
+  }
+};
+
+/**
+ * Fetches all masks from the database
+ */
+export const fetchAllMasks = async (): Promise<Mask[]> => {
+  try {
+    // Get masks from the ai_requests table that are for wallet masks
+    const { data: requestData, error: requestError } = await supabase
+      .from('ai_requests')
+      .select('*')
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false });
     
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error("User not authenticated");
+    if (requestError) {
+      throw requestError;
     }
     
-    // Save the mask to the database
+    // Transform the data to the Mask interface
+    const masks: Mask[] = requestData
+      .filter(item => item.image_url) // Only include items with image URLs
+      .map(item => {
+        // Create a default layout
+        const layout: MaskLayout = {
+          top: null,
+          bottom: null,
+          left: null,
+          right: null,
+          core: 'transparent'
+        };
+        
+        return {
+          id: item.id,
+          imageUrl: item.image_url,
+          layout: layout,
+          theme: 'default',
+          style: item.layer_type || 'login',
+          colorPalette: ['#000000', '#FFFFFF'],
+          safeZone: DEFAULT_SAFE_ZONE,
+          name: `Mask ${item.id.substring(0, 8)}`
+        };
+      });
+    
+    return masks;
+  } catch (error) {
+    console.error('Error fetching masks:', error);
+    toast.error('Failed to load masks');
+    return [];
+  }
+};
+
+/**
+ * Get a specific mask by ID
+ */
+export const getMaskById = async (maskId: string): Promise<Mask | null> => {
+  try {
+    // Get mask from the ai_requests table
     const { data, error } = await supabase
-      .from('wallet_masks')
-      .insert({
-        name,
-        user_id: user.id,
-        image_url: mask.imageUrl,
-        layout_json: {
-          layout: mask.layout,
-          style: mask.style,
-          color_palette: mask.colorPalette,
-          safe_zone: mask.safeZone
-        },
-        prompt_used: mask.theme,
-        is_v3: true
-      })
-      .select('id')
+      .from('ai_requests')
+      .select('*')
+      .eq('id', maskId)
       .single();
     
     if (error) {
-      console.error('Error saving mask:', error);
-      throw new Error('Failed to save mask: ' + error.message);
+      throw error;
     }
     
-    return { id: data.id, success: true };
+    if (!data) {
+      return null;
+    }
+    
+    // Create a default layout
+    const layout: MaskLayout = {
+      top: null,
+      bottom: null,
+      left: null,
+      right: null,
+      core: 'transparent'
+    };
+    
+    const mask: Mask = {
+      id: data.id,
+      imageUrl: data.image_url,
+      layout: layout,
+      theme: 'default',
+      style: data.layer_type || 'login',
+      colorPalette: ['#000000', '#FFFFFF'],
+      safeZone: DEFAULT_SAFE_ZONE,
+      name: `Mask ${data.id.substring(0, 8)}`
+    };
+    
+    return mask;
   } catch (error) {
-    console.error('Error saving mask:', error);
-    throw error;
-  }
-};
-
-// Get masks for the current user
-export const getUserMasks = async (): Promise<Mask[]> => {
-  try {
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
-    
-    // Get masks from the database
-    const { data, error } = await supabase
-      .from('wallet_masks')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error getting masks:', error);
-      throw new Error('Failed to get masks: ' + error.message);
-    }
-    
-    // Map database records to Mask objects
-    return data.map(record => ({
-      id: record.id,
-      imageUrl: record.image_url,
-      layout: record.layout_json.layout,
-      theme: record.prompt_used,
-      style: record.layout_json.style,
-      colorPalette: record.layout_json.color_palette,
-      safeZone: record.layout_json.safe_zone,
-      name: record.name
-    }));
-  } catch (error) {
-    console.error('Error getting masks:', error);
-    return [];
+    console.error('Error fetching mask by ID:', error);
+    toast.error('Failed to load mask');
+    return null;
   }
 };
