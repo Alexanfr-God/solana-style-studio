@@ -6,18 +6,37 @@ import MaskPromptInput from './MaskPromptInput';
 import MaskUploadImage from './MaskUploadImage';
 import GenerateMaskButton from './GenerateMaskButton';
 import { Button } from '@/components/ui/button';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Info, Eye, EyeOff } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import V3MaskPreviewCanvas from './V3MaskPreviewCanvas';
 import SafeZoneToggle from './SafeZoneToggle';
+import MaskPresets from './MaskPresets';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
 
 const V3MaskEditor = () => {
-  const { resetEditor, maskImageUrl, prompt } = useMaskEditorStore();
+  const { 
+    resetEditor, 
+    maskImageUrl, 
+    prompt, 
+    safeZoneVisible,
+    setSafeZoneVisible
+  } = useMaskEditorStore();
+  
+  const [showGuide, setShowGuide] = useState(true);
 
   const handleReset = () => {
     resetEditor();
     toast.success("Mask editor has been reset");
+  };
+  
+  const toggleGuide = () => {
+    setShowGuide(!showGuide);
   };
 
   return (
@@ -28,8 +47,41 @@ const V3MaskEditor = () => {
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white">Create Wallet Costume</h2>
-                <div className="bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xs px-2 py-1 rounded">V3</div>
+                <div className="bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xs px-2 py-1 rounded">AI-Powered</div>
               </div>
+              
+              {showGuide && (
+                <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-md">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-sm font-medium text-purple-300 mb-1">How it works:</h3>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 w-6 p-0" 
+                      onClick={toggleGuide}
+                    >
+                      <EyeOff className="h-4 w-4 text-white/60" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-white/70">
+                    Our AI generates decorative masks that surround your wallet while keeping the central wallet UI visible and functional. Try our presets or create your own design!
+                  </p>
+                </div>
+              )}
+              
+              {!showGuide && (
+                <div className="flex justify-end mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6" 
+                    onClick={toggleGuide}
+                  >
+                    <Info className="h-4 w-4 mr-1 text-white/60" />
+                    <span className="text-xs text-white/60">Show Guide</span>
+                  </Button>
+                </div>
+              )}
               
               <div className="space-y-6">
                 <div>
@@ -37,7 +89,7 @@ const V3MaskEditor = () => {
                   <MaskUploadImage />
                 </div>
                 
-                <Separator orientation="horizontal" />
+                <Separator orientation="horizontal" className="bg-white/10" />
                 
                 <div className="space-y-4">
                   <h3 className="text-md font-medium text-white flex items-center gap-2">
@@ -49,9 +101,11 @@ const V3MaskEditor = () => {
                   <MaskPromptInput />
                 </div>
                 
+                <MaskPresets />
+                
                 <SafeZoneToggle />
                 
-                <div className="flex flex-col space-y-3">
+                <div className="space-y-3">
                   <GenerateMaskButton />
                   <Button 
                     variant="outline" 
@@ -70,6 +124,29 @@ const V3MaskEditor = () => {
       
       <div className="lg:col-span-2">
         <Card className="bg-black/30 backdrop-blur-md border-white/10 p-2 md:p-4">
+          <div className="flex items-center justify-between py-2 px-4">
+            <h3 className="text-sm font-medium text-white">Wallet Preview</h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSafeZoneVisible(!safeZoneVisible)}
+                  >
+                    {safeZoneVisible ? (
+                      <Eye className="h-4 w-4 text-purple-400" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-white/60" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">{safeZoneVisible ? "Hide" : "Show"} Safe Zone</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="flex items-center justify-center py-4">
             <div className="w-full h-full">
               <V3MaskPreviewCanvas />

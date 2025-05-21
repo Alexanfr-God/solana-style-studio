@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 
 export type MaskLayerType = 'login' | 'wallet';
+export type MaskStyleType = 'modern' | 'cartoon' | 'realistic' | 'fantasy' | 'minimalist';
 
 export interface SafeZone {
   x: number;
@@ -19,23 +20,26 @@ export interface MaskLayout {
 }
 
 export interface Mask {
+  id?: string;
   imageUrl: string;
   layout: MaskLayout;
   theme: string;
   style: string;
   colorPalette: string[];
   safeZone: SafeZone;
+  name?: string;
 }
 
 interface MaskEditorState {
   activeLayer: MaskLayerType;
   prompt: string;
   maskImageUrl: string | null;
-  externalMask: string | null; // New property for external masks
+  externalMask: string | null; // For external masks
   selectedMask: Mask | null;
   previewVisible: boolean;
   safeZoneVisible: boolean;
   isGenerating: boolean;
+  maskStyle: MaskStyleType;
   
   // Legacy V3 beta properties - kept for compatibility
   topLayer: string | null;
@@ -49,6 +53,7 @@ interface MaskEditorState {
   setPreviewVisible: (visible: boolean) => void;
   setSafeZoneVisible: (visible: boolean) => void;
   setIsGenerating: (isGenerating: boolean) => void;
+  setMaskStyle: (style: MaskStyleType) => void;
   
   // Legacy setters - kept for compatibility
   setTopLayer: (imageUrl: string | null) => void;
@@ -75,6 +80,7 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   previewVisible: true,
   safeZoneVisible: true, // Changed to true by default for V3
   isGenerating: false,
+  maskStyle: 'modern',
   
   // Legacy V3 beta properties
   topLayer: null,
@@ -88,6 +94,7 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   setPreviewVisible: (visible) => set({ previewVisible: visible }),
   setSafeZoneVisible: (visible) => set({ safeZoneVisible: visible }),
   setIsGenerating: (isGenerating) => set({ isGenerating: isGenerating }),
+  setMaskStyle: (style) => set({ maskStyle: style }),
   
   // Legacy setters
   setTopLayer: (imageUrl) => set({ topLayer: imageUrl }),
