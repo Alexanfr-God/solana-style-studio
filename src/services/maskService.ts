@@ -31,6 +31,7 @@ interface MaskData {
 
 /**
  * Generates a mask using the Supabase Edge Function
+ * In V3, masks have transparent centers to show the wallet UI
  */
 export const generateMask = async (
   prompt: string,
@@ -39,15 +40,18 @@ export const generateMask = async (
 ): Promise<GeneratedMask> => {
   try {
     // For demo purposes, we're using hardcoded sample images
-    // In production, this would call an actual AI service
+    // In production, this would call an actual AI service that creates masks with transparent centers
     
-    // Sample image URLs for different types of prompts
+    // Sample image URLs for different types of prompts - with transparent centers
     const sampleMasks = [
-      '/lovable-uploads/9388ce6f-be1d-42c8-b4d3-8d38453996a9.png', // Cute cats
-      '/lovable-uploads/d4fc8532-6040-450a-a8cf-d1d459c42e46.png', // Cyberpunk
-      '/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png', // Pepe style
-      '/lovable-uploads/a8a0aa8b-cabe-4031-b6c4-c3fd3c4007cd.png', // Abstract
+      '/external-masks/cats-mask.png',  // Cute cats
+      '/external-masks/cyber-mask.png', // Cyberpunk
+      '/external-masks/pepe-mask.png',  // Pepe style
+      '/external-masks/abstract-mask.png', // Abstract
     ];
+    
+    // Enhanced prompt to ensure AI generates a mask with transparent center
+    const enhancedPrompt = `${prompt}. IMPORTANT: Create a decorative frame/mask that SURROUNDS a central wallet UI. The central area (320×569px) MUST BE TRANSPARENT, showing no elements. Only create decorative elements AROUND this central area.`;
     
     // For demo - select an image based on the prompt content
     let selectedMaskIndex = 0;
@@ -60,25 +64,21 @@ export const generateMask = async (
       selectedMaskIndex = 2;
     }
     
-    // In a real implementation, we would call the AI service here
+    // In a real implementation, we would call the AI service here with the enhanced prompt
     // const { data, error } = await supabase.functions.invoke('generate-wallet-mask', {
     //   body: { 
-    //     prompt, 
+    //     prompt: enhancedPrompt, // Use enhanced prompt emphasizing transparent center
     //     layer,
-    //     referenceImageUrl
+    //     referenceImageUrl,
+    //     safeZone: DEFAULT_SAFE_ZONE // Pass safe zone dimensions to ensure transparent center
     //   }
     // });
-    
-    // if (error) {
-    //   console.error('Error generating mask:', error);
-    //   throw new Error(error.message || 'Failed to generate mask');
-    // }
     
     // Use the mock data for now
     const mockResponse = {
       id: uuidv4(),
       imageUrl: sampleMasks[selectedMaskIndex],
-      prompt,
+      prompt: enhancedPrompt,
       layer
     };
     

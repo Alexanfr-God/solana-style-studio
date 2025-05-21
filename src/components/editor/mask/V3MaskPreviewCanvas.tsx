@@ -19,13 +19,23 @@ const V3MaskPreviewCanvas = () => {
       <div className="relative">
         {/* New scene container with larger area for external masks */}
         <WalletSceneContainer style={loginStyle}>
-          {/* External mask layer - positioned around the wallet */}
+          {/* External mask layer - positioned ONLY around the wallet, not over it */}
           {externalMask && (
             <div 
               className="absolute pointer-events-none z-10 inset-0"
               style={{
                 width: '100%',
-                height: '100%'
+                height: '100%',
+                maskImage: 'url(/mask-wallet-cutout.png)',
+                WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskMode: 'luminance',
+                WebkitMaskMode: 'luminance'
               }}
             >
               <img 
@@ -36,13 +46,23 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
           
-          {/* Regular mask (for backward compatibility) */}
+          {/* Regular mask (for backward compatibility) - also with cutout */}
           {maskImageUrl && !externalMask && (
             <div 
               className="absolute pointer-events-none z-20 inset-0"
               style={{
                 width: '100%',
-                height: '100%'
+                height: '100%',
+                maskImage: 'url(/mask-wallet-cutout.png)',
+                WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskMode: 'luminance',
+                WebkitMaskMode: 'luminance'
               }}
             >
               <img 
@@ -60,8 +80,12 @@ const V3MaskPreviewCanvas = () => {
           
           {/* Safe zone visualization - only shown when enabled */}
           {safeZoneVisible && (
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-40">
-              <div className="absolute inset-0 border-2 border-red-500/50 rounded-2xl">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-40">
+              <div className="border-2 border-red-500/50 rounded-2xl"
+                style={{
+                  width: '320px',
+                  height: '569px'
+                }}>
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-500/20 px-2 py-1 rounded text-xs text-white whitespace-nowrap">
                   Protected UI Zone (320×569px)
                 </div>

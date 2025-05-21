@@ -21,7 +21,7 @@ const SafeZoneToggle = ({ disabled = false }: SafeZoneToggleProps) => {
     <div className="flex items-center justify-between space-x-2">
       <div className="flex items-center space-x-2">
         <Shield className="h-4 w-4 text-white" />
-        <Label htmlFor="safe-zone" className="text-white text-sm">Show Wallet UI Guide</Label>
+        <Label htmlFor="safe-zone" className="text-white text-sm">Show Protected Wallet Area</Label>
       </div>
       
       <TooltipProvider>
@@ -36,8 +36,8 @@ const SafeZoneToggle = ({ disabled = false }: SafeZoneToggleProps) => {
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             <p>
-              Shows the wallet UI guide. The central area (320x569px) indicates the wallet UI zone.
-              Masks will be placed around this zone, not on top of it.
+              Shows the protected wallet UI area (320×569px). Masks will be displayed around this area, 
+              not on top of it. This ensures your wallet UI remains clearly visible.
             </p>
           </TooltipContent>
         </Tooltip>

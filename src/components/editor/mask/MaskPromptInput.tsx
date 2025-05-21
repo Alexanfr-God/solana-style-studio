@@ -32,10 +32,10 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
 
   const promptExamples = [
     "Cute animals surrounding the wallet",
-    "Abstract geometric shapes",
-    "Luxury gold ornamental pattern",
-    "Cyberpunk neon elements",
-    "Space and planets scene"
+    "Abstract geometric shapes around the wallet",
+    "Luxury gold ornamental pattern as a frame",
+    "Cyberpunk neon elements surrounding the wallet",
+    "Space and planets scene with central transparent area"
   ];
 
   return (
@@ -99,7 +99,7 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
         
         <Textarea
           id="mask-prompt"
-          placeholder="Example: A cute cat hugging the wallet, digital art style"
+          placeholder="Example: A cute cat hugging the wallet, with transparent center"
           value={prompt}
           onChange={handlePromptChange}
           disabled={disabled}
@@ -107,7 +107,7 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
         />
         
         <p className="text-xs text-white/50 italic mt-1">
-          Tip: Describe decorative elements that go around the wallet UI. The AI will leave the central wallet area untouched.
+          Tip: Describe decorative elements that surround the wallet. The central wallet area (320×569px) will always remain visible with a transparent cutout.
         </p>
       </div>
     </div>

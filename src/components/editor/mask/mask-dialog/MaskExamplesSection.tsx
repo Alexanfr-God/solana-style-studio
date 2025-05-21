@@ -36,21 +36,24 @@ export const MaskExamplesSection = ({
     // Set top and bottom layers based on the selected mask type
     switch (maskType) {
       case 'cats':
-        // Updated paths to the new cat mask assets
-        setTopLayer('/lovable-uploads/9388ce6f-be1d-42c8-b4d3-8d38453996a9.png');
-        setBottomLayer('/lovable-uploads/8c936683-1e0b-407a-a7a4-425b5b6cb4b8.png');
+        // Using external mask that surrounds the wallet with a transparent center
+        setTopLayer(null);
+        setBottomLayer(null);
+        setCustomMask('/external-masks/cats-mask.png');
         toast.success('Cute Cats mask applied');
         break;
       case 'crypto':
-        // Apply the crypto meme as a single unified custom mask
+        // Apply the crypto meme as a single unified custom mask with transparent center
         setTopLayer(null);
         setBottomLayer(null);
-        setCustomMask('/lovable-uploads/f57c7d94-7776-485c-8d15-e2da5c9c80b4.png');
+        setCustomMask('/external-masks/crypto-mask.png');
         toast.success('Crypto Meme mask applied');
         break;
       case 'pepe':
-        setTopLayer('/lovable-uploads/d4fc8532-6040-450a-a8cf-d1d459c42e46.png');
-        setBottomLayer('/lovable-uploads/a5f8972f-b18d-4f17-8799-eeb025813f3b.png');
+        // Apply pepe with transparent center
+        setTopLayer(null);
+        setBottomLayer(null);
+        setCustomMask('/external-masks/pepe-mask.png');
         toast.success('Pepe Hacker mask applied');
         break;
     }
@@ -66,7 +69,7 @@ export const MaskExamplesSection = ({
           🎨 Try Example Mask
         </h3>
         <p className="text-sm text-white/60 mb-4">
-          This is a demo of how custom Wallet Masks will work. Only the top and bottom are used — the center stays visible for the login UI. Try it now!
+          This is a demo of how custom Wallet Masks work. The masks appear around the wallet UI, leaving the center transparent. Try it now!
         </p>
         
         <div className="grid grid-cols-3 gap-3 mb-4">
@@ -128,14 +131,14 @@ export const MaskExamplesSection = ({
             {JSON.stringify({
               name: "Custom Wallet Mask",
               styles: {
-                mask: customMask ? "full" : "none",
+                mask: customMask ? "external" : "none",
                 topLayer: topLayer ? topLayer.split('/').pop() : null,
                 bottomLayer: bottomLayer ? bottomLayer.split('/').pop() : null,
                 theme: "dark",
                 scale: 1.0
               },
               metadata: {
-                version: "v3-beta",
+                version: "v3",
                 generated: new Date().toISOString()
               }
             }, null, 2)}
@@ -151,9 +154,9 @@ export const MaskExamplesSection = ({
         </div>
         
         <ul className="text-sm text-white/60 space-y-2 list-disc pl-5">
+          <li>Masks appear around the wallet UI, not over it</li>
+          <li>The wallet UI area (320×569px) always remains visible</li>
           <li>Use PNG with transparent center where the wallet UI will be visible</li>
-          <li>Design your mask with a size of at least 500x500px</li>
-          <li>Keep important elements away from the center (wallet area)</li>
           <li>Light colors work best on the dark wallet background</li>
         </ul>
       </div>

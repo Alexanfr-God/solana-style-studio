@@ -25,7 +25,17 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
                 className="absolute pointer-events-none z-10 inset-0"
                 style={{
                   width: '100%',
-                  height: '100%'
+                  height: '100%',
+                  maskImage: 'url(/mask-wallet-cutout.png)',
+                  WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
+                  maskSize: 'contain',
+                  WebkitMaskSize: 'contain',
+                  maskPosition: 'center',
+                  WebkitMaskPosition: 'center',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskMode: 'luminance',
+                  WebkitMaskMode: 'luminance'
                 }}
               >
                 <img 
