@@ -2,6 +2,7 @@
 import React from 'react';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
+import { WalletContainer } from '@/components/wallet/WalletContainer';
 
 interface MaskPreviewSectionProps {
   topLayer: string | null;
@@ -16,70 +17,53 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
     <div className="flex flex-col items-center justify-center">
       <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
         {/* Base wallet UI with fixed dimensions */}
-        <div className="w-[320px] relative">
-          {/* Top Layer - Positioned to slightly overlap the top of wallet */}
-          {topLayer && (
-            <div 
-              className="absolute pointer-events-none z-10"
-              style={{
-                top: '-205px', // Position adjusted to slightly overlap the top edge
-                left: 0,
-                width: '100%',
-                overflow: 'visible'
-              }}
-            >
-              <img 
-                src={topLayer} 
-                alt="Top mask layer" 
-                className="w-full h-auto"
-              />
-            </div>
-          )}
-          
-          <LoginScreen style={loginStyle} />
-          
-          {/* Bottom Layer - Positioned to align perfectly with the bottom edge */}
-          {bottomLayer && (
-            <div 
-              className="absolute pointer-events-none z-10"
-              style={{
-                bottom: '-5px', // Positioned at the bottom edge
-                left: 0,
-                width: '100%',
-                overflow: 'visible'
-              }}
-            >
-              <img 
-                src={bottomLayer} 
-                alt="Bottom mask layer" 
-                className="w-full h-auto"
-              />
-            </div>
-          )}
-          
-          {/* Full mask overlay - only shown when using the custom upload or example mask */}
-          {customMask && (
-            <div 
-              className="absolute pointer-events-none z-10"
-              style={{
-                top: '-205px', // Position as requested
-                left: 0,
-                width: '100%',
-                height: 'auto',
-                overflow: 'visible'
-              }}
-            >
-              <img 
-                src={customMask} 
-                alt="Mask overlay" 
-                className="w-full h-auto"
+        <div className="relative">
+          <WalletContainer style={loginStyle} className="relative">
+            {/* Full mask overlay - only shown when using the custom upload or example mask */}
+            {customMask && (
+              <div 
+                className="absolute pointer-events-none z-10 inset-0"
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: 'unset'
+                  width: '100%',
+                  height: '100%'
                 }}
-              />
-            </div>
-          )}
+              >
+                <img 
+                  src={customMask} 
+                  alt="Mask overlay" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
+            {/* Top Layer - Positioned at the top of wallet */}
+            {topLayer && (
+              <div 
+                className="absolute pointer-events-none z-10 top-0 left-0 w-full"
+              >
+                <img 
+                  src={topLayer} 
+                  alt="Top mask layer" 
+                  className="w-full h-auto"
+                />
+              </div>
+            )}
+            
+            {/* Bottom Layer - Positioned at the bottom of wallet */}
+            {bottomLayer && (
+              <div 
+                className="absolute pointer-events-none z-10 bottom-0 left-0 w-full"
+              >
+                <img 
+                  src={bottomLayer} 
+                  alt="Bottom mask layer" 
+                  className="w-full h-auto"
+                />
+              </div>
+            )}
+            
+            <LoginScreen style={loginStyle} />
+          </WalletContainer>
         </div>
       </div>
       

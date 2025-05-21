@@ -4,6 +4,7 @@ import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { Badge } from '@/components/ui/badge';
+import WalletContainer from '@/components/wallet/WalletContainer';
 
 const MaskPreviewCanvas = () => {
   const { 
@@ -42,17 +43,28 @@ const MaskPreviewCanvas = () => {
         )}
         
         {/* Base wallet UI */}
-        <div className="relative z-10">
-          {/* Top Layer Overlay - Positioned to slightly overlap the top of wallet */}
+        <WalletContainer style={loginStyle} className="relative z-10">
+          {/* Full mask overlay for custom uploads */}
+          {maskImageUrl && (
+            <div 
+              className="absolute pointer-events-none z-20 inset-0"
+              style={{
+                width: '100%',
+                height: '100%'
+              }}
+            >
+              <img 
+                src={maskImageUrl} 
+                alt="Full mask overlay" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          
+          {/* Top Layer Overlay */}
           {topLayer && (
             <div 
-              className="absolute pointer-events-none z-20"
-              style={{
-                top: '-205px', // Position adjusted to slightly overlap the top edge
-                left: 0,
-                width: '100%',
-                overflow: 'visible'
-              }}
+              className="absolute pointer-events-none z-20 top-0 left-0 w-full"
             >
               <img 
                 src={topLayer} 
@@ -64,16 +76,10 @@ const MaskPreviewCanvas = () => {
           
           <LoginScreen style={loginStyle} />
           
-          {/* Bottom Layer Overlay - Positioned to align perfectly with the bottom edge */}
+          {/* Bottom Layer Overlay */}
           {bottomLayer && (
             <div 
-              className="absolute pointer-events-none z-20"
-              style={{
-                bottom: '-5px', // Better positioned at bottom
-                left: 0,
-                width: '100%',
-                overflow: 'visible'
-              }}
+              className="absolute pointer-events-none z-20 bottom-0 left-0 w-full"
             >
               <img 
                 src={bottomLayer} 
@@ -82,31 +88,7 @@ const MaskPreviewCanvas = () => {
               />
             </div>
           )}
-          
-          {/* Full mask overlay for custom uploads */}
-          {maskImageUrl && (
-            <div 
-              className="absolute pointer-events-none z-20"
-              style={{
-                top: '-205px', // Position as requested
-                left: 0,
-                width: '100%',
-                height: 'auto',
-                overflow: 'visible'
-              }}
-            >
-              <img 
-                src={maskImageUrl} 
-                alt="Full mask overlay" 
-                className="w-full h-auto"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: 'unset'
-                }}
-              />
-            </div>
-          )}
-        </div>
+        </WalletContainer>
         
         {/* Safe zone overlay - only visible when safeZoneVisible is true */}
         {safeZoneVisible && (
