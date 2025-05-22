@@ -34,7 +34,6 @@ const V3MaskPreviewCanvas = () => {
                 WebkitMaskPosition: 'center',
                 maskRepeat: 'no-repeat',
                 WebkitMaskRepeat: 'no-repeat',
-                // The mask-mode property is not needed and can cause issues
               }}
             >
               <img 
@@ -60,7 +59,6 @@ const V3MaskPreviewCanvas = () => {
                 WebkitMaskPosition: 'center',
                 maskRepeat: 'no-repeat',
                 WebkitMaskRepeat: 'no-repeat',
-                // The mask-mode property is not needed and can cause issues
               }}
             >
               <img 

@@ -14,6 +14,7 @@ interface WalletSceneContainerProps {
  * Scene size is larger to accommodate decorative elements
  */
 export const WalletSceneContainer = ({ style, children, className = "" }: WalletSceneContainerProps) => {
+  // Fixed wallet dimensions - these are crucial for proper mask alignment
   const WALLET_WIDTH = 320;
   const WALLET_HEIGHT = 569;
   

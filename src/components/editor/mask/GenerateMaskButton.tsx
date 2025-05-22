@@ -62,7 +62,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       }
       
       // Always add safe zone instructions to ensure transparency in the center
-      enhancedPrompt += " - Important: Create a decorative mask AROUND a wallet. Leave the central rectangle (320x569px) completely transparent and clear.";
+      enhancedPrompt += " - Important: Create a decorative mask AROUND a wallet. The central rectangle (320x569px) MUST BE COMPLETELY TRANSPARENT.";
       
       setProgress(30);
       
@@ -111,7 +111,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           : "Failed to generate costume. Using a demo mask instead."
       );
       
-      // Use a fallback demo mask on error
+      // Use a fallback demo mask on error - using one of the example masks
       setExternalMask('/external-masks/abstract-mask.png');
       
       setShowProgress(false);

@@ -34,7 +34,6 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
                   WebkitMaskPosition: 'center',
                   maskRepeat: 'no-repeat',
                   WebkitMaskRepeat: 'no-repeat'
-                  // Removed the incorrect WebkitMaskMode property
                 }}
               >
                 <img 
