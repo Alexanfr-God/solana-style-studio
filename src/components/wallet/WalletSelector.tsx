@@ -23,7 +23,7 @@ const WALLET_ICONS = {
   'MetaMask': <MetaMaskIcon />,
 };
 
-const WalletSelector = () => {
+const WalletSelector: React.FC = () => {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
   const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
 
