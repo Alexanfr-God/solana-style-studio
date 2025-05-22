@@ -15,7 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { PhantomIcon, SolflareIcon, BackpackIcon, BraveIcon, MetaMaskIcon } from './WalletIcons';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 
-const WALLET_ICONS: Record<string, React.ReactNode> = {
+const WALLET_ICONS = {
   'Phantom': <PhantomIcon />,
   'Solflare': <SolflareIcon />,
   'Backpack': <BackpackIcon />,
@@ -23,7 +23,7 @@ const WALLET_ICONS: Record<string, React.ReactNode> = {
   'MetaMask': <MetaMaskIcon />,
 };
 
-export default function WalletSelector() {
+const WalletSelector = () => {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
   const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
 
@@ -139,3 +139,5 @@ export default function WalletSelector() {
     </div>
   );
 };
+
+export default WalletSelector;
