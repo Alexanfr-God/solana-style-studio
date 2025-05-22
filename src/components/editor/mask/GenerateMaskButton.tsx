@@ -27,6 +27,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   const [progress, setProgress] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
   const [hasGenerationError, setHasGenerationError] = useState(false);
+  const [useBackupStrategy, setUseBackupStrategy] = useState(false);
 
   const handleGenerate = async () => {
     if (!prompt && !maskImageUrl) {
@@ -74,13 +75,19 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         });
       }, 1000);
       
-      console.log('Calling generateMask with:', { enhancedPrompt, activeLayer, maskImageUrl });
+      console.log('Calling generateMask with:', { 
+        enhancedPrompt, 
+        activeLayer, 
+        maskImageUrl,
+        useBackupStrategy 
+      });
       
       // Generate the external mask that surrounds the wallet
       const generatedMask = await generateMask(
         enhancedPrompt,
         activeLayer, 
-        maskImageUrl
+        maskImageUrl,
+        useBackupStrategy
       );
       
       clearInterval(progressInterval);
@@ -120,6 +127,13 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       setIsGenerating(false);
       // Keep safe zone visible after generation so user can see the result in context
     }
+  };
+
+  const handleUseFallback = () => {
+    setUseBackupStrategy(!useBackupStrategy);
+    toast.info(useBackupStrategy 
+      ? "Will try to use AI generation" 
+      : "Will use predefined masks for faster results");
   };
 
   const hasExistingContent = !!prompt || !!maskImageUrl || !!externalMask;
@@ -163,15 +177,26 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       )}
       
       {hasExistingContent && !isGenerating && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="w-full border-white/10 text-white/70"
-          onClick={() => toast.info("Try a different prompt or style to generate a new mask")}
-        >
-          <RotateCcw className="mr-2 h-3 w-3" />
-          Try Different Style
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1 border-white/10 text-white/70"
+            onClick={() => toast.info("Try a different prompt or style to generate a new mask")}
+          >
+            <RotateCcw className="mr-2 h-3 w-3" />
+            Try Different Style
+          </Button>
+          
+          <Button
+            variant={useBackupStrategy ? "destructive" : "secondary"}
+            size="sm"
+            className="flex-1"
+            onClick={handleUseFallback}
+          >
+            {useBackupStrategy ? "Use AI (Slower)" : "Use Fallbacks (Faster)"}
+          </Button>
+        </div>
       )}
     </div>
   );

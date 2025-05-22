@@ -31,6 +31,7 @@ interface MaskRequest {
   prompt?: string;
   layer: "login" | "wallet";
   user_id?: string;
+  hd_quality?: boolean;
 }
 
 interface MaskResponse {
@@ -74,7 +75,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { image_url, prompt, layer, user_id } = await req.json() as MaskRequest;
+    const { image_url, prompt, layer, user_id, hd_quality } = await req.json() as MaskRequest;
     
     // Log input parameters for debugging
     console.log(`Request received for ${layer} mask`);
@@ -109,7 +110,7 @@ serve(async (req) => {
     const inputType = determineInputType(image_url, prompt);
 
     // Process the request
-    const response = await processRequest(inputType, image_url, prompt, openAiKey, layer, user_id);
+    const response = await processRequest(inputType, image_url, prompt, openAiKey, layer, user_id, hd_quality);
 
     return new Response(
       JSON.stringify(response),
@@ -119,10 +120,23 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in generate-wallet-mask function:", error);
     
+    // Return a more informative error response
     return new Response(
       JSON.stringify({ 
         error: "Failed to generate wallet mask", 
-        details: error.message 
+        details: error.message,
+        fallback_mask: '/external-masks/abstract-mask.png',
+        fallback_layout: {
+          layout: {
+            top: "Fallback decorative elements",
+            bottom: "Fallback decorative elements",
+            left: null,
+            right: null,
+            core: "untouched"
+          },
+          style: "abstract fallback",
+          color_palette: ["#6c5ce7", "#fd79a8", "#00cec9"]
+        }
       }),
       { 
         status: 500, 
@@ -155,7 +169,8 @@ async function processRequest(
   prompt: string | undefined,
   openAiKey: string,
   layer: string,
-  user_id?: string
+  user_id?: string,
+  hd_quality: boolean = false
 ): Promise<MaskResponse> {
   console.log(`Processing ${inputType} request for ${layer} layer`);
   
@@ -173,36 +188,39 @@ async function processRequest(
   
     console.log("Layout analysis complete:", layoutAnalysis);
 
-    // Step 2: Generate mask image - SIMPLIFIED VERSION TO AVOID DALL-E ERRORS
-    // Instead of using DALL-E, we'll use a predefined mask as a fallback for now
+    // Step 2: Try generating mask image with DALL-E
     let maskImageUrl;
+    let generationSucceeded = false;
 
-    // Try the simpler DALL-E approach first
     try {
-      const simplifiedPrompt = createSimplifiedPrompt(prompt || "", layoutAnalysis);
-      console.log("Trying simplified prompt for DALL-E:", simplifiedPrompt);
+      // Use simplified approach with minimal prompt complexity
+      const simplifiedPrompt = createUltraSimplifiedPrompt(prompt || "", layoutAnalysis);
+      console.log("Using ultra simplified prompt for DALL-E:", simplifiedPrompt);
       
-      maskImageUrl = await generateImageWithSimplifiedDallE(simplifiedPrompt, openAiKey);
-      console.log("Image generated successfully with simplified prompt");
+      // Try with controller & timeout to prevent hanging
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
+      try {
+        maskImageUrl = await generateImageWithSimplifiedDallE(
+          simplifiedPrompt, 
+          openAiKey,
+          hd_quality
+        );
+        clearTimeout(timeout);
+        
+        console.log("Image generated successfully with simplified prompt");
+        generationSucceeded = true;
+      } catch (abortError) {
+        clearTimeout(timeout);
+        throw new Error("DALL-E request timed out or was aborted");
+      }
     } catch (dalleError) {
       console.error("Error with simplified DALL-E approach:", dalleError);
       console.log("Falling back to predefined mask...");
       
-      // Use a predefined mask based on the style
-      const styleLower = layoutAnalysis.style.toLowerCase();
-      let fallbackMask = '/external-masks/abstract-mask.png';
-      
-      if (styleLower.includes('cat')) {
-        fallbackMask = '/external-masks/cats-mask.png';
-      } else if (styleLower.includes('crypto') || styleLower.includes('bitcoin')) {
-        fallbackMask = '/external-masks/crypto-mask.png';
-      } else if (styleLower.includes('cyber')) {
-        fallbackMask = '/external-masks/cyber-mask.png';
-      } else if (prompt && prompt.toLowerCase().includes('pepe')) {
-        fallbackMask = '/external-masks/pepe-mask.png';
-      }
-      
-      maskImageUrl = fallbackMask;
+      // Use a predefined mask based on the style or prompt content
+      maskImageUrl = selectFallbackMask(prompt || "", layoutAnalysis.style);
     }
 
     // Prepare response
@@ -230,18 +248,30 @@ async function processRequest(
   }
 }
 
-// Creates a simplified prompt for DALL-E to reduce complexity
-function createSimplifiedPrompt(userPrompt: string, layoutAnalysis: LayoutAnalysis): string {
-  return `Create a decorative frame for a wallet app with these specifications:
-- Canvas size: 1024x1024 pixels
-- Style: ${layoutAnalysis.style}
-- Important: The center area must be completely transparent (no elements)
-- The transparent zone dimensions: 320px wide by 569px tall in the center
-- Draw decorative elements ONLY around the edges (top, bottom, left, right)
-- Main theme from user request: ${userPrompt}
-- Color suggestions: ${layoutAnalysis.color_palette.join(", ")}
+// Select the most appropriate fallback mask based on style or prompt keywords
+function selectFallbackMask(prompt: string, style: string): string {
+  const promptLower = prompt.toLowerCase();
+  const styleLower = style.toLowerCase();
+  
+  if (promptLower.includes('cat') || styleLower.includes('cat')) {
+    return '/external-masks/cats-mask.png';
+  } else if (promptLower.includes('crypto') || promptLower.includes('bitcoin') || styleLower.includes('crypto')) {
+    return '/external-masks/crypto-mask.png';
+  } else if (promptLower.includes('cyber') || styleLower.includes('cyber')) {
+    return '/external-masks/cyber-mask.png';
+  } else if (promptLower.includes('pepe') || styleLower.includes('pepe')) {
+    return '/external-masks/pepe-mask.png';
+  } else {
+    return '/external-masks/abstract-mask.png';
+  }
+}
 
-Do not include any UI components or text. This is a decorative frame only.`;
+// Ultra simplified prompt to try to avoid DALL-E errors
+function createUltraSimplifiedPrompt(userPrompt: string, layoutAnalysis: LayoutAnalysis): string {
+  // Extract key themes from the user prompt (max 20 chars to avoid overwhelming DALL-E)
+  const themes = userPrompt.split(/\s+/).filter(word => word.length > 3).slice(0, 3).join(" ");
+  
+  return `Decorative frame with ${themes} style. Central area (320x569px) is transparent.`;
 }
 
 async function analyzeImageWithGPT(
@@ -436,7 +466,8 @@ async function processOpenAIResponse(response: Response): Promise<LayoutAnalysis
 // Simplified DALL-E function to generate images with minimal instructions
 async function generateImageWithSimplifiedDallE(
   prompt: string,
-  apiKey: string
+  apiKey: string,
+  hdQuality: boolean = false
 ): Promise<string> {
   console.log("Generating image with simplified DALL-E prompt...");
   
@@ -447,7 +478,7 @@ async function generateImageWithSimplifiedDallE(
     n: 1,
     size: "1024x1024",
     response_format: "url",
-    quality: "standard" // Using standard quality to reduce potential errors
+    quality: hdQuality ? "hd" : "standard" // Try HD quality if requested
   };
   
   console.log("DALL-E request payload:", JSON.stringify(requestPayload));
