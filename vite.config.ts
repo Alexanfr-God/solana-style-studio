@@ -13,10 +13,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react({
       jsxImportSource: 'react',
-      // Ensure development features are properly handled
-      babel: {
-        plugins: [],
-      },
     }),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),

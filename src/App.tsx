@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
 import { WalletContextProvider } from "./context/WalletContextProvider";
+import FeedbackAnalyticsPage from "./pages/FeedbackAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/documentation" element={<Documentation />} />
+            <Route path="/feedback-analytics" element={<FeedbackAnalyticsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

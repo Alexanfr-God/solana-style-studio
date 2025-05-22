@@ -42,6 +42,39 @@ export type Database = {
         }
         Relationships: []
       }
+      image_feedback: {
+        Row: {
+          created_at: string | null
+          feedback_text: string | null
+          id: string
+          image_url: string
+          prompt: string
+          rating: number
+          tags: string[] | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          image_url: string
+          prompt: string
+          rating: number
+          tags?: string[] | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          feedback_text?: string | null
+          id?: string
+          image_url?: string
+          prompt?: string
+          rating?: number
+          tags?: string[] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       nfts: {
         Row: {
           created_at: string | null
@@ -98,10 +131,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      feedback_analytics: {
+        Row: {
+          average_rating: number | null
+          feedback_count: number | null
+          feedback_texts: string[] | null
+          prompt: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      refresh_feedback_analytics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
