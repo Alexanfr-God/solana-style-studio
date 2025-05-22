@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletName, WalletReadyState } from '@solana/wallet-adapter-base';
@@ -15,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { PhantomIcon, SolflareIcon, BackpackIcon, BraveIcon, MetaMaskIcon } from './WalletIcons';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 
+// Wallet icons mapping - unchanged
 const WALLET_ICONS = {
   'Phantom': <PhantomIcon />,
   'Solflare': <SolflareIcon />,
@@ -23,11 +23,13 @@ const WALLET_ICONS = {
   'MetaMask': <MetaMaskIcon />,
 };
 
+// Component definition with explicit React.FC type
 const WalletSelector: React.FC = () => {
+  // Hooks - unchanged
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
   const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
 
-  // Filter and sort wallets by readiness
+  // Filter and sort wallets by readiness - unchanged
   const availableWallets = useMemo(() => {
     const installed = wallets.filter(
       ({ readyState }) => readyState === WalletReadyState.Installed
@@ -38,14 +40,14 @@ const WalletSelector: React.FC = () => {
     return [...installed, ...notDetected];
   }, [wallets]);
 
-  // Trigger sign message after wallet is connected
+  // Trigger sign message after wallet is connected - unchanged
   useEffect(() => {
     if (connected && publicKey && !isAuthenticated && !isAuthenticating && !hasRejectedSignature) {
       signMessageOnConnect(publicKey.toString());
     }
   }, [connected, publicKey, signMessageOnConnect, isAuthenticated, isAuthenticating, hasRejectedSignature]);
 
-  // Handle disconnect with toast notification
+  // Handle disconnect with toast notification - unchanged
   const handleDisconnect = useCallback(async () => {
     try {
       await disconnect();
@@ -56,7 +58,7 @@ const WalletSelector: React.FC = () => {
     }
   }, [disconnect]);
 
-  // Handle wallet selection
+  // Handle wallet selection - unchanged
   const handleWalletSelect = useCallback(
     async (walletName: WalletName) => {
       try {
@@ -69,11 +71,12 @@ const WalletSelector: React.FC = () => {
     [select]
   );
 
-  // Helper function to shorten wallet address
+  // Helper function to shorten wallet address - unchanged
   const shortenAddress = (address: string) => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
+  // Return JSX with explicit parentheses to help transpiler
   return (
     <div className="relative z-10">
       <DropdownMenu>
