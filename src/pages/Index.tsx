@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import V1Customizer from '../components/editor/V1Customizer';
 import AnimatedStars from '@/components/ui/animated-stars';
 import ShowcaseSection from '@/components/showcase/ShowcaseSection';
+import PhantomWalletShowcase from '@/components/showcase/PhantomWalletShowcase';
 import Footer from '@/components/layout/Footer';
 import { useEffect, useState } from 'react';
 
@@ -98,7 +99,7 @@ const Index = () => {
       <AnimatedStars />
       
       {/* Customizer Section */}
-      <section className="w-full">
+      <section id="editor-section" className="w-full">
         <V1Customizer />
       </section>
       
@@ -109,6 +110,11 @@ const Index = () => {
         data-testid="showcase-section"
       >
         <ShowcaseSection />
+      </section>
+      
+      {/* New Phantom Wallet Showcase Section */}
+      <section className="w-full relative z-10">
+        <PhantomWalletShowcase />
       </section>
       
       {/* Footer */}
