@@ -50,8 +50,9 @@ const WalletSelector = () => {
     try {
       await disconnect();
       toast.success('Wallet disconnected');
-    } catch (error: any) {
-      toast.error(`Error disconnecting: ${error?.message || 'Unknown error'}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Error disconnecting: ${errorMessage}`);
     }
   }, [disconnect]);
 
@@ -60,8 +61,9 @@ const WalletSelector = () => {
     async (walletName: WalletName) => {
       try {
         select(walletName);
-      } catch (error: any) {
-        toast.error(`Error selecting wallet: ${error?.message || 'Unknown error'}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        toast.error(`Error selecting wallet: ${errorMessage}`);
       }
     },
     [select]
@@ -114,7 +116,6 @@ const WalletSelector = () => {
                         onClick={() => isInstalled && handleWalletSelect(item.adapter.name)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
-                        {/* Display wallet icon if available */}
                         {WALLET_ICONS[item.adapter.name] || null}
                         <span>{item.adapter.name}</span>
                         {!isInstalled && <span className="ml-auto text-xs text-muted-foreground">(Not detected)</span>}
