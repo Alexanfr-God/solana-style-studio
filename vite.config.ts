@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: {
+      // Improve HMR performance
+      overlay: false
+    }
   },
   plugins: [
     react(),
@@ -31,20 +35,43 @@ export default defineConfig(({ mode }) => ({
       '@solana/web3.js',
       'buffer',
     ],
+    // Skip optional dependencies to speed up installation
+    exclude: ['fsevents'],
+    // Speed up dependency pre-bundling
     esbuildOptions: {
       // Node.js global to browser globalThis
       define: {
         global: 'globalThis',
       },
+      // Reduce build bloat
+      minify: true,
+      // Skip source maps in development to speed up builds
+      sourcemap: false,
     }
   },
   build: {
+    // Improve build performance
+    target: 'esnext',
+    // Disable source maps in production to reduce build time
+    sourcemap: false,
+    // Minify output for production
+    minify: 'esbuild',
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    // Chunk size warnings configuration
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
-      // Enable the node polyfills plugin
-      plugins: []
+      output: {
+        // Improve code splitting
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
+          'wallet-vendor': ['@solana/wallet-adapter-react', '@solana/web3.js']
+        }
+      }
     }
-  }
+  },
+  // Disable dependency optimization in certain cases to prevent timeouts
+  cacheDir: '.vite_cache'
 }));

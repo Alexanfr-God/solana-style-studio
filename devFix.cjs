@@ -3,6 +3,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+console.log('Starting improved development server with timeout handling...');
+
 // Locate the Vite binary path
 const findViteBinary = () => {
   const possiblePaths = [
@@ -24,6 +26,19 @@ const findViteBinary = () => {
   return null;
 };
 
+console.log('Checking if dependencies are installed...');
+// First try running a lightweight install to make sure essential deps are available
+try {
+  require('child_process').execSync('bun install --no-progress --no-summary', { 
+    stdio: 'inherit',
+    timeout: 120000 // 2 minute timeout for initial install
+  });
+  console.log('Essential dependencies are ready.');
+} catch (err) {
+  console.warn('Could not verify dependencies:', err.message);
+  console.log('Continuing with available dependencies...');
+}
+
 const vitePath = findViteBinary();
 
 if (vitePath) {
@@ -33,7 +48,13 @@ if (vitePath) {
   const isWindows = process.platform === 'win32';
   const spawnOptions = {
     stdio: 'inherit',
-    shell: isWindows
+    shell: isWindows,
+    env: {
+      ...process.env,
+      // Set environment variables to optimize build
+      VITE_OPTIMIZE_MEMORY: 'true',
+      NODE_OPTIONS: '--max-old-space-size=4096' // Increase memory limit
+    }
   };
   
   const child = spawn(vitePath, process.argv.slice(2), spawnOptions);
@@ -54,7 +75,13 @@ if (vitePath) {
   // Try running via npx as a fallback
   const child = spawn('npx', ['vite', ...process.argv.slice(2)], { 
     stdio: 'inherit',
-    shell: true
+    shell: true,
+    env: {
+      ...process.env,
+      // Set environment variables to optimize build
+      VITE_OPTIMIZE_MEMORY: 'true',
+      NODE_OPTIONS: '--max-old-space-size=4096' // Increase memory limit
+    }
   });
   
   child.on('error', (err) => {
