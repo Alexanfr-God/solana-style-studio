@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { PhantomIcon, SolflareIcon, BackpackIcon, BraveIcon, MetaMaskIcon } from './WalletIcons';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 
+// Define icon mapping for wallet types
 const WALLET_ICONS: Record<string, React.ReactNode> = {
   'Phantom': <PhantomIcon />,
   'Solflare': <SolflareIcon />,
@@ -23,7 +24,8 @@ const WALLET_ICONS: Record<string, React.ReactNode> = {
   'MetaMask': <MetaMaskIcon />,
 };
 
-export default function WalletSelector() {
+// WalletSelector component with explicit React.FC type
+const WalletSelector: React.FC = () => {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
   const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
 
@@ -72,6 +74,7 @@ export default function WalletSelector() {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
+  // Using explicit return with parentheses to ensure proper transpilation
   return (
     <div className="relative z-10">
       <DropdownMenu>
@@ -139,3 +142,5 @@ export default function WalletSelector() {
     </div>
   );
 };
+
+export default WalletSelector;
