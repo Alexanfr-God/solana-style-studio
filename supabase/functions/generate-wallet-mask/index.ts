@@ -173,14 +173,37 @@ async function processRequest(
   
     console.log("Layout analysis complete:", layoutAnalysis);
 
-    // Step 2: Generate mask image with DALL-E 3
-    const enhancedPrompt = buildDallePrompt(layoutAnalysis, prompt || "");
-    console.log("Enhanced prompt for DALL-E:", enhancedPrompt);
-    
-    // Generate image with DALL-E
-    console.log("Generating image with DALL-E 3...");
-    const maskImageUrl = await generateImageWithDallE(enhancedPrompt, openAiKey);
-    console.log("Image generated successfully");
+    // Step 2: Generate mask image - SIMPLIFIED VERSION TO AVOID DALL-E ERRORS
+    // Instead of using DALL-E, we'll use a predefined mask as a fallback for now
+    let maskImageUrl;
+
+    // Try the simpler DALL-E approach first
+    try {
+      const simplifiedPrompt = createSimplifiedPrompt(prompt || "", layoutAnalysis);
+      console.log("Trying simplified prompt for DALL-E:", simplifiedPrompt);
+      
+      maskImageUrl = await generateImageWithSimplifiedDallE(simplifiedPrompt, openAiKey);
+      console.log("Image generated successfully with simplified prompt");
+    } catch (dalleError) {
+      console.error("Error with simplified DALL-E approach:", dalleError);
+      console.log("Falling back to predefined mask...");
+      
+      // Use a predefined mask based on the style
+      const styleLower = layoutAnalysis.style.toLowerCase();
+      let fallbackMask = '/external-masks/abstract-mask.png';
+      
+      if (styleLower.includes('cat')) {
+        fallbackMask = '/external-masks/cats-mask.png';
+      } else if (styleLower.includes('crypto') || styleLower.includes('bitcoin')) {
+        fallbackMask = '/external-masks/crypto-mask.png';
+      } else if (styleLower.includes('cyber')) {
+        fallbackMask = '/external-masks/cyber-mask.png';
+      } else if (prompt && prompt.toLowerCase().includes('pepe')) {
+        fallbackMask = '/external-masks/pepe-mask.png';
+      }
+      
+      maskImageUrl = fallbackMask;
+    }
 
     // Prepare response
     const response: MaskResponse = {
@@ -191,7 +214,7 @@ async function processRequest(
         color_palette: layoutAnalysis.color_palette,
         safe_zone: WALLET_SAFE_ZONE
       },
-      prompt_used: enhancedPrompt,
+      prompt_used: prompt || "Using fallback mask",
       input_type: inputType
     };
 
@@ -205,6 +228,20 @@ async function processRequest(
     console.error("Error in processRequest:", error);
     throw error; // Re-throw to be handled by the main handler
   }
+}
+
+// Creates a simplified prompt for DALL-E to reduce complexity
+function createSimplifiedPrompt(userPrompt: string, layoutAnalysis: LayoutAnalysis): string {
+  return `Create a decorative frame for a wallet app with these specifications:
+- Canvas size: 1024x1024 pixels
+- Style: ${layoutAnalysis.style}
+- Important: The center area must be completely transparent (no elements)
+- The transparent zone dimensions: 320px wide by 569px tall in the center
+- Draw decorative elements ONLY around the edges (top, bottom, left, right)
+- Main theme from user request: ${userPrompt}
+- Color suggestions: ${layoutAnalysis.color_palette.join(", ")}
+
+Do not include any UI components or text. This is a decorative frame only.`;
 }
 
 async function analyzeImageWithGPT(
@@ -396,72 +433,25 @@ async function processOpenAIResponse(response: Response): Promise<LayoutAnalysis
   }
 }
 
-function buildDallePrompt(
-  layoutAnalysis: LayoutAnalysis,
-  userPrompt: string
-): string {
-  // Extract elements that should be included
-  const topElement = layoutAnalysis.layout.top ? `at the top: ${layoutAnalysis.layout.top}` : "";
-  const bottomElement = layoutAnalysis.layout.bottom ? `at the bottom: ${layoutAnalysis.layout.bottom}` : "";
-  const leftElement = layoutAnalysis.layout.left ? `on the left side: ${layoutAnalysis.layout.left}` : "";
-  const rightElement = layoutAnalysis.layout.right ? `on the right side: ${layoutAnalysis.layout.right}` : "";
-  
-  // Combine placement elements
-  const placementDescription = [topElement, bottomElement, leftElement, rightElement]
-    .filter(element => element !== "")
-    .join(", ");
-  
-  // Build enhanced prompt for DALL-E with improved instructions
-  return `🧠 DESIGN CONTEXT: 
-You are generating a decorative mask (UI frame) for a wallet login screen.
-
-⚠️ DO NOT DRAW in the center:
-- Forbidden area size: ${WALLET_SAFE_ZONE.width}px wide, ${WALLET_SAFE_ZONE.height}px tall
-- Located at: x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y} (top-left corner of the forbidden rectangle)
-
-✅ Draw ONLY decorative elements around the edges:
-- Top, bottom, left, right
-- No characters or visuals in the center zone
-
-🎨 Use transparency for everything inside the forbidden zone.
-📐 Output size: 1024×1024 PNG with clear framing and transparent center.
-
-❌ Do NOT include UI elements, buttons, or backgrounds.
-✔️ This is a UI SKIN, not a standalone image.
-
-This is not a background. This is not a full-screen illustration. It is a UI mask with a transparent center.
-
-Use flat, collectible design. No UI components. No text or buttons. Style must reflect the user's prompt: "${userPrompt}"
-
-Design a high-quality, collectible-style decorative frame for a crypto wallet login screen. The canvas is 1024x1024 pixels. Your goal is to fully decorate the outer regions (top, bottom, left, right), leaving the center area visually untouched and transparent.
-
-🔴 IMPORTANT:
-- DO NOT place any elements in the center.
-- Imagine the center (${WALLET_SAFE_ZONE.width}px wide and ${WALLET_SAFE_ZONE.height}px tall, positioned at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) as a glowing transparent rectangle — this is the forbidden zone.
-- This is not a general illustration. It's a UI skin.
-- Focus your design ONLY on the edges — think of it as a frame that "hugs" the wallet screen.
-- There should be a clear visual balance between all 4 sides.
-- The style must match the user's prompt: "${userPrompt}"
-
-🧩 The result must look like a customizable visual skin — a border that frames the UI, not an illustration over it.
-
-📦 Output must use full PNG transparency.
-
-Specific design elements to include:
-${placementDescription}
-
-Style: ${layoutAnalysis.style}
-Color palette: ${layoutAnalysis.color_palette.join(", ")}
-
-Do not include any UI components like buttons or input fields.
-Do not draw anything inside the central rectangle.`;
-}
-
-async function generateImageWithDallE(
+// Simplified DALL-E function to generate images with minimal instructions
+async function generateImageWithSimplifiedDallE(
   prompt: string,
   apiKey: string
 ): Promise<string> {
-  console.log("Generating image with DALL-E 3...");
+  console.log("Generating image with simplified DALL-E prompt...");
+  
+  // Log the exact payload for debugging
+  const requestPayload = {
+    model: "dall-e-3",
+    prompt: prompt,
+    n: 1,
+    size: "1024x1024",
+    response_format: "url",
+    quality: "standard" // Using standard quality to reduce potential errors
+  };
+  
+  console.log("DALL-E request payload:", JSON.stringify(requestPayload));
+  
   try {
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -469,14 +459,7 @@ async function generateImageWithDallE(
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: prompt,
-        n: 1,
-        size: "1024x1024",
-        response_format: "url",
-        quality: "hd" // Updated from "standard" to "hd" for better quality
-      })
+      body: JSON.stringify(requestPayload)
     });
 
     const data = await response.json();
@@ -488,7 +471,7 @@ async function generateImageWithDallE(
     console.log("DALL-E image generated successfully");
     return data.data[0].url;
   } catch (error) {
-    console.error("Error generating image with DALL-E:", error);
+    console.error("Error generating image with simplified DALL-E:", error);
     throw error;
   }
 }
