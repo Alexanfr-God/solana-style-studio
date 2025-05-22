@@ -7,7 +7,6 @@ import ShowcaseSection from '@/components/showcase/ShowcaseSection';
 import PhantomWalletShowcase from '@/components/showcase/PhantomWalletShowcase';
 import Footer from '@/components/layout/Footer';
 import { useEffect, useState } from 'react';
-import PhantomDemoWalletsSection from '@/components/showcase/PhantomDemoWalletsSection';
 
 const Index = () => {
   const [mounted, setMounted] = useState(false);
@@ -116,11 +115,6 @@ const Index = () => {
       {/* New Phantom Wallet Showcase Section */}
       <section className="w-full relative z-10">
         <PhantomWalletShowcase />
-      </section>
-      
-      {/* New Phantom Demo Wallets Section */}
-      <section id="demo-wallets" className="w-full relative z-10">
-        <PhantomDemoWalletsSection />
       </section>
       
       {/* Footer */}

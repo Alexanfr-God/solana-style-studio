@@ -1,14 +1,7 @@
 
 [install]
-# Increase timeout to 15 minutes
-timeout = "15m"
+timeout = "10m"
 cache = true
-# Enable concurrent installations to speed up the process
-concurrent = true
-# Disable unnecessary steps during installation
-no-progress = true
-no-summary = true
 
 [install.scopes]
 "*" = { production = false }
-
