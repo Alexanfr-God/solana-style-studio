@@ -23,8 +23,7 @@ const WALLET_ICONS = {
   'MetaMask': <MetaMaskIcon />,
 };
 
-// Переписанный компонент как функциональный компонент с использованием React.FC
-const WalletSelector: React.FC = () => {
+const WalletSelector = () => {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
   const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
 
@@ -75,7 +74,6 @@ const WalletSelector: React.FC = () => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
-  // Переписанный рендер с использованием стандартного синтаксиса JSX, а не _jsxDEV
   return (
     <div className="relative z-10">
       <DropdownMenu>
