@@ -92,36 +92,36 @@ async function analyzeDrawingWithGPT(drawingImageBase64: string): Promise<string
         messages: [
           {
             role: "system",
-            content: `🎯 КОНТЕКСТ АНАЛИЗА РИСУНКА ДЛЯ МАСКИ КОШЕЛЬКА:
+            content: `🎯 WALLET MASK DRAWING ANALYSIS CONTEXT:
 
-ВЫ АНАЛИЗИРУЕТЕ: Пользовательский рисунок на холсте с интерфейсом кошелька в центре.
+YOU ARE ANALYZING: A user's drawing on a canvas with a demo wallet interface in the center.
 
-📐 ЧТО ВИДИТЕ:
-- Квадратный холст 1024x1024 пикселя
-- В ЦЕНТРЕ: Интерфейс демо-кошелька (320x569 пикселей) - ЭТО НЕ ЧАСТЬ МАСКИ!
-- ВОКРУГ КОШЕЛЬКА: Красные линии/рисунки пользователя - ИЗ ЭТОГО ДЕЛАЕМ МАСКУ!
+📐 WHAT YOU SEE:
+- Square canvas 1024x1024 pixels
+- IN THE CENTER: Demo wallet interface (320x569 pixels) - THIS IS NOT PART OF THE MASK!
+- AROUND THE WALLET: Red lines/drawings by user - THESE BECOME THE MASK!
 
-🎨 ВАША ЗАДАЧА:
-Опишите ТОЛЬКО красные элементы вокруг кошелька как основу для декоративной маски.
-Игнорируйте интерфейс кошелька в центре - он останется видимым.
+🎨 YOUR TASK:
+Describe ONLY the red elements around the wallet as the basis for a decorative mask.
+Ignore the wallet interface in the center - it must remain visible.
 
-📋 ПРАВИЛА ОПИСАНИЯ:
-- Описывайте положение элементов: "сверху", "снизу", "слева", "справа"
-- Указывайте стиль: мультяшный, мемный, абстрактный
-- Описывайте формы: уши, лапы, рога, узоры, рамки
-- НЕ УПОМИНАЙТЕ кошелек или интерфейс - только декоративные элементы
+📋 DESCRIPTION RULES:
+- Describe element positions: "top", "bottom", "left", "right"
+- Specify style: cartoon, meme, abstract
+- Describe shapes: ears, paws, horns, patterns, frames
+- DO NOT MENTION the wallet or interface - only decorative elements
 
-🎯 ПРИМЕР ХОРОШЕГО ОПИСАНИЯ:
-"Сверху два треугольных уха в мультяшном стиле, снизу две округлые лапы, по бокам волнистые узоры. Стиль: игривый мемный котик."
+🎯 EXAMPLE GOOD DESCRIPTION:
+"Two triangular ears at the top in cartoon style, two round paws at the bottom, wavy patterns on the sides. Style: playful meme cat."
 
-АНАЛИЗИРУЙТЕ РИСУНОК И СОЗДАЙТЕ ОПИСАНИЕ ДЛЯ DALL-E:`
+ANALYZE THE DRAWING AND CREATE A DESCRIPTION FOR DALL-E:`
           },
           {
             role: "user", 
             content: [
               {
                 type: "text", 
-                text: "Проанализируй этот рисунок. В центре видишь интерфейс кошелька (НЕ трогай его!), а вокруг красные линии - это моя маска. Опиши ТОЛЬКО красные элементы для создания декоративной маски."
+                text: "Analyze this drawing. In the center you see a wallet interface (DON'T touch it!), and around it are red lines - this is my mask. Describe ONLY the red elements for creating a decorative mask."
               },
               {
                 type: "image_url",
@@ -158,34 +158,34 @@ async function analyzeDrawingWithGPT(drawingImageBase64: string): Promise<string
 async function generateMaskWithDALLE(description: string): Promise<string> {
   try {
     // Create a very specific prompt that enforces transparency rules
-    const prompt = `🎯 СОЗДАНИЕ МАСКИ КОШЕЛЬКА - СТРОГИЕ ТРЕБОВАНИЯ:
+    const prompt = `🎯 WALLET MASK CREATION - STRICT REQUIREMENTS:
 
-📝 ОПИСАНИЕ ОТ ПОЛЬЗОВАТЕЛЯ: "${description}"
+📝 USER DESCRIPTION: "${description}"
 
-📐 ОБЯЗАТЕЛЬНЫЕ ТЕХНИЧЕСКИЕ ХАРАКТЕРИСТИКИ:
-- Размер: 1024x1024 пикселя, PNG с прозрачностью
-- ЦЕНТРАЛЬНАЯ ПРОЗРАЧНАЯ ЗОНА: 320x569 пикселей (ТОЧНО ПО ЦЕНТРУ)
-- Координаты прозрачной зоны: X=352, Y=227.5 (от левого верхнего угла)
-- В ЦЕНТРЕ НЕ ДОЛЖНО БЫТЬ НИЧЕГО - полная прозрачность
+📐 MANDATORY TECHNICAL SPECS:
+- Size: 1024x1024 pixels, PNG with transparency
+- CENTRAL TRANSPARENT ZONE: 320x569 pixels (EXACTLY IN CENTER)
+- Transparent zone coordinates: X=352, Y=227.5 (from top-left corner)
+- CENTER MUST BE EMPTY - complete transparency
 
-🎨 ПРАВИЛА ДИЗАЙНА:
-- Создайте декоративную маску на основе описания
-- Все элементы размещайте ТОЛЬКО вокруг центральной прозрачной зоны
-- Сверху: элементы над прозрачной зоной
-- Снизу: элементы под прозрачной зоной  
-- По бокам: элементы слева и справа от прозрачной зоны
-- Стиль: яркий, мемный, мультяшный, впечатляющий
+🎨 DESIGN RULES:
+- Create decorative mask based on description
+- Place ALL elements ONLY around the central transparent zone
+- Top: elements above transparent zone
+- Bottom: elements below transparent zone  
+- Sides: elements left and right of transparent zone
+- Style: bright, meme-like, cartoon, impressive
 
-⚠️ КРИТИЧЕСКИ ВАЖНО:
-Центральный прямоугольник 320x569px ДОЛЖЕН быть полностью прозрачным (alpha=0).
-Это "окно" для интерфейса кошелька, которое должно оставаться видимым.
+⚠️ CRITICALLY IMPORTANT:
+Central rectangle 320x569px MUST be completely transparent (alpha=0).
+This is a "window" for the wallet interface that must remain visible.
 
-🎭 ДУМАЙТЕ О МАСКЕ КАК О:
-- Декоративной рамке вокруг кошелька
-- Костюме для кошелька
-- Обложке с вырезом в центре
+🎭 THINK OF THE MASK AS:
+- Decorative frame around the wallet
+- Costume for the wallet
+- Cover with a cutout in the center
 
-Создайте PNG с альфа-каналом и строгой прозрачностью в центре!`;
+Create PNG with alpha channel and strict transparency in center!`;
     
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
