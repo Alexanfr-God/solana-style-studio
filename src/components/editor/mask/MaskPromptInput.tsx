@@ -3,7 +3,6 @@ import React from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Info, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -55,18 +54,21 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
           </TooltipProvider>
         </div>
         
-        <Select value={maskStyle} onValueChange={handleStyleChange} disabled={disabled}>
-          <SelectTrigger className="bg-black/20 border-white/10">
-            <SelectValue placeholder="Choose a style" />
-          </SelectTrigger>
-          <SelectContent className="bg-black/90 border-white/10">
+        <div className="relative">
+          <select 
+            value={maskStyle} 
+            onChange={(e) => handleStyleChange(e.target.value)}
+            disabled={disabled}
+            className="w-full h-10 px-3 py-2 bg-black/20 border border-white/10 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+          >
+            <option value="" disabled className="bg-black text-white">Choose a style</option>
             {styleOptions.map((style) => (
-              <SelectItem key={style.value} value={style.value} className="text-white">
+              <option key={style.value} value={style.value} className="bg-black text-white">
                 {style.label}
-              </SelectItem>
+              </option>
             ))}
-          </SelectContent>
-        </Select>
+          </select>
+        </div>
       </div>
 
       <div className="space-y-2">
