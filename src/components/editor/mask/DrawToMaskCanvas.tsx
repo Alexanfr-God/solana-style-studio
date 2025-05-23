@@ -25,12 +25,15 @@ const DrawToMaskCanvas = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [useStyleTransfer, setUseStyleTransfer] = useState(false);
 
-  // Safe zone dimensions - centered wallet area
-  const CANVAS_WIDTH = 480;
+  // Canvas dimensions
+  const CANVAS_WIDTH = 800;
   const CANVAS_HEIGHT = 800;
+  
+  // Wallet dimensions (exact LoginScreen dimensions)
   const WALLET_WIDTH = 320;
   const WALLET_HEIGHT = 569;
   
+  // Calculate perfect center position
   const SAFE_ZONE = {
     x: (CANVAS_WIDTH - WALLET_WIDTH) / 2,
     y: (CANVAS_HEIGHT - WALLET_HEIGHT) / 2,
@@ -55,7 +58,7 @@ const DrawToMaskCanvas = () => {
     freeDrawingBrush.color = '#ff3333';
     freeDrawingBrush.width = brushSize;
 
-    // Add safe zone indicator
+    // Add safe zone indicator - perfectly centered and sized
     const safeZoneRect = new fabric.Rect({
       left: SAFE_ZONE.x,
       top: SAFE_ZONE.y,
@@ -119,7 +122,7 @@ const DrawToMaskCanvas = () => {
     const canvas = fabricCanvasRef.current;
     canvas.clear();
     
-    // Re-add safe zone
+    // Re-add safe zone with exact positioning
     const safeZoneRect = new fabric.Rect({
       left: SAFE_ZONE.x,
       top: SAFE_ZONE.y,
@@ -198,7 +201,7 @@ const DrawToMaskCanvas = () => {
       <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md flex items-start space-x-2">
         <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
         <div className="text-xs text-blue-300">
-          <strong>New AI Approach:</strong> Draw decorative elements around the wallet area. 
+          <strong>AI Drawing Approach:</strong> Draw decorative elements around the wallet area. 
           AI will precisely detect your drawings and create a transparent mask only where needed.
         </div>
       </div>
@@ -262,10 +265,10 @@ const DrawToMaskCanvas = () => {
         </Label>
       </div>
       
-      <div className="relative h-[800px] bg-black/10 rounded-lg overflow-hidden">
+      <div className="relative bg-black/10 rounded-lg overflow-hidden" style={{ height: `${CANVAS_HEIGHT}px` }}>
         <canvas ref={canvasRef} className="absolute top-0 left-0 z-20" />
         
-        {/* Demo wallet positioned in center */}
+        {/* Demo wallet positioned EXACTLY in center - NO SCALING */}
         <div 
           className="absolute z-10 pointer-events-none"
           style={{
@@ -275,9 +278,7 @@ const DrawToMaskCanvas = () => {
             height: `${SAFE_ZONE.height}px`,
           }}
         >
-          <div className="scale-[0.8] origin-top-left">
-            <LoginScreen style={loginStyle} />
-          </div>
+          <LoginScreen style={loginStyle} />
         </div>
       </div>
       
