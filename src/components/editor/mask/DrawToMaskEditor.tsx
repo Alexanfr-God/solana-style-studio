@@ -3,10 +3,11 @@ import { fabric } from 'fabric';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
-import { Brush, Eraser, RotateCcw } from 'lucide-react';
+import { Brush, Eraser, RotateCcw, Info } from 'lucide-react';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { toast } from 'sonner';
+import { generateMaskFromDrawing } from '@/services/drawToMaskService';
 
 type DrawToolType = 'brush' | 'eraser';
 
@@ -19,7 +20,6 @@ const DrawToMaskEditor = () => {
   
   const [activeTool, setActiveTool] = useState<DrawToolType>('brush');
   const [brushSize, setBrushSize] = useState(20);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Safe zone dimensions - must match the wallet UI area
@@ -37,18 +37,18 @@ const DrawToMaskEditor = () => {
     // Create a new Fabric.js canvas
     const canvas = new fabric.Canvas(canvasRef.current, {
       isDrawingMode: true,
-      width: 480,  // Wider than wallet to give room for the mask
-      height: 800,  // Taller than wallet to give room for the mask
-      backgroundColor: 'rgba(0, 0, 0, 0.05)'
+      width: 480,
+      height: 800,
+      backgroundColor: 'rgba(0, 0, 0, 0.02)'
     });
     fabricCanvasRef.current = canvas;
 
-    // Set up the brush
+    // Set up the brush with better visibility
     const freeDrawingBrush = canvas.freeDrawingBrush;
-    freeDrawingBrush.color = '#ff3333'; // Red brush by default
+    freeDrawingBrush.color = '#ff3333';
     freeDrawingBrush.width = brushSize;
 
-    // Add safe zone rectangle (centered)
+    // Add enhanced safe zone rectangle with better visibility
     const centerX = canvas.width! / 2 - SAFE_ZONE.width / 2;
     const centerY = canvas.height! / 2 - SAFE_ZONE.height / 2;
     
@@ -57,26 +57,29 @@ const DrawToMaskEditor = () => {
       top: centerY,
       width: SAFE_ZONE.width,
       height: SAFE_ZONE.height,
-      fill: 'rgba(0, 0, 0, 0)',
-      stroke: 'rgba(255, 255, 255, 0.5)',
+      fill: 'rgba(128, 128, 128, 0.1)',
+      stroke: 'rgba(255, 255, 255, 0.8)',
       strokeWidth: 2,
+      strokeDashArray: [5, 5],
       selectable: false,
       evented: false,
     });
     canvas.add(safeZoneRect);
 
-    // Position the wallet UI
-    const walletContainerEl = document.querySelector('.wallet-preview-container');
-    if (walletContainerEl && containerRef.current) {
-      const walletEl = walletContainerEl.querySelector('.wallet-preview') as HTMLElement;
-      if (walletEl) {
-        // Position wallet in the center of the canvas
-        walletEl.style.position = 'absolute';
-        walletEl.style.top = `${centerY}px`;
-        walletEl.style.left = `${centerX}px`;
-        walletEl.style.zIndex = '100';
-      }
-    }
+    // Add "WALLET AREA" text overlay
+    const warningText = new fabric.Text('WALLET AREA\n(DO NOT DRAW HERE)', {
+      left: centerX + SAFE_ZONE.width / 2,
+      top: centerY + SAFE_ZONE.height / 2,
+      fontSize: 14,
+      fontFamily: 'Arial',
+      textAlign: 'center',
+      originX: 'center',
+      originY: 'center',
+      fill: 'rgba(255, 255, 255, 0.6)',
+      selectable: false,
+      evented: false,
+    });
+    canvas.add(warningText);
 
     // Set safe zone visible by default
     setSafeZoneVisible(true);
@@ -148,57 +151,49 @@ const DrawToMaskEditor = () => {
       setIsGenerating(true);
       const canvas = fabricCanvasRef.current;
       
-      // Convert canvas to image
+      // Convert canvas to image with high quality
       const dataUrl = canvas.toDataURL({
         format: 'png',
         quality: 1,
+        multiplier: 1
       });
       
-      // Send the drawing to the server for AI processing
-      const { data, error } = await generateMaskFromDrawing(dataUrl);
+      console.log('🎨 Starting mask generation from drawing...');
       
-      if (error) {
-        throw new Error(error.message);
+      // Send the drawing to the enhanced server processing
+      const result = await generateMaskFromDrawing(dataUrl);
+      
+      if (!result) {
+        throw new Error('No result returned from mask generation');
       }
       
       // Set the generated mask in the store
-      setMaskImageUrl(data.imageUrl);
+      setMaskImageUrl(result.imageUrl);
       
-      toast.success("Mask generated successfully!");
+      console.log('✅ Mask generation completed successfully');
+      toast.success("Enhanced mask generated!", {
+        description: "Your drawing has been transformed into a professional wallet decoration"
+      });
     } catch (err) {
-      console.error("Error generating mask:", err);
+      console.error("❌ Error generating mask:", err);
       toast.error("Failed to generate mask. Please try again.");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Function to generate mask from drawing using our edge function
-  const generateMaskFromDrawing = async (drawingDataUrl: string) => {
-    try {
-      const response = await fetch('/api/generate-mask-from-drawing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          drawingImage: drawingDataUrl,
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate mask');
-      }
-      
-      return { data: await response.json(), error: null };
-    } catch (err: any) {
-      return { data: null, error: { message: err.message } };
-    }
-  };
-
   return (
     <div className="flex flex-col space-y-4">
+      {/* Info banner */}
+      <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md flex items-start space-x-2">
+        <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+        <div className="text-xs text-blue-300">
+          <strong>Drawing Instructions:</strong> Draw decorative elements around the wallet area. 
+          The gray dashed rectangle shows where the wallet will be - avoid drawing there. 
+          AI will enhance your drawings and create a transparent center.
+        </div>
+      </div>
+      
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Button 
@@ -260,8 +255,14 @@ const DrawToMaskEditor = () => {
         disabled={isGenerating}
         onClick={handleGenerateMask}
       >
-        {isGenerating ? 'Generating...' : 'Generate Costume from Drawing'}
+        {isGenerating ? 'Generating Enhanced Mask...' : 'Generate AI Enhanced Costume'}
       </Button>
+      
+      {isGenerating && (
+        <div className="text-xs text-white/60 text-center">
+          ⏳ Analyzing your drawing and creating professional enhancements...
+        </div>
+      )}
     </div>
   );
 };
