@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
- * Generates minimalist cat mask using AI based on user drawing
+ * Generates AI cat mask using simplified approach
  */
 export async function generateMaskFromDrawing(
   drawingImageBase64: string,
@@ -11,8 +11,13 @@ export async function generateMaskFromDrawing(
 ): Promise<{ imageUrl: string; layoutJson: any } | undefined> {
   try {
     console.log('🐱 === STARTING AI CAT MASK GENERATION ===');
-    console.log('Drawing size:', drawingImageBase64.length);
-    console.log('Using style transfer:', useStyleTransfer);
+    console.log('Drawing data length:', drawingImageBase64.length);
+    console.log('Style transfer enabled:', useStyleTransfer);
+    
+    // Show progress to user
+    toast.info('Analyzing your cat drawing...', {
+      description: 'AI is creating a professional cat mask design'
+    });
     
     // Call the Supabase Edge Function for cat mask generation
     const { data, error } = await supabase.functions.invoke('generate-mask-from-drawing', {
@@ -21,6 +26,8 @@ export async function generateMaskFromDrawing(
         useStyleTransfer: useStyleTransfer
       }
     });
+
+    console.log('Edge function response:', { data, error });
 
     if (error) {
       console.error('Edge function error:', error);
@@ -36,23 +43,25 @@ export async function generateMaskFromDrawing(
       imageUrl: data.mask_image_url,
       layoutJson: data.layout_json || {
         layout: {
-          top: "AI-generated cat head",
-          bottom: "AI-generated cat paws", 
+          top: "AI-generated cat head with ears",
+          bottom: "AI-generated cat paws and body", 
           left: null,
           right: null,
           core: "transparent wallet area"
         },
         style: "ai-generated-minimalist-cat",
         color_palette: ["#000000", "#ffffff"],
-        generation_method: useStyleTransfer ? "dall-e-stylized" : "dall-e-minimalist"
+        generation_method: useStyleTransfer ? "dall-e-stylized" : "dall-e-minimalist",
+        cat_type: data.layout_json?.cat_type || "sitting"
       }
     };
 
     console.log('✅ === SUCCESSFUL CAT MASK GENERATION ===');
     console.log('Generated mask URL:', result.imageUrl);
+    console.log('Layout analysis:', result.layoutJson);
     
-    toast.success('Minimalist cat mask created!', {
-      description: 'AI generated a cute cat design around your wallet'
+    toast.success('Cat mask created successfully!', {
+      description: `AI generated a ${result.layoutJson.cat_type} cat design around your wallet`
     });
     
     return result;
@@ -61,33 +70,42 @@ export async function generateMaskFromDrawing(
     console.error('💥 === CAT MASK GENERATION FAILURE ===');
     console.error('Error details:', error);
     
-    // Fallback to predefined cat mask
-    toast.error('AI generation failed. Using fallback cat mask.');
+    // Enhanced fallback with rotation
+    toast.error('AI generation failed. Using demo cat mask.');
     return createCatFallbackResponse();
   }
 }
 
 /**
- * Creates a fallback response with predefined cat mask
+ * Creates a fallback response with predefined cat mask (rotated for variety)
  */
 function createCatFallbackResponse(): { imageUrl: string; layoutJson: any } {
-  const fallbackCatMask = '/external-masks/cats-mask.png';
+  // Rotate through different cat masks for variety
+  const catMasks = [
+    '/external-masks/cats-mask.png',
+    '/external-masks/pepe-mask.png',
+    '/external-masks/abstract-mask.png'
+  ];
   
-  console.log('🚨 Using fallback cat mask:', fallbackCatMask);
+  const randomIndex = Math.floor(Math.random() * catMasks.length);
+  const selectedMask = catMasks[randomIndex];
+  
+  console.log('🚨 Using fallback cat mask:', selectedMask);
   
   return {
-    imageUrl: fallbackCatMask,
+    imageUrl: selectedMask,
     layoutJson: {
       layout: {
-        top: "Fallback cat head",
-        bottom: "Fallback cat paws",
+        top: "Demo cat head design",
+        bottom: "Demo cat paws and body",
         left: null,
         right: null,
         core: "transparent wallet area"
       },
-      style: "fallback-cat",
+      style: "demo-cat-fallback",
       color_palette: ["#ff6b6b", "#4ecdc4", "#45b7d1"],
-      generation_method: "fallback"
+      generation_method: "fallback-demo",
+      cat_type: "demo"
     }
   };
 }
