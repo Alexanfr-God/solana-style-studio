@@ -1,6 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useCustomizationStore } from '@/stores/customizationStore';
+import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,12 +11,15 @@ import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
+  const { externalMask } = useMaskEditorStore();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
   const [debugMode, setDebugMode] = useState(false);
 
   // For feedback purposes, create placeholder values
   const previewImageUrl = "/placeholder.svg";
   const previewPrompt = "Dual wallet preview with custom styling";
+
+  console.log('DualWalletPreview rendering with V3 mask:', { externalMask });
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -29,18 +33,73 @@ const DualWalletPreview = () => {
             <div className="text-xs text-white/70 space-y-1">
               <div>Login Style: Active</div>
               <div>Wallet Style: Active</div>
+              <div>V3 External Mask: {externalMask ? 'Applied' : 'None'}</div>
+              {externalMask && <div>Mask URL: {externalMask}</div>}
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full relative" ref={dualPreviewRef}>
+          {/* V3 Mask Overlay - Applied to both wallet views */}
+          {externalMask && (
+            <div className="absolute inset-0 pointer-events-none z-20 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left side mask (Login View) */}
+              <div className="relative">
+                <div 
+                  className="absolute inset-4 pointer-events-none"
+                  style={{
+                    maskImage: 'url(/mask-wallet-cutout.png)',
+                    WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                    maskPosition: 'center',
+                    WebkitMaskPosition: 'center',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskRepeat: 'no-repeat',
+                  }}
+                >
+                  <img 
+                    src={externalMask} 
+                    alt="V3 Wallet mask overlay" 
+                    className="w-full h-full object-cover"
+                    onLoad={() => console.log('✅ V3 mask applied to DualWalletPreview:', externalMask)}
+                    onError={(e) => console.error('❌ V3 mask failed to load in DualWalletPreview:', externalMask, e)}
+                  />
+                </div>
+              </div>
+              
+              {/* Right side mask (Wallet View) */}
+              <div className="relative">
+                <div 
+                  className="absolute inset-4 pointer-events-none"
+                  style={{
+                    maskImage: 'url(/mask-wallet-cutout.png)',
+                    WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                    maskPosition: 'center',
+                    WebkitMaskPosition: 'center',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskRepeat: 'no-repeat',
+                  }}
+                >
+                  <img 
+                    src={externalMask} 
+                    alt="V3 Wallet mask overlay" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Login View */}
           <div className="flex flex-col h-full">
             <div className="text-center mb-2">
               <h3 className="text-lg font-medium text-white/90">Login View</h3>
             </div>
             <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center relative">
-              <div className="relative z-20">
+              <div className="relative z-30">
                 <LoginScreen style={loginStyle} />
               </div>
             </div>
@@ -51,7 +110,7 @@ const DualWalletPreview = () => {
             <Badge 
               className="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(153,69,255,0.5)] border-white/20 rotate-[-10deg] scale-125"
             >
-              DEMO
+              {externalMask ? 'V3 DEMO' : 'DEMO'}
             </Badge>
           </div>
           
@@ -61,7 +120,7 @@ const DualWalletPreview = () => {
               <h3 className="text-lg font-medium text-white/90">Wallet View</h3>
             </div>
             <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center relative">
-              <div className="relative z-20">
+              <div className="relative z-30">
                 <WalletScreen style={walletStyle} />
               </div>
             </div>
