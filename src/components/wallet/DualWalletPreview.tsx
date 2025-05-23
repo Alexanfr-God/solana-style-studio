@@ -1,30 +1,21 @@
 
 import React, { useRef, useState } from 'react';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bug, Eye, EyeOff } from 'lucide-react';
+import { Bug } from 'lucide-react';
 import MintNftButton from './ExportToIpfsButton';
 import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
-  const { 
-    externalMask, 
-    maskImageUrl, 
-    safeZoneVisible,
-    setSafeZoneVisible 
-  } = useMaskEditorStore();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
   const [debugMode, setDebugMode] = useState(false);
 
   // For feedback purposes, create placeholder values
-  const previewImageUrl = externalMask || maskImageUrl || "/placeholder.svg";
+  const previewImageUrl = "/placeholder.svg";
   const previewPrompt = "Dual wallet preview with custom styling";
-
-  const activeMask = externalMask || maskImageUrl;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -34,21 +25,10 @@ const DualWalletPreview = () => {
           <div className="mb-4 p-3 bg-black/20 border border-white/10 rounded-md">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-sm font-medium text-white">Debug Info</h4>
-              <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setSafeZoneVisible(!safeZoneVisible)}
-                >
-                  {safeZoneVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </Button>
-              </div>
             </div>
             <div className="text-xs text-white/70 space-y-1">
-              <div>External Mask: {externalMask ? '✅' : '❌'}</div>
-              <div>Mask Image: {maskImageUrl ? '✅' : '❌'}</div>
-              <div>Active Mask: {activeMask ? activeMask.substring(0, 50) + '...' : 'None'}</div>
-              <div>Safe Zone Visible: {safeZoneVisible ? 'Yes' : 'No'}</div>
+              <div>Login Style: Active</div>
+              <div>Wallet Style: Active</div>
             </div>
           </div>
         )}
@@ -60,44 +40,6 @@ const DualWalletPreview = () => {
               <h3 className="text-lg font-medium text-white/90">Login View</h3>
             </div>
             <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center relative">
-              {/* Mask overlay for Login */}
-              {activeMask && (
-                <div 
-                  className="absolute inset-0 pointer-events-none z-10"
-                  style={{
-                    maskImage: 'url(/mask-wallet-cutout.png)',
-                    WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
-                    maskSize: 'contain',
-                    WebkitMaskSize: 'contain',
-                    maskPosition: 'center',
-                    WebkitMaskPosition: 'center',
-                    maskRepeat: 'no-repeat',
-                    WebkitMaskRepeat: 'no-repeat',
-                  }}
-                >
-                  <img 
-                    src={activeMask} 
-                    alt="Wallet mask" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              
-              {/* Safe zone visualization for Login */}
-              {safeZoneVisible && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30">
-                  <div className="border-2 border-red-500/50 rounded-2xl bg-red-500/5"
-                    style={{
-                      width: '320px',
-                      height: '569px'
-                    }}>
-                    <div className="absolute top-1 left-1 bg-red-500/80 px-1 py-0.5 rounded text-xs text-white">
-                      Safe Zone
-                    </div>
-                  </div>
-                </div>
-              )}
-              
               <div className="relative z-20">
                 <LoginScreen style={loginStyle} />
               </div>
@@ -119,44 +61,6 @@ const DualWalletPreview = () => {
               <h3 className="text-lg font-medium text-white/90">Wallet View</h3>
             </div>
             <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center relative">
-              {/* Mask overlay for Wallet */}
-              {activeMask && (
-                <div 
-                  className="absolute inset-0 pointer-events-none z-10"
-                  style={{
-                    maskImage: 'url(/mask-wallet-cutout.png)',
-                    WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
-                    maskSize: 'contain',
-                    WebkitMaskSize: 'contain',
-                    maskPosition: 'center',
-                    WebkitMaskPosition: 'center',
-                    maskRepeat: 'no-repeat',
-                    WebkitMaskRepeat: 'no-repeat',
-                  }}
-                >
-                  <img 
-                    src={activeMask} 
-                    alt="Wallet mask" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              
-              {/* Safe zone visualization for Wallet */}
-              {safeZoneVisible && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30">
-                  <div className="border-2 border-red-500/50 rounded-2xl bg-red-500/5"
-                    style={{
-                      width: '320px',
-                      height: '569px'
-                    }}>
-                    <div className="absolute top-1 left-1 bg-red-500/80 px-1 py-0.5 rounded text-xs text-white">
-                      Safe Zone
-                    </div>
-                  </div>
-                </div>
-              )}
-              
               <div className="relative z-20">
                 <WalletScreen style={walletStyle} />
               </div>
