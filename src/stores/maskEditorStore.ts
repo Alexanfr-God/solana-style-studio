@@ -41,6 +41,10 @@ interface MaskEditorState {
   // Drawing-specific state
   drawingImageUrl: string | null;
   
+  // Text prompt related state (added to fix TypeScript errors)
+  prompt: string;
+  maskStyle: string;
+  
   // Actions
   setActiveLayer: (layer: MaskLayerType) => void;
   setMaskImageUrl: (imageUrl: string | null) => void;
@@ -50,6 +54,8 @@ interface MaskEditorState {
   setSafeZoneVisible: (visible: boolean) => void;
   setIsGenerating: (isGenerating: boolean) => void;
   setDrawingImageUrl: (imageUrl: string | null) => void;
+  setPrompt: (prompt: string) => void;
+  setMaskStyle: (style: string) => void;
   
   resetEditor: () => void;
 }
@@ -71,6 +77,8 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   safeZoneVisible: true,
   isGenerating: false,
   drawingImageUrl: null,
+  prompt: '',
+  maskStyle: '',
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),
   setMaskImageUrl: (imageUrl) => set({ maskImageUrl: imageUrl }),
@@ -80,12 +88,16 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   setSafeZoneVisible: (visible) => set({ safeZoneVisible: visible }),
   setIsGenerating: (isGenerating) => set({ isGenerating: isGenerating }),
   setDrawingImageUrl: (imageUrl) => set({ drawingImageUrl: imageUrl }),
+  setPrompt: (prompt) => set({ prompt: prompt }),
+  setMaskStyle: (style) => set({ maskStyle: style }),
   
   resetEditor: () => set({
     maskImageUrl: null,
     externalMask: null,
     selectedMask: null,
     isGenerating: false,
-    drawingImageUrl: null
+    drawingImageUrl: null,
+    prompt: '',
+    maskStyle: ''
   })
 }));
