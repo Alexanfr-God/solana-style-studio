@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
@@ -6,7 +5,6 @@ import { useCustomizationStore } from '@/stores/customizationStore';
 import { WalletSceneContainer } from '@/components/wallet/WalletSceneContainer';
 import { Badge } from '@/components/ui/badge';
 import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
-import FeedbackButton from '@/components/feedback/FeedbackButton';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 const V3MaskPreviewCanvas = () => {
@@ -76,9 +74,9 @@ const V3MaskPreviewCanvas = () => {
   };
 
   return (
-    <div className="relative w-full h-[800px] flex items-center justify-center">
-      <div className="relative">
-        <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
+    <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
+      <div className="relative w-full h-[800px] flex items-center justify-center">
+        <div className="relative">
           {/* New scene container with larger area for external masks */}
           <WalletSceneContainer style={loginStyle}>
             {/* External mask layer - positioned ONLY around the wallet, not over it */}
@@ -206,19 +204,9 @@ const V3MaskPreviewCanvas = () => {
               </div>
             )}
           </WalletSceneContainer>
-        </ImageFeedbackWrapper>
-      </div>
-      
-      {/* Feedback Button positioned at the same level as "Mint as NFT" would be */}
-      <div className="absolute bottom-4 right-4">
-        <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3">
-          <FeedbackButton 
-            imageUrl={previewImageUrl} 
-            prompt={previewPrompt}
-          />
         </div>
       </div>
-    </div>
+    </ImageFeedbackWrapper>
   );
 };
 
