@@ -14,7 +14,7 @@ import {
   TooltipProvider, 
   TooltipTrigger 
 } from '@/components/ui/tooltip';
-import DrawToMaskEditor from './DrawToMaskEditor';
+import DrawToMaskCanvas from './DrawToMaskCanvas';
 
 const V3MaskEditor = () => {
   const { 
@@ -36,99 +36,62 @@ const V3MaskEditor = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 relative">
-      <div className="lg:col-span-1">
-        <div className="flex flex-col space-y-6 md:space-y-8">
-          <Card className="bg-black/30 backdrop-blur-md border-white/10">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Draw-to-Mask Editor</h2>
-                <div className="bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xs px-2 py-1 rounded">AI-Powered</div>
-              </div>
-              
-              {showGuide && (
-                <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-md">
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-sm font-medium text-purple-300 mb-1">How it works:</h3>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-6 w-6 p-0" 
-                      onClick={toggleGuide}
-                    >
-                      <EyeOff className="h-4 w-4 text-white/60" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-white/70">
-                    Draw the outline of your wallet costume directly on the canvas. Our AI will turn your sketch into a beautiful decorative mask while keeping the wallet UI visible and functional.
-                  </p>
-                </div>
-              )}
-              
-              {!showGuide && (
-                <div className="flex justify-end mb-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6" 
-                    onClick={toggleGuide}
-                  >
-                    <Info className="h-4 w-4 mr-1 text-white/60" />
-                    <span className="text-xs text-white/60">Show Guide</span>
-                  </Button>
-                </div>
-              )}
-              
-              <div className="space-y-6">
-                <DrawToMaskEditor />
-                
-                <SafeZoneToggle />
-                
+    <div className="grid grid-cols-1 gap-4 md:gap-6 relative">
+      <Card className="bg-black/30 backdrop-blur-md border-white/10">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">Draw-to-Mask Editor</h2>
+            <div className="bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xs px-2 py-1 rounded">AI-Powered</div>
+          </div>
+          
+          {showGuide && (
+            <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-md">
+              <div className="flex justify-between items-start">
+                <h3 className="text-sm font-medium text-purple-300 mb-1">How it works:</h3>
                 <Button 
-                  variant="outline" 
-                  onClick={handleReset}
-                  className="w-full border-white/10 text-white/80 hover:text-white"
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0" 
+                  onClick={toggleGuide}
                 >
-                  Reset All
+                  <EyeOff className="h-4 w-4 text-white/60" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-      
-      <div className="lg:col-span-2">
-        <Card className="bg-black/30 backdrop-blur-md border-white/10 p-2 md:p-4">
-          <div className="flex items-center justify-between py-2 px-4">
-            <h3 className="text-sm font-medium text-white">Wallet Preview</h3>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setSafeZoneVisible(!safeZoneVisible)}
-                  >
-                    {safeZoneVisible ? (
-                      <Eye className="h-4 w-4 text-purple-400" />
-                    ) : (
-                      <EyeOff className="h-4 w-4 text-white/60" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs">{safeZoneVisible ? "Hide" : "Show"} Safe Zone</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="flex items-center justify-center py-4">
-            <div className="w-full h-full">
-              <V3MaskPreviewCanvas />
+              <p className="text-xs text-white/70">
+                Draw the outline of your wallet costume directly on the canvas. Our AI will turn your sketch into a beautiful decorative mask while keeping the wallet UI visible and functional.
+              </p>
             </div>
+          )}
+          
+          {!showGuide && (
+            <div className="flex justify-end mb-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6" 
+                onClick={toggleGuide}
+              >
+                <Info className="h-4 w-4 mr-1 text-white/60" />
+                <span className="text-xs text-white/60">Show Guide</span>
+              </Button>
+            </div>
+          )}
+          
+          <DrawToMaskCanvas />
+          
+          <div className="mt-4">
+            <SafeZoneToggle />
           </div>
-        </Card>
-      </div>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleReset}
+            className="w-full mt-4 border-white/10 text-white/80 hover:text-white"
+          >
+            Reset All
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };

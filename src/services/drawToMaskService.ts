@@ -7,7 +7,7 @@ import { toast } from 'sonner';
  */
 export async function generateMaskFromDrawing(
   drawingImageBase64: string
-): Promise<{ imageUrl: string; layoutJson: any }> {
+): Promise<{ imageUrl: string; layoutJson: any } | undefined> {
   try {
     console.log('Generating mask from drawing');
     
