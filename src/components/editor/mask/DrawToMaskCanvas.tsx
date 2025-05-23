@@ -9,7 +9,7 @@ import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { Brush, Eraser, RotateCcw, Sparkles, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import { generateMaskFromDrawing } from '@/services/drawToMaskService';
+import { supabase } from '@/integrations/supabase/client';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 
 type DrawToolType = 'brush' | 'eraser';
@@ -17,7 +17,6 @@ type DrawToolType = 'brush' | 'eraser';
 const DrawToMaskCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
-  const walletRef = useRef<HTMLDivElement>(null);
   const { setMaskImageUrl, setSafeZoneVisible } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
   
@@ -25,52 +24,32 @@ const DrawToMaskCanvas = () => {
   const [brushSize, setBrushSize] = useState(20);
   const [isGenerating, setIsGenerating] = useState(false);
   const [useStyleTransfer, setUseStyleTransfer] = useState(false);
-  const [walletDimensions, setWalletDimensions] = useState({ width: 320, height: 569 });
-  const [safeZone, setSafeZone] = useState({ x: 0, y: 0, width: 320, height: 569 });
 
   // Canvas dimensions
   const CANVAS_WIDTH = 800;
   const CANVAS_HEIGHT = 800;
+  
+  // Fixed wallet dimensions - exactly 320x569
+  const WALLET_WIDTH = 320;
+  const WALLET_HEIGHT = 569;
+  
+  // Calculate exact center coordinates
+  const walletX = (CANVAS_WIDTH - WALLET_WIDTH) / 2; // 240
+  const walletY = (CANVAS_HEIGHT - WALLET_HEIGHT) / 2; // 115.5
+  
+  const safeZone = {
+    x: walletX,
+    y: walletY,
+    width: WALLET_WIDTH,
+    height: WALLET_HEIGHT,
+  };
 
-  // Measure wallet dimensions and calculate safe zone
-  useEffect(() => {
-    const measureWallet = () => {
-      if (walletRef.current) {
-        const rect = walletRef.current.getBoundingClientRect();
-        const actualWidth = rect.width;
-        const actualHeight = rect.height;
-        
-        console.log('📏 Measured wallet dimensions:', { actualWidth, actualHeight });
-        
-        setWalletDimensions({ width: actualWidth, height: actualHeight });
-        
-        // Calculate perfectly centered safe zone
-        const centerX = (CANVAS_WIDTH - actualWidth) / 2;
-        const centerY = (CANVAS_HEIGHT - actualHeight) / 2;
-        
-        const newSafeZone = {
-          x: centerX,
-          y: centerY,
-          width: actualWidth,
-          height: actualHeight,
-        };
-        
-        console.log('🎯 Calculated safe zone:', newSafeZone);
-        setSafeZone(newSafeZone);
-      }
-    };
-
-    // Measure after a short delay to ensure rendering is complete
-    const timeoutId = setTimeout(measureWallet, 100);
-    
-    // Also measure on window resize
-    window.addEventListener('resize', measureWallet);
-    
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', measureWallet);
-    };
-  }, [loginStyle]);
+  console.log('🎯 EXACT POSITIONING:', {
+    canvas: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT },
+    wallet: { width: WALLET_WIDTH, height: WALLET_HEIGHT },
+    position: { x: walletX, y: walletY },
+    safeZone
+  });
 
   // Initialize canvas
   useEffect(() => {
@@ -90,6 +69,9 @@ const DrawToMaskCanvas = () => {
     freeDrawingBrush.width = brushSize;
 
     setSafeZoneVisible(true);
+    
+    // Add safe zone immediately
+    addSafeZoneToCanvas(canvas);
 
     return () => {
       canvas.dispose();
@@ -97,12 +79,8 @@ const DrawToMaskCanvas = () => {
     };
   }, []);
 
-  // Update safe zone rectangle when dimensions change
-  useEffect(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    
+  // Function to add safe zone to canvas
+  const addSafeZoneToCanvas = (canvas: fabric.Canvas) => {
     // Remove existing safe zone elements
     const objects = canvas.getObjects();
     const safeZoneObjects = objects.filter(obj => 
@@ -110,7 +88,7 @@ const DrawToMaskCanvas = () => {
     );
     safeZoneObjects.forEach(obj => canvas.remove(obj));
     
-    // Add new safe zone rectangle with measured dimensions
+    // Add safe zone rectangle with exact positioning
     const safeZoneRect = new fabric.Rect({
       name: 'safeZoneRect',
       left: safeZone.x,
@@ -143,8 +121,8 @@ const DrawToMaskCanvas = () => {
     
     canvas.renderAll();
     
-    console.log('✅ Safe zone updated on canvas:', safeZone);
-  }, [safeZone]);
+    console.log('✅ Safe zone added with exact coordinates:', safeZone);
+  };
 
   // Update brush size
   useEffect(() => {
@@ -173,36 +151,8 @@ const DrawToMaskCanvas = () => {
     const canvas = fabricCanvasRef.current;
     canvas.clear();
     
-    // Re-add safe zone with measured dimensions
-    const safeZoneRect = new fabric.Rect({
-      name: 'safeZoneRect',
-      left: safeZone.x,
-      top: safeZone.y,
-      width: safeZone.width,
-      height: safeZone.height,
-      fill: 'rgba(128, 128, 128, 0.1)',
-      stroke: 'rgba(255, 255, 255, 0.8)',
-      strokeWidth: 2,
-      strokeDashArray: [5, 5],
-      selectable: false,
-      evented: false,
-    });
-    canvas.add(safeZoneRect);
-    
-    const warningText = new fabric.Text('WALLET AREA\n(WILL BE TRANSPARENT)', {
-      name: 'safeZoneText',
-      left: safeZone.x + safeZone.width / 2,
-      top: safeZone.y + safeZone.height / 2,
-      fontSize: 14,
-      fontFamily: 'Arial',
-      textAlign: 'center',
-      originX: 'center',
-      originY: 'center',
-      fill: 'rgba(255, 255, 255, 0.6)',
-      selectable: false,
-      evented: false,
-    });
-    canvas.add(warningText);
+    // Re-add safe zone
+    addSafeZoneToCanvas(canvas);
     
     toast.success("Canvas cleared");
   };
@@ -223,16 +173,28 @@ const DrawToMaskCanvas = () => {
       });
       
       console.log('🎨 Starting AI mask generation from drawing...');
+      console.log('📐 Using safe zone:', safeZone);
       
-      // Generate mask using new AI approach
-      const result = await generateMaskFromDrawing(dataUrl, useStyleTransfer);
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('generate-mask-from-drawing', {
+        body: {
+          compositeImage: dataUrl,
+          safeZone: safeZone,
+          useStyleTransfer: useStyleTransfer
+        }
+      });
       
-      if (!result) {
-        throw new Error('No result returned from AI mask generation');
+      if (error) {
+        console.error('❌ Error from edge function:', error);
+        throw new Error(error.message || 'Failed to generate mask');
+      }
+      
+      if (!data || !data.mask_image_url) {
+        throw new Error('No mask image returned from AI generation');
       }
       
       // Set the generated mask
-      setMaskImageUrl(result.imageUrl);
+      setMaskImageUrl(data.mask_image_url);
       
       console.log('✅ AI mask generation completed successfully');
       toast.success("AI mask created!", {
@@ -321,18 +283,24 @@ const DrawToMaskCanvas = () => {
       <div className="relative bg-black/10 rounded-lg overflow-hidden" style={{ height: `${CANVAS_HEIGHT}px` }}>
         <canvas ref={canvasRef} className="absolute top-0 left-0 z-20" />
         
-        {/* Demo wallet positioned EXACTLY in center using measured dimensions */}
+        {/* Wallet positioned EXACTLY in center using calculated coordinates */}
         <div 
-          ref={walletRef}
-          className="absolute z-10 pointer-events-none"
+          className="absolute z-10 pointer-events-none bg-black/5 border border-red-500/50"
           style={{
-            left: `${safeZone.x}px`,
-            top: `${safeZone.y}px`,
-            width: `${safeZone.width}px`,
-            height: `${safeZone.height}px`,
+            left: `${walletX}px`,
+            top: `${walletY}px`,
+            width: `${WALLET_WIDTH}px`,
+            height: `${WALLET_HEIGHT}px`,
           }}
         >
-          <LoginScreen style={loginStyle} />
+          <div className="w-full h-full">
+            <LoginScreen style={loginStyle} />
+          </div>
+        </div>
+        
+        {/* Debug positioning indicator */}
+        <div className="absolute top-2 left-2 text-xs text-white/60 bg-black/30 px-2 py-1 rounded">
+          Center: ({walletX}, {walletY}) | Size: {WALLET_WIDTH}x{WALLET_HEIGHT}
         </div>
       </div>
       
@@ -353,7 +321,8 @@ const DrawToMaskCanvas = () => {
       
       {/* Debug info */}
       <div className="text-xs text-white/50 text-center">
-        Wallet: {walletDimensions.width}×{walletDimensions.height} | 
+        Canvas: {CANVAS_WIDTH}×{CANVAS_HEIGHT} | 
+        Wallet: {WALLET_WIDTH}×{WALLET_HEIGHT} at ({walletX},{walletY}) |
         Safe Zone: {safeZone.x},{safeZone.y} ({safeZone.width}×{safeZone.height})
       </div>
     </div>
