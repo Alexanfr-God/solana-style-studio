@@ -38,14 +38,10 @@ interface MaskEditorState {
   safeZoneVisible: boolean;
   isGenerating: boolean;
   
-  // Drawing-specific state
   drawingImageUrl: string | null;
-  
-  // Text prompt related state (added to fix TypeScript errors)
   prompt: string;
   maskStyle: string;
   
-  // Actions
   setActiveLayer: (layer: MaskLayerType) => void;
   setMaskImageUrl: (imageUrl: string | null) => void;
   setExternalMask: (imageUrl: string | null) => void;
@@ -60,7 +56,6 @@ interface MaskEditorState {
   resetEditor: () => void;
 }
 
-// Default safe zone for the wallet UI area
 const defaultSafeZone: SafeZone = {
   x: 0,
   y: 0,
@@ -80,31 +75,72 @@ export const useMaskEditorStore = create<MaskEditorState>((set, get) => ({
   prompt: '',
   maskStyle: '',
   
-  setActiveLayer: (layer) => set({ activeLayer: layer }),
+  setActiveLayer: (layer) => {
+    console.log('🏪 STORE: Setting activeLayer to:', layer);
+    set({ activeLayer: layer });
+  },
+  
   setMaskImageUrl: (imageUrl) => {
-    console.log('🏪 STORE: Setting maskImageUrl to:', imageUrl);
-    console.log('🏪 STORE: Previous value was:', get().maskImageUrl);
-    console.log('🏪 STORE: External mask is:', get().externalMask);
+    const currentState = get();
+    console.log('🏪 STORE: Setting maskImageUrl');
+    console.log('  - Previous value:', currentState.maskImageUrl);
+    console.log('  - New value:', imageUrl);
+    console.log('  - New value length:', imageUrl ? imageUrl.length : 0);
+    console.log('  - Current externalMask:', currentState.externalMask);
+    
     set({ maskImageUrl: imageUrl });
-    console.log('🏪 STORE: State updated, new value:', get().maskImageUrl);
+    
+    const newState = get();
+    console.log('🏪 STORE: maskImageUrl updated');
+    console.log('  - Final value:', newState.maskImageUrl);
+    console.log('  - Should show custom mask:', Boolean(newState.maskImageUrl && !newState.externalMask));
   },
+  
   setExternalMask: (imageUrl) => {
-    console.log('🏪 STORE: Setting externalMask to:', imageUrl);
-    console.log('🏪 STORE: Previous value was:', get().externalMask);
-    console.log('🏪 STORE: Custom mask is:', get().maskImageUrl);
+    const currentState = get();
+    console.log('🏪 STORE: Setting externalMask');
+    console.log('  - Previous value:', currentState.externalMask);
+    console.log('  - New value:', imageUrl);
+    console.log('  - Current maskImageUrl:', currentState.maskImageUrl);
+    
     set({ externalMask: imageUrl });
-    console.log('🏪 STORE: State updated, new value:', get().externalMask);
+    
+    const newState = get();
+    console.log('🏪 STORE: externalMask updated');
+    console.log('  - Final value:', newState.externalMask);
+    console.log('  - Should show external mask:', Boolean(newState.externalMask));
   },
-  setSelectedMask: (mask) => set({ selectedMask: mask }),
+  
+  setSelectedMask: (mask) => {
+    console.log('🏪 STORE: Setting selectedMask:', mask);
+    set({ selectedMask: mask });
+  },
+  
   setPreviewVisible: (visible) => set({ previewVisible: visible }),
   setSafeZoneVisible: (visible) => set({ safeZoneVisible: visible }),
-  setIsGenerating: (isGenerating) => set({ isGenerating: isGenerating }),
-  setDrawingImageUrl: (imageUrl) => set({ drawingImageUrl: imageUrl }),
-  setPrompt: (prompt) => set({ prompt: prompt }),
-  setMaskStyle: (style) => set({ maskStyle: style }),
+  
+  setIsGenerating: (isGenerating) => {
+    console.log('🏪 STORE: Setting isGenerating to:', isGenerating);
+    set({ isGenerating: isGenerating });
+  },
+  
+  setDrawingImageUrl: (imageUrl) => {
+    console.log('🏪 STORE: Setting drawingImageUrl to:', imageUrl ? 'data present' : 'null');
+    set({ drawingImageUrl: imageUrl });
+  },
+  
+  setPrompt: (prompt) => {
+    console.log('🏪 STORE: Setting prompt to:', prompt);
+    set({ prompt: prompt });
+  },
+  
+  setMaskStyle: (style) => {
+    console.log('🏪 STORE: Setting maskStyle to:', style);
+    set({ maskStyle: style });
+  },
   
   resetEditor: () => {
-    console.log('🏪 STORE: Resetting editor state');
+    console.log('🏪 STORE: Resetting all editor state');
     set({
       maskImageUrl: null,
       externalMask: null,
@@ -114,5 +150,6 @@ export const useMaskEditorStore = create<MaskEditorState>((set, get) => ({
       prompt: '',
       maskStyle: ''
     });
+    console.log('🏪 STORE: Reset complete');
   }
 }));

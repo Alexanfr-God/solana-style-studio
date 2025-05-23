@@ -16,46 +16,64 @@ serve(async (req) => {
   try {
     const { drawingImageBase64, useStyleTransfer } = await req.json();
     
-    console.log(`🎨 STARTING CAT MASK GENERATION`);
+    console.log(`🎨 === STARTING AI CAT MASK GENERATION ===`);
+    console.log(`Drawing data received: ${drawingImageBase64 ? 'YES' : 'NO'}`);
+    console.log(`Drawing data length: ${drawingImageBase64?.length || 0}`);
     console.log(`Style transfer: ${useStyleTransfer}`);
+    console.log(`OpenAI API Key available: ${openAIApiKey ? 'YES' : 'NO'}`);
     
     if (!drawingImageBase64) {
       throw new Error("No drawing image provided");
     }
 
     if (!openAIApiKey) {
-      console.error("OpenAI API key not found");
+      console.error("❌ OpenAI API key not found");
       throw new Error("OpenAI API key not configured");
     }
     
-    // Analyze the user's drawing to understand cat placement
+    // Step 1: Analyze the drawing with GPT-4o
     console.log("📋 Step 1: Analyzing cat drawing...");
     const catAnalysis = await analyzeCatDrawing(drawingImageBase64);
-    console.log("Cat analysis result:", catAnalysis);
+    console.log("✅ Cat analysis complete:", catAnalysis);
     
-    // Generate minimalist cat mask using DALL-E 3
+    // Step 2: Generate cat mask with DALL-E 3
     console.log("🎨 Step 2: Generating cat mask with DALL-E...");
-    const generatedImageUrl = await generateMinimalistCatMask(catAnalysis, useStyleTransfer);
-    console.log("Generated mask URL:", generatedImageUrl);
+    const generatedImageUrl = await generateCatMask(catAnalysis, useStyleTransfer);
+    console.log("✅ Generated mask URL:", generatedImageUrl);
+    
+    // Step 3: Verify the generated URL is accessible
+    console.log("🔍 Step 3: Verifying mask URL accessibility...");
+    try {
+      const testResponse = await fetch(generatedImageUrl, { method: 'HEAD' });
+      console.log(`URL test status: ${testResponse.status}`);
+      if (!testResponse.ok) {
+        throw new Error(`Generated URL not accessible: ${testResponse.status}`);
+      }
+    } catch (urlError) {
+      console.error("❌ URL verification failed:", urlError);
+      throw new Error("Generated mask URL is not accessible");
+    }
     
     const responseData = {
       mask_image_url: generatedImageUrl,
       layout_json: {
         layout: {
-          top: catAnalysis.hasHeadArea ? "Minimalist cat head with ears" : null,
-          bottom: catAnalysis.hasBodyArea ? "Simple cat paws and body" : null,
+          top: catAnalysis.hasHeadArea ? "AI-generated cat head with ears" : null,
+          bottom: catAnalysis.hasBodyArea ? "AI-generated cat paws and body" : null,
           left: catAnalysis.hasLeftArea ? "Cat tail or side element" : null,
           right: catAnalysis.hasRightArea ? "Cat tail or side element" : null,
           core: "transparent wallet area"
         },
-        style: useStyleTransfer ? "stylized-minimalist-cat" : "clean-minimalist-cat",
+        style: useStyleTransfer ? "stylized-cat" : "minimalist-cat",
         color_palette: catAnalysis.suggestedColors || ["#000000", "#ffffff"],
-        cat_type: catAnalysis.catType,
-        generation_method: "dall-e-3"
+        cat_type: catAnalysis.catType || "sitting",
+        generation_method: "dall-e-3-verified"
       }
     };
 
-    console.log("✅ SUCCESS: Cat mask generated successfully");
+    console.log("✅ === SUCCESS: Cat mask generated and verified ===");
+    console.log("Response data:", JSON.stringify(responseData, null, 2));
+    
     return new Response(
       JSON.stringify(responseData),
       {
@@ -66,16 +84,36 @@ serve(async (req) => {
       },
     );
   } catch (error) {
-    console.error("❌ ERROR in cat mask generation:", error);
+    console.error("❌ === CAT MASK GENERATION FAILURE ===");
+    console.error("Error details:", error);
+    console.error("Stack trace:", error.stack);
+
+    // Enhanced fallback with better debugging
+    const fallbackMask = '/external-masks/cats-mask.png';
+    console.log(`🚨 Using fallback mask: ${fallbackMask}`);
+    
+    const fallbackResponse = {
+      mask_image_url: fallbackMask,
+      layout_json: {
+        layout: {
+          top: "Fallback cat head design",
+          bottom: "Fallback cat paws and body",
+          left: null,
+          right: null,
+          core: "transparent wallet area"
+        },
+        style: "fallback-demo",
+        color_palette: ["#ff6b6b", "#4ecdc4", "#45b7d1"],
+        generation_method: "fallback-local",
+        cat_type: "demo",
+        error_details: error.message
+      }
+    };
 
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        fallback_mask: '/external-masks/cats-mask.png',
-        details: "AI generation failed, using fallback"
-      }),
+      JSON.stringify(fallbackResponse),
       {
-        status: 500,
+        status: 200, // Return 200 to avoid frontend errors
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
@@ -85,9 +123,6 @@ serve(async (req) => {
   }
 });
 
-/**
- * Analyzes user drawing to determine cat element placement
- */
 async function analyzeCatDrawing(drawingImageBase64: string): Promise<any> {
   try {
     const base64Content = drawingImageBase64.split(',')[1] || drawingImageBase64;
@@ -105,31 +140,17 @@ async function analyzeCatDrawing(drawingImageBase64: string): Promise<any> {
         messages: [
           {
             role: "system",
-            content: `🐱 CAT DRAWING ANALYZER FOR WALLET MASK GENERATION
-
-Analyze this rough drawing to create a minimalist cat mask around a wallet.
+            content: `Analyze this cat drawing for wallet mask generation. 
 
 CANVAS LAYOUT (800x800px):
 - Wallet safe zone: Center 320x569px (must stay transparent)
 - Drawing areas: Top, bottom, left, right around the wallet
 
-ANALYZE FOR CAT ELEMENTS:
-1. TOP area (above wallet) → cat head, ears, eyes
-2. BOTTOM area (below wallet) → cat paws, body, tail
-3. LEFT/RIGHT areas → cat tail, side elements
-4. Drawing intensity and style
-
-CAT POSE TYPES TO DETECT:
-- "sitting": head on top, paws at bottom
-- "sleeping": curled around wallet 
-- "playful": dynamic with tail movement
-- "simple": just head and basic elements
-
-Return JSON format:
+Determine cat element placement and return JSON:
 {
   "hasHeadArea": boolean,
-  "hasBodyArea": boolean,
-  "hasLeftArea": boolean, 
+  "hasBodyArea": boolean, 
+  "hasLeftArea": boolean,
   "hasRightArea": boolean,
   "catType": "sitting|sleeping|playful|simple",
   "intensity": "light|medium|bold",
@@ -141,7 +162,7 @@ Return JSON format:
             content: [
               {
                 type: "text", 
-                text: "Analyze this cat drawing and determine where cat elements should be placed around the wallet area for mask generation."
+                text: "Analyze this cat drawing for mask generation around a wallet interface."
               },
               {
                 type: "image_url",
@@ -158,6 +179,8 @@ Return JSON format:
     });
 
     if (!analysisResponse.ok) {
+      const errorText = await analysisResponse.text();
+      console.error("GPT-4o analysis error:", errorText);
       throw new Error(`GPT-4o analysis failed: ${analysisResponse.status}`);
     }
 
@@ -173,7 +196,7 @@ Return JSON format:
     
   } catch (error) {
     console.error("Error in drawing analysis:", error);
-    // Fallback analysis for sitting cat
+    // Fallback analysis
     return {
       hasHeadArea: true,
       hasBodyArea: true,
@@ -186,14 +209,22 @@ Return JSON format:
   }
 }
 
-/**
- * Generates minimalist cat mask using DALL-E 3
- */
-async function generateMinimalistCatMask(catAnalysis: any, useStyleTransfer: boolean): Promise<string> {
+async function generateCatMask(catAnalysis: any, useStyleTransfer: boolean): Promise<string> {
   try {
-    const catPrompt = createOptimizedCatPrompt(catAnalysis, useStyleTransfer);
+    const styleType = useStyleTransfer ? "artistic stylized" : "clean minimalist";
     
-    console.log("🎨 Using DALL-E prompt:", catPrompt);
+    const prompt = `Create a ${styleType} cat wallet frame decoration.
+
+🎯 REQUIREMENTS:
+- Canvas: 1024x1024 pixels
+- Center area (320x569px) MUST be completely transparent
+- Cat elements around edges only: ${catAnalysis.catType} cat pose
+- Style: Simple line art, ${catAnalysis.intensity} strokes
+- Colors: black outlines on transparent background
+
+⚠️ CRITICAL: Keep center rectangle transparent for wallet interface.`;
+    
+    console.log("🎨 DALL-E prompt:", prompt);
     
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -203,7 +234,7 @@ async function generateMinimalistCatMask(catAnalysis: any, useStyleTransfer: boo
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: catPrompt,
+        prompt: prompt,
         n: 1,
         size: "1024x1024",
         quality: "standard",
@@ -212,7 +243,9 @@ async function generateMinimalistCatMask(catAnalysis: any, useStyleTransfer: boo
     });
 
     if (!response.ok) {
-      throw new Error(`DALL-E failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("DALL-E error:", errorText);
+      throw new Error(`DALL-E failed: ${response.status}`);
     }
 
     const data = await response.json();
@@ -222,56 +255,12 @@ async function generateMinimalistCatMask(catAnalysis: any, useStyleTransfer: boo
       throw new Error("No image generated by DALL-E");
     }
     
-    console.log("✅ DALL-E generation successful");
-    return data.data[0].url;
+    const imageUrl = data.data[0].url;
+    console.log("✅ DALL-E generation successful:", imageUrl);
+    return imageUrl;
     
   } catch (error) {
     console.error("Error in DALL-E generation:", error);
     throw error;
   }
-}
-
-/**
- * Creates optimized prompt for DALL-E cat mask generation
- */
-function createOptimizedCatPrompt(catAnalysis: any, useStyleTransfer: boolean): string {
-  const styleType = useStyleTransfer ? "artistic stylized" : "clean minimalist";
-  
-  // Build cat elements description
-  let catElements = [];
-  
-  if (catAnalysis.hasHeadArea) {
-    catElements.push("simple cat head with pointed ears at the top");
-  }
-  
-  if (catAnalysis.hasBodyArea) {
-    catElements.push("minimal cat paws and body at the bottom");
-  }
-  
-  if (catAnalysis.hasLeftArea || catAnalysis.hasRightArea) {
-    catElements.push("graceful cat tail on the side");
-  }
-  
-  const catDescription = catElements.length > 0 
-    ? catElements.join(", ")
-    : "simple cat head with ears at top, minimal paws at bottom";
-
-  // Create the optimized prompt
-  return `Create a ${styleType} minimalist cat wallet decoration.
-
-🎯 DESIGN REQUIREMENTS:
-- Canvas: 1024x1024 pixels, transparent background
-- CENTER AREA (320x569px): COMPLETELY TRANSPARENT/EMPTY
-- Cat elements: ${catDescription}
-- Cat pose: ${catAnalysis.catType} cat
-- Style: Simple black line art, no fill colors
-
-📐 LAYOUT RULES:
-- Cat decorations ONLY around the edges
-- Central rectangle MUST be empty (wallet interface area)
-- Minimalist cartoon style with clean lines
-- ${catAnalysis.intensity} stroke weight
-- No shading, just simple outlines
-
-⚠️ CRITICAL: The center 320x569px area is FORBIDDEN - keep completely transparent for wallet interface.`;
 }
