@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 
 export type MaskLayerType = 'login' | 'wallet';
+export type MaskStyleType = 'modern' | 'cartoon' | 'realistic' | 'fantasy' | 'minimalist';
 
 export interface SafeZone {
   x: number;
@@ -31,36 +32,38 @@ export interface Mask {
 
 interface MaskEditorState {
   activeLayer: MaskLayerType;
+  prompt: string;
   maskImageUrl: string | null;
-  externalMask: string | null;
+  externalMask: string | null; // For external masks
   selectedMask: Mask | null;
   previewVisible: boolean;
   safeZoneVisible: boolean;
   isGenerating: boolean;
+  maskStyle: MaskStyleType;
   
-  // Drawing-specific state
-  drawingImageUrl: string | null;
+  // Legacy V3 beta properties - kept for compatibility
+  topLayer: string | null;
+  bottomLayer: string | null;
   
-  // Text prompt related state (added to fix TypeScript errors)
-  prompt: string;
-  maskStyle: string;
-  
-  // Actions
   setActiveLayer: (layer: MaskLayerType) => void;
+  setPrompt: (prompt: string) => void;
   setMaskImageUrl: (imageUrl: string | null) => void;
   setExternalMask: (imageUrl: string | null) => void;
   setSelectedMask: (mask: Mask | null) => void;
   setPreviewVisible: (visible: boolean) => void;
   setSafeZoneVisible: (visible: boolean) => void;
   setIsGenerating: (isGenerating: boolean) => void;
-  setDrawingImageUrl: (imageUrl: string | null) => void;
-  setPrompt: (prompt: string) => void;
-  setMaskStyle: (style: string) => void;
+  setMaskStyle: (style: MaskStyleType) => void;
+  
+  // Legacy setters - kept for compatibility
+  setTopLayer: (imageUrl: string | null) => void;
+  setBottomLayer: (imageUrl: string | null) => void;
+  resetLayers: () => void;
   
   resetEditor: () => void;
 }
 
-// Default safe zone for the wallet UI area
+// Default safe zone for the V3 editor - representing the wallet UI area
 const defaultSafeZone: SafeZone = {
   x: 0,
   y: 0,
@@ -68,51 +71,43 @@ const defaultSafeZone: SafeZone = {
   height: 569
 };
 
-export const useMaskEditorStore = create<MaskEditorState>((set, get) => ({
+export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   activeLayer: 'login',
+  prompt: '',
   maskImageUrl: null,
   externalMask: null,
   selectedMask: null,
   previewVisible: true,
-  safeZoneVisible: true,
+  safeZoneVisible: true, // Changed to true by default for V3
   isGenerating: false,
-  drawingImageUrl: null,
-  prompt: '',
-  maskStyle: '',
+  maskStyle: 'modern',
+  
+  // Legacy V3 beta properties
+  topLayer: null,
+  bottomLayer: null,
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),
-  setMaskImageUrl: (imageUrl) => {
-    console.log('🏪 STORE: Setting maskImageUrl to:', imageUrl);
-    console.log('🏪 STORE: Previous value was:', get().maskImageUrl);
-    console.log('🏪 STORE: External mask is:', get().externalMask);
-    set({ maskImageUrl: imageUrl });
-    console.log('🏪 STORE: State updated, new value:', get().maskImageUrl);
-  },
-  setExternalMask: (imageUrl) => {
-    console.log('🏪 STORE: Setting externalMask to:', imageUrl);
-    console.log('🏪 STORE: Previous value was:', get().externalMask);
-    console.log('🏪 STORE: Custom mask is:', get().maskImageUrl);
-    set({ externalMask: imageUrl });
-    console.log('🏪 STORE: State updated, new value:', get().externalMask);
-  },
+  setPrompt: (prompt) => set({ prompt }),
+  setMaskImageUrl: (imageUrl) => set({ maskImageUrl: imageUrl }),
+  setExternalMask: (imageUrl) => set({ externalMask: imageUrl }),
   setSelectedMask: (mask) => set({ selectedMask: mask }),
   setPreviewVisible: (visible) => set({ previewVisible: visible }),
   setSafeZoneVisible: (visible) => set({ safeZoneVisible: visible }),
   setIsGenerating: (isGenerating) => set({ isGenerating: isGenerating }),
-  setDrawingImageUrl: (imageUrl) => set({ drawingImageUrl: imageUrl }),
-  setPrompt: (prompt) => set({ prompt: prompt }),
   setMaskStyle: (style) => set({ maskStyle: style }),
   
-  resetEditor: () => {
-    console.log('🏪 STORE: Resetting editor state');
-    set({
-      maskImageUrl: null,
-      externalMask: null,
-      selectedMask: null,
-      isGenerating: false,
-      drawingImageUrl: null,
-      prompt: '',
-      maskStyle: ''
-    });
-  }
+  // Legacy setters
+  setTopLayer: (imageUrl) => set({ topLayer: imageUrl }),
+  setBottomLayer: (imageUrl) => set({ bottomLayer: imageUrl }),
+  resetLayers: () => set({ topLayer: null, bottomLayer: null }),
+  
+  resetEditor: () => set({
+    prompt: '',
+    maskImageUrl: null,
+    externalMask: null,
+    selectedMask: null,
+    isGenerating: false,
+    topLayer: null,
+    bottomLayer: null
+  })
 }));

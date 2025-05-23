@@ -1,3 +1,4 @@
+
 // Import required modules
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -265,22 +266,12 @@ function selectFallbackMask(prompt: string, style: string): string {
   }
 }
 
-// Ultra simplified prompt with strict transparency rules
+// Ultra simplified prompt to try to avoid DALL-E errors
 function createUltraSimplifiedPrompt(userPrompt: string, layoutAnalysis: LayoutAnalysis): string {
-  // Extract key themes from the user prompt
+  // Extract key themes from the user prompt (max 20 chars to avoid overwhelming DALL-E)
   const themes = userPrompt.split(/\s+/).filter(word => word.length > 3).slice(0, 3).join(" ");
   
-  return `🎯 WALLET MASK - STRICT FORMAT:
-
-Create a decorative wallet frame with ${themes} style.
-
-📐 MANDATORY REQUIREMENTS:
-- Size: 1024x1024 PNG
-- Central transparent area: 320x569 pixels (exact center)
-- NO CONTENT in center - must be 100% transparent
-- Decorative elements ONLY around edges
-
-⚠️ CRITICAL: The center rectangle (320x569px) is FORBIDDEN - place all design elements around the edges only. This area will show a wallet interface.`;
+  return `Decorative frame with ${themes} style. Central area (320x569px) is transparent.`;
 }
 
 async function analyzeImageWithGPT(
@@ -290,39 +281,38 @@ async function analyzeImageWithGPT(
 ): Promise<LayoutAnalysis> {
   
   const safeZoneInstructions = `
-🎯 WALLET MASK GENERATION RULES:
+🧠 DESIGN CONTEXT: 
+You are generating a decorative mask (UI frame) for a wallet login screen.
 
-📐 MANDATORY LAYOUT:
-- Image size: 1024x1024 pixels
-- Transparent center: 320x569 pixels (positioned at exact center)
-- Center coordinates: x=352, y=227.5 (top-left of transparent area)
-- ZERO content in the transparent zone
+⚠️ DO NOT DRAW in the center:
+- Forbidden area size: ${WALLET_SAFE_ZONE.width}px wide, ${WALLET_SAFE_ZONE.height}px tall
+- Located at: x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y} (top-left corner of the forbidden rectangle)
 
-🎨 DESIGN PLACEMENT:
-- Decorative elements ONLY around edges
-- Top area: above the transparent zone
-- Bottom area: below the transparent zone  
-- Left/Right sides: alongside the transparent zone
-- NO overlap with center rectangle
+✅ Draw ONLY decorative elements around the edges:
+- Top, bottom, left, right
+- No characters or visuals in the center zone
 
-⚠️ TRANSPARENCY REQUIREMENT:
-The central 320x569 pixel rectangle must be completely empty/transparent. This is a wallet interface area that cannot be covered.
+❌ The central rectangle (${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) must remain completely empty and transparent. This area is reserved for the login interface.
 
-Think of this as creating a decorative "frame" or "costume" that surrounds a wallet interface.`;
+🎨 Use transparency for everything inside the forbidden zone.
+📐 Output size: 1024×1024 PNG with clear framing and transparent center.
 
-  const promptBase = `Analyze this image and design a wallet mask following strict transparency rules.
+Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.`;
+
+  const promptBase = `Analyze this image and describe how it could be used as a decorative frame or character around a crypto wallet UI.
 
 ${safeZoneInstructions}
 
-Image analysis needed:
-1. Main subject/character identification
-2. Visual style (cartoon, realistic, meme, etc.)
-3. Color palette (3-5 hex colors)
-4. Layout positioning (keeping center 320x569px transparent)
+I need these specific details:
+1. Subject - What is the main subject/character in the image?
+2. Style - What visual style is used (cartoon, photorealistic, anime, etc)?
+3. Color palette - List 3-5 main colors (in hex codes)
+4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement ONLY, keeping the center completely empty)
 
 ${additionalPrompt ? `Additional context: ${additionalPrompt}` : ''}
 
-Format as JSON: {layout: {top, bottom, left, right, core: "untouched"}, style, color_palette}`;
+Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
+The "core" property in layout must ALWAYS be "untouched" to indicate the center remains completely empty and transparent.`;
 
   return await callOpenAIVisionAPI(apiKey, promptBase, imageUrl);
 }
@@ -333,37 +323,36 @@ async function interpretPromptWithGPT(
 ): Promise<LayoutAnalysis> {
   
   const safeZoneInstructions = `
-🎯 WALLET MASK GENERATION RULES:
+🧠 DESIGN CONTEXT: 
+You are generating a decorative mask (UI frame) for a wallet login screen.
 
-📐 MANDATORY LAYOUT:
-- Image size: 1024x1024 pixels
-- Transparent center: 320x569 pixels (positioned at exact center)
-- Center coordinates: x=352, y=227.5 (top-left of transparent area)
-- ZERO content in the transparent zone
+⚠️ DO NOT DRAW in the center:
+- Forbidden area size: ${WALLET_SAFE_ZONE.width}px wide, ${WALLET_SAFE_ZONE.height}px tall
+- Located at: x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y} (top-left corner of the forbidden rectangle)
 
-🎨 DESIGN PLACEMENT:
-- Decorative elements ONLY around edges
-- Top area: above the transparent zone
-- Bottom area: below the transparent zone  
-- Left/Right sides: alongside the transparent zone
-- NO overlap with center rectangle
+✅ Draw ONLY decorative elements around the edges:
+- Top, bottom, left, right
+- No characters or visuals in the center zone
 
-⚠️ TRANSPARENCY REQUIREMENT:
-The central 320x569 pixel rectangle must be completely empty/transparent. This is a wallet interface area that cannot be covered.
+❌ The central rectangle (${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) must remain completely empty and transparent. This area is reserved for the login interface.
 
-Think of this as creating a decorative "frame" or "costume" that surrounds a wallet interface.`;
+🎨 Use transparency for everything inside the forbidden zone.
+📐 Output size: 1024×1024 PNG with clear framing and transparent center.
 
-  const promptBase = `Design a wallet mask based on: "${prompt}"
+Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.`;
+
+  const promptBase = `Based on this description: "${prompt}", design a decorative frame or character that could surround a crypto wallet UI.
 
 ${safeZoneInstructions}
 
-Design requirements:
-1. Main subject/character concept
-2. Visual style recommendation
-3. Color palette (3-5 hex colors)  
-4. Layout positioning (keeping center 320x569px transparent)
+I need these specific details:
+1. Subject - What would be the main subject/character?
+2. Style - What visual style would work best (cartoon, photorealistic, anime, etc)?
+3. Color palette - Suggest 3-5 main colors (in hex codes)
+4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement ONLY, keeping the center completely empty)
 
-Format as JSON: {layout: {top, bottom, left, right, core: "untouched"}, style, color_palette}`;
+Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
+The "core" property in layout must ALWAYS be "untouched" to indicate the center remains completely empty and transparent.`;
 
   return await callOpenAITextAPI(apiKey, promptBase);
 }
@@ -474,37 +463,25 @@ async function processOpenAIResponse(response: Response): Promise<LayoutAnalysis
   }
 }
 
-// Simplified DALL-E function with enhanced transparency instructions
+// Simplified DALL-E function to generate images with minimal instructions
 async function generateImageWithSimplifiedDallE(
   prompt: string,
   apiKey: string,
   hdQuality: boolean = false
 ): Promise<string> {
-  console.log("Generating wallet mask with strict transparency rules...");
+  console.log("Generating image with simplified DALL-E prompt...");
   
-  // Enhanced prompt with very specific transparency requirements
-  const enhancedPrompt = `${prompt}
-
-🎯 CRITICAL MASK REQUIREMENTS:
-- PNG format with alpha transparency
-- Size: 1024x1024 pixels
-- Central rectangle 320x569px: MUST BE COMPLETELY TRANSPARENT
-- Center position: x=352, y=227.5 (exact coordinates)
-- Place decorative elements ONLY around the edges
-- NO content, colors, or patterns in the center rectangle
-
-⚠️ MANDATORY: The center area (320x569px) is a "hole" where a wallet interface will show through. Draw decorative frame elements around this hole only.`;
-  
+  // Log the exact payload for debugging
   const requestPayload = {
     model: "dall-e-3",
-    prompt: enhancedPrompt,
+    prompt: prompt,
     n: 1,
     size: "1024x1024",
     response_format: "url",
-    quality: hdQuality ? "hd" : "standard"
+    quality: hdQuality ? "hd" : "standard" // Try HD quality if requested
   };
   
-  console.log("DALL-E request with enhanced transparency rules");
+  console.log("DALL-E request payload:", JSON.stringify(requestPayload));
   
   try {
     const response = await fetch("https://api.openai.com/v1/images/generations", {
@@ -522,10 +499,10 @@ async function generateImageWithSimplifiedDallE(
       throw new Error(`DALL-E API error: ${data.error?.message || "Unknown error"}`);
     }
 
-    console.log("DALL-E mask generated with transparency rules");
+    console.log("DALL-E image generated successfully");
     return data.data[0].url;
   } catch (error) {
-    console.error("Error generating mask with transparency rules:", error);
+    console.error("Error generating image with simplified DALL-E:", error);
     throw error;
   }
 }
