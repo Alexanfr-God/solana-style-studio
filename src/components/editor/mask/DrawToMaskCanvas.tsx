@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -58,7 +57,7 @@ const DrawToMaskCanvas = () => {
     updateSafeZone(canvas, centerX, centerY);
 
     // Position the wallet UI in the center of the canvas
-    positionWalletPreview(centerX, centerY);
+    positionWalletPreview();
 
     // Cleanup when component unmounts
     return () => {
@@ -117,18 +116,20 @@ const DrawToMaskCanvas = () => {
     canvas.renderAll();
   };
   
-  const positionWalletPreview = (centerX: number, centerY: number) => {
+  const positionWalletPreview = () => {
     const walletContainer = document.querySelector('.wallet-preview-container');
-    if (walletContainer && containerRef.current) {
-      const walletPreview = walletContainer.querySelector('.wallet-preview') as HTMLElement;
-      if (walletPreview) {
-        // Position wallet preview at the center of the canvas
-        walletPreview.style.position = 'absolute';
-        walletPreview.style.top = `${centerY}px`;
-        walletPreview.style.left = `${centerX}px`;
-        walletPreview.style.zIndex = '5'; // Below the drawing canvas but above the background
-      }
-    }
+    if (!walletContainer) return;
+    
+    // Get the wallet preview element
+    const walletPreview = walletContainer.querySelector('.wallet-preview') as HTMLElement;
+    if (!walletPreview) return;
+    
+    // Position wallet preview in the center of the canvas using transform
+    walletPreview.style.position = 'absolute';
+    walletPreview.style.top = '50%';
+    walletPreview.style.left = '50%';
+    walletPreview.style.transform = 'translate(-50%, -50%)';
+    walletPreview.style.zIndex = '5'; // Below the drawing canvas but above the background
   };
 
   // Switch between brush and eraser
