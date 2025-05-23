@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -196,7 +195,7 @@ const DrawToMaskCanvas = () => {
     toast.success("Canvas cleared");
   };
 
-  // Generate the mask from the drawing
+  // Generate the mask from the drawing using composite approach
   const handleGenerateMask = async () => {
     if (!fabricCanvasRef.current) return;
     
@@ -209,23 +208,23 @@ const DrawToMaskCanvas = () => {
       resetEditor();
       setMaskGenerated(false);
       
-      // Convert canvas to image
-      const dataUrl = canvas.toDataURL({
+      // Convert canvas drawing to image (without wallet preview)
+      const drawingDataUrl = canvas.toDataURL({
         format: 'png',
         quality: 1,
       });
       
-      console.log("🎨 Sending drawing to AI for mask generation...");
-      console.log("Drawing data size:", dataUrl.length);
+      console.log("🎨 Starting composite mask generation...");
+      console.log("Drawing data size:", drawingDataUrl.length);
       
-      // Send the drawing to the server for AI processing
-      const result = await generateMaskFromDrawing(dataUrl);
+      // Send the drawing to the server for AI processing with composite approach
+      const result = await generateMaskFromDrawing(drawingDataUrl);
       
       if (!result || !result.imageUrl) {
         throw new Error("Failed to generate mask");
       }
       
-      console.log("✅ Mask generation successful:", result.imageUrl);
+      console.log("✅ Composite mask generation successful:", result.imageUrl);
       
       // Set the generated mask in the store with a small delay to ensure state reset
       setTimeout(() => {
@@ -238,12 +237,14 @@ const DrawToMaskCanvas = () => {
         // Mark as generated for UI updates
         setMaskGenerated(true);
         
-        toast.success("Mask successfully generated! Red lines replaced with AI mask.");
+        toast.success("AI-enhanced mask generated successfully!", {
+          description: "Your drawing has been professionally enhanced and styled"
+        });
       }, 200);
       
     } catch (err) {
-      console.error("Error generating mask:", err);
-      toast.error("Error generating mask. Please try again.");
+      console.error("Error generating composite mask:", err);
+      toast.error("Error generating enhanced mask. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -256,10 +257,10 @@ const DrawToMaskCanvas = () => {
         <div className="bg-green-900/30 border border-green-500/50 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-2 text-green-400">
             <CheckCircle className="h-5 w-5" />
-            <span className="font-medium">Mask successfully generated!</span>
+            <span className="font-medium">AI-enhanced mask successfully generated!</span>
           </div>
           <p className="text-green-300/80 text-sm mt-1">
-            Your red lines have been transformed into a decorative mask. You now see the AI-processed version.
+            Your drawing has been professionally enhanced and transformed into a polished decorative mask.
           </p>
         </div>
       )}
@@ -275,7 +276,7 @@ const DrawToMaskCanvas = () => {
             disabled={maskGenerated}
           >
             <Brush className="h-4 w-4 mr-2" />
-            Brush
+            Draw
           </Button>
           
           <Button 
@@ -286,7 +287,7 @@ const DrawToMaskCanvas = () => {
             disabled={maskGenerated}
           >
             <Eraser className="h-4 w-4 mr-2" />
-            Eraser
+            Erase
           </Button>
           
           <div className="flex items-center space-x-2 ml-4">
@@ -366,20 +367,26 @@ const DrawToMaskCanvas = () => {
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating mask...
+            Generating enhanced mask...
           </>
         ) : maskGenerated ? (
           <>
             <CheckCircle className="mr-2 h-4 w-4" />
-            Mask generated
+            Enhanced mask generated
           </>
         ) : (
           <>
             <Wand className="mr-2 h-4 w-4" />
-            Create mask from drawing
+            Generate AI-enhanced mask
           </>
         )}
       </Button>
+
+      {/* Instructions */}
+      <div className="text-xs text-white/60 bg-black/20 rounded p-3">
+        <div className="font-medium mb-1">💡 How it works:</div>
+        <div>Draw decorative elements around the wallet. Our AI will enhance your sketch into a professional mask while keeping the wallet interface perfectly visible and functional.</div>
+      </div>
 
       {/* Debug Info */}
       {process.env.NODE_ENV === 'development' && (
