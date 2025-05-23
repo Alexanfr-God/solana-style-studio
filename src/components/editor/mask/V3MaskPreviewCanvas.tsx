@@ -15,9 +15,16 @@ const V3MaskPreviewCanvas = () => {
   } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
-  // Use the same priority as before: externalMask first, then maskImageUrl
+  // ✅ Use the same priority as before: externalMask first, then maskImageUrl
   // externalMask now contains V3-generated masks from the new GPT-4o + DALL-E flow
   const activeMask = externalMask || maskImageUrl;
+  
+  console.log('V3MaskPreviewCanvas rendering with:', {
+    externalMask,
+    maskImageUrl,
+    activeMask,
+    safeZoneVisible
+  });
 
   // For feedback purposes, we need to capture the final rendered image "URL"
   const previewImageUrl = activeMask || "/placeholder.svg";
@@ -29,7 +36,7 @@ const V3MaskPreviewCanvas = () => {
         <div className="relative">
           {/* V3 scene container with larger area for V3-generated masks */}
           <WalletSceneContainer style={loginStyle}>
-            {/* V3 Mask layer - positioned ONLY around the wallet, not over it */}
+            {/* ✅ V3 Mask layer - positioned ONLY around the wallet, not over it */}
             {activeMask && (
               <div 
                 className="absolute pointer-events-none z-10 inset-0"
@@ -50,6 +57,8 @@ const V3MaskPreviewCanvas = () => {
                   src={activeMask} 
                   alt="V3 Wallet mask generated with GPT-4o + DALL-E" 
                   className="w-full h-full object-cover"
+                  onLoad={() => console.log('✅ V3 mask image loaded successfully:', activeMask)}
+                  onError={(e) => console.error('❌ V3 mask image failed to load:', activeMask, e)}
                 />
               </div>
             )}

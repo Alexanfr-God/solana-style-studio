@@ -93,8 +93,9 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         throw new Error("Failed to generate V3 mask - no image URL returned");
       }
       
-      // Set the external mask with the generated image URL (V3 only)
+      // ✅ CRITICAL: Set the external mask with the generated image URL for V3 wallet preview
       setExternalMask(generatedMask.imageUrl);
+      console.log('✅ V3 externalMask set to:', generatedMask.imageUrl);
       
       // Show V3-specific success message with debug info if available
       const successMessage = debugMode && generatedMask.debugInfo
@@ -126,8 +127,9 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           : "Failed to generate V3 costume. Using a demo mask instead."
       );
       
-      // Use a fallback demo mask on error
+      // Use a fallback demo mask on error and set it to externalMask
       setExternalMask('/external-masks/abstract-mask.png');
+      console.log('✅ V3 fallback externalMask set to: /external-masks/abstract-mask.png');
       
       setShowProgress(false);
       setProgress(0);
