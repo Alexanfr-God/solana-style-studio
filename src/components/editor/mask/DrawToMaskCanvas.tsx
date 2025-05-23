@@ -17,6 +17,7 @@ type DrawToolType = 'brush' | 'eraser';
 const DrawToMaskCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const walletRef = useRef<HTMLDivElement>(null);
   const { setMaskImageUrl, setSafeZoneVisible } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
   
@@ -24,22 +25,52 @@ const DrawToMaskCanvas = () => {
   const [brushSize, setBrushSize] = useState(20);
   const [isGenerating, setIsGenerating] = useState(false);
   const [useStyleTransfer, setUseStyleTransfer] = useState(false);
+  const [walletDimensions, setWalletDimensions] = useState({ width: 320, height: 569 });
+  const [safeZone, setSafeZone] = useState({ x: 0, y: 0, width: 320, height: 569 });
 
   // Canvas dimensions
   const CANVAS_WIDTH = 800;
   const CANVAS_HEIGHT = 800;
-  
-  // Wallet dimensions (exact LoginScreen dimensions)
-  const WALLET_WIDTH = 320;
-  const WALLET_HEIGHT = 569;
-  
-  // Calculate perfect center position
-  const SAFE_ZONE = {
-    x: (CANVAS_WIDTH - WALLET_WIDTH) / 2,
-    y: (CANVAS_HEIGHT - WALLET_HEIGHT) / 2,
-    width: WALLET_WIDTH,
-    height: WALLET_HEIGHT,
-  };
+
+  // Measure wallet dimensions and calculate safe zone
+  useEffect(() => {
+    const measureWallet = () => {
+      if (walletRef.current) {
+        const rect = walletRef.current.getBoundingClientRect();
+        const actualWidth = rect.width;
+        const actualHeight = rect.height;
+        
+        console.log('📏 Measured wallet dimensions:', { actualWidth, actualHeight });
+        
+        setWalletDimensions({ width: actualWidth, height: actualHeight });
+        
+        // Calculate perfectly centered safe zone
+        const centerX = (CANVAS_WIDTH - actualWidth) / 2;
+        const centerY = (CANVAS_HEIGHT - actualHeight) / 2;
+        
+        const newSafeZone = {
+          x: centerX,
+          y: centerY,
+          width: actualWidth,
+          height: actualHeight,
+        };
+        
+        console.log('🎯 Calculated safe zone:', newSafeZone);
+        setSafeZone(newSafeZone);
+      }
+    };
+
+    // Measure after a short delay to ensure rendering is complete
+    const timeoutId = setTimeout(measureWallet, 100);
+    
+    // Also measure on window resize
+    window.addEventListener('resize', measureWallet);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', measureWallet);
+    };
+  }, [loginStyle]);
 
   // Initialize canvas
   useEffect(() => {
@@ -58,12 +89,34 @@ const DrawToMaskCanvas = () => {
     freeDrawingBrush.color = '#ff3333';
     freeDrawingBrush.width = brushSize;
 
-    // Add safe zone indicator - perfectly centered and sized
+    setSafeZoneVisible(true);
+
+    return () => {
+      canvas.dispose();
+      fabricCanvasRef.current = null;
+    };
+  }, []);
+
+  // Update safe zone rectangle when dimensions change
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    
+    // Remove existing safe zone elements
+    const objects = canvas.getObjects();
+    const safeZoneObjects = objects.filter(obj => 
+      obj.name === 'safeZoneRect' || obj.name === 'safeZoneText'
+    );
+    safeZoneObjects.forEach(obj => canvas.remove(obj));
+    
+    // Add new safe zone rectangle with measured dimensions
     const safeZoneRect = new fabric.Rect({
-      left: SAFE_ZONE.x,
-      top: SAFE_ZONE.y,
-      width: SAFE_ZONE.width,
-      height: SAFE_ZONE.height,
+      name: 'safeZoneRect',
+      left: safeZone.x,
+      top: safeZone.y,
+      width: safeZone.width,
+      height: safeZone.height,
       fill: 'rgba(128, 128, 128, 0.1)',
       stroke: 'rgba(255, 255, 255, 0.8)',
       strokeWidth: 2,
@@ -74,8 +127,9 @@ const DrawToMaskCanvas = () => {
     canvas.add(safeZoneRect);
 
     const warningText = new fabric.Text('WALLET AREA\n(WILL BE TRANSPARENT)', {
-      left: SAFE_ZONE.x + SAFE_ZONE.width / 2,
-      top: SAFE_ZONE.y + SAFE_ZONE.height / 2,
+      name: 'safeZoneText',
+      left: safeZone.x + safeZone.width / 2,
+      top: safeZone.y + safeZone.height / 2,
       fontSize: 14,
       fontFamily: 'Arial',
       textAlign: 'center',
@@ -86,14 +140,11 @@ const DrawToMaskCanvas = () => {
       evented: false,
     });
     canvas.add(warningText);
-
-    setSafeZoneVisible(true);
-
-    return () => {
-      canvas.dispose();
-      fabricCanvasRef.current = null;
-    };
-  }, []);
+    
+    canvas.renderAll();
+    
+    console.log('✅ Safe zone updated on canvas:', safeZone);
+  }, [safeZone]);
 
   // Update brush size
   useEffect(() => {
@@ -122,12 +173,13 @@ const DrawToMaskCanvas = () => {
     const canvas = fabricCanvasRef.current;
     canvas.clear();
     
-    // Re-add safe zone with exact positioning
+    // Re-add safe zone with measured dimensions
     const safeZoneRect = new fabric.Rect({
-      left: SAFE_ZONE.x,
-      top: SAFE_ZONE.y,
-      width: SAFE_ZONE.width,
-      height: SAFE_ZONE.height,
+      name: 'safeZoneRect',
+      left: safeZone.x,
+      top: safeZone.y,
+      width: safeZone.width,
+      height: safeZone.height,
       fill: 'rgba(128, 128, 128, 0.1)',
       stroke: 'rgba(255, 255, 255, 0.8)',
       strokeWidth: 2,
@@ -138,8 +190,9 @@ const DrawToMaskCanvas = () => {
     canvas.add(safeZoneRect);
     
     const warningText = new fabric.Text('WALLET AREA\n(WILL BE TRANSPARENT)', {
-      left: SAFE_ZONE.x + SAFE_ZONE.width / 2,
-      top: SAFE_ZONE.y + SAFE_ZONE.height / 2,
+      name: 'safeZoneText',
+      left: safeZone.x + safeZone.width / 2,
+      top: safeZone.y + safeZone.height / 2,
       fontSize: 14,
       fontFamily: 'Arial',
       textAlign: 'center',
@@ -268,14 +321,15 @@ const DrawToMaskCanvas = () => {
       <div className="relative bg-black/10 rounded-lg overflow-hidden" style={{ height: `${CANVAS_HEIGHT}px` }}>
         <canvas ref={canvasRef} className="absolute top-0 left-0 z-20" />
         
-        {/* Demo wallet positioned EXACTLY in center - NO SCALING */}
+        {/* Demo wallet positioned EXACTLY in center using measured dimensions */}
         <div 
+          ref={walletRef}
           className="absolute z-10 pointer-events-none"
           style={{
-            left: `${SAFE_ZONE.x}px`,
-            top: `${SAFE_ZONE.y}px`,
-            width: `${SAFE_ZONE.width}px`,
-            height: `${SAFE_ZONE.height}px`,
+            left: `${safeZone.x}px`,
+            top: `${safeZone.y}px`,
+            width: `${safeZone.width}px`,
+            height: `${safeZone.height}px`,
           }}
         >
           <LoginScreen style={loginStyle} />
@@ -296,6 +350,12 @@ const DrawToMaskCanvas = () => {
           ⏳ AI is analyzing your drawing and creating a precise transparent mask...
         </div>
       )}
+      
+      {/* Debug info */}
+      <div className="text-xs text-white/50 text-center">
+        Wallet: {walletDimensions.width}×{walletDimensions.height} | 
+        Safe Zone: {safeZone.x},{safeZone.y} ({safeZone.width}×{safeZone.height})
+      </div>
     </div>
   );
 };
