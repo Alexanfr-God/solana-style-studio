@@ -10,45 +10,40 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { compositeImage, safeZone } = await req.json();
+    const { drawingImageBase64, useStyleTransfer } = await req.json();
     
-    console.log(`Received composite image for mask generation`);
+    console.log(`Received drawing for AI cat mask generation`);
     
-    if (!compositeImage) {
-      throw new Error("No composite image provided");
+    if (!drawingImageBase64) {
+      throw new Error("No drawing image provided");
     }
     
-    // Analyze the composite to understand drawing areas
-    const drawingAnalysis = await analyzeDrawingAreas(compositeImage);
-    console.log("Drawing analysis:", drawingAnalysis);
+    // Analyze the user's drawing to understand cat placement
+    const catAnalysis = await analyzeCatDrawing(drawingImageBase64);
+    console.log("Cat drawing analysis:", catAnalysis);
     
-    // Generate mask using focused generation approach
-    const generatedImageUrl = await generateMaskWithConstraints(compositeImage, drawingAnalysis, safeZone);
-    console.log("Generated image URL:", generatedImageUrl);
+    // Generate minimalist cat mask using DALL-E 3
+    const generatedImageUrl = await generateMinimalistCatMask(catAnalysis, useStyleTransfer);
+    console.log("Generated cat mask URL:", generatedImageUrl);
     
-    // Process the result to create transparent center
-    const finalMaskUrl = await processAndCropMask(generatedImageUrl, safeZone);
-    console.log("Final processed mask:", finalMaskUrl);
-    
-    // Return the processed mask and metadata
     const responseData = {
-      mask_image_url: finalMaskUrl,
+      mask_image_url: generatedImageUrl,
       layout_json: {
         layout: {
-          top: "Enhanced decorative elements based on user drawing",
-          bottom: "Enhanced decorative elements based on user drawing",
-          left: "Enhanced decorative elements based on user drawing",
-          right: "Enhanced decorative elements based on user drawing",
-          core: "transparent"
+          top: catAnalysis.hasHeadArea ? "Minimalist cat head with ears" : null,
+          bottom: catAnalysis.hasBodyArea ? "Simple cat paws and tail" : null,
+          left: catAnalysis.hasLeftArea ? "Cat tail or paw" : null,
+          right: catAnalysis.hasRightArea ? "Cat tail or paw" : null,
+          core: "transparent wallet area"
         },
-        style: "user-drawing-enhanced",
-        color_palette: drawingAnalysis.colors || ["#f4d03f", "#222222", "#ffffff"],
+        style: useStyleTransfer ? "stylized-minimalist-cat" : "clean-minimalist-cat",
+        color_palette: catAnalysis.suggestedColors || ["#000000", "#ffffff"],
+        cat_type: catAnalysis.catType
       }
     };
 
@@ -65,7 +60,10 @@ serve(async (req) => {
     console.error("Error:", error);
 
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        fallback_mask: '/external-masks/cats-mask.png'
+      }),
       {
         status: 500,
         headers: {
@@ -78,12 +76,11 @@ serve(async (req) => {
 });
 
 /**
- * Analyzes the composite image to identify drawing areas and style
+ * Analyzes user drawing to determine cat element placement
  */
-async function analyzeDrawingAreas(compositeImageBase64: string): Promise<any> {
+async function analyzeCatDrawing(drawingImageBase64: string): Promise<any> {
   try {
-    // Extract the base64 content from data URL if needed
-    const base64Content = compositeImageBase64.split(',')[1] || compositeImageBase64;
+    const base64Content = drawingImageBase64.split(',')[1] || drawingImageBase64;
     
     const analysisResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -96,26 +93,35 @@ async function analyzeDrawingAreas(compositeImageBase64: string): Promise<any> {
         messages: [
           {
             role: "system",
-            content: `🎯 DRAWING AREA ANALYSIS FOR MASK GENERATION:
+            content: `🐱 CAT DRAWING ANALYSIS FOR MINIMALIST MASK:
 
-You are analyzing a composite image that shows:
-- A wallet interface in the center (DON'T MODIFY THIS)
-- User drawings around the wallet (ENHANCE THESE ONLY)
+You are analyzing a user's rough drawing to create a minimalist cat mask around a wallet interface.
 
-YOUR TASK:
-1. Identify EXACTLY where the user has drawn elements
-2. Describe the style and theme of the drawings
-3. Extract the color palette from the drawings
-4. Define constraints for DALL-E generation
+CANVAS LAYOUT:
+- Canvas: 800x800 pixels
+- Wallet safe zone: 320x569 pixels (centered)
+- Drawing areas: Around the wallet where cat elements should appear
 
-CRITICAL: The wallet in the center (320x569 pixels) must remain UNTOUCHED.
-DALL-E should only enhance the areas where the user has drawn something.
+ANALYZE FOR:
+1. Where user drew in TOP area (above wallet) → cat head/ears
+2. Where user drew in BOTTOM area (below wallet) → cat paws/body
+3. Where user drew in LEFT/RIGHT areas → cat tail/side elements
+4. Drawing style intensity (light sketches vs bold strokes)
 
-Return JSON with: {
-  "drawn_areas": "description of where user drew",
-  "style": "style of the drawings",
-  "colors": ["color1", "color2", "color3"],
-  "enhancement_prompt": "specific prompt for DALL-E focusing only on drawn areas"
+CAT VARIATIONS TO DETECT:
+- "sitting": head on top, paws at bottom
+- "sleeping": curled around wallet
+- "playful": dynamic pose with tail
+- "simple": just head and minimal elements
+
+Return JSON: {
+  "hasHeadArea": boolean,
+  "hasBodyArea": boolean, 
+  "hasLeftArea": boolean,
+  "hasRightArea": boolean,
+  "catType": "sitting|sleeping|playful|simple",
+  "intensity": "light|medium|bold",
+  "suggestedColors": ["#color1", "#color2"]
 }`
           },
           {
@@ -123,7 +129,7 @@ Return JSON with: {
             content: [
               {
                 type: "text", 
-                text: "Analyze this composite image and identify the user drawing areas around the wallet. Focus on where decorative elements should be enhanced."
+                text: "Analyze this rough cat drawing and determine where cat elements should be placed around the wallet area."
               },
               {
                 type: "image_url",
@@ -134,7 +140,7 @@ Return JSON with: {
             ]
           }
         ],
-        max_tokens: 500,
+        max_tokens: 300,
         response_format: { type: "json_object" }
       })
     });
@@ -142,53 +148,34 @@ Return JSON with: {
     const analysisData = await analysisResponse.json();
     
     if (!analysisData.choices || analysisData.choices.length === 0) {
-      throw new Error("Failed to analyze drawing areas");
+      throw new Error("Failed to analyze cat drawing");
     }
     
     return JSON.parse(analysisData.choices[0].message.content);
   } catch (error) {
-    console.error("Error analyzing drawing areas:", error);
+    console.error("Error analyzing cat drawing:", error);
+    // Fallback analysis
     return {
-      drawn_areas: "around the edges",
-      style: "abstract",
-      colors: ["#ff0000", "#00ff00", "#0000ff"],
-      enhancement_prompt: "decorative elements around a central rectangle"
+      hasHeadArea: true,
+      hasBodyArea: true,
+      hasLeftArea: false,
+      hasRightArea: false,
+      catType: "sitting",
+      intensity: "medium",
+      suggestedColors: ["#000000", "#ffffff"]
     };
   }
 }
 
 /**
- * Generates a mask using DALL-E with specific constraints
+ * Generates minimalist cat mask using DALL-E 3
  */
-async function generateMaskWithConstraints(
-  compositeImageBase64: string, 
-  drawingAnalysis: any, 
-  safeZone: any
-): Promise<string> {
+async function generateMinimalistCatMask(catAnalysis: any, useStyleTransfer: boolean): Promise<string> {
   try {
-    // Create a focused prompt that restricts DALL-E to only drawn areas
-    const constrainedPrompt = `🎯 MASK GENERATION - STRICT CONSTRAINTS:
-
-${drawingAnalysis.enhancement_prompt}
-
-📐 CRITICAL REQUIREMENTS:
-- Size: 1024x1024 PNG with transparent background
-- Central rectangle (320x569px at center): MUST REMAIN COMPLETELY EMPTY
-- Enhance ONLY the areas where decorative elements are already drawn
-- Style: ${drawingAnalysis.style}
-- Colors: ${drawingAnalysis.colors.join(', ')}
-
-⚠️ FORBIDDEN:
-- NO content in the center rectangle (320x569px)
-- NO background fill - use transparent background
-- NO new elements in empty areas
-- ONLY enhance existing drawn elements
-
-Create a decorative mask that enhances the user's drawings while keeping the center completely transparent for a wallet interface.`;
+    const catPrompt = createCatMaskPrompt(catAnalysis, useStyleTransfer);
     
-    console.log("Using constrained prompt for DALL-E generation");
+    console.log("Using cat prompt for DALL-E:", catPrompt);
     
-    // Generate with DALL-E using generation API (not edit API)
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
@@ -197,7 +184,7 @@ Create a decorative mask that enhances the user's drawings while keeping the cen
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: constrainedPrompt,
+        prompt: catPrompt,
         n: 1,
         size: "1024x1024",
         quality: "standard",
@@ -208,50 +195,66 @@ Create a decorative mask that enhances the user's drawings while keeping the cen
     const data = await response.json();
     
     if (!data.data || data.data.length === 0) {
-      console.error("Unexpected response from DALL-E:", data);
-      throw new Error("Failed to generate mask with DALL-E");
+      console.error("DALL-E response:", data);
+      throw new Error("Failed to generate cat mask");
     }
     
     return data.data[0].url;
   } catch (error) {
-    console.error("Error generating mask with constraints:", error);
+    console.error("Error generating cat mask:", error);
     throw error;
   }
 }
 
 /**
- * Processes the DALL-E result to crop out the center and create transparency
+ * Creates optimized prompt for minimalist cat mask generation
  */
-async function processAndCropMask(imageUrl: string, safeZone: any): Promise<string> {
-  try {
-    console.log("Processing mask to create transparent center...");
-    
-    // Download the image from DALL-E
-    const imageResponse = await fetch(imageUrl);
-    const imageBlob = await imageResponse.blob();
-    const imageArrayBuffer = await imageBlob.arrayBuffer();
-    const imageBytes = new Uint8Array(imageArrayBuffer);
-    
-    // Convert to base64 for processing
-    const base64Image = btoa(String.fromCharCode(...imageBytes));
-    
-    // For now, we'll create a simple processing approach
-    // In a full implementation, you would:
-    // 1. Decode the PNG
-    // 2. Create a new canvas with the image
-    // 3. Clear the center rectangle (safeZone area)
-    // 4. Export as PNG with alpha transparency
-    // 5. Upload the result and return the URL
-    
-    // Simplified approach: return a data URL with processing instructions
-    // The client can handle the final transparency overlay
-    const processedDataUrl = `data:image/png;base64,${base64Image}`;
-    
-    console.log("Mask processing completed");
-    return processedDataUrl;
-  } catch (error) {
-    console.error("Error processing mask:", error);
-    // Return original URL if processing fails
-    return imageUrl;
+function createCatMaskPrompt(catAnalysis: any, useStyleTransfer: boolean): string {
+  const baseStyle = useStyleTransfer ? "artistic stylized" : "clean minimalist";
+  
+  let catElements = [];
+  
+  if (catAnalysis.hasHeadArea) {
+    catElements.push("simple cat head with pointed ears at the top");
   }
+  
+  if (catAnalysis.hasBodyArea) {
+    catElements.push("minimal cat paws at the bottom");
+  }
+  
+  if (catAnalysis.hasLeftArea || catAnalysis.hasRightArea) {
+    catElements.push("graceful cat tail on the side");
+  }
+  
+  const catDescription = catElements.length > 0 
+    ? catElements.join(", ")
+    : "simple cat head with ears at top, minimal paws at bottom";
+
+  return `🎯 MINIMALIST CAT WALLET MASK:
+
+Create a ${baseStyle} line art drawing of a cat around a wallet interface.
+
+CAT ELEMENTS: ${catDescription}
+CAT TYPE: ${catAnalysis.catType} cat pose
+STYLE: Simple black line art on transparent background
+
+📐 CRITICAL LAYOUT:
+- Canvas: 1024x1024 pixels
+- CENTER RECTANGLE (320x569px): COMPLETELY TRANSPARENT/EMPTY
+- Cat elements ONLY around the edges, never inside center
+- Minimal, clean lines - no complex details
+- ${catAnalysis.intensity} stroke weight
+
+🎨 VISUAL STYLE:
+- Black line art on transparent background
+- Minimalist cartoon style
+- Clean, simple shapes
+- No shading, just outlines
+- Cute and friendly cat expression
+
+⚠️ ABSOLUTE REQUIREMENTS:
+- Central 320x569px area MUST be empty (wallet will show here)
+- Cat decorations ONLY around the edges
+- Simple, minimalist design
+- Transparent background`;
 }

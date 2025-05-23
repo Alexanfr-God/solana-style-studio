@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,7 @@ const DrawToMaskCanvas = () => {
     });
     canvas.add(safeZoneRect);
 
-    const warningText = new fabric.Text('WALLET AREA\n(WILL BE TRANSPARENT)', {
+    const walletText = new fabric.Text('WALLET AREA\n(STAYS VISIBLE)', {
       left: SAFE_ZONE.x + SAFE_ZONE.width / 2,
       top: SAFE_ZONE.y + SAFE_ZONE.height / 2,
       fontSize: 14,
@@ -85,7 +84,10 @@ const DrawToMaskCanvas = () => {
       selectable: false,
       evented: false,
     });
-    canvas.add(warningText);
+    canvas.add(walletText);
+
+    // Add cat drawing guidelines
+    addCatDrawingGuides(canvas);
 
     setSafeZoneVisible(true);
 
@@ -94,6 +96,37 @@ const DrawToMaskCanvas = () => {
       fabricCanvasRef.current = null;
     };
   }, []);
+
+  // Add helpful cat drawing guides
+  const addCatDrawingGuides = (canvas: fabric.Canvas) => {
+    // Top guide for cat head
+    const topGuide = new fabric.Text('Draw cat head here ↑', {
+      left: SAFE_ZONE.x + SAFE_ZONE.width / 2,
+      top: SAFE_ZONE.y - 40,
+      fontSize: 12,
+      fontFamily: 'Arial',
+      textAlign: 'center',
+      originX: 'center',
+      fill: 'rgba(255, 200, 100, 0.8)',
+      selectable: false,
+      evented: false,
+    });
+    canvas.add(topGuide);
+
+    // Bottom guide for cat paws
+    const bottomGuide = new fabric.Text('Draw cat paws here ↓', {
+      left: SAFE_ZONE.x + SAFE_ZONE.width / 2,
+      top: SAFE_ZONE.y + SAFE_ZONE.height + 20,
+      fontSize: 12,
+      fontFamily: 'Arial',
+      textAlign: 'center',
+      originX: 'center',
+      fill: 'rgba(255, 200, 100, 0.8)',
+      selectable: false,
+      evented: false,
+    });
+    canvas.add(bottomGuide);
+  };
 
   // Update brush size
   useEffect(() => {
@@ -115,14 +148,14 @@ const DrawToMaskCanvas = () => {
     }
   };
 
-  // Clear canvas
+  // Clear canvas with guides
   const handleClearCanvas = () => {
     if (!fabricCanvasRef.current) return;
     
     const canvas = fabricCanvasRef.current;
     canvas.clear();
     
-    // Re-add safe zone with exact positioning
+    // Re-add safe zone
     const safeZoneRect = new fabric.Rect({
       left: SAFE_ZONE.x,
       top: SAFE_ZONE.y,
@@ -137,7 +170,7 @@ const DrawToMaskCanvas = () => {
     });
     canvas.add(safeZoneRect);
     
-    const warningText = new fabric.Text('WALLET AREA\n(WILL BE TRANSPARENT)', {
+    const walletText = new fabric.Text('WALLET AREA\n(STAYS VISIBLE)', {
       left: SAFE_ZONE.x + SAFE_ZONE.width / 2,
       top: SAFE_ZONE.y + SAFE_ZONE.height / 2,
       fontSize: 14,
@@ -149,9 +182,12 @@ const DrawToMaskCanvas = () => {
       selectable: false,
       evented: false,
     });
-    canvas.add(warningText);
+    canvas.add(walletText);
+
+    // Re-add cat guides
+    addCatDrawingGuides(canvas);
     
-    toast.success("Canvas cleared");
+    toast.success("Canvas cleared - ready for new cat drawing");
   };
 
   // Generate mask using AI
@@ -197,12 +233,12 @@ const DrawToMaskCanvas = () => {
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Info banner */}
+      {/* Updated info banner for cat drawing */}
       <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md flex items-start space-x-2">
         <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
         <div className="text-xs text-blue-300">
-          <strong>AI Drawing Approach:</strong> Draw decorative elements around the wallet area. 
-          AI will precisely detect your drawings and create a transparent mask only where needed.
+          <strong>🐱 Cat Drawing Guide:</strong> Sketch where you want cat elements - head above the wallet, paws below. 
+          AI will create a minimalist line art cat around your wallet interface!
         </div>
       </div>
       
@@ -252,7 +288,7 @@ const DrawToMaskCanvas = () => {
         </Button>
       </div>
 
-      {/* Style transfer option */}
+      {/* Enhanced style transfer option */}
       <div className="flex items-center space-x-2 p-3 bg-purple-500/10 border border-purple-500/20 rounded-md">
         <Switch
           id="style-transfer"
@@ -261,7 +297,7 @@ const DrawToMaskCanvas = () => {
         />
         <Label htmlFor="style-transfer" className="text-sm text-purple-300">
           <Sparkles className="inline h-4 w-4 mr-1" />
-          Apply stylization (experimental)
+          Artistic cat style (vs clean minimalist)
         </Label>
       </div>
       
@@ -288,12 +324,12 @@ const DrawToMaskCanvas = () => {
         onClick={handleGenerateMask}
       >
         <Sparkles className="mr-2 h-4 w-4" />
-        {isGenerating ? 'Creating AI Mask...' : 'Create AI Mask'}
+        {isGenerating ? 'AI Creating Cat Mask...' : 'Generate AI Cat Mask 🐱'}
       </Button>
       
       {isGenerating && (
         <div className="text-xs text-white/60 text-center">
-          ⏳ AI is analyzing your drawing and creating a precise transparent mask...
+          🐱 AI is analyzing your cat drawing and creating a minimalist mask...
         </div>
       )}
     </div>
