@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import { Wand, Loader2, RotateCcw, AlertCircle, Bug } from 'lucide-react';
-import { generateMask } from '@/services/maskService';
+import { generateWalletMaskV3 } from '@/services/maskServiceV3';
 import { Progress } from '@/components/ui/progress';
 
 interface GenerateMaskButtonProps {
@@ -53,7 +53,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     setSafeZoneVisible(true);
     
     try {
-      toast.info("Generating enhanced wallet costume. This may take up to 30 seconds...");
+      toast.info("Generating V3 wallet costume with GPT-4o + DALL-E. This may take up to 30 seconds...");
       
       setProgress(30);
       
@@ -65,7 +65,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         });
       }, 1000);
       
-      console.log('Calling enhanced generateMask with:', { 
+      console.log('Calling V3 generateWalletMaskV3 with:', { 
         prompt, 
         activeLayer, 
         maskImageUrl,
@@ -74,41 +74,41 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         debugMode
       });
       
-      // Generate the enhanced mask with full semantic preservation
-      const generatedMask = await generateMask(
+      // Generate the V3 mask using the new architecture
+      const generatedMask = await generateWalletMaskV3({
         prompt,
-        activeLayer, 
-        maskImageUrl,
+        layer: activeLayer,
+        referenceImageUrl: maskImageUrl,
+        selectedStyle: maskStyle,
         useBackupStrategy,
-        maskStyle, // Pass selected style to backend
         debugMode
-      );
+      });
       
       clearInterval(progressInterval);
       setProgress(100);
       
-      console.log('Enhanced mask generation result:', generatedMask);
+      console.log('V3 mask generation result:', generatedMask);
       
       if (!generatedMask || !generatedMask.imageUrl) {
-        throw new Error("Failed to generate enhanced mask - no image URL returned");
+        throw new Error("Failed to generate V3 mask - no image URL returned");
       }
       
-      // Set the external mask with the generated image URL
+      // Set the external mask with the generated image URL (V3 only)
       setExternalMask(generatedMask.imageUrl);
       
-      // Show enhanced success message with debug info if available
+      // Show V3-specific success message with debug info if available
       const successMessage = debugMode && generatedMask.debugInfo
-        ? `Wallet costume generated! Safe zone: ${generatedMask.debugInfo.safeZoneValidation?.opaquePixelPercent?.toFixed(1)}% opaque`
-        : "Enhanced wallet costume generated successfully";
+        ? `V3 wallet costume generated! Layout: ${generatedMask.metadata.layout.top || 'none'} (top), ${generatedMask.metadata.layout.bottom || 'none'} (bottom)`
+        : "V3 wallet costume generated successfully with GPT-4o + DALL-E";
       
       toast.success(successMessage);
       
-      // Log debug information if available
+      // Log V3 debug information if available
       if (debugMode && generatedMask.debugInfo) {
-        console.log('=== ENHANCED GENERATION DEBUG ===');
+        console.log('=== V3 GENERATION DEBUG ===');
         console.log('Prompt used:', generatedMask.debugInfo.promptUsed);
         console.log('Input type:', generatedMask.debugInfo.inputType);
-        console.log('Safe zone validation:', generatedMask.debugInfo.safeZoneValidation);
+        console.log('Metadata:', generatedMask.metadata);
         console.log('Additional debug data:', generatedMask.debugInfo.debugData);
       }
       
@@ -118,12 +118,12 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         setProgress(0);
       }, 1000);
     } catch (error) {
-      console.error("Enhanced mask generation error:", error);
+      console.error("V3 mask generation error:", error);
       setHasGenerationError(true);
       toast.error(
         typeof error === 'object' && error !== null && 'message' in error
-          ? `Enhanced generation error: ${(error as Error).message}`
-          : "Failed to generate enhanced costume. Using a demo mask instead."
+          ? `V3 generation error: ${(error as Error).message}`
+          : "Failed to generate V3 costume. Using a demo mask instead."
       );
       
       // Use a fallback demo mask on error
@@ -139,15 +139,15 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   const handleUseFallback = () => {
     setUseBackupStrategy(!useBackupStrategy);
     toast.info(useBackupStrategy 
-      ? "Will try enhanced AI generation" 
-      : "Will use predefined masks for faster results");
+      ? "Will try V3 AI generation with GPT-4o + DALL-E" 
+      : "Will use predefined V3 masks for faster results");
   };
 
   const handleToggleDebug = () => {
     setDebugMode(!debugMode);
     toast.info(debugMode 
-      ? "Debug mode disabled" 
-      : "Debug mode enabled - will show detailed generation info");
+      ? "V3 debug mode disabled" 
+      : "V3 debug mode enabled - will show detailed generation info");
   };
 
   const hasExistingContent = !!prompt || !!maskImageUrl || !!externalMask;
@@ -162,12 +162,12 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating Enhanced Costume...
+            Generating V3 Costume...
           </>
         ) : (
           <>
             <Wand className="mr-2 h-4 w-4" />
-            Generate Enhanced Costume
+            Generate V3 Costume (GPT-4o + DALL-E)
           </>
         )}
       </Button>
@@ -177,8 +177,8 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-white/50 text-center">
             {progress < 30 ? "Analyzing prompt with GPT-4o..." : 
-             progress < 60 ? "Building enhanced prompt..." : 
-             progress < 90 ? "Generating with DALL-E..." : "Validating safe zone..."}
+             progress < 60 ? "Building enhanced V3 prompt..." : 
+             progress < 90 ? "Generating with DALL-E..." : "Finalizing V3 mask..."}
           </p>
         </div>
       )}
@@ -186,7 +186,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       {hasGenerationError && (
         <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-md flex items-center text-xs text-red-300">
           <AlertCircle className="h-3 w-3 mr-1" />
-          Enhanced generation error. Using fallback mask. Check console for details.
+          V3 generation error. Using fallback mask. Check console for details.
         </div>
       )}
       
@@ -196,10 +196,10 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
             variant="outline" 
             size="sm" 
             className="flex-1 border-white/10 text-white/70"
-            onClick={() => toast.info("Try a different prompt or style to generate a new enhanced mask")}
+            onClick={() => toast.info("Try a different prompt or style to generate a new V3 mask")}
           >
             <RotateCcw className="mr-2 h-3 w-3" />
-            Try Different Style
+            Try Different V3 Style
           </Button>
           
           <Button
@@ -208,12 +208,12 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
             className="flex-1"
             onClick={handleUseFallback}
           >
-            {useBackupStrategy ? "Use Enhanced AI" : "Use Fallbacks"}
+            {useBackupStrategy ? "Use V3 AI" : "Use V3 Fallbacks"}
           </Button>
         </div>
       )}
 
-      {/* Debug Mode Toggle */}
+      {/* V3 Debug Mode Toggle */}
       <div className="flex gap-2">
         <Button
           variant={debugMode ? "default" : "outline"}
@@ -222,7 +222,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           onClick={handleToggleDebug}
         >
           <Bug className="mr-2 h-3 w-3" />
-          {debugMode ? "Debug: ON" : "Debug: OFF"}
+          {debugMode ? "V3 Debug: ON" : "V3 Debug: OFF"}
         </Button>
       </div>
     </div>

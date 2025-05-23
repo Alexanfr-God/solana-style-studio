@@ -15,20 +15,21 @@ const V3MaskPreviewCanvas = () => {
   } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
-  // Use the same priority as DualWalletPreview: externalMask first, then maskImageUrl
+  // Use the same priority as before: externalMask first, then maskImageUrl
+  // externalMask now contains V3-generated masks from the new GPT-4o + DALL-E flow
   const activeMask = externalMask || maskImageUrl;
 
   // For feedback purposes, we need to capture the final rendered image "URL"
   const previewImageUrl = activeMask || "/placeholder.svg";
-  const previewPrompt = "Wallet mask customization";
+  const previewPrompt = "V3 wallet mask customization with GPT-4o + DALL-E";
 
   return (
     <div className="relative w-full h-[800px] flex items-center justify-center">
       <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
         <div className="relative">
-          {/* New scene container with larger area for external masks */}
+          {/* V3 scene container with larger area for V3-generated masks */}
           <WalletSceneContainer style={loginStyle}>
-            {/* Mask layer - positioned ONLY around the wallet, not over it */}
+            {/* V3 Mask layer - positioned ONLY around the wallet, not over it */}
             {activeMask && (
               <div 
                 className="absolute pointer-events-none z-10 inset-0"
@@ -47,18 +48,18 @@ const V3MaskPreviewCanvas = () => {
               >
                 <img 
                   src={activeMask} 
-                  alt="Wallet mask" 
+                  alt="V3 Wallet mask generated with GPT-4o + DALL-E" 
                   className="w-full h-full object-cover"
                 />
               </div>
             )}
             
-            {/* The Login Screen UI */}
+            {/* The Login Screen UI - remains untouched in center */}
             <div className="wallet-ui-container relative z-30">
               <LoginScreen style={loginStyle} />
             </div>
             
-            {/* Safe zone visualization - only shown when enabled */}
+            {/* V3 Safe zone visualization - only shown when enabled */}
             {safeZoneVisible && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-40">
                 <div className="border-2 border-red-500/50 rounded-2xl"
@@ -67,18 +68,18 @@ const V3MaskPreviewCanvas = () => {
                     height: '569px'
                   }}>
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-500/20 px-2 py-1 rounded text-xs text-white whitespace-nowrap">
-                    Protected UI Zone (320×569px)
+                    V3 Protected UI Zone (320×569px)
                   </div>
                 </div>
               </div>
             )}
             
-            {/* DEMO Badge */}
+            {/* V3 DEMO Badge */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
               <Badge 
                 className="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(153,69,255,0.5)] border-white/20 rotate-[-10deg] scale-125"
               >
-                DEMO
+                V3 DEMO
               </Badge>
             </div>
           </WalletSceneContainer>
