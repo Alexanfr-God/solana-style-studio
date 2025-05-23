@@ -1,3 +1,4 @@
+
 import { createMaskFromDrawing, createStylizedMask } from './imageSegmentationService';
 import { toast } from 'sonner';
 
@@ -37,8 +38,8 @@ export async function generateMaskFromDrawing(
     console.log('✅ === SUCCESSFUL AI MASK GENERATION ===');
     console.log('Final result:', result);
     
-    toast.success('ИИ маска успешно создана!', {
-      description: 'Ваш рисунок преобразован в профессиональную маску с прозрачным центром'
+    toast.success('AI mask successfully created!', {
+      description: 'Your drawing has been transformed into a professional mask with transparent center'
     });
     
     return result;
@@ -48,7 +49,7 @@ export async function generateMaskFromDrawing(
     console.error('Error in AI mask generation:', error);
     
     // Fallback to predefined mask
-    toast.error('Ошибка создания ИИ маски. Используется запасная маска.');
+    toast.error('Error creating AI mask. Using fallback mask.');
     return createFallbackResponse();
   }
 }

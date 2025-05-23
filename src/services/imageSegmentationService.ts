@@ -44,7 +44,7 @@ export async function createMaskFromDrawing(drawingImageBase64: string): Promise
     console.log('🎯 Starting AI-based mask creation...');
     
     // Load the segmentation model
-    toast.info('Загрузка AI модели для сегментации...');
+    toast.info('Loading AI model for segmentation...');
     
     const segmenter = await pipeline(
       'image-segmentation', 
@@ -53,7 +53,7 @@ export async function createMaskFromDrawing(drawingImageBase64: string): Promise
     );
     
     console.log('✅ Segmentation model loaded');
-    toast.info('Анализ вашего рисунка...');
+    toast.info('Analyzing your drawing...');
     
     // Create image element from base64
     const img = new Image();
@@ -82,7 +82,7 @@ export async function createMaskFromDrawing(drawingImageBase64: string): Promise
       throw new Error('Invalid segmentation result');
     }
     
-    toast.info('Создание прозрачной маски...');
+    toast.info('Creating transparent mask...');
     
     // Create the final mask with transparency
     const maskCanvas = document.createElement('canvas');
@@ -168,13 +168,13 @@ export async function createMaskFromDrawing(drawingImageBase64: string): Promise
     const finalMaskUrl = maskCanvas.toDataURL('image/png');
     
     console.log('✅ AI mask creation completed');
-    toast.success('Маска успешно создана с помощью ИИ!');
+    toast.success('Mask successfully created with AI!');
     
     return finalMaskUrl;
     
   } catch (error) {
     console.error('❌ Error in AI mask creation:', error);
-    toast.error('Ошибка создания маски. Попробуйте снова.');
+    toast.error('Error creating mask. Please try again.');
     throw error;
   }
 }

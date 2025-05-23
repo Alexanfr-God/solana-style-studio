@@ -6,9 +6,11 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
+import { useCustomizationStore } from '@/stores/customizationStore';
 import { Brush, Eraser, RotateCcw, Sparkles, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateMaskFromDrawing } from '@/services/drawToMaskService';
+import { LoginScreen } from '@/components/wallet/WalletScreens';
 
 type DrawToolType = 'brush' | 'eraser';
 
@@ -16,18 +18,24 @@ const DrawToMaskCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const { setMaskImageUrl, setSafeZoneVisible } = useMaskEditorStore();
+  const { loginStyle } = useCustomizationStore();
   
   const [activeTool, setActiveTool] = useState<DrawToolType>('brush');
   const [brushSize, setBrushSize] = useState(20);
   const [isGenerating, setIsGenerating] = useState(false);
   const [useStyleTransfer, setUseStyleTransfer] = useState(false);
 
-  // Safe zone dimensions
+  // Safe zone dimensions - centered wallet area
+  const CANVAS_WIDTH = 480;
+  const CANVAS_HEIGHT = 800;
+  const WALLET_WIDTH = 320;
+  const WALLET_HEIGHT = 569;
+  
   const SAFE_ZONE = {
-    x: 0,
-    y: 0,
-    width: 320,
-    height: 569,
+    x: (CANVAS_WIDTH - WALLET_WIDTH) / 2,
+    y: (CANVAS_HEIGHT - WALLET_HEIGHT) / 2,
+    width: WALLET_WIDTH,
+    height: WALLET_HEIGHT,
   };
 
   // Initialize canvas
@@ -36,8 +44,8 @@ const DrawToMaskCanvas = () => {
 
     const canvas = new fabric.Canvas(canvasRef.current, {
       isDrawingMode: true,
-      width: 480,
-      height: 800,
+      width: CANVAS_WIDTH,
+      height: CANVAS_HEIGHT,
       backgroundColor: 'rgba(0, 0, 0, 0.02)'
     });
     fabricCanvasRef.current = canvas;
@@ -48,12 +56,9 @@ const DrawToMaskCanvas = () => {
     freeDrawingBrush.width = brushSize;
 
     // Add safe zone indicator
-    const centerX = canvas.width! / 2 - SAFE_ZONE.width / 2;
-    const centerY = canvas.height! / 2 - SAFE_ZONE.height / 2;
-    
     const safeZoneRect = new fabric.Rect({
-      left: centerX,
-      top: centerY,
+      left: SAFE_ZONE.x,
+      top: SAFE_ZONE.y,
       width: SAFE_ZONE.width,
       height: SAFE_ZONE.height,
       fill: 'rgba(128, 128, 128, 0.1)',
@@ -65,9 +70,9 @@ const DrawToMaskCanvas = () => {
     });
     canvas.add(safeZoneRect);
 
-    const warningText = new fabric.Text('WALLET AREA\n(БУДЕТ ПРОЗРАЧНЫМ)', {
-      left: centerX + SAFE_ZONE.width / 2,
-      top: centerY + SAFE_ZONE.height / 2,
+    const warningText = new fabric.Text('WALLET AREA\n(WILL BE TRANSPARENT)', {
+      left: SAFE_ZONE.x + SAFE_ZONE.width / 2,
+      top: SAFE_ZONE.y + SAFE_ZONE.height / 2,
       fontSize: 14,
       fontFamily: 'Arial',
       textAlign: 'center',
@@ -115,12 +120,9 @@ const DrawToMaskCanvas = () => {
     canvas.clear();
     
     // Re-add safe zone
-    const centerX = canvas.width! / 2 - SAFE_ZONE.width / 2;
-    const centerY = canvas.height! / 2 - SAFE_ZONE.height / 2;
-    
     const safeZoneRect = new fabric.Rect({
-      left: centerX,
-      top: centerY,
+      left: SAFE_ZONE.x,
+      top: SAFE_ZONE.y,
       width: SAFE_ZONE.width,
       height: SAFE_ZONE.height,
       fill: 'rgba(128, 128, 128, 0.1)',
@@ -132,9 +134,9 @@ const DrawToMaskCanvas = () => {
     });
     canvas.add(safeZoneRect);
     
-    const warningText = new fabric.Text('WALLET AREA\n(БУДЕТ ПРОЗРАЧНЫМ)', {
-      left: centerX + SAFE_ZONE.width / 2,
-      top: centerY + SAFE_ZONE.height / 2,
+    const warningText = new fabric.Text('WALLET AREA\n(WILL BE TRANSPARENT)', {
+      left: SAFE_ZONE.x + SAFE_ZONE.width / 2,
+      top: SAFE_ZONE.y + SAFE_ZONE.height / 2,
       fontSize: 14,
       fontFamily: 'Arial',
       textAlign: 'center',
@@ -146,7 +148,7 @@ const DrawToMaskCanvas = () => {
     });
     canvas.add(warningText);
     
-    toast.success("Холст очищен");
+    toast.success("Canvas cleared");
   };
 
   // Generate mask using AI
@@ -177,14 +179,14 @@ const DrawToMaskCanvas = () => {
       setMaskImageUrl(result.imageUrl);
       
       console.log('✅ AI mask generation completed successfully');
-      toast.success("ИИ маска создана!", {
+      toast.success("AI mask created!", {
         description: useStyleTransfer 
-          ? "Ваш рисунок преобразован с применением стилизации"
-          : "Точная маска создана на основе вашего рисунка"
+          ? "Your drawing has been transformed with stylization"
+          : "Precise mask created from your drawing"
       });
     } catch (err) {
       console.error("❌ Error generating AI mask:", err);
-      toast.error("Ошибка создания маски. Попробуйте снова.");
+      toast.error("Error creating mask. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -196,8 +198,8 @@ const DrawToMaskCanvas = () => {
       <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md flex items-start space-x-2">
         <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
         <div className="text-xs text-blue-300">
-          <strong>Новый ИИ подход:</strong> Рисуйте декоративные элементы вокруг области кошелька. 
-          ИИ точно определит ваши рисунки и создаст прозрачную маску только в нужных местах.
+          <strong>New AI Approach:</strong> Draw decorative elements around the wallet area. 
+          AI will precisely detect your drawings and create a transparent mask only where needed.
         </div>
       </div>
       
@@ -210,7 +212,7 @@ const DrawToMaskCanvas = () => {
             className={activeTool === 'brush' ? "bg-purple-600 hover:bg-purple-700" : ""}
           >
             <Brush className="h-4 w-4 mr-2" />
-            Кисть
+            Brush
           </Button>
           
           <Button 
@@ -220,11 +222,11 @@ const DrawToMaskCanvas = () => {
             className={activeTool === 'eraser' ? "bg-purple-600 hover:bg-purple-700" : ""}
           >
             <Eraser className="h-4 w-4 mr-2" />
-            Ластик
+            Eraser
           </Button>
           
           <div className="flex items-center space-x-2 ml-4">
-            <span className="text-xs text-white/70">Размер:</span>
+            <span className="text-xs text-white/70">Size:</span>
             <Slider
               value={[brushSize]}
               min={1}
@@ -243,7 +245,7 @@ const DrawToMaskCanvas = () => {
           onClick={handleClearCanvas}
         >
           <RotateCcw className="h-4 w-4 mr-2" />
-          Очистить
+          Clear
         </Button>
       </div>
 
@@ -256,12 +258,27 @@ const DrawToMaskCanvas = () => {
         />
         <Label htmlFor="style-transfer" className="text-sm text-purple-300">
           <Sparkles className="inline h-4 w-4 mr-1" />
-          Применить стилизацию (экспериментально)
+          Apply stylization (experimental)
         </Label>
       </div>
       
-      <div className="relative h-[800px] bg-black/10 rounded-lg">
-        <canvas ref={canvasRef} className="absolute top-0 left-0 z-10" />
+      <div className="relative h-[800px] bg-black/10 rounded-lg overflow-hidden">
+        <canvas ref={canvasRef} className="absolute top-0 left-0 z-20" />
+        
+        {/* Demo wallet positioned in center */}
+        <div 
+          className="absolute z-10 pointer-events-none"
+          style={{
+            left: `${SAFE_ZONE.x}px`,
+            top: `${SAFE_ZONE.y}px`,
+            width: `${SAFE_ZONE.width}px`,
+            height: `${SAFE_ZONE.height}px`,
+          }}
+        >
+          <div className="scale-[0.8] origin-top-left">
+            <LoginScreen style={loginStyle} />
+          </div>
+        </div>
       </div>
       
       <Button 
@@ -270,12 +287,12 @@ const DrawToMaskCanvas = () => {
         onClick={handleGenerateMask}
       >
         <Sparkles className="mr-2 h-4 w-4" />
-        {isGenerating ? 'Создание ИИ маски...' : 'Создать ИИ маску'}
+        {isGenerating ? 'Creating AI Mask...' : 'Create AI Mask'}
       </Button>
       
       {isGenerating && (
         <div className="text-xs text-white/60 text-center">
-          ⏳ ИИ анализирует ваш рисунок и создает точную прозрачную маску...
+          ⏳ AI is analyzing your drawing and creating a precise transparent mask...
         </div>
       )}
     </div>
