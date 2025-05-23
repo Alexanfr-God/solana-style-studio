@@ -9,9 +9,9 @@ export async function generateMaskFromDrawing(
   drawingImageBase64: string
 ): Promise<{ imageUrl: string; layoutJson: any } | undefined> {
   try {
-    console.log('🎨 === НАЧАЛО ГЕНЕРАЦИИ МАСКИ ===');
-    console.log('Размер рисунка:', drawingImageBase64.length);
-    console.log('Превью рисунка:', drawingImageBase64.substring(0, 100));
+    console.log('🎨 === STARTING MASK GENERATION ===');
+    console.log('Drawing size:', drawingImageBase64.length);
+    console.log('Drawing preview:', drawingImageBase64.substring(0, 100));
     
     // Create safe zone definition - for 1024x1024 square canvas with centered wallet
     const safeZone = {
@@ -21,7 +21,7 @@ export async function generateMaskFromDrawing(
       height: 569
     };
     
-    console.log('Безопасная зона кошелька:', safeZone);
+    console.log('Wallet safe zone:', safeZone);
     
     // Call the Supabase function with retries
     let attempts = 0;
@@ -29,7 +29,7 @@ export async function generateMaskFromDrawing(
     
     while (attempts < maxAttempts) {
       attempts++;
-      console.log(`🔄 Попытка генерации ${attempts}/${maxAttempts}`);
+      console.log(`🔄 Generation attempt ${attempts}/${maxAttempts}`);
       
       try {
         const requestPayload = {
@@ -38,7 +38,7 @@ export async function generateMaskFromDrawing(
           hd_quality: true
         };
         
-        console.log('Отправка запроса в Supabase функцию...');
+        console.log('Sending request to Supabase function...');
         const startTime = Date.now();
         
         const { data, error } = await supabase.functions.invoke('generate-mask-from-drawing', {
@@ -46,26 +46,26 @@ export async function generateMaskFromDrawing(
         });
 
         const endTime = Date.now();
-        console.log(`⏱️ Запрос выполнен за ${endTime - startTime}мс`);
+        console.log(`⏱️ Request completed in ${endTime - startTime}ms`);
 
         if (error) {
-          console.error(`❌ Ошибка на попытке ${attempts}:`, error);
-          console.error('Детали ошибки:', JSON.stringify(error, null, 2));
+          console.error(`❌ Error on attempt ${attempts}:`, error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
           if (attempts < maxAttempts) {
-            console.log('🔄 Повторная попытка...');
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Ожидание 1 секунда перед повтором
+            console.log('🔄 Retrying...');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
             continue;
           }
-          throw new Error(`Не удалось сгенерировать маску: ${error.message}`);
+          throw new Error(`Failed to generate mask: ${error.message}`);
         }
 
-        console.log('📦 Сырые данные ответа:', JSON.stringify(data, null, 2));
+        console.log('📦 Raw response data:', JSON.stringify(data, null, 2));
 
         if (!data || !data.mask_image_url) {
-          console.error(`❌ Некорректные данные ответа на попытке ${attempts}:`, data);
+          console.error(`❌ Invalid response data on attempt ${attempts}:`, data);
           if (attempts < maxAttempts) {
-            console.log('🔄 Повторная попытка...');
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Ожидание 1 секунда перед повтором
+            console.log('🔄 Retrying...');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
             continue;
           }
           return createFallbackResponse();
@@ -73,30 +73,30 @@ export async function generateMaskFromDrawing(
 
         // Enhanced URL validation
         const imageUrl = data.mask_image_url;
-        console.log('🖼️ Сгенерированный URL изображения:', imageUrl);
-        console.log('Тип URL:', typeof imageUrl);
-        console.log('Длина URL:', imageUrl.length);
-        console.log('URL начинается с:', imageUrl.substring(0, 50));
+        console.log('🖼️ Generated image URL:', imageUrl);
+        console.log('URL type:', typeof imageUrl);
+        console.log('URL length:', imageUrl.length);
+        console.log('URL starts with:', imageUrl.substring(0, 50));
         
         // Test URL accessibility
-        console.log('🔍 Проверка доступности URL...');
+        console.log('🔍 Checking URL accessibility...');
         try {
           const testResponse = await fetch(imageUrl, { 
             method: 'HEAD',
-            mode: 'no-cors' // Избегаем CORS ошибок при проверке
+            mode: 'no-cors' // Avoid CORS errors during check
           });
-          console.log('Статус проверки URL:', testResponse.status);
+          console.log('URL check status:', testResponse.status);
           
           if (testResponse.status === 0) {
-            console.log('✅ URL заблокирован CORS, но доступен (это нормально для внешних изображений)');
+            console.log('✅ URL blocked by CORS but accessible (normal for external images)');
           } else if (!testResponse.ok) {
-            console.warn(`⚠️ URL вернул статус ${testResponse.status}, но продолжаем`);
+            console.warn(`⚠️ URL returned status ${testResponse.status}, but continuing`);
           } else {
-            console.log('✅ URL доступен');
+            console.log('✅ URL accessible');
           }
         } catch (urlError) {
-          console.error('❌ Тест доступности URL не удался:', urlError);
-          console.log('🤷 Продолжаем в любом случае, возможно проблема с CORS');
+          console.error('❌ URL accessibility test failed:', urlError);
+          console.log('🤷 Continuing anyway, might be a CORS issue');
         }
 
         const result = {
@@ -104,40 +104,40 @@ export async function generateMaskFromDrawing(
           layoutJson: data.layout_json || {}
         };
 
-        console.log('✅ === УСПЕШНАЯ ГЕНЕРАЦИЯ МАСКИ ===');
-        console.log('Финальный результат:', result);
-        console.log('URL изображения для установки:', result.imageUrl);
+        console.log('✅ === SUCCESSFUL MASK GENERATION ===');
+        console.log('Final result:', result);
+        console.log('Image URL to set:', result.imageUrl);
         
-        // Показать успешное уведомление
-        toast.success('Маска успешно сгенерирована AI!', {
-          description: 'Ваши красные линии превращены в декоративную маску'
+        // Show success notification
+        toast.success('Mask successfully generated by AI!', {
+          description: 'Your red lines have been transformed into a decorative mask'
         });
         
         return result;
       } catch (attemptError) {
-        console.error(`❌ Ошибка во время попытки ${attempts}:`, attemptError);
-        console.error('Стек ошибки попытки:', attemptError.stack);
+        console.error(`❌ Error during attempt ${attempts}:`, attemptError);
+        console.error('Attempt error stack:', attemptError.stack);
         if (attempts < maxAttempts) {
-          console.log('🔄 Повтор после ошибки...');
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Ожидание 1 секунда перед повтором
+          console.log('🔄 Retrying after error...');
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
           continue;
         }
         
-        // Если все попытки провалились, используем fallback
-        console.log('💀 Все попытки провалились, используем fallback');
-        toast.error('Ошибка генерации AI. Используется резервная маска.');
+        // If all attempts failed, use fallback
+        console.log('💀 All attempts failed, using fallback');
+        toast.error('AI generation error. Using backup mask.');
         return createFallbackResponse();
       }
     }
     
-    // Это не должно выполняться из-за цикла while, но TypeScript требует return
+    // This shouldn't execute due to the while loop, but TypeScript requires return
     return createFallbackResponse();
     
   } catch (error) {
-    console.error('💥 === ПРОВАЛ ГЕНЕРАЦИИ МАСКИ ===');
-    console.error('Ошибка в drawToMaskService.generateMaskFromDrawing:', error);
-    console.error('Стек ошибки:', error.stack);
-    toast.error('Не удалось сгенерировать маску. Попробуйте снова.');
+    console.error('💥 === MASK GENERATION FAILURE ===');
+    console.error('Error in drawToMaskService.generateMaskFromDrawing:', error);
+    console.error('Error stack:', error.stack);
+    toast.error('Failed to generate mask. Please try again.');
     return createFallbackResponse();
   }
 }
@@ -148,14 +148,14 @@ export async function generateMaskFromDrawing(
 function createFallbackResponse(): { imageUrl: string; layoutJson: any } {
   const fallbackMaskUrl = '/external-masks/abstract-mask.png';
   
-  console.log('🚨 Используется резервная маска:', fallbackMaskUrl);
+  console.log('🚨 Using fallback mask:', fallbackMaskUrl);
   
   return {
     imageUrl: fallbackMaskUrl,
     layoutJson: {
       layout: {
-        top: "Декоративные элементы (резерв)",
-        bottom: "Дополнительные декоративные элементы (резерв)",
+        top: "Decorative elements (fallback)",
+        bottom: "Additional decorative elements (fallback)",
         left: null,
         right: null,
         core: "untouched"

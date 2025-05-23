@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -237,12 +238,12 @@ const DrawToMaskCanvas = () => {
         // Mark as generated for UI updates
         setMaskGenerated(true);
         
-        toast.success("Маска успешно сгенерирована! Красные линии заменены на AI-маску.");
+        toast.success("Mask successfully generated! Red lines replaced with AI mask.");
       }, 200);
       
     } catch (err) {
       console.error("Error generating mask:", err);
-      toast.error("Ошибка при генерации маски. Попробуйте еще раз.");
+      toast.error("Error generating mask. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -255,10 +256,10 @@ const DrawToMaskCanvas = () => {
         <div className="bg-green-900/30 border border-green-500/50 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-2 text-green-400">
             <CheckCircle className="h-5 w-5" />
-            <span className="font-medium">Маска успешно сгенерирована!</span>
+            <span className="font-medium">Mask successfully generated!</span>
           </div>
           <p className="text-green-300/80 text-sm mt-1">
-            Ваши красные линии были преобразованы в декоративную маску. Теперь вы видите AI-обработанную версию.
+            Your red lines have been transformed into a decorative mask. You now see the AI-processed version.
           </p>
         </div>
       )}
@@ -274,7 +275,7 @@ const DrawToMaskCanvas = () => {
             disabled={maskGenerated}
           >
             <Brush className="h-4 w-4 mr-2" />
-            Кисть
+            Brush
           </Button>
           
           <Button 
@@ -285,11 +286,11 @@ const DrawToMaskCanvas = () => {
             disabled={maskGenerated}
           >
             <Eraser className="h-4 w-4 mr-2" />
-            Ластик
+            Eraser
           </Button>
           
           <div className="flex items-center space-x-2 ml-4">
-            <span className="text-xs text-white/70">Размер:</span>
+            <span className="text-xs text-white/70">Size:</span>
             <Slider
               value={[brushSize]}
               min={1}
@@ -309,7 +310,7 @@ const DrawToMaskCanvas = () => {
           onClick={handleClearCanvas}
         >
           <RotateCcw className="h-4 w-4 mr-2" />
-          {maskGenerated ? 'Новый рисунок' : 'Очистить'}
+          {maskGenerated ? 'New Drawing' : 'Clear'}
         </Button>
       </div>
       
@@ -365,17 +366,17 @@ const DrawToMaskCanvas = () => {
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Генерируем маску...
+            Generating mask...
           </>
         ) : maskGenerated ? (
           <>
             <CheckCircle className="mr-2 h-4 w-4" />
-            Маска сгенерирована
+            Mask generated
           </>
         ) : (
           <>
             <Wand className="mr-2 h-4 w-4" />
-            Создать маску из рисунка
+            Create mask from drawing
           </>
         )}
       </Button>
