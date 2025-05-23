@@ -11,10 +11,10 @@ export async function generateMaskFromDrawing(
   try {
     console.log('Generating mask from drawing');
     
-    // Create safe zone definition
+    // Create safe zone definition - for 1024x1024 square canvas with centered wallet
     const safeZone = {
-      x: 0,
-      y: 0,
+      x: (1024 - 320) / 2,
+      y: (1024 - 569) / 2,
       width: 320,
       height: 569
     };

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -23,10 +24,11 @@ const DrawToMaskCanvas = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Canvas dimensions
+  const CANVAS_SIZE = 1024;
+  
   // Safe zone dimensions - must match the wallet UI area
   const SAFE_ZONE = {
-    x: 0,
-    y: 0,
     width: 320,
     height: 569,
   };
@@ -35,11 +37,11 @@ const DrawToMaskCanvas = () => {
   useEffect(() => {
     if (!canvasRef.current || fabricCanvasRef.current) return;
 
-    // Create a new Fabric.js canvas that's placed directly on top of the wallet preview
+    // Create a new Fabric.js canvas with square dimensions
     const canvas = new fabric.Canvas(canvasRef.current, {
       isDrawingMode: true,
-      width: 480,  // Wider than wallet to give room for the mask
-      height: 800,  // Taller than wallet to give room for the mask
+      width: CANVAS_SIZE,
+      height: CANVAS_SIZE,
       backgroundColor: 'rgba(0, 0, 0, 0.05)'
     });
     fabricCanvasRef.current = canvas;
@@ -49,13 +51,13 @@ const DrawToMaskCanvas = () => {
     freeDrawingBrush.color = '#ff3333'; // Red brush by default
     freeDrawingBrush.width = brushSize;
 
-    // Add safe zone rectangle (centered)
-    const centerX = canvas.width! / 2 - SAFE_ZONE.width / 2;
-    const centerY = canvas.height! / 2 - SAFE_ZONE.height / 2;
+    // Calculate center positions
+    const centerX = (CANVAS_SIZE - SAFE_ZONE.width) / 2;
+    const centerY = (CANVAS_SIZE - SAFE_ZONE.height) / 2;
     
     updateSafeZone(canvas, centerX, centerY);
 
-    // Position the wallet UI
+    // Position the wallet UI in the center of the canvas
     positionWalletPreview(centerX, centerY);
 
     // Cleanup when component unmounts
@@ -153,8 +155,8 @@ const DrawToMaskCanvas = () => {
     canvas.clear();
     
     // Re-add safe zone rectangle
-    const centerX = canvas.width! / 2 - SAFE_ZONE.width / 2;
-    const centerY = canvas.height! / 2 - SAFE_ZONE.height / 2;
+    const centerX = (CANVAS_SIZE - SAFE_ZONE.width) / 2;
+    const centerY = (CANVAS_SIZE - SAFE_ZONE.height) / 2;
     
     updateSafeZone(canvas, centerX, centerY);
     
@@ -244,12 +246,29 @@ const DrawToMaskCanvas = () => {
       </div>
       
       {/* Canvas Container with Wallet Preview */}
-      <div className="relative h-[600px] bg-black/10 rounded-lg overflow-hidden" ref={containerRef}>
+      <div 
+        className="relative bg-black/10 rounded-lg overflow-hidden mx-auto" 
+        ref={containerRef}
+        style={{
+          width: `${CANVAS_SIZE}px`,
+          height: `${CANVAS_SIZE}px`,
+          maxWidth: '100%',
+          aspectRatio: '1/1'
+        }}
+      >
         {/* This is the drawing canvas that overlays the wallet preview */}
-        <canvas ref={canvasRef} className="absolute top-0 left-0 z-10" />
+        <canvas 
+          ref={canvasRef} 
+          className="absolute top-0 left-0 z-10"
+          style={{
+            width: '100%',
+            height: '100%',
+            maxWidth: '100%',
+          }}
+        />
         
         {/* Wallet preview positioned underneath the canvas */}
-        <div className="wallet-preview-container absolute inset-0 z-5 flex items-center justify-center">
+        <div className="wallet-preview-container absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
           <LoginScreen style={loginStyle} />
         </div>
       </div>
