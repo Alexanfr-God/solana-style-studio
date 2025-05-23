@@ -33,7 +33,7 @@ const ImageFeedbackWrapper: React.FC<ImageFeedbackWrapperProps> = ({
     <div className="relative">
       {children}
       
-      <div className="absolute bottom-4 right-4 flex items-center space-x-2">
+      <div className="absolute bottom-4 left-4 flex items-center space-x-2">
         {!feedbackSubmitted ? (
           <Button 
             size="sm" 
