@@ -2,28 +2,24 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import MaskPromptInput from './MaskPromptInput';
-import MaskUploadImage from './MaskUploadImage';
-import GenerateMaskButton from './GenerateMaskButton';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Info, Eye, EyeOff } from 'lucide-react';
+import { Info, Eye, EyeOff } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import V3MaskPreviewCanvas from './V3MaskPreviewCanvas';
 import SafeZoneToggle from './SafeZoneToggle';
-import MaskPresets from './MaskPresets';
 import { 
   Tooltip, 
   TooltipContent, 
   TooltipProvider, 
   TooltipTrigger 
 } from '@/components/ui/tooltip';
+import DrawToMaskEditor from './DrawToMaskEditor';
 
 const V3MaskEditor = () => {
   const { 
     resetEditor, 
     maskImageUrl, 
-    prompt, 
     safeZoneVisible,
     setSafeZoneVisible
   } = useMaskEditorStore();
@@ -46,7 +42,7 @@ const V3MaskEditor = () => {
           <Card className="bg-black/30 backdrop-blur-md border-white/10">
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Create Wallet Costume</h2>
+                <h2 className="text-xl font-bold text-white">Draw-to-Mask Editor</h2>
                 <div className="bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xs px-2 py-1 rounded">AI-Powered</div>
               </div>
               
@@ -64,7 +60,7 @@ const V3MaskEditor = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-white/70">
-                    Our AI generates decorative masks that surround your wallet while keeping the central wallet UI visible and functional. Try our presets or create your own design!
+                    Draw the outline of your wallet costume directly on the canvas. Our AI will turn your sketch into a beautiful decorative mask while keeping the wallet UI visible and functional.
                   </p>
                 </div>
               )}
@@ -84,38 +80,17 @@ const V3MaskEditor = () => {
               )}
               
               <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-medium mb-4 text-white">Upload your own wallet skin</h3>
-                  <MaskUploadImage />
-                </div>
-                
-                <Separator orientation="horizontal" className="bg-white/10" />
-                
-                <div className="space-y-4">
-                  <h3 className="text-md font-medium text-white flex items-center gap-2">
-                    AI Mask Creator
-                  </h3>
-                  <p className="text-xs text-white/70">
-                    Create beautiful decorative masks that go around your wallet. The mask will leave the central wallet UI untouched.
-                  </p>
-                  <MaskPromptInput />
-                </div>
-                
-                <MaskPresets />
+                <DrawToMaskEditor />
                 
                 <SafeZoneToggle />
                 
-                <div className="space-y-3">
-                  <GenerateMaskButton />
-                  <Button 
-                    variant="outline" 
-                    onClick={handleReset}
-                    className="w-full border-white/10 text-white/80 hover:text-white"
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Reset
-                  </Button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleReset}
+                  className="w-full border-white/10 text-white/80 hover:text-white"
+                >
+                  Reset All
+                </Button>
               </div>
             </CardContent>
           </Card>
