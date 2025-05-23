@@ -28,7 +28,7 @@ serve(async (req) => {
     const drawingDescription = await analyzeDrawingWithGPT(drawingImage);
     console.log("Drawing description:", drawingDescription);
     
-    // 2. Generate the mask image based on the description using DALL-E
+    // 2. Generate the mask image based on the description using DALL-E with strict transparency rules
     const generatedImageUrl = await generateMaskWithDALLE(drawingDescription);
     console.log("Generated mask URL:", generatedImageUrl);
     
@@ -92,14 +92,35 @@ async function analyzeDrawingWithGPT(drawingImageBase64: string): Promise<string
         messages: [
           {
             role: "system",
-            content: "You are an expert in analyzing drawings and creating descriptions for image generation. The user will provide a sketch drawing for a wallet costume/mask. Your task is to describe what's in this drawing in detail so it can be used as a prompt for DALL-E to generate a polished, high-quality version. Focus on the overall shape, theme, character elements, and where they are positioned (top, sides, bottom). Note that the central area must remain empty/transparent."
+            content: `STRICT MASK GENERATION RULES:
+
+🎯 CRITICAL: The mask MUST have a completely transparent rectangular area in the center (320x569 pixels) for a wallet interface.
+
+📐 Layout Requirements:
+- Image size: 1024x1024 pixels
+- Transparent center zone: 320x569 pixels (positioned at center)
+- Decorative elements ONLY around the edges: top, bottom, left, right sides
+- NO CONTENT in the center rectangle - it must be 100% transparent
+
+🎨 Style Guidelines:
+- Create decorative frame/costume elements
+- Use meme, cartoon, or impressive style
+- Think of it as a wallet "costume" or "frame"
+- Elements should look like they're surrounding/framing the wallet
+
+⚠️ TRANSPARENCY RULES:
+- Center must be completely empty/transparent
+- Use PNG format with alpha channel
+- If transparency isn't working, describe it as "black void in center that will be made transparent"
+
+Your task: Analyze this drawing and describe how to turn it into a wallet mask following these strict rules.`
           },
           {
             role: "user", 
             content: [
               {
                 type: "text", 
-                text: "Analyze this drawing I made for a wallet costume. Describe it in detail so DALL-E can generate a polished, high-quality version while keeping the central wallet area empty."
+                text: "Analyze this drawing I made for a wallet costume. Describe it for DALL-E generation while ensuring the central wallet area (320x569px) remains completely transparent/empty."
               },
               {
                 type: "image_url",
@@ -131,12 +152,30 @@ async function analyzeDrawingWithGPT(drawingImageBase64: string): Promise<string
 }
 
 /**
- * Generates a polished mask image using DALL-E based on the drawing description
+ * Generates a polished mask image using DALL-E with strict transparency requirements
  */
 async function generateMaskWithDALLE(description: string): Promise<string> {
   try {
-    // Create a prompt that ensures the central area remains empty
-    const prompt = `Create a decorative wallet costume based on this description: "${description}". Make it highly detailed and polished. IMPORTANT: The central rectangular area (320x569 pixels) MUST remain completely empty and transparent for the wallet UI. The decorative elements should only appear around the edges of this central area. Make it look professional and vibrant.`;
+    // Create a very specific prompt that enforces transparency rules
+    const prompt = `🎯 WALLET MASK GENERATION - STRICT REQUIREMENTS:
+
+Create a decorative wallet frame/costume based on: "${description}"
+
+📐 MANDATORY SPECIFICATIONS:
+- Image size: 1024x1024 PNG with transparency
+- Central transparent rectangle: 320x569 pixels (exactly in the center)
+- The center MUST be completely empty/transparent - NO colors, patterns, or designs
+- Place ALL decorative elements around the edges only
+
+🎨 DESIGN STYLE:
+- Decorative frame/costume style
+- Cartoon/meme aesthetic
+- Vibrant and impressive
+- Think "wallet costume" or "phone case design"
+
+⚠️ CRITICAL: The central rectangular area (320x569px) must be 100% transparent. This is for a wallet interface that will show through. Draw only decorative elements around the edges: top, bottom, left side, right side.
+
+Generate as PNG with proper alpha transparency.`;
     
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
