@@ -68,7 +68,7 @@ const defaultSafeZone: SafeZone = {
   height: 569
 };
 
-export const useMaskEditorStore = create<MaskEditorState>((set) => ({
+export const useMaskEditorStore = create<MaskEditorState>((set, get) => ({
   activeLayer: 'login',
   maskImageUrl: null,
   externalMask: null,
@@ -81,8 +81,20 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   maskStyle: '',
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),
-  setMaskImageUrl: (imageUrl) => set({ maskImageUrl: imageUrl }),
-  setExternalMask: (imageUrl) => set({ externalMask: imageUrl }),
+  setMaskImageUrl: (imageUrl) => {
+    console.log('🏪 STORE: Setting maskImageUrl to:', imageUrl);
+    console.log('🏪 STORE: Previous value was:', get().maskImageUrl);
+    console.log('🏪 STORE: External mask is:', get().externalMask);
+    set({ maskImageUrl: imageUrl });
+    console.log('🏪 STORE: State updated, new value:', get().maskImageUrl);
+  },
+  setExternalMask: (imageUrl) => {
+    console.log('🏪 STORE: Setting externalMask to:', imageUrl);
+    console.log('🏪 STORE: Previous value was:', get().externalMask);
+    console.log('🏪 STORE: Custom mask is:', get().maskImageUrl);
+    set({ externalMask: imageUrl });
+    console.log('🏪 STORE: State updated, new value:', get().externalMask);
+  },
   setSelectedMask: (mask) => set({ selectedMask: mask }),
   setPreviewVisible: (visible) => set({ previewVisible: visible }),
   setSafeZoneVisible: (visible) => set({ safeZoneVisible: visible }),
@@ -91,13 +103,16 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   setPrompt: (prompt) => set({ prompt: prompt }),
   setMaskStyle: (style) => set({ maskStyle: style }),
   
-  resetEditor: () => set({
-    maskImageUrl: null,
-    externalMask: null,
-    selectedMask: null,
-    isGenerating: false,
-    drawingImageUrl: null,
-    prompt: '',
-    maskStyle: ''
-  })
+  resetEditor: () => {
+    console.log('🏪 STORE: Resetting editor state');
+    set({
+      maskImageUrl: null,
+      externalMask: null,
+      selectedMask: null,
+      isGenerating: false,
+      drawingImageUrl: null,
+      prompt: '',
+      maskStyle: ''
+    });
+  }
 }));
