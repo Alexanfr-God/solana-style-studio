@@ -6,6 +6,7 @@ import { useCustomizationStore } from '@/stores/customizationStore';
 import { WalletSceneContainer } from '@/components/wallet/WalletSceneContainer';
 import { Badge } from '@/components/ui/badge';
 import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
+import FeedbackButton from '@/components/feedback/FeedbackButton';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 const V3MaskPreviewCanvas = () => {
@@ -206,6 +207,16 @@ const V3MaskPreviewCanvas = () => {
             )}
           </WalletSceneContainer>
         </ImageFeedbackWrapper>
+      </div>
+      
+      {/* Feedback Button positioned at the same level as "Mint as NFT" would be */}
+      <div className="absolute bottom-4 right-4">
+        <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3">
+          <FeedbackButton 
+            imageUrl={previewImageUrl} 
+            prompt={previewPrompt}
+          />
+        </div>
       </div>
     </div>
   );
