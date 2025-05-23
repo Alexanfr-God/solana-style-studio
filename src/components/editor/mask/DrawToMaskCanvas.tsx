@@ -1,10 +1,9 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
-import { Brush, Eraser, RotateCcw, Loader2, Wand } from 'lucide-react';
+import { Brush, Eraser, RotateCcw, Loader2, Wand, CheckCircle } from 'lucide-react';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { toast } from 'sonner';
@@ -22,13 +21,15 @@ const DrawToMaskCanvas = () => {
     setSafeZoneVisible, 
     safeZoneVisible, 
     setExternalMask,
-    resetEditor
+    resetEditor,
+    maskImageUrl
   } = useMaskEditorStore();
   
   const [activeTool, setActiveTool] = useState<DrawToolType>('brush');
   const [brushSize, setBrushSize] = useState(20);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [maskGenerated, setMaskGenerated] = useState(false);
 
   // Canvas dimensions
   const CANVAS_SIZE = 1024;
@@ -91,6 +92,18 @@ const DrawToMaskCanvas = () => {
       canvas.renderAll();
     }
   }, [safeZoneVisible]);
+
+  // When mask is generated, hide the drawing and show success message
+  useEffect(() => {
+    if (maskImageUrl && fabricCanvasRef.current) {
+      console.log("🎭 Mask generated successfully, hiding drawing canvas");
+      setMaskGenerated(true);
+      
+      // Hide the drawing canvas to show only the generated mask
+      const canvas = fabricCanvasRef.current;
+      canvas.getElement().style.display = 'none';
+    }
+  }, [maskImageUrl]);
 
   const updateSafeZone = (canvas: fabric.Canvas) => {
     // Remove any existing safe zone rectangles
@@ -160,11 +173,18 @@ const DrawToMaskCanvas = () => {
     }
   };
 
-  // Clear the canvas
+  // Clear the canvas and reset mask state
   const handleClearCanvas = () => {
     if (!fabricCanvasRef.current) return;
     
     const canvas = fabricCanvasRef.current;
+    
+    // Reset all mask-related state
+    resetEditor();
+    setMaskGenerated(false);
+    
+    // Show the drawing canvas again
+    canvas.getElement().style.display = 'block';
     
     // Keep only the safe zone rectangle
     canvas.clear();
@@ -184,15 +204,18 @@ const DrawToMaskCanvas = () => {
       const canvas = fabricCanvasRef.current;
       
       // Reset mask state completely first - important for proper rerender
+      console.log("🔄 Resetting editor state before generation");
       resetEditor();
-      
-      console.log("🔄 State reset before mask generation");
+      setMaskGenerated(false);
       
       // Convert canvas to image
       const dataUrl = canvas.toDataURL({
         format: 'png',
         quality: 1,
       });
+      
+      console.log("🎨 Sending drawing to AI for mask generation...");
+      console.log("Drawing data size:", dataUrl.length);
       
       // Send the drawing to the server for AI processing
       const result = await generateMaskFromDrawing(dataUrl);
@@ -201,18 +224,25 @@ const DrawToMaskCanvas = () => {
         throw new Error("Failed to generate mask");
       }
       
-      // Add a slight delay to ensure the reset has fully processed
+      console.log("✅ Mask generation successful:", result.imageUrl);
+      
+      // Set the generated mask in the store with a small delay to ensure state reset
       setTimeout(() => {
-        // Set the generated mask in the store
-        console.log("🎨 Setting new mask URL:", result.imageUrl);
+        console.log("🎭 Setting generated mask URL in store");
+        
+        // Ensure external mask is null and set our generated mask
+        setExternalMask(null);
         setMaskImageUrl(result.imageUrl);
         
-        toast.success("Mask generated successfully!");
-      }, 100);
+        // Mark as generated for UI updates
+        setMaskGenerated(true);
+        
+        toast.success("Маска успешно сгенерирована! Красные линии заменены на AI-маску.");
+      }, 200);
       
     } catch (err) {
       console.error("Error generating mask:", err);
-      toast.error("Failed to generate mask. Please try again.");
+      toast.error("Ошибка при генерации маски. Попробуйте еще раз.");
     } finally {
       setIsGenerating(false);
     }
@@ -220,6 +250,19 @@ const DrawToMaskCanvas = () => {
 
   return (
     <div className="space-y-4">
+      {/* Success Message */}
+      {maskGenerated && maskImageUrl && (
+        <div className="bg-green-900/30 border border-green-500/50 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 text-green-400">
+            <CheckCircle className="h-5 w-5" />
+            <span className="font-medium">Маска успешно сгенерирована!</span>
+          </div>
+          <p className="text-green-300/80 text-sm mt-1">
+            Ваши красные линии были преобразованы в декоративную маску. Теперь вы видите AI-обработанную версию.
+          </p>
+        </div>
+      )}
+
       {/* Drawing Tools */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -228,9 +271,10 @@ const DrawToMaskCanvas = () => {
             variant={activeTool === 'brush' ? "default" : "outline"} 
             onClick={() => handleToolChange('brush')}
             className={activeTool === 'brush' ? "bg-purple-600 hover:bg-purple-700" : ""}
+            disabled={maskGenerated}
           >
             <Brush className="h-4 w-4 mr-2" />
-            Brush
+            Кисть
           </Button>
           
           <Button 
@@ -238,13 +282,14 @@ const DrawToMaskCanvas = () => {
             variant={activeTool === 'eraser' ? "default" : "outline"} 
             onClick={() => handleToolChange('eraser')}
             className={activeTool === 'eraser' ? "bg-purple-600 hover:bg-purple-700" : ""}
+            disabled={maskGenerated}
           >
             <Eraser className="h-4 w-4 mr-2" />
-            Eraser
+            Ластик
           </Button>
           
           <div className="flex items-center space-x-2 ml-4">
-            <span className="text-xs text-white/70">Size:</span>
+            <span className="text-xs text-white/70">Размер:</span>
             <Slider
               value={[brushSize]}
               min={1}
@@ -252,6 +297,7 @@ const DrawToMaskCanvas = () => {
               step={1}
               onValueChange={(values) => setBrushSize(values[0])}
               className="w-24"
+              disabled={maskGenerated}
             />
             <span className="text-xs text-white/70">{brushSize}px</span>
           </div>
@@ -263,7 +309,7 @@ const DrawToMaskCanvas = () => {
           onClick={handleClearCanvas}
         >
           <RotateCcw className="h-4 w-4 mr-2" />
-          Clear
+          {maskGenerated ? 'Новый рисунок' : 'Очистить'}
         </Button>
       </div>
       
@@ -289,7 +335,20 @@ const DrawToMaskCanvas = () => {
           }}
         />
         
-        {/* Wallet preview positioned underneath the canvas */}
+        {/* Generated mask overlay - shown when mask is generated */}
+        {maskGenerated && maskImageUrl && (
+          <div 
+            className="absolute top-0 left-0 w-full h-full z-8 pointer-events-none"
+            style={{
+              backgroundImage: `url(${maskImageUrl})`,
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          />
+        )}
+        
+        {/* Wallet preview positioned underneath */}
         <div className="wallet-preview-container absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
           <div className="wallet-preview">
             <LoginScreen style={loginStyle} />
@@ -300,21 +359,36 @@ const DrawToMaskCanvas = () => {
       {/* Generate Button */}
       <Button 
         className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-        disabled={isGenerating}
+        disabled={isGenerating || maskGenerated}
         onClick={handleGenerateMask}
       >
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating...
+            Генерируем маску...
+          </>
+        ) : maskGenerated ? (
+          <>
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Маска сгенерирована
           </>
         ) : (
           <>
             <Wand className="mr-2 h-4 w-4" />
-            Generate Costume from Drawing
+            Создать маску из рисунка
           </>
         )}
       </Button>
+
+      {/* Debug Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-4 p-3 bg-black/30 rounded-lg text-xs">
+          <div className="text-white/70">Debug Info:</div>
+          <div className="text-white/50">Mask URL: {maskImageUrl || 'None'}</div>
+          <div className="text-white/50">Generated: {maskGenerated ? 'Yes' : 'No'}</div>
+          <div className="text-white/50">Is Generating: {isGenerating ? 'Yes' : 'No'}</div>
+        </div>
+      )}
     </div>
   );
 };
