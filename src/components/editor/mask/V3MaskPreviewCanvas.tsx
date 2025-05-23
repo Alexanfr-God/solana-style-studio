@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
@@ -75,8 +74,8 @@ const V3MaskPreviewCanvas = () => {
   };
 
   return (
-    <div className="relative w-full h-[800px] flex items-center justify-center">
-      <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
+    <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
+      <div className="relative w-full h-[800px] flex items-center justify-center">
         <div className="relative">
           {/* New scene container with larger area for external masks */}
           <WalletSceneContainer style={loginStyle}>
@@ -206,8 +205,8 @@ const V3MaskPreviewCanvas = () => {
             )}
           </WalletSceneContainer>
         </div>
-      </ImageFeedbackWrapper>
-    </div>
+      </div>
+    </ImageFeedbackWrapper>
   );
 };
 
