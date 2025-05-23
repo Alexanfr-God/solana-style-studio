@@ -9,21 +9,18 @@ export async function generateMaskFromDrawing(
   try {
     console.log('🐱 === STARTING AI CAT MASK GENERATION ===');
     console.log('Drawing data length:', drawingImageBase64?.length || 0);
-    console.log('Drawing data preview:', drawingImageBase64?.substring(0, 50));
     console.log('Style transfer enabled:', useStyleTransfer);
     
     if (!drawingImageBase64 || drawingImageBase64.length < 100) {
       throw new Error('Invalid drawing data provided');
     }
     
-    // Show progress to user
     toast.info('🎨 Analyzing your cat drawing...', {
       description: 'AI is creating a professional cat mask design'
     });
     
     console.log('📡 Calling Supabase Edge Function...');
     
-    // Call the Supabase Edge Function for cat mask generation
     const { data, error } = await supabase.functions.invoke('generate-mask-from-drawing', {
       body: {
         drawingImageBase64: drawingImageBase64,
@@ -45,29 +42,17 @@ export async function generateMaskFromDrawing(
       throw new Error('No response from AI generation service');
     }
 
-    if (!data.mask_image_url) {
-      console.error('❌ No mask image URL in response:', data);
+    // The Edge Function now returns imageUrl directly (as base64)
+    if (!data.imageUrl) {
+      console.error('❌ No imageUrl in response:', data);
       throw new Error('No mask image returned from AI');
     }
 
-    console.log('🔍 Validating generated mask URL...');
-    console.log('Mask URL:', data.mask_image_url);
+    console.log('✅ Received image data type:', data.imageUrl.startsWith('data:') ? 'base64' : 'url');
+    console.log('✅ Image data length:', data.imageUrl.length);
     
-    // Test if the URL is accessible (only for remote URLs)
-    if (data.mask_image_url.startsWith('http')) {
-      try {
-        const testResponse = await fetch(data.mask_image_url, { method: 'HEAD' });
-        console.log('URL test response status:', testResponse.status);
-        if (!testResponse.ok) {
-          console.warn('⚠️ Generated URL may not be accessible:', testResponse.status);
-        }
-      } catch (urlError) {
-        console.warn('⚠️ Could not verify URL accessibility:', urlError);
-      }
-    }
-
     const result = {
-      imageUrl: data.mask_image_url,
+      imageUrl: data.imageUrl, // This is now base64 or local path
       layoutJson: data.layout_json || {
         layout: {
           top: "AI-generated cat head with ears",
@@ -78,13 +63,13 @@ export async function generateMaskFromDrawing(
         },
         style: "ai-generated-cat",
         color_palette: ["#000000", "#ffffff"],
-        generation_method: data.layout_json?.generation_method || "dall-e-3",
+        generation_method: data.layout_json?.generation_method || "dall-e-3-base64",
         cat_type: data.layout_json?.cat_type || "sitting"
       }
     };
 
     console.log('✅ === SUCCESSFUL CAT MASK GENERATION ===');
-    console.log('Final result:', result);
+    console.log('Final result imageUrl type:', result.imageUrl.startsWith('data:') ? 'base64' : 'local');
     
     toast.success('🐱 Cat mask created successfully!', {
       description: `AI generated a ${result.layoutJson.cat_type} cat design`
@@ -95,9 +80,7 @@ export async function generateMaskFromDrawing(
   } catch (error) {
     console.error('💥 === CAT MASK GENERATION FAILURE ===');
     console.error('Error details:', error);
-    console.error('Error stack:', error.stack);
     
-    // Enhanced fallback
     toast.error('❌ AI generation failed. Using demo cat mask.');
     return createEnhancedFallbackResponse();
   }

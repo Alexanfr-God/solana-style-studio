@@ -38,24 +38,16 @@ serve(async (req) => {
     
     // Step 2: Generate cat mask with DALL-E 3
     console.log("🎨 Step 2: Generating cat mask with DALL-E...");
-    const generatedImageUrl = await generateCatMask(catAnalysis, useStyleTransfer);
-    console.log("✅ Generated mask URL:", generatedImageUrl);
+    const dalleImageUrl = await generateCatMask(catAnalysis, useStyleTransfer);
+    console.log("✅ Generated DALL-E URL:", dalleImageUrl);
     
-    // Step 3: Verify the generated URL is accessible
-    console.log("🔍 Step 3: Verifying mask URL accessibility...");
-    try {
-      const testResponse = await fetch(generatedImageUrl, { method: 'HEAD' });
-      console.log(`URL test status: ${testResponse.status}`);
-      if (!testResponse.ok) {
-        throw new Error(`Generated URL not accessible: ${testResponse.status}`);
-      }
-    } catch (urlError) {
-      console.error("❌ URL verification failed:", urlError);
-      throw new Error("Generated mask URL is not accessible");
-    }
+    // Step 3: Download and convert to base64 immediately
+    console.log("📥 Step 3: Downloading and converting to base64...");
+    const base64Image = await downloadAndConvertToBase64(dalleImageUrl);
+    console.log("✅ Image converted to base64, length:", base64Image.length);
     
     const responseData = {
-      mask_image_url: generatedImageUrl,
+      imageUrl: base64Image, // Return base64 directly as imageUrl
       layout_json: {
         layout: {
           top: catAnalysis.hasHeadArea ? "AI-generated cat head with ears" : null,
@@ -67,12 +59,12 @@ serve(async (req) => {
         style: useStyleTransfer ? "stylized-cat" : "minimalist-cat",
         color_palette: catAnalysis.suggestedColors || ["#000000", "#ffffff"],
         cat_type: catAnalysis.catType || "sitting",
-        generation_method: "dall-e-3-verified"
+        generation_method: "dall-e-3-base64-converted"
       }
     };
 
-    console.log("✅ === SUCCESS: Cat mask generated and verified ===");
-    console.log("Response data:", JSON.stringify(responseData, null, 2));
+    console.log("✅ === SUCCESS: Cat mask generated and converted ===");
+    console.log("Response data keys:", Object.keys(responseData));
     
     return new Response(
       JSON.stringify(responseData),
@@ -88,12 +80,11 @@ serve(async (req) => {
     console.error("Error details:", error);
     console.error("Stack trace:", error.stack);
 
-    // Enhanced fallback with better debugging
-    const fallbackMask = '/external-masks/cats-mask.png';
-    console.log(`🚨 Using fallback mask: ${fallbackMask}`);
+    // Enhanced fallback with base64 local image
+    console.log(`🚨 Using fallback mask`);
     
     const fallbackResponse = {
-      mask_image_url: fallbackMask,
+      imageUrl: '/external-masks/cats-mask.png', // Use local fallback
       layout_json: {
         layout: {
           top: "Fallback cat head design",
@@ -113,7 +104,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify(fallbackResponse),
       {
-        status: 200, // Return 200 to avoid frontend errors
+        status: 200,
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
@@ -122,6 +113,27 @@ serve(async (req) => {
     );
   }
 });
+
+async function downloadAndConvertToBase64(imageUrl: string): Promise<string> {
+  try {
+    console.log("🔄 Downloading image from:", imageUrl);
+    
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status}`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const dataUrl = `data:image/png;base64,${base64}`;
+    
+    console.log("✅ Image successfully converted to base64");
+    return dataUrl;
+  } catch (error) {
+    console.error("❌ Failed to download and convert image:", error);
+    throw new Error(`Image download failed: ${error.message}`);
+  }
+}
 
 async function analyzeCatDrawing(drawingImageBase64: string): Promise<any> {
   try {
