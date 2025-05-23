@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,12 @@ const DrawToMaskCanvas = () => {
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { loginStyle } = useCustomizationStore();
-  const { setMaskImageUrl, setSafeZoneVisible, safeZoneVisible } = useMaskEditorStore();
+  const { 
+    setMaskImageUrl, 
+    setSafeZoneVisible, 
+    safeZoneVisible, 
+    setExternalMask 
+  } = useMaskEditorStore();
   
   const [activeTool, setActiveTool] = useState<DrawToolType>('brush');
   const [brushSize, setBrushSize] = useState(20);
@@ -54,7 +60,7 @@ const DrawToMaskCanvas = () => {
     const centerX = (CANVAS_SIZE - SAFE_ZONE.width) / 2;
     const centerY = (CANVAS_SIZE - SAFE_ZONE.height) / 2;
     
-    updateSafeZone(canvas, centerX, centerY);
+    updateSafeZone(canvas);
 
     // Position the wallet UI in the center of the canvas
     positionWalletPreview();
@@ -88,7 +94,7 @@ const DrawToMaskCanvas = () => {
     }
   }, [safeZoneVisible]);
 
-  const updateSafeZone = (canvas: fabric.Canvas, centerX: number, centerY: number) => {
+  const updateSafeZone = (canvas: fabric.Canvas) => {
     // Remove any existing safe zone rectangles
     const objects = canvas.getObjects();
     const existingSafeZone = objects.find(obj => obj.data?.isSafeZone === true);
@@ -96,12 +102,14 @@ const DrawToMaskCanvas = () => {
       canvas.remove(existingSafeZone);
     }
     
-    // Create new safe zone rectangle
+    // Create new safe zone rectangle perfectly aligned with the wallet preview
     const safeZoneRect = new fabric.Rect({
-      left: centerX,
-      top: centerY,
+      left: CANVAS_SIZE / 2,
+      top: CANVAS_SIZE / 2,
       width: SAFE_ZONE.width,
       height: SAFE_ZONE.height,
+      originX: 'center',
+      originY: 'center',
       fill: 'rgba(0, 0, 0, 0)',
       stroke: 'rgba(255, 0, 0, 0.5)',
       strokeWidth: 2,
@@ -156,10 +164,7 @@ const DrawToMaskCanvas = () => {
     canvas.clear();
     
     // Re-add safe zone rectangle
-    const centerX = (CANVAS_SIZE - SAFE_ZONE.width) / 2;
-    const centerY = (CANVAS_SIZE - SAFE_ZONE.height) / 2;
-    
-    updateSafeZone(canvas, centerX, centerY);
+    updateSafeZone(canvas);
     
     toast.success("Canvas cleared");
   };
@@ -178,6 +183,9 @@ const DrawToMaskCanvas = () => {
         quality: 1,
       });
       
+      // Clear any existing external mask to avoid rendering conflicts
+      setExternalMask(null);
+      
       // Send the drawing to the server for AI processing
       const result = await generateMaskFromDrawing(dataUrl);
       
@@ -189,6 +197,9 @@ const DrawToMaskCanvas = () => {
       setMaskImageUrl(result.imageUrl);
       
       toast.success("Mask generated successfully!");
+      
+      // Log the mask URL for debugging
+      console.log("Generated mask URL:", result.imageUrl);
     } catch (err) {
       console.error("Error generating mask:", err);
       toast.error("Failed to generate mask. Please try again.");

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
@@ -14,11 +14,24 @@ const V3MaskPreviewCanvas = () => {
     maskImageUrl // This will be used for custom full masks
   } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
+  
+  // Log mask URLs for debugging
+  useEffect(() => {
+    if (maskImageUrl) {
+      console.log("Current maskImageUrl:", maskImageUrl);
+    }
+    if (externalMask) {
+      console.log("Current externalMask:", externalMask);
+    }
+  }, [maskImageUrl, externalMask]);
 
   // For feedback purposes, we need to capture the final rendered image "URL"
   // Since we don't have an actual image URL for the canvas, we use a placeholder
   const previewImageUrl = externalMask || maskImageUrl || "/placeholder.svg";
   const previewPrompt = "Wallet mask customization";
+  
+  // Determine if a mask should be displayed
+  const shouldDisplayMask = Boolean(maskImageUrl || externalMask);
 
   return (
     <div className="relative w-full h-[800px] flex items-center justify-center">
@@ -51,7 +64,7 @@ const V3MaskPreviewCanvas = () => {
               </div>
             )}
             
-            {/* Regular mask (for backward compatibility) - also with cutout */}
+            {/* Regular mask (from draw-to-mask generator) - also with cutout */}
             {maskImageUrl && !externalMask && (
               <div 
                 className="absolute pointer-events-none z-20 inset-0"
@@ -104,6 +117,15 @@ const V3MaskPreviewCanvas = () => {
                 DEMO
               </Badge>
             </div>
+            
+            {/* Display message when no mask is present */}
+            {!shouldDisplayMask && (
+              <div className="absolute inset-0 flex items-center justify-center z-25 pointer-events-none">
+                <div className="bg-black/50 backdrop-blur-sm px-6 py-3 rounded-lg text-white text-sm">
+                  Draw and generate a mask to see it applied here
+                </div>
+              </div>
+            )}
           </WalletSceneContainer>
         </div>
       </ImageFeedbackWrapper>
