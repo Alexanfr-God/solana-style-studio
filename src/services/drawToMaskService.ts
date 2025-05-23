@@ -1,113 +1,54 @@
-import { supabase } from '@/integrations/supabase/client';
+import { createMaskFromDrawing, createStylizedMask } from './imageSegmentationService';
 import { toast } from 'sonner';
 
 /**
- * Analyzes a user drawing and generates a polished mask for wallet customization
+ * Enhanced mask generation using AI segmentation instead of DALL-E
  */
 export async function generateMaskFromDrawing(
-  drawingImageBase64: string
+  drawingImageBase64: string,
+  useStyleTransfer: boolean = false
 ): Promise<{ imageUrl: string; layoutJson: any } | undefined> {
   try {
-    console.log('🎨 === STARTING ENHANCED MASK GENERATION ===');
+    console.log('🎨 === STARTING ENHANCED AI MASK GENERATION ===');
     console.log('Drawing size:', drawingImageBase64.length);
+    console.log('Using style transfer:', useStyleTransfer);
     
-    // Create composite image with wallet + drawing
-    const compositeImageBase64 = await createCompositeImage(drawingImageBase64);
-    console.log('📸 Composite image created successfully');
+    // Use AI segmentation for precise mask creation
+    const maskImageUrl = useStyleTransfer 
+      ? await createStylizedMask(drawingImageBase64, "decorative wallet frame")
+      : await createMaskFromDrawing(drawingImageBase64);
     
-    // Create safe zone definition - for 1024x1024 square canvas with centered wallet
-    const safeZone = {
-      x: (1024 - 320) / 2,
-      y: (1024 - 569) / 2,
-      width: 320,
-      height: 569
-    };
-    
-    console.log('Wallet safe zone coordinates:', safeZone);
-    
-    // Call the enhanced Supabase function
-    let attempts = 0;
-    const maxAttempts = 2;
-    
-    while (attempts < maxAttempts) {
-      attempts++;
-      console.log(`🔄 Enhanced generation attempt ${attempts}/${maxAttempts}`);
-      
-      try {
-        const requestPayload = {
-          compositeImage: compositeImageBase64,
-          safeZone
-        };
-        
-        console.log('Sending enhanced request to Supabase function...');
-        const startTime = Date.now();
-        
-        const { data, error } = await supabase.functions.invoke('generate-mask-from-drawing', {
-          body: requestPayload
-        });
-
-        const endTime = Date.now();
-        console.log(`⏱️ Enhanced request completed in ${endTime - startTime}ms`);
-
-        if (error) {
-          console.error(`❌ Error on attempt ${attempts}:`, error);
-          if (attempts < maxAttempts) {
-            console.log('🔄 Retrying...');
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            continue;
-          }
-          throw new Error(`Failed to generate enhanced mask: ${error.message}`);
-        }
-
-        console.log('📦 Enhanced response data:', JSON.stringify(data, null, 2));
-
-        if (!data || !data.mask_image_url) {
-          console.error(`❌ Invalid enhanced response on attempt ${attempts}:`, data);
-          if (attempts < maxAttempts) {
-            console.log('🔄 Retrying...');
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            continue;
-          }
-          return createFallbackResponse();
-        }
-
-        const imageUrl = data.mask_image_url;
-        console.log('🖼️ Enhanced mask URL:', imageUrl);
-        
-        const result = {
-          imageUrl: imageUrl,
-          layoutJson: data.layout_json || {}
-        };
-
-        console.log('✅ === SUCCESSFUL ENHANCED MASK GENERATION ===');
-        console.log('Final enhanced result:', result);
-        
-        // Show enhanced success notification
-        toast.success('Enhanced AI mask generated!', {
-          description: 'Your drawing has been professionally enhanced with transparent center'
-        });
-        
-        return result;
-      } catch (attemptError) {
-        console.error(`❌ Error during enhanced attempt ${attempts}:`, attemptError);
-        if (attempts < maxAttempts) {
-          console.log('🔄 Retrying after enhanced error...');
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          continue;
-        }
-        
-        console.log('💀 All enhanced attempts failed, using fallback');
-        toast.error('Enhanced AI generation failed. Using backup mask.');
-        return createFallbackResponse();
+    const result = {
+      imageUrl: maskImageUrl,
+      layoutJson: {
+        layout: {
+          top: "AI-detected decorative elements from user drawing",
+          bottom: "AI-detected decorative elements from user drawing", 
+          left: "AI-detected decorative elements from user drawing",
+          right: "AI-detected decorative elements from user drawing",
+          core: "transparent"
+        },
+        style: "user-drawing-ai-enhanced",
+        color_palette: ["#ffffff", "#000000"], // Will be extracted from actual drawing
+        generation_method: useStyleTransfer ? "ai-segmentation-with-style" : "ai-segmentation-only"
       }
-    }
+    };
+
+    console.log('✅ === SUCCESSFUL AI MASK GENERATION ===');
+    console.log('Final result:', result);
     
-    return createFallbackResponse();
+    toast.success('ИИ маска успешно создана!', {
+      description: 'Ваш рисунок преобразован в профессиональную маску с прозрачным центром'
+    });
+    
+    return result;
     
   } catch (error) {
-    console.error('💥 === ENHANCED MASK GENERATION FAILURE ===');
-    console.error('Error in enhanced drawToMaskService:', error);
-    toast.error('Failed to generate enhanced mask. Please try again.');
+    console.error('💥 === AI MASK GENERATION FAILURE ===');
+    console.error('Error in AI mask generation:', error);
+    
+    // Fallback to predefined mask
+    toast.error('Ошибка создания ИИ маски. Используется запасная маска.');
     return createFallbackResponse();
   }
 }
