@@ -21,7 +21,8 @@ const DrawToMaskCanvas = () => {
     setMaskImageUrl, 
     setSafeZoneVisible, 
     safeZoneVisible, 
-    setExternalMask 
+    setExternalMask,
+    resetEditor
   } = useMaskEditorStore();
   
   const [activeTool, setActiveTool] = useState<DrawToolType>('brush');
@@ -56,10 +57,7 @@ const DrawToMaskCanvas = () => {
     freeDrawingBrush.color = '#ff3333'; // Red brush by default
     freeDrawingBrush.width = brushSize;
 
-    // Calculate center positions
-    const centerX = (CANVAS_SIZE - SAFE_ZONE.width) / 2;
-    const centerY = (CANVAS_SIZE - SAFE_ZONE.height) / 2;
-    
+    // Set proper safe zone positioning matching the wallet preview
     updateSafeZone(canvas);
 
     // Position the wallet UI in the center of the canvas
@@ -103,9 +101,10 @@ const DrawToMaskCanvas = () => {
     }
     
     // Create new safe zone rectangle perfectly aligned with the wallet preview
+    // Position it in the exact center of the canvas
     const safeZoneRect = new fabric.Rect({
-      left: CANVAS_SIZE / 2,
-      top: CANVAS_SIZE / 2,
+      left: CANVAS_SIZE / 2, // Center X position
+      top: CANVAS_SIZE / 2, // Center Y position
       width: SAFE_ZONE.width,
       height: SAFE_ZONE.height,
       originX: 'center',
@@ -122,6 +121,13 @@ const DrawToMaskCanvas = () => {
     
     canvas.add(safeZoneRect);
     canvas.renderAll();
+    
+    console.log("Safe zone updated - position:", {
+      x: CANVAS_SIZE / 2,
+      y: CANVAS_SIZE / 2,
+      width: SAFE_ZONE.width,
+      height: SAFE_ZONE.height
+    });
   };
   
   const positionWalletPreview = () => {
@@ -177,14 +183,16 @@ const DrawToMaskCanvas = () => {
       setIsGenerating(true);
       const canvas = fabricCanvasRef.current;
       
+      // Reset mask state completely first - important for proper rerender
+      resetEditor();
+      
+      console.log("🔄 State reset before mask generation");
+      
       // Convert canvas to image
       const dataUrl = canvas.toDataURL({
         format: 'png',
         quality: 1,
       });
-      
-      // Clear any existing external mask to avoid rendering conflicts
-      setExternalMask(null);
       
       // Send the drawing to the server for AI processing
       const result = await generateMaskFromDrawing(dataUrl);
@@ -193,13 +201,15 @@ const DrawToMaskCanvas = () => {
         throw new Error("Failed to generate mask");
       }
       
-      // Set the generated mask in the store
-      setMaskImageUrl(result.imageUrl);
+      // Add a slight delay to ensure the reset has fully processed
+      setTimeout(() => {
+        // Set the generated mask in the store
+        console.log("🎨 Setting new mask URL:", result.imageUrl);
+        setMaskImageUrl(result.imageUrl);
+        
+        toast.success("Mask generated successfully!");
+      }, 100);
       
-      toast.success("Mask generated successfully!");
-      
-      // Log the mask URL for debugging
-      console.log("Generated mask URL:", result.imageUrl);
     } catch (err) {
       console.error("Error generating mask:", err);
       toast.error("Failed to generate mask. Please try again.");
@@ -281,7 +291,9 @@ const DrawToMaskCanvas = () => {
         
         {/* Wallet preview positioned underneath the canvas */}
         <div className="wallet-preview-container absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
-          <LoginScreen style={loginStyle} />
+          <div className="wallet-preview">
+            <LoginScreen style={loginStyle} />
+          </div>
         </div>
       </div>
       

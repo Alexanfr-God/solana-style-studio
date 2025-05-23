@@ -1,27 +1,45 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { WalletSceneContainer } from '@/components/wallet/WalletSceneContainer';
 import { Badge } from '@/components/ui/badge';
 import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 const V3MaskPreviewCanvas = () => {
   const { 
     safeZoneVisible, 
     externalMask,
-    maskImageUrl // This will be used for custom full masks
+    maskImageUrl, // This will be used for custom full masks
+    resetEditor
   } = useMaskEditorStore();
+  
   const { loginStyle } = useCustomizationStore();
+  
+  const [masksLoaded, setMasksLoaded] = useState({
+    external: false,
+    custom: false
+  });
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   
   // Log mask URLs for debugging
   useEffect(() => {
+    console.log("🎭 Mask State Update:");
+    console.log("  - maskImageUrl:", maskImageUrl);
+    console.log("  - externalMask:", externalMask);
+    console.log("  - Should show mask:", Boolean(maskImageUrl || externalMask));
+    
+    // Reset loading states when URLs change
     if (maskImageUrl) {
-      console.log("Current maskImageUrl:", maskImageUrl);
+      setMasksLoaded(prev => ({ ...prev, custom: false }));
+      setLoadingError(null);
     }
+    
     if (externalMask) {
-      console.log("Current externalMask:", externalMask);
+      setMasksLoaded(prev => ({ ...prev, external: false }));
+      setLoadingError(null);
     }
   }, [maskImageUrl, externalMask]);
 
@@ -32,6 +50,29 @@ const V3MaskPreviewCanvas = () => {
   
   // Determine if a mask should be displayed
   const shouldDisplayMask = Boolean(maskImageUrl || externalMask);
+  
+  // Handle image load events
+  const handleImageLoaded = (type: 'external' | 'custom') => {
+    console.log(`🖼️ ${type} mask image loaded successfully`);
+    setMasksLoaded(prev => ({
+      ...prev,
+      [type]: true
+    }));
+  };
+  
+  // Handle image error events
+  const handleImageError = (type: 'external' | 'custom', e: React.SyntheticEvent<HTMLImageElement>) => {
+    const url = type === 'external' ? externalMask : maskImageUrl;
+    console.error(`❌ Failed to load ${type} mask image:`, url, e);
+    setLoadingError(`Failed to load ${type} mask image. Please try again.`);
+    
+    // Reset the failing mask URL to clear the error state
+    if (type === 'external' && externalMask) {
+      setTimeout(() => resetEditor(), 500);
+    } else if (type === 'custom' && maskImageUrl) {
+      setTimeout(() => resetEditor(), 500);
+    }
+  };
 
   return (
     <div className="relative w-full h-[800px] flex items-center justify-center">
@@ -60,6 +101,8 @@ const V3MaskPreviewCanvas = () => {
                   src={externalMask} 
                   alt="External mask" 
                   className="w-full h-full object-cover"
+                  onLoad={() => handleImageLoaded('external')}
+                  onError={(e) => handleImageError('external', e)}
                 />
               </div>
             )}
@@ -85,6 +128,8 @@ const V3MaskPreviewCanvas = () => {
                   src={maskImageUrl} 
                   alt="Full mask overlay" 
                   className="w-full h-full object-cover"
+                  onLoad={() => handleImageLoaded('custom')}
+                  onError={(e) => handleImageError('custom', e)}
                 />
               </div>
             )}
@@ -124,6 +169,39 @@ const V3MaskPreviewCanvas = () => {
                 <div className="bg-black/50 backdrop-blur-sm px-6 py-3 rounded-lg text-white text-sm">
                   Draw and generate a mask to see it applied here
                 </div>
+              </div>
+            )}
+            
+            {/* Loading indicator */}
+            {shouldDisplayMask && (
+              (externalMask && !masksLoaded.external) || 
+              (maskImageUrl && !masksLoaded.custom && !externalMask)
+            ) && (
+              <div className="absolute inset-0 flex items-center justify-center z-35 pointer-events-none">
+                <div className="bg-black/50 backdrop-blur-sm px-6 py-3 rounded-lg text-white flex items-center">
+                  <Loader2 className="animate-spin mr-2" size={16} />
+                  Loading your custom mask...
+                </div>
+              </div>
+            )}
+            
+            {/* Error message */}
+            {loadingError && (
+              <div className="absolute inset-0 flex items-center justify-center z-35 pointer-events-none">
+                <div className="bg-red-500/80 backdrop-blur-sm px-6 py-3 rounded-lg text-white flex items-center">
+                  <AlertCircle className="mr-2" size={16} />
+                  {loadingError}
+                </div>
+              </div>
+            )}
+            
+            {/* Debug overlay (only in development) */}
+            {process.env.NODE_ENV === 'development' && shouldDisplayMask && (
+              <div className="absolute bottom-2 left-2 text-xs bg-black/80 text-white rounded p-2 max-w-[400px] z-60 overflow-hidden">
+                <div><strong>Debug:</strong></div>
+                <div className="truncate">maskImageUrl: {maskImageUrl || 'null'}</div>
+                <div className="truncate">externalMask: {externalMask || 'null'}</div>
+                <div>Loaded: {(externalMask && masksLoaded.external) || (maskImageUrl && masksLoaded.custom) ? '✅' : '❌'}</div>
               </div>
             )}
           </WalletSceneContainer>
