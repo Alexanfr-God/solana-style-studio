@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
@@ -74,9 +75,9 @@ const V3MaskPreviewCanvas = () => {
   };
 
   return (
-    <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
-      <div className="relative w-full h-[800px] flex items-center justify-center">
-        <div className="relative">
+    <div className="relative w-full h-[800px] flex items-center justify-center">
+      <div className="relative">
+        <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
           {/* New scene container with larger area for external masks */}
           <WalletSceneContainer style={loginStyle}>
             {/* External mask layer - positioned ONLY around the wallet, not over it */}
@@ -204,9 +205,9 @@ const V3MaskPreviewCanvas = () => {
               </div>
             )}
           </WalletSceneContainer>
-        </div>
+        </ImageFeedbackWrapper>
       </div>
-    </ImageFeedbackWrapper>
+    </div>
   );
 };
 
