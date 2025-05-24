@@ -14,21 +14,19 @@ const V3MaskPreviewCanvas = () => {
   } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
-  // V3 Enhanced mask cutout URL
+  // Updated V3 Enhanced mask cutout URL with proper coordinates
   const MASK_CUTOUT_URL = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-wallet-cutout-v3.png';
 
   const previewImageUrl = externalMask || maskImageUrl || "/placeholder.svg";
   const previewPrompt = "V3 Enhanced wallet mask with optimized coordinates and sizing";
 
-  // V3 Enhanced: Container and wallet dimensions
-  const CONTAINER_WIDTH = 480;
-  const CONTAINER_HEIGHT = 854;
+  // V3 Enhanced: Output coordinates (1024x1024 canvas)
+  const OUTPUT_WIDTH = 1024;
+  const OUTPUT_HEIGHT = 1024;
   const WALLET_WIDTH = 320;
   const WALLET_HEIGHT = 569;
-  
-  // V3 Enhanced: Safe zone coordinates (centered in container)
-  const SAFE_ZONE_X = (CONTAINER_WIDTH - WALLET_WIDTH) / 2; // 80
-  const SAFE_ZONE_Y = (CONTAINER_HEIGHT - WALLET_HEIGHT) / 2; // 142.5 ≈ 142
+  const WALLET_X = 352; // Centered in 1024x1024 canvas
+  const WALLET_Y = 228; // Centered in 1024x1024 canvas
 
   // Debug logging
   useEffect(() => {
@@ -36,9 +34,9 @@ const V3MaskPreviewCanvas = () => {
       externalMask: externalMask ? 'loaded' : 'null',
       maskImageUrl: maskImageUrl ? 'loaded' : 'null',
       safeZoneVisible,
-      containerDimensions: `${CONTAINER_WIDTH}x${CONTAINER_HEIGHT}`,
+      outputDimensions: `${OUTPUT_WIDTH}x${OUTPUT_HEIGHT}`,
       walletDimensions: `${WALLET_WIDTH}x${WALLET_HEIGHT}`,
-      safeZonePosition: `x=${SAFE_ZONE_X}, y=${SAFE_ZONE_Y}`,
+      walletPosition: `x=${WALLET_X}, y=${WALLET_Y}`,
       maskCutoutUrl: MASK_CUTOUT_URL
     });
   }, [externalMask, maskImageUrl, safeZoneVisible]);
@@ -46,12 +44,13 @@ const V3MaskPreviewCanvas = () => {
   return (
     <div className="relative w-full h-[800px] flex items-center justify-center bg-black/20 rounded-xl overflow-hidden">
       <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
-        {/* V3 Enhanced main preview container */}
+        {/* V3 Enhanced main preview container - 1024x1024 output simulation */}
         <div 
           className="relative" 
           style={{ 
-            width: `${CONTAINER_WIDTH}px`, 
-            height: `${CONTAINER_HEIGHT}px` 
+            width: `${OUTPUT_WIDTH * 0.6}px`, // Scale down for preview
+            height: `${OUTPUT_HEIGHT * 0.6}px`,
+            transform: 'scale(0.8)' // Additional scaling for better fit
           }}
         >
           
@@ -64,8 +63,8 @@ const V3MaskPreviewCanvas = () => {
                 height: '100%',
                 maskImage: `url('${MASK_CUTOUT_URL}')`,
                 WebkitMaskImage: `url('${MASK_CUTOUT_URL}')`,
-                maskSize: 'cover',
-                WebkitMaskSize: 'cover',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
                 maskPosition: 'center',
                 WebkitMaskPosition: 'center',
                 maskRepeat: 'no-repeat',
@@ -75,12 +74,11 @@ const V3MaskPreviewCanvas = () => {
               <img 
                 src={externalMask} 
                 alt="V3 Enhanced decorative mask" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.15))',
-                  objectFit: 'cover'
                 }}
-                onLoad={() => console.log('✅ V3 Enhanced external mask loaded:', externalMask)}
+                onLoad={() => console.log('✅ V3 Enhanced external mask loaded with new cutout:', externalMask)}
                 onError={(e) => console.error('❌ V3 Enhanced external mask failed:', externalMask, e)}
               />
             </div>
@@ -95,8 +93,8 @@ const V3MaskPreviewCanvas = () => {
                 height: '100%',
                 maskImage: `url('${MASK_CUTOUT_URL}')`,
                 WebkitMaskImage: `url('${MASK_CUTOUT_URL}')`,
-                maskSize: 'cover',
-                WebkitMaskSize: 'cover',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
                 maskPosition: 'center',
                 WebkitMaskPosition: 'center',
                 maskRepeat: 'no-repeat',
@@ -106,21 +104,21 @@ const V3MaskPreviewCanvas = () => {
               <img 
                 src={maskImageUrl} 
                 alt="Legacy mask overlay" 
-                className="w-full h-full object-cover"
-                onLoad={() => console.log('✅ Legacy mask loaded:', maskImageUrl)}
+                className="w-full h-full object-contain"
+                onLoad={() => console.log('✅ Legacy mask loaded with new cutout:', maskImageUrl)}
                 onError={(e) => console.error('❌ Legacy mask failed:', maskImageUrl, e)}
               />
             </div>
           )}
           
-          {/* V3 Enhanced wallet UI container */}
+          {/* V3 Enhanced wallet UI container - positioned at exact coordinates */}
           <div 
             className="absolute z-20"
             style={{
-              width: `${WALLET_WIDTH}px`,
-              height: `${WALLET_HEIGHT}px`,
-              left: `${SAFE_ZONE_X}px`,
-              top: `${SAFE_ZONE_Y}px`,
+              width: `${WALLET_WIDTH * 0.6}px`, // Scale to match container
+              height: `${WALLET_HEIGHT * 0.6}px`,
+              left: `${WALLET_X * 0.6}px`, // Scale coordinates
+              top: `${WALLET_Y * 0.6}px`,
               backgroundColor: loginStyle.backgroundColor || '#131313',
               backgroundImage: loginStyle.backgroundImage,
               backgroundSize: 'cover',
@@ -140,10 +138,10 @@ const V3MaskPreviewCanvas = () => {
             <div 
               className="absolute z-30 pointer-events-none"
               style={{
-                width: `${WALLET_WIDTH}px`,
-                height: `${WALLET_HEIGHT}px`,
-                left: `${SAFE_ZONE_X}px`,
-                top: `${SAFE_ZONE_Y}px`,
+                width: `${WALLET_WIDTH * 0.6}px`,
+                height: `${WALLET_HEIGHT * 0.6}px`,
+                left: `${WALLET_X * 0.6}px`,
+                top: `${WALLET_Y * 0.6}px`,
                 border: '2px solid #10b981',
                 borderRadius: '16px',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -156,7 +154,7 @@ const V3MaskPreviewCanvas = () => {
                 V3 Enhanced
               </div>
               <div className="absolute bottom-2 right-2 bg-green-500/70 px-2 py-1 rounded text-xs text-green-200">
-                x={SAFE_ZONE_X}, y={SAFE_ZONE_Y}
+                x={WALLET_X}, y={WALLET_Y}
               </div>
             </div>
           )}
@@ -187,7 +185,7 @@ const V3MaskPreviewCanvas = () => {
               <Badge 
                 className="bg-blue-500/80 text-white px-2 py-1 text-xs"
               >
-                🎭 V3 Active ({CONTAINER_WIDTH}×{CONTAINER_HEIGHT})
+                🎭 V3 Active ({OUTPUT_WIDTH}×{OUTPUT_HEIGHT})
               </Badge>
             </div>
           )}
@@ -198,7 +196,18 @@ const V3MaskPreviewCanvas = () => {
               <Badge 
                 className="bg-yellow-500/80 text-black px-2 py-1 text-xs font-mono"
               >
-                Safe: {SAFE_ZONE_X},{SAFE_ZONE_Y}
+                Wallet: {WALLET_X},{WALLET_Y}
+              </Badge>
+            </div>
+          )}
+
+          {/* Cutout mask indicator */}
+          {externalMask && (
+            <div className="absolute top-1/2 left-4 z-40">
+              <Badge 
+                className="bg-emerald-500/80 text-white px-2 py-1 text-xs"
+              >
+                🎭 Cutout Applied
               </Badge>
             </div>
           )}

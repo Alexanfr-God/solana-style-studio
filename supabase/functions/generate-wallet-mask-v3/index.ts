@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -47,7 +46,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 V3 Enhanced mask generation started');
+    console.log('🚀 V3 Enhanced mask generation started with updated cutout');
     
     const openAiKey = Deno.env.get("OPENAI_API_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -74,19 +73,16 @@ serve(async (req) => {
       safe_zone_height = 569
     } = await req.json() as MaskRequest;
 
-    // Calculate scaled coordinates for 1024x1024 output
-    const scaleX = output_size / container_width;
-    const scaleY = output_size / container_height;
-    
+    // V3 Enhanced: Fixed coordinates for 1024x1024 output
     const OUTPUT_SAFE_ZONE = {
-      x: Math.round(safe_zone_x * scaleX),
-      y: Math.round(safe_zone_y * scaleY),
-      width: Math.round(safe_zone_width * scaleX),
-      height: Math.round(safe_zone_height * scaleY)
+      x: 352, // Fixed center position in 1024x1024
+      y: 228, // Fixed center position in 1024x1024
+      width: 320, // Fixed wallet width
+      height: 569 // Fixed wallet height
     };
 
-    console.log(`📐 Coordinate mapping: Container(${container_width}x${container_height}) -> Output(${output_size}x${output_size})`);
-    console.log(`📐 Safe zone: (${safe_zone_x},${safe_zone_y}) -> (${OUTPUT_SAFE_ZONE.x},${OUTPUT_SAFE_ZONE.y})`);
+    console.log(`📐 V3 Enhanced coordinate mapping: Container(${container_width}x${container_height}) -> Output(${output_size}x${output_size})`);
+    console.log(`📐 V3 Fixed safe zone: x=${OUTPUT_SAFE_ZONE.x}, y=${OUTPUT_SAFE_ZONE.y}, ${OUTPUT_SAFE_ZONE.width}x${OUTPUT_SAFE_ZONE.height}`);
     console.log(`🎨 Processing ${style} style with prompt: "${prompt}"`);
 
     // Step 1: Enhanced GPT-4o analysis
@@ -116,7 +112,7 @@ serve(async (req) => {
         console.log(`📝 Enhanced prompt created (${enhancedPrompt.length} chars)`);
         
         maskImageUrl = await generateMaskWithDallE(enhancedPrompt, openAiKey);
-        console.log("✅ Mask generated successfully");
+        console.log("✅ Mask generated successfully with updated coordinates");
         break;
         
       } catch (error) {
@@ -155,14 +151,14 @@ serve(async (req) => {
       safeZone: OUTPUT_SAFE_ZONE,
       containerDimensions: { width: container_width, height: container_height },
       outputImageSize: `${output_size}x${output_size}`,
-      coordinateMapping: `Container(${container_width}x${container_height}) -> Output(${output_size}x${output_size})`,
-      scaleFactors: { x: scaleX, y: scaleY },
+      fixedCoordinates: `Wallet at (${OUTPUT_SAFE_ZONE.x}, ${OUTPUT_SAFE_ZONE.y})`,
       promptLength: prompt.length,
       hasReferenceImage: !!reference_image_url,
       hasStyleHint: !!style_hint_image_url,
       attempts: attempts,
       walletBaseUsed: WALLET_BASE_IMAGE,
-      final_prompt: layoutAnalysis.enhanced_prompt || "Not available"
+      final_prompt: layoutAnalysis.enhanced_prompt || "Not available",
+      cutoutApplied: "mask-wallet-cutout-v3.png with center transparency"
     };
 
     const response: MaskResponse = {
@@ -183,7 +179,7 @@ serve(async (req) => {
       await storeMaskResult(user_id, response, reference_image_url, style_hint_image_url, supabaseUrl, supabaseKey);
     }
 
-    console.log("🎉 V3 Enhanced mask generation completed successfully");
+    console.log("🎉 V3 Enhanced mask generation completed successfully with new cutout mask");
     
     return new Response(
       JSON.stringify(response),
@@ -216,16 +212,18 @@ async function analyzeWithGPT(
   style: string,
   safeZone: any
 ) {
-  console.log("🧠 Starting enhanced GPT-4o analysis");
+  console.log("🧠 Starting enhanced GPT-4o analysis with fixed coordinates");
   
   const analysisPrompt = `Analyze images and create a structured design plan for a wallet mask decoration.
 
 MAIN TASK: "${prompt}" - This is the primary creative direction!
 
-SAFE ZONE: The central area at coordinates x=${safeZone.x}, y=${safeZone.y} with size ${safeZone.width}x${safeZone.height} pixels MUST remain completely transparent.
+CRITICAL COORDINATES: The central area at coordinates x=${safeZone.x}, y=${safeZone.y} with size ${safeZone.width}x${safeZone.height} pixels MUST remain completely transparent.
 
 OUTPUT FORMAT: 1024x1024 pixels
 STYLE: ${style}
+
+Focus on creating decorative elements around the specified transparent center area.
 
 Please analyze the provided images and respond with a structured JSON containing:
 
@@ -242,7 +240,7 @@ Please analyze the provided images and respond with a structured JSON containing
   "enhanced_prompt": "optimized prompt for DALL-E generation"
 }
 
-Focus on creating decorative elements that complement the wallet UI while keeping the center transparent.`;
+The transparent center will be handled by a separate cutout mask.`;
 
   const messages = [
     {
@@ -285,7 +283,7 @@ Focus on creating decorative elements that complement the wallet UI while keepin
   const data = await response.json();
   const result = JSON.parse(data.choices[0].message.content);
   
-  console.log("🎯 GPT-4o analysis result:", JSON.stringify(result, null, 2));
+  console.log("🎯 GPT-4o analysis result with fixed coordinates:", JSON.stringify(result, null, 2));
   
   return {
     layout: result.layout || getDefaultLayout(safeZone),
@@ -309,7 +307,7 @@ function createOptimizedPrompt(prompt: string, analysis: any, style: string, saf
   const enhancedPrompt = analysis.enhanced_prompt || prompt;
   const colors = analysis.color_palette.join(", ");
   
-  return `Create a decorative wallet mask with the following specifications:
+  return `Create a decorative wallet mask background with the following specifications:
 
 PRIMARY CREATIVE DIRECTION: "${enhancedPrompt}"
 
@@ -317,25 +315,25 @@ Style: ${styleModifiers[style]}
 Color palette: ${colors}
 
 Layout design:
-- Top area (above wallet): ${analysis.layout.top}
-- Bottom area (below wallet): ${analysis.layout.bottom}
+- Top area: ${analysis.layout.top}
+- Bottom area: ${analysis.layout.bottom}
 - Left side: ${analysis.layout.left}
 - Right side: ${analysis.layout.right}
 
-CRITICAL REQUIREMENT: The central rectangle at coordinates x=${safeZone.x}, y=${safeZone.y} with dimensions ${safeZone.width}x${safeZone.height} pixels MUST be completely transparent (alpha=0).
+IMPORTANT: Fill the entire 1024x1024 canvas with decorative elements. The central area at coordinates x=${safeZone.x}, y=${safeZone.y} with dimensions ${safeZone.width}x${safeZone.height} pixels will be made transparent by a separate cutout mask, so you can draw over this area.
 
 Technical specs:
-- Output: 1024x1024 PNG with alpha channel
-- Transparent center for wallet UI visibility
-- Decorative elements only around the edges
+- Output: 1024x1024 PNG 
+- Fill entire canvas with decorative background
 - No text or letters in the image
 - High quality detailed artwork
+- The transparent center will be applied separately
 
-Create a stunning decorative frame around the wallet while keeping the center transparent.`;
+Create a stunning decorative background that fills the entire canvas.`;
 }
 
 async function generateMaskWithDallE(prompt: string, apiKey: string): Promise<string> {
-  console.log("🎨 Calling DALL-E 3 API");
+  console.log("🎨 Calling DALL-E 3 API with updated prompt");
   
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
