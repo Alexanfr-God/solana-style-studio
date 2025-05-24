@@ -1,45 +1,41 @@
 
 import React from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
-import { cn } from '@/lib/utils';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Layers } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 const MaskLayerSelector = () => {
   const { activeLayer, setActiveLayer } = useMaskEditorStore();
 
-  const handleLayerChange = (value: string) => {
-    setActiveLayer(value as 'login' | 'wallet');
+  const handleLayerChange = (layer: 'background' | 'foreground') => {
+    setActiveLayer(layer);
   };
 
   return (
-    <div className="flex flex-col space-y-2">
-      <div className="flex items-center space-x-2 mb-1">
-        <Layers className="h-5 w-5 text-white" />
-        <h3 className="text-sm font-medium text-white">Select Mask Layer</h3>
+    <div className="space-y-2">
+      <Label className="text-sm text-white/80">
+        Active Layer
+      </Label>
+      
+      <div className="flex gap-2">
+        <Button
+          variant={activeLayer === 'background' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleLayerChange('background')}
+          className="flex-1"
+        >
+          Background
+        </Button>
+        
+        <Button
+          variant={activeLayer === 'foreground' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleLayerChange('foreground')}
+          className="flex-1"
+        >
+          Foreground
+        </Button>
       </div>
-      <Tabs value={activeLayer} onValueChange={handleLayerChange}>
-        <TabsList className="w-full bg-white/10">
-          <TabsTrigger 
-            value="login" 
-            className={cn(
-              "w-full text-white", 
-              activeLayer === "login" ? "bg-primary text-primary-foreground" : "bg-transparent"
-            )}
-          >
-            Login Mask
-          </TabsTrigger>
-          <TabsTrigger 
-            value="wallet" 
-            className={cn(
-              "w-full text-white", 
-              activeLayer === "wallet" ? "bg-primary text-primary-foreground" : "bg-transparent"
-            )}
-          >
-            Wallet Mask
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
     </div>
   );
 };
