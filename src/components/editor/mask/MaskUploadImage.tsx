@@ -1,16 +1,9 @@
 
 import React, { useRef, useState } from 'react';
-import { Upload, Loader2, X, Image as ImageIcon, ZoomIn } from 'lucide-react';
+import { Upload, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
-import { 
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose
-} from '@/components/ui/dialog';
 
 interface MaskUploadImageProps {
   disabled?: boolean;
@@ -66,7 +59,6 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
       setIsAnalyzing(true);
       
       // Set a default prompt based on the image type
-      // In a real implementation, you would analyze the image with AI
       setTimeout(() => {
         const imageType = file.name.toLowerCase().includes('abstract') 
           ? 'abstract pattern' 
@@ -76,7 +68,7 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
         
         setPrompt(`Create a ${imageType} wallet costume based on the uploaded image`);
         setIsAnalyzing(false);
-        toast.success('Image analyzed and uploaded successfully');
+        toast.success('Image uploaded successfully - check the wallet preview');
       }, 1500);
       
     } catch (error) {
@@ -93,6 +85,7 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
   const handleRemoveImage = () => {
     setExternalMask(null);
     setMaskImageUrl(null);
+    toast.success('Mask removed from wallet preview');
   };
   
   const hasImage = externalMask || maskImageUrl;
@@ -109,7 +102,7 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
       
       {hasImage ? (
         <div className="flex flex-col gap-2">
-          <div className="relative w-full h-32 bg-black/20 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden">
+          <div className="relative w-full h-20 bg-black/20 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden">
             <img
               src={externalMask || maskImageUrl || ''}
               alt="Uploaded mask"
@@ -118,37 +111,10 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
             
             {isAnalyzing && (
               <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-purple-400 mb-2" />
-                <p className="text-xs text-white/80">Analyzing image...</p>
+                <Loader2 className="h-4 w-4 animate-spin text-purple-400 mb-1" />
+                <p className="text-xs text-white/80">Processing...</p>
               </div>
             )}
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="absolute top-2 right-2 h-7 w-7 p-0 bg-black/40 border-white/20"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md bg-black/90 border-white/10">
-                <DialogTitle className="text-white">Preview Image</DialogTitle>
-                <div className="flex items-center justify-center p-4">
-                  <img
-                    src={externalMask || maskImageUrl || ''}
-                    alt="Mask preview"
-                    className="max-w-full max-h-[400px] object-contain"
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <DialogClose asChild>
-                    <Button variant="outline">Close</Button>
-                  </DialogClose>
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
           
           <div className="flex gap-2">
@@ -178,19 +144,19 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
       ) : (
         <Button
           variant="outline"
-          className="w-full h-32 border-dashed border-white/20 flex flex-col items-center justify-center gap-2"
+          className="w-full h-20 border-dashed border-white/20 flex flex-col items-center justify-center gap-1"
           onClick={handleUploadClick}
           disabled={disabled || isLoading}
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="text-sm">Uploading...</span>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-xs">Uploading...</span>
             </>
           ) : (
             <>
-              <Upload className="h-6 w-6" />
-              <span className="text-sm">Upload your own mask image</span>
+              <Upload className="h-5 w-5" />
+              <span className="text-xs">Upload mask image</span>
               <span className="text-xs text-white/50">(PNG, JPG, SVG or WEBP)</span>
             </>
           )}
@@ -199,7 +165,7 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
       
       {hasImage && !isAnalyzing && (
         <p className="text-xs text-white/60 mt-2 italic">
-          Tip: The AI will use your image as inspiration when generating a costume.
+          ✓ Image loaded - check the wallet preview to see your mask
         </p>
       )}
     </div>

@@ -5,21 +5,23 @@ import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bug } from 'lucide-react';
+import { Bug, Eye, EyeOff } from 'lucide-react';
 import MintNftButton from './ExportToIpfsButton';
 import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
-  const { externalMask } = useMaskEditorStore();
+  const { externalMask, safeZoneVisible, setSafeZoneVisible } = useMaskEditorStore();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
   const [debugMode, setDebugMode] = useState(false);
 
   // For feedback purposes, create placeholder values
-  const previewImageUrl = "/placeholder.svg";
+  const previewImageUrl = externalMask || "/placeholder.svg";
   const previewPrompt = "Dual wallet preview with custom styling";
 
-  console.log('DualWalletPreview rendering with V3 mask:', { externalMask });
+  console.log('DualWalletPreview rendering with V3 mask:', { externalMask, safeZoneVisible });
+
+  const hasActiveMask = !!externalMask;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -35,6 +37,7 @@ const DualWalletPreview = () => {
               <div>Wallet Style: Active</div>
               <div>V3 External Mask: {externalMask ? 'Applied' : 'None'}</div>
               {externalMask && <div>Mask URL: {externalMask}</div>}
+              <div>Safe Zone Visible: {safeZoneVisible ? 'Yes' : 'No'}</div>
             </div>
           </div>
         )}
@@ -44,6 +47,9 @@ const DualWalletPreview = () => {
           <div className="flex flex-col h-full">
             <div className="text-center mb-2">
               <h3 className="text-lg font-medium text-white/90">Login View</h3>
+              {hasActiveMask && (
+                <p className="text-xs text-purple-300">Custom costume applied</p>
+              )}
             </div>
             <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center relative">
               {/* V3 Mask overlay for Login View */}
@@ -71,18 +77,37 @@ const DualWalletPreview = () => {
                 </div>
               )}
               
-              <div className="relative z-40">
+              {/* Safe zone visualization */}
+              {safeZoneVisible && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-40">
+                  <div className="border-2 border-purple-500/50 rounded-2xl bg-purple-500/5"
+                    style={{
+                      width: '320px',
+                      height: '569px'
+                    }}>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-purple-500/20 px-2 py-1 rounded text-xs text-purple-300 whitespace-nowrap">
+                      Protected UI Zone (320×569px)
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="relative z-50">
                 <LoginScreen style={loginStyle} />
               </div>
             </div>
           </div>
           
           {/* DEMO Badge */}
-          <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+          <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-60">
             <Badge 
-              className="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(153,69,255,0.5)] border-white/20 rotate-[-10deg] scale-125"
+              className={`px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(153,69,255,0.5)] border-white/20 rotate-[-10deg] scale-125 ${
+                hasActiveMask 
+                  ? 'bg-gradient-to-r from-yellow-500 to-purple-700 text-white' 
+                  : 'bg-gradient-to-r from-purple-500 to-purple-700 text-white'
+              }`}
             >
-              {externalMask ? 'V3 DEMO' : 'DEMO'}
+              {hasActiveMask ? 'CUSTOM DEMO' : 'DEMO'}
             </Badge>
           </div>
           
@@ -90,6 +115,9 @@ const DualWalletPreview = () => {
           <div className="flex flex-col h-full">
             <div className="text-center mb-2">
               <h3 className="text-lg font-medium text-white/90">Wallet View</h3>
+              {hasActiveMask && (
+                <p className="text-xs text-purple-300">Custom costume applied</p>
+              )}
             </div>
             <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center relative">
               {/* V3 Mask overlay for Wallet View */}
@@ -117,7 +145,22 @@ const DualWalletPreview = () => {
                 </div>
               )}
               
-              <div className="relative z-40">
+              {/* Safe zone visualization */}
+              {safeZoneVisible && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-40">
+                  <div className="border-2 border-purple-500/50 rounded-2xl bg-purple-500/5"
+                    style={{
+                      width: '320px',
+                      height: '569px'
+                    }}>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-purple-500/20 px-2 py-1 rounded text-xs text-purple-300 whitespace-nowrap">
+                      Protected UI Zone (320×569px)
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="relative z-50">
                 <WalletScreen style={walletStyle} />
               </div>
             </div>
@@ -136,6 +179,16 @@ const DualWalletPreview = () => {
           >
             <Bug className="mr-2 h-3 w-3" />
             {debugMode ? "Debug: ON" : "Debug: OFF"}
+          </Button>
+          
+          <Button
+            variant={safeZoneVisible ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSafeZoneVisible(!safeZoneVisible)}
+            className="border-white/10"
+          >
+            {safeZoneVisible ? <Eye className="mr-2 h-3 w-3" /> : <EyeOff className="mr-2 h-3 w-3" />}
+            Safe Zone: {safeZoneVisible ? "ON" : "OFF"}
           </Button>
         </div>
         
