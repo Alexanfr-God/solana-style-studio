@@ -6,19 +6,32 @@ interface WalletSceneContainerProps {
   style: WalletStyle;
   children: ReactNode;
   className?: string;
+  renderMode?: 'scene' | 'direct';
 }
 
 /**
  * Container for wallet UI with extended area for external masks
- * Central fixed size: 320px width x 569px height
- * Scene size is larger to accommodate decorative elements
+ * Now supports both scene mode (with larger container) and direct mode
  */
-export const WalletSceneContainer = ({ style, children, className = "" }: WalletSceneContainerProps) => {
-  // Fixed wallet dimensions - these are crucial for proper mask alignment
+export const WalletSceneContainer = ({ 
+  style, 
+  children, 
+  className = "",
+  renderMode = 'scene'
+}: WalletSceneContainerProps) => {
+  
+  if (renderMode === 'direct') {
+    // Direct rendering without scene wrapper (for V3 mask mode)
+    return (
+      <div className={`wallet-scene-direct ${className}`}>
+        {children}
+      </div>
+    );
+  }
+
+  // Original scene mode with larger container
   const WALLET_WIDTH = 320;
   const WALLET_HEIGHT = 569;
-  
-  // Scene is larger than wallet to accommodate external masks
   const SCENE_WIDTH = WALLET_WIDTH * 1.5;
   const SCENE_HEIGHT = WALLET_HEIGHT * 1.5;
 
