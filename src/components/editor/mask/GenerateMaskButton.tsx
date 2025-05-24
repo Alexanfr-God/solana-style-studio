@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
-import { Wand, Loader2, RotateCcw, AlertCircle } from 'lucide-react';
+import { Wand, Loader2, AlertCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -33,13 +33,10 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       return;
     }
 
-    // Reset error state
     setHasGenerationError(false);
     setIsGenerating(true);
     setShowProgress(true);
     setProgress(10);
-    
-    // Show safe zone during generation
     setSafeZoneVisible(true);
     
     try {
@@ -47,7 +44,6 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       
       setProgress(30);
       
-      // Simulate intermediate progress
       const progressInterval = setInterval(() => {
         setProgress(prev => {
           const newProgress = prev + Math.random() * 8;
@@ -62,7 +58,6 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         maskStyle 
       });
       
-      // Call the new V3 edge function
       const { data, error } = await supabase.functions.invoke('generate-wallet-mask-v3', {
         body: {
           prompt: prompt,
@@ -81,16 +76,13 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         throw new Error(`V3 Generation failed: ${error.message}`);
       }
       
-      if (!data || !data.mask_image_url) {
+      if (!data || !data.image_url) {
         throw new Error("Failed to generate mask - no image URL returned");
       }
       
-      // Automatically apply the mask to the preview
-      setExternalMask(data.mask_image_url);
-      
+      setExternalMask(data.image_url);
       toast.success("🎉 Wallet costume generated and applied! Check the preview on the right.");
       
-      // Hide progress after success
       setTimeout(() => {
         setShowProgress(false);
         setProgress(0);
@@ -105,11 +97,14 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           : "Failed to generate costume. Using a demo mask instead."
       );
       
-      // Use a fallback demo mask on error
       const fallbacks = {
         cartoon: '/external-masks/cats-mask.png',
         meme: '/external-masks/pepe-mask.png',
-        luxury: '/external-masks/crypto-mask.png'
+        luxury: '/external-masks/crypto-mask.png',
+        modern: '/external-masks/abstract-mask.png',
+        realistic: '/external-masks/abstract-mask.png',
+        fantasy: '/external-masks/abstract-mask.png',
+        minimalist: '/external-masks/clean Example.png'
       };
       
       setExternalMask(fallbacks[maskStyle] || '/external-masks/abstract-mask.png');
