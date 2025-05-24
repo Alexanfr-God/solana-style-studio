@@ -1,11 +1,12 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
-import Index from './pages/index';
-import Documentation from './pages/documentation';
-import NotFound from './pages/404';
-import FeedbackAnalytics from './pages/feedback-analytics';
-import { WalletContextProvider } from './context/WalletContext';
+import Index from './pages/Index';
+import Documentation from './pages/Documentation';
+import NotFound from './pages/NotFound';
+import FeedbackAnalytics from './pages/FeedbackAnalytics';
+import { WalletContextProvider } from './context/WalletContextProvider';
 import CustomizationStudio from './components/CustomizationStudio';
 
 function App() {
