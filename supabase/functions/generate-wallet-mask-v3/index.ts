@@ -36,7 +36,7 @@ const SAFE_ZONE = {
 };
 
 // Updated to use your uploaded wallet base image from Supabase Storage
-const WALLET_BASE_IMAGE = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/ui_frame_base_v3.png';
+const WALLET_BASE_IMAGE = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/ui_frame_base.png';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -67,6 +67,20 @@ serve(async (req) => {
     console.log(`Reference image: ${reference_image_url ? "provided" : "none"}`);
     console.log(`Style hint: ${style_hint_image_url ? "provided" : "none"}`);
     console.log(`Wallet base image: ${WALLET_BASE_IMAGE}`);
+
+    // Verify wallet base image is accessible
+    console.log('Verifying wallet base image accessibility...');
+    try {
+      const imageTestResponse = await fetch(WALLET_BASE_IMAGE, { method: 'HEAD' });
+      if (!imageTestResponse.ok) {
+        console.error(`Wallet base image not accessible: ${imageTestResponse.status}`);
+        throw new Error(`Wallet base image not accessible: ${imageTestResponse.status}`);
+      }
+      console.log('Wallet base image verified as accessible');
+    } catch (verifyError) {
+      console.error('Error verifying wallet base image:', verifyError);
+      throw new Error(`Cannot access wallet base image: ${verifyError.message}`);
+    }
 
     // Step 1: Enhanced GPT-4o analysis with all three images
     const layoutAnalysis = await analyzeImagesWithGPT(
