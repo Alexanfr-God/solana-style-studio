@@ -1,0 +1,14 @@
+
+// This file represents a 1024x1024 PNG with:
+// - White background (#FFFFFF)
+// - Transparent rectangular cutout at coordinates (352, 228) with size 320x569 pixels
+// The cutout represents the exact area where the wallet UI should be visible
+// This file should be uploaded to Supabase Storage at:
+// wallet-base/mask-wallet-cutout-v3.png
+
+// Since this is a binary PNG file, it needs to be created using image editing software
+// or programmatically generated. The specifications are:
+// - Canvas: 1024x1024 pixels
+// - Background: Solid white (#FFFFFF, alpha=255)
+// - Cutout area: Rectangle at (352, 228) with dimensions 320x569 pixels, alpha=0 (fully transparent)
+// - File format: PNG with alpha channel support

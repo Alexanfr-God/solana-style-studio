@@ -42,58 +42,46 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     setDebugInfo(null);
     
     try {
-      toast.info("🚀 Generating V3 optimized wallet costume...");
+      toast.info("🚀 Generating V3 Enhanced wallet costume...");
       
-      setProgress(20);
+      setProgress(25);
       
       const progressInterval = setInterval(() => {
         setProgress(prev => {
-          const newProgress = prev + Math.random() * 6;
-          return newProgress < 80 ? newProgress : prev;
+          const newProgress = prev + Math.random() * 5;
+          return newProgress < 85 ? newProgress : prev;
         });
       }, 2000);
-      
-      console.log('🎯 V3 Enhanced generation request:', { 
-        prompt: prompt || 'No text prompt provided',
-        referenceImage: referenceImage ? 'Reference image provided' : 'No reference image',
-        styleHintImage: styleHintImage ? 'Style hint provided' : 'No style hint',
-        maskStyle,
-        containerSize: '480x854',
-        walletSize: '320x569',
-        outputSize: '1024x1024'
-      });
-      
-      setProgress(40);
       
       // Get current user for storage
       const { data: { user } } = await supabase.auth.getUser();
       
+      // V3 Enhanced request payload with proper coordinate mapping
       const requestPayload = {
         prompt: prompt || '',
         reference_image_url: referenceImage || null,
         style_hint_image_url: styleHintImage || null,
         style: maskStyle,
         user_id: user?.id,
-        // V3 Enhanced parameters
         container_width: 480,
         container_height: 854,
         wallet_width: 320,
         wallet_height: 569,
         output_size: 1024,
-        safe_zone_x: 80, // Corrected coordinates for 480x854 container
+        safe_zone_x: 80,
         safe_zone_y: 142,
         safe_zone_width: 320,
         safe_zone_height: 569
       };
       
-      console.log('📤 V3 Request payload:', requestPayload);
+      console.log('📤 V3 Enhanced request:', requestPayload);
       
       const { data, error } = await supabase.functions.invoke('generate-wallet-mask-v3', {
         body: requestPayload
       });
       
       clearInterval(progressInterval);
-      setProgress(90);
+      setProgress(95);
       
       console.log('🎉 V3 Enhanced generation result:', data);
       
@@ -112,25 +100,14 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       if (data.debug_info) {
         setDebugInfo({
           ...data.debug_info,
-          requestedSafeZone: {
-            x: 80,
-            y: 142,
-            width: 320,
-            height: 569
-          },
-          actualSafeZone: data.debug_info.safeZone,
-          coordinateMapping: 'Container(480x854) -> Output(1024x1024)',
-          promptUsed: data.debug_info.final_prompt || 'Not available',
-          imagesProcessed: {
-            reference: !!referenceImage,
-            styleHint: !!styleHintImage,
-            total: (referenceImage ? 1 : 0) + (styleHintImage ? 1 : 0)
-          }
+          generation_success: true,
+          storage_success: !!data.storage_path,
+          coordinate_mapping_applied: true
         });
-        console.log('🔍 V3 Enhanced debug info:', debugInfo);
+        console.log('🔍 V3 Enhanced debug info:', data.debug_info);
       }
       
-      toast.success("🎉 V3 Enhanced wallet costume generated! Optimized sizing and positioning applied.");
+      toast.success("🎉 V3 Enhanced wallet costume generated successfully!");
       
       if (data.storage_path) {
         console.log("💾 V3 Enhanced image stored at:", data.storage_path);
@@ -151,7 +128,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           : "V3 Enhanced generation failed. Using fallback mask."
       );
       
-      // Enhanced fallbacks with better sizing
+      // Enhanced fallbacks
       const fallbacks = {
         cartoon: '/external-masks/cats-mask.png',
         meme: '/external-masks/pepe-mask.png',
@@ -183,7 +160,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating V3 Enhanced Costume...
+            Generating V3 Enhanced...
           </>
         ) : (
           <>
@@ -197,11 +174,11 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         <div className="space-y-1">
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-white/50 text-center">
-            {progress < 20 ? "🔍 V3 Enhanced: Analyzing wallet and images..." : 
-             progress < 40 ? "🧠 V3 Enhanced: GPT-4o with improved prompt processing..." :
-             progress < 60 ? "🎨 V3 Enhanced: DALL-E 3 with corrected coordinates..." : 
-             progress < 80 ? "✨ V3 Enhanced: Validating sizing and transparency..." : 
-             progress < 90 ? "💾 V3 Enhanced: Storing optimized result..." : "🎉 V3 Enhanced: Finalizing optimization!"}
+            {progress < 25 ? "🔍 V3: Analyzing layout and coordinates..." : 
+             progress < 50 ? "🧠 V3: GPT-4o processing with enhanced prompts..." :
+             progress < 75 ? "🎨 V3: DALL-E 3 generating with optimized specs..." : 
+             progress < 90 ? "✨ V3: Applying coordinate mapping and validation..." : 
+             progress < 95 ? "💾 V3: Storing in Supabase with enhanced logging..." : "🎉 V3: Finalizing enhanced result!"}
           </p>
         </div>
       )}
@@ -222,7 +199,8 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       {hasValidInput && !isGenerating && (
         <div className="text-xs text-white/60 text-center">
           🚀 V3 Enhanced Style: <span className="text-purple-300 font-medium">{maskStyle}</span> | 
-          🖼️ Images: {referenceImage ? "✅" : "✗"} {styleHintImage ? "+ Style" : ""} + Wallet Base (480x854→1024x1024)
+          🖼️ Images: {referenceImage ? "✅" : "✗"} {styleHintImage ? "+ Style" : ""} | 
+          📐 Coordinates: Container(480×854) → Output(1024×1024)
         </div>
       )}
 
@@ -233,15 +211,14 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
             V3 Enhanced Debug Information
           </div>
           <div className="text-xs text-white/70 space-y-1">
-            <div>📐 Requested Safe Zone: x={debugInfo.requestedSafeZone?.x}, y={debugInfo.requestedSafeZone?.y}, {debugInfo.requestedSafeZone?.width}×{debugInfo.requestedSafeZone?.height}px</div>
-            <div>📐 Actual Safe Zone: x={debugInfo.actualSafeZone?.x}, y={debugInfo.actualSafeZone?.y}, {debugInfo.actualSafeZone?.width}×{debugInfo.actualSafeZone?.height}px</div>
+            <div>📐 Safe Zone: x={debugInfo.safeZone?.x}, y={debugInfo.safeZone?.y}, {debugInfo.safeZone?.width}×{debugInfo.safeZone?.height}px</div>
             <div>📱 Container: {debugInfo.containerDimensions?.width || '480'}×{debugInfo.containerDimensions?.height || '854'}px</div>
             <div>🖼️ Output: {debugInfo.outputImageSize || '1024x1024'}</div>
-            <div>🔄 Coordinate Mapping: {debugInfo.coordinateMapping}</div>
-            <div>🎯 Generation Attempts: {debugInfo.attempts || 'N/A'}</div>
-            <div>✅ Transparency: {debugInfo.transparencyValidated ? "Valid" : "Failed"}</div>
-            <div>📸 Images Processed: {debugInfo.imagesProcessed?.total || 0} ({debugInfo.imagesProcessed?.reference ? "ref" : "no-ref"}, {debugInfo.imagesProcessed?.styleHint ? "style" : "no-style"})</div>
-            <div>📝 Prompt Length: {debugInfo.promptUsed?.length || 0} chars</div>
+            <div>🔄 Coordinate Mapping: {debugInfo.coordinateMapping || 'Applied'}</div>
+            <div>📸 Images: {debugInfo.hasReferenceImage ? "ref" : "no-ref"}, {debugInfo.hasStyleHint ? "style" : "no-style"}</div>
+            <div>📝 Prompt: {debugInfo.promptLength || 0} chars</div>
+            <div>✅ Generation: {debugInfo.generation_success ? "Success" : "Failed"}</div>
+            <div>💾 Storage: {debugInfo.storage_success ? "Saved" : "Not saved"}</div>
           </div>
         </div>
       )}

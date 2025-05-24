@@ -20,33 +20,26 @@ const V3MaskPreviewCanvas = () => {
   const previewImageUrl = externalMask || maskImageUrl || "/placeholder.svg";
   const previewPrompt = "V3 Enhanced wallet mask with optimized coordinates and sizing";
 
-  // V3 Enhanced: Corrected dimensions and positioning
+  // V3 Enhanced: Container and wallet dimensions
   const CONTAINER_WIDTH = 480;
   const CONTAINER_HEIGHT = 854;
   const WALLET_WIDTH = 320;
   const WALLET_HEIGHT = 569;
   
-  // V3 Enhanced: Corrected safe zone coordinates for 480x854 container
-  const SAFE_ZONE_X = 80; // (480 - 320) / 2
-  const SAFE_ZONE_Y = 142; // (854 - 569) / 2
+  // V3 Enhanced: Safe zone coordinates (centered in container)
+  const SAFE_ZONE_X = (CONTAINER_WIDTH - WALLET_WIDTH) / 2; // 80
+  const SAFE_ZONE_Y = (CONTAINER_HEIGHT - WALLET_HEIGHT) / 2; // 142.5 ≈ 142
 
-  // V3 Enhanced debug logging
+  // Debug logging
   useEffect(() => {
-    console.log('🔍 V3 Enhanced Debug Info:', {
+    console.log('🔍 V3 Enhanced Preview Debug:', {
       externalMask: externalMask ? 'loaded' : 'null',
-      externalMaskUrl: externalMask,
       maskImageUrl: maskImageUrl ? 'loaded' : 'null',
       safeZoneVisible,
-      maskCutoutUrl: MASK_CUTOUT_URL,
-      renderingMode: 'V3_ENHANCED',
       containerDimensions: `${CONTAINER_WIDTH}x${CONTAINER_HEIGHT}`,
       walletDimensions: `${WALLET_WIDTH}x${WALLET_HEIGHT}`,
-      safeZoneCoordinates: `x=${SAFE_ZONE_X}, y=${SAFE_ZONE_Y}`,
-      coordinateMapping: 'Container(480x854) -> Output(1024x1024)',
-      scalingFactors: {
-        x: 1024 / CONTAINER_WIDTH,
-        y: 1024 / CONTAINER_HEIGHT
-      }
+      safeZonePosition: `x=${SAFE_ZONE_X}, y=${SAFE_ZONE_Y}`,
+      maskCutoutUrl: MASK_CUTOUT_URL
     });
   }, [externalMask, maskImageUrl, safeZoneVisible]);
 
@@ -62,7 +55,7 @@ const V3MaskPreviewCanvas = () => {
           }}
         >
           
-          {/* V3 Enhanced external mask layer with improved positioning */}
+          {/* V3 Enhanced external mask layer with CSS mask-image */}
           {externalMask && (
             <div 
               className="absolute inset-0 pointer-events-none z-10"
@@ -93,7 +86,7 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
           
-          {/* Legacy mask support with V3 Enhanced sizing */}
+          {/* Legacy mask support */}
           {maskImageUrl && !externalMask && (
             <div 
               className="absolute inset-0 pointer-events-none z-10"
@@ -114,13 +107,13 @@ const V3MaskPreviewCanvas = () => {
                 src={maskImageUrl} 
                 alt="Legacy mask overlay" 
                 className="w-full h-full object-cover"
-                onLoad={() => console.log('✅ Legacy mask loaded with V3 Enhanced sizing:', maskImageUrl)}
+                onLoad={() => console.log('✅ Legacy mask loaded:', maskImageUrl)}
                 onError={(e) => console.error('❌ Legacy mask failed:', maskImageUrl, e)}
               />
             </div>
           )}
           
-          {/* V3 Enhanced wallet UI container with corrected positioning */}
+          {/* V3 Enhanced wallet UI container */}
           <div 
             className="absolute z-20"
             style={{
@@ -142,7 +135,7 @@ const V3MaskPreviewCanvas = () => {
             <LoginScreen style={loginStyle} />
           </div>
           
-          {/* V3 Enhanced safe zone visualization with corrected coordinates */}
+          {/* V3 Enhanced safe zone visualization */}
           {safeZoneVisible && (
             <div 
               className="absolute z-30 pointer-events-none"
@@ -157,7 +150,7 @@ const V3MaskPreviewCanvas = () => {
               }}
             >
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500/90 px-3 py-2 rounded text-xs text-white whitespace-nowrap">
-                ✅ V3 Enhanced Safe Zone ({WALLET_WIDTH}×{WALLET_HEIGHT}px)
+                ✅ Safe Zone ({WALLET_WIDTH}×{WALLET_HEIGHT}px)
               </div>
               <div className="absolute top-2 left-2 bg-green-500/70 px-2 py-1 rounded text-xs text-green-200">
                 V3 Enhanced
@@ -194,7 +187,7 @@ const V3MaskPreviewCanvas = () => {
               <Badge 
                 className="bg-blue-500/80 text-white px-2 py-1 text-xs"
               >
-                🎭 V3 Enhanced Active ({CONTAINER_WIDTH}×{CONTAINER_HEIGHT})
+                🎭 V3 Active ({CONTAINER_WIDTH}×{CONTAINER_HEIGHT})
               </Badge>
             </div>
           )}
@@ -208,38 +201,6 @@ const V3MaskPreviewCanvas = () => {
                 Safe: {SAFE_ZONE_X},{SAFE_ZONE_Y}
               </Badge>
             </div>
-          )}
-
-          {/* V3 Enhanced debug boundaries */}
-          {process.env.NODE_ENV === 'development' && (
-            <>
-              <div className="absolute inset-0 border border-red-500/30 z-50 pointer-events-none">
-                <span className="absolute top-0 left-0 bg-red-500/80 text-white text-xs px-1">
-                  Container: {CONTAINER_WIDTH}×{CONTAINER_HEIGHT}
-                </span>
-              </div>
-              <div 
-                className="absolute border border-blue-500/30 z-50 pointer-events-none"
-                style={{
-                  width: `${WALLET_WIDTH}px`,
-                  height: `${WALLET_HEIGHT}px`,
-                  left: `${SAFE_ZONE_X}px`,
-                  top: `${SAFE_ZONE_Y}px`,
-                }}
-              >
-                <span className="absolute top-0 left-0 bg-blue-500/80 text-white text-xs px-1">
-                  UI: {WALLET_WIDTH}×{WALLET_HEIGHT}
-                </span>
-              </div>
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-black/90 text-white p-2 rounded text-xs">
-                <div className="text-center">🔍 V3 Enhanced Debug:</div>
-                <div>Container: {CONTAINER_WIDTH}×{CONTAINER_HEIGHT}</div>
-                <div>Wallet UI: {WALLET_WIDTH}×{WALLET_HEIGHT}</div>
-                <div>Safe Zone: {SAFE_ZONE_X},{SAFE_ZONE_Y}</div>
-                <div>Output: 1024×1024</div>
-                <div>Scale: {(1024/CONTAINER_WIDTH).toFixed(2)}x</div>
-              </div>
-            </>
           )}
         </div>
       </ImageFeedbackWrapper>
