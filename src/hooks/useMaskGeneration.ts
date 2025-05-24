@@ -86,14 +86,14 @@ export const useMaskGeneration = () => {
         throw new Error("Failed to generate V3 mask - no image URL returned");
       }
       
-      // ✅ CRITICAL: Set the external mask with the generated image URL for V3 wallet preview
+      // ✅ CRITICAL: Immediately apply the mask to the wallet
       setExternalMask(generatedMask.imageUrl);
-      console.log('✅ V3 externalMask set to:', generatedMask.imageUrl);
+      console.log('✅ V3 mask applied directly to wallet:', generatedMask.imageUrl);
       
       // Show success message
       const successMessage = debugMode && generatedMask.metadata.layout
-        ? `Wallet costume generated! Check the preview → Layout: ${generatedMask.metadata.layout.top || 'decorative'} (top), ${generatedMask.metadata.layout.bottom || 'decorative'} (bottom)`
-        : "Wallet costume generated! Check the preview →";
+        ? `Costume applied to wallet! Layout: ${generatedMask.metadata.layout.top || 'decorative'} (top), ${generatedMask.metadata.layout.bottom || 'decorative'} (bottom)`
+        : "Costume applied to wallet! Check the wallet preview →";
       
       toast.success(successMessage);
       
@@ -120,9 +120,9 @@ export const useMaskGeneration = () => {
           : "Failed to generate costume. Using a demo mask instead."
       );
       
-      // Use a fallback demo mask on error and set it to externalMask
+      // Use a fallback demo mask on error and apply it directly to wallet
       setExternalMask('/external-masks/abstract-mask.png');
-      console.log('✅ V3 fallback externalMask set to: /external-masks/abstract-mask.png');
+      console.log('✅ V3 fallback mask applied to wallet: /external-masks/abstract-mask.png');
       
       setShowProgress(false);
       setProgress(0);
