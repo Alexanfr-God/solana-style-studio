@@ -28,9 +28,6 @@ const V3MaskPreviewCanvas = () => {
   const WALLET_X = 352; // Centered in 1024x1024 canvas
   const WALLET_Y = 228; // Centered in 1024x1024 canvas
 
-  // V3 Enhanced: Wallet UI scaling factor (увеличиваем только UI)
-  const WALLET_UI_SCALE = 0.8; // Увеличенный масштаб для wallet UI
-
   // Debug logging
   useEffect(() => {
     console.log('🔍 V3 Enhanced Preview Debug:', {
@@ -40,7 +37,6 @@ const V3MaskPreviewCanvas = () => {
       outputDimensions: `${OUTPUT_WIDTH}x${OUTPUT_HEIGHT}`,
       walletDimensions: `${WALLET_WIDTH}x${WALLET_HEIGHT}`,
       walletPosition: `x=${WALLET_X}, y=${WALLET_Y}`,
-      walletUIScale: WALLET_UI_SCALE,
       maskCutoutUrl: MASK_CUTOUT_URL
     });
   }, [externalMask, maskImageUrl, safeZoneVisible]);
@@ -115,14 +111,14 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
           
-          {/* V3 Enhanced wallet UI container - positioned at exact coordinates with increased scale */}
+          {/* V3 Enhanced wallet UI container - positioned at exact coordinates */}
           <div 
             className="absolute z-20"
             style={{
-              width: `${WALLET_WIDTH * 0.6 * WALLET_UI_SCALE}px`, // Увеличенный размер UI
-              height: `${WALLET_HEIGHT * 0.6 * WALLET_UI_SCALE}px`,
-              left: `${WALLET_X * 0.6 - (WALLET_WIDTH * 0.6 * (WALLET_UI_SCALE - 1)) / 2}px`, // Центрирование увеличенного UI
-              top: `${WALLET_Y * 0.6 - (WALLET_HEIGHT * 0.6 * (WALLET_UI_SCALE - 1)) / 2}px`,
+              width: `${WALLET_WIDTH * 0.6}px`, // Scale to match container
+              height: `${WALLET_HEIGHT * 0.6}px`,
+              left: `${WALLET_X * 0.6}px`, // Scale coordinates
+              top: `${WALLET_Y * 0.6}px`,
               backgroundColor: loginStyle.backgroundColor || '#131313',
               backgroundImage: loginStyle.backgroundImage,
               backgroundSize: 'cover',
@@ -137,14 +133,14 @@ const V3MaskPreviewCanvas = () => {
             <LoginScreen style={loginStyle} />
           </div>
           
-          {/* V3 Enhanced safe zone visualization - показывает оригинальную Safe Zone */}
+          {/* V3 Enhanced safe zone visualization */}
           {safeZoneVisible && (
             <div 
               className="absolute z-30 pointer-events-none"
               style={{
-                width: `${WALLET_WIDTH * 0.6}px`, // Оригинальный размер Safe Zone
+                width: `${WALLET_WIDTH * 0.6}px`,
                 height: `${WALLET_HEIGHT * 0.6}px`,
-                left: `${WALLET_X * 0.6}px`, // Оригинальные координаты
+                left: `${WALLET_X * 0.6}px`,
                 top: `${WALLET_Y * 0.6}px`,
                 border: '2px solid #10b981',
                 borderRadius: '16px',
@@ -159,9 +155,6 @@ const V3MaskPreviewCanvas = () => {
               </div>
               <div className="absolute bottom-2 right-2 bg-green-500/70 px-2 py-1 rounded text-xs text-green-200">
                 x={WALLET_X}, y={WALLET_Y}
-              </div>
-              <div className="absolute top-2 right-2 bg-blue-500/70 px-2 py-1 rounded text-xs text-blue-200">
-                UI Scale: {WALLET_UI_SCALE}
               </div>
             </div>
           )}
@@ -203,7 +196,7 @@ const V3MaskPreviewCanvas = () => {
               <Badge 
                 className="bg-yellow-500/80 text-black px-2 py-1 text-xs font-mono"
               >
-                Wallet: {WALLET_X},{WALLET_Y} | Scale: {WALLET_UI_SCALE}
+                Wallet: {WALLET_X},{WALLET_Y}
               </Badge>
             </div>
           )}
