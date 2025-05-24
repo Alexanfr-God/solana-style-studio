@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 
 export type MaskLayerType = 'login' | 'wallet';
-export type MaskStyleType = 'modern' | 'cartoon' | 'realistic' | 'fantasy' | 'minimalist';
+export type MaskStyleType = 'cartoon' | 'meme' | 'luxury' | 'modern' | 'realistic' | 'fantasy' | 'minimalist';
 
 export interface SafeZone {
   x: number;
@@ -34,7 +34,9 @@ interface MaskEditorState {
   activeLayer: MaskLayerType;
   prompt: string;
   maskImageUrl: string | null;
-  externalMask: string | null; // For external masks
+  externalMask: string | null;
+  referenceImage: string | null;
+  styleHintImage: string | null;
   selectedMask: Mask | null;
   previewVisible: boolean;
   safeZoneVisible: boolean;
@@ -49,6 +51,8 @@ interface MaskEditorState {
   setPrompt: (prompt: string) => void;
   setMaskImageUrl: (imageUrl: string | null) => void;
   setExternalMask: (imageUrl: string | null) => void;
+  setReferenceImage: (imageUrl: string | null) => void;
+  setStyleHintImage: (imageUrl: string | null) => void;
   setSelectedMask: (mask: Mask | null) => void;
   setPreviewVisible: (visible: boolean) => void;
   setSafeZoneVisible: (visible: boolean) => void;
@@ -76,11 +80,13 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   prompt: '',
   maskImageUrl: null,
   externalMask: null,
+  referenceImage: null,
+  styleHintImage: null,
   selectedMask: null,
   previewVisible: true,
-  safeZoneVisible: true, // Changed to true by default for V3
+  safeZoneVisible: true,
   isGenerating: false,
-  maskStyle: 'modern',
+  maskStyle: 'cartoon',
   
   // Legacy V3 beta properties
   topLayer: null,
@@ -90,6 +96,8 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
   setPrompt: (prompt) => set({ prompt }),
   setMaskImageUrl: (imageUrl) => set({ maskImageUrl: imageUrl }),
   setExternalMask: (imageUrl) => set({ externalMask: imageUrl }),
+  setReferenceImage: (imageUrl) => set({ referenceImage: imageUrl }),
+  setStyleHintImage: (imageUrl) => set({ styleHintImage: imageUrl }),
   setSelectedMask: (mask) => set({ selectedMask: mask }),
   setPreviewVisible: (visible) => set({ previewVisible: visible }),
   setSafeZoneVisible: (visible) => set({ safeZoneVisible: visible }),
@@ -105,6 +113,8 @@ export const useMaskEditorStore = create<MaskEditorState>((set) => ({
     prompt: '',
     maskImageUrl: null,
     externalMask: null,
+    referenceImage: null,
+    styleHintImage: null,
     selectedMask: null,
     isGenerating: false,
     topLayer: null,

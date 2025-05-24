@@ -1,0 +1,6 @@
+
+// This is a placeholder for the wallet base image
+// In a real implementation, this would be a PNG file showing the wallet UI layout
+// The file should contain the exact wallet UI elements (buttons, text fields, etc.)
+// with proper positioning and colors, but with transparent background
+// Size: 320x569px to match the safe zone dimensions

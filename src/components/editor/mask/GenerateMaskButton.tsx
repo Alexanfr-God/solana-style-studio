@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import { Wand, Loader2, RotateCcw, AlertCircle } from 'lucide-react';
-import { generateMask } from '@/services/maskService';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GenerateMaskButtonProps {
   disabled?: boolean;
@@ -14,9 +14,8 @@ interface GenerateMaskButtonProps {
 const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   const { 
     prompt, 
-    activeLayer, 
-    maskImageUrl,
-    externalMask,
+    referenceImage,
+    styleHintImage,
     maskStyle,
     setExternalMask,
     isGenerating, 
@@ -27,90 +26,78 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   const [progress, setProgress] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
   const [hasGenerationError, setHasGenerationError] = useState(false);
-  const [useBackupStrategy, setUseBackupStrategy] = useState(false);
 
   const handleGenerate = async () => {
-    if (!prompt && !maskImageUrl) {
-      toast.error("Please enter a description or upload an image first");
+    if (!prompt && !referenceImage) {
+      toast.error("Please enter a description or upload a reference image first");
       return;
     }
 
     // Reset error state
     setHasGenerationError(false);
-
-    // Validate image URL if provided
-    if (maskImageUrl && maskImageUrl.startsWith('blob:')) {
-      toast.error("Please wait for the image to finish uploading");
-      return;
-    }
-
     setIsGenerating(true);
     setShowProgress(true);
     setProgress(10);
     
-    // Always show safe zone during generation to help the user understand the process
+    // Show safe zone during generation
     setSafeZoneVisible(true);
     
     try {
-      toast.info("Generating wallet costume. This may take up to 30 seconds...");
-      
-      // Enhanced prompt with style instructions and safe zone guidance
-      let enhancedPrompt = prompt;
-      
-      // Add style modifier if selected
-      if (maskStyle) {
-        enhancedPrompt += `, ${maskStyle} style`;
-      }
-      
-      // Always add safe zone instructions to ensure transparency in the center
-      enhancedPrompt += " - Important: Create a decorative mask AROUND a wallet. The central rectangle (320x569px) MUST BE COMPLETELY TRANSPARENT.";
+      toast.info("Generating wallet costume with advanced AI. This may take up to 45 seconds...");
       
       setProgress(30);
       
       // Simulate intermediate progress
       const progressInterval = setInterval(() => {
         setProgress(prev => {
-          const newProgress = prev + Math.random() * 10;
-          return newProgress < 90 ? newProgress : prev;
+          const newProgress = prev + Math.random() * 8;
+          return newProgress < 85 ? newProgress : prev;
         });
-      }, 1000);
+      }, 1500);
       
-      console.log('Calling generateMask with:', { 
-        enhancedPrompt, 
-        activeLayer, 
-        maskImageUrl,
-        useBackupStrategy 
+      console.log('Calling generate-wallet-mask-v3 with:', { 
+        prompt, 
+        referenceImage,
+        styleHintImage,
+        maskStyle 
       });
       
-      // Generate the external mask that surrounds the wallet
-      const generatedMask = await generateMask(
-        enhancedPrompt,
-        activeLayer, 
-        maskImageUrl,
-        useBackupStrategy
-      );
+      // Call the new V3 edge function
+      const { data, error } = await supabase.functions.invoke('generate-wallet-mask-v3', {
+        body: {
+          prompt: prompt,
+          reference_image_url: referenceImage,
+          style_hint_image_url: styleHintImage,
+          style: maskStyle
+        }
+      });
       
       clearInterval(progressInterval);
       setProgress(100);
       
-      console.log('Generated mask result:', generatedMask);
+      console.log('V3 mask generation result:', data);
       
-      if (!generatedMask || !generatedMask.imageUrl) {
+      if (error) {
+        throw new Error(`V3 Generation failed: ${error.message}`);
+      }
+      
+      if (!data || !data.mask_image_url) {
         throw new Error("Failed to generate mask - no image URL returned");
       }
       
-      // Set the external mask with the generated image URL
-      setExternalMask(generatedMask.imageUrl);
+      // Automatically apply the mask to the preview
+      setExternalMask(data.mask_image_url);
       
-      toast.success("Wallet costume generated successfully");
+      toast.success("🎉 Wallet costume generated and applied! Check the preview on the right.");
       
       // Hide progress after success
       setTimeout(() => {
         setShowProgress(false);
         setProgress(0);
       }, 1000);
+      
     } catch (error) {
-      console.error("Error generating mask:", error);
+      console.error("Error generating V3 mask:", error);
       setHasGenerationError(true);
       toast.error(
         typeof error === 'object' && error !== null && 'message' in error
@@ -118,32 +105,30 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           : "Failed to generate costume. Using a demo mask instead."
       );
       
-      // Use a fallback demo mask on error - using one of the example masks
-      setExternalMask('/external-masks/abstract-mask.png');
+      // Use a fallback demo mask on error
+      const fallbacks = {
+        cartoon: '/external-masks/cats-mask.png',
+        meme: '/external-masks/pepe-mask.png',
+        luxury: '/external-masks/crypto-mask.png'
+      };
+      
+      setExternalMask(fallbacks[maskStyle] || '/external-masks/abstract-mask.png');
       
       setShowProgress(false);
       setProgress(0);
     } finally {
       setIsGenerating(false);
-      // Keep safe zone visible after generation so user can see the result in context
     }
   };
 
-  const handleUseFallback = () => {
-    setUseBackupStrategy(!useBackupStrategy);
-    toast.info(useBackupStrategy 
-      ? "Will try to use AI generation" 
-      : "Will use predefined masks for faster results");
-  };
-
-  const hasExistingContent = !!prompt || !!maskImageUrl || !!externalMask;
+  const hasValidInput = !!prompt || !!referenceImage;
 
   return (
     <div className="space-y-3">
       <Button
         onClick={handleGenerate}
-        className="w-full bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600"
-        disabled={isGenerating || (!prompt && !maskImageUrl) || disabled}
+        className="w-full bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600 text-black font-bold"
+        disabled={isGenerating || !hasValidInput || disabled}
       >
         {isGenerating ? (
           <>
@@ -153,7 +138,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         ) : (
           <>
             <Wand className="mr-2 h-4 w-4" />
-            Generate Costume
+            Generate Wallet Costume
           </>
         )}
       </Button>
@@ -162,9 +147,9 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         <div className="space-y-1">
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-white/50 text-center">
-            {progress < 30 ? "Analyzing prompt..." : 
-             progress < 60 ? "Creating artwork..." : 
-             progress < 90 ? "Finalizing mask..." : "Almost done!"}
+            {progress < 30 ? "🔍 Analyzing your images..." : 
+             progress < 60 ? "🎨 Creating artwork with AI..." : 
+             progress < 85 ? "✨ Adding WOW effects..." : "🎉 Almost ready!"}
           </p>
         </div>
       )}
@@ -176,26 +161,16 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         </div>
       )}
       
-      {hasExistingContent && !isGenerating && (
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1 border-white/10 text-white/70"
-            onClick={() => toast.info("Try a different prompt or style to generate a new mask")}
-          >
-            <RotateCcw className="mr-2 h-3 w-3" />
-            Try Different Style
-          </Button>
-          
-          <Button
-            variant={useBackupStrategy ? "destructive" : "secondary"}
-            size="sm"
-            className="flex-1"
-            onClick={handleUseFallback}
-          >
-            {useBackupStrategy ? "Use AI (Slower)" : "Use Fallbacks (Faster)"}
-          </Button>
+      {!hasValidInput && (
+        <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-xs text-yellow-300">
+          💡 Upload a reference image or enter a description to get started
+        </div>
+      )}
+      
+      {hasValidInput && !isGenerating && (
+        <div className="text-xs text-white/60 text-center">
+          🚀 Style: <span className="text-purple-300 font-medium">{maskStyle}</span> | 
+          🖼️ Images: {referenceImage ? "✓" : "✗"} {styleHintImage ? "+ Style Hint" : ""}
         </div>
       )}
     </div>

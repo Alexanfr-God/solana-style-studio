@@ -17,33 +17,37 @@ interface MaskUploadImageProps {
 }
 
 const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const { setExternalMask, externalMask, maskImageUrl, setMaskImageUrl, setPrompt } = useMaskEditorStore();
+  const referenceFileInputRef = useRef<HTMLInputElement>(null);
+  const styleHintFileInputRef = useRef<HTMLInputElement>(null);
   
-  // Process the uploaded image
+  const [isLoadingReference, setIsLoadingReference] = useState(false);
+  const [isLoadingStyleHint, setIsLoadingStyleHint] = useState(false);
+  
+  const { 
+    referenceImage, 
+    setReferenceImage, 
+    styleHintImage, 
+    setStyleHintImage 
+  } = useMaskEditorStore();
+  
   const processImage = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result);
-      };
-      
+      reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
   };
   
-  const handleUploadClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+  const handleReferenceUpload = () => {
+    referenceFileInputRef.current?.click();
   };
   
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStyleHintUpload = () => {
+    styleHintFileInputRef.current?.click();
+  };
+  
+  const handleReferenceFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
@@ -52,93 +56,103 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
       return;
     }
     
-    setIsLoading(true);
+    setIsLoadingReference(true);
     
     try {
-      // Process the image
       const imageUrl = await processImage(file);
-      
-      // For V3, we set both for compatibility
-      setExternalMask(imageUrl);
-      setMaskImageUrl(imageUrl);
-      
-      // Show analyzing state
-      setIsAnalyzing(true);
-      
-      // Set a default prompt based on the image type
-      // In a real implementation, you would analyze the image with AI
-      setTimeout(() => {
-        const imageType = file.name.toLowerCase().includes('abstract') 
-          ? 'abstract pattern' 
-          : file.name.toLowerCase().includes('cat') 
-          ? 'cat-themed' 
-          : 'custom design';
-        
-        setPrompt(`Create a ${imageType} wallet costume based on the uploaded image`);
-        setIsAnalyzing(false);
-        toast.success('Image analyzed and uploaded successfully');
-      }, 1500);
-      
+      setReferenceImage(imageUrl);
+      toast.success('Reference image uploaded successfully');
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Failed to upload image. Please try again.');
+      console.error('Error uploading reference image:', error);
+      toast.error('Failed to upload reference image. Please try again.');
     } finally {
-      setIsLoading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      setIsLoadingReference(false);
+      if (referenceFileInputRef.current) {
+        referenceFileInputRef.current.value = '';
       }
     }
   };
   
-  const handleRemoveImage = () => {
-    setExternalMask(null);
-    setMaskImageUrl(null);
+  const handleStyleHintFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!/image\/(png|jpg|jpeg|webp|svg\+xml)/.test(file.type)) {
+      toast.error('Please upload an image file (PNG, JPG, JPEG, WEBP, SVG)');
+      return;
+    }
+    
+    setIsLoadingStyleHint(true);
+    
+    try {
+      const imageUrl = await processImage(file);
+      setStyleHintImage(imageUrl);
+      toast.success('Style hint image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading style hint image:', error);
+      toast.error('Failed to upload style hint image. Please try again.');
+    } finally {
+      setIsLoadingStyleHint(false);
+      if (styleHintFileInputRef.current) {
+        styleHintFileInputRef.current.value = '';
+      }
+    }
   };
   
-  const hasImage = externalMask || maskImageUrl;
+  const handleRemoveReference = () => {
+    setReferenceImage(null);
+    toast.success('Reference image removed');
+  };
   
-  return (
-    <div className="w-full">
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
-        className="hidden"
-      />
+  const handleRemoveStyleHint = () => {
+    setStyleHintImage(null);
+    toast.success('Style hint image removed');
+  };
+
+  const ImageUploadCard = ({ 
+    title, 
+    description, 
+    image, 
+    isLoading, 
+    onUpload, 
+    onRemove 
+  }: {
+    title: string;
+    description: string;
+    image: string | null;
+    isLoading: boolean;
+    onUpload: () => void;
+    onRemove: () => void;
+  }) => (
+    <div className="space-y-2">
+      <div className="text-sm font-medium text-white">{title}</div>
+      <div className="text-xs text-white/60 mb-2">{description}</div>
       
-      {hasImage ? (
-        <div className="flex flex-col gap-2">
-          <div className="relative w-full h-32 bg-black/20 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden">
-            <img
-              src={externalMask || maskImageUrl || ''}
-              alt="Uploaded mask"
-              className="max-w-full max-h-full object-contain"
-            />
-            
-            {isAnalyzing && (
-              <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-purple-400 mb-2" />
-                <p className="text-xs text-white/80">Analyzing image...</p>
-              </div>
-            )}
-            
+      {image ? (
+        <div className="relative w-full h-24 bg-black/20 rounded-lg border border-white/10 overflow-hidden">
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+          
+          <div className="absolute top-2 right-2 flex gap-1">
             <Dialog>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="absolute top-2 right-2 h-7 w-7 p-0 bg-black/40 border-white/20"
+                  className="h-6 w-6 p-0 bg-black/40 border-white/20"
                 >
-                  <ZoomIn className="h-4 w-4" />
+                  <ZoomIn className="h-3 w-3" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md bg-black/90 border-white/10">
-                <DialogTitle className="text-white">Preview Image</DialogTitle>
+                <DialogTitle className="text-white">{title}</DialogTitle>
                 <div className="flex items-center justify-center p-4">
                   <img
-                    src={externalMask || maskImageUrl || ''}
-                    alt="Mask preview"
+                    src={image}
+                    alt={title}
                     className="max-w-full max-h-[400px] object-contain"
                   />
                 </div>
@@ -149,58 +163,83 @@ const MaskUploadImage = ({ disabled = false }: MaskUploadImageProps) => {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 border-white/10"
-              onClick={handleUploadClick}
-              disabled={disabled || isLoading}
-            >
-              <ImageIcon className="mr-2 h-4 w-4" />
-              Replace
-            </Button>
             
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 border-white/10 hover:border-red-500/50 hover:text-red-400"
-              onClick={handleRemoveImage}
+              className="h-6 w-6 p-0 bg-black/40 border-white/20 hover:border-red-500/50 hover:text-red-400"
+              onClick={onRemove}
               disabled={disabled || isLoading}
             >
-              <X className="mr-2 h-4 w-4" />
-              Remove
+              <X className="h-3 w-3" />
             </Button>
           </div>
         </div>
       ) : (
         <Button
           variant="outline"
-          className="w-full h-32 border-dashed border-white/20 flex flex-col items-center justify-center gap-2"
-          onClick={handleUploadClick}
+          className="w-full h-24 border-dashed border-white/20 flex flex-col items-center justify-center gap-1"
+          onClick={onUpload}
           disabled={disabled || isLoading}
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="text-sm">Uploading...</span>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-xs">Uploading...</span>
             </>
           ) : (
             <>
-              <Upload className="h-6 w-6" />
-              <span className="text-sm">Upload your own mask image</span>
-              <span className="text-xs text-white/50">(PNG, JPG, SVG or WEBP)</span>
+              <Upload className="h-5 w-5" />
+              <span className="text-xs">Upload {title}</span>
             </>
           )}
         </Button>
       )}
+    </div>
+  );
+  
+  return (
+    <div className="space-y-4">
+      <input
+        type="file"
+        ref={referenceFileInputRef}
+        onChange={handleReferenceFileChange}
+        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+        className="hidden"
+      />
       
-      {hasImage && !isAnalyzing && (
-        <p className="text-xs text-white/60 mt-2 italic">
-          Tip: The AI will use your image as inspiration when generating a costume.
-        </p>
+      <input
+        type="file"
+        ref={styleHintFileInputRef}
+        onChange={handleStyleHintFileChange}
+        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+        className="hidden"
+      />
+      
+      <ImageUploadCard
+        title="Reference Image"
+        description="Main inspiration (cat, meme, character, etc.)"
+        image={referenceImage}
+        isLoading={isLoadingReference}
+        onUpload={handleReferenceUpload}
+        onRemove={handleRemoveReference}
+      />
+      
+      <ImageUploadCard
+        title="Style Hint Image"
+        description="Optional: Pattern, texture, or style reference"
+        image={styleHintImage}
+        isLoading={isLoadingStyleHint}
+        onUpload={handleStyleHintUpload}
+        onRemove={handleRemoveStyleHint}
+      />
+      
+      {(referenceImage || styleHintImage) && (
+        <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-md">
+          <p className="text-xs text-purple-300">
+            💡 Tip: The AI will combine these images with your text prompt to create a unique wallet costume that flows around your UI.
+          </p>
+        </div>
       )}
     </div>
   );
