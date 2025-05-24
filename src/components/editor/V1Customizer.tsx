@@ -1,4 +1,3 @@
-
 import React from 'react';
 import LayerSelector from './LayerSelector';
 import UploadImage from './UploadImage';
@@ -13,7 +12,6 @@ import StyleNotesDisplay from '../wallet/StyleNotesDisplay';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import MaskEditor from './mask/MaskEditor';
 
 const V1Customizer = () => {
   const { editorMode } = useCustomizationStore();
@@ -24,8 +22,6 @@ const V1Customizer = () => {
         return <CreateStyleEditor />;
       case 'fine-tune':
         return <FineTuneEditor />;
-      case 'decorate':
-        return <MaskEditor />;
       default:
         return <CreateStyleEditor />;
     }
