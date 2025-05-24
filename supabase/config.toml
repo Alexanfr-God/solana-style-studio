@@ -47,6 +47,12 @@ enabled = true
 [functions.generate-wallet-mask-v3]
 verify_jwt = false
 
+[functions.generate-wallet-mask]
+verify_jwt = false
+
+[functions.generate-style]
+verify_jwt = true
+
 [functions.save-feedback]
 verify_jwt = true
 

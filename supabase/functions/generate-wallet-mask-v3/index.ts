@@ -17,7 +17,7 @@ interface MaskRequest {
 }
 
 interface MaskResponse {
-  mask_image_url: string;
+  image_url: string;
   layout_json: {
     layout: any;
     style: string;
@@ -27,11 +27,9 @@ interface MaskResponse {
   prompt_used: string;
 }
 
-const WALLET_BASE_IMAGE_URL = "/assets/wallet/ui_frame_base.png";
-
 const SAFE_ZONE = {
-  x: 432, // center X - width/2 for 1024x1024 canvas
-  y: 344, // center Y - height/2
+  x: 432,
+  y: 344,
   width: 160,
   height: 336
 };
@@ -42,8 +40,11 @@ serve(async (req) => {
   }
 
   try {
+    console.log('V3 Mask generation request received');
+    
     const openAiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openAiKey) {
+      console.error("OpenAI API key not configured");
       throw new Error("OpenAI API key not found");
     }
 
@@ -55,9 +56,9 @@ serve(async (req) => {
       user_id 
     } = await req.json() as MaskRequest;
 
-    console.log(`V3 Mask generation request: ${style} style`);
-    console.log(`Reference image: ${reference_image_url ? "✓" : "✗"}`);
-    console.log(`Style hint: ${style_hint_image_url ? "✓" : "✗"}`);
+    console.log(`Processing ${style} style mask generation`);
+    console.log(`Reference image: ${reference_image_url ? "provided" : "none"}`);
+    console.log(`Style hint: ${style_hint_image_url ? "provided" : "none"}`);
 
     // Step 1: Analyze images with GPT-4o
     const layoutAnalysis = await analyzeImagesWithGPT(
@@ -68,24 +69,24 @@ serve(async (req) => {
       style
     );
 
-    console.log("Layout analysis complete:", layoutAnalysis);
+    console.log("Layout analysis completed successfully");
 
     // Step 2: Generate mask with DALL-E
     let maskImageUrl;
     try {
       const enhancedPrompt = createEnhancedPrompt(prompt, layoutAnalysis, style);
-      console.log("Enhanced prompt for DALL-E:", enhancedPrompt);
+      console.log("Generating mask with DALL-E 3");
       
       maskImageUrl = await generateMaskWithDallE(enhancedPrompt, openAiKey);
-      console.log("Mask generated successfully");
+      console.log("Mask generated successfully with DALL-E");
     } catch (error) {
-      console.error("DALL-E generation failed:", error);
+      console.error("DALL-E generation failed, using fallback:", error);
       maskImageUrl = selectFallbackMask(style);
       console.log("Using fallback mask:", maskImageUrl);
     }
 
     const response: MaskResponse = {
-      mask_image_url: maskImageUrl,
+      image_url: maskImageUrl,
       layout_json: {
         layout: layoutAnalysis.layout,
         style: layoutAnalysis.style,
@@ -100,6 +101,7 @@ serve(async (req) => {
       await storeMaskResult(user_id, response, reference_image_url, style_hint_image_url, prompt);
     }
 
+    console.log("V3 mask generation completed successfully");
     return new Response(
       JSON.stringify(response),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -129,27 +131,28 @@ async function analyzeImagesWithGPT(
   apiKey: string,
   style: string
 ) {
+  console.log("Starting GPT-4o image analysis");
+  
   const analysisPrompt = `
-Analyze the provided images and text prompt to create a wallet costume design.
+Analyze the provided images and create a wallet costume design specification.
 
 REFERENCE IMAGE: Main inspiration for the mask design
 ${styleHintImageUrl ? "STYLE HINT IMAGE: Additional style/pattern reference" : ""}
-WALLET BASE: Consider the wallet UI placement (320x569px center area must remain TRANSPARENT)
 
 TEXT PROMPT: "${prompt}"
 STYLE: ${style}
 
 Create a decorative mask that:
-1. Flows beautifully around the wallet UI (WOW effect)
+1. Flows beautifully around the wallet UI creating a WOW effect
 2. Keeps the center (320x569px) completely transparent for UI visibility
 3. Uses the reference image as main inspiration
 ${styleHintImageUrl ? "4. Incorporates style elements from the hint image" : ""}
 5. Applies ${style} aesthetic principles
 
-IMPORTANT SAFE ZONE:
+CRITICAL SAFE ZONE:
 - Center rectangle (320x569px) at position (432, 344) MUST be transparent
 - No visual elements should overlap the UI area
-- Decorative elements should flow around the edges
+- Decorative elements should flow around the edges only
 
 Respond with JSON containing:
 {
@@ -178,7 +181,6 @@ Respond with JSON containing:
     }
   ];
 
-  // Add style hint image if provided
   if (styleHintImageUrl) {
     messages[0].content.push({
       type: "image_url",
@@ -195,16 +197,19 @@ Respond with JSON containing:
     body: JSON.stringify({
       model: "gpt-4o",
       messages: messages,
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
+      max_tokens: 1000
     })
   });
 
-  const data = await response.json();
   if (!response.ok) {
-    throw new Error(`GPT-4o analysis failed: ${data.error?.message}`);
+    const errorData = await response.json();
+    throw new Error(`GPT-4o analysis failed: ${errorData.error?.message}`);
   }
 
+  const data = await response.json();
   const result = JSON.parse(data.choices[0].message.content);
+  
   return {
     layout: result.layout || {
       top: "decorative elements",
@@ -221,13 +226,13 @@ Respond with JSON containing:
 
 function createEnhancedPrompt(prompt: string, analysis: any, style: string): string {
   const styleModifiers = {
-    cartoon: "vibrant cartoon style, bold outlines, bright colors",
-    meme: "meme-style, bold text effects, internet culture aesthetic",
-    luxury: "luxury gold and black, premium materials, elegant patterns",
-    modern: "clean modern design, geometric shapes, minimalist approach",
-    realistic: "photorealistic textures, detailed rendering",
-    fantasy: "magical fantasy elements, mystical effects",
-    minimalist: "clean minimal design, simple shapes, limited colors"
+    cartoon: "vibrant cartoon style, bold outlines, bright colors, playful design",
+    meme: "meme-style, bold text effects, internet culture aesthetic, humorous elements",
+    luxury: "luxury gold and black, premium materials, elegant patterns, sophisticated design",
+    modern: "clean modern design, geometric shapes, minimalist approach, contemporary style",
+    realistic: "photorealistic textures, detailed rendering, lifelike appearance",
+    fantasy: "magical fantasy elements, mystical effects, otherworldly design",
+    minimalist: "clean minimal design, simple shapes, limited colors, elegant simplicity"
   };
 
   const colors = analysis.color_palette.join(", ");
@@ -237,11 +242,14 @@ ${prompt}.
 Use colors: ${colors}.
 Layout: ${analysis.layout.top} at top, ${analysis.layout.bottom} at bottom.
 CRITICAL: Central rectangle (320x569px at coordinates 432,344) must be COMPLETELY TRANSPARENT.
-The design should flow beautifully around the edges creating a WOW effect.
-Output: 1024x1024 PNG with transparent center for UI visibility.`;
+The design should flow beautifully around the edges creating a stunning visual effect.
+Output: 1024x1024 PNG with transparent center for UI visibility.
+No text, letters, or words in the image.`;
 }
 
 async function generateMaskWithDallE(prompt: string, apiKey: string): Promise<string> {
+  console.log("Calling DALL-E 3 API");
+  
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: {
@@ -258,11 +266,12 @@ async function generateMaskWithDallE(prompt: string, apiKey: string): Promise<st
     })
   });
 
-  const data = await response.json();
   if (!response.ok) {
-    throw new Error(`DALL-E generation failed: ${data.error?.message}`);
+    const errorData = await response.json();
+    throw new Error(`DALL-E generation failed: ${errorData.error?.message}`);
   }
 
+  const data = await response.json();
   return data.data[0].url;
 }
 
@@ -274,7 +283,7 @@ function selectFallbackMask(style: string): string {
     modern: '/external-masks/cyber-mask.png',
     realistic: '/external-masks/abstract-mask.png',
     fantasy: '/external-masks/abstract-mask.png',
-    minimalist: '/external-masks/abstract-mask.png'
+    minimalist: '/external-masks/clean Example.png'
   };
   
   return fallbacks[style] || '/external-masks/abstract-mask.png';
@@ -301,11 +310,17 @@ async function storeMaskResult(
   styleHintImageUrl: string | undefined,
   prompt: string
 ): Promise<void> {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn("Supabase credentials not available, skipping storage");
+      return;
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     await supabase.from('ai_requests').insert({
       user_id: userId,
       prompt: prompt,
@@ -313,13 +328,14 @@ async function storeMaskResult(
       layer_type: 'mask_v3',
       status: 'completed',
       style_result: {
-        mask_image_url: response.mask_image_url,
+        image_url: response.image_url,
         layout_json: response.layout_json,
         prompt_used: response.prompt_used,
         reference_image: referenceImageUrl,
         style_hint_image: styleHintImageUrl
       }
     });
+    
     console.log("V3 mask result stored successfully");
   } catch (error) {
     console.error("Error storing V3 mask result:", error);
