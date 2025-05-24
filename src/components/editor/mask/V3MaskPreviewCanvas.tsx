@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
@@ -15,8 +15,22 @@ const V3MaskPreviewCanvas = () => {
   } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
+  // Updated mask URL from Supabase Storage
+  const MASK_CUTOUT_URL = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-wallet-cutout-v3.png';
+
   const previewImageUrl = externalMask || maskImageUrl || "/placeholder.svg";
   const previewPrompt = "V3 Enhanced wallet mask customization with wallet base integration";
+
+  // Debug logging for mask state
+  useEffect(() => {
+    console.log('V3MaskPreviewCanvas - Mask State:', {
+      externalMask: externalMask ? 'loaded' : 'null',
+      externalMaskUrl: externalMask,
+      maskImageUrl: maskImageUrl ? 'loaded' : 'null',
+      safeZoneVisible,
+      maskCutoutUrl: MASK_CUTOUT_URL
+    });
+  }, [externalMask, maskImageUrl, safeZoneVisible]);
 
   return (
     <div className="relative w-full h-[800px] flex items-center justify-center">
@@ -30,10 +44,10 @@ const V3MaskPreviewCanvas = () => {
                 style={{
                   width: '100%',
                   height: '100%',
-                  maskImage: 'url(/mask-wallet-cutout.png)',
-                  WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
-                  maskSize: 'contain',
-                  WebkitMaskSize: 'contain',
+                  maskImage: `url('${MASK_CUTOUT_URL}')`,
+                  WebkitMaskImage: `url('${MASK_CUTOUT_URL}')`,
+                  maskSize: 'cover',
+                  WebkitMaskSize: 'cover',
                   maskPosition: 'center',
                   WebkitMaskPosition: 'center',
                   maskRepeat: 'no-repeat',
@@ -49,6 +63,8 @@ const V3MaskPreviewCanvas = () => {
                   style={{
                     filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.1))'
                   }}
+                  onLoad={() => console.log('External mask image loaded successfully:', externalMask)}
+                  onError={(e) => console.error('External mask image failed to load:', externalMask, e)}
                 />
               </div>
             )}
@@ -60,10 +76,10 @@ const V3MaskPreviewCanvas = () => {
                 style={{
                   width: '100%',
                   height: '100%',
-                  maskImage: 'url(/mask-wallet-cutout.png)',
-                  WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
-                  maskSize: 'contain',
-                  WebkitMaskSize: 'contain',
+                  maskImage: `url('${MASK_CUTOUT_URL}')`,
+                  WebkitMaskImage: `url('${MASK_CUTOUT_URL}')`,
+                  maskSize: 'cover',
+                  WebkitMaskSize: 'cover',
                   maskPosition: 'center',
                   WebkitMaskPosition: 'center',
                   maskRepeat: 'no-repeat',
@@ -74,6 +90,8 @@ const V3MaskPreviewCanvas = () => {
                   src={maskImageUrl} 
                   alt="Legacy mask overlay" 
                   className="w-full h-full object-cover"
+                  onLoad={() => console.log('Legacy mask image loaded successfully:', maskImageUrl)}
+                  onError={(e) => console.error('Legacy mask image failed to load:', maskImageUrl, e)}
                 />
               </div>
             )}
@@ -120,6 +138,17 @@ const V3MaskPreviewCanvas = () => {
                 V3 DEMO
               </Badge>
             </div>
+
+            {/* Debug indicator when mask is loaded */}
+            {externalMask && (
+              <div className="absolute bottom-4 left-4 z-50">
+                <Badge 
+                  className="bg-blue-500/80 text-white px-2 py-1 text-xs"
+                >
+                  🎭 Mask Active
+                </Badge>
+              </div>
+            )}
           </WalletSceneContainer>
         </div>
       </ImageFeedbackWrapper>
