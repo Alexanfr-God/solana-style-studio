@@ -42,7 +42,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     setDebugInfo(null);
     
     try {
-      toast.info("🚀 Generating optimized V3 wallet costume...");
+      toast.info("🚀 Generating V3 optimized wallet costume...");
       
       setProgress(20);
       
@@ -53,11 +53,14 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         });
       }, 2000);
       
-      console.log('🎯 Calling optimized generate-wallet-mask-v3 with:', { 
-        prompt, 
-        referenceImage,
-        styleHintImage,
-        maskStyle 
+      console.log('🎯 V3 Enhanced generation request:', { 
+        prompt: prompt || 'No text prompt provided',
+        referenceImage: referenceImage ? 'Reference image provided' : 'No reference image',
+        styleHintImage: styleHintImage ? 'Style hint provided' : 'No style hint',
+        maskStyle,
+        containerSize: '480x854',
+        walletSize: '320x569',
+        outputSize: '1024x1024'
       });
       
       setProgress(40);
@@ -65,23 +68,37 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       // Get current user for storage
       const { data: { user } } = await supabase.auth.getUser();
       
+      const requestPayload = {
+        prompt: prompt || '',
+        reference_image_url: referenceImage || null,
+        style_hint_image_url: styleHintImage || null,
+        style: maskStyle,
+        user_id: user?.id,
+        // V3 Enhanced parameters
+        container_width: 480,
+        container_height: 854,
+        wallet_width: 320,
+        wallet_height: 569,
+        output_size: 1024,
+        safe_zone_x: 80, // Corrected coordinates for 480x854 container
+        safe_zone_y: 142,
+        safe_zone_width: 320,
+        safe_zone_height: 569
+      };
+      
+      console.log('📤 V3 Request payload:', requestPayload);
+      
       const { data, error } = await supabase.functions.invoke('generate-wallet-mask-v3', {
-        body: {
-          prompt: prompt,
-          reference_image_url: referenceImage,
-          style_hint_image_url: styleHintImage,
-          style: maskStyle,
-          user_id: user?.id
-        }
+        body: requestPayload
       });
       
       clearInterval(progressInterval);
       setProgress(90);
       
-      console.log('🎉 V3 optimized mask generation result:', data);
+      console.log('🎉 V3 Enhanced generation result:', data);
       
       if (error) {
-        throw new Error(`V3 Optimized generation failed: ${error.message}`);
+        throw new Error(`V3 Enhanced generation failed: ${error.message}`);
       }
       
       if (!data || !data.image_url) {
@@ -91,17 +108,33 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       setProgress(100);
       setExternalMask(data.image_url);
       
-      // Store debug information from the response
+      // Enhanced debug information
       if (data.debug_info) {
-        setDebugInfo(data.debug_info);
-        console.log('🔍 Debug information received:', data.debug_info);
+        setDebugInfo({
+          ...data.debug_info,
+          requestedSafeZone: {
+            x: 80,
+            y: 142,
+            width: 320,
+            height: 569
+          },
+          actualSafeZone: data.debug_info.safeZone,
+          coordinateMapping: 'Container(480x854) -> Output(1024x1024)',
+          promptUsed: data.debug_info.final_prompt || 'Not available',
+          imagesProcessed: {
+            reference: !!referenceImage,
+            styleHint: !!styleHintImage,
+            total: (referenceImage ? 1 : 0) + (styleHintImage ? 1 : 0)
+          }
+        });
+        console.log('🔍 V3 Enhanced debug info:', debugInfo);
       }
       
-      toast.success("🎉 Optimized V3 wallet costume generated and applied! Check the preview.");
+      toast.success("🎉 V3 Enhanced wallet costume generated! Optimized sizing and positioning applied.");
       
       if (data.storage_path) {
-        console.log("💾 Image stored at:", data.storage_path);
-        toast.info("💾 Costume saved to your collection");
+        console.log("💾 V3 Enhanced image stored at:", data.storage_path);
+        toast.info("💾 Enhanced costume saved to your collection");
       }
       
       setTimeout(() => {
@@ -110,14 +143,15 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       }, 1500);
       
     } catch (error) {
-      console.error("💥 Error generating V3 optimized mask:", error);
+      console.error("💥 V3 Enhanced generation error:", error);
       setHasGenerationError(true);
       toast.error(
         typeof error === 'object' && error !== null && 'message' in error
-          ? `Error: ${(error as Error).message}`
-          : "Failed to generate costume. Using a demo mask instead."
+          ? `V3 Enhanced Error: ${(error as Error).message}`
+          : "V3 Enhanced generation failed. Using fallback mask."
       );
       
+      // Enhanced fallbacks with better sizing
       const fallbacks = {
         cartoon: '/external-masks/cats-mask.png',
         meme: '/external-masks/pepe-mask.png',
@@ -149,12 +183,12 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating Optimized Costume...
+            Generating V3 Enhanced Costume...
           </>
         ) : (
           <>
             <Wand className="mr-2 h-4 w-4" />
-            Generate V3 Optimized Costume
+            Generate V3 Enhanced Costume
           </>
         )}
       </Button>
@@ -163,11 +197,11 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         <div className="space-y-1">
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-white/50 text-center">
-            {progress < 20 ? "🔍 Analyzing wallet base and images..." : 
-             progress < 40 ? "🧠 Enhanced GPT-4o with optimized prompt handling..." :
-             progress < 60 ? "🎨 Creating artwork with DALL-E 3 (corrected coordinates)..." : 
-             progress < 80 ? "✨ Validating transparency and sizing..." : 
-             progress < 90 ? "💾 Storing optimized result..." : "🎉 Finalizing V3 optimization!"}
+            {progress < 20 ? "🔍 V3 Enhanced: Analyzing wallet and images..." : 
+             progress < 40 ? "🧠 V3 Enhanced: GPT-4o with improved prompt processing..." :
+             progress < 60 ? "🎨 V3 Enhanced: DALL-E 3 with corrected coordinates..." : 
+             progress < 80 ? "✨ V3 Enhanced: Validating sizing and transparency..." : 
+             progress < 90 ? "💾 V3 Enhanced: Storing optimized result..." : "🎉 V3 Enhanced: Finalizing optimization!"}
           </p>
         </div>
       )}
@@ -175,37 +209,39 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       {hasGenerationError && (
         <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-md flex items-center text-xs text-red-300">
           <AlertCircle className="h-3 w-3 mr-1" />
-          Generation error. Using fallback mask. Check console for details.
+          V3 Enhanced generation error. Using fallback. Check console for details.
         </div>
       )}
       
       {!hasValidInput && (
         <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-xs text-yellow-300">
-          💡 Upload a reference image or enter a description to get started
+          💡 Upload a reference image or enter a description to start V3 Enhanced generation
         </div>
       )}
       
       {hasValidInput && !isGenerating && (
         <div className="text-xs text-white/60 text-center">
-          🚀 Style: <span className="text-purple-300 font-medium">{maskStyle}</span> | 
-          🖼️ Images: {referenceImage ? "✅" : "✗"} {styleHintImage ? "+ Style Hint" : ""} + Wallet Base
+          🚀 V3 Enhanced Style: <span className="text-purple-300 font-medium">{maskStyle}</span> | 
+          🖼️ Images: {referenceImage ? "✅" : "✗"} {styleHintImage ? "+ Style" : ""} + Wallet Base (480x854→1024x1024)
         </div>
       )}
 
-      {/* ENHANCED Debug information display */}
       {debugInfo && (
         <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
           <div className="flex items-center text-xs text-blue-300 mb-2">
             <Info className="h-3 w-3 mr-1" />
-            Debug Information (V3 Optimized)
+            V3 Enhanced Debug Information
           </div>
           <div className="text-xs text-white/70 space-y-1">
-            <div>📐 Safe Zone: x={debugInfo.safeZone?.x}, y={debugInfo.safeZone?.y}, {debugInfo.safeZone?.width}×{debugInfo.safeZone?.height}px</div>
-            <div>📱 Container: {debugInfo.containerDimensions?.width}×{debugInfo.containerDimensions?.height}px</div>
-            <div>🖼️ Output: {debugInfo.outputImageSize}</div>
-            <div>🎯 Attempts: {debugInfo.attempts}</div>
+            <div>📐 Requested Safe Zone: x={debugInfo.requestedSafeZone?.x}, y={debugInfo.requestedSafeZone?.y}, {debugInfo.requestedSafeZone?.width}×{debugInfo.requestedSafeZone?.height}px</div>
+            <div>📐 Actual Safe Zone: x={debugInfo.actualSafeZone?.x}, y={debugInfo.actualSafeZone?.y}, {debugInfo.actualSafeZone?.width}×{debugInfo.actualSafeZone?.height}px</div>
+            <div>📱 Container: {debugInfo.containerDimensions?.width || '480'}×{debugInfo.containerDimensions?.height || '854'}px</div>
+            <div>🖼️ Output: {debugInfo.outputImageSize || '1024x1024'}</div>
+            <div>🔄 Coordinate Mapping: {debugInfo.coordinateMapping}</div>
+            <div>🎯 Generation Attempts: {debugInfo.attempts || 'N/A'}</div>
             <div>✅ Transparency: {debugInfo.transparencyValidated ? "Valid" : "Failed"}</div>
-            <div>📸 Images: {debugInfo.hasReferenceImage ? "✓" : "✗"} ref, {debugInfo.hasStyleHint ? "✓" : "✗"} hint</div>
+            <div>📸 Images Processed: {debugInfo.imagesProcessed?.total || 0} ({debugInfo.imagesProcessed?.reference ? "ref" : "no-ref"}, {debugInfo.imagesProcessed?.styleHint ? "style" : "no-style"})</div>
+            <div>📝 Prompt Length: {debugInfo.promptUsed?.length || 0} chars</div>
           </div>
         </div>
       )}
