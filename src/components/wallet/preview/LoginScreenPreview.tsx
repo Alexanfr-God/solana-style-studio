@@ -155,7 +155,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
   
   return (
     <div 
-      className="wallet-preview flex flex-col rounded-2xl overflow-hidden w-full max-w-[320px] relative"
+      className="wallet-preview flex flex-col rounded-2xl overflow-hidden w-full h-full relative"
       style={{
         ...getBackgroundStyle(),
         color: style.textColor || '#FFFFFF',
@@ -167,12 +167,12 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
       <div 
         className="absolute inset-0 z-0 opacity-20" 
         style={{
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23" + (style.accentColor?.replace('#', '') || '9945FF') + "' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E\")",
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.74 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23" + (style.accentColor?.replace('#', '') || '9945FF') + "' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E\")",
         }}
       />
 
-      {/* Header with centered phantom branding */}
-      <div className="p-5 flex justify-center items-center relative z-10">
+      {/* Header with centered phantom branding - reduced padding for full height */}
+      <div className="p-3 flex justify-center items-center relative z-10">
         <div 
           className="text-center relative" 
           style={textStyle}
@@ -189,7 +189,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
           />
         </div>
         <HelpCircle 
-          className="h-5 w-5 cursor-pointer transition-transform hover:scale-110 hover:rotate-12 absolute right-5" 
+          className="h-4 w-4 cursor-pointer transition-transform hover:scale-110 hover:rotate-12 absolute right-3" 
           style={{ 
             color: style.accentColor || '#9945FF', 
             filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))' 
@@ -197,8 +197,8 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         />
       </div>
       
-      {/* Logo and Content area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 pt-8 relative z-10">
+      {/* Logo and Content area - optimized spacing for full height */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4 pt-6 relative z-10">
         {/* Animated Ghost Logo - only displayed when NOT generating */}
         {!isGenerating && (
           <div className="mb-8 relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
@@ -218,11 +218,11 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
           </div>
         )}
         
-        {/* Content container with consistent spacing */}
-        <div className="w-full flex flex-col items-center space-y-6 relative z-10">
-          {/* Login Title */}
+        {/* Content container with optimized spacing for full height */}
+        <div className="w-full flex flex-col items-center space-y-4 relative z-10">
+          {/* Login Title - reduced margin */}
           <h2 
-            className="text-2xl font-medium" 
+            className="text-xl font-medium" 
             style={{ 
               color: style.textColor || '#FFFFFF', 
               textShadow: getTextShadow(),
@@ -232,10 +232,10 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             Enter your password
           </h2>
           
-          {/* Password field with enhanced styling */}
+          {/* Password field with enhanced styling - optimized size */}
           <div className="w-full max-w-xs">
             <div 
-              className="h-12 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
+              className="h-10 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
               style={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.07)',
                 borderRadius: style.borderRadius || '100px',
@@ -248,7 +248,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white transition-colors"
+                className="w-full bg-transparent border-none outline-none text-white transition-colors text-sm"
                 placeholder="Password"
                 style={{
                   caretColor: style.accentColor || '#9945FF',
@@ -257,10 +257,10 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
               {password.length > 0 && (
                 <button 
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 text-gray-400 hover:text-white transition-colors flex items-center justify-center"
+                  className="absolute right-3 text-gray-400 hover:text-white transition-colors flex items-center justify-center"
                   style={{ color: style.accentColor || '#9945FF' }}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               )}
               
@@ -271,13 +271,13 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             </div>
           </div>
           
-          {/* Forgot password link */}
+          {/* Forgot password link - reduced margin */}
           <div 
             className="w-full max-w-xs text-center"
             onClick={handleForgotPassword}
           >
             <span 
-              className="text-gray-400 text-sm cursor-pointer hover:text-gray-300 relative group"
+              className="text-gray-400 text-xs cursor-pointer hover:text-gray-300 relative group"
               style={{ transition: 'all 0.3s ease' }}
             >
               Forgot password?
@@ -288,11 +288,11 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             </span>
           </div>
           
-          {/* Enhanced Unlock Button */}
-          <div className="w-full max-w-xs mt-4">
+          {/* Enhanced Unlock Button - optimized size */}
+          <div className="w-full max-w-xs mt-3">
             <button 
               onClick={handleUnlock}
-              className="w-full h-12 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98]"
+              className="w-full h-10 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98] text-sm"
               style={{ 
                 backgroundColor: style.buttonColor || '#9b87f5',
                 color: style.buttonTextColor || '#000000',

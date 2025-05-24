@@ -28,6 +28,9 @@ const V3MaskPreviewCanvas = () => {
   const WALLET_X = 352; // Centered in 1024x1024 canvas
   const WALLET_Y = 228; // Centered in 1024x1024 canvas
 
+  // Preview scale factor for display (only for the entire preview container)
+  const PREVIEW_SCALE = 0.6;
+
   // Debug logging
   useEffect(() => {
     console.log('🔍 V3 Enhanced Preview Debug:', {
@@ -37,6 +40,7 @@ const V3MaskPreviewCanvas = () => {
       outputDimensions: `${OUTPUT_WIDTH}x${OUTPUT_HEIGHT}`,
       walletDimensions: `${WALLET_WIDTH}x${WALLET_HEIGHT}`,
       walletPosition: `x=${WALLET_X}, y=${WALLET_Y}`,
+      previewScale: PREVIEW_SCALE,
       maskCutoutUrl: MASK_CUTOUT_URL
     });
   }, [externalMask, maskImageUrl, safeZoneVisible]);
@@ -48,9 +52,8 @@ const V3MaskPreviewCanvas = () => {
         <div 
           className="relative" 
           style={{ 
-            width: `${OUTPUT_WIDTH * 0.6}px`, // Scale down for preview
-            height: `${OUTPUT_HEIGHT * 0.6}px`,
-            transform: 'scale(0.8)' // Additional scaling for better fit
+            width: `${OUTPUT_WIDTH * PREVIEW_SCALE}px`,
+            height: `${OUTPUT_HEIGHT * PREVIEW_SCALE}px`,
           }}
         >
           
@@ -111,14 +114,14 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
           
-          {/* V3 Enhanced wallet UI container - positioned at exact coordinates */}
+          {/* V3 Enhanced wallet UI container - positioned at exact coordinates with full size */}
           <div 
             className="absolute z-20"
             style={{
-              width: `${WALLET_WIDTH * 0.6}px`, // Scale to match container
-              height: `${WALLET_HEIGHT * 0.6}px`,
-              left: `${WALLET_X * 0.6}px`, // Scale coordinates
-              top: `${WALLET_Y * 0.6}px`,
+              width: `${WALLET_WIDTH * PREVIEW_SCALE}px`,
+              height: `${WALLET_HEIGHT * PREVIEW_SCALE}px`,
+              left: `${WALLET_X * PREVIEW_SCALE}px`,
+              top: `${WALLET_Y * PREVIEW_SCALE}px`,
               backgroundColor: loginStyle.backgroundColor || '#131313',
               backgroundImage: loginStyle.backgroundImage,
               backgroundSize: 'cover',
@@ -138,10 +141,10 @@ const V3MaskPreviewCanvas = () => {
             <div 
               className="absolute z-30 pointer-events-none"
               style={{
-                width: `${WALLET_WIDTH * 0.6}px`,
-                height: `${WALLET_HEIGHT * 0.6}px`,
-                left: `${WALLET_X * 0.6}px`,
-                top: `${WALLET_Y * 0.6}px`,
+                width: `${WALLET_WIDTH * PREVIEW_SCALE}px`,
+                height: `${WALLET_HEIGHT * PREVIEW_SCALE}px`,
+                left: `${WALLET_X * PREVIEW_SCALE}px`,
+                top: `${WALLET_Y * PREVIEW_SCALE}px`,
                 border: '2px solid #10b981',
                 borderRadius: '16px',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -211,6 +214,15 @@ const V3MaskPreviewCanvas = () => {
               </Badge>
             </div>
           )}
+
+          {/* Scale indicator for debugging */}
+          <div className="absolute top-1/2 right-4 z-40">
+            <Badge 
+              className="bg-orange-500/80 text-white px-2 py-1 text-xs font-mono"
+            >
+              Scale: {PREVIEW_SCALE}x
+            </Badge>
+          </div>
         </div>
       </ImageFeedbackWrapper>
     </div>
