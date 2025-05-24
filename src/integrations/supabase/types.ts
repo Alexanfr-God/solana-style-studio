@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_mask_results: {
+        Row: {
+          color_palette: string[]
+          created_at: string
+          id: string
+          image_url: string
+          layout: Json
+          prompt: string
+          reference_image_url: string | null
+          safe_zone: Json
+          storage_path: string | null
+          style: string
+          style_hint_image_url: string | null
+          transparency_validated: boolean | null
+          updated_at: string
+          user_id: string | null
+          wallet_base_image_url: string | null
+        }
+        Insert: {
+          color_palette: string[]
+          created_at?: string
+          id?: string
+          image_url: string
+          layout: Json
+          prompt: string
+          reference_image_url?: string | null
+          safe_zone: Json
+          storage_path?: string | null
+          style: string
+          style_hint_image_url?: string | null
+          transparency_validated?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+          wallet_base_image_url?: string | null
+        }
+        Update: {
+          color_palette?: string[]
+          created_at?: string
+          id?: string
+          image_url?: string
+          layout?: Json
+          prompt?: string
+          reference_image_url?: string | null
+          safe_zone?: Json
+          storage_path?: string | null
+          style?: string
+          style_hint_image_url?: string | null
+          transparency_validated?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+          wallet_base_image_url?: string | null
+        }
+        Relationships: []
+      }
       ai_requests: {
         Row: {
           created_at: string | null

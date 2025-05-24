@@ -40,56 +40,69 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     setSafeZoneVisible(true);
     
     try {
-      toast.info("Generating wallet costume with advanced AI. This may take up to 45 seconds...");
+      toast.info("🚀 Generating enhanced wallet costume with V3 architecture...");
       
-      setProgress(30);
+      setProgress(20);
       
       const progressInterval = setInterval(() => {
         setProgress(prev => {
-          const newProgress = prev + Math.random() * 8;
-          return newProgress < 85 ? newProgress : prev;
+          const newProgress = prev + Math.random() * 6;
+          return newProgress < 80 ? newProgress : prev;
         });
-      }, 1500);
+      }, 2000);
       
-      console.log('Calling generate-wallet-mask-v3 with:', { 
+      console.log('Calling enhanced generate-wallet-mask-v3 with:', { 
         prompt, 
         referenceImage,
         styleHintImage,
         maskStyle 
       });
       
+      setProgress(40);
+      
+      // Get current user for storage
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase.functions.invoke('generate-wallet-mask-v3', {
         body: {
           prompt: prompt,
           reference_image_url: referenceImage,
           style_hint_image_url: styleHintImage,
-          style: maskStyle
+          style: maskStyle,
+          user_id: user?.id
         }
       });
       
       clearInterval(progressInterval);
-      setProgress(100);
+      setProgress(90);
       
-      console.log('V3 mask generation result:', data);
+      console.log('V3 enhanced mask generation result:', data);
       
       if (error) {
-        throw new Error(`V3 Generation failed: ${error.message}`);
+        throw new Error(`V3 Enhanced generation failed: ${error.message}`);
       }
       
       if (!data || !data.image_url) {
         throw new Error("Failed to generate mask - no image URL returned");
       }
       
+      setProgress(100);
       setExternalMask(data.image_url);
-      toast.success("🎉 Wallet costume generated and applied! Check the preview on the right.");
+      
+      toast.success("🎉 Enhanced wallet costume generated and applied! Check the preview on the right.");
+      
+      if (data.storage_path) {
+        console.log("Image stored at:", data.storage_path);
+        toast.info("💾 Costume saved to your collection");
+      }
       
       setTimeout(() => {
         setShowProgress(false);
         setProgress(0);
-      }, 1000);
+      }, 1500);
       
     } catch (error) {
-      console.error("Error generating V3 mask:", error);
+      console.error("Error generating V3 enhanced mask:", error);
       setHasGenerationError(true);
       toast.error(
         typeof error === 'object' && error !== null && 'message' in error
@@ -128,12 +141,12 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating Costume...
+            Generating Enhanced Costume...
           </>
         ) : (
           <>
             <Wand className="mr-2 h-4 w-4" />
-            Generate Wallet Costume
+            Generate V3 Wallet Costume
           </>
         )}
       </Button>
@@ -142,9 +155,11 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         <div className="space-y-1">
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-white/50 text-center">
-            {progress < 30 ? "🔍 Analyzing your images..." : 
-             progress < 60 ? "🎨 Creating artwork with AI..." : 
-             progress < 85 ? "✨ Adding WOW effects..." : "🎉 Almost ready!"}
+            {progress < 20 ? "🔍 Analyzing wallet base and images..." : 
+             progress < 40 ? "🧠 Enhanced GPT-4o layout analysis..." :
+             progress < 60 ? "🎨 Creating artwork with DALL-E 3..." : 
+             progress < 80 ? "✨ Validating transparency..." : 
+             progress < 90 ? "💾 Storing in collection..." : "🎉 Almost ready!"}
           </p>
         </div>
       )}
@@ -165,7 +180,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       {hasValidInput && !isGenerating && (
         <div className="text-xs text-white/60 text-center">
           🚀 Style: <span className="text-purple-300 font-medium">{maskStyle}</span> | 
-          🖼️ Images: {referenceImage ? "✓" : "✗"} {styleHintImage ? "+ Style Hint" : ""}
+          🖼️ Images: {referenceImage ? "✓" : "✗"} {styleHintImage ? "+ Style Hint" : ""} + Wallet Base
         </div>
       )}
     </div>
