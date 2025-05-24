@@ -1,3 +1,4 @@
+
 // Import required modules
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -31,8 +32,6 @@ interface MaskRequest {
   layer: "login" | "wallet";
   user_id?: string;
   hd_quality?: boolean;
-  selected_style?: string;
-  debug_mode?: boolean;
 }
 
 interface MaskResponse {
@@ -45,7 +44,6 @@ interface MaskResponse {
   };
   prompt_used: string;
   input_type: "image" | "prompt" | "image+prompt";
-  debug_info?: any;
 }
 
 interface LayoutAnalysis {
@@ -54,12 +52,13 @@ interface LayoutAnalysis {
   color_palette: string[];
 }
 
-// Enhanced safe zone coordinates for 1024x1024 canvas
+// Define safe zone - precise coordinates based on wallet UI dimensions
+// Updated to use the centerpoint-relative coordinates for 1024x1024 DALL-E canvas
 const WALLET_SAFE_ZONE: SafeZone = {
-  x: 352, // (1024 - 320) / 2
-  y: 227, // (1024 - 569) / 2
-  width: 320,
-  height: 569
+  x: 432, // center X - width/2
+  y: 344, // center Y - height/2
+  width: 160,
+  height: 336
 };
 
 // Main function handler
@@ -76,40 +75,42 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { 
-      image_url, 
-      prompt, 
-      layer, 
-      user_id, 
-      hd_quality,
-      selected_style = '',
-      debug_mode = false
-    } = await req.json() as MaskRequest;
+    const { image_url, prompt, layer, user_id, hd_quality } = await req.json() as MaskRequest;
     
     // Log input parameters for debugging
     console.log(`Request received for ${layer} mask`);
-    console.log(`Selected style: ${selected_style}`);
-    console.log(`Debug mode: ${debug_mode}`);
+    console.log(`Input type: ${image_url ? "image_url" : ""}${prompt ? (image_url ? "+prompt" : "prompt") : ""}`);
+    if (image_url) {
+      console.log(`Image URL provided: ${image_url.substring(0, 50)}...`);
+      
+      // Validate the image URL - make sure it's not a blob URL
+      if (image_url.startsWith('blob:')) {
+        throw new Error("Invalid image URL format. Blob URLs are not accessible by the API. Please use a publicly accessible URL.");
+      }
+      
+      // Check if URL is accessible
+      try {
+        const imageResponse = await fetch(image_url, { method: 'HEAD' });
+        if (!imageResponse.ok) {
+          throw new Error(`Image URL is not accessible (status: ${imageResponse.status})`);
+        }
+      } catch (error) {
+        console.error("Error checking image URL:", error);
+        throw new Error("Unable to access the provided image URL. Please ensure it's publicly accessible.");
+      }
+    }
     
     // Validate input parameters
     validateInputParameters(image_url, prompt, layer);
 
+    console.log(`Processing mask request for layer: ${layer}`);
+    console.log(`Input: ${image_url ? "image_url: ✓" : "image_url: ✗"}, ${prompt ? "prompt: ✓" : "prompt: ✗"}`);
+
     // Determine input type
     const inputType = determineInputType(image_url, prompt);
-    console.log(`Processing ${inputType} request`);
 
-    // Process the request with enhanced prompt building
-    const response = await processEnhancedRequest(
-      inputType, 
-      image_url, 
-      prompt, 
-      openAiKey, 
-      layer, 
-      selected_style,
-      user_id, 
-      hd_quality,
-      debug_mode
-    );
+    // Process the request
+    const response = await processRequest(inputType, image_url, prompt, openAiKey, layer, user_id, hd_quality);
 
     return new Response(
       JSON.stringify(response),
@@ -119,11 +120,23 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in generate-wallet-mask function:", error);
     
+    // Return a more informative error response
     return new Response(
       JSON.stringify({ 
         error: "Failed to generate wallet mask", 
         details: error.message,
-        fallback_mask: '/external-masks/abstract-mask.png'
+        fallback_mask: '/external-masks/abstract-mask.png',
+        fallback_layout: {
+          layout: {
+            top: "Fallback decorative elements",
+            bottom: "Fallback decorative elements",
+            left: null,
+            right: null,
+            core: "untouched"
+          },
+          style: "abstract fallback",
+          color_palette: ["#6c5ce7", "#fd79a8", "#00cec9"]
+        }
       }),
       { 
         status: 500, 
@@ -150,60 +163,67 @@ function determineInputType(image_url?: string, prompt?: string): "image" | "pro
   return "prompt";
 }
 
-async function processEnhancedRequest(
+async function processRequest(
   inputType: "image" | "prompt" | "image+prompt",
   image_url: string | undefined,
   prompt: string | undefined,
   openAiKey: string,
   layer: string,
-  selectedStyle: string,
   user_id?: string,
-  hd_quality: boolean = false,
-  debug_mode: boolean = false
+  hd_quality: boolean = false
 ): Promise<MaskResponse> {
-  console.log(`Processing enhanced ${inputType} request for ${layer} layer`);
+  console.log(`Processing ${inputType} request for ${layer} layer`);
   
-  // Step 1: Enhanced analysis with style context
-  let layoutAnalysis: LayoutAnalysis;
+  // Step 1: Analyze image or interpret prompt with GPT-4o
+  let layoutAnalysis;
   
   try {
     if (inputType === "image" || inputType === "image+prompt") {
-      console.log("Analyzing image with GPT-4o and style context...");
-      layoutAnalysis = await analyzeImageWithEnhancedGPT(image_url!, prompt, selectedStyle, openAiKey);
+      console.log("Analyzing image with GPT-4o...");
+      layoutAnalysis = await analyzeImageWithGPT(image_url!, prompt, openAiKey);
     } else {
-      console.log("Interpreting prompt with GPT-4o and style context...");
-      layoutAnalysis = await interpretPromptWithEnhancedGPT(prompt!, selectedStyle, openAiKey);
+      console.log("Interpreting prompt with GPT-4o...");
+      layoutAnalysis = await interpretPromptWithGPT(prompt!, openAiKey);
     }
   
-    console.log("Enhanced layout analysis complete:", layoutAnalysis);
+    console.log("Layout analysis complete:", layoutAnalysis);
 
-    // Step 2: Build comprehensive prompt using modular system
-    const finalPrompt = buildEnhancedPrompt(prompt || "", layoutAnalysis, selectedStyle, debug_mode);
-    console.log("Enhanced prompt built:", debug_mode ? finalPrompt : finalPrompt.substring(0, 200) + "...");
-
-    // Step 3: Generate with DALL-E using enhanced prompt
-    let maskImageUrl: string;
+    // Step 2: Try generating mask image with DALL-E
+    let maskImageUrl;
     let generationSucceeded = false;
 
     try {
-      console.log("Generating with enhanced DALL-E prompt...");
+      // Use simplified approach with minimal prompt complexity
+      const simplifiedPrompt = createUltraSimplifiedPrompt(prompt || "", layoutAnalysis);
+      console.log("Using ultra simplified prompt for DALL-E:", simplifiedPrompt);
       
-      maskImageUrl = await generateImageWithEnhancedDallE(
-        finalPrompt, 
-        openAiKey,
-        hd_quality
-      );
+      // Try with controller & timeout to prevent hanging
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
       
-      console.log("Enhanced image generated successfully");
-      generationSucceeded = true;
+      try {
+        maskImageUrl = await generateImageWithSimplifiedDallE(
+          simplifiedPrompt, 
+          openAiKey,
+          hd_quality
+        );
+        clearTimeout(timeout);
+        
+        console.log("Image generated successfully with simplified prompt");
+        generationSucceeded = true;
+      } catch (abortError) {
+        clearTimeout(timeout);
+        throw new Error("DALL-E request timed out or was aborted");
+      }
     } catch (dalleError) {
-      console.error("Error with enhanced DALL-E approach:", dalleError);
+      console.error("Error with simplified DALL-E approach:", dalleError);
       console.log("Falling back to predefined mask...");
       
-      maskImageUrl = selectFallbackMask(prompt || "", layoutAnalysis.style, selectedStyle);
+      // Use a predefined mask based on the style or prompt content
+      maskImageUrl = selectFallbackMask(prompt || "", layoutAnalysis.style);
     }
 
-    // Prepare enhanced response
+    // Prepare response
     const response: MaskResponse = {
       mask_image_url: maskImageUrl,
       layout_json: {
@@ -212,13 +232,8 @@ async function processEnhancedRequest(
         color_palette: layoutAnalysis.color_palette,
         safe_zone: WALLET_SAFE_ZONE
       },
-      prompt_used: finalPrompt,
-      input_type: inputType,
-      debug_info: debug_mode ? {
-        selected_style: selectedStyle,
-        analysis: layoutAnalysis,
-        generation_succeeded: generationSucceeded
-      } : undefined
+      prompt_used: prompt || "Using fallback mask",
+      input_type: inputType
     };
 
     // Store result in database if user_id is provided
@@ -228,208 +243,120 @@ async function processEnhancedRequest(
 
     return response;
   } catch (error) {
-    console.error("Error in processEnhancedRequest:", error);
-    throw error;
+    console.error("Error in processRequest:", error);
+    throw error; // Re-throw to be handled by the main handler
   }
 }
 
-// Enhanced GPT-4o analysis with style integration
-async function analyzeImageWithEnhancedGPT(
-  imageUrl: string, 
-  additionalPrompt: string | undefined, 
-  selectedStyle: string,
-  apiKey: string
-): Promise<LayoutAnalysis> {
-  
-  const styleContext = selectedStyle ? `User has selected "${selectedStyle}" style preference. ` : '';
-  const safeZoneInstructions = `
-🎯 WALLET MASK DESIGN ANALYSIS
-
-${styleContext}Your task: Analyze this image for creating a decorative wallet frame.
-
-SAFE ZONE REQUIREMENTS:
-- Central rectangle: ${WALLET_SAFE_ZONE.width}×${WALLET_SAFE_ZONE.height}px at position (${WALLET_SAFE_ZONE.x}, ${WALLET_SAFE_ZONE.y})
-- This area MUST remain completely transparent
-- All decorative elements must surround this forbidden zone
-
-ANALYSIS NEEDED:
-1. Layout Strategy: How should elements be positioned around the safe zone?
-   - Top area: What decorative elements work above the wallet?
-   - Bottom area: What elements work below the wallet?
-   - Left/Right sides: What side decorations complement the design?
-
-2. Style Classification: What visual style best describes this image?
-   ${selectedStyle ? `(Consider user preference: ${selectedStyle})` : ''}
-
-3. Color Palette: Extract 3-5 dominant colors in hex format
-
-${additionalPrompt ? `Additional context: ${additionalPrompt}` : ''}
-
-Respond with JSON containing: layout (top, bottom, left, right, core), style, color_palette.
-The "core" must always be "untouched" to ensure transparency.`;
-
-  return await callOpenAIVisionAPI(apiKey, safeZoneInstructions, imageUrl);
-}
-
-async function interpretPromptWithEnhancedGPT(
-  prompt: string, 
-  selectedStyle: string,
-  apiKey: string
-): Promise<LayoutAnalysis> {
-  
-  const styleContext = selectedStyle ? `User has selected "${selectedStyle}" style preference. ` : '';
-  const safeZoneInstructions = `
-🎯 WALLET MASK DESIGN INTERPRETATION
-
-${styleContext}Your task: Design a decorative wallet frame based on: "${prompt}"
-
-SAFE ZONE REQUIREMENTS:
-- Central rectangle: ${WALLET_SAFE_ZONE.width}×${WALLET_SAFE_ZONE.height}px at position (${WALLET_SAFE_ZONE.x}, ${WALLET_SAFE_ZONE.y})
-- This area MUST remain completely transparent
-- All decorative elements must surround this forbidden zone
-
-DESIGN STRATEGY:
-1. Layout Planning: How to arrange elements around the wallet?
-   - Top area: What decorative elements above the wallet?
-   - Bottom area: What elements below the wallet?
-   - Left/Right sides: What side decorations?
-
-2. Style Integration: 
-   ${selectedStyle ? `Apply "${selectedStyle}" style characteristics` : 'Determine appropriate visual style'}
-   - Consider rendering techniques, color approaches, detail levels
-
-3. Color Harmony: Suggest 3-5 colors that work well together
-
-Respond with JSON containing: layout (top, bottom, left, right, core), style, color_palette.
-The "core" must always be "untouched" to ensure transparency.`;
-
-  return await callOpenAITextAPI(apiKey, safeZoneInstructions);
-}
-
-// Enhanced prompt building function
-function buildEnhancedPrompt(
-  userPrompt: string,
-  analysis: LayoutAnalysis,
-  selectedStyle: string,
-  debugMode: boolean = false
-): string {
-  // Build layout description
-  const layoutParts: string[] = [];
-  if (analysis.layout.top) layoutParts.push(`Top: ${analysis.layout.top}`);
-  if (analysis.layout.bottom) layoutParts.push(`Bottom: ${analysis.layout.bottom}`);
-  if (analysis.layout.left) layoutParts.push(`Left: ${analysis.layout.left}`);
-  if (analysis.layout.right) layoutParts.push(`Right: ${analysis.layout.right}`);
-  
-  const layoutDescription = layoutParts.join('. ');
-  
-  // Build style instruction
-  const styleMap: Record<string, string> = {
-    'modern': 'sleek modern digital art with clean lines and gradients',
-    'cartoon': 'cartoon style with bold outlines, flat colors, and playful design',
-    'realistic': 'photorealistic with detailed textures and natural lighting',
-    'fantasy': 'fantasy art with magical elements and ethereal atmosphere',
-    'minimalist': 'minimalist design with simple shapes and limited colors'
-  };
-  
-  const styleInstruction = selectedStyle && styleMap[selectedStyle] 
-    ? `Render in ${styleMap[selectedStyle]}` 
-    : `Apply ${analysis.style} visual style`;
-  
-  // Build color instruction
-  const colorInstruction = analysis.color_palette.length > 0 
-    ? `Use colors: ${analysis.color_palette.slice(0, 5).join(', ')}.` 
-    : '';
-  
-  // Build safe zone instruction
-  const safeZoneInstruction = `CRITICAL: Keep central area (${WALLET_SAFE_ZONE.x}, ${WALLET_SAFE_ZONE.y}) to (${WALLET_SAFE_ZONE.x + WALLET_SAFE_ZONE.width}, ${WALLET_SAFE_ZONE.y + WALLET_SAFE_ZONE.height}) completely transparent (alpha=0).`;
-  
-  // Assemble final prompt
-  const finalPrompt = [
-    `Create decorative wallet frame: ${userPrompt}.`,
-    layoutDescription,
-    styleInstruction,
-    colorInstruction,
-    safeZoneInstruction,
-    'Output: 1024×1024px PNG with transparency.'
-  ].filter(Boolean).join(' ');
-  
-  if (debugMode) {
-    console.log('=== ENHANCED PROMPT COMPONENTS ===');
-    console.log('User input:', userPrompt);
-    console.log('Layout:', layoutDescription);
-    console.log('Style:', styleInstruction);
-    console.log('Colors:', colorInstruction);
-    console.log('=== FINAL ENHANCED PROMPT ===');
-    console.log(finalPrompt);
-  }
-  
-  return finalPrompt;
-}
-
-// Enhanced fallback mask selection with style preference
-function selectFallbackMask(prompt: string, analyzedStyle: string, selectedStyle: string): string {
+// Select the most appropriate fallback mask based on style or prompt keywords
+function selectFallbackMask(prompt: string, style: string): string {
   const promptLower = prompt.toLowerCase();
-  const combinedStyle = `${selectedStyle} ${analyzedStyle}`.toLowerCase();
+  const styleLower = style.toLowerCase();
   
-  if (promptLower.includes('cat') || combinedStyle.includes('cat')) {
+  if (promptLower.includes('cat') || styleLower.includes('cat')) {
     return '/external-masks/cats-mask.png';
-  } else if (promptLower.includes('crypto') || combinedStyle.includes('crypto')) {
+  } else if (promptLower.includes('crypto') || promptLower.includes('bitcoin') || styleLower.includes('crypto')) {
     return '/external-masks/crypto-mask.png';
-  } else if (promptLower.includes('cyber') || combinedStyle.includes('cyber')) {
+  } else if (promptLower.includes('cyber') || styleLower.includes('cyber')) {
     return '/external-masks/cyber-mask.png';
-  } else if (promptLower.includes('pepe') || combinedStyle.includes('pepe')) {
+  } else if (promptLower.includes('pepe') || styleLower.includes('pepe')) {
     return '/external-masks/pepe-mask.png';
-  } else if (selectedStyle === 'minimalist') {
-    return '/external-masks/abstract-mask.png';
   } else {
     return '/external-masks/abstract-mask.png';
   }
 }
 
-// Enhanced DALL-E generation
-async function generateImageWithEnhancedDallE(
-  prompt: string,
-  apiKey: string,
-  hdQuality: boolean = false
-): Promise<string> {
-  console.log("Generating image with enhanced DALL-E prompt...");
+// Ultra simplified prompt to try to avoid DALL-E errors
+function createUltraSimplifiedPrompt(userPrompt: string, layoutAnalysis: LayoutAnalysis): string {
+  // Extract key themes from the user prompt (max 20 chars to avoid overwhelming DALL-E)
+  const themes = userPrompt.split(/\s+/).filter(word => word.length > 3).slice(0, 3).join(" ");
   
-  const requestPayload = {
-    model: "dall-e-3",
-    prompt: prompt,
-    n: 1,
-    size: "1024x1024" as const,
-    response_format: "url" as const,
-    quality: hdQuality ? "hd" as const : "standard" as const
-  };
-  
-  console.log("Enhanced DALL-E request payload:", JSON.stringify(requestPayload));
-  
-  try {
-    const response = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(requestPayload)
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      console.error("Enhanced DALL-E API error:", data);
-      throw new Error(`DALL-E API error: ${data.error?.message || "Unknown error"}`);
-    }
-
-    console.log("Enhanced DALL-E image generated successfully");
-    return data.data[0].url;
-  } catch (error) {
-    console.error("Error generating image with enhanced DALL-E:", error);
-    throw error;
-  }
+  return `Decorative frame with ${themes} style. Central area (320x569px) is transparent.`;
 }
 
-// Keep existing helper functions
+async function analyzeImageWithGPT(
+  imageUrl: string, 
+  additionalPrompt: string | undefined, 
+  apiKey: string
+): Promise<LayoutAnalysis> {
+  
+  const safeZoneInstructions = `
+🧠 DESIGN CONTEXT: 
+You are generating a decorative mask (UI frame) for a wallet login screen.
+
+⚠️ DO NOT DRAW in the center:
+- Forbidden area size: ${WALLET_SAFE_ZONE.width}px wide, ${WALLET_SAFE_ZONE.height}px tall
+- Located at: x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y} (top-left corner of the forbidden rectangle)
+
+✅ Draw ONLY decorative elements around the edges:
+- Top, bottom, left, right
+- No characters or visuals in the center zone
+
+❌ The central rectangle (${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) must remain completely empty and transparent. This area is reserved for the login interface.
+
+🎨 Use transparency for everything inside the forbidden zone.
+📐 Output size: 1024×1024 PNG with clear framing and transparent center.
+
+Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.`;
+
+  const promptBase = `Analyze this image and describe how it could be used as a decorative frame or character around a crypto wallet UI.
+
+${safeZoneInstructions}
+
+I need these specific details:
+1. Subject - What is the main subject/character in the image?
+2. Style - What visual style is used (cartoon, photorealistic, anime, etc)?
+3. Color palette - List 3-5 main colors (in hex codes)
+4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement ONLY, keeping the center completely empty)
+
+${additionalPrompt ? `Additional context: ${additionalPrompt}` : ''}
+
+Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
+The "core" property in layout must ALWAYS be "untouched" to indicate the center remains completely empty and transparent.`;
+
+  return await callOpenAIVisionAPI(apiKey, promptBase, imageUrl);
+}
+
+async function interpretPromptWithGPT(
+  prompt: string, 
+  apiKey: string
+): Promise<LayoutAnalysis> {
+  
+  const safeZoneInstructions = `
+🧠 DESIGN CONTEXT: 
+You are generating a decorative mask (UI frame) for a wallet login screen.
+
+⚠️ DO NOT DRAW in the center:
+- Forbidden area size: ${WALLET_SAFE_ZONE.width}px wide, ${WALLET_SAFE_ZONE.height}px tall
+- Located at: x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y} (top-left corner of the forbidden rectangle)
+
+✅ Draw ONLY decorative elements around the edges:
+- Top, bottom, left, right
+- No characters or visuals in the center zone
+
+❌ The central rectangle (${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px at position x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}) must remain completely empty and transparent. This area is reserved for the login interface.
+
+🎨 Use transparency for everything inside the forbidden zone.
+📐 Output size: 1024×1024 PNG with clear framing and transparent center.
+
+Inside the center of the image (rectangle: ${WALLET_SAFE_ZONE.width}px × ${WALLET_SAFE_ZONE.height}px, starting at x=${WALLET_SAFE_ZONE.x}, y=${WALLET_SAFE_ZONE.y}), imagine a glowing transparent rectangle labeled "DO NOT DRAW". All artwork must surround this area without overlapping it. This is a forbidden zone.`;
+
+  const promptBase = `Based on this description: "${prompt}", design a decorative frame or character that could surround a crypto wallet UI.
+
+${safeZoneInstructions}
+
+I need these specific details:
+1. Subject - What would be the main subject/character?
+2. Style - What visual style would work best (cartoon, photorealistic, anime, etc)?
+3. Color palette - Suggest 3-5 main colors (in hex codes)
+4. Layout suggestion - How would you position elements around a wallet? (Consider top/bottom/left/right placement ONLY, keeping the center completely empty)
+
+Format your response as a JSON object with these keys: layout (with top, bottom, left, right, core properties), style, color_palette.
+The "core" property in layout must ALWAYS be "untouched" to indicate the center remains completely empty and transparent.`;
+
+  return await callOpenAITextAPI(apiKey, promptBase);
+}
+
 async function callOpenAIVisionAPI(
   apiKey: string,
   promptText: string,
@@ -521,6 +448,7 @@ async function processOpenAIResponse(response: Response): Promise<LayoutAnalysis
     };
   } catch (e) {
     console.error("Error parsing GPT response:", e);
+    // Fallback layout if parsing fails
     return {
       layout: {
         top: "character element",
@@ -535,6 +463,50 @@ async function processOpenAIResponse(response: Response): Promise<LayoutAnalysis
   }
 }
 
+// Simplified DALL-E function to generate images with minimal instructions
+async function generateImageWithSimplifiedDallE(
+  prompt: string,
+  apiKey: string,
+  hdQuality: boolean = false
+): Promise<string> {
+  console.log("Generating image with simplified DALL-E prompt...");
+  
+  // Log the exact payload for debugging
+  const requestPayload = {
+    model: "dall-e-3",
+    prompt: prompt,
+    n: 1,
+    size: "1024x1024",
+    response_format: "url",
+    quality: hdQuality ? "hd" : "standard" // Try HD quality if requested
+  };
+  
+  console.log("DALL-E request payload:", JSON.stringify(requestPayload));
+  
+  try {
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestPayload)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error("DALL-E API error:", data);
+      throw new Error(`DALL-E API error: ${data.error?.message || "Unknown error"}`);
+    }
+
+    console.log("DALL-E image generated successfully");
+    return data.data[0].url;
+  } catch (error) {
+    console.error("Error generating image with simplified DALL-E:", error);
+    throw error;
+  }
+}
+
 async function storeMaskResult(
   userId: string,
   response: MaskResponse,
@@ -542,11 +514,13 @@ async function storeMaskResult(
   originalPrompt: string,
   layer: string
 ): Promise<void> {
+  // Create Supabase client
   const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
+    // Store the result in the ai_requests table
     await supabase.from('ai_requests').insert({
       user_id: userId,
       prompt: originalPrompt,
@@ -561,8 +535,9 @@ async function storeMaskResult(
       }
     });
 
-    console.log("Enhanced mask result stored successfully");
+    console.log("Mask result stored successfully");
   } catch (error) {
     console.error("Error storing mask result:", error);
+    // Don't throw here, just log the error to avoid breaking the main flow
   }
 }

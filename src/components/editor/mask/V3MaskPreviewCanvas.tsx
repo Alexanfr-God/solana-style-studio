@@ -11,15 +11,13 @@ const V3MaskPreviewCanvas = () => {
   const { 
     safeZoneVisible, 
     externalMask,
-    maskImageUrl
+    maskImageUrl // This will be used for custom full masks
   } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
-  // Use the same priority as DualWalletPreview: externalMask first, then maskImageUrl
-  const activeMask = externalMask || maskImageUrl;
-
   // For feedback purposes, we need to capture the final rendered image "URL"
-  const previewImageUrl = activeMask || "/placeholder.svg";
+  // Since we don't have an actual image URL for the canvas, we use a placeholder
+  const previewImageUrl = externalMask || maskImageUrl || "/placeholder.svg";
   const previewPrompt = "Wallet mask customization";
 
   return (
@@ -28,8 +26,8 @@ const V3MaskPreviewCanvas = () => {
         <div className="relative">
           {/* New scene container with larger area for external masks */}
           <WalletSceneContainer style={loginStyle}>
-            {/* Mask layer - positioned ONLY around the wallet, not over it */}
-            {activeMask && (
+            {/* External mask layer - positioned ONLY around the wallet, not over it */}
+            {externalMask && (
               <div 
                 className="absolute pointer-events-none z-10 inset-0"
                 style={{
@@ -46,8 +44,33 @@ const V3MaskPreviewCanvas = () => {
                 }}
               >
                 <img 
-                  src={activeMask} 
-                  alt="Wallet mask" 
+                  src={externalMask} 
+                  alt="External mask" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
+            {/* Regular mask (for backward compatibility) - also with cutout */}
+            {maskImageUrl && !externalMask && (
+              <div 
+                className="absolute pointer-events-none z-20 inset-0"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  maskImage: 'url(/mask-wallet-cutout.png)',
+                  WebkitMaskImage: 'url(/mask-wallet-cutout.png)',
+                  maskSize: 'contain',
+                  WebkitMaskSize: 'contain',
+                  maskPosition: 'center',
+                  WebkitMaskPosition: 'center',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskRepeat: 'no-repeat',
+                }}
+              >
+                <img 
+                  src={maskImageUrl} 
+                  alt="Full mask overlay" 
                   className="w-full h-full object-cover"
                 />
               </div>
