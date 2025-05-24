@@ -44,7 +44,7 @@ enabled = true
 [edge_functions]
 enabled = true
 
-[functions.generate-wallet-mask]
+[functions.generate-wallet-mask-v3]
 verify_jwt = false
 
 [functions.save-feedback]
