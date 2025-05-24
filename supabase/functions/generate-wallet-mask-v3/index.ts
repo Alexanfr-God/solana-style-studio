@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -36,7 +35,8 @@ const SAFE_ZONE = {
   height: 569
 };
 
-const WALLET_BASE_IMAGE = '/assets/wallet/ui_frame_base.png';
+// Updated to use your uploaded wallet base image from Supabase Storage
+const WALLET_BASE_IMAGE = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/ui_frame_base_v3.png';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -197,41 +197,41 @@ async function analyzeImagesWithGPT(
   console.log("Starting enhanced GPT-4o image analysis with wallet base");
   
   const analysisPrompt = `
-Analyze the provided images to create an enhanced wallet costume design:
+Анализируй предоставленные изображения для создания улучшенного дизайна костюма кошелька:
 
-WALLET BASE IMAGE: The actual wallet UI framework (320x569px center)
-REFERENCE IMAGE: Main inspiration for the mask design
-${styleHintImageUrl ? "STYLE HINT IMAGE: Additional style/pattern reference" : ""}
+WALLET BASE IMAGE: Реальный UI-фреймворк кошелька (320x569px в центре)
+REFERENCE IMAGE: Основное вдохновение для дизайна маски
+${styleHintImageUrl ? "STYLE HINT IMAGE: Дополнительная стилевая/узорная референция" : ""}
 
-TEXT PROMPT: "${prompt}"
-STYLE: ${style}
+ТЕКСТОВЫЙ ПРОМПТ: "${prompt}"
+СТИЛЬ: ${style}
 
-Create a decorative mask that:
-1. Flows beautifully around the wallet UI creating a WOW effect
-2. Keeps the center (320x569px at coordinates 432,344) completely transparent for UI visibility
-3. Uses the wallet base image to understand the exact UI boundaries
-4. Uses the reference image as main design inspiration
-${styleHintImageUrl ? "5. Incorporates style elements from the hint image" : ""}
-6. Applies ${style} aesthetic principles
+Создай декоративную маску, которая:
+1. Красиво обтекает интерфейс кошелька, создавая WOW-эффект
+2. Оставляет центр (320x569px по координатам 432,344) полностью прозрачным для видимости UI
+3. Использует wallet base image для понимания точных границ UI
+4. Использует reference image как основное вдохновение для дизайна
+${styleHintImageUrl ? "5. Включает стилевые элементы из hint image" : ""}
+6. Применяет принципы эстетики ${style}
 
-CRITICAL SAFE ZONE:
-- Center rectangle (320x569px) at position (432, 344) MUST be transparent
-- No visual elements should overlap the UI area
-- Decorative elements should flow around the edges only
+КРИТИЧЕСКИ ВАЖНАЯ БЕЗОПАСНАЯ ЗОНА:
+- Центральный прямоугольник (320x569px) в позиции (432, 344) ДОЛЖЕН быть прозрачным
+- Никакие визуальные элементы не должны перекрывать область UI
+- Декоративные элементы должны обтекать только края
 
-Respond with JSON containing:
+Ответь JSON содержащим:
 {
   "layout": {
-    "top": "description of top decoration around wallet header",
-    "bottom": "description of bottom decoration around wallet footer", 
-    "left": "description of left decoration around wallet sides",
-    "right": "description of right decoration around wallet sides",
+    "top": "описание верхнего декора вокруг заголовка кошелька",
+    "bottom": "описание нижнего декора вокруг футера кошелька", 
+    "left": "описание левого декора вокруг боков кошелька",
+    "right": "описание правого декора вокруг боков кошелька",
     "core": "transparent - wallet UI visible"
   },
   "style": "${style}",
   "color_palette": ["#hex1", "#hex2", "#hex3", "#hex4"],
-  "wow_elements": "description of eye-catching features that enhance the wallet",
-  "transparency_instructions": "specific instructions for ensuring center transparency"
+  "wow_elements": "описание впечатляющих функций, которые улучшают кошелек",
+  "transparency_instructions": "конкретные инструкции для обеспечения прозрачности центра"
 }`;
 
   const messages = [
