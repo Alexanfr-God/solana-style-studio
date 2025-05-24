@@ -6,33 +6,38 @@ import MaskPromptInput from './MaskPromptInput';
 import MaskUploadImage from './MaskUploadImage';
 import GenerateMaskButton from './GenerateMaskButton';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Info, EyeOff } from 'lucide-react';
+import { RotateCcw, Info, Eye, EyeOff } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import V3MaskPreviewCanvas from './V3MaskPreviewCanvas';
 import SafeZoneToggle from './SafeZoneToggle';
 import MaskPresets from './MaskPresets';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
 
 const V3MaskEditor = () => {
   const { 
     resetEditor, 
     maskImageUrl, 
     prompt, 
-    externalMask
+    safeZoneVisible,
+    setSafeZoneVisible
   } = useMaskEditorStore();
   
   const [showGuide, setShowGuide] = useState(true);
 
   const handleReset = () => {
     resetEditor();
-    toast.success("Mask editor reset - check the wallet preview");
+    toast.success("Mask editor has been reset");
   };
   
   const toggleGuide = () => {
     setShowGuide(!showGuide);
   };
-
-  const hasActiveMask = !!(externalMask || maskImageUrl);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 relative">
@@ -41,7 +46,7 @@ const V3MaskEditor = () => {
           <Card className="bg-black/30 backdrop-blur-md border-white/10">
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Wallet Costume Creator</h2>
+                <h2 className="text-xl font-bold text-white">Create Wallet Costume</h2>
                 <div className="bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xs px-2 py-1 rounded">AI-Powered</div>
               </div>
               
@@ -59,7 +64,7 @@ const V3MaskEditor = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-white/70">
-                    Create decorative masks that surround your wallet while keeping the central UI visible. All results appear directly in the wallet preview →
+                    Our AI generates decorative masks that surround your wallet while keeping the central wallet UI visible and functional. Try our presets or create your own design!
                   </p>
                 </div>
               )}
@@ -80,7 +85,7 @@ const V3MaskEditor = () => {
               
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-medium mb-4 text-white">Upload Custom Image</h3>
+                  <h3 className="text-sm font-medium mb-4 text-white">Upload your own wallet skin</h3>
                   <MaskUploadImage />
                 </div>
                 
@@ -88,10 +93,10 @@ const V3MaskEditor = () => {
                 
                 <div className="space-y-4">
                   <h3 className="text-md font-medium text-white flex items-center gap-2">
-                    AI Costume Creator
+                    AI Mask Creator
                   </h3>
                   <p className="text-xs text-white/70">
-                    Describe your ideal wallet costume. The AI will create decorative elements around your wallet.
+                    Create beautiful decorative masks that go around your wallet. The mask will leave the central wallet UI untouched.
                   </p>
                   <MaskPromptInput />
                 </div>
@@ -102,26 +107,15 @@ const V3MaskEditor = () => {
                 
                 <div className="space-y-3">
                   <GenerateMaskButton />
-                  
-                  {hasActiveMask && (
-                    <Button 
-                      variant="outline" 
-                      onClick={handleReset}
-                      className="w-full border-white/10 text-white/80 hover:text-white"
-                    >
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Clear & Reset
-                    </Button>
-                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={handleReset}
+                    className="w-full border-white/10 text-white/80 hover:text-white"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Reset
+                  </Button>
                 </div>
-                
-                {hasActiveMask && (
-                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-md">
-                    <p className="text-xs text-green-300">
-                      ✓ Costume active! Check the wallet preview to see your custom design.
-                    </p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -132,9 +126,26 @@ const V3MaskEditor = () => {
         <Card className="bg-black/30 backdrop-blur-md border-white/10 p-2 md:p-4">
           <div className="flex items-center justify-between py-2 px-4">
             <h3 className="text-sm font-medium text-white">Wallet Preview</h3>
-            <div className="text-xs text-white/50">
-              {hasActiveMask ? "Custom costume active" : "No costume applied"}
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSafeZoneVisible(!safeZoneVisible)}
+                  >
+                    {safeZoneVisible ? (
+                      <Eye className="h-4 w-4 text-purple-400" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-white/60" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">{safeZoneVisible ? "Hide" : "Show"} Safe Zone</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div className="flex items-center justify-center py-4">
             <div className="w-full h-full">

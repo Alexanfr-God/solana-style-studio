@@ -1,38 +1,56 @@
 
 import React from 'react';
-import V1Customizer from './editor/V1Customizer';
-import V3MaskEditor from './editor/v3/V3MaskEditor';
-import { Button } from '@/components/ui/button';
-import { useCustomizationStore } from '@/stores/customizationStore';
+import LayerSelector from './LayerSelector';
+import UploadImage from './UploadImage';
+import PromptInput from './PromptInput';
+import GenerateButton from './GenerateButton';
+import WalletPreview from './WalletPreview';
+import ResetButton from './ResetButton';
+import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 
 const CustomizationStudio = () => {
-  const { editorMode, setEditorMode } = useCustomizationStore();
-
   return (
-    <div className="w-full py-4 md:py-6 px-2 md:px-6 bg-black">
-      <div className="max-w-screen-xl mx-auto">
-        {/* Mode Toggle */}
-        <div className="flex justify-center mb-6">
-          <div className="flex bg-black/20 backdrop-blur-sm rounded-lg p-1">
-            <Button
-              variant={editorMode === 'create-style' ? 'default' : 'ghost'}
-              onClick={() => setEditorMode('create-style')}
-              className="text-sm"
-            >
-              Style Creator
-            </Button>
-            <Button
-              variant={editorMode === 'v3-mask' ? 'default' : 'ghost'}
-              onClick={() => setEditorMode('v3-mask')}
-              className="text-sm"
-            >
-              Costume Generator
-            </Button>
-          </div>
+    <div className="min-h-screen bg-background p-4 md:p-6">
+      <header className="mb-8 text-center">
+        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-solana-purple to-solana-blue bg-clip-text text-transparent pb-2">
+          Solana Wallet Customization Studio
+        </h1>
+        <p className="text-muted-foreground">
+          Customize your wallet interface with AI-powered style generation
+        </p>
+      </header>
+      
+      <div className="customization-studio">
+        <div className="studio-sidebar">
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <LayerSelector />
+                
+                <Separator />
+                
+                <div className="space-y-1">
+                  <h3 className="text-sm font-medium mb-2">Reference Image</h3>
+                  <UploadImage />
+                </div>
+                
+                <Separator />
+                
+                <PromptInput />
+                
+                <div className="flex flex-col space-y-3">
+                  <GenerateButton />
+                  <ResetButton />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-
-        {/* Render appropriate editor */}
-        {editorMode === 'v3-mask' ? <V3MaskEditor /> : <V1Customizer />}
+        
+        <div className="preview-area">
+          <WalletPreview />
+        </div>
       </div>
     </div>
   );

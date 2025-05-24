@@ -1,8 +1,9 @@
+
 import { create } from 'zustand';
 import { defaultLoginStyle, defaultWalletStyle } from '../constants/defaultWalletStyles';
 
 export type LayerType = 'login' | 'wallet';
-export type EditorModeType = 'create-style' | 'fine-tune' | 'v3-mask';
+export type EditorModeType = 'create-style' | 'fine-tune' | 'decorate';
 
 export interface WalletStyle {
   backgroundColor: string;
@@ -48,7 +49,7 @@ const stylingTips = [
   "For cosmic feel try 'space galaxy cosmic wallet'"
 ];
 
-export const useCustomizationStore = create<CustomizationState>((set, get) => ({
+export const useCustomizationStore = create<CustomizationState>((set) => ({
   activeLayer: 'login',
   loginStyle: { ...defaultLoginStyle },
   walletStyle: { ...defaultWalletStyle },
