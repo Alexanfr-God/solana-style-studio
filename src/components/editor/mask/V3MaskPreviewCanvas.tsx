@@ -28,12 +28,12 @@ const V3MaskPreviewCanvas = () => {
   const WALLET_X = 352; // Centered in 1024x1024 canvas
   const WALLET_Y = 228; // Centered in 1024x1024 canvas
 
-  // Preview scale factor for display (only for the entire preview container)
-  const PREVIEW_SCALE = 0.6;
+  // Enhanced preview scale factor for better visibility (increased from 0.6 to 0.75)
+  const PREVIEW_SCALE = 0.75;
 
   // Debug logging
   useEffect(() => {
-    console.log('🔍 V3 Enhanced Preview Debug:', {
+    console.log('🔍 V3 Enhanced Preview Debug (Increased Scale):', {
       externalMask: externalMask ? 'loaded' : 'null',
       maskImageUrl: maskImageUrl ? 'loaded' : 'null',
       safeZoneVisible,
@@ -41,6 +41,8 @@ const V3MaskPreviewCanvas = () => {
       walletDimensions: `${WALLET_WIDTH}x${WALLET_HEIGHT}`,
       walletPosition: `x=${WALLET_X}, y=${WALLET_Y}`,
       previewScale: PREVIEW_SCALE,
+      actualCanvasSize: `${OUTPUT_WIDTH * PREVIEW_SCALE}x${OUTPUT_HEIGHT * PREVIEW_SCALE}`,
+      actualWalletSize: `${WALLET_WIDTH * PREVIEW_SCALE}x${WALLET_HEIGHT * PREVIEW_SCALE}`,
       maskCutoutUrl: MASK_CUTOUT_URL
     });
   }, [externalMask, maskImageUrl, safeZoneVisible]);
@@ -48,7 +50,7 @@ const V3MaskPreviewCanvas = () => {
   return (
     <div className="relative w-full h-[800px] flex items-center justify-center bg-black/20 rounded-xl overflow-hidden">
       <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
-        {/* V3 Enhanced main preview container - 1024x1024 output simulation */}
+        {/* V3 Enhanced main preview container - 1024x1024 output simulation with increased scale */}
         <div 
           className="relative" 
           style={{ 
@@ -81,7 +83,7 @@ const V3MaskPreviewCanvas = () => {
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.15))',
                 }}
-                onLoad={() => console.log('✅ V3 Enhanced external mask loaded with new cutout:', externalMask)}
+                onLoad={() => console.log('✅ V3 Enhanced external mask loaded with increased scale:', externalMask)}
                 onError={(e) => console.error('❌ V3 Enhanced external mask failed:', externalMask, e)}
               />
             </div>
@@ -108,13 +110,13 @@ const V3MaskPreviewCanvas = () => {
                 src={maskImageUrl} 
                 alt="Legacy mask overlay" 
                 className="w-full h-full object-contain"
-                onLoad={() => console.log('✅ Legacy mask loaded with new cutout:', maskImageUrl)}
+                onLoad={() => console.log('✅ Legacy mask loaded with increased scale:', maskImageUrl)}
                 onError={(e) => console.error('❌ Legacy mask failed:', maskImageUrl, e)}
               />
             </div>
           )}
           
-          {/* V3 Enhanced wallet UI container - positioned at exact coordinates with full size */}
+          {/* V3 Enhanced wallet UI container - positioned at exact coordinates with increased scale */}
           <div 
             className="absolute z-20"
             style={{
@@ -136,7 +138,7 @@ const V3MaskPreviewCanvas = () => {
             <LoginScreen style={loginStyle} />
           </div>
           
-          {/* V3 Enhanced safe zone visualization */}
+          {/* V3 Enhanced safe zone visualization with increased scale */}
           {safeZoneVisible && (
             <div 
               className="absolute z-30 pointer-events-none"
@@ -215,12 +217,12 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
 
-          {/* Scale indicator for debugging */}
+          {/* Updated scale indicator for debugging */}
           <div className="absolute top-1/2 right-4 z-40">
             <Badge 
               className="bg-orange-500/80 text-white px-2 py-1 text-xs font-mono"
             >
-              Scale: {PREVIEW_SCALE}x
+              Scale: {PREVIEW_SCALE}x (Enhanced)
             </Badge>
           </div>
         </div>
