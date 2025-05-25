@@ -37,7 +37,8 @@ interface MaskResponse {
   debug_info?: any;
 }
 
-// Updated wallet base image URL with proper V3 cutout
+// V3 Enhanced: Guide image for consistent positioning
+const GUIDE_IMAGE_URL = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-guide-v3.png';
 const WALLET_BASE_IMAGE = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/ui_frame_base.png';
 
 serve(async (req) => {
@@ -46,7 +47,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 V3 Enhanced mask generation started with updated cutout');
+    console.log('🚀 V3 Enhanced mask generation with Reference Image Guide');
     
     const openAiKey = Deno.env.get("OPENAI_API_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -81,42 +82,43 @@ serve(async (req) => {
       height: 569 // Fixed wallet height
     };
 
-    console.log(`📐 V3 Enhanced coordinate mapping: Container(${container_width}x${container_height}) -> Output(${output_size}x${output_size})`);
+    console.log(`📐 V3 Enhanced with Reference Image Guide: Container(${container_width}x${container_height}) -> Output(${output_size}x${output_size})`);
     console.log(`📐 V3 Fixed safe zone: x=${OUTPUT_SAFE_ZONE.x}, y=${OUTPUT_SAFE_ZONE.y}, ${OUTPUT_SAFE_ZONE.width}x${OUTPUT_SAFE_ZONE.height}`);
-    console.log(`🎨 Processing ${style} style with prompt: "${prompt}"`);
+    console.log(`🎨 Processing ${style} style with reference guide approach`);
 
-    // Step 1: Enhanced GPT-4o analysis
+    // Step 1: Enhanced GPT-4o analysis with guide image
     const layoutAnalysis = await analyzeWithGPT(
       prompt,
       reference_image_url,
       style_hint_image_url,
+      GUIDE_IMAGE_URL,
       WALLET_BASE_IMAGE,
       openAiKey,
       style,
       OUTPUT_SAFE_ZONE
     );
 
-    console.log("✅ Layout analysis completed");
+    console.log("✅ Layout analysis completed with reference guide");
 
-    // Step 2: Generate mask with improved prompt
+    // Step 2: Generate mask with reference image approach
     let maskImageUrl;
     let attempts = 0;
     const maxAttempts = 2;
 
     while (attempts < maxAttempts) {
       attempts++;
-      console.log(`🎯 Generation attempt ${attempts}/${maxAttempts}`);
+      console.log(`🎯 Reference-guided generation attempt ${attempts}/${maxAttempts}`);
       
       try {
-        const enhancedPrompt = createOptimizedPrompt(prompt, layoutAnalysis, style, OUTPUT_SAFE_ZONE);
-        console.log(`📝 Enhanced prompt created (${enhancedPrompt.length} chars)`);
+        const enhancedPrompt = createReferenceGuidedPrompt(prompt, layoutAnalysis, style);
+        console.log(`📝 Reference-guided prompt created (${enhancedPrompt.length} chars)`);
         
         maskImageUrl = await generateMaskWithDallE(enhancedPrompt, openAiKey);
-        console.log("✅ Mask generated successfully with updated coordinates");
+        console.log("✅ Mask generated successfully with reference guide approach");
         break;
         
       } catch (error) {
-        console.error(`❌ Generation failed on attempt ${attempts}:`, error);
+        console.error(`❌ Reference-guided generation failed on attempt ${attempts}:`, error);
         if (attempts === maxAttempts) {
           console.log("🛡️ Using fallback mask");
           maskImageUrl = selectFallbackMask(style);
@@ -130,7 +132,7 @@ serve(async (req) => {
 
     if (user_id && supabaseUrl && supabaseKey) {
       try {
-        console.log("💾 Attempting to store in Supabase Storage...");
+        console.log("💾 Attempting to store reference-guided result in Supabase Storage...");
         const result = await storeInSupabaseStorage(
           maskImageUrl,
           user_id,
@@ -139,25 +141,26 @@ serve(async (req) => {
         );
         storagePath = result.path;
         finalImageUrl = result.publicUrl;
-        console.log(`✅ Image stored successfully: ${storagePath}`);
+        console.log(`✅ Reference-guided image stored successfully: ${storagePath}`);
       } catch (storageError) {
         console.error("❌ Storage failed:", storageError);
         console.log("🔄 Continuing with original URL");
       }
     }
 
-    // Enhanced debug information
+    // Enhanced debug information with reference guide details
     const debugInfo = {
       safeZone: OUTPUT_SAFE_ZONE,
       containerDimensions: { width: container_width, height: container_height },
       outputImageSize: `${output_size}x${output_size}`,
-      fixedCoordinates: `Wallet at (${OUTPUT_SAFE_ZONE.x}, ${OUTPUT_SAFE_ZONE.y})`,
+      referenceGuideUsed: GUIDE_IMAGE_URL,
       promptLength: prompt.length,
       hasReferenceImage: !!reference_image_url,
       hasStyleHint: !!style_hint_image_url,
       attempts: attempts,
       walletBaseUsed: WALLET_BASE_IMAGE,
       final_prompt: layoutAnalysis.enhanced_prompt || "Not available",
+      referenceGuidedApproach: true,
       cutoutApplied: "mask-wallet-cutout-v3.png with center transparency"
     };
 
@@ -179,7 +182,7 @@ serve(async (req) => {
       await storeMaskResult(user_id, response, reference_image_url, style_hint_image_url, supabaseUrl, supabaseKey);
     }
 
-    console.log("🎉 V3 Enhanced mask generation completed successfully with new cutout mask");
+    console.log("🎉 V3 Enhanced mask generation completed successfully with Reference Image Guide");
     
     return new Response(
       JSON.stringify(response),
@@ -187,11 +190,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("💥 Error in generate-wallet-mask-v3:", error);
+    console.error("💥 Error in generate-wallet-mask-v3 with reference guide:", error);
     
     return new Response(
       JSON.stringify({ 
-        error: "Failed to generate wallet mask", 
+        error: "Failed to generate wallet mask with reference guide", 
         details: error.message,
         fallback_mask: '/external-masks/abstract-mask.png'
       }),
@@ -207,46 +210,45 @@ async function analyzeWithGPT(
   prompt: string,
   referenceImageUrl: string,
   styleHintImageUrl: string | undefined,
+  guideImageUrl: string,
   walletBaseImageUrl: string,
   apiKey: string,
   style: string,
   safeZone: any
 ) {
-  console.log("🧠 Starting enhanced GPT-4o analysis with fixed coordinates");
+  console.log("🧠 Starting V3 Enhanced GPT-4o analysis with Reference Image Guide");
   
-  const analysisPrompt = `Analyze images and create a structured design plan for a wallet mask decoration.
+  const analysisPrompt = `Analyze the images and create a design plan for a wallet mask decoration using the reference guide.
 
-MAIN TASK: "${prompt}" - This is the primary creative direction!
+MAIN CREATIVE TASK: "${prompt}" - This is the primary creative direction!
 
-CRITICAL COORDINATES: The central area at coordinates x=${safeZone.x}, y=${safeZone.y} with size ${safeZone.width}x${safeZone.height} pixels MUST remain completely transparent.
+REFERENCE GUIDE: The guide image shows the exact positioning - a black rectangle in the center that must remain unchanged in size and position.
 
-OUTPUT FORMAT: 1024x1024 pixels
 STYLE: ${style}
 
-Focus on creating decorative elements around the specified transparent center area.
+Your task is to design decorative elements around the black rectangle, following the reference guide positioning exactly.
 
 Please analyze the provided images and respond with a structured JSON containing:
 
 {
   "layout": {
-    "top": "description of decorative elements above the wallet area",
-    "bottom": "description of decorative elements below the wallet area", 
-    "left": "description of decorative elements to the left of wallet",
-    "right": "description of decorative elements to the right of wallet",
-    "core": "transparent - wallet UI area (${safeZone.width}x${safeZone.height}px at x=${safeZone.x}, y=${safeZone.y})"
+    "interaction": "how the character/elements interact with the central black rectangle",
+    "composition": "overall composition and visual balance around the rectangle",
+    "background": "background treatment (should be minimal or transparent-friendly)"
   },
   "style": "${style}",
   "color_palette": ["#hex1", "#hex2", "#hex3", "#hex4"],
-  "enhanced_prompt": "optimized prompt for DALL-E generation"
+  "enhanced_prompt": "optimized creative prompt for DALL-E generation that references the guide image positioning"
 }
 
-The transparent center will be handled by a separate cutout mask.`;
+Focus on creative interaction with the central black rectangle, not technical specifications.`;
 
   const messages = [
     {
       role: "user",
       content: [
         { type: "text", text: analysisPrompt },
+        { type: "image_url", image_url: { url: guideImageUrl } },
         { type: "image_url", image_url: { url: walletBaseImageUrl } },
         { type: "image_url", image_url: { url: referenceImageUrl } }
       ]
@@ -283,17 +285,17 @@ The transparent center will be handled by a separate cutout mask.`;
   const data = await response.json();
   const result = JSON.parse(data.choices[0].message.content);
   
-  console.log("🎯 GPT-4o analysis result with fixed coordinates:", JSON.stringify(result, null, 2));
+  console.log("🎯 GPT-4o analysis result with reference guide:", JSON.stringify(result, null, 2));
   
   return {
-    layout: result.layout || getDefaultLayout(safeZone),
+    layout: result.layout || getDefaultLayout(),
     style: result.style || style,
     color_palette: result.color_palette || getDefaultColors(style),
     enhanced_prompt: result.enhanced_prompt || ""
   };
 }
 
-function createOptimizedPrompt(prompt: string, analysis: any, style: string, safeZone: any): string {
+function createReferenceGuidedPrompt(prompt: string, analysis: any, style: string): string {
   const styleModifiers = {
     cartoon: "vibrant cartoon style, bold outlines, bright colors, playful design",
     meme: "meme-style, bold effects, internet culture aesthetic, humorous elements",
@@ -307,33 +309,26 @@ function createOptimizedPrompt(prompt: string, analysis: any, style: string, saf
   const enhancedPrompt = analysis.enhanced_prompt || prompt;
   const colors = analysis.color_palette.join(", ");
   
-  return `Create a decorative wallet mask background with the following specifications:
-
-PRIMARY CREATIVE DIRECTION: "${enhancedPrompt}"
+  return `${enhancedPrompt}
 
 Style: ${styleModifiers[style]}
 Color palette: ${colors}
 
-Layout design:
-- Top area: ${analysis.layout.top}
-- Bottom area: ${analysis.layout.bottom}
-- Left side: ${analysis.layout.left}
-- Right side: ${analysis.layout.right}
-
-IMPORTANT: Fill the entire 1024x1024 canvas with decorative elements. The central area at coordinates x=${safeZone.x}, y=${safeZone.y} with dimensions ${safeZone.width}x${safeZone.height} pixels will be made transparent by a separate cutout mask, so you can draw over this area.
-
-Technical specs:
-- Output: 1024x1024 PNG 
-- Fill entire canvas with decorative background
-- No text or letters in the image
+IMPORTANT COMPOSITION RULES:
+- Follow the reference guide image exactly for positioning
+- The black rectangle in the center must remain the same size and position
+- Create decorative elements around it, not inside it
+- Character or elements should interact with (hug, hold, present) the black rectangle
+- Minimal or transparent-friendly background
+- Do not add text or letters
 - High quality detailed artwork
-- The transparent center will be applied separately
+- PNG style with clean edges
 
-Create a stunning decorative background that fills the entire canvas.`;
+The black rectangle will be made transparent later, so focus on the character/decorative elements around it.`;
 }
 
 async function generateMaskWithDallE(prompt: string, apiKey: string): Promise<string> {
-  console.log("🎨 Calling DALL-E 3 API with updated prompt");
+  console.log("🎨 Calling DALL-E 3 API with reference-guided prompt");
   
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
@@ -376,7 +371,7 @@ async function storeInSupabaseStorage(
   
   const imageBlob = await imageResponse.blob();
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const fileName = `v3-mask-${timestamp}.png`;
+  const fileName = `v3-reference-guided-mask-${timestamp}.png`;
   const filePath = `${userId}/${fileName}`;
   
   console.log(`📁 Storing as: ${filePath}`);
@@ -418,7 +413,7 @@ async function storeMaskResult(
   supabaseKey: string
 ): Promise<void> {
   try {
-    console.log("💾 Storing mask result in database");
+    console.log("💾 Storing reference-guided mask result in database");
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -440,10 +435,10 @@ async function storeMaskResult(
     if (error) {
       console.error("Database storage error:", error);
     } else {
-      console.log("✅ Mask result stored in database");
+      console.log("✅ Reference-guided mask result stored in database");
     }
   } catch (error) {
-    console.error("❌ Error storing mask result:", error);
+    console.error("❌ Error storing reference-guided mask result:", error);
   }
 }
 
@@ -475,12 +470,10 @@ function getDefaultColors(style: string): string[] {
   return palettes[style] || ["#6c5ce7", "#fd79a8", "#00cec9", "#fdcb6e"];
 }
 
-function getDefaultLayout(safeZone: any) {
+function getDefaultLayout() {
   return {
-    top: "decorative elements above wallet area",
-    bottom: "decorative elements below wallet area",
-    left: "decorative elements on left side",
-    right: "decorative elements on right side",
-    core: `transparent - wallet UI area (${safeZone.width}x${safeZone.height}px at x=${safeZone.x}, y=${safeZone.y})`
+    interaction: "character interacting with central black rectangle",
+    composition: "balanced decorative elements around the rectangle",
+    background: "minimal or transparent-friendly background"
   };
 }
