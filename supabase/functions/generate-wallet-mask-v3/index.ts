@@ -38,7 +38,7 @@ interface MaskResponse {
 }
 
 // V3 Enhanced: Guide image for consistent positioning
-const GUIDE_IMAGE_URL = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-guide-v3.png';
+const GUIDE_IMAGE_URL = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-guide.png';
 const WALLET_BASE_IMAGE = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/ui_frame_base.png';
 
 serve(async (req) => {

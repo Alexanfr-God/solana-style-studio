@@ -34,7 +34,7 @@ export const createAndUploadGuideImage = async (): Promise<string> => {
     });
 
     // Upload to Supabase Storage
-    const fileName = 'mask-guide-v3.png';
+    const fileName = 'mask-guide.png';
     const { data, error } = await supabase.storage
       .from('wallet-base')
       .upload(fileName, blob, {
@@ -62,7 +62,7 @@ export const createAndUploadGuideImage = async (): Promise<string> => {
 
 // Utility to ensure guide image exists
 export const ensureGuideImageExists = async (): Promise<string> => {
-  const fileName = 'mask-guide-v3.png';
+  const fileName = 'mask-guide.png';
   
   // Check if file already exists
   const { data: listData, error: listError } = await supabase.storage
