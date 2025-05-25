@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
-import { Wand, Loader2, AlertCircle, Info } from 'lucide-react';
+import { Wand, Loader2, AlertCircle, Info, Settings, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -25,8 +25,10 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   
   const [progress, setProgress] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
+  const [currentStep, setCurrentStep] = useState("");
   const [hasGenerationError, setHasGenerationError] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [zonePreference, setZonePreference] = useState<'top' | 'bottom' | 'left' | 'right' | 'all'>('all');
 
   const handleGenerate = async () => {
     if (!prompt && !referenceImage) {
@@ -37,26 +39,37 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     setHasGenerationError(false);
     setIsGenerating(true);
     setShowProgress(true);
-    setProgress(10);
+    setProgress(0);
     setSafeZoneVisible(true);
     setDebugInfo(null);
+    setCurrentStep("Initializing V4 Enhanced System...");
     
     try {
-      toast.info("🚀 Generating V3 Enhanced wallet costume with Reference Guide...");
+      toast.info("🚀 V4 Enhanced: Multi-Step Character Generation Starting...");
       
-      setProgress(25);
+      // Simulate step-by-step progress
+      const steps = [
+        "V4: Loading reference guide system...",
+        "V4: Building enhanced positioning prompts...", 
+        "V4: DALL-E generation with coordinate guidance...",
+        "V4: Multi-model background removal...",
+        "V4: Quality optimization and validation...",
+        "V4: Secure storage with metadata..."
+      ];
       
+      let stepIndex = 0;
       const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          const newProgress = prev + Math.random() * 5;
-          return newProgress < 85 ? newProgress : prev;
-        });
+        if (stepIndex < steps.length) {
+          setCurrentStep(steps[stepIndex]);
+          setProgress((stepIndex + 1) * (85 / steps.length));
+          stepIndex++;
+        }
       }, 2000);
       
       // Get current user for storage
       const { data: { user } } = await supabase.auth.getUser();
       
-      // V3 Enhanced request payload with reference guide approach
+      // V4 Enhanced request payload with multi-step processing
       const requestPayload = {
         prompt: prompt || '',
         reference_image_url: referenceImage || null,
@@ -68,13 +81,14 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         wallet_width: 320,
         wallet_height: 569,
         output_size: 1024,
-        safe_zone_x: 80,
-        safe_zone_y: 142,
+        safe_zone_x: 352,
+        safe_zone_y: 228,
         safe_zone_width: 320,
-        safe_zone_height: 569
+        safe_zone_height: 569,
+        zone_preference: zonePreference
       };
       
-      console.log('📤 V3 Enhanced request with Reference Guide:', requestPayload);
+      console.log('📤 V4 Enhanced Multi-Step request:', requestPayload);
       
       const { data, error } = await supabase.functions.invoke('generate-wallet-mask-v3', {
         body: requestPayload
@@ -82,54 +96,64 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       
       clearInterval(progressInterval);
       setProgress(95);
+      setCurrentStep("V4: Finalizing enhanced result...");
       
-      console.log('🎉 V3 Enhanced generation result with Reference Guide:', data);
+      console.log('🎉 V4 Enhanced Multi-Step result:', data);
       
       if (error) {
-        throw new Error(`V3 Enhanced generation failed: ${error.message}`);
+        throw new Error(`V4 Enhanced Multi-Step generation failed: ${error.message}`);
       }
       
       if (!data || !data.image_url) {
-        throw new Error("Failed to generate mask - no image URL returned");
+        throw new Error("V4 Enhanced generation failed - no image URL returned");
       }
       
       setProgress(100);
+      setCurrentStep("V4 Enhanced: Generation completed successfully!");
       setExternalMask(data.image_url);
       
-      // Enhanced debug information with reference guide details
+      // Enhanced debug information with multi-step details
       if (data.debug_info) {
         setDebugInfo({
           ...data.debug_info,
-          generation_success: true,
-          storage_success: !!data.storage_path,
-          reference_guided_approach: true,
-          guide_image_used: data.debug_info.referenceGuideUsed
+          v4_enhanced_system: true,
+          multi_step_success: true,
+          zone_preference: zonePreference,
+          coordinate_guided: true,
+          reference_guided: data.debug_info.reference_image_used
         });
-        console.log('🔍 V3 Enhanced debug info with Reference Guide:', data.debug_info);
+        console.log('🔍 V4 Enhanced Multi-Step debug info:', data.debug_info);
       }
       
-      toast.success("🎉 V3 Enhanced wallet costume generated with Reference Guide!");
+      // Success message with step details
+      if (data.debug_info?.processing_progress) {
+        const progress = data.debug_info.processing_progress;
+        toast.success(`🎉 V4 Enhanced: ${progress.current}/${progress.total} steps completed successfully!`);
+      } else {
+        toast.success("🎉 V4 Enhanced Multi-Step generation completed!");
+      }
       
       if (data.storage_path) {
-        console.log("💾 V3 Enhanced image stored at:", data.storage_path);
-        toast.info("💾 Enhanced costume saved to your collection");
+        console.log("💾 V4 Enhanced: Multi-step result stored at:", data.storage_path);
+        toast.info("💾 Enhanced multi-step costume saved to collection");
       }
       
       setTimeout(() => {
         setShowProgress(false);
         setProgress(0);
-      }, 1500);
+        setCurrentStep("");
+      }, 2000);
       
     } catch (error) {
-      console.error("💥 V3 Enhanced generation error:", error);
+      console.error("💥 V4 Enhanced Multi-Step generation error:", error);
       setHasGenerationError(true);
       toast.error(
         typeof error === 'object' && error !== null && 'message' in error
-          ? `V3 Enhanced Error: ${(error as Error).message}`
-          : "V3 Enhanced generation failed. Using fallback mask."
+          ? `V4 Enhanced Error: ${(error as Error).message}`
+          : "V4 Enhanced Multi-Step generation failed. Using fallback mask."
       );
       
-      // Enhanced fallbacks
+      // Enhanced fallbacks with zone consideration
       const fallbacks = {
         cartoon: '/external-masks/cats-mask.png',
         meme: '/external-masks/pepe-mask.png',
@@ -144,6 +168,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       
       setShowProgress(false);
       setProgress(0);
+      setCurrentStep("");
     } finally {
       setIsGenerating(false);
     }
@@ -153,6 +178,26 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
 
   return (
     <div className="space-y-3">
+      {/* Zone Preference Selector */}
+      <div className="space-y-2">
+        <label className="text-xs text-white/70 flex items-center gap-1">
+          <Settings className="h-3 w-3" />
+          Character Zone Preference
+        </label>
+        <select 
+          value={zonePreference} 
+          onChange={(e) => setZonePreference(e.target.value as any)}
+          disabled={isGenerating}
+          className="w-full h-8 px-2 py-1 bg-black/20 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
+        >
+          <option value="all">All Around (Surround)</option>
+          <option value="top">Top Zone (Above wallet)</option>
+          <option value="bottom">Bottom Zone (Below wallet)</option>
+          <option value="left">Left Zone (Left side)</option>
+          <option value="right">Right Zone (Right side)</option>
+        </select>
+      </div>
+
       <Button
         onClick={handleGenerate}
         className="w-full bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600 text-black font-bold"
@@ -161,25 +206,21 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating V3 Reference-Guided...
+            V4 Enhanced Multi-Step...
           </>
         ) : (
           <>
-            <Wand className="mr-2 h-4 w-4" />
-            Generate V3 Reference-Guided Costume
+            <Zap className="mr-2 h-4 w-4" />
+            Generate V4 Enhanced Multi-Step
           </>
         )}
       </Button>
       
       {showProgress && (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Progress value={progress} className="h-2" />
           <p className="text-xs text-white/50 text-center">
-            {progress < 25 ? "🔍 V3: Analyzing with Reference Guide..." : 
-             progress < 50 ? "🧠 V3: GPT-4o processing reference positioning..." :
-             progress < 75 ? "🎨 V3: DALL-E 3 generating with guide image..." : 
-             progress < 90 ? "✨ V3: Applying reference-guided positioning..." : 
-             progress < 95 ? "💾 V3: Storing reference-guided result..." : "🎉 V3: Finalizing reference-guided costume!"}
+            {currentStep}
           </p>
         </div>
       )}
@@ -187,21 +228,22 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       {hasGenerationError && (
         <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-md flex items-center text-xs text-red-300">
           <AlertCircle className="h-3 w-3 mr-1" />
-          V3 Reference-guided generation error. Using fallback. Check console for details.
+          V4 Enhanced Multi-Step error. Using fallback. Check console for details.
         </div>
       )}
       
       {!hasValidInput && (
         <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-xs text-yellow-300">
-          💡 Upload a reference image or enter a description to start V3 Reference-Guided generation
+          💡 Upload reference image or enter description for V4 Enhanced Multi-Step generation
         </div>
       )}
       
       {hasValidInput && !isGenerating && (
-        <div className="text-xs text-white/60 text-center">
-          🚀 V3 Reference-Guided Style: <span className="text-purple-300 font-medium">{maskStyle}</span> | 
-          🖼️ Images: {referenceImage ? "✅" : "✗"} {styleHintImage ? "+ Style" : ""} | 
-          📐 Guide: Container(480×854) → Output(1024×1024) with positioning reference
+        <div className="text-xs text-white/60 text-center space-y-1">
+          <div>🚀 V4 Enhanced Multi-Step System</div>
+          <div>🎭 Style: <span className="text-purple-300 font-medium">{maskStyle}</span> | 🎯 Zone: <span className="text-blue-300 font-medium">{zonePreference}</span></div>
+          <div>🖼️ Images: {referenceImage ? "✅" : "✗"} {styleHintImage ? "+ Style" : ""}</div>
+          <div>📐 Coordinates: (352,228) → 320×569px safe zone</div>
         </div>
       )}
 
@@ -209,18 +251,18 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
           <div className="flex items-center text-xs text-blue-300 mb-2">
             <Info className="h-3 w-3 mr-1" />
-            V3 Reference-Guided Debug Information
+            V4 Enhanced Multi-Step Debug Info
           </div>
           <div className="text-xs text-white/70 space-y-1">
-            <div>📐 Safe Zone: x={debugInfo.safeZone?.x}, y={debugInfo.safeZone?.y}, {debugInfo.safeZone?.width}×{debugInfo.safeZone?.height}px</div>
-            <div>📱 Container: {debugInfo.containerDimensions?.width || '480'}×{debugInfo.containerDimensions?.height || '854'}px</div>
-            <div>🖼️ Output: {debugInfo.outputImageSize || '1024x1024'}</div>
-            <div>🎯 Reference Guide: {debugInfo.guide_image_used ? "Applied" : "Not used"}</div>
-            <div>📸 Images: {debugInfo.hasReferenceImage ? "ref" : "no-ref"}, {debugInfo.hasStyleHint ? "style" : "no-style"}</div>
-            <div>📝 Prompt: {debugInfo.promptLength || 0} chars</div>
-            <div>✅ Generation: {debugInfo.generation_success ? "Success" : "Failed"}</div>
-            <div>💾 Storage: {debugInfo.storage_success ? "Saved" : "Not saved"}</div>
-            <div>🎭 Reference-Guided: {debugInfo.reference_guided_approach ? "Yes" : "No"}</div>
+            <div>🔄 Multi-Step: {debugInfo.multi_step_success ? "SUCCESS" : "PARTIAL"}</div>
+            <div>📐 Coordinate Guided: {debugInfo.coordinate_guided ? "YES" : "NO"}</div>
+            <div>🖼️ Reference Guided: {debugInfo.reference_guided ? "YES" : "NO"}</div>
+            <div>🎯 Zone: {debugInfo.zone_preference || "all"}</div>
+            <div>🎨 Background Removal: {debugInfo.background_removal_method}</div>
+            <div>✅ BG Success: {debugInfo.background_removal_success ? "YES" : "NO"}</div>
+            {debugInfo.processing_progress && (
+              <div>📊 Progress: {debugInfo.processing_progress.current}/{debugInfo.processing_progress.total} ({debugInfo.processing_progress.percentage}%)</div>
+            )}
           </div>
         </div>
       )}
