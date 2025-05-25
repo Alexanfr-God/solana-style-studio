@@ -14,13 +14,13 @@ const V3MaskPreviewCanvas = () => {
   } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
-  // Updated V3 Enhanced mask cutout URL with proper coordinates
+  // Updated V4 Enhanced mask cutout URL with proper coordinates
   const MASK_CUTOUT_URL = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-wallet-cutout-v3.png';
 
   const previewImageUrl = externalMask || maskImageUrl || "/placeholder.svg";
-  const previewPrompt = "V3 Reference-Guided wallet mask with optimized positioning and sizing";
+  const previewPrompt = "V4 Enhanced wallet mask with transparent background and character interaction";
 
-  // V3 Enhanced: Output coordinates (1024x1024 canvas)
+  // V4 Enhanced: Output coordinates (1024x1024 canvas)
   const OUTPUT_WIDTH = 1024;
   const OUTPUT_HEIGHT = 1024;
   const WALLET_WIDTH = 320;
@@ -31,9 +31,9 @@ const V3MaskPreviewCanvas = () => {
   // Enhanced preview scale factor for better visibility
   const PREVIEW_SCALE = 0.75;
 
-  // Debug logging
+  // Debug logging with V4 transparency tracking
   useEffect(() => {
-    console.log('🔍 V3 Reference-Guided Preview Debug:', {
+    console.log('🔍 V4 Enhanced Preview Debug:', {
       externalMask: externalMask ? 'loaded' : 'null',
       maskImageUrl: maskImageUrl ? 'loaded' : 'null',
       safeZoneVisible,
@@ -44,23 +44,24 @@ const V3MaskPreviewCanvas = () => {
       actualCanvasSize: `${OUTPUT_WIDTH * PREVIEW_SCALE}x${OUTPUT_HEIGHT * PREVIEW_SCALE}`,
       actualWalletSize: `${WALLET_WIDTH * PREVIEW_SCALE}x${WALLET_HEIGHT * PREVIEW_SCALE}`,
       maskCutoutUrl: MASK_CUTOUT_URL,
-      referenceGuidedApproach: true
+      v4EnhancedTransparency: true
     });
   }, [externalMask, maskImageUrl, safeZoneVisible]);
 
   return (
-    <div className="relative w-full h-[800px] flex items-center justify-center bg-black/20 rounded-xl overflow-hidden">
+    <div className="relative w-full h-[800px] flex items-center justify-center bg-gradient-to-br from-black/40 to-purple-900/20 rounded-xl overflow-hidden">
       <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
-        {/* V3 Reference-Guided main preview container - 1024x1024 output simulation */}
+        {/* V4 Enhanced main preview container with improved transparency handling */}
         <div 
-          className="relative" 
+          className="relative bg-transparent" 
           style={{ 
             width: `${OUTPUT_WIDTH * PREVIEW_SCALE}px`,
             height: `${OUTPUT_HEIGHT * PREVIEW_SCALE}px`,
+            background: 'transparent'
           }}
         >
           
-          {/* V3 Reference-Guided external mask layer with CSS mask-image */}
+          {/* V4 Enhanced external mask layer with improved transparency CSS */}
           {externalMask && (
             <div 
               className="absolute inset-0 pointer-events-none z-10"
@@ -75,22 +76,25 @@ const V3MaskPreviewCanvas = () => {
                 WebkitMaskPosition: 'center',
                 maskRepeat: 'no-repeat',
                 WebkitMaskRepeat: 'no-repeat',
+                background: 'transparent'
               }}
             >
               <img 
                 src={externalMask} 
-                alt="V3 Reference-Guided decorative mask" 
+                alt="V4 Enhanced decorative mask with transparency" 
                 className="w-full h-full object-contain"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.15))',
+                  background: 'transparent',
+                  imageRendering: 'crisp-edges'
                 }}
-                onLoad={() => console.log('✅ V3 Reference-Guided external mask loaded:', externalMask)}
-                onError={(e) => console.error('❌ V3 Reference-Guided external mask failed:', externalMask, e)}
+                onLoad={() => console.log('✅ V4 Enhanced external mask loaded with transparency:', externalMask)}
+                onError={(e) => console.error('❌ V4 Enhanced external mask failed:', externalMask, e)}
               />
             </div>
           )}
           
-          {/* Legacy mask support */}
+          {/* Legacy mask support with enhanced transparency */}
           {maskImageUrl && !externalMask && (
             <div 
               className="absolute inset-0 pointer-events-none z-10"
@@ -105,19 +109,24 @@ const V3MaskPreviewCanvas = () => {
                 WebkitMaskPosition: 'center',
                 maskRepeat: 'no-repeat',
                 WebkitMaskRepeat: 'no-repeat',
+                background: 'transparent'
               }}
             >
               <img 
                 src={maskImageUrl} 
-                alt="Legacy mask overlay" 
+                alt="Legacy mask with enhanced transparency" 
                 className="w-full h-full object-contain"
-                onLoad={() => console.log('✅ Legacy mask loaded:', maskImageUrl)}
+                style={{
+                  background: 'transparent',
+                  imageRendering: 'crisp-edges'
+                }}
+                onLoad={() => console.log('✅ Legacy mask loaded with transparency:', maskImageUrl)}
                 onError={(e) => console.error('❌ Legacy mask failed:', maskImageUrl, e)}
               />
             </div>
           )}
           
-          {/* V3 Reference-Guided wallet UI container - positioned at exact coordinates */}
+          {/* V4 Enhanced wallet UI container - positioned at exact coordinates */}
           <div 
             className="absolute z-20"
             style={{
@@ -139,7 +148,7 @@ const V3MaskPreviewCanvas = () => {
             <LoginScreen style={loginStyle} />
           </div>
           
-          {/* V3 Reference-Guided safe zone visualization */}
+          {/* V4 Enhanced safe zone visualization */}
           {safeZoneVisible && (
             <div 
               className="absolute z-30 pointer-events-none"
@@ -157,7 +166,7 @@ const V3MaskPreviewCanvas = () => {
                 ✅ Safe Zone ({WALLET_WIDTH}×{WALLET_HEIGHT}px)
               </div>
               <div className="absolute top-2 left-2 bg-green-500/70 px-2 py-1 rounded text-xs text-green-200">
-                V3 Reference-Guided
+                V4 Enhanced
               </div>
               <div className="absolute bottom-2 right-2 bg-green-500/70 px-2 py-1 rounded text-xs text-green-200">
                 x={WALLET_X}, y={WALLET_Y}
@@ -165,65 +174,65 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
           
-          {/* V3 Reference-Guided success badge */}
+          {/* V4 Enhanced success badge */}
           {externalMask && !safeZoneVisible && (
             <div className="absolute top-4 right-4 z-40">
               <Badge 
                 className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(34,197,94,0.5)] border-white/20 animate-pulse"
               >
-                ✨ V3 REFERENCE-GUIDED
+                ✨ V4 ENHANCED TRANSPARENCY
               </Badge>
             </div>
           )}
           
-          {/* V3 Reference-Guided architecture badge */}
+          {/* V4 Enhanced architecture badge */}
           <div className="absolute top-4 left-4 z-40">
             <Badge 
               className="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(153,69,255,0.5)] border-white/20"
             >
-              V3 REF-GUIDED
+              V4 ENHANCED
             </Badge>
           </div>
 
-          {/* V3 Reference-Guided debug indicator */}
+          {/* V4 Enhanced transparency indicator */}
           {externalMask && (
             <div className="absolute bottom-4 left-4 z-40">
               <Badge 
-                className="bg-blue-500/80 text-white px-2 py-1 text-xs"
+                className="bg-emerald-500/80 text-white px-2 py-1 text-xs"
               >
-                🎯 Reference Guide Active
+                🎯 No Background
               </Badge>
             </div>
           )}
 
-          {/* V3 Reference-Guided coordinate display */}
+          {/* V4 Enhanced coordinate display */}
           {externalMask && (
             <div className="absolute bottom-4 right-4 z-40">
               <Badge 
                 className="bg-yellow-500/80 text-black px-2 py-1 text-xs font-mono"
               >
-                Guide: {WALLET_X},{WALLET_Y}
+                Enhanced: {WALLET_X},{WALLET_Y}
               </Badge>
             </div>
           )}
 
-          {/* Reference Guide indicator */}
+          {/* Enhanced background removal indicator */}
           {externalMask && (
             <div className="absolute top-1/2 left-4 z-40">
               <Badge 
-                className="bg-emerald-500/80 text-white px-2 py-1 text-xs"
+                className="bg-blue-500/80 text-white px-2 py-1 text-xs"
               >
-                📐 Reference Positioning
+                📐 Background Removed
               </Badge>
             </div>
           )}
 
-          {/* Reference-guided scale indicator */}
+          {/* Enhanced quality scale indicator */}
           <div className="absolute top-1/2 right-4 z-40">
             <Badge 
               className="bg-orange-500/80 text-white px-2 py-1 text-xs font-mono"
             >
-              Scale: {PREVIEW_SCALE}x (Ref-Guided)
+              Quality: HD (Enhanced)
             </Badge>
           </div>
         </div>

@@ -3,9 +3,9 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
-// V4 Architecture: Import modular components
-import { buildSimplePrompt, getInteractionVariations } from './promptBuilder.ts';
-import { removeBackgroundHuggingFace, validateBackgroundRemoval } from './backgroundRemover.ts';
+// V4 Enhanced Architecture: Import modular components
+import { buildSimplePrompt, buildEnhancedPrompt, getInteractionVariations } from './promptBuilder.ts';
+import { removeBackgroundHuggingFace, validateBackgroundRemoval, optimizeImageQuality } from './backgroundRemover.ts';
 import { V4_CONFIG, getFallbackMask } from './utils/constants.ts';
 import { storeProcessedImage, storeMaskMetadata } from './storage.ts';
 
@@ -50,15 +50,18 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 V4 Architecture: Simple character-focused generation');
+    console.log('🚀 V4 Enhanced Architecture: Advanced character-focused generation');
     
     const openAiKey = Deno.env.get("OPENAI_API_KEY");
+    const huggingFaceKey = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!openAiKey) {
       throw new Error("OpenAI API key not found");
     }
+
+    console.log(`🔑 V4 Enhanced: API Keys Status - OpenAI: ✅, HuggingFace: ${huggingFaceKey ? '✅' : '❌'}`);
 
     const { 
       prompt, 
@@ -68,52 +71,56 @@ serve(async (req) => {
       user_id
     } = await req.json() as MaskRequest;
 
-    console.log(`🎭 V4: Processing ${style} style`);
-    console.log(`📝 V4: User prompt: "${prompt}"`);
+    console.log(`🎭 V4 Enhanced: Processing ${style} style`);
+    console.log(`📝 V4 Enhanced: User prompt: "${prompt}"`);
 
     const processingSteps: string[] = [];
     
-    // Step 1: V4 Simple Prompt Building
-    processingSteps.push("V4: Building simple character-focused prompt");
-    const v4Prompt = buildSimplePrompt(prompt, style);
-    console.log(`✨ V4 Prompt: "${v4Prompt}"`);
+    // Step 1: V4 Enhanced Prompt Building with multiple variations
+    processingSteps.push("V4 Enhanced: Building optimized character-focused prompt");
+    const v4Prompt = buildEnhancedPrompt(prompt, style, "hugging");
+    console.log(`✨ V4 Enhanced Prompt: "${v4Prompt}"`);
 
-    // Step 2: DALL-E Generation with Guide Image
-    processingSteps.push("V4: Generating with DALL-E using guide image");
+    // Step 2: DALL-E Generation with Enhanced Quality
+    processingSteps.push("V4 Enhanced: Generating with DALL-E using enhanced prompts");
     let generatedImageUrl: string;
     
     try {
       generatedImageUrl = await generateWithDallE(v4Prompt, openAiKey);
-      processingSteps.push("V4: DALL-E generation successful");
-      console.log("✅ V4: DALL-E generation completed");
+      processingSteps.push("V4 Enhanced: DALL-E generation successful");
+      console.log("✅ V4 Enhanced: DALL-E generation completed");
     } catch (error) {
-      console.error("❌ V4: DALL-E failed, using fallback:", error);
+      console.error("❌ V4 Enhanced: DALL-E failed, using fallback:", error);
       generatedImageUrl = getFallbackMask(style);
-      processingSteps.push("V4: Using fallback mask due to generation error");
+      processingSteps.push("V4 Enhanced: Using fallback mask due to generation error");
     }
 
-    // Step 3: Background Removal (V4 Core Feature)
-    processingSteps.push("V4: Starting background removal");
+    // Step 3: Advanced Background Removal (V4 Enhanced Core Feature)
+    processingSteps.push("V4 Enhanced: Starting advanced background removal");
     const processedImageUrl = await removeBackgroundHuggingFace(generatedImageUrl);
     const backgroundWasRemoved = await validateBackgroundRemoval(generatedImageUrl, processedImageUrl);
     
     if (backgroundWasRemoved) {
-      processingSteps.push("V4: Background removal successful");
-      console.log("✅ V4: Background removed successfully");
+      processingSteps.push("V4 Enhanced: Advanced background removal successful");
+      console.log("✅ V4 Enhanced: Background removed successfully - transparent PNG ready");
     } else {
-      processingSteps.push("V4: Using original image (background removal skipped)");
-      console.log("⚠️ V4: Background removal skipped");
+      processingSteps.push("V4 Enhanced: Using original image (background removal skipped/failed)");
+      console.log("⚠️ V4 Enhanced: Background removal skipped or failed");
     }
 
-    // Step 4: Storage
+    // Step 4: Image Quality Optimization
+    processingSteps.push("V4 Enhanced: Optimizing image quality");
+    const optimizedImageUrl = await optimizeImageQuality(processedImageUrl);
+
+    // Step 5: Storage with Enhanced Metadata
     let storagePath = null;
-    let finalImageUrl = processedImageUrl;
+    let finalImageUrl = optimizedImageUrl;
 
     if (user_id && supabaseUrl && supabaseKey) {
       try {
-        processingSteps.push("V4: Storing processed image");
+        processingSteps.push("V4 Enhanced: Storing processed image with metadata");
         const result = await storeProcessedImage(
-          processedImageUrl,
+          optimizedImageUrl,
           user_id,
           supabaseUrl,
           supabaseKey,
@@ -121,15 +128,15 @@ serve(async (req) => {
         );
         storagePath = result.path;
         finalImageUrl = result.publicUrl;
-        processingSteps.push("V4: Image storage successful");
-        console.log(`✅ V4: Stored at ${storagePath}`);
+        processingSteps.push("V4 Enhanced: Image storage successful");
+        console.log(`✅ V4 Enhanced: Stored at ${storagePath}`);
       } catch (storageError) {
-        console.error("❌ V4: Storage failed:", storageError);
-        processingSteps.push("V4: Storage failed, using direct URL");
+        console.error("❌ V4 Enhanced: Storage failed:", storageError);
+        processingSteps.push("V4 Enhanced: Storage failed, using direct URL");
       }
     }
 
-    // Step 5: Metadata Storage
+    // Step 6: Enhanced Metadata Storage
     if (user_id && supabaseUrl && supabaseKey) {
       await storeMaskMetadata(
         user_id,
@@ -146,33 +153,37 @@ serve(async (req) => {
       );
     }
 
-    // V4 Response
+    // V4 Enhanced Response with detailed debug info
     const response: MaskResponse = {
       image_url: finalImageUrl,
       layout_json: {
         layout: {
-          v4_architecture: true,
+          v4_enhanced_architecture: true,
           character_interaction: "physical contact with black rectangle",
-          background: backgroundWasRemoved ? "removed" : "original",
-          core_principle: "NO BACKGROUND, character focus"
+          background: backgroundWasRemoved ? "completely_removed_transparent" : "original",
+          core_principle: "NO BACKGROUND, character focus, HD quality",
+          transparency_quality: backgroundWasRemoved ? "professional" : "standard"
         },
         style: style,
-        color_palette: ["#V4CLEAN", "#TRANSPARENT", "#CHARACTER"],
+        color_palette: ["#V4ENHANCED", "#TRANSPARENT", "#HDQUALITY"],
         safe_zone: V4_CONFIG.SAFE_ZONE
       },
       prompt_used: prompt,
       storage_path: storagePath,
       debug_info: {
-        v4_architecture: true,
+        v4_enhanced_architecture: true,
         processing_steps: processingSteps,
         background_removed: backgroundWasRemoved,
+        hugging_face_available: !!huggingFaceKey,
         guide_image_used: V4_CONFIG.GUIDE_IMAGE_URL,
         dalle_prompt: v4Prompt,
-        core_principles: V4_CONFIG.CORE_PRINCIPLES
+        core_principles: V4_CONFIG.CORE_PRINCIPLES,
+        quality_optimization: "enabled",
+        transparency_handling: "enhanced"
       }
     };
 
-    console.log("🎉 V4 Architecture: Generation completed successfully");
+    console.log("🎉 V4 Enhanced Architecture: Generation completed successfully with transparency");
     
     return new Response(
       JSON.stringify(response),
@@ -180,13 +191,14 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("💥 V4 Architecture Error:", error);
+    console.error("💥 V4 Enhanced Architecture Error:", error);
     
     return new Response(
       JSON.stringify({ 
-        error: "V4 Architecture generation failed", 
+        error: "V4 Enhanced Architecture generation failed", 
         details: error.message,
-        fallback_available: true
+        fallback_available: true,
+        enhanced_features: "background removal, quality optimization, transparency handling"
       }),
       { 
         status: 500, 
@@ -197,7 +209,7 @@ serve(async (req) => {
 });
 
 async function generateWithDallE(prompt: string, apiKey: string): Promise<string> {
-  console.log("🎨 V4: Calling DALL-E with simple prompt");
+  console.log("🎨 V4 Enhanced: Calling DALL-E with optimized prompt");
   
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
@@ -221,5 +233,6 @@ async function generateWithDallE(prompt: string, apiKey: string): Promise<string
   }
 
   const data = await response.json();
+  console.log("✅ V4 Enhanced: DALL-E response received");
   return data.data[0].url;
 }
