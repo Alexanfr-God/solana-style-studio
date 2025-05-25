@@ -6,18 +6,24 @@ import MaskPromptInput from './MaskPromptInput';
 import MaskUploadImage from './MaskUploadImage';
 import GenerateMaskButton from './GenerateMaskButton';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Info, Eye, EyeOff } from 'lucide-react';
+import { RotateCcw, Info, Eye, EyeOff, Settings } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import V3MaskPreviewCanvas from './V3MaskPreviewCanvas';
 import SafeZoneToggle from './SafeZoneToggle';
 import MaskPresets from './MaskPresets';
+import CreateGuideImageButton from '@/components/admin/CreateGuideImageButton';
 import { 
   Tooltip, 
   TooltipContent, 
   TooltipProvider, 
   TooltipTrigger 
 } from '@/components/ui/tooltip';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const V3MaskEditor = () => {
   const { 
@@ -29,6 +35,7 @@ const V3MaskEditor = () => {
   } = useMaskEditorStore();
   
   const [showGuide, setShowGuide] = useState(true);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const handleReset = () => {
     resetEditor();
@@ -116,6 +123,29 @@ const V3MaskEditor = () => {
                     Reset
                   </Button>
                 </div>
+                
+                {/* Admin Section */}
+                <Collapsible open={showAdmin} onOpenChange={setShowAdmin}>
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full text-xs text-white/50 hover:text-white/70"
+                    >
+                      <Settings className="mr-2 h-3 w-3" />
+                      {showAdmin ? 'Hide Admin' : 'Show Admin'}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-3 pt-3">
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                      <h4 className="text-xs font-medium text-blue-300 mb-2">Reference Guide Setup</h4>
+                      <p className="text-xs text-white/60 mb-3">
+                        Create the mask-guide-v3.png reference image for better positioning accuracy.
+                      </p>
+                      <CreateGuideImageButton />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </CardContent>
           </Card>
