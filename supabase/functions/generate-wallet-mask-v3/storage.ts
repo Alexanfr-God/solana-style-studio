@@ -63,7 +63,9 @@ export async function storeMaskMetadata(
     imageUrl: string;
     storagePath?: string;
     backgroundRemoved: boolean;
-    processingSteps: string[];
+    processingSteps: any[];
+    referenceGuided: boolean;
+    zonePreference: string;
   },
   supabaseUrl: string,
   supabaseKey: string
@@ -79,7 +81,12 @@ export async function storeMaskMetadata(
       style: maskData.style,
       image_url: maskData.imageUrl,
       storage_path: maskData.storagePath,
-      layout: { v4_architecture: true, processing_steps: maskData.processingSteps },
+      layout: { 
+        v4_architecture: true, 
+        processing_steps: maskData.processingSteps,
+        reference_guided: maskData.referenceGuided,
+        zone_preference: maskData.zonePreference
+      },
       color_palette: ["#V4", "#NOBG", "#CLEAN"],
       safe_zone: V4_CONFIG.SAFE_ZONE,
       transparency_validated: maskData.backgroundRemoved,

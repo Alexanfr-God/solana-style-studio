@@ -5,6 +5,7 @@ export interface ProcessingStep {
   description: string;
   completed: boolean;
   result?: any;
+  error?: string;
 }
 
 export class V4MultiStepProcessor {
@@ -44,6 +45,7 @@ export class V4MultiStepProcessor {
       return result;
     } catch (error) {
       console.error(`❌ V4 Enhanced: Step failed - ${step.description}:`, error);
+      step.error = error.message;
       throw error;
     }
   }
@@ -70,5 +72,13 @@ export class V4MultiStepProcessor {
   getCurrentStepDescription(): string {
     const currentStep = this.steps[this.currentStep];
     return currentStep ? currentStep.description : "V4 Enhanced: Processing completed";
+  }
+
+  getFailedSteps(): ProcessingStep[] {
+    return this.steps.filter(s => s.error);
+  }
+
+  getAllSteps(): ProcessingStep[] {
+    return [...this.steps];
   }
 }

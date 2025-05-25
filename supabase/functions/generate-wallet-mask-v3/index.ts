@@ -51,6 +51,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Initialize V4 Multi-Step Processor
+  const processor = new V4MultiStepProcessor();
+  
   try {
     console.log('🚀 V4 Enhanced Architecture: Advanced Multi-Step Character Generation System');
     
@@ -65,6 +68,7 @@ serve(async (req) => {
 
     console.log(`🔑 V4 Enhanced: System Status - OpenAI: ✅, HuggingFace: ${huggingFaceKey ? '✅' : '❌'}, Supabase: ${supabaseUrl ? '✅' : '❌'}`);
 
+    const requestBody = await req.json() as MaskRequest;
     const { 
       prompt, 
       reference_image_url, 
@@ -72,18 +76,20 @@ serve(async (req) => {
       style, 
       user_id,
       zone_preference = 'all'
-    } = await req.json() as MaskRequest;
+    } = requestBody;
 
     console.log(`🎭 V4 Enhanced: Processing ${style} style with zone preference: ${zone_preference}`);
     console.log(`📝 V4 Enhanced: User prompt: "${prompt}"`);
 
-    // Initialize V4 Multi-Step Processor
-    const processor = new V4MultiStepProcessor();
-    
     // Step 1: Reference Image Loading
-    const referenceImageUrl = await processor.executeStep("reference_loading", async () => {
-      return await loadReferenceImage();
-    });
+    let referenceImageUrl: string | null = null;
+    try {
+      referenceImageUrl = await processor.executeStep("reference_loading", async () => {
+        return await loadReferenceImage();
+      });
+    } catch (error) {
+      console.warn("⚠️ V4 Enhanced: Reference image loading failed, continuing without:", error.message);
+    }
 
     // Step 2: Enhanced Prompt Building
     const enhancedPrompt = await processor.executeStep("prompt_optimization", async () => {
@@ -108,9 +114,15 @@ serve(async (req) => {
     }
 
     // Step 4: Enhanced Background Removal
-    const backgroundResult = await processor.executeStep("background_removal", async () => {
-      return await enhancedBackgroundRemoval(generatedImageUrl);
-    });
+    let backgroundResult;
+    try {
+      backgroundResult = await processor.executeStep("background_removal", async () => {
+        return await enhancedBackgroundRemoval(generatedImageUrl);
+      });
+    } catch (error) {
+      console.warn("⚠️ V4 Enhanced: Background removal failed, using original:", error.message);
+      backgroundResult = { processedUrl: generatedImageUrl, method: "failed", success: false };
+    }
 
     // Step 5: Quality Optimization
     const finalImageUrl = await processor.executeStep("quality_optimization", async () => {
@@ -132,8 +144,8 @@ serve(async (req) => {
     let publicUrl = finalImageUrl.url;
 
     if (user_id && supabaseUrl && supabaseKey) {
-      const storageResult = await processor.executeStep("storage_processing", async () => {
-        try {
+      try {
+        const storageResult = await processor.executeStep("storage_processing", async () => {
           const result = await storeProcessedImage(
             finalImageUrl.url,
             user_id,
@@ -150,7 +162,7 @@ serve(async (req) => {
               imageUrl: result.publicUrl,
               storagePath: result.path,
               backgroundRemoved: finalImageUrl.backgroundRemoved,
-              processingSteps: processor.getStepResults(),
+              processingSteps: processor.getAllSteps(),
               referenceGuided: !!referenceImageUrl,
               zonePreference: zone_preference
             },
@@ -159,19 +171,19 @@ serve(async (req) => {
           );
           
           return result;
-        } catch (storageError) {
-          console.error("❌ V4 Enhanced: Storage failed:", storageError);
-          return { path: null, publicUrl: finalImageUrl.url };
-        }
-      });
-      
-      storagePath = storageResult.path;
-      publicUrl = storageResult.publicUrl;
+        });
+        
+        storagePath = storageResult.path;
+        publicUrl = storageResult.publicUrl;
+      } catch (storageError) {
+        console.error("❌ V4 Enhanced: Storage failed:", storageError);
+      }
     }
 
     // V4 Enhanced Response with comprehensive debug info
     const progress = processor.getProgress();
     const stepResults = processor.getStepResults();
+    const failedSteps = processor.getFailedSteps();
     
     const response: MaskResponse = {
       image_url: publicUrl,
@@ -201,6 +213,7 @@ serve(async (req) => {
         multi_step_processing: true,
         processing_progress: progress,
         step_results: stepResults,
+        failed_steps: failedSteps,
         reference_image_used: !!referenceImageUrl,
         background_removal_method: finalImageUrl.method,
         background_removal_success: finalImageUrl.backgroundRemoved,
@@ -223,11 +236,19 @@ serve(async (req) => {
   } catch (error) {
     console.error("💥 V4 Enhanced System Error:", error);
     
+    const failedSteps = processor.getFailedSteps();
+    const progress = processor.getProgress();
+    
     return new Response(
       JSON.stringify({ 
         error: "V4 Enhanced System processing failed", 
         details: error.message,
         fallback_available: true,
+        debug_info: {
+          failed_steps: failedSteps,
+          progress: progress,
+          all_steps: processor.getAllSteps()
+        },
         system_features: [
           "Multi-step processing",
           "Reference-guided generation", 
@@ -260,8 +281,6 @@ async function generateWithEnhancedDallE(
     quality: V4_CONFIG.DALLE_CONFIG.quality
   };
 
-  // If we have a reference image, we could potentially use it for better guidance
-  // For now, we rely on the enhanced prompt with coordinates
   if (referenceImageUrl) {
     console.log("🖼️ V4 Enhanced: Using reference image guidance for positioning");
   }
