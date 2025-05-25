@@ -83,7 +83,7 @@ const V4MaskEditor = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 relative">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
       <div className="lg:col-span-1">
         <div className="flex flex-col space-y-6">
           
