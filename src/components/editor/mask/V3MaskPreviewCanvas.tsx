@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
@@ -23,9 +24,9 @@ const V3MaskPreviewCanvas = () => {
   const OUTPUT_WIDTH = 1024;
   const OUTPUT_HEIGHT = 1024;
   const WALLET_WIDTH = 320;
-  const WALLET_HEIGHT = 650; // Увеличили с 569 до 650 для показа всех элементов
+  const WALLET_HEIGHT = 569;
   const WALLET_X = 352; // Centered in 1024x1024 canvas
-  const WALLET_Y = 187; // Сдвинули выше чтобы поместился полный кошелек (228 - 41)
+  const WALLET_Y = 228; // Centered in 1024x1024 canvas
 
   // Preview scale factor for display (only for the entire preview container)
   const PREVIEW_SCALE = 0.6;
@@ -192,13 +193,13 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
 
-          {/* V3 Enhanced coordinate display - updated with new dimensions */}
+          {/* V3 Enhanced coordinate display */}
           {externalMask && (
             <div className="absolute bottom-4 right-4 z-40">
               <Badge 
                 className="bg-yellow-500/80 text-black px-2 py-1 text-xs font-mono"
               >
-                Wallet: {WALLET_X},{WALLET_Y} ({WALLET_WIDTH}×{WALLET_HEIGHT})
+                Wallet: {WALLET_X},{WALLET_Y}
               </Badge>
             </div>
           )}
