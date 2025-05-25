@@ -1,7 +1,12 @@
 
 [install]
-timeout = "10m"
+timeout = "5m"
 cache = true
+retry = 2
 
 [install.scopes]
 "*" = { production = false }
+
+# Exclude supabase functions from main build
+[build]
+exclude = ["supabase/functions/**/*"]

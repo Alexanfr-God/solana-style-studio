@@ -25,7 +25,6 @@ const V4MaskEditor = () => {
   } = useMaskEditorStore();
   
   const [backgroundRemoval, setBackgroundRemoval] = useState(true);
-  const [showComparison, setShowComparison] = useState(false);
 
   const handleV4Generate = async () => {
     if (!prompt.trim()) {
