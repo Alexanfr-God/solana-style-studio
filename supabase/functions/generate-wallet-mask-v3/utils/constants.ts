@@ -15,7 +15,9 @@ export const V4_CONFIG = {
     height: 569
   },
   
-  GUIDE_IMAGE_URL: "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-wallet-cutout-v3.png",
+  // Updated to use the black square guide image for better DALL-E positioning
+  GUIDE_IMAGE_URL: "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-guide.png",
+  FALLBACK_GUIDE_URL: "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-wallet-cutout-v3.png",
   WALLET_BASE_IMAGE: "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/wallet-ui-frame.png",
   
   FALLBACK_MASKS: {

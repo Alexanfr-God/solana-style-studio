@@ -71,7 +71,7 @@ export async function storeMaskMetadata(
   supabaseKey: string
 ): Promise<void> {
   try {
-    console.log("💾 V4: Storing mask metadata");
+    console.log("💾 V4: Storing mask metadata with black square guide reference");
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -85,7 +85,8 @@ export async function storeMaskMetadata(
         v4_architecture: true, 
         processing_steps: maskData.processingSteps,
         reference_guided: maskData.referenceGuided,
-        zone_preference: maskData.zonePreference
+        zone_preference: maskData.zonePreference,
+        guide_type: 'black_square'
       },
       color_palette: ["#V4", "#NOBG", "#CLEAN"],
       safe_zone: V4_CONFIG.SAFE_ZONE,
@@ -97,7 +98,7 @@ export async function storeMaskMetadata(
     if (error) {
       console.error("V4: Metadata storage error:", error);
     } else {
-      console.log("✅ V4: Metadata stored successfully");
+      console.log("✅ V4: Metadata stored successfully with black square guide reference");
     }
   } catch (error) {
     console.error("❌ V4: Metadata error:", error);

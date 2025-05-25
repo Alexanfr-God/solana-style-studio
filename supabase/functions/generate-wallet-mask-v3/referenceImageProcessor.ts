@@ -1,5 +1,7 @@
 
-// V4 Enhanced: Reference Image Processing System
+// V4 Enhanced: Reference Image Processing System with Black Square Guide
+import { V4_CONFIG } from './utils/constants.ts';
+
 export interface ReferenceImageConfig {
   imageUrl: string;
   safeZone: {
@@ -13,23 +15,32 @@ export interface ReferenceImageConfig {
 
 export async function loadReferenceImage(): Promise<string | null> {
   try {
-    // Try to load the reference cutout image
-    const referenceImageUrl = "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-wallet-cutout-v3.png";
+    console.log("🖼️ V4 Enhanced: Loading black square reference image for precise DALL-E positioning");
     
-    console.log("🖼️ V4 Enhanced: Loading reference image for precise positioning");
+    // First try the main black square guide image
+    const primaryResponse = await fetch(V4_CONFIG.GUIDE_IMAGE_URL, { method: 'HEAD' });
     
-    // Test if reference image is accessible
-    const response = await fetch(referenceImageUrl, { method: 'HEAD' });
-    
-    if (response.ok) {
-      console.log("✅ V4 Enhanced: Reference image found and accessible");
-      return referenceImageUrl;
-    } else {
-      console.log("⚠️ V4 Enhanced: Reference image not accessible, using coordinate-based approach");
-      return null;
+    if (primaryResponse.ok) {
+      console.log("✅ V4 Enhanced: Black square guide image found and accessible");
+      console.log(`📍 V4 Enhanced: Using guide: ${V4_CONFIG.GUIDE_IMAGE_URL}`);
+      return V4_CONFIG.GUIDE_IMAGE_URL;
     }
+    
+    console.log("⚠️ V4 Enhanced: Primary guide not accessible, trying fallback");
+    
+    // Try fallback guide image
+    const fallbackResponse = await fetch(V4_CONFIG.FALLBACK_GUIDE_URL, { method: 'HEAD' });
+    
+    if (fallbackResponse.ok) {
+      console.log("✅ V4 Enhanced: Fallback guide image accessible");
+      console.log(`📍 V4 Enhanced: Using fallback: ${V4_CONFIG.FALLBACK_GUIDE_URL}`);
+      return V4_CONFIG.FALLBACK_GUIDE_URL;
+    }
+    
+    console.log("❌ V4 Enhanced: No reference images accessible, using coordinate-based approach");
+    return null;
   } catch (error) {
-    console.error("❌ V4 Enhanced: Error loading reference image:", error);
+    console.error("❌ V4 Enhanced: Error loading reference images:", error);
     return null;
   }
 }
@@ -41,9 +52,10 @@ export function buildReferenceGuidedPrompt(
 ): string {
   const character = getEnhancedCharacterDescription(style);
   const interactionDetails = getPhysicalInteractionDetails();
+  
   const positioningInstructions = hasReferenceImage 
-    ? "using the white background with transparent rectangular cutout as positioning guide"
-    : "with black rectangle positioned at coordinates (352,228) dimensions 320x569 pixels";
+    ? "using the provided reference image with BLACK RECTANGULAR AREA as exact positioning guide - character must embrace and interact with this black rectangular zone"
+    : "with character positioned around coordinates (352,228) embracing a 320x569 pixel central rectangular area";
   
   return `${character} ${userPrompt} ${interactionDetails} ${positioningInstructions}, COMPLETELY TRANSPARENT BACKGROUND, PNG format, no background elements, professional 4K quality, character must make direct physical contact with the central rectangular area.`;
 }
@@ -63,16 +75,16 @@ function getEnhancedCharacterDescription(style: string): string {
 }
 
 function getPhysicalInteractionDetails(): string {
-  return "physically embracing, hugging, and making direct contact with the central transparent rectangular area";
+  return "physically embracing, hugging, and making direct contact with the central black rectangular area";
 }
 
 export function getZoneBasedPositioning(zone: 'top' | 'bottom' | 'left' | 'right' | 'all'): string {
   const zones = {
-    top: "character positioned above the central rectangle, leaning down and embracing it from above",
-    bottom: "character positioned below the central rectangle, reaching up and hugging it from below", 
-    left: "character positioned to the left of the central rectangle, embracing it from the side",
-    right: "character positioned to the right of the central rectangle, hugging it from the right side",
-    all: "character surrounding and embracing the central rectangle from multiple angles"
+    top: "character positioned above the central black rectangle, leaning down and embracing it from above",
+    bottom: "character positioned below the central black rectangle, reaching up and hugging it from below", 
+    left: "character positioned to the left of the central black rectangle, embracing it from the side",
+    right: "character positioned to the right of the central black rectangle, hugging it from the right side",
+    all: "character surrounding and embracing the central black rectangle from multiple angles"
   };
   
   return zones[zone];
