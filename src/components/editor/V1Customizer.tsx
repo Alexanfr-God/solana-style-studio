@@ -1,3 +1,4 @@
+
 import React from 'react';
 import LayerSelector from './LayerSelector';
 import UploadImage from './UploadImage';
@@ -32,18 +33,14 @@ const V1Customizer = () => {
 
   return (
     <div className="w-full py-4 md:py-6 px-2 md:px-6 bg-black">
-      <div className="max-w-screen-xl mx-auto space-y-8 md:space-y-12">
+      <div className="max-w-screen-xl mx-auto">
         <EditorHeader />
         
         <WalletRider />
         
-        <div className="pt-4 md:pt-8">
-          <EditorTabs />
-        </div>
+        <EditorTabs />
         
-        <div className="pt-4 md:pt-8">
-          {renderEditor()}
-        </div>
+        {renderEditor()}
       </div>
     </div>
   );
