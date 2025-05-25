@@ -1,6 +1,7 @@
 
 // V4 Architecture: Clean storage operations
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { V4_CONFIG } from './utils/constants.ts';
 
 export async function storeProcessedImage(
   imageUrl: string,
