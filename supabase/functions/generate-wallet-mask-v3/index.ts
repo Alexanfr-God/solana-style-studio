@@ -119,9 +119,14 @@ serve(async (req) => {
       generatedImageUrl = await processor.executeStep("replicate_generation", async () => {
         return await generateMaskWithReplicate(enhancedPrompt, replicateKey, referenceImageUrl, style);
       });
+      
+      console.log("✅ Replicate result received:", generatedImageUrl);
+      console.log("✅ Generated image URL:", generatedImageUrl);
+      
     } catch (error) {
       console.error("❌ V4 Enhanced: Replicate SDXL-ControlNet generation failed, using style-appropriate fallback:", error);
       generatedImageUrl = getFallbackMask(style);
+      console.log("🔄 Using fallback mask:", generatedImageUrl);
       
       // Add fallback info to processor for debugging
       processor.executeStep("replicate_generation", async () => {
@@ -133,6 +138,7 @@ serve(async (req) => {
     let backgroundResult;
     try {
       backgroundResult = await processor.executeStep("background_removal", async () => {
+        console.log("🎨 Starting background removal for:", generatedImageUrl);
         return await enhancedBackgroundRemoval(generatedImageUrl);
       });
     } catch (error) {
@@ -329,8 +335,9 @@ async function generateMaskWithReplicate(
   try {
     console.log(`🔄 V4 Enhanced: Starting Replicate SDXL-ControlNet generation...`);
     
+    // FIXED: Removed specific version hash to avoid 422 error
     const output = await replicate.run(
-      "lucataco/sdxl-controlnet:066dfa6e633c8ce4e4592a5b89d94e6b4c4e7e51e6a41a2d7cc31c2e6bc632c7",
+      "lucataco/sdxl-controlnet",
       {
         input: {
           image: controlImageUrl,
@@ -346,10 +353,13 @@ async function generateMaskWithReplicate(
     );
 
     console.log("✅ V4 Enhanced: Replicate SDXL-ControlNet generation completed successfully");
+    console.log("✅ Replicate result:", output);
     console.log(`📊 V4 Enhanced: Output type: ${typeof output}, Array: ${Array.isArray(output)}`);
     
     // Extract URL from output array
     const imageUrl = Array.isArray(output) ? output[0] : output;
+    
+    console.log("✅ Generated image URL:", imageUrl);
     
     if (!imageUrl) {
       throw new Error("No image URL returned from Replicate SDXL-ControlNet");

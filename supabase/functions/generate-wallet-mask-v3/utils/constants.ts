@@ -20,14 +20,15 @@ export const V4_CONFIG = {
   FALLBACK_GUIDE_URL: "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-wallet-cutout-v3.png",
   WALLET_BASE_IMAGE: "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/wallet-ui-frame.png",
   
+  // FIXED: Use absolute URLs for fallback masks to prevent background removal errors
   FALLBACK_MASKS: {
-    cartoon: '/external-masks/cats-mask.png',
-    meme: '/external-masks/pepe-mask.png', 
-    luxury: '/external-masks/crypto-mask.png',
-    modern: '/external-masks/abstract-mask.png',
-    realistic: '/external-masks/abstract-mask.png',
-    fantasy: '/external-masks/abstract-mask.png',
-    minimalist: '/external-masks/clean Example.png'
+    cartoon: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/external-masks/cats-mask.png',
+    meme: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/external-masks/pepe-mask.png', 
+    luxury: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/external-masks/crypto-mask.png',
+    modern: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/external-masks/abstract-mask.png',
+    realistic: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/external-masks/abstract-mask.png',
+    fantasy: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/external-masks/abstract-mask.png',
+    minimalist: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/external-masks/clean%20Example.png'
   }
 };
 
