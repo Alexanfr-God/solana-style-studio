@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -29,6 +28,9 @@ interface MaskResponse {
   storage_path?: string;
   debug_info?: any;
 }
+
+// Встроенный fallback - черный квадрат в центре белого canvas 1024x1024
+const BLACK_SQUARE_FALLBACK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAYAAAB/HSuDAAAgAElEQVR4nO3XQQ0AAAzCsOHf9F6oIJXQS071AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+BjYAP/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -102,10 +104,10 @@ serve(async (req) => {
     }
 
     console.log(`🎉 Generation completed successfully`);
-    console.log(`🖼️ Final Image URL: ${publicUrl}`);
+    console.log(`🖼️ Final Image URL: ${generatedImageUrl}`);
     
     const response: MaskResponse = {
-      image_url: publicUrl,
+      image_url: generatedImageUrl,
       layout_json: {
         layout: {
           character_position: zone_preference,
@@ -123,12 +125,13 @@ serve(async (req) => {
         }
       },
       prompt_used: prompt,
-      storage_path: storagePath,
+      storage_path: null,
       debug_info: {
         generation_successful: true,
         style: style,
         zone_preference: zone_preference,
         reference_image_used: !!reference_image_url,
+        control_image_used: reference_image_url || "BLACK_SQUARE_FALLBACK",
         api_keys_status: {
           replicate: !!replicateKey,
           supabase: !!(supabaseUrl && supabaseKey)
@@ -171,50 +174,39 @@ async function generateMaskWithReplicate(
     auth: apiKey,
   });
 
-  // Улучшенные промпты для каждого стиля
-  const stylePrompts = {
-    cartoon: "vibrant cartoon character, bold outlines, clean animation style, colorful",
-    realistic: "photorealistic character, detailed, natural lighting, high quality",
-    fantasy: "magical fantasy character, mystical, enchanted, ethereal",
-    modern: "sleek modern character, contemporary, digital art style, clean",
-    minimalist: "simple clean character design, minimal details, geometric"
+  // Строгие стили для каждого типа
+  const styleDescriptions = {
+    cartoon: "vibrant cartoon character with bold outlines and expressive features",
+    realistic: "photorealistic character with detailed natural features and lighting",
+    fantasy: "magical fantasy character with mystical enchanted elements",
+    modern: "sleek contemporary character with clean geometric design",
+    minimalist: "simple clean character design with minimal essential details only"
   };
   
-  const stylePrompt = stylePrompts[style as keyof typeof stylePrompts] || "detailed character design";
+  const stylePrompt = styleDescriptions[style as keyof typeof styleDescriptions] || "detailed character design";
   
-  // Промпт для позиционирования
-  const positionPrompts = {
-    top: "character positioned above the central area",
-    bottom: "character positioned below the central area", 
-    left: "character positioned to the left of the central area",
-    right: "character positioned to the right of the central area",
-    all: "character surrounding the central area"
-  };
+  // СТРОГИЙ промпт для взаимодействия с черным окном в центре
+  const enhancedPrompt = `${prompt}, ${stylePrompt}, character physically touching and interacting with central black rectangular window located at coordinates x:352 y:228 width:320 height:569, character embracing or holding edges of black rectangle, character positioned around black window borders, no objects inside black rectangle area, PNG format with transparent background`;
   
-  const positionPrompt = positionPrompts[zonePreference as keyof typeof positionPrompts] || "character surrounding the central area";
-  
-  // Составляем финальный промпт
-  const enhancedPrompt = `${prompt}, ${stylePrompt}, ${positionPrompt}, leaving central rectangular area completely empty and transparent, no background, transparent background, PNG format, high quality, professional artwork`;
-  
-  // Негативный промпт для качества
-  const negativePrompt = "blurry, low quality, distorted, text, watermark, signature, background elements in central area, objects in wallet zone, poor quality, artifacts";
+  // УСИЛЕННЫЙ негативный промпт против фонов
+  const negativePrompt = "background, landscape, scenery, environment, sky, ground, floor, wall, room, interior, exterior, forest, city, buildings, mountains, trees, grass, clouds, any objects in central black area, filling black rectangle, covering black window, text, watermark, signature, blurry, low quality, distorted, poor quality, artifacts, duplicate character";
   
   console.log(`🎭 Enhanced Prompt: "${enhancedPrompt}"`);
   console.log(`🚫 Negative Prompt: "${negativePrompt}"`);
   
-  // Используем reference image или default guide
-  const controlImageUrl = referenceImageUrl || "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-guide.png";
+  // Используем reference image или fallback с черным квадратом
+  const controlImageUrl = referenceImageUrl || BLACK_SQUARE_FALLBACK;
   
-  console.log(`🖼️ Control Image URL: ${controlImageUrl}`);
+  console.log(`🖼️ Control Image URL: ${controlImageUrl.substring(0, 100)}...`);
   
-  // Правильные параметры для lucataco/sdxl-controlnet
+  // Увеличенные параметры для строгого следования
   const requestPayload = {
     prompt: enhancedPrompt,
     negative_prompt: negativePrompt,
     image: controlImageUrl,
-    num_inference_steps: 25,
-    guidance_scale: 7.5,
-    controlnet_conditioning_scale: 0.8,
+    num_inference_steps: 30, // Увеличено для лучшего качества
+    guidance_scale: 9.0, // Увеличено для лучшего следования промпту
+    controlnet_conditioning_scale: 1.0, // Максимальное влияние ControlNet
     seed: Math.floor(Math.random() * 1000000)
   };
   
