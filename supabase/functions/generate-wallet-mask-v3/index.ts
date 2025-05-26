@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -332,24 +331,27 @@ async function generateMaskWithReplicate(
   
   console.log(`🎭 V4 Enhanced: Style-Enhanced Prompt: "${enhancedPrompt}"`);
   
+  // FIXED: Using correct parameters according to official documentation
+  const requestPayload = {
+    image: controlImageUrl,
+    prompt: enhancedPrompt,
+    controlnet_type: "canny", // REQUIRED parameter
+    negative_prompt: "blurry, watermark, low quality, text, background elements, cluttered, messy, overlapping wallet area, bad anatomy",
+    num_inference_steps: 50, // Increased as per documentation
+    guidance_scale: 7.5,
+    condition_scale: 1.0, // Fixed parameter name from controlnet_conditioning_scale
+    seed: Math.floor(Math.random() * 1000000)
+  };
+  
+  console.log(`📤 V4 Enhanced: Sending request to Replicate with payload:`, JSON.stringify(requestPayload, null, 2));
+  
   try {
     console.log(`🔄 V4 Enhanced: Starting Replicate SDXL-ControlNet generation...`);
     
-    // FIXED: Added required controlnet_type parameter
     const output = await replicate.run(
       "lucataco/sdxl-controlnet",
       {
-        input: {
-          image: controlImageUrl,
-          prompt: enhancedPrompt,
-          controlnet_type: "canny", // REQUIRED parameter for this model
-          a_prompt: "vibrant, sharp, detailed, clean background, high quality, professional, 4K resolution",
-          n_prompt: "blurry, watermark, low quality, text, background elements, cluttered, messy, overlapping wallet area",
-          num_inference_steps: 25,
-          guidance_scale: 7.5,
-          controlnet_conditioning_scale: 1.0,
-          seed: Math.floor(Math.random() * 1000000)
-        }
+        input: requestPayload
       }
     );
 
@@ -357,17 +359,29 @@ async function generateMaskWithReplicate(
     console.log("✅ Replicate output:", output);
     console.log(`📊 V4 Enhanced: Output type: ${typeof output}, Array: ${Array.isArray(output)}`);
     
-    // Extract URL from output array
-    const imageUrl = Array.isArray(output) ? output[0] : output;
+    // Extract URL from output
+    let imageUrl: string;
+    if (Array.isArray(output)) {
+      imageUrl = output[0];
+      console.log(`🔗 V4 Enhanced: Extracted URL from array: ${imageUrl}`);
+    } else if (typeof output === 'string') {
+      imageUrl = output;
+      console.log(`🔗 V4 Enhanced: Using direct string URL: ${imageUrl}`);
+    } else if (output && typeof output === 'object' && 'url' in output) {
+      imageUrl = (output as any).url;
+      console.log(`🔗 V4 Enhanced: Extracted URL from object: ${imageUrl}`);
+    } else {
+      console.error("❌ V4 Enhanced: Unexpected output format:", output);
+      throw new Error("Invalid output format from Replicate");
+    }
     
-    console.log("✅ Generated image URL:", imageUrl);
-    
-    if (!imageUrl) {
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      console.error("❌ V4 Enhanced: No valid image URL in output:", output);
       throw new Error("No image URL returned from Replicate SDXL-ControlNet");
     }
     
-    console.log(`🖼️ V4 Enhanced: Generated Image URL: ${imageUrl}`);
-    console.log(`🎯 V4 Enhanced: Image validation: ${typeof imageUrl === 'string' ? 'VALID STRING' : 'INVALID'}`);
+    console.log(`🖼️ V4 Enhanced: Final Generated Image URL: ${imageUrl}`);
+    console.log(`🎯 V4 Enhanced: Image validation: ${imageUrl.startsWith('http') ? 'VALID HTTP URL' : 'INVALID URL'}`);
     
     return imageUrl;
     
@@ -375,8 +389,14 @@ async function generateMaskWithReplicate(
     console.error("❌ V4 Enhanced: Replicate SDXL-ControlNet detailed error:", {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
+      status: (error as any).status || 'unknown',
+      response: (error as any).response || 'no response data'
     });
+    
+    // Log the exact request that failed
+    console.error("❌ V4 Enhanced: Failed request payload was:", JSON.stringify(requestPayload, null, 2));
+    
     throw new Error(`Replicate SDXL-ControlNet failed: ${error.message}`);
   }
 }
