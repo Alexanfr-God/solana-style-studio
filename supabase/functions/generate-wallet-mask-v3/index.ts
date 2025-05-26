@@ -2,6 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import Replicate from "https://esm.sh/replicate@0.25.2";
 
 // V4 Enhanced Architecture: Import all enhanced modules
 import { loadReferenceImage, buildReferenceGuidedPrompt, getZoneBasedPositioning } from './referenceImageProcessor.ts';
@@ -55,18 +56,18 @@ serve(async (req) => {
   const processor = new V4MultiStepProcessor();
   
   try {
-    console.log('🚀 V4 Enhanced Architecture: Advanced Multi-Step Character Generation System');
+    console.log('🚀 V4 Enhanced Architecture: Advanced Multi-Step Character Generation with Replicate SDXL-ControlNet');
     
-    const openAiKey = Deno.env.get("OPENAI_API_KEY");
+    const replicateKey = Deno.env.get("REPLICATE_API_TOKEN");
     const huggingFaceKey = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!openAiKey) {
-      throw new Error("OpenAI API key not found");
+    if (!replicateKey) {
+      throw new Error("Replicate API key not found");
     }
 
-    console.log(`🔑 V4 Enhanced: System Status - OpenAI: ✅, HuggingFace: ${huggingFaceKey ? '✅' : '❌'}, Supabase: ${supabaseUrl ? '✅' : '❌'}`);
+    console.log(`🔑 V4 Enhanced: System Status - Replicate: ✅, HuggingFace: ${huggingFaceKey ? '✅' : '❌'}, Supabase: ${supabaseUrl ? '✅' : '❌'}`);
 
     const requestBody = await req.json() as MaskRequest;
     const { 
@@ -96,20 +97,20 @@ serve(async (req) => {
       const basePrompt = buildReferenceGuidedPrompt(prompt, style, !!referenceImageUrl);
       const zoneInstructions = getZoneBasedPositioning(zone_preference);
       
-      const finalPrompt = `${basePrompt} ${zoneInstructions}. Exact positioning: central transparent rectangle at (352,228) size 320x569px must remain completely empty for wallet interface.`;
+      const finalPrompt = `${basePrompt} ${zoneInstructions}. Character must embrace and interact with the central black rectangular area, leaving it completely empty for wallet interface.`;
       
       console.log(`✨ V4 Enhanced Final Prompt: "${finalPrompt}"`);
       return finalPrompt;
     });
 
-    // Step 3: DALL-E Generation with Enhanced Approach
+    // Step 3: Replicate SDXL-ControlNet Generation
     let generatedImageUrl: string;
     try {
-      generatedImageUrl = await processor.executeStep("dalle_generation", async () => {
-        return await generateWithEnhancedDallE(enhancedPrompt, openAiKey, referenceImageUrl);
+      generatedImageUrl = await processor.executeStep("replicate_generation", async () => {
+        return await generateMaskWithReplicate(enhancedPrompt, replicateKey, referenceImageUrl, style);
       });
     } catch (error) {
-      console.error("❌ V4 Enhanced: DALL-E generation failed, using style-appropriate fallback:", error);
+      console.error("❌ V4 Enhanced: Replicate SDXL-ControlNet generation failed, using style-appropriate fallback:", error);
       generatedImageUrl = getFallbackMask(style);
     }
 
@@ -192,9 +193,10 @@ serve(async (req) => {
           v4_enhanced_system: true,
           reference_guided: !!referenceImageUrl,
           zone_preference: zone_preference,
-          character_interaction: "enhanced physical contact with positioned rectangle",
+          character_interaction: "enhanced physical contact with positioned rectangle via SDXL-ControlNet",
           background_removal: finalImageUrl.backgroundRemoved ? "success" : "failed",
           processing_method: finalImageUrl.method,
+          generation_model: "replicate_sdxl_controlnet",
           safe_zone_coordinates: {
             x: 352,
             y: 228,
@@ -211,6 +213,7 @@ serve(async (req) => {
       debug_info: {
         v4_enhanced_system: true,
         multi_step_processing: true,
+        generation_model: "replicate_sdxl_controlnet",
         processing_progress: progress,
         step_results: stepResults,
         failed_steps: failedSteps,
@@ -220,12 +223,13 @@ serve(async (req) => {
         zone_preference: zone_preference,
         enhanced_positioning: true,
         coordinate_guided: true,
+        controlnet_guided: true,
         hugging_face_available: !!huggingFaceKey,
         final_prompt: enhancedPrompt
       }
     };
 
-    console.log("🎉 V4 Enhanced System: Multi-step processing completed successfully");
+    console.log("🎉 V4 Enhanced System: Multi-step processing with Replicate SDXL-ControlNet completed successfully");
     console.log(`📊 V4 Enhanced: Progress ${progress.current}/${progress.total} (${progress.percentage}%)`);
     
     return new Response(
@@ -251,6 +255,7 @@ serve(async (req) => {
         },
         system_features: [
           "Multi-step processing",
+          "Replicate SDXL-ControlNet generation", 
           "Reference-guided generation", 
           "Enhanced background removal",
           "Zone-based positioning",
@@ -265,41 +270,70 @@ serve(async (req) => {
   }
 });
 
-async function generateWithEnhancedDallE(
+async function generateMaskWithReplicate(
   prompt: string, 
   apiKey: string, 
-  referenceImageUrl: string | null
+  referenceImageUrl: string | null,
+  style: string
 ): Promise<string> {
-  console.log("🎨 V4 Enhanced: Calling DALL-E with reference-guided approach");
+  console.log("🎨 V4 Enhanced: Calling Replicate SDXL-ControlNet with reference-guided approach");
   
-  const requestBody: any = {
-    model: V4_CONFIG.DALLE_CONFIG.model,
-    prompt: prompt,
-    n: 1,
-    size: V4_CONFIG.DALLE_CONFIG.size,
-    response_format: V4_CONFIG.DALLE_CONFIG.response_format,
-    quality: V4_CONFIG.DALLE_CONFIG.quality
-  };
-
-  if (referenceImageUrl) {
-    console.log("🖼️ V4 Enhanced: Using reference image guidance for positioning");
-  }
-
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(requestBody)
+  const replicate = new Replicate({
+    auth: apiKey,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`DALL-E failed: ${errorData.error?.message}`);
-  }
+  // Use guide image or fallback
+  const controlImageUrl = referenceImageUrl || V4_CONFIG.GUIDE_IMAGE_URL;
+  
+  console.log(`🖼️ V4 Enhanced: Using control image: ${controlImageUrl}`);
+  
+  // Build style-specific prompts
+  const stylePrompts = {
+    cartoon: "vibrant cartoon style, bold outlines, clean animation style",
+    meme: "meme style, internet culture, recognizable character style",
+    luxury: "elegant, premium, sophisticated design, golden accents",
+    modern: "sleek, contemporary, minimalist, geometric design",
+    realistic: "photorealistic, detailed, natural lighting",
+    fantasy: "magical, mystical, enchanted, fantasy art style",
+    minimalist: "clean, simple, minimal design, geometric shapes"
+  };
+  
+  const stylePrompt = stylePrompts[style as keyof typeof stylePrompts] || "detailed character design";
+  const enhancedPrompt = `${prompt}, ${stylePrompt}, character interacting with central black rectangle`;
+  
+  try {
+    console.log(`🔄 V4 Enhanced: Generating with SDXL-ControlNet using prompt: "${enhancedPrompt}"`);
+    
+    const output = await replicate.run(
+      "lucataco/sdxl-controlnet:066dfa6e633c8ce4e4592a5b89d94e6b4c4e7e51e6a41a2d7cc31c2e6bc632c7",
+      {
+        input: {
+          image: controlImageUrl,
+          prompt: enhancedPrompt,
+          a_prompt: "vibrant, sharp, detailed, clean background, high quality, professional",
+          n_prompt: "blurry, watermark, low quality, text, background elements, cluttered, messy",
+          num_inference_steps: 30,
+          guidance_scale: 7.5,
+          controlnet_conditioning_scale: 1.0,
+          seed: Math.floor(Math.random() * 1000000)
+        }
+      }
+    );
 
-  const data = await response.json();
-  console.log("✅ V4 Enhanced: DALL-E generation completed with reference guidance");
-  return data.data[0].url;
+    console.log("✅ V4 Enhanced: Replicate SDXL-ControlNet generation completed");
+    
+    // Extract URL from output array
+    const imageUrl = Array.isArray(output) ? output[0] : output;
+    
+    if (!imageUrl) {
+      throw new Error("No image URL returned from Replicate");
+    }
+    
+    console.log(`🖼️ V4 Enhanced: Generated image URL: ${imageUrl}`);
+    return imageUrl;
+    
+  } catch (error) {
+    console.error("❌ V4 Enhanced: Replicate SDXL-ControlNet error:", error);
+    throw new Error(`Replicate SDXL-ControlNet failed: ${error.message}`);
+  }
 }

@@ -1,5 +1,5 @@
 
-// V4 Enhanced: Multi-Step Processing System
+// V4 Enhanced: Multi-Step Processing System with Replicate SDXL-ControlNet
 export interface ProcessingStep {
   name: string;
   description: string;
@@ -20,7 +20,7 @@ export class V4MultiStepProcessor {
     this.steps = [
       { name: "reference_loading", description: "V4: Loading reference guide image", completed: false },
       { name: "prompt_optimization", description: "V4: Building enhanced character-focused prompt", completed: false },
-      { name: "dalle_generation", description: "V4: DALL-E 3 generation with positioning guide", completed: false },
+      { name: "replicate_generation", description: "V4: Replicate SDXL-ControlNet generation with positioning guide", completed: false },
       { name: "background_removal", description: "V4: Advanced multi-model background removal", completed: false },
       { name: "quality_optimization", description: "V4: Final quality optimization", completed: false },
       { name: "storage_processing", description: "V4: Secure storage with metadata", completed: false }
