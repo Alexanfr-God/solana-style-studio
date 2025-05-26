@@ -335,13 +335,14 @@ async function generateMaskWithReplicate(
   try {
     console.log(`🔄 V4 Enhanced: Starting Replicate SDXL-ControlNet generation...`);
     
-    // FIXED: Removed specific version hash to avoid 422 error
+    // FIXED: Added required controlnet_type parameter
     const output = await replicate.run(
       "lucataco/sdxl-controlnet",
       {
         input: {
           image: controlImageUrl,
           prompt: enhancedPrompt,
+          controlnet_type: "canny", // REQUIRED parameter for this model
           a_prompt: "vibrant, sharp, detailed, clean background, high quality, professional, 4K resolution",
           n_prompt: "blurry, watermark, low quality, text, background elements, cluttered, messy, overlapping wallet area",
           num_inference_steps: 25,
@@ -353,7 +354,7 @@ async function generateMaskWithReplicate(
     );
 
     console.log("✅ V4 Enhanced: Replicate SDXL-ControlNet generation completed successfully");
-    console.log("✅ Replicate result:", output);
+    console.log("✅ Replicate output:", output);
     console.log(`📊 V4 Enhanced: Output type: ${typeof output}, Array: ${Array.isArray(output)}`);
     
     // Extract URL from output array
