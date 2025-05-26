@@ -22,37 +22,25 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
   };
 
   const styleOptions = [
-    { value: 'modern', label: 'Modern Digital Art' },
     { value: 'cartoon', label: 'Cartoon Style' },
     { value: 'realistic', label: 'Realistic' },
     { value: 'fantasy', label: 'Fantasy' },
+    { value: 'modern', label: 'Modern Digital' },
     { value: 'minimalist', label: 'Minimalist' },
   ];
 
   const promptExamples = [
-    "Cute animals surrounding the wallet",
-    "Abstract geometric shapes around the wallet",
-    "Luxury gold ornamental pattern as a frame",
-    "Cyberpunk neon elements surrounding the wallet",
-    "Space and planets scene with central transparent area"
+    "cute cat character",
+    "magical fairy with wings", 
+    "robot guardian",
+    "mystical dragon",
+    "friendly monster"
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="mask-style" className="text-sm text-white/80">Art Style</Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-white/50 cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-[250px]">
-                <p className="text-xs">Select an art style to guide the AI generation. This will be added to your prompt.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <Label htmlFor="mask-style" className="text-sm text-white/80">Art Style</Label>
         
         <div className="relative">
           <select 
@@ -61,7 +49,6 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
             disabled={disabled}
             className="w-full h-10 px-3 py-2 bg-black/20 border border-white/10 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
           >
-            <option value="" disabled className="bg-black text-white">Choose a style</option>
             {styleOptions.map((style) => (
               <option key={style.value} value={style.value} className="bg-black text-white">
                 {style.label}
@@ -73,7 +60,7 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="mask-prompt" className="text-sm text-white/80">Describe your wallet costume</Label>
+          <Label htmlFor="mask-prompt" className="text-sm text-white/80">Character Description</Label>
           
           <TooltipProvider>
             <Tooltip>
@@ -101,15 +88,15 @@ const MaskPromptInput = ({ disabled = false }: MaskPromptInputProps) => {
         
         <Textarea
           id="mask-prompt"
-          placeholder="Example: A cute cat hugging the wallet, with transparent center"
+          placeholder="Example: cute cat character, magical fairy, friendly robot..."
           value={prompt}
           onChange={handlePromptChange}
           disabled={disabled}
-          className="resize-none h-24 bg-black/20 border-white/10 placeholder:text-white/30 focus-visible:ring-purple-500"
+          className="resize-none h-20 bg-black/20 border-white/10 placeholder:text-white/30 focus-visible:ring-purple-500"
         />
         
         <p className="text-xs text-white/50 italic mt-1">
-          Tip: Describe decorative elements that surround the wallet. The central wallet area (320×569px) will always remain visible with a transparent cutout.
+          The character will appear around your wallet while keeping the central wallet area (320×569px) completely visible.
         </p>
       </div>
     </div>

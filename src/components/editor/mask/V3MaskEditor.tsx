@@ -11,7 +11,6 @@ import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import V3MaskPreviewCanvas from './V3MaskPreviewCanvas';
 import SafeZoneToggle from './SafeZoneToggle';
-import MaskPresets from './MaskPresets';
 import { 
   Tooltip, 
   TooltipContent, 
@@ -64,7 +63,7 @@ const V3MaskEditor = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-white/70">
-                    Our AI generates decorative masks that surround your wallet while keeping the central wallet UI visible and functional. Try our presets or create your own design!
+                    AI creates decorative characters around your wallet while keeping the wallet interface visible and functional.
                   </p>
                 </div>
               )}
@@ -85,7 +84,7 @@ const V3MaskEditor = () => {
               
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-medium mb-4 text-white">Upload your own wallet skin</h3>
+                  <h3 className="text-sm font-medium mb-4 text-white">Upload Reference Image (Optional)</h3>
                   <MaskUploadImage />
                 </div>
                 
@@ -93,15 +92,13 @@ const V3MaskEditor = () => {
                 
                 <div className="space-y-4">
                   <h3 className="text-md font-medium text-white flex items-center gap-2">
-                    AI Mask Creator
+                    Describe Your Character
                   </h3>
                   <p className="text-xs text-white/70">
-                    Create beautiful decorative masks that go around your wallet. The mask will leave the central wallet UI untouched.
+                    Tell AI what character you want around your wallet. The central wallet area will remain untouched.
                   </p>
                   <MaskPromptInput />
                 </div>
-                
-                <MaskPresets />
                 
                 <SafeZoneToggle />
                 
