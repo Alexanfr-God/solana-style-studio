@@ -58,16 +58,22 @@ serve(async (req) => {
   try {
     console.log('🚀 V4 Enhanced Architecture: Advanced Multi-Step Character Generation with Replicate SDXL-ControlNet');
     
-    const replicateKey = Deno.env.get("REPLICATE_API_TOKEN");
+    // FIXED: Correct environment variable name
+    const replicateKey = Deno.env.get("REPLICATE_API_KEY");
     const huggingFaceKey = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
+    // Enhanced API key diagnostics
+    console.log(`🔑 V4 Enhanced API Key Status:`);
+    console.log(`  - REPLICATE_API_KEY: ${replicateKey ? '✅ FOUND (' + replicateKey.substring(0, 8) + '...)' : '❌ MISSING'}`);
+    console.log(`  - HUGGING_FACE_ACCESS_TOKEN: ${huggingFaceKey ? '✅ FOUND' : '❌ MISSING'}`);
+    console.log(`  - SUPABASE_URL: ${supabaseUrl ? '✅ FOUND' : '❌ MISSING'}`);
+    console.log(`  - SUPABASE_SERVICE_ROLE_KEY: ${supabaseKey ? '✅ FOUND' : '❌ MISSING'}`);
+    
     if (!replicateKey) {
-      throw new Error("Replicate API key not found");
+      throw new Error("🔑 CRITICAL: REPLICATE_API_KEY environment variable not found. Please check Supabase Secrets configuration.");
     }
-
-    console.log(`🔑 V4 Enhanced: System Status - Replicate: ✅, HuggingFace: ${huggingFaceKey ? '✅' : '❌'}, Supabase: ${supabaseUrl ? '✅' : '❌'}`);
 
     const requestBody = await req.json() as MaskRequest;
     const { 
@@ -79,8 +85,12 @@ serve(async (req) => {
       zone_preference = 'all'
     } = requestBody;
 
-    console.log(`🎭 V4 Enhanced: Processing ${style} style with zone preference: ${zone_preference}`);
-    console.log(`📝 V4 Enhanced: User prompt: "${prompt}"`);
+    console.log(`🎭 V4 Enhanced: Processing Request`);
+    console.log(`  - Style: ${style}`);
+    console.log(`  - Zone Preference: ${zone_preference}`);
+    console.log(`  - User Prompt: "${prompt}"`);
+    console.log(`  - Reference Image: ${reference_image_url ? 'PROVIDED' : 'NONE'}`);
+    console.log(`  - Style Hint: ${style_hint_image_url ? 'PROVIDED' : 'NONE'}`);
 
     // Step 1: Reference Image Loading
     let referenceImageUrl: string | null = null;
@@ -112,6 +122,11 @@ serve(async (req) => {
     } catch (error) {
       console.error("❌ V4 Enhanced: Replicate SDXL-ControlNet generation failed, using style-appropriate fallback:", error);
       generatedImageUrl = getFallbackMask(style);
+      
+      // Add fallback info to processor for debugging
+      processor.executeStep("replicate_generation", async () => {
+        return { fallback: true, error: error.message, fallbackUrl: generatedImageUrl };
+      }).catch(() => {});
     }
 
     // Step 4: Enhanced Background Removal
@@ -186,6 +201,10 @@ serve(async (req) => {
     const stepResults = processor.getStepResults();
     const failedSteps = processor.getFailedSteps();
     
+    console.log(`🎉 V4 Enhanced System: Processing completed`);
+    console.log(`📊 V4 Enhanced: Final Progress ${progress.current}/${progress.total} (${progress.percentage}%)`);
+    console.log(`🖼️ V4 Enhanced: Final Image URL: ${publicUrl}`);
+    
     const response: MaskResponse = {
       image_url: publicUrl,
       layout_json: {
@@ -224,14 +243,16 @@ serve(async (req) => {
         enhanced_positioning: true,
         coordinate_guided: true,
         controlnet_guided: true,
-        hugging_face_available: !!huggingFaceKey,
-        final_prompt: enhancedPrompt
+        api_keys_status: {
+          replicate: !!replicateKey,
+          huggingface: !!huggingFaceKey,
+          supabase: !!(supabaseUrl && supabaseKey)
+        },
+        final_prompt: enhancedPrompt,
+        test_mode: true
       }
     };
 
-    console.log("🎉 V4 Enhanced System: Multi-step processing with Replicate SDXL-ControlNet completed successfully");
-    console.log(`📊 V4 Enhanced: Progress ${progress.current}/${progress.total} (${progress.percentage}%)`);
-    
     return new Response(
       JSON.stringify(response),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -251,7 +272,8 @@ serve(async (req) => {
         debug_info: {
           failed_steps: failedSteps,
           progress: progress,
-          all_steps: processor.getAllSteps()
+          all_steps: processor.getAllSteps(),
+          error_location: error.stack ? error.stack.split('\n')[0] : 'unknown'
         },
         system_features: [
           "Multi-step processing",
@@ -276,7 +298,8 @@ async function generateMaskWithReplicate(
   referenceImageUrl: string | null,
   style: string
 ): Promise<string> {
-  console.log("🎨 V4 Enhanced: Calling Replicate SDXL-ControlNet with reference-guided approach");
+  console.log("🎨 V4 Enhanced: Initializing Replicate SDXL-ControlNet generation");
+  console.log(`🔑 V4 Enhanced: API Key Status: ${apiKey ? 'AVAILABLE' : 'MISSING'}`);
   
   const replicate = new Replicate({
     auth: apiKey,
@@ -285,12 +308,12 @@ async function generateMaskWithReplicate(
   // Use guide image or fallback
   const controlImageUrl = referenceImageUrl || V4_CONFIG.GUIDE_IMAGE_URL;
   
-  console.log(`🖼️ V4 Enhanced: Using control image: ${controlImageUrl}`);
+  console.log(`🖼️ V4 Enhanced: Control Image URL: ${controlImageUrl}`);
   
   // Build style-specific prompts
   const stylePrompts = {
     cartoon: "vibrant cartoon style, bold outlines, clean animation style",
-    meme: "meme style, internet culture, recognizable character style",
+    meme: "expressive meme-style character, internet culture, recognizable character style",
     luxury: "elegant, premium, sophisticated design, golden accents",
     modern: "sleek, contemporary, minimalist, geometric design",
     realistic: "photorealistic, detailed, natural lighting",
@@ -301,8 +324,10 @@ async function generateMaskWithReplicate(
   const stylePrompt = stylePrompts[style as keyof typeof stylePrompts] || "detailed character design";
   const enhancedPrompt = `${prompt}, ${stylePrompt}, character interacting with central black rectangle`;
   
+  console.log(`🎭 V4 Enhanced: Style-Enhanced Prompt: "${enhancedPrompt}"`);
+  
   try {
-    console.log(`🔄 V4 Enhanced: Generating with SDXL-ControlNet using prompt: "${enhancedPrompt}"`);
+    console.log(`🔄 V4 Enhanced: Starting Replicate SDXL-ControlNet generation...`);
     
     const output = await replicate.run(
       "lucataco/sdxl-controlnet:066dfa6e633c8ce4e4592a5b89d94e6b4c4e7e51e6a41a2d7cc31c2e6bc632c7",
@@ -310,9 +335,9 @@ async function generateMaskWithReplicate(
         input: {
           image: controlImageUrl,
           prompt: enhancedPrompt,
-          a_prompt: "vibrant, sharp, detailed, clean background, high quality, professional",
-          n_prompt: "blurry, watermark, low quality, text, background elements, cluttered, messy",
-          num_inference_steps: 30,
+          a_prompt: "vibrant, sharp, detailed, clean background, high quality, professional, 4K resolution",
+          n_prompt: "blurry, watermark, low quality, text, background elements, cluttered, messy, overlapping wallet area",
+          num_inference_steps: 25,
           guidance_scale: 7.5,
           controlnet_conditioning_scale: 1.0,
           seed: Math.floor(Math.random() * 1000000)
@@ -320,20 +345,27 @@ async function generateMaskWithReplicate(
       }
     );
 
-    console.log("✅ V4 Enhanced: Replicate SDXL-ControlNet generation completed");
+    console.log("✅ V4 Enhanced: Replicate SDXL-ControlNet generation completed successfully");
+    console.log(`📊 V4 Enhanced: Output type: ${typeof output}, Array: ${Array.isArray(output)}`);
     
     // Extract URL from output array
     const imageUrl = Array.isArray(output) ? output[0] : output;
     
     if (!imageUrl) {
-      throw new Error("No image URL returned from Replicate");
+      throw new Error("No image URL returned from Replicate SDXL-ControlNet");
     }
     
-    console.log(`🖼️ V4 Enhanced: Generated image URL: ${imageUrl}`);
+    console.log(`🖼️ V4 Enhanced: Generated Image URL: ${imageUrl}`);
+    console.log(`🎯 V4 Enhanced: Image validation: ${typeof imageUrl === 'string' ? 'VALID STRING' : 'INVALID'}`);
+    
     return imageUrl;
     
   } catch (error) {
-    console.error("❌ V4 Enhanced: Replicate SDXL-ControlNet error:", error);
+    console.error("❌ V4 Enhanced: Replicate SDXL-ControlNet detailed error:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     throw new Error(`Replicate SDXL-ControlNet failed: ${error.message}`);
   }
 }

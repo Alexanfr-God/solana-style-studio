@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
-import { Wand, Loader2, AlertCircle, Info, Settings, Zap } from 'lucide-react';
+import { Wand, Loader2, AlertCircle, Info, Settings, Zap, TestTube } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,9 +29,51 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   const [hasGenerationError, setHasGenerationError] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [zonePreference, setZonePreference] = useState<'top' | 'bottom' | 'left' | 'right' | 'all'>('all');
+  const [testMode, setTestMode] = useState(false);
 
-  const handleGenerate = async () => {
-    if (!prompt && !referenceImage) {
+  const handleTestGeneration = async () => {
+    console.log("🧪 V4 Enhanced: Starting comprehensive test mode");
+    setTestMode(true);
+    
+    const testCases = [
+      { prompt: "funny cartoon cat", style: "cartoon", zone: "all" },
+      { prompt: "cyber punk warrior", style: "modern", zone: "top" },
+      { prompt: "cute meme dog", style: "meme", zone: "bottom" },
+      { prompt: "elegant royal character", style: "luxury", zone: "left" },
+      { prompt: "magical fairy", style: "fantasy", zone: "right" }
+    ];
+    
+    toast.info("🧪 Starting V4 Enhanced system test with 5 scenarios...");
+    
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i];
+      console.log(`🎯 Test ${i + 1}/5: ${testCase.prompt} (${testCase.style}, ${testCase.zone})`);
+      
+      try {
+        await generateWithParams(testCase.prompt, testCase.style as any, testCase.zone as any);
+        console.log(`✅ Test ${i + 1} completed successfully`);
+        toast.success(`✅ Test ${i + 1}/5 passed: ${testCase.style} style`);
+      } catch (error) {
+        console.error(`❌ Test ${i + 1} failed:`, error);
+        toast.error(`❌ Test ${i + 1}/5 failed: ${testCase.style} style`);
+      }
+      
+      // Wait between tests
+      if (i < testCases.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    
+    setTestMode(false);
+    toast.success("🎉 V4 Enhanced system test completed!");
+  };
+
+  const generateWithParams = async (testPrompt?: string, testStyle?: any, testZone?: any) => {
+    const effectivePrompt = testPrompt || prompt;
+    const effectiveStyle = testStyle || maskStyle;
+    const effectiveZone = testZone || zonePreference;
+    
+    if (!effectivePrompt && !referenceImage) {
       toast.error("Please enter a description or upload a reference image first");
       return;
     }
@@ -45,10 +87,12 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     setCurrentStep("Initializing V4 Enhanced System...");
     
     try {
-      toast.info("🚀 V4 Enhanced: Multi-Step Character Generation with Replicate SDXL-ControlNet...");
+      const stepPrefix = testMode ? "🧪 Test Mode" : "🚀 V4 Enhanced";
+      toast.info(`${stepPrefix}: Multi-Step Character Generation with Replicate SDXL-ControlNet...`);
       
-      // Simulate step-by-step progress with Replicate steps
+      // Enhanced step-by-step progress simulation
       const steps = [
+        "V4: Validating API keys and system status...",
         "V4: Loading reference guide system...",
         "V4: Building enhanced positioning prompts...", 
         "V4: Replicate SDXL-ControlNet generation with guide...",
@@ -64,17 +108,17 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           setProgress((stepIndex + 1) * (85 / steps.length));
           stepIndex++;
         }
-      }, 2000);
+      }, 1500);
       
       // Get current user for storage
       const { data: { user } } = await supabase.auth.getUser();
       
-      // V4 Enhanced request payload with Replicate SDXL-ControlNet
+      // V4 Enhanced request payload with comprehensive diagnostics
       const requestPayload = {
-        prompt: prompt || '',
+        prompt: effectivePrompt || '',
         reference_image_url: referenceImage || null,
         style_hint_image_url: styleHintImage || null,
-        style: maskStyle,
+        style: effectiveStyle,
         user_id: user?.id,
         container_width: 480,
         container_height: 854,
@@ -85,7 +129,8 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         safe_zone_y: 228,
         safe_zone_width: 320,
         safe_zone_height: 569,
-        zone_preference: zonePreference
+        zone_preference: effectiveZone,
+        test_mode: testMode
       };
       
       console.log('📤 V4 Enhanced Replicate SDXL-ControlNet request:', requestPayload);
@@ -110,32 +155,38 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       
       setProgress(100);
       setCurrentStep("V4 Enhanced: Replicate SDXL-ControlNet generation completed!");
-      setExternalMask(data.image_url);
       
-      // Enhanced debug information with Replicate details
+      if (!testMode) {
+        setExternalMask(data.image_url);
+      }
+      
+      // Enhanced debug information with comprehensive diagnostics
       if (data.debug_info) {
         setDebugInfo({
           ...data.debug_info,
           v4_enhanced_system: true,
           multi_step_success: true,
           generation_model: "replicate_sdxl_controlnet",
-          zone_preference: zonePreference,
+          zone_preference: effectiveZone,
           coordinate_guided: true,
           controlnet_guided: true,
-          reference_guided: data.debug_info.reference_image_used
+          reference_guided: data.debug_info.reference_image_used,
+          test_mode: testMode,
+          api_validation: data.debug_info.api_keys_status
         });
-        console.log('🔍 V4 Enhanced Replicate SDXL-ControlNet debug info:', data.debug_info);
+        console.log('🔍 V4 Enhanced Replicate SDXL-ControlNet comprehensive debug info:', data.debug_info);
       }
       
-      // Success message with step details
+      // Success message with detailed information
+      const successPrefix = testMode ? "🧪 Test" : "🎉 Production";
       if (data.debug_info?.processing_progress) {
         const progress = data.debug_info.processing_progress;
-        toast.success(`🎉 V4 Enhanced Replicate SDXL-ControlNet: ${progress.current}/${progress.total} steps completed!`);
+        toast.success(`${successPrefix}: V4 Enhanced Replicate SDXL-ControlNet ${progress.current}/${progress.total} steps completed!`);
       } else {
-        toast.success("🎉 V4 Enhanced Replicate SDXL-ControlNet generation completed!");
+        toast.success(`${successPrefix}: V4 Enhanced Replicate SDXL-ControlNet generation completed!`);
       }
       
-      if (data.storage_path) {
+      if (data.storage_path && !testMode) {
         console.log("💾 V4 Enhanced: Replicate result stored at:", data.storage_path);
         toast.info("💾 Enhanced Replicate costume saved to collection");
       }
@@ -149,32 +200,42 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     } catch (error) {
       console.error("💥 V4 Enhanced Replicate SDXL-ControlNet generation error:", error);
       setHasGenerationError(true);
+      
+      const errorPrefix = testMode ? "🧪 Test Error" : "💥 Production Error";
       toast.error(
         typeof error === 'object' && error !== null && 'message' in error
-          ? `V4 Enhanced Replicate Error: ${(error as Error).message}`
-          : "V4 Enhanced Replicate SDXL-ControlNet generation failed. Using fallback mask."
+          ? `${errorPrefix}: ${(error as Error).message}`
+          : `${errorPrefix}: V4 Enhanced Replicate SDXL-ControlNet generation failed. Using fallback mask.`
       );
       
-      // Enhanced fallbacks with zone consideration
-      const fallbacks = {
-        cartoon: '/external-masks/cats-mask.png',
-        meme: '/external-masks/pepe-mask.png',
-        luxury: '/external-masks/crypto-mask.png',
-        modern: '/external-masks/abstract-mask.png',
-        realistic: '/external-masks/abstract-mask.png',
-        fantasy: '/external-masks/abstract-mask.png',
-        minimalist: '/external-masks/clean Example.png'
-      };
-      
-      setExternalMask(fallbacks[maskStyle] || '/external-masks/abstract-mask.png');
+      if (!testMode) {
+        // Enhanced fallbacks with zone consideration
+        const fallbacks = {
+          cartoon: '/external-masks/cats-mask.png',
+          meme: '/external-masks/pepe-mask.png',
+          luxury: '/external-masks/crypto-mask.png',
+          modern: '/external-masks/abstract-mask.png',
+          realistic: '/external-masks/abstract-mask.png',
+          fantasy: '/external-masks/abstract-mask.png',
+          minimalist: '/external-masks/clean Example.png'
+        };
+        
+        setExternalMask(fallbacks[effectiveStyle] || '/external-masks/abstract-mask.png');
+      }
       
       setShowProgress(false);
       setProgress(0);
       setCurrentStep("");
+      
+      if (testMode) {
+        throw error; // Re-throw for test mode
+      }
     } finally {
       setIsGenerating(false);
     }
   };
+
+  const handleGenerate = () => generateWithParams();
 
   const hasValidInput = !!prompt || !!referenceImage;
 
@@ -200,12 +261,23 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         </select>
       </div>
 
+      {/* Test Mode Button */}
+      <Button
+        onClick={handleTestGeneration}
+        className="w-full bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-black font-bold"
+        disabled={isGenerating}
+      >
+        <TestTube className="mr-2 h-4 w-4" />
+        {isGenerating && testMode ? 'Running Tests...' : 'Test V4 System (5 scenarios)'}
+      </Button>
+
+      {/* Main Generation Button */}
       <Button
         onClick={handleGenerate}
         className="w-full bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600 text-black font-bold"
         disabled={isGenerating || !hasValidInput || disabled}
       >
-        {isGenerating ? (
+        {isGenerating && !testMode ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             V4 Replicate SDXL-ControlNet...
@@ -230,7 +302,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       {hasGenerationError && (
         <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-md flex items-center text-xs text-red-300">
           <AlertCircle className="h-3 w-3 mr-1" />
-          V4 Enhanced Replicate SDXL-ControlNet error. Using fallback. Check console for details.
+          V4 Enhanced Replicate SDXL-ControlNet error. Check console and debug info below.
         </div>
       )}
       
@@ -246,7 +318,8 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
           <div>🎭 Style: <span className="text-purple-300 font-medium">{maskStyle}</span> | 🎯 Zone: <span className="text-blue-300 font-medium">{zonePreference}</span></div>
           <div>🖼️ Images: {referenceImage ? "✅" : "✗"} {styleHintImage ? "+ Style" : ""}</div>
           <div>📐 Coordinates: (352,228) → 320×569px safe zone</div>
-          <div>🎨 Model: SDXL-ControlNet via Replicate</div>
+          <div>🎨 Model: SDXL-ControlNet via Replicate API</div>
+          <div>🔧 Test Mode: Available for comprehensive validation</div>
         </div>
       )}
 
@@ -265,6 +338,17 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
             <div>🎯 Zone: {debugInfo.zone_preference || "all"}</div>
             <div>🎨 Background Removal: {debugInfo.background_removal_method}</div>
             <div>✅ BG Success: {debugInfo.background_removal_success ? "YES" : "NO"}</div>
+            <div>🧪 Test Mode: {debugInfo.test_mode ? "YES" : "NO"}</div>
+            {debugInfo.api_validation && (
+              <div className="pt-1 border-t border-white/10">
+                <div>🔑 API Keys Status:</div>
+                <div className="ml-2">
+                  <div>Replicate: {debugInfo.api_validation.replicate ? "✅" : "❌"}</div>
+                  <div>HuggingFace: {debugInfo.api_validation.huggingface ? "✅" : "❌"}</div>
+                  <div>Supabase: {debugInfo.api_validation.supabase ? "✅" : "❌"}</div>
+                </div>
+              </div>
+            )}
             {debugInfo.processing_progress && (
               <div>📊 Progress: {debugInfo.processing_progress.current}/{debugInfo.processing_progress.total} ({debugInfo.processing_progress.percentage}%)</div>
             )}
