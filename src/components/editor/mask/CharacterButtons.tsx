@@ -12,7 +12,7 @@ const CharacterButtons = () => {
       name: 'DOGE',
       icon: '🐕',
       color: 'from-yellow-500 to-orange-500',
-      pngPath: '/external-masks/doge.png' // Путь к PNG файлу
+      pngPath: '/lovable-uploads/cd33fecf-bff4-4243-bd9d-3f3062e0ba37.png' // Ваш загруженный DOGE файл
     },
     {
       name: 'PEPE',
