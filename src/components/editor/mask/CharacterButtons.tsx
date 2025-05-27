@@ -24,7 +24,7 @@ const CharacterButtons = () => {
       name: 'TRUMP',
       icon: '🇺🇸',
       color: 'from-red-500 to-blue-500',
-      pngPath: '/external-masks/trump simpson.png'
+      pngPath: '/lovable-uploads/4fce14b3-1a45-4f0a-b599-4f439227e037.png'
     },
     {
       name: 'CAT',
