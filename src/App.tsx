@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
+import WalletAlivePlayground from "./pages/WalletAlivePlayground";
 import { WalletContextProvider } from "./context/WalletContextProvider";
 import FeedbackAnalyticsPage from "./pages/FeedbackAnalytics";
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/feedback-analytics" element={<FeedbackAnalyticsPage />} />
+            <Route path="/wallet-alive-playground" element={<WalletAlivePlayground />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
