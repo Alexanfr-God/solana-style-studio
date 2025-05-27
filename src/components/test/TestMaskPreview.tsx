@@ -9,11 +9,11 @@ const TestMaskPreview = () => {
   const { externalMask, maskImageUrl } = useMaskEditorStore();
   const { loginStyle } = useCustomizationStore();
 
-  // Fixed dimensions for test preview
-  const CONTAINER_WIDTH = 500;
-  const CONTAINER_HEIGHT = 400;
-  const WALLET_WIDTH = 200;
-  const WALLET_HEIGHT = 356;
+  // Увеличенные размеры для удобного тестирования
+  const CONTAINER_WIDTH = 800;
+  const CONTAINER_HEIGHT = 600;
+  const WALLET_WIDTH = 300;
+  const WALLET_HEIGHT = 534;
 
   const previewImageUrl = externalMask || maskImageUrl;
 
@@ -26,8 +26,8 @@ const TestMaskPreview = () => {
       }}
     >
       {/* Test Canvas Info */}
-      <div className="absolute top-2 left-2 z-50">
-        <Badge className="bg-blue-500/80 text-white text-xs">
+      <div className="absolute top-3 left-3 z-50">
+        <Badge className="bg-blue-500/80 text-white text-sm">
           Test Canvas {CONTAINER_WIDTH}×{CONTAINER_HEIGHT}
         </Badge>
       </div>
@@ -44,10 +44,10 @@ const TestMaskPreview = () => {
           backgroundPosition: 'center',
           color: loginStyle.textColor || '#FFFFFF',
           fontFamily: loginStyle.fontFamily,
-          borderRadius: '12px',
-          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.5)',
+          borderRadius: '16px',
+          boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.6)',
           overflow: 'hidden',
-          transform: 'translate(-50%, -50%) scale(0.6)'
+          transform: 'translate(-50%, -50%) scale(0.85)'
         }}
       >
         <LoginScreen style={loginStyle} />
@@ -67,7 +67,7 @@ const TestMaskPreview = () => {
             alt="Test mask overlay" 
             className="w-full h-full object-contain"
             style={{
-              filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.1))',
+              filter: 'drop-shadow(0 0 24px rgba(255, 255, 255, 0.15))',
               imageRendering: 'crisp-edges'
             }}
           />
@@ -75,14 +75,14 @@ const TestMaskPreview = () => {
       )}
 
       {/* Status Indicators */}
-      <div className="absolute bottom-2 left-2 z-50">
-        <Badge className={`text-xs ${previewImageUrl ? 'bg-green-500/80' : 'bg-gray-500/80'} text-white`}>
+      <div className="absolute bottom-3 left-3 z-50">
+        <Badge className={`text-sm ${previewImageUrl ? 'bg-green-500/80' : 'bg-gray-500/80'} text-white`}>
           {previewImageUrl ? '✅ Mask Loaded' : '⭕ No Mask'}
         </Badge>
       </div>
 
-      <div className="absolute bottom-2 right-2 z-50">
-        <Badge className="bg-purple-500/80 text-white text-xs">
+      <div className="absolute bottom-3 right-3 z-50">
+        <Badge className="bg-purple-500/80 text-white text-sm">
           Wallet {WALLET_WIDTH}×{WALLET_HEIGHT}
         </Badge>
       </div>
@@ -91,8 +91,8 @@ const TestMaskPreview = () => {
       {!previewImageUrl && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="text-center text-white/60">
-            <div className="text-2xl mb-2">🎭</div>
-            <div className="text-sm">Run a test to see mask preview</div>
+            <div className="text-3xl mb-3">🎭</div>
+            <div className="text-lg">Run a test to see mask preview</div>
           </div>
         </div>
       )}

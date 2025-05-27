@@ -192,7 +192,7 @@ const AiMaskTest = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-purple-900/20 to-black p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -216,9 +216,9 @@ const AiMaskTest = () => {
           </div>
         )}
 
-        {/* Main Layout - Simple Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-6">
-          {/* Left Panel - Controls (1 column) */}
+        {/* Main Layout - Improved Grid for larger preview */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 mb-6">
+          {/* Left Panel - Controls (1.5 columns) */}
           <div className="xl:col-span-1 space-y-4">
             <TestControls
               testPrompt={testPrompt}
@@ -240,13 +240,13 @@ const AiMaskTest = () => {
             />
           </div>
 
-          {/* Right Panel - Preview (3 columns) */}
-          <div className="xl:col-span-3">
+          {/* Right Panel - Preview (3.5 columns for larger display) */}
+          <div className="xl:col-span-4">
             <Card className="bg-black/30 backdrop-blur border-white/10 h-full">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Monitor className="h-5 w-5 text-green-400" />
-                  Test Preview Canvas
+                  Test Preview Canvas - Enhanced Size
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center justify-center p-8">
