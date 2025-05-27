@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
@@ -30,7 +29,7 @@ const CharacterButtons = () => {
       name: 'CAT',
       icon: '🐱',
       color: 'from-purple-500 to-pink-500',
-      pngPath: '/external-masks/cats-mask.png'
+      pngPath: '/lovable-uploads/78d15f07-7430-48a3-bfcd-159efeb38a9e.png'
     }
   ];
 
