@@ -12,25 +12,25 @@ const CharacterButtons = () => {
       name: 'DOGE',
       icon: '🐕',
       color: 'from-yellow-500 to-orange-500',
-      pngPath: '/lovable-uploads/cd33fecf-bff4-4243-bd9d-3f3062e0ba37.png' // Ваш загруженный DOGE файл
+      pngPath: '/lovable-uploads/cd33fecf-bff4-4243-bd9d-3f3062e0ba37.png'
     },
     {
       name: 'PEPE',
       icon: '🐸',
       color: 'from-green-500 to-emerald-500',
-      pngPath: '/external-masks/pepe.png' // Путь к PNG файлу
+      pngPath: '/lovable-uploads/d4ec5dbf-9943-46d4-abcb-33fdbd4616c1.png'
     },
     {
       name: 'TRUMP',
       icon: '🇺🇸',
       color: 'from-red-500 to-blue-500',
-      pngPath: '/external-masks/trump simpson.png' // Путь к PNG файлу
+      pngPath: '/external-masks/trump simpson.png'
     },
     {
       name: 'CAT',
       icon: '🐱',
       color: 'from-purple-500 to-pink-500',
-      pngPath: '/external-masks/cats-mask.png' // Путь к PNG файлу
+      pngPath: '/external-masks/cats-mask.png'
     }
   ];
 
