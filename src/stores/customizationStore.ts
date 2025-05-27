@@ -18,6 +18,71 @@ export interface WalletStyle {
   styleNotes?: string;
 }
 
+export interface WalletAnalysis {
+  uiStructure: {
+    dimensions: {
+      width: number;
+      height: number;
+      aspectRatio: string;
+    };
+    layout: {
+      type: 'login' | 'wallet';
+      primaryElements: string[];
+      interactiveElements: string[];
+      visualHierarchy: string[];
+    };
+    colorPalette: {
+      primary: string;
+      secondary: string;
+      accent: string;
+      text: string;
+      background: string;
+      gradients?: string[];
+    };
+    typography: {
+      fontFamily: string;
+      primaryTextColor: string;
+      secondaryTextColor: string;
+      textSizes: string[];
+    };
+    interactivity: {
+      buttons: Array<{
+        type: string;
+        position: string;
+        color: string;
+        textColor: string;
+        functionality: string;
+      }>;
+      inputs: Array<{
+        type: string;
+        placeholder: string;
+        position: string;
+        styling: string;
+      }>;
+      animations: string[];
+    };
+    safeZone: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      criticalElements: string[];
+    };
+  };
+  functionalContext: {
+    purpose: string;
+    userFlow: string[];
+    criticalFeatures: string[];
+    designPhilosophy: string;
+  };
+  generationContext: {
+    promptEnhancement: string;
+    characterInteractionGuidelines: string[];
+    preservationRules: string[];
+    styleAdaptation: string;
+  };
+}
+
 interface CustomizationState {
   activeLayer: LayerType;
   loginStyle: WalletStyle;
@@ -27,6 +92,9 @@ interface CustomizationState {
   uploadedImage: string | null;
   stylingTip: string;
   editorMode: EditorModeType;
+  walletAnalysis: WalletAnalysis | null;
+  isAnalyzing: boolean;
+  analysisTimestamp: string | null;
   
   setActiveLayer: (layer: LayerType) => void;
   setStyleForLayer: (layer: LayerType, style: WalletStyle) => void;
@@ -36,6 +104,9 @@ interface CustomizationState {
   setIsGenerating: (isGenerating: boolean) => void;
   setStylingTip: (tip: string) => void;
   setEditorMode: (mode: EditorModeType) => void;
+  setWalletAnalysis: (analysis: WalletAnalysis | null) => void;
+  setIsAnalyzing: (isAnalyzing: boolean) => void;
+  analyzeCurrentWallet: () => Promise<void>;
 }
 
 const stylingTips = [
@@ -49,7 +120,7 @@ const stylingTips = [
   "For cosmic feel try 'space galaxy cosmic wallet'"
 ];
 
-export const useCustomizationStore = create<CustomizationState>((set) => ({
+export const useCustomizationStore = create<CustomizationState>((set, get) => ({
   activeLayer: 'login',
   loginStyle: { ...defaultLoginStyle },
   walletStyle: { ...defaultWalletStyle },
@@ -58,19 +129,28 @@ export const useCustomizationStore = create<CustomizationState>((set) => ({
   uploadedImage: null,
   stylingTip: stylingTips[Math.floor(Math.random() * stylingTips.length)],
   editorMode: 'create-style',
+  walletAnalysis: null,
+  isAnalyzing: false,
+  analysisTimestamp: null,
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),
   
   setStyleForLayer: (layer, style) => set((state) => ({
     ...(layer === 'login' 
       ? { loginStyle: { ...state.loginStyle, ...style }, isGenerating: false } 
-      : { walletStyle: { ...state.walletStyle, ...style }, isGenerating: false })
+      : { walletStyle: { ...state.walletStyle, ...style }, isGenerating: false }),
+    // Сбросить анализ при изменении стиля
+    walletAnalysis: null,
+    analysisTimestamp: null
   })),
   
   resetLayer: (layer) => set((state) => ({
     ...(layer === 'login' 
       ? { loginStyle: { ...defaultLoginStyle }, isGenerating: false } 
-      : { walletStyle: { ...defaultWalletStyle }, isGenerating: false })
+      : { walletStyle: { ...defaultWalletStyle }, isGenerating: false }),
+    // Сбросить анализ при сбросе стиля
+    walletAnalysis: null,
+    analysisTimestamp: null
   })),
   
   setPrompt: (prompt) => set({ prompt }),
@@ -82,4 +162,48 @@ export const useCustomizationStore = create<CustomizationState>((set) => ({
   setStylingTip: (tip) => set({ stylingTip: tip }),
   
   setEditorMode: (mode) => set({ editorMode: mode }),
+
+  setWalletAnalysis: (analysis) => set({ walletAnalysis: analysis }),
+
+  setIsAnalyzing: (isAnalyzing) => set({ isAnalyzing }),
+
+  analyzeCurrentWallet: async () => {
+    const state = get();
+    
+    try {
+      set({ isAnalyzing: true });
+      console.log('🔍 Starting wallet analysis...');
+      
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('analyze-wallet-structure', {
+        body: {
+          loginStyle: state.loginStyle,
+          walletStyle: state.walletStyle,
+          activeLayer: state.activeLayer
+        }
+      });
+      
+      if (error) {
+        throw new Error(`Analysis failed: ${error.message}`);
+      }
+      
+      if (!data || !data.analysis) {
+        throw new Error("Analysis failed - no data returned");
+      }
+      
+      console.log('✅ Wallet analysis completed:', data.analysis);
+      
+      set({ 
+        walletAnalysis: data.analysis,
+        analysisTimestamp: new Date().toISOString(),
+        isAnalyzing: false 
+      });
+      
+    } catch (error) {
+      console.error('💥 Wallet analysis error:', error);
+      set({ isAnalyzing: false });
+      throw error;
+    }
+  }
 }));

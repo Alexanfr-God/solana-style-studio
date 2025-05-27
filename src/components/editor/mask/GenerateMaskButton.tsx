@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
+import { useCustomizationStore } from '@/stores/customizationStore';
 import { toast } from 'sonner';
-import { Wand, Loader2, AlertCircle, Settings, Zap } from 'lucide-react';
+import { Wand, Loader2, AlertCircle, Settings, Zap, Brain } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,6 +23,13 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     setSafeZoneVisible
   } = useMaskEditorStore();
   
+  const { 
+    walletAnalysis, 
+    activeLayer,
+    analyzeCurrentWallet,
+    isAnalyzing
+  } = useCustomizationStore();
+  
   const [progress, setProgress] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
   const [currentStep, setCurrentStep] = useState("");
@@ -34,6 +42,18 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       return;
     }
 
+    // Проверяем наличие анализа кошелька
+    if (!walletAnalysis) {
+      toast.info("🔍 Analyzing wallet structure first...");
+      try {
+        await analyzeCurrentWallet();
+        toast.success("✅ Wallet analysis completed!");
+      } catch (error) {
+        toast.error("❌ Wallet analysis failed. Using basic generation.");
+        console.error("Analysis error:", error);
+      }
+    }
+
     setHasGenerationError(false);
     setIsGenerating(true);
     setShowProgress(true);
@@ -44,13 +64,14 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     try {
       toast.info("🎨 Creating your wallet costume...");
       
-      // Симуляция прогресса
+      // Симуляция прогресса с расширенными этапами
       const steps = [
-        "Analyzing your description...",
-        "Selecting art style...", 
-        "Generating character with AI...",
+        "Analyzing wallet structure...",
+        "Processing UI elements...",
+        "Enhancing character prompt...",
+        "Generating AI artwork...",
         "Positioning around wallet...",
-        "Finalizing artwork..."
+        "Finalizing composition..."
       ];
       
       let stepIndex = 0;
@@ -65,16 +86,22 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       // Получаем текущего пользователя
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Запрос к Edge Function
+      // Подготавливаем расширенный промпт с анализом кошелька
+      const enhancedPrompt = walletAnalysis ? 
+        `${prompt}. ${walletAnalysis.generationContext.promptEnhancement}` : 
+        prompt;
+      
+      // Запрос к Edge Function с анализом кошелька
       const requestPayload = {
-        prompt: prompt,
+        prompt: enhancedPrompt,
         reference_image_url: referenceImage || null,
         style: maskStyle,
         user_id: user?.id,
-        zone_preference: zonePreference
+        zone_preference: zonePreference,
+        wallet_analysis: walletAnalysis // Передаем анализ кошелька
       };
       
-      console.log('📤 Sending generation request:', requestPayload);
+      console.log('📤 Sending enhanced generation request:', requestPayload);
       
       const { data, error } = await supabase.functions.invoke('generate-wallet-mask-v3', {
         body: requestPayload
@@ -99,7 +126,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       
       setExternalMask(data.image_url);
       
-      toast.success("🎉 Wallet costume created successfully!");
+      toast.success("🎉 Enhanced wallet costume created successfully!");
       
       if (data.storage_path) {
         console.log("💾 Costume saved to collection:", data.storage_path);
@@ -131,9 +158,18 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   };
 
   const hasValidInput = !!prompt;
+  const isAnalysisAvailable = !!walletAnalysis;
 
   return (
     <div className="space-y-3">
+      {/* Analysis Status Indicator */}
+      {isAnalysisAvailable && (
+        <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-md flex items-center text-xs text-green-300">
+          <Brain className="h-3 w-3 mr-1" />
+          Enhanced AI generation ready with {walletAnalysis.uiStructure.layout.type} wallet analysis
+        </div>
+      )}
+
       {/* Zone Preference Selector */}
       <div className="space-y-2">
         <label className="text-xs text-white/70 flex items-center gap-1">
@@ -143,7 +179,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         <select 
           value={zonePreference} 
           onChange={(e) => setZonePreference(e.target.value as any)}
-          disabled={isGenerating}
+          disabled={isGenerating || isAnalyzing}
           className="w-full h-8 px-2 py-1 bg-black/20 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
         >
           <option value="all">All Around Wallet</option>
@@ -157,18 +193,31 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       {/* Main Generation Button */}
       <Button
         onClick={handleGenerate}
-        className="w-full bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600 text-black font-bold"
-        disabled={isGenerating || !hasValidInput || disabled}
+        className={`w-full font-bold ${
+          isAnalysisAvailable 
+            ? 'bg-gradient-to-r from-green-400 to-purple-500 hover:from-green-500 hover:to-purple-600' 
+            : 'bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600'
+        } text-black`}
+        disabled={isGenerating || !hasValidInput || disabled || isAnalyzing}
       >
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating Costume...
+            Creating Enhanced Costume...
+          </>
+        ) : isAnalyzing ? (
+          <>
+            <Brain className="mr-2 h-4 w-4 animate-pulse" />
+            Analyzing Wallet...
           </>
         ) : (
           <>
-            <Zap className="mr-2 h-4 w-4" />
-            Generate Wallet Costume
+            {isAnalysisAvailable ? (
+              <Brain className="mr-2 h-4 w-4" />
+            ) : (
+              <Zap className="mr-2 h-4 w-4" />
+            )}
+            {isAnalysisAvailable ? 'Generate Enhanced Costume' : 'Generate Wallet Costume'}
           </>
         )}
       </Button>
@@ -195,11 +244,15 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         </div>
       )}
       
-      {hasValidInput && !isGenerating && (
+      {hasValidInput && !isGenerating && !isAnalyzing && (
         <div className="text-xs text-white/60 text-center space-y-1">
           <div>🎨 Style: <span className="text-purple-300 font-medium">{maskStyle}</span></div>
           <div>📍 Position: <span className="text-blue-300 font-medium">{zonePreference}</span></div>
           <div>🖼️ Reference: {referenceImage ? "✅ Custom image" : "⚪ Default guide"}</div>
+          <div>🧠 Analysis: {isAnalysisAvailable ? 
+            <span className="text-green-300 font-medium">✅ Enhanced</span> : 
+            <span className="text-yellow-300 font-medium">⚪ Basic</span>}
+          </div>
         </div>
       )}
     </div>
