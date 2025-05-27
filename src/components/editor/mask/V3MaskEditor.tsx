@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -12,76 +11,51 @@ import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { toast } from 'sonner';
 import V3MaskPreviewCanvas from './V3MaskPreviewCanvas';
 import SafeZoneToggle from './SafeZoneToggle';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 const V3MaskEditor = () => {
-  const { 
-    resetEditor, 
-    maskImageUrl, 
-    prompt, 
+  const {
+    resetEditor,
+    maskImageUrl,
+    prompt,
     safeZoneVisible,
     setSafeZoneVisible
   } = useMaskEditorStore();
-  
   const [showGuide, setShowGuide] = useState(true);
-
   const handleReset = () => {
     resetEditor();
     toast.success("Mask editor has been reset");
   };
-  
   const toggleGuide = () => {
     setShowGuide(!showGuide);
   };
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 relative">
+  return <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 relative">
       <div className="lg:col-span-1">
         <div className="flex flex-col space-y-6 md:space-y-8">
           <Card className="bg-black/30 backdrop-blur-md border-white/10">
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Create Wallet Costume</h2>
+                <h2 className="text-xl font-bold text-white">Create Wallet Costume (DEMO)</h2>
                 <div className="bg-gradient-to-r from-yellow-400 to-purple-600 text-white text-xs px-2 py-1 rounded">AI-Powered</div>
               </div>
               
-              {showGuide && (
-                <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-md">
+              {showGuide && <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-md">
                   <div className="flex justify-between items-start">
                     <h3 className="text-sm font-medium text-purple-300 mb-1">How it works:</h3>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-6 w-6 p-0" 
-                      onClick={toggleGuide}
-                    >
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={toggleGuide}>
                       <EyeOff className="h-4 w-4 text-white/60" />
                     </Button>
                   </div>
                   <p className="text-xs text-white/70">
                     AI creates decorative characters around your wallet while keeping the wallet interface visible and functional.
                   </p>
-                </div>
-              )}
+                </div>}
               
-              {!showGuide && (
-                <div className="flex justify-end mb-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6" 
-                    onClick={toggleGuide}
-                  >
+              {!showGuide && <div className="flex justify-end mb-4">
+                  <Button variant="ghost" size="sm" className="h-6" onClick={toggleGuide}>
                     <Info className="h-4 w-4 mr-1 text-white/60" />
                     <span className="text-xs text-white/60">Show Guide</span>
                   </Button>
-                </div>
-              )}
+                </div>}
               
               <div className="space-y-6">
                 {/* Новая секция с кнопками персонажей */}
@@ -112,11 +86,7 @@ const V3MaskEditor = () => {
                 
                 <div className="space-y-3">
                   <GenerateMaskButton />
-                  <Button 
-                    variant="outline" 
-                    onClick={handleReset}
-                    className="w-full border-white/10 text-white/80 hover:text-white"
-                  >
+                  <Button variant="outline" onClick={handleReset} className="w-full border-white/10 text-white/80 hover:text-white">
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Reset
                   </Button>
@@ -134,16 +104,8 @@ const V3MaskEditor = () => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setSafeZoneVisible(!safeZoneVisible)}
-                  >
-                    {safeZoneVisible ? (
-                      <Eye className="h-4 w-4 text-purple-400" />
-                    ) : (
-                      <EyeOff className="h-4 w-4 text-white/60" />
-                    )}
+                  <Button variant="ghost" size="sm" onClick={() => setSafeZoneVisible(!safeZoneVisible)}>
+                    {safeZoneVisible ? <Eye className="h-4 w-4 text-purple-400" /> : <EyeOff className="h-4 w-4 text-white/60" />}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -159,8 +121,6 @@ const V3MaskEditor = () => {
           </div>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default V3MaskEditor;
