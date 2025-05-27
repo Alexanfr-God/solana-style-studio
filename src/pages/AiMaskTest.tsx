@@ -8,20 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { 
   Brain, 
   Zap, 
   Bug, 
   Monitor, 
-  Layers, 
   TestTube,
   Play,
   RefreshCw,
   Download,
   Eye,
-  Code,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
@@ -53,6 +54,7 @@ const AiMaskTest = () => {
   const [logs, setLogs] = useState<TestLog[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [selectedTab, setSelectedTab] = useState('test');
+  const [progress, setProgress] = useState(0);
 
   const { 
     walletAnalysis, 
@@ -79,7 +81,7 @@ const AiMaskTest = () => {
       message,
       data
     };
-    setLogs(prev => [newLog, ...prev.slice(0, 49)]); // Keep last 50 logs
+    setLogs(prev => [newLog, ...prev.slice(0, 49)]);
   };
 
   const runTest = async (prompt?: string, style?: typeof testStyle) => {
@@ -87,6 +89,7 @@ const AiMaskTest = () => {
     const finalStyle = style || testStyle;
     
     setIsGenerating(true);
+    setProgress(0);
     const startTime = Date.now();
     
     addLog('info', `🚀 Starting test generation`, {
@@ -97,6 +100,7 @@ const AiMaskTest = () => {
     });
 
     try {
+      setProgress(20);
       const { data: { user } } = await supabase.auth.getUser();
       
       const requestPayload = {
@@ -109,11 +113,13 @@ const AiMaskTest = () => {
       };
 
       addLog('info', '📤 Sending request to Edge Function', requestPayload);
+      setProgress(40);
 
       const { data, error } = await supabase.functions.invoke('generate-wallet-mask-v3', {
         body: requestPayload
       });
 
+      setProgress(80);
       const executionTime = Date.now() - startTime;
 
       if (error) {
@@ -121,13 +127,13 @@ const AiMaskTest = () => {
         throw error;
       }
 
+      setProgress(100);
       addLog('info', '✅ Generation successful', {
         imageUrl: data.image_url,
         layoutJson: data.layout_json,
         executionTime: `${executionTime}ms`
       });
 
-      // Store test result
       const testResult: TestResult = {
         id: Date.now().toString(),
         prompt: finalPrompt,
@@ -138,7 +144,7 @@ const AiMaskTest = () => {
         executionTime
       };
 
-      setTestResults(prev => [testResult, ...prev.slice(0, 9)]); // Keep last 10 results
+      setTestResults(prev => [testResult, ...prev.slice(0, 9)]);
       setExternalMask(data.image_url);
       
       toast.success(`✅ Test completed in ${executionTime}ms`);
@@ -161,6 +167,7 @@ const AiMaskTest = () => {
       toast.error(`❌ Test failed after ${executionTime}ms`);
     } finally {
       setIsGenerating(false);
+      setProgress(0);
     }
   };
 
@@ -185,7 +192,7 @@ const AiMaskTest = () => {
     const exportData = {
       timestamp: new Date().toISOString(),
       testResults,
-      logs: logs.slice(0, 20), // Last 20 logs
+      logs: logs.slice(0, 20),
       walletAnalysis
     };
     
@@ -200,9 +207,19 @@ const AiMaskTest = () => {
     addLog('info', '📥 Test results exported');
   };
 
+  const getStatusInfo = () => {
+    if (isGenerating) return { status: 'Generating...', color: 'bg-blue-500', icon: RefreshCw };
+    if (isAnalyzing) return { status: 'Analyzing...', color: 'bg-purple-500', icon: Brain };
+    if (walletAnalysis) return { status: 'Ready to Test', color: 'bg-green-500', icon: CheckCircle };
+    return { status: 'Analysis Required', color: 'bg-yellow-500', icon: AlertTriangle };
+  };
+
+  const statusInfo = getStatusInfo();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-purple-900/20 to-black p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -211,10 +228,25 @@ const AiMaskTest = () => {
             </h1>
             <p className="text-white/60 mt-2">Internal debugging environment for layout-aware generation</p>
           </div>
-          <Badge variant="outline" className="bg-yellow-500/10 border-yellow-500/30 text-yellow-300">
-            🔬 Internal Testing Only
-          </Badge>
+          
+          <div className="flex items-center gap-4">
+            <Badge variant="outline" className={`${statusInfo.color}/10 border-${statusInfo.color.replace('bg-', '')}/30 text-white px-3 py-1`}>
+              <statusInfo.icon className="h-4 w-4 mr-2" />
+              {statusInfo.status}
+            </Badge>
+            <Badge variant="outline" className="bg-yellow-500/10 border-yellow-500/30 text-yellow-300">
+              🔬 Internal Testing Only
+            </Badge>
+          </div>
         </div>
+
+        {/* Progress Bar */}
+        {isGenerating && (
+          <div className="mb-6">
+            <Progress value={progress} className="h-2 bg-black/30" />
+            <p className="text-white/60 text-sm mt-2">Generating mask... {progress}%</p>
+          </div>
+        )}
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
           <TabsList className="bg-black/30 border border-white/10">
@@ -237,65 +269,67 @@ const AiMaskTest = () => {
           </TabsList>
 
           <TabsContent value="test" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-black/30 backdrop-blur border-white/10">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-blue-400" />
-                    Generation Controls
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm text-white/70 mb-2 block">Test Prompt</label>
-                    <Textarea 
-                      value={testPrompt}
-                      onChange={(e) => setTestPrompt(e.target.value)}
-                      placeholder="Describe the character interaction..."
-                      className="bg-black/20 border-white/10 text-white"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Left Column - Controls */}
+              <div className="xl:col-span-1 space-y-6">
+                <Card className="bg-black/30 backdrop-blur border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-blue-400" />
+                      Generation Controls
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div>
-                      <label className="text-sm text-white/70 mb-2 block">Style</label>
-                      <Select value={testStyle} onValueChange={(value: any) => setTestStyle(value)}>
-                        <SelectTrigger className="bg-black/20 border-white/10 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cartoon">Cartoon</SelectItem>
-                          <SelectItem value="realistic">Realistic</SelectItem>
-                          <SelectItem value="fantasy">Fantasy</SelectItem>
-                          <SelectItem value="modern">Modern</SelectItem>
-                          <SelectItem value="minimalist">Minimalist</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <label className="text-sm text-white/70 mb-2 block">Test Prompt</label>
+                      <Textarea 
+                        value={testPrompt}
+                        onChange={(e) => setTestPrompt(e.target.value)}
+                        placeholder="Describe the character interaction..."
+                        className="bg-black/20 border-white/10 text-white min-h-[80px]"
+                        rows={3}
+                      />
                     </div>
 
-                    <div>
-                      <label className="text-sm text-white/70 mb-2 block">Position</label>
-                      <Select value={zonePreference} onValueChange={(value: any) => setZonePreference(value)}>
-                        <SelectTrigger className="bg-black/20 border-white/10 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Around</SelectItem>
-                          <SelectItem value="top">Top</SelectItem>
-                          <SelectItem value="bottom">Bottom</SelectItem>
-                          <SelectItem value="left">Left</SelectItem>
-                          <SelectItem value="right">Right</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="text-sm text-white/70 mb-2 block">Style</label>
+                        <Select value={testStyle} onValueChange={(value: any) => setTestStyle(value)}>
+                          <SelectTrigger className="bg-black/20 border-white/10 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cartoon">Cartoon</SelectItem>
+                            <SelectItem value="realistic">Realistic</SelectItem>
+                            <SelectItem value="fantasy">Fantasy</SelectItem>
+                            <SelectItem value="modern">Modern</SelectItem>
+                            <SelectItem value="minimalist">Minimalist</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="flex gap-2">
+                      <div>
+                        <label className="text-sm text-white/70 mb-2 block">Position</label>
+                        <Select value={zonePreference} onValueChange={(value: any) => setZonePreference(value)}>
+                          <SelectTrigger className="bg-black/20 border-white/10 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Around</SelectItem>
+                            <SelectItem value="top">Top</SelectItem>
+                            <SelectItem value="bottom">Bottom</SelectItem>
+                            <SelectItem value="left">Left</SelectItem>
+                            <SelectItem value="right">Right</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     <Button 
                       onClick={() => runTest()}
                       disabled={isGenerating || !testPrompt}
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                      className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                      size="lg"
                     >
                       {isGenerating ? (
                         <>
@@ -309,11 +343,16 @@ const AiMaskTest = () => {
                         </>
                       )}
                     </Button>
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  <div>
-                    <p className="text-xs text-white/70 mb-2">Quick Tests:</p>
-                    <div className="grid grid-cols-1 gap-2">
+                {/* Quick Tests */}
+                <Card className="bg-black/30 backdrop-blur border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white text-sm">Quick Test Scenarios</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
                       {quickTests.map((test, index) => (
                         <Button
                           key={index}
@@ -321,29 +360,35 @@ const AiMaskTest = () => {
                           size="sm"
                           onClick={() => runTest(test.prompt, test.style)}
                           disabled={isGenerating}
-                          className="text-left justify-start border-white/10 text-white/80 hover:text-white text-xs"
+                          className="w-full text-left justify-start border-white/10 text-white/80 hover:text-white text-xs h-auto py-2 px-3"
                         >
-                          {test.prompt}
+                          <div className="text-left">
+                            <div className="font-medium">{test.style}</div>
+                            <div className="text-xs text-white/60 mt-1">{test.prompt}</div>
+                          </div>
                         </Button>
                       ))}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
 
-              <Card className="bg-black/30 backdrop-blur border-white/10">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Eye className="h-5 w-5 text-green-400" />
-                    Preview Canvas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center p-4 bg-black/20 rounded-lg border border-white/10">
-                    <V3MaskPreviewCanvas />
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Right Column - Large Canvas Preview */}
+              <div className="xl:col-span-2">
+                <Card className="bg-black/30 backdrop-blur border-white/10 h-full">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-green-400" />
+                      Live Preview Canvas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="w-full h-[600px] flex items-center justify-center bg-black/20 rounded-lg border border-white/10">
+                      <V3MaskPreviewCanvas />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
@@ -358,7 +403,7 @@ const AiMaskTest = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex gap-4">
-                    <Button onClick={runAnalysis} disabled={isAnalyzing}>
+                    <Button onClick={runAnalysis} disabled={isAnalyzing} size="lg">
                       {isAnalyzing ? (
                         <>
                           <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -382,9 +427,12 @@ const AiMaskTest = () => {
 
                   {walletAnalysis && (
                     <div className="mt-4 p-4 bg-black/20 rounded-lg border border-white/10">
-                      <pre className="text-xs text-white/80 overflow-auto max-h-96">
-                        {JSON.stringify(walletAnalysis, null, 2)}
-                      </pre>
+                      <h3 className="text-white font-medium mb-3">Analysis Results:</h3>
+                      <ScrollArea className="h-96">
+                        <pre className="text-xs text-white/80 whitespace-pre-wrap">
+                          {JSON.stringify(walletAnalysis, null, 2)}
+                        </pre>
+                      </ScrollArea>
                     </div>
                   )}
                 </div>
@@ -406,31 +454,43 @@ const AiMaskTest = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-96">
+                <ScrollArea className="h-[500px]">
                   <div className="space-y-2">
                     {logs.map((log, index) => (
-                      <div key={index} className="p-2 bg-black/20 rounded border border-white/10">
-                        <div className="flex items-center gap-2 text-xs">
+                      <div key={index} className="p-3 bg-black/20 rounded border border-white/10">
+                        <div className="flex items-center gap-2 text-xs mb-2">
                           <Badge variant="outline" className={
                             log.level === 'error' ? "bg-red-500/10 border-red-500/30 text-red-300" :
                             log.level === 'warning' ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-300" :
                             "bg-blue-500/10 border-blue-500/30 text-blue-300"
                           }>
-                            {log.level}
+                            {log.level.toUpperCase()}
                           </Badge>
+                          <Clock className="h-3 w-3 text-white/50" />
                           <span className="text-white/50">{new Date(log.timestamp).toLocaleTimeString()}</span>
                         </div>
-                        <p className="text-white/80 mt-1 text-sm">{log.message}</p>
+                        <p className="text-white/80 text-sm mb-2">{log.message}</p>
                         {log.data && (
                           <details className="mt-2">
-                            <summary className="text-xs text-white/60 cursor-pointer">Show data</summary>
-                            <pre className="text-xs text-white/70 mt-1 p-2 bg-black/30 rounded overflow-auto">
-                              {JSON.stringify(log.data, null, 2)}
-                            </pre>
+                            <summary className="text-xs text-white/60 cursor-pointer hover:text-white/80">
+                              Show data →
+                            </summary>
+                            <div className="mt-2 p-2 bg-black/30 rounded overflow-auto">
+                              <pre className="text-xs text-white/70">
+                                {JSON.stringify(log.data, null, 2)}
+                              </pre>
+                            </div>
                           </details>
                         )}
                       </div>
                     ))}
+                    
+                    {logs.length === 0 && (
+                      <div className="text-center py-8 text-white/50">
+                        <Bug className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No logs yet. Run a test to see debug information here.</p>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               </CardContent>
@@ -452,40 +512,54 @@ const AiMaskTest = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {testResults.map((result) => (
-                    <div key={result.id} className="p-4 bg-black/20 rounded-lg border border-white/10">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className={
-                          result.success ? "bg-green-500/10 border-green-500/30 text-green-300" 
-                          : "bg-red-500/10 border-red-500/30 text-red-300"
-                        }>
-                          {result.success ? "✅ Success" : "❌ Failed"}
-                        </Badge>
-                        <span className="text-xs text-white/50">{result.executionTime}ms</span>
+                <ScrollArea className="h-[500px]">
+                  <div className="space-y-4">
+                    {testResults.map((result) => (
+                      <div key={result.id} className="p-4 bg-black/20 rounded-lg border border-white/10">
+                        <div className="flex items-center justify-between mb-3">
+                          <Badge variant="outline" className={
+                            result.success ? "bg-green-500/10 border-green-500/30 text-green-300" 
+                            : "bg-red-500/10 border-red-500/30 text-red-300"
+                          }>
+                            {result.success ? "✅ Success" : "❌ Failed"}
+                          </Badge>
+                          <div className="flex items-center gap-2 text-xs text-white/60">
+                            <Clock className="h-3 w-3" />
+                            <span>{result.executionTime}ms</span>
+                          </div>
+                        </div>
+                        
+                        <p className="text-white/80 text-sm mb-3 p-2 bg-black/30 rounded">
+                          "{result.prompt}"
+                        </p>
+                        
+                        <div className="flex items-center justify-between text-xs text-white/60">
+                          <div className="flex items-center gap-4">
+                            <span>Analysis: {result.analysisUsed ? "✅ Used" : "❌ Not used"}</span>
+                            <span>{new Date(result.timestamp).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        
+                        {result.imageUrl && (
+                          <div className="mt-3 flex justify-center">
+                            <img 
+                              src={result.imageUrl} 
+                              alt="Generated result" 
+                              className="max-w-48 h-auto rounded border border-white/20 shadow-lg"
+                            />
+                          </div>
+                        )}
                       </div>
-                      <p className="text-white/80 text-sm mb-2">{result.prompt}</p>
-                      <div className="flex items-center gap-4 text-xs text-white/60">
-                        <span>Analysis: {result.analysisUsed ? "✅" : "❌"}</span>
-                        <span>{new Date(result.timestamp).toLocaleString()}</span>
-                      </div>
-                      {result.imageUrl && (
-                        <img 
-                          src={result.imageUrl} 
-                          alt="Generated result" 
-                          className="mt-2 max-w-32 h-auto rounded border border-white/10"
-                        />
-                      )}
-                    </div>
-                  ))}
+                    ))}
 
-                  {testResults.length === 0 && (
-                    <div className="text-center py-8 text-white/50">
-                      <TestTube className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No test results yet. Run some tests to see results here.</p>
-                    </div>
-                  )}
-                </div>
+                    {testResults.length === 0 && (
+                      <div className="text-center py-8 text-white/50">
+                        <TestTube className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No test results yet. Run some tests to see results here.</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           </TabsContent>
