@@ -61,71 +61,6 @@ const V3MaskPreviewCanvas = () => {
           }}
         >
           
-          {/* V4 Enhanced external mask layer with improved transparency CSS */}
-          {externalMask && (
-            <div 
-              className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                width: '100%',
-                height: '100%',
-                maskImage: `url('${MASK_CUTOUT_URL}')`,
-                WebkitMaskImage: `url('${MASK_CUTOUT_URL}')`,
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                background: 'transparent'
-              }}
-            >
-              <img 
-                src={externalMask} 
-                alt="V4 Enhanced decorative mask with transparency" 
-                className="w-full h-full object-contain"
-                style={{
-                  filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.15))',
-                  background: 'transparent',
-                  imageRendering: 'crisp-edges'
-                }}
-                onLoad={() => console.log('✅ V4 Enhanced external mask loaded with transparency:', externalMask)}
-                onError={(e) => console.error('❌ V4 Enhanced external mask failed:', externalMask, e)}
-              />
-            </div>
-          )}
-          
-          {/* Legacy mask support with enhanced transparency */}
-          {maskImageUrl && !externalMask && (
-            <div 
-              className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                width: '100%',
-                height: '100%',
-                maskImage: `url('${MASK_CUTOUT_URL}')`,
-                WebkitMaskImage: `url('${MASK_CUTOUT_URL}')`,
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                background: 'transparent'
-              }}
-            >
-              <img 
-                src={maskImageUrl} 
-                alt="Legacy mask with enhanced transparency" 
-                className="w-full h-full object-contain"
-                style={{
-                  background: 'transparent',
-                  imageRendering: 'crisp-edges'
-                }}
-                onLoad={() => console.log('✅ Legacy mask loaded with transparency:', maskImageUrl)}
-                onError={(e) => console.error('❌ Legacy mask failed:', maskImageUrl, e)}
-              />
-            </div>
-          )}
-          
           {/* V4 Enhanced wallet UI container - positioned at exact coordinates */}
           <div 
             className="absolute z-20"
@@ -147,11 +82,62 @@ const V3MaskPreviewCanvas = () => {
           >
             <LoginScreen style={loginStyle} />
           </div>
+
+          {/* V4 Enhanced external mask layer rendered on top of wallet */}
+          {externalMask && (
+            <div 
+              className="absolute z-30 pointer-events-none"
+              style={{
+                width: `${OUTPUT_WIDTH * PREVIEW_SCALE}px`,
+                height: `${OUTPUT_HEIGHT * PREVIEW_SCALE}px`,
+                left: 0,
+                top: 0
+              }}
+            >
+              <img 
+                src={externalMask} 
+                alt="V4 Enhanced decorative mask with transparency" 
+                className="w-full h-full object-contain"
+                style={{
+                  filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.15))',
+                  background: 'transparent',
+                  imageRendering: 'crisp-edges'
+                }}
+                onLoad={() => console.log('✅ V4 Enhanced external mask loaded with transparency:', externalMask)}
+                onError={(e) => console.error('❌ V4 Enhanced external mask failed:', externalMask, e)}
+              />
+            </div>
+          )}
+          
+          {/* Legacy mask support with enhanced transparency */}
+          {maskImageUrl && !externalMask && (
+            <div 
+              className="absolute z-30 pointer-events-none"
+              style={{
+                width: `${OUTPUT_WIDTH * PREVIEW_SCALE}px`,
+                height: `${OUTPUT_HEIGHT * PREVIEW_SCALE}px`,
+                left: 0,
+                top: 0
+              }}
+            >
+              <img 
+                src={maskImageUrl} 
+                alt="Legacy mask with enhanced transparency" 
+                className="w-full h-full object-contain"
+                style={{
+                  background: 'transparent',
+                  imageRendering: 'crisp-edges'
+                }}
+                onLoad={() => console.log('✅ Legacy mask loaded with transparency:', maskImageUrl)}
+                onError={(e) => console.error('❌ Legacy mask failed:', maskImageUrl, e)}
+              />
+            </div>
+          )}
           
           {/* V4 Enhanced safe zone visualization */}
           {safeZoneVisible && (
             <div 
-              className="absolute z-30 pointer-events-none"
+              className="absolute z-40 pointer-events-none"
               style={{
                 width: `${WALLET_WIDTH * PREVIEW_SCALE}px`,
                 height: `${WALLET_HEIGHT * PREVIEW_SCALE}px`,
@@ -176,7 +162,7 @@ const V3MaskPreviewCanvas = () => {
           
           {/* V4 Enhanced success badge */}
           {externalMask && !safeZoneVisible && (
-            <div className="absolute top-4 right-4 z-40">
+            <div className="absolute top-4 right-4 z-50">
               <Badge 
                 className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(34,197,94,0.5)] border-white/20 animate-pulse"
               >
@@ -186,7 +172,7 @@ const V3MaskPreviewCanvas = () => {
           )}
           
           {/* V4 Enhanced architecture badge */}
-          <div className="absolute top-4 left-4 z-40">
+          <div className="absolute top-4 left-4 z-50">
             <Badge 
               className="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(153,69,255,0.5)] border-white/20"
             >
@@ -196,7 +182,7 @@ const V3MaskPreviewCanvas = () => {
 
           {/* V4 Enhanced transparency indicator */}
           {externalMask && (
-            <div className="absolute bottom-4 left-4 z-40">
+            <div className="absolute bottom-4 left-4 z-50">
               <Badge 
                 className="bg-emerald-500/80 text-white px-2 py-1 text-xs"
               >
@@ -207,7 +193,7 @@ const V3MaskPreviewCanvas = () => {
 
           {/* V4 Enhanced coordinate display */}
           {externalMask && (
-            <div className="absolute bottom-4 right-4 z-40">
+            <div className="absolute bottom-4 right-4 z-50">
               <Badge 
                 className="bg-yellow-500/80 text-black px-2 py-1 text-xs font-mono"
               >
@@ -218,7 +204,7 @@ const V3MaskPreviewCanvas = () => {
 
           {/* Enhanced background removal indicator */}
           {externalMask && (
-            <div className="absolute top-1/2 left-4 z-40">
+            <div className="absolute top-1/2 left-4 z-50">
               <Badge 
                 className="bg-blue-500/80 text-white px-2 py-1 text-xs"
               >
@@ -228,7 +214,7 @@ const V3MaskPreviewCanvas = () => {
           )}
 
           {/* Enhanced quality scale indicator */}
-          <div className="absolute top-1/2 right-4 z-40">
+          <div className="absolute top-1/2 right-4 z-50">
             <Badge 
               className="bg-orange-500/80 text-white px-2 py-1 text-xs font-mono"
             >
