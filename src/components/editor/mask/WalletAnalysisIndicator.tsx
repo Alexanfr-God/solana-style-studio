@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { toast } from 'sonner';
-import { Search, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, CheckCircle, AlertCircle, RefreshCw, Brain, Eye, Palette, Layout } from 'lucide-react';
 
 const WalletAnalysisIndicator = () => {
   const { 
@@ -33,13 +33,16 @@ const WalletAnalysisIndicator = () => {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-white">Wallet Structure Analysis</h3>
+        <h3 className="text-sm font-medium text-white flex items-center gap-2">
+          <Brain className="h-4 w-4" />
+          Wallet Layout Analysis
+        </h3>
         {isAnalysisValid && (
           <Badge 
             variant="outline" 
             className="bg-green-500/10 border-green-500/30 text-green-300 text-xs"
           >
-            ✅ Analyzed
+            ✅ Enhanced
           </Badge>
         )}
       </div>
@@ -51,17 +54,59 @@ const WalletAnalysisIndicator = () => {
             <span className="text-sm">Analyzing {activeLayer} wallet UI...</span>
           </div>
         ) : isAnalysisValid ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center space-x-2 text-green-300">
               <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">Analysis Complete</span>
+              <span className="text-sm font-medium">Layout Analysis Complete</span>
+            </div>
+            
+            {/* UI Structure Info */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded">
+                <div className="flex items-center gap-1 text-purple-300 mb-1">
+                  <Layout className="h-3 w-3" />
+                  <span className="font-medium">Layout</span>
+                </div>
+                <div className="text-white/70">
+                  {walletAnalysis.uiStructure.layout.type} • {walletAnalysis.uiStructure.layout.primaryElements.length} elements
+                </div>
+              </div>
+              
+              <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded">
+                <div className="flex items-center gap-1 text-blue-300 mb-1">
+                  <Eye className="h-3 w-3" />
+                  <span className="font-medium">Interactive</span>
+                </div>
+                <div className="text-white/70">
+                  {walletAnalysis.uiStructure.interactivity.buttons.length} buttons • {walletAnalysis.uiStructure.interactivity.inputs.length} inputs
+                </div>
+              </div>
+              
+              <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded col-span-2">
+                <div className="flex items-center gap-1 text-yellow-300 mb-1">
+                  <Palette className="h-3 w-3" />
+                  <span className="font-medium">Color Palette</span>
+                </div>
+                <div className="text-white/70 text-xs">
+                  {walletAnalysis.uiStructure.colorPalette.primary} • {walletAnalysis.uiStructure.colorPalette.accent}
+                </div>
+              </div>
+            </div>
+            
+            {/* Safe Zone Info */}
+            <div className="p-2 bg-green-500/10 border border-green-500/20 rounded text-xs">
+              <div className="text-green-300 font-medium mb-1">Safe Zone Detected</div>
+              <div className="text-white/70">
+                {walletAnalysis.uiStructure.safeZone.width}×{walletAnalysis.uiStructure.safeZone.height}px preserved area
+              </div>
+              <div className="text-white/50 text-xs mt-1">
+                Critical: {walletAnalysis.uiStructure.safeZone.criticalElements.length} elements protected
+              </div>
             </div>
             
             <div className="text-xs text-white/60 space-y-1">
-              <div>📱 Layer: <span className="text-purple-300">{walletAnalysis.uiStructure.layout.type}</span></div>
-              <div>🎨 Elements: <span className="text-blue-300">{walletAnalysis.uiStructure.layout.primaryElements.length}</span></div>
-              <div>🔘 Interactive: <span className="text-yellow-300">{walletAnalysis.uiStructure.layout.interactiveElements.length}</span></div>
               <div>⏱️ Age: <span className="text-orange-300">{analysisAge}s ago</span></div>
+              <div>🎯 Purpose: <span className="text-cyan-300">{walletAnalysis.functionalContext.purpose}</span></div>
             </div>
             
             {analysisAge > 30 && (
@@ -74,7 +119,7 @@ const WalletAnalysisIndicator = () => {
         ) : (
           <div className="flex items-center space-x-2 text-yellow-300">
             <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">No analysis available</span>
+            <span className="text-sm">No layout analysis available</span>
           </div>
         )}
         
@@ -93,7 +138,7 @@ const WalletAnalysisIndicator = () => {
           ) : (
             <>
               <Search className="mr-2 h-3 w-3" />
-              {isAnalysisValid ? 'Re-analyze' : 'Analyze'} Wallet
+              {isAnalysisValid ? 'Re-analyze' : 'Analyze'} Layout
             </>
           )}
         </Button>
@@ -101,7 +146,7 @@ const WalletAnalysisIndicator = () => {
       
       {isAnalysisValid && (
         <div className="text-xs text-white/50 bg-black/10 p-2 rounded">
-          💡 This analysis will enhance AI generation with detailed wallet context
+          🧠 Layout-aware AI will generate characters that respect your wallet's UI structure and interact naturally with interface elements
         </div>
       )}
     </div>
