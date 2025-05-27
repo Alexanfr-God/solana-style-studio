@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import MaskPromptInput from './MaskPromptInput';
 import MaskUploadImage from './MaskUploadImage';
 import GenerateMaskButton from './GenerateMaskButton';
+import CharacterButtons from './CharacterButtons';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, Info, Eye, EyeOff } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
@@ -83,6 +84,13 @@ const V3MaskEditor = () => {
               )}
               
               <div className="space-y-6">
+                {/* Новая секция с кнопками персонажей */}
+                <div>
+                  <CharacterButtons />
+                </div>
+                
+                <Separator orientation="horizontal" className="bg-white/10" />
+                
                 <div>
                   <h3 className="text-sm font-medium mb-4 text-white">Upload Reference Image (Optional)</h3>
                   <MaskUploadImage />
