@@ -61,34 +61,48 @@ const V3MaskPreviewCanvas = () => {
           }}
         >
           
-          {/* V4 Enhanced external mask layer with improved transparency CSS */}
+          {/* V4 Enhanced wallet UI container - positioned at exact coordinates UNDER the mask */}
+          <div 
+            className="absolute z-10"
+            style={{
+              width: `${WALLET_WIDTH * PREVIEW_SCALE}px`,
+              height: `${WALLET_HEIGHT * PREVIEW_SCALE}px`,
+              left: `${WALLET_X * PREVIEW_SCALE}px`,
+              top: `${WALLET_Y * PREVIEW_SCALE}px`,
+              backgroundColor: loginStyle.backgroundColor || '#131313',
+              backgroundImage: loginStyle.backgroundImage,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              color: loginStyle.textColor || '#FFFFFF',
+              fontFamily: loginStyle.fontFamily,
+              borderRadius: '16px',
+              boxShadow: loginStyle.boxShadow || '0px 4px 20px rgba(0, 0, 0, 0.5)',
+              overflow: 'hidden'
+            }}
+          >
+            <LoginScreen style={loginStyle} />
+          </div>
+          
+          {/* V4 Enhanced external mask layer - positioned OVER the wallet */}
           {externalMask && (
             <div 
-              className="absolute inset-0 pointer-events-none z-10"
+              className="absolute inset-0 pointer-events-none z-20"
               style={{
                 width: '100%',
                 height: '100%',
-                maskImage: `url('${MASK_CUTOUT_URL}')`,
-                WebkitMaskImage: `url('${MASK_CUTOUT_URL}')`,
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
                 background: 'transparent'
               }}
             >
               <img 
                 src={externalMask} 
-                alt="V4 Enhanced decorative mask with transparency" 
+                alt="V4 Enhanced decorative mask overlaying wallet" 
                 className="w-full h-full object-contain"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.15))',
                   background: 'transparent',
                   imageRendering: 'crisp-edges'
                 }}
-                onLoad={() => console.log('✅ V4 Enhanced external mask loaded with transparency:', externalMask)}
+                onLoad={() => console.log('✅ V4 Enhanced external mask loaded and positioned over wallet:', externalMask)}
                 onError={(e) => console.error('❌ V4 Enhanced external mask failed:', externalMask, e)}
               />
             </div>
@@ -97,7 +111,7 @@ const V3MaskPreviewCanvas = () => {
           {/* Legacy mask support with enhanced transparency */}
           {maskImageUrl && !externalMask && (
             <div 
-              className="absolute inset-0 pointer-events-none z-10"
+              className="absolute inset-0 pointer-events-none z-20"
               style={{
                 width: '100%',
                 height: '100%',
@@ -125,28 +139,6 @@ const V3MaskPreviewCanvas = () => {
               />
             </div>
           )}
-          
-          {/* V4 Enhanced wallet UI container - positioned at exact coordinates */}
-          <div 
-            className="absolute z-20"
-            style={{
-              width: `${WALLET_WIDTH * PREVIEW_SCALE}px`,
-              height: `${WALLET_HEIGHT * PREVIEW_SCALE}px`,
-              left: `${WALLET_X * PREVIEW_SCALE}px`,
-              top: `${WALLET_Y * PREVIEW_SCALE}px`,
-              backgroundColor: loginStyle.backgroundColor || '#131313',
-              backgroundImage: loginStyle.backgroundImage,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              color: loginStyle.textColor || '#FFFFFF',
-              fontFamily: loginStyle.fontFamily,
-              borderRadius: '16px',
-              boxShadow: loginStyle.boxShadow || '0px 4px 20px rgba(0, 0, 0, 0.5)',
-              overflow: 'hidden'
-            }}
-          >
-            <LoginScreen style={loginStyle} />
-          </div>
           
           {/* V4 Enhanced safe zone visualization */}
           {safeZoneVisible && (
@@ -180,7 +172,7 @@ const V3MaskPreviewCanvas = () => {
               <Badge 
                 className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(34,197,94,0.5)] border-white/20 animate-pulse"
               >
-                ✨ V4 ENHANCED TRANSPARENCY
+                ✨ ПОВЕРХ КОШЕЛЬКА
               </Badge>
             </div>
           )}
@@ -200,7 +192,7 @@ const V3MaskPreviewCanvas = () => {
               <Badge 
                 className="bg-emerald-500/80 text-white px-2 py-1 text-xs"
               >
-                🎯 No Background
+                🎯 DOGE АКТИВЕН
               </Badge>
             </div>
           )}
@@ -216,13 +208,13 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
 
-          {/* Enhanced background removal indicator */}
+          {/* Enhanced overlay indicator */}
           {externalMask && (
             <div className="absolute top-1/2 left-4 z-40">
               <Badge 
                 className="bg-blue-500/80 text-white px-2 py-1 text-xs"
               >
-                📐 Background Removed
+                📐 Overlay Mode
               </Badge>
             </div>
           )}
