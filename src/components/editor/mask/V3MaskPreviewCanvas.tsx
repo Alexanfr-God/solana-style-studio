@@ -17,8 +17,16 @@ const V3MaskPreviewCanvas = () => {
   // Updated V4 Enhanced mask cutout URL with proper coordinates
   const MASK_CUTOUT_URL = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-base/mask-wallet-cutout-v3.png';
 
+  // All character PNG files that should be displayed over the wallet
+  const characterPngs = [
+    '/lovable-uploads/c953a08b-6f7f-4cb4-bbf9-8872f02468ca.png', // DOGE
+    '/lovable-uploads/d4ec5dbf-9943-46d4-abcb-33fdbd4616c1.png', // PEPE
+    '/lovable-uploads/4fce14b3-1a45-4f0a-b599-4f439227e037.png', // TRUMP
+    '/lovable-uploads/78d15f07-7430-48a3-bfcd-159efeb38a9e.png'  // CAT
+  ];
+
   const previewImageUrl = externalMask || maskImageUrl || "/placeholder.svg";
-  const previewPrompt = "V4 Enhanced wallet mask with transparent background and character interaction";
+  const previewPrompt = "V4 Enhanced wallet mask with transparent background and multiple character overlays";
 
   // V4 Enhanced: Output coordinates (1024x1024 canvas)
   const OUTPUT_WIDTH = 1024;
@@ -41,10 +49,8 @@ const V3MaskPreviewCanvas = () => {
       walletDimensions: `${WALLET_WIDTH}x${WALLET_HEIGHT}`,
       walletPosition: `x=${WALLET_X}, y=${WALLET_Y}`,
       previewScale: PREVIEW_SCALE,
-      actualCanvasSize: `${OUTPUT_WIDTH * PREVIEW_SCALE}x${OUTPUT_HEIGHT * PREVIEW_SCALE}`,
-      actualWalletSize: `${WALLET_WIDTH * PREVIEW_SCALE}x${WALLET_HEIGHT * PREVIEW_SCALE}`,
-      maskCutoutUrl: MASK_CUTOUT_URL,
-      v4EnhancedTransparency: true
+      characterPngsCount: characterPngs.length,
+      v4EnhancedMultiCharacter: true
     });
   }, [externalMask, maskImageUrl, safeZoneVisible]);
 
@@ -61,10 +67,47 @@ const V3MaskPreviewCanvas = () => {
           }}
         >
           
-          {/* V4 Enhanced external mask layer with improved transparency CSS */}
-          {externalMask && (
+          {/* V4 Enhanced: Render all character PNGs over the wallet */}
+          {characterPngs.map((pngPath, index) => (
             <div 
+              key={`character-${index}`}
               className="absolute inset-0 pointer-events-none z-10"
+              style={{
+                width: '100%',
+                height: '100%',
+                maskImage: `url('${MASK_CUTOUT_URL}')`,
+                WebkitMaskImage: `url('${MASK_CUTOUT_URL}')`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                background: 'transparent',
+                opacity: 0.8 - (index * 0.15), // Gradually reduce opacity for layering effect
+                transform: `scale(${1 - (index * 0.05)}) rotate(${index * 5}deg)` // Slight scale and rotation for visual variety
+              }}
+            >
+              <img 
+                src={pngPath} 
+                alt={`V4 Enhanced character overlay ${index + 1}`} 
+                className="w-full h-full object-contain"
+                style={{
+                  filter: `drop-shadow(0 0 20px rgba(255, 255, 255, ${0.2 - (index * 0.03)})) hue-rotate(${index * 30}deg)`,
+                  background: 'transparent',
+                  imageRendering: 'crisp-edges',
+                  mixBlendMode: index % 2 === 0 ? 'multiply' : 'screen'
+                }}
+                onLoad={() => console.log(`✅ V4 Enhanced character PNG ${index + 1} loaded:`, pngPath)}
+                onError={(e) => console.error(`❌ V4 Enhanced character PNG ${index + 1} failed:`, pngPath, e)}
+              />
+            </div>
+          ))}
+          
+          {/* Legacy external mask support (if needed) */}
+          {externalMask && !characterPngs.includes(externalMask) && (
+            <div 
+              className="absolute inset-0 pointer-events-none z-15"
               style={{
                 width: '100%',
                 height: '100%',
@@ -81,14 +124,14 @@ const V3MaskPreviewCanvas = () => {
             >
               <img 
                 src={externalMask} 
-                alt="V4 Enhanced decorative mask with transparency" 
+                alt="V4 Enhanced external decorative mask" 
                 className="w-full h-full object-contain"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.15))',
                   background: 'transparent',
                   imageRendering: 'crisp-edges'
                 }}
-                onLoad={() => console.log('✅ V4 Enhanced external mask loaded with transparency:', externalMask)}
+                onLoad={() => console.log('✅ V4 Enhanced external mask loaded:', externalMask)}
                 onError={(e) => console.error('❌ V4 Enhanced external mask failed:', externalMask, e)}
               />
             </div>
@@ -166,7 +209,7 @@ const V3MaskPreviewCanvas = () => {
                 ✅ Safe Zone ({WALLET_WIDTH}×{WALLET_HEIGHT}px)
               </div>
               <div className="absolute top-2 left-2 bg-green-500/70 px-2 py-1 rounded text-xs text-green-200">
-                V4 Enhanced
+                V4 Multi-Character
               </div>
               <div className="absolute bottom-2 right-2 bg-green-500/70 px-2 py-1 rounded text-xs text-green-200">
                 x={WALLET_X}, y={WALLET_Y}
@@ -174,13 +217,13 @@ const V3MaskPreviewCanvas = () => {
             </div>
           )}
           
-          {/* V4 Enhanced success badge */}
-          {externalMask && !safeZoneVisible && (
+          {/* V4 Enhanced multi-character success badge */}
+          {!safeZoneVisible && (
             <div className="absolute top-4 right-4 z-40">
               <Badge 
                 className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(34,197,94,0.5)] border-white/20 animate-pulse"
               >
-                ✨ V4 ENHANCED TRANSPARENCY
+                ✨ MULTI-CHARACTER OVERLAY
               </Badge>
             </div>
           )}
@@ -190,49 +233,43 @@ const V3MaskPreviewCanvas = () => {
             <Badge 
               className="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-3 py-1 text-sm font-bold shadow-[0_0_15px_rgba(153,69,255,0.5)] border-white/20"
             >
-              V4 ENHANCED
+              V4 MULTI-LAYER
             </Badge>
           </div>
 
-          {/* V4 Enhanced transparency indicator */}
-          {externalMask && (
-            <div className="absolute bottom-4 left-4 z-40">
-              <Badge 
-                className="bg-emerald-500/80 text-white px-2 py-1 text-xs"
-              >
-                🎯 No Background
-              </Badge>
-            </div>
-          )}
+          {/* V4 Enhanced character count indicator */}
+          <div className="absolute bottom-4 left-4 z-40">
+            <Badge 
+              className="bg-emerald-500/80 text-white px-2 py-1 text-xs"
+            >
+              🎭 {characterPngs.length} Characters
+            </Badge>
+          </div>
 
           {/* V4 Enhanced coordinate display */}
-          {externalMask && (
-            <div className="absolute bottom-4 right-4 z-40">
-              <Badge 
-                className="bg-yellow-500/80 text-black px-2 py-1 text-xs font-mono"
-              >
-                Enhanced: {WALLET_X},{WALLET_Y}
-              </Badge>
-            </div>
-          )}
+          <div className="absolute bottom-4 right-4 z-40">
+            <Badge 
+              className="bg-yellow-500/80 text-black px-2 py-1 text-xs font-mono"
+            >
+              Multi: {WALLET_X},{WALLET_Y}
+            </Badge>
+          </div>
 
-          {/* Enhanced background removal indicator */}
-          {externalMask && (
-            <div className="absolute top-1/2 left-4 z-40">
-              <Badge 
-                className="bg-blue-500/80 text-white px-2 py-1 text-xs"
-              >
-                📐 Background Removed
-              </Badge>
-            </div>
-          )}
+          {/* Enhanced layering indicator */}
+          <div className="absolute top-1/2 left-4 z-40">
+            <Badge 
+              className="bg-blue-500/80 text-white px-2 py-1 text-xs"
+            >
+              📐 Layered Blend
+            </Badge>
+          </div>
 
           {/* Enhanced quality scale indicator */}
           <div className="absolute top-1/2 right-4 z-40">
             <Badge 
               className="bg-orange-500/80 text-white px-2 py-1 text-xs font-mono"
             >
-              Quality: HD (Enhanced)
+              Quality: Multi-HD
             </Badge>
           </div>
         </div>
