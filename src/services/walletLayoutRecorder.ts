@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -25,11 +24,19 @@ export interface WalletElement {
   };
 }
 
+export interface WalletLayoutLayer {
+  id?: string;
+  layer_name: string;
+  layer_order: number;
+  elements: WalletElement[];
+}
+
 export interface WalletLayout {
   screen: 'login' | 'wallet' | 'dashboard';
   walletType: 'phantom' | 'metamask' | 'solflare';
   dimensions: { width: number; height: number };
   elements: WalletElement[];
+  layers?: WalletLayoutLayer[];
   safeZone?: { x: number; y: number; width: number; height: number };
   metadata?: {
     recorded_at: string;
@@ -39,6 +46,65 @@ export interface WalletLayout {
 }
 
 export class WalletLayoutRecorder {
+  // Layer classification logic
+  static classifyElementIntoLayer(element: WalletElement): { layerName: string; order: number } {
+    const { type, name, position } = element;
+    
+    // Header elements (top 20% of screen)
+    if (position.y < 120) {
+      return { layerName: 'Header', order: 1 };
+    }
+    
+    // Main content area
+    if (type === 'logo' || name.includes('logo')) {
+      return { layerName: 'Branding', order: 2 };
+    }
+    
+    if (type === 'text' && (name.includes('title') || name.includes('heading'))) {
+      return { layerName: 'Content Text', order: 3 };
+    }
+    
+    if (type === 'input') {
+      return { layerName: 'Input Fields', order: 4 };
+    }
+    
+    if (type === 'button') {
+      return { layerName: 'Action Buttons', order: 5 };
+    }
+    
+    if (type === 'link') {
+      return { layerName: 'Navigation Links', order: 6 };
+    }
+    
+    if (type === 'icon') {
+      return { layerName: 'Icons', order: 7 };
+    }
+    
+    // Default container layer
+    return { layerName: 'Background', order: 0 };
+  }
+
+  static segmentElementsIntoLayers(elements: WalletElement[]): WalletLayoutLayer[] {
+    const layerMap = new Map<string, WalletLayoutLayer>();
+    
+    elements.forEach(element => {
+      const { layerName, order } = this.classifyElementIntoLayer(element);
+      
+      if (!layerMap.has(layerName)) {
+        layerMap.set(layerName, {
+          layer_name: layerName,
+          layer_order: order,
+          elements: []
+        });
+      }
+      
+      layerMap.get(layerName)!.elements.push(element);
+    });
+    
+    // Sort layers by order
+    return Array.from(layerMap.values()).sort((a, b) => a.layer_order - b.layer_order);
+  }
+
   static async recordCurrentLayout(walletId: string, screen: string, walletType: string = 'phantom'): Promise<WalletLayout> {
     console.log('🎯 Starting wallet layout recording...');
     
@@ -172,10 +238,13 @@ export class WalletLayoutRecorder {
       metadata: {
         recorded_at: new Date().toISOString(),
         version: '1.0.0',
-        notes: 'Initial Phantom login screen recording'
+        notes: 'Initial Phantom login screen recording with layer support'
       }
     };
 
+    // Segment elements into layers
+    phantomLoginLayout.layers = this.segmentElementsIntoLayers(phantomLoginLayout.elements);
+    
     return phantomLoginLayout;
   }
 
@@ -183,25 +252,49 @@ export class WalletLayoutRecorder {
     try {
       console.log('💾 Saving layout to database...');
       
-      const { data, error } = await supabase
+      // Save the main layout
+      const { data: layoutData, error: layoutError } = await supabase
         .from('wallet_layouts')
         .insert({
           wallet_id: walletId,
           screen: layout.screen,
           wallet_type: layout.walletType,
-          layout_data: layout as any, // Cast to any to satisfy Json type
-          dimensions: layout.dimensions as any // Cast to any to satisfy Json type
+          layout_data: layout as any,
+          dimensions: layout.dimensions as any
         })
         .select('id')
         .single();
 
-      if (error) {
-        console.error('❌ Database save error:', error);
+      if (layoutError) {
+        console.error('❌ Database save error:', layoutError);
         return null;
       }
 
-      console.log('✅ Layout saved successfully:', data.id);
-      return data.id;
+      const layoutId = layoutData.id;
+      
+      // Save the layers if they exist
+      if (layout.layers && layout.layers.length > 0) {
+        const layerInserts = layout.layers.map(layer => ({
+          wallet_layout_id: layoutId,
+          layer_name: layer.layer_name,
+          layer_order: layer.layer_order,
+          elements: layer.elements as any
+        }));
+
+        const { error: layersError } = await supabase
+          .from('wallet_layout_layers')
+          .insert(layerInserts);
+
+        if (layersError) {
+          console.error('❌ Layers save error:', layersError);
+          // Continue anyway - main layout was saved
+        } else {
+          console.log('✅ Layers saved successfully');
+        }
+      }
+
+      console.log('✅ Layout saved successfully:', layoutId);
+      return layoutId;
     } catch (error) {
       console.error('💥 Save layout error:', error);
       return null;
@@ -210,7 +303,8 @@ export class WalletLayoutRecorder {
 
   static async getLayoutFromDatabase(walletId: string, screen: string): Promise<WalletLayout | null> {
     try {
-      const { data, error } = await supabase
+      // Get the main layout
+      const { data: layoutData, error: layoutError } = await supabase
         .from('wallet_layouts')
         .select('*')
         .eq('wallet_id', walletId)
@@ -219,19 +313,87 @@ export class WalletLayoutRecorder {
         .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error('❌ Database fetch error:', error);
+      if (layoutError) {
+        console.error('❌ Database fetch error:', layoutError);
         return null;
       }
 
-      if (!data) {
+      if (!layoutData) {
         return null;
       }
 
-      // Properly cast the layout_data with type assertion
-      return data.layout_data as unknown as WalletLayout;
+      const layout = layoutData.layout_data as unknown as WalletLayout;
+
+      // Get the layers
+      const { data: layersData, error: layersError } = await supabase
+        .from('wallet_layout_layers')
+        .select('*')
+        .eq('wallet_layout_id', layoutData.id)
+        .order('layer_order', { ascending: true });
+
+      if (!layersError && layersData) {
+        layout.layers = layersData.map(layer => ({
+          id: layer.id,
+          layer_name: layer.layer_name,
+          layer_order: layer.layer_order,
+          elements: layer.elements as WalletElement[]
+        }));
+      }
+
+      return layout;
     } catch (error) {
       console.error('💥 Fetch layout error:', error);
+      return null;
+    }
+  }
+
+  static async exportLayerToJSON(layoutId: string, layerName: string): Promise<WalletLayoutLayer | null> {
+    try {
+      const { data, error } = await supabase
+        .from('wallet_layout_layers')
+        .select('*')
+        .eq('wallet_layout_id', layoutId)
+        .eq('layer_name', layerName)
+        .single();
+
+      if (error || !data) {
+        console.error('❌ Layer export error:', error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        layer_name: data.layer_name,
+        layer_order: data.layer_order,
+        elements: data.elements as WalletElement[]
+      };
+    } catch (error) {
+      console.error('💥 Export layer error:', error);
+      return null;
+    }
+  }
+
+  static async exportAllLayersToJSON(layoutId: string): Promise<WalletLayoutLayer[] | null> {
+    try {
+      const { data, error } = await supabase
+        .from('wallet_layout_layers')
+        .select('*')
+        .eq('wallet_layout_id', layoutId)
+        .order('layer_order', { ascending: true });
+
+      if (error) {
+        console.error('❌ All layers export error:', error);
+        return null;
+      }
+
+      return data.map(layer => ({
+        id: layer.id,
+        layer_name: layer.layer_name,
+        layer_order: layer.layer_order,
+        elements: layer.elements as WalletElement[]
+      }));
+    } catch (error) {
+      console.error('💥 Export all layers error:', error);
       return null;
     }
   }

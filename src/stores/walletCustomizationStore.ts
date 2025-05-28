@@ -1,6 +1,5 @@
-
 import { create } from 'zustand';
-import { WalletLayout } from '@/services/walletLayoutRecorder';
+import { WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
 
 export interface WalletStyle {
   backgroundColor: string;
@@ -25,6 +24,7 @@ interface WalletCustomizationState {
   selectedWallet: 'phantom' | 'metamask' | 'solflare';
   isCustomizing: boolean;
   recordedLayout: WalletLayout | null;
+  recordedLayers: WalletLayoutLayer[] | null;
   aiPet: AiPetState;
   
   setWalletStyle: (style: Partial<WalletStyle>) => void;
@@ -32,6 +32,7 @@ interface WalletCustomizationState {
   setSelectedWallet: (wallet: 'phantom' | 'metamask' | 'solflare') => void;
   setIsCustomizing: (isCustomizing: boolean) => void;
   setRecordedLayout: (layout: WalletLayout | null) => void;
+  setRecordedLayers: (layers: WalletLayoutLayer[] | null) => void;
   setAiPetEmotion: (emotion: AiPetEmotion) => void;
   setAiPetZone: (zone: AiPetZone) => void;
   setAiPetPosition: (position: { x: number; y: number }) => void;
@@ -60,6 +61,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   selectedWallet: 'phantom',
   isCustomizing: false,
   recordedLayout: null,
+  recordedLayers: null,
   aiPet: { ...defaultAiPetState },
   
   setWalletStyle: (style) => set((state) => ({
@@ -72,7 +74,12 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   
   setIsCustomizing: (isCustomizing) => set({ isCustomizing }),
   
-  setRecordedLayout: (layout) => set({ recordedLayout: layout }),
+  setRecordedLayout: (layout) => set({ 
+    recordedLayout: layout,
+    recordedLayers: layout?.layers || null
+  }),
+
+  setRecordedLayers: (layers) => set({ recordedLayers: layers }),
 
   setAiPetEmotion: (emotion) => set((state) => ({
     aiPet: { ...state.aiPet, emotion }
@@ -101,20 +108,18 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
       isCustomizing: true,
       aiPet: {
         ...state.aiPet,
-        emotion: 'excited' // Pet gets excited when customizing!
+        emotion: 'excited'
       }
     }));
     
-    // Reset customizing state and pet emotion after animation
     setTimeout(() => set((state) => ({ 
       isCustomizing: false,
       aiPet: {
         ...state.aiPet,
-        emotion: 'happy' // Happy after successful customization
+        emotion: 'happy'
       }
     })), 1000);
 
-    // Return to idle after a while
     setTimeout(() => set((state) => ({
       aiPet: {
         ...state.aiPet,
@@ -128,6 +133,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     uploadedImage: null,
     isCustomizing: false,
     recordedLayout: null,
+    recordedLayers: null,
     aiPet: { ...defaultAiPetState }
   })
 }));

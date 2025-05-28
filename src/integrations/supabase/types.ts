@@ -162,6 +162,44 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_layout_layers: {
+        Row: {
+          created_at: string
+          elements: Json
+          id: string
+          layer_name: string
+          layer_order: number
+          updated_at: string
+          wallet_layout_id: string
+        }
+        Insert: {
+          created_at?: string
+          elements?: Json
+          id?: string
+          layer_name: string
+          layer_order?: number
+          updated_at?: string
+          wallet_layout_id: string
+        }
+        Update: {
+          created_at?: string
+          elements?: Json
+          id?: string
+          layer_name?: string
+          layer_order?: number
+          updated_at?: string
+          wallet_layout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_layout_layers_wallet_layout_id_fkey"
+            columns: ["wallet_layout_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_layouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallet_layouts: {
         Row: {
           created_at: string
