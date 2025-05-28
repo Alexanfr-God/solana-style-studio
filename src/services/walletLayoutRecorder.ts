@@ -224,7 +224,12 @@ export class WalletLayoutRecorder {
         return null;
       }
 
-      return data?.layout_data as WalletLayout || null;
+      if (!data) {
+        return null;
+      }
+
+      // Properly cast the layout_data with type assertion
+      return data.layout_data as unknown as WalletLayout;
     } catch (error) {
       console.error('💥 Fetch layout error:', error);
       return null;
