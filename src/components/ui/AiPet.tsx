@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import LiquidBody from './LiquidBody';
-import Eyes from './Eyes';
-import Mouth from './Mouth';
+import PhantomBody from './PhantomBody';
+import PhantomEyes from './PhantomEyes';
+import PhantomMouth from './PhantomMouth';
 
 export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
@@ -66,7 +66,7 @@ const AiPet: React.FC<AiPetProps> = ({
   useEffect(() => {
     if (zone === 'outside' && containerBounds) {
       const floatAnimation = async () => {
-        const boundary = 30; // pixels beyond container
+        const boundary = 30;
         const centerX = containerBounds.width / 2;
         const centerY = containerBounds.height / 2;
         const radius = Math.min(containerBounds.width, containerBounds.height) / 2 + boundary;
@@ -101,7 +101,7 @@ const AiPet: React.FC<AiPetProps> = ({
   const getRotation = () => {
     if (!isHovered || zone === 'outside') return 0;
     const angle = Math.atan2(mousePosition.y, mousePosition.x) * (180 / Math.PI);
-    return Math.max(-15, Math.min(15, angle / 6));
+    return Math.max(-10, Math.min(10, angle / 8));
   };
 
   // Click reaction animation
@@ -109,7 +109,7 @@ const AiPet: React.FC<AiPetProps> = ({
     setIsAnimating(true);
     onClick?.();
     await controls.start({
-      scale: 1.2,
+      scale: 1.15,
       transition: { duration: 0.1 }
     });
     await controls.start({
@@ -187,8 +187,8 @@ const AiPet: React.FC<AiPetProps> = ({
       dragMomentum={false}
       whileHover={{ scale: 1.05 }}
     >
-      {/* Liquid Body */}
-      <LiquidBody 
+      {/* Phantom Body */}
+      <PhantomBody 
         color={color}
         size={size}
         emotion={emotion}
@@ -196,21 +196,22 @@ const AiPet: React.FC<AiPetProps> = ({
         isAnimating={isAnimating}
       />
       
-      {/* Eyes */}
-      <Eyes emotion={emotion} size={size} />
+      {/* Phantom Eyes */}
+      <PhantomEyes emotion={emotion} size={size} />
       
-      {/* Mouth */}
-      <Mouth emotion={emotion} size={size} />
+      {/* Phantom Mouth */}
+      <PhantomMouth emotion={emotion} size={size} />
       
       {/* Zone indicator */}
       {zone === 'outside' && (
         <motion.div
-          className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"
+          className="absolute -top-1 -right-1 w-3 h-3 bg-purple-400 rounded-full"
           animate={{
             scale: [1, 1.2, 1],
+            opacity: [0.8, 1, 0.8],
           }}
           transition={{
-            duration: 1,
+            duration: 1.5,
             repeat: Infinity,
           }}
         />
