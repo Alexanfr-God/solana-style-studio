@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,7 +103,7 @@ const WalletPreviewContainer = () => {
           <div 
             ref={walletContainerRef}
             className={`
-              relative rounded-2xl border border-white transition-all duration-1000
+              relative rounded-2xl transition-all duration-1000
               ${isCustomizing ? 'scale-105 animate-pulse' : 'scale-100'}
             `}
             style={{ 
@@ -114,7 +113,8 @@ const WalletPreviewContainer = () => {
               backgroundImage: walletStyle.image ? `url(${walletStyle.image})` : undefined,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundBlendMode: 'overlay'
+              backgroundBlendMode: 'overlay',
+              border: '1px solid white'
             }}
           >
             {/* Top Bar (Header) */}
@@ -234,17 +234,6 @@ const WalletPreviewContainer = () => {
                   </div>
                 </div>
               </div>
-
-              {/* White line at bottom */}
-              <div 
-                className="absolute left-6 right-6"
-                style={{ 
-                  bottom: '85px',
-                  height: '1px',
-                  backgroundColor: 'white',
-                  opacity: 0.2
-                }}
-              />
               
               {/* Unlock Button - Positioned at bottom */}
               <div 
