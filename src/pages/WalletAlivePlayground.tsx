@@ -1,32 +1,66 @@
 
 import React from 'react';
+import ImageUploadSection from '@/components/customization/ImageUploadSection';
+import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
+import CustomizeWalletButton from '@/components/customization/CustomizeWalletButton';
+import { Button } from '@/components/ui/button';
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { RotateCcw } from 'lucide-react';
 
 const WalletAlivePlayground = () => {
+  const { resetWallet } = useWalletCustomizationStore();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-white mb-2">
-            Wallet Alive Playground
+            Wallet UI Customization Studio
           </h1>
-          <p className="text-gray-400">
-            Experimental development space for animated wallet interfaces
+          <p className="text-gray-400 text-lg">
+            AI-powered wallet interface customization (Demo Foundation)
           </p>
+          <div className="mt-2 inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm px-3 py-1 rounded-full">
+            🧱 Foundation Build
+          </div>
         </div>
 
-        {/* Main Content Area - Empty for now */}
-        <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 p-8 min-h-[600px]">
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="text-6xl mb-4">🚀</div>
-              <h2 className="text-2xl font-semibold text-white mb-2">
-                Ready for Development
-              </h2>
-              <p className="text-gray-400">
-                Clean slate for building animated wallet components
-              </p>
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Controls */}
+          <div className="space-y-6">
+            <ImageUploadSection />
+            
+            {/* Action Buttons */}
+            <div className="space-y-4">
+              <CustomizeWalletButton />
+              
+              <Button 
+                variant="outline" 
+                onClick={resetWallet}
+                className="w-full border-white/20 text-white/80 hover:text-white"
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Reset to Default
+              </Button>
             </div>
+            
+            {/* Development Notes */}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <h4 className="text-blue-300 font-medium mb-2">🚀 Next Steps</h4>
+              <ul className="text-blue-200 text-sm space-y-1">
+                <li>• Connect AI style analysis</li>
+                <li>• Add MetaMask & Solflare previews</li>
+                <li>• Implement per-layer customization</li>
+                <li>• Add NFT minting capability</li>
+              </ul>
+            </div>
+          </div>
+          
+          {/* Right Column - Wallet Preview */}
+          <div>
+            <WalletPreviewContainer />
           </div>
         </div>
       </div>
