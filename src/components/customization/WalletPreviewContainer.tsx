@@ -150,9 +150,9 @@ const WalletPreviewContainer = () => {
               }}
             />
             
-            {/* Main Section */}
+            {/* Main Section - Updated layout for repositioned button */}
             <div 
-              className="flex-1 flex flex-col items-center justify-center p-6 relative"
+              className="relative p-6"
               style={{ 
                 backgroundColor: '#181818',
                 height: '541px',
@@ -160,14 +160,14 @@ const WalletPreviewContainer = () => {
                 borderBottomRightRadius: '1rem'
               }}
             >
-              {/* AiPet - Only render when in inside zone */}
+              {/* AiPet - Centered in available space above button */}
               {aiPet.isVisible && aiPet.zone === 'inside' && (
-                <div className="mb-8 relative">
+                <div className="flex justify-center mt-8 mb-8">
                   <AiPet
                     emotion={aiPet.emotion}
                     zone={aiPet.zone}
                     color={walletStyle.primaryColor || '#9945FF'}
-                    size={64}
+                    size={96}
                     onZoneChange={setAiPetZone}
                     onEmotionChange={setAiPetEmotion}
                     onHover={onAiPetHover}
@@ -178,61 +178,79 @@ const WalletPreviewContainer = () => {
                 </div>
               )}
               
-              {/* Login Form */}
-              <div className="w-full max-w-xs space-y-6">
-                {/* Password Title */}
-                <h2 
-                  className="text-center font-medium text-white"
-                  style={{ 
-                    fontFamily: walletStyle.font || 'Inter',
-                    fontSize: '20px'
-                  }}
-                >
-                  Enter your password
-                </h2>
-                
-                {/* Password Input */}
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      triggerAiPetInteraction();
-                    }}
-                    placeholder="Password"
-                    className="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 border-none outline-none"
+              {/* Login Form - Centered */}
+              <div className="flex justify-center">
+                <div className="w-full max-w-xs space-y-6">
+                  {/* Password Title */}
+                  <h2 
+                    className="text-center font-medium text-white"
                     style={{ 
-                      backgroundColor: '#0f0f0f',
-                      fontFamily: walletStyle.font || 'Inter'
+                      fontFamily: walletStyle.font || 'Inter',
+                      fontSize: '20px'
                     }}
-                  />
-                  {password && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowPassword(!showPassword);
+                  >
+                    Enter your password
+                  </h2>
+                  
+                  {/* Password Input */}
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
                         triggerAiPetInteraction();
                       }}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      placeholder="Password"
+                      className="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 border-none outline-none"
+                      style={{ 
+                        backgroundColor: '#0f0f0f',
+                        fontFamily: walletStyle.font || 'Inter'
+                      }}
+                    />
+                    {password && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPassword(!showPassword);
+                          triggerAiPetInteraction();
+                        }}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Forgot Password Link */}
+                  <div className="text-center">
+                    <button 
+                      className="text-gray-400 hover:text-gray-300 text-sm"
+                      style={{ fontFamily: walletStyle.font || 'Inter' }}
+                      onClick={triggerAiPetInteraction}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      Forgot password?
                     </button>
-                  )}
+                  </div>
                 </div>
-                
-                {/* Forgot Password Link */}
-                <div className="text-center">
-                  <button 
-                    className="text-gray-400 hover:text-gray-300 text-sm"
-                    style={{ fontFamily: walletStyle.font || 'Inter' }}
-                    onClick={triggerAiPetInteraction}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-                
-                {/* Unlock Button */}
+              </div>
+
+              {/* White line at bottom */}
+              <div 
+                className="absolute left-6 right-6"
+                style={{ 
+                  bottom: '85px',
+                  height: '1px',
+                  backgroundColor: 'white',
+                  opacity: 0.2
+                }}
+              />
+              
+              {/* Unlock Button - Positioned at bottom */}
+              <div 
+                className="absolute left-6 right-6"
+                style={{ bottom: '25px' }}
+              >
                 <button 
                   className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
                   style={{ 
@@ -256,7 +274,7 @@ const WalletPreviewContainer = () => {
           </div>
         </div>
 
-        {/* AiPet in outside zone - Render outside wallet container */}
+        {/* AiPet in outside zone - Render outside wallet container with increased size */}
         {aiPet.isVisible && aiPet.zone === 'outside' && containerBounds && (
           <div className="absolute inset-0 pointer-events-none">
             <div className="relative w-full h-full pointer-events-auto">
@@ -264,7 +282,7 @@ const WalletPreviewContainer = () => {
                 emotion={aiPet.emotion}
                 zone={aiPet.zone}
                 color={walletStyle.primaryColor || '#9945FF'}
-                size={80}
+                size={120}
                 onZoneChange={setAiPetZone}
                 onEmotionChange={setAiPetEmotion}
                 onHover={onAiPetHover}
