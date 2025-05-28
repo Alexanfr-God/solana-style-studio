@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -15,11 +15,43 @@ const WalletPreviewContainer = () => {
     isCustomizing,
     aiPet,
     setAiPetEmotion,
-    setAiPetZone
+    setAiPetZone,
+    setContainerBounds,
+    containerBounds,
+    triggerAiPetInteraction,
+    updateAiPetEnergy
   } = useWalletCustomizationStore();
   
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
+  const walletContainerRef = useRef<HTMLDivElement>(null);
+
+  // Set container bounds for AiPet floating behavior
+  useEffect(() => {
+    if (walletContainerRef.current) {
+      const bounds = walletContainerRef.current.getBoundingClientRect();
+      setContainerBounds(bounds);
+    }
+
+    const handleResize = () => {
+      if (walletContainerRef.current) {
+        const bounds = walletContainerRef.current.getBoundingClientRect();
+        setContainerBounds(bounds);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [setContainerBounds]);
+
+  // Update AiPet energy periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      updateAiPetEnergy();
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [updateAiPetEnergy]);
 
   return (
     <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
@@ -66,6 +98,7 @@ const WalletPreviewContainer = () => {
         {/* Centered wallet container */}
         <div className="flex-1 flex items-center justify-center overflow-auto relative">
           <div 
+            ref={walletContainerRef}
             className={`
               relative rounded-2xl border border-white transition-all duration-1000
               ${isCustomizing ? 'scale-105 animate-pulse' : 'scale-100'}
@@ -123,9 +156,9 @@ const WalletPreviewContainer = () => {
                 borderBottomRightRadius: '1rem'
               }}
             >
-              {/* AiPet replaces the static logo */}
-              <div className="mb-8 relative">
-                {aiPet.isVisible && (
+              {/* AiPet - Only render when in inside zone */}
+              {aiPet.isVisible && aiPet.zone === 'inside' && (
+                <div className="mb-8 relative">
                   <AiPet
                     emotion={aiPet.emotion}
                     zone={aiPet.zone}
@@ -133,14 +166,10 @@ const WalletPreviewContainer = () => {
                     size={64}
                     onZoneChange={setAiPetZone}
                     onEmotionChange={setAiPetEmotion}
+                    containerBounds={containerBounds}
                   />
-                )}
-                
-                {/* Zone boundary indicator for outside mode */}
-                {aiPet.zone === 'outside' && (
-                  <div className="absolute -inset-4 border-2 border-dashed border-yellow-400/30 rounded-full animate-pulse" />
-                )}
-              </div>
+                </div>
+              )}
               
               {/* Login Form */}
               <div className="w-full max-w-xs space-y-6">
@@ -160,7 +189,10 @@ const WalletPreviewContainer = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      triggerAiPetInteraction();
+                    }}
                     placeholder="Password"
                     className="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 border-none outline-none"
                     style={{ 
@@ -171,7 +203,10 @@ const WalletPreviewContainer = () => {
                   {password && (
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() => {
+                        setShowPassword(!showPassword);
+                        triggerAiPetInteraction();
+                      }}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -184,6 +219,7 @@ const WalletPreviewContainer = () => {
                   <button 
                     className="text-gray-400 hover:text-gray-300 text-sm"
                     style={{ fontFamily: walletStyle.font || 'Inter' }}
+                    onClick={triggerAiPetInteraction}
                   >
                     Forgot password?
                   </button>
@@ -197,6 +233,7 @@ const WalletPreviewContainer = () => {
                     fontFamily: walletStyle.font || 'Inter',
                     borderRadius: '12px'
                   }}
+                  onClick={triggerAiPetInteraction}
                 >
                   Unlock
                 </button>
@@ -210,30 +247,34 @@ const WalletPreviewContainer = () => {
               </div>
             )}
           </div>
-
-          {/* AiPet can overflow outside wallet when in "outside" zone */}
-          {aiPet.zone === 'outside' && aiPet.isVisible && (
-            <div className="absolute pointer-events-none">
-              <div className="relative">
-                <AiPet
-                  emotion={aiPet.emotion}
-                  zone={aiPet.zone}
-                  color={walletStyle.primaryColor || '#9945FF'}
-                  size={80}
-                  onZoneChange={setAiPetZone}
-                  onEmotionChange={setAiPetEmotion}
-                />
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* AiPet in outside zone - Render outside wallet container */}
+        {aiPet.isVisible && aiPet.zone === 'outside' && containerBounds && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="relative w-full h-full pointer-events-auto">
+              <AiPet
+                emotion={aiPet.emotion}
+                zone={aiPet.zone}
+                color={walletStyle.primaryColor || '#9945FF'}
+                size={80}
+                onZoneChange={setAiPetZone}
+                onEmotionChange={setAiPetEmotion}
+                containerBounds={containerBounds}
+              />
+            </div>
+          </div>
+        )}
         
         <div className="mt-4 text-center">
           <p className="text-white/60 text-sm">
             Upload an image and click "Customize Wallet" to see the magic! ✨
           </p>
           <p className="text-purple-400/80 text-xs mt-1">
-            Double-click the AiPet to switch zones • Watch it react to your mouse!
+            Double-click the AiPet to switch zones • Watch it react and follow your mouse!
+          </p>
+          <p className="text-blue-400/80 text-xs mt-1">
+            Energy: {aiPet.energy}% • Last interaction: {Math.floor((Date.now() - aiPet.lastInteraction) / 1000)}s ago
           </p>
         </div>
       </CardContent>

@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
 
@@ -16,6 +17,16 @@ interface AiPetState {
   zone: AiPetZone;
   isVisible: boolean;
   position: { x: number; y: number };
+  isDragging: boolean;
+  lastInteraction: number;
+  energy: number; // 0-100, affects behavior
+}
+
+interface AiPetBehavior {
+  followMouse: boolean;
+  autonomousMovement: boolean;
+  reactToClicks: boolean;
+  emotionTransitions: boolean;
 }
 
 interface WalletCustomizationState {
@@ -26,6 +37,8 @@ interface WalletCustomizationState {
   recordedLayout: WalletLayout | null;
   recordedLayers: WalletLayoutLayer[] | null;
   aiPet: AiPetState;
+  aiPetBehavior: AiPetBehavior;
+  containerBounds: DOMRect | null;
   
   setWalletStyle: (style: Partial<WalletStyle>) => void;
   setUploadedImage: (image: string | null) => void;
@@ -37,6 +50,12 @@ interface WalletCustomizationState {
   setAiPetZone: (zone: AiPetZone) => void;
   setAiPetPosition: (position: { x: number; y: number }) => void;
   setAiPetVisibility: (visible: boolean) => void;
+  setAiPetDragging: (dragging: boolean) => void;
+  setAiPetEnergy: (energy: number) => void;
+  setAiPetBehavior: (behavior: Partial<AiPetBehavior>) => void;
+  setContainerBounds: (bounds: DOMRect | null) => void;
+  triggerAiPetInteraction: () => void;
+  updateAiPetEnergy: () => void;
   customizeWallet: () => void;
   resetWallet: () => void;
 }
@@ -52,7 +71,17 @@ const defaultAiPetState: AiPetState = {
   emotion: 'idle',
   zone: 'inside',
   isVisible: true,
-  position: { x: 0, y: 0 }
+  position: { x: 0, y: 0 },
+  isDragging: false,
+  lastInteraction: Date.now(),
+  energy: 80
+};
+
+const defaultAiPetBehavior: AiPetBehavior = {
+  followMouse: true,
+  autonomousMovement: true,
+  reactToClicks: true,
+  emotionTransitions: true
 };
 
 export const useWalletCustomizationStore = create<WalletCustomizationState>((set, get) => ({
@@ -63,6 +92,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   recordedLayout: null,
   recordedLayers: null,
   aiPet: { ...defaultAiPetState },
+  aiPetBehavior: { ...defaultAiPetBehavior },
+  containerBounds: null,
   
   setWalletStyle: (style) => set((state) => ({
     walletStyle: { ...state.walletStyle, ...style }
@@ -82,11 +113,11 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setRecordedLayers: (layers) => set({ recordedLayers: layers }),
 
   setAiPetEmotion: (emotion) => set((state) => ({
-    aiPet: { ...state.aiPet, emotion }
+    aiPet: { ...state.aiPet, emotion, lastInteraction: Date.now() }
   })),
 
   setAiPetZone: (zone) => set((state) => ({
-    aiPet: { ...state.aiPet, zone }
+    aiPet: { ...state.aiPet, zone, lastInteraction: Date.now() }
   })),
 
   setAiPetPosition: (position) => set((state) => ({
@@ -96,6 +127,45 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setAiPetVisibility: (visible) => set((state) => ({
     aiPet: { ...state.aiPet, isVisible: visible }
   })),
+
+  setAiPetDragging: (dragging) => set((state) => ({
+    aiPet: { ...state.aiPet, isDragging: dragging }
+  })),
+
+  setAiPetEnergy: (energy) => set((state) => ({
+    aiPet: { ...state.aiPet, energy: Math.max(0, Math.min(100, energy)) }
+  })),
+
+  setAiPetBehavior: (behavior) => set((state) => ({
+    aiPetBehavior: { ...state.aiPetBehavior, ...behavior }
+  })),
+
+  setContainerBounds: (bounds) => set({ containerBounds: bounds }),
+
+  triggerAiPetInteraction: () => set((state) => ({
+    aiPet: { 
+      ...state.aiPet, 
+      lastInteraction: Date.now(),
+      energy: Math.min(100, state.aiPet.energy + 10)
+    }
+  })),
+
+  updateAiPetEnergy: () => set((state) => {
+    const timeSinceInteraction = Date.now() - state.aiPet.lastInteraction;
+    const energyDecay = Math.floor(timeSinceInteraction / 60000); // 1 energy per minute
+    const newEnergy = Math.max(0, state.aiPet.energy - energyDecay);
+    
+    // Auto emotion change based on energy
+    let newEmotion = state.aiPet.emotion;
+    if (newEnergy < 20) newEmotion = 'sleepy';
+    else if (newEnergy > 80) newEmotion = 'excited';
+    else if (newEnergy > 60) newEmotion = 'happy';
+    else newEmotion = 'idle';
+    
+    return {
+      aiPet: { ...state.aiPet, energy: newEnergy, emotion: newEmotion }
+    };
+  }),
   
   customizeWallet: () => {
     const { uploadedImage } = get();
@@ -108,7 +178,9 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
       isCustomizing: true,
       aiPet: {
         ...state.aiPet,
-        emotion: 'excited'
+        emotion: 'excited',
+        energy: 100,
+        lastInteraction: Date.now()
       }
     }));
     
@@ -134,6 +206,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     isCustomizing: false,
     recordedLayout: null,
     recordedLayers: null,
-    aiPet: { ...defaultAiPetState }
+    aiPet: { ...defaultAiPetState },
+    aiPetBehavior: { ...defaultAiPetBehavior },
+    containerBounds: null
   })
 }));

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'framer-motion';
+import LiquidBlob from './LiquidBlob';
 
 export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy';
 export type AiPetZone = 'inside' | 'outside';
@@ -12,6 +13,7 @@ interface AiPetProps {
   size?: number;
   onZoneChange?: (zone: AiPetZone) => void;
   onEmotionChange?: (emotion: AiPetEmotion) => void;
+  containerBounds?: DOMRect;
 }
 
 const AiPet: React.FC<AiPetProps> = ({
@@ -20,17 +22,21 @@ const AiPet: React.FC<AiPetProps> = ({
   color = '#9945FF',
   size = 64,
   onZoneChange,
-  onEmotionChange
+  onEmotionChange,
+  containerBounds
 }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isAnimating, setIsAnimating] = useState(false);
   const petRef = useRef<HTMLDivElement>(null);
   const controls = useAnimation();
+  const floatControls = useAnimation();
 
-  // Track mouse position for "looking" behavior
+  // Track mouse position for following behavior
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (petRef.current) {
+      if (petRef.current && zone === 'inside') {
         const rect = petRef.current.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
@@ -42,59 +48,57 @@ const AiPet: React.FC<AiPetProps> = ({
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    return () => document.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  // Calculate rotation based on mouse position
-  const getRotation = () => {
-    if (!isHovered) return 0;
-    const angle = Math.atan2(mousePosition.y, mousePosition.x) * (180 / Math.PI);
-    return Math.max(-15, Math.min(15, angle / 6)); // Limit rotation
-  };
-
-  // Animation variants for different emotions
-  const emotionVariants = {
-    idle: {
-      scale: [1, 1.05, 1],
-      opacity: [0.9, 1, 0.9],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    },
-    excited: {
-      scale: [1, 1.1, 0.95, 1.1, 1],
-      opacity: [1, 0.8, 1, 0.8, 1],
-      transition: {
-        duration: 0.8,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    },
-    sleepy: {
-      scale: [1, 0.95, 1],
-      opacity: [0.7, 0.5, 0.7],
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    },
-    happy: {
-      scale: [1, 1.08, 1],
-      opacity: [1, 0.9, 1],
-      transition: {
-        duration: 1.5,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
+    if (zone === 'inside') {
+      document.addEventListener('mousemove', handleMouseMove);
+      return () => document.removeEventListener('mousemove', handleMouseMove);
     }
+  }, [zone]);
+
+  // Floating behavior for outside zone
+  useEffect(() => {
+    if (zone === 'outside' && containerBounds) {
+      const floatAnimation = async () => {
+        const boundary = 30; // pixels beyond container
+        const centerX = containerBounds.width / 2;
+        const centerY = containerBounds.height / 2;
+        const radius = Math.min(containerBounds.width, containerBounds.height) / 2 + boundary;
+        
+        // Create floating path around container
+        const points = [];
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * 2 * Math.PI;
+          const x = centerX + Math.cos(angle) * radius;
+          const y = centerY + Math.sin(angle) * radius;
+          points.push({ x, y });
+        }
+        
+        // Animate through points
+        for (const point of points) {
+          await floatControls.start({
+            x: point.x - size / 2,
+            y: point.y - size / 2,
+            transition: { duration: 2, ease: "easeInOut" }
+          });
+        }
+        
+        // Repeat the animation
+        floatAnimation();
+      };
+      
+      floatAnimation();
+    }
+  }, [zone, containerBounds, floatControls, size]);
+
+  // Calculate rotation based on mouse position (inside zone only)
+  const getRotation = () => {
+    if (!isHovered || zone === 'outside') return 0;
+    const angle = Math.atan2(mousePosition.y, mousePosition.x) * (180 / Math.PI);
+    return Math.max(-15, Math.min(15, angle / 6));
   };
 
   // Click reaction animation
   const handleClick = async () => {
+    setIsAnimating(true);
     await controls.start({
       scale: 1.2,
       transition: { duration: 0.1 }
@@ -103,12 +107,39 @@ const AiPet: React.FC<AiPetProps> = ({
       scale: 1,
       transition: { duration: 0.2 }
     });
+    setIsAnimating(false);
   };
 
-  // Double click zone switching
-  const handleDoubleClick = () => {
+  // Zone switching with teleport effect
+  const handleDoubleClick = async () => {
     const newZone = zone === 'inside' ? 'outside' : 'inside';
+    
+    // Teleport animation
+    setIsAnimating(true);
+    await controls.start({
+      scale: 0,
+      rotate: 360,
+      transition: { duration: 0.3 }
+    });
+    
     onZoneChange?.(newZone);
+    
+    await controls.start({
+      scale: 1,
+      rotate: 0,
+      transition: { duration: 0.3 }
+    });
+    setIsAnimating(false);
+  };
+
+  // Drag behavior for outside zone
+  const handleDrag = (event: any, info: any) => {
+    if (zone === 'outside' && containerBounds) {
+      const boundary = 30;
+      const newX = Math.max(-boundary, Math.min(containerBounds.width + boundary - size, info.point.x - size / 2));
+      const newY = Math.max(-boundary, Math.min(containerBounds.height + boundary - size, info.point.y - size / 2));
+      setPosition({ x: newX, y: newY });
+    }
   };
 
   return (
@@ -119,89 +150,33 @@ const AiPet: React.FC<AiPetProps> = ({
         width: size,
         height: size,
       }}
-      animate={controls}
+      animate={zone === 'outside' ? floatControls : controls}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
+      drag={zone === 'outside'}
+      onDrag={handleDrag}
+      dragMomentum={false}
       whileHover={{ scale: 1.05 }}
+      style={{
+        rotate: getRotation(),
+        ...(zone === 'outside' && { 
+          position: 'absolute',
+          x: position.x,
+          y: position.y,
+          zIndex: 1000
+        })
+      }}
     >
-      {/* Main blob shape */}
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: `radial-gradient(circle, ${color}aa, ${color})`,
-          boxShadow: `0 0 20px ${color}40`,
-          rotate: getRotation(),
-        }}
-        animate={emotionVariants[emotion]}
-      >
-        {/* Inner glow */}
-        <motion.div
-          className="absolute inset-2 rounded-full"
-          style={{
-            background: `radial-gradient(circle, ${color}60, transparent)`,
-          }}
-          animate={{
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        
-        {/* Sparkle effect for excited state */}
-        {emotion === 'excited' && (
-          <>
-            <motion.div
-              className="absolute w-1 h-1 bg-white rounded-full"
-              style={{ top: '20%', left: '30%' }}
-              animate={{
-                scale: [0, 1, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                delay: 0,
-              }}
-            />
-            <motion.div
-              className="absolute w-1 h-1 bg-white rounded-full"
-              style={{ top: '30%', right: '25%' }}
-              animate={{
-                scale: [0, 1, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                delay: 0.3,
-              }}
-            />
-          </>
-        )}
-
-        {/* Eyes for sleepy state */}
-        {emotion === 'sleepy' && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex space-x-2">
-              <div className="w-1 h-0.5 bg-white rounded-full opacity-70" />
-              <div className="w-1 h-0.5 bg-white rounded-full opacity-70" />
-            </div>
-          </div>
-        )}
-
-        {/* Happy face */}
-        {emotion === 'happy' && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-white text-lg">😊</div>
-          </div>
-        )}
-      </motion.div>
-
+      {/* Liquid Blob */}
+      <LiquidBlob 
+        color={color}
+        size={size}
+        emotion={emotion}
+        isAnimating={isAnimating}
+      />
+      
       {/* Zone indicator */}
       {zone === 'outside' && (
         <motion.div
@@ -214,6 +189,18 @@ const AiPet: React.FC<AiPetProps> = ({
             repeat: Infinity,
           }}
         />
+      )}
+      
+      {/* Interaction hint */}
+      {isHovered && (
+        <motion.div
+          className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-white/70 whitespace-nowrap"
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -5 }}
+        >
+          {zone === 'inside' ? 'Double-click to release' : 'Drag me around!'}
+        </motion.div>
       )}
     </motion.div>
   );
