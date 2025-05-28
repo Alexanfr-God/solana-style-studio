@@ -5,9 +5,19 @@ import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { Eye, EyeOff, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
+import AiPet from '@/components/ui/AiPet';
 
 const WalletPreviewContainer = () => {
-  const { walletStyle, selectedWallet, setSelectedWallet, isCustomizing } = useWalletCustomizationStore();
+  const { 
+    walletStyle, 
+    selectedWallet, 
+    setSelectedWallet, 
+    isCustomizing,
+    aiPet,
+    setAiPetEmotion,
+    setAiPetZone
+  } = useWalletCustomizationStore();
+  
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
 
@@ -54,15 +64,15 @@ const WalletPreviewContainer = () => {
         </div>
         
         {/* Centered wallet container */}
-        <div className="flex-1 flex items-center justify-center overflow-auto">
+        <div className="flex-1 flex items-center justify-center overflow-auto relative">
           <div 
             className={`
               relative rounded-2xl border border-white transition-all duration-1000
               ${isCustomizing ? 'scale-105 animate-pulse' : 'scale-100'}
             `}
             style={{ 
-              width: '361px', // Half of 722px to fit better in the container
-              height: '601px', // Half of 1202px to maintain aspect ratio
+              width: '361px',
+              height: '601px',
               backgroundColor: walletStyle.backgroundColor || '#1a1a1a',
               backgroundImage: walletStyle.image ? `url(${walletStyle.image})` : undefined,
               backgroundSize: 'cover',
@@ -74,7 +84,7 @@ const WalletPreviewContainer = () => {
             <div 
               className="w-full flex items-center justify-between px-4 py-3"
               style={{ 
-                height: '58px', // Half of 116px
+                height: '58px',
                 backgroundColor: '#1a1a1a',
                 borderTopLeftRadius: '1rem',
                 borderTopRightRadius: '1rem'
@@ -98,31 +108,38 @@ const WalletPreviewContainer = () => {
             <div 
               className="w-full"
               style={{ 
-                height: '1px', // Half of 2px
+                height: '1px',
                 backgroundColor: '#111111'
               }}
             />
             
             {/* Main Section */}
             <div 
-              className="flex-1 flex flex-col items-center justify-center p-6"
+              className="flex-1 flex flex-col items-center justify-center p-6 relative"
               style={{ 
                 backgroundColor: '#181818',
-                height: '541px', // Half of 1082px
+                height: '541px',
                 borderBottomLeftRadius: '1rem',
                 borderBottomRightRadius: '1rem'
               }}
             >
-              {/* Phantom Logo Placeholder */}
-              <div className="mb-8">
-                <div 
-                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white"
-                  style={{ 
-                    backgroundColor: walletStyle.primaryColor || '#9945FF'
-                  }}
-                >
-                  👻
-                </div>
+              {/* AiPet replaces the static logo */}
+              <div className="mb-8 relative">
+                {aiPet.isVisible && (
+                  <AiPet
+                    emotion={aiPet.emotion}
+                    zone={aiPet.zone}
+                    color={walletStyle.primaryColor || '#9945FF'}
+                    size={64}
+                    onZoneChange={setAiPetZone}
+                    onEmotionChange={setAiPetEmotion}
+                  />
+                )}
+                
+                {/* Zone boundary indicator for outside mode */}
+                {aiPet.zone === 'outside' && (
+                  <div className="absolute -inset-4 border-2 border-dashed border-yellow-400/30 rounded-full animate-pulse" />
+                )}
               </div>
               
               {/* Login Form */}
@@ -193,11 +210,30 @@ const WalletPreviewContainer = () => {
               </div>
             )}
           </div>
+
+          {/* AiPet can overflow outside wallet when in "outside" zone */}
+          {aiPet.zone === 'outside' && aiPet.isVisible && (
+            <div className="absolute pointer-events-none">
+              <div className="relative">
+                <AiPet
+                  emotion={aiPet.emotion}
+                  zone={aiPet.zone}
+                  color={walletStyle.primaryColor || '#9945FF'}
+                  size={80}
+                  onZoneChange={setAiPetZone}
+                  onEmotionChange={setAiPetEmotion}
+                />
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="mt-4 text-center">
           <p className="text-white/60 text-sm">
             Upload an image and click "Customize Wallet" to see the magic! ✨
+          </p>
+          <p className="text-purple-400/80 text-xs mt-1">
+            Double-click the AiPet to switch zones • Watch it react to your mouse!
           </p>
         </div>
       </CardContent>
