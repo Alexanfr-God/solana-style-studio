@@ -50,10 +50,10 @@ const WalletPreviewContainer = () => {
 
         {/* Design close to the real wallet text */}
         <div className="text-center mb-4">
-          <p className="text-gray-400 text-sm">Design close to the real wallet</p>
+          <p className="text-gray-400 text-sm">Design close to the real wallet - Real Size (722x1202px)</p>
         </div>
         
-        {/* Centered wallet container */}
+        {/* Centered wallet container with real dimensions */}
         <div className="flex-1 flex items-center justify-center overflow-auto">
           <div 
             className={`
@@ -61,8 +61,8 @@ const WalletPreviewContainer = () => {
               ${isCustomizing ? 'scale-105 animate-pulse' : 'scale-100'}
             `}
             style={{ 
-              width: '361px', // Half of 722px to fit better in the container
-              height: '601px', // Half of 1202px to maintain aspect ratio
+              width: '722px', // Real size width
+              height: '1202px', // Real size height
               backgroundColor: walletStyle.backgroundColor || '#1a1a1a',
               backgroundImage: walletStyle.image ? `url(${walletStyle.image})` : undefined,
               backgroundSize: 'cover',
@@ -72,9 +72,9 @@ const WalletPreviewContainer = () => {
           >
             {/* Top Bar (Header) */}
             <div 
-              className="w-full flex items-center justify-between px-4 py-3"
+              className="w-full flex items-center justify-between px-8 py-6"
               style={{ 
-                height: '58px', // Half of 116px
+                height: '116px', // Real size height
                 backgroundColor: '#1a1a1a',
                 borderTopLeftRadius: '1rem',
                 borderTopRightRadius: '1rem'
@@ -85,38 +85,38 @@ const WalletPreviewContainer = () => {
                   className="font-bold text-white"
                   style={{ 
                     fontFamily: walletStyle.font || 'Inter',
-                    fontSize: '16px'
+                    fontSize: '32px' // Real size font
                   }}
                 >
                   phantom
                 </span>
               </div>
-              <HelpCircle className="h-5 w-5 text-white/70" />
+              <HelpCircle className="h-10 w-10 text-white/70" />
             </div>
             
             {/* Transition Strip */}
             <div 
               className="w-full"
               style={{ 
-                height: '1px', // Half of 2px
+                height: '2px', // Real size
                 backgroundColor: '#111111'
               }}
             />
             
             {/* Main Section */}
             <div 
-              className="flex-1 flex flex-col items-center justify-center p-6"
+              className="flex-1 flex flex-col items-center justify-center p-12"
               style={{ 
                 backgroundColor: '#181818',
-                height: '541px', // Half of 1082px
+                height: '1082px', // Real size height
                 borderBottomLeftRadius: '1rem',
                 borderBottomRightRadius: '1rem'
               }}
             >
               {/* Phantom Logo Placeholder */}
-              <div className="mb-8">
+              <div className="mb-16">
                 <div 
-                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white"
+                  className="w-32 h-32 rounded-full flex items-center justify-center text-5xl font-bold text-white"
                   style={{ 
                     backgroundColor: walletStyle.primaryColor || '#9945FF'
                   }}
@@ -126,13 +126,13 @@ const WalletPreviewContainer = () => {
               </div>
               
               {/* Login Form */}
-              <div className="w-full max-w-xs space-y-6">
+              <div className="w-full max-w-md space-y-12">
                 {/* Password Title */}
                 <h2 
                   className="text-center font-medium text-white"
                   style={{ 
                     fontFamily: walletStyle.font || 'Inter',
-                    fontSize: '20px'
+                    fontSize: '40px' // Real size font
                   }}
                 >
                   Enter your password
@@ -145,7 +145,7 @@ const WalletPreviewContainer = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
-                    className="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 border-none outline-none"
+                    className="w-full px-8 py-6 rounded-xl text-white placeholder-gray-400 border-none outline-none text-xl"
                     style={{ 
                       backgroundColor: '#0f0f0f',
                       fontFamily: walletStyle.font || 'Inter'
@@ -155,9 +155,9 @@ const WalletPreviewContainer = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? <EyeOff className="h-8 w-8" /> : <Eye className="h-8 w-8" />}
                     </button>
                   )}
                 </div>
@@ -165,7 +165,7 @@ const WalletPreviewContainer = () => {
                 {/* Forgot Password Link */}
                 <div className="text-center">
                   <button 
-                    className="text-gray-400 hover:text-gray-300 text-sm"
+                    className="text-gray-400 hover:text-gray-300 text-lg"
                     style={{ fontFamily: walletStyle.font || 'Inter' }}
                   >
                     Forgot password?
@@ -174,7 +174,7 @@ const WalletPreviewContainer = () => {
                 
                 {/* Unlock Button */}
                 <button 
-                  className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
+                  className="w-full py-6 font-bold text-white rounded-xl transition-colors hover:opacity-90 text-xl"
                   style={{ 
                     backgroundColor: walletStyle.primaryColor || '#a390f5',
                     fontFamily: walletStyle.font || 'Inter',
@@ -188,7 +188,7 @@ const WalletPreviewContainer = () => {
             
             {/* Customization Indicator */}
             {isCustomizing && (
-              <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded animate-bounce">
+              <div className="absolute top-4 right-4 bg-green-500 text-white text-lg px-4 py-2 rounded animate-bounce">
                 Applying Style...
               </div>
             )}
