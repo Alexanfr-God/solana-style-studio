@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -336,7 +337,7 @@ export class WalletLayoutRecorder {
           id: layer.id,
           layer_name: layer.layer_name,
           layer_order: layer.layer_order,
-          elements: layer.elements as WalletElement[]
+          elements: layer.elements as unknown as WalletElement[]
         }));
       }
 
@@ -365,7 +366,7 @@ export class WalletLayoutRecorder {
         id: data.id,
         layer_name: data.layer_name,
         layer_order: data.layer_order,
-        elements: data.elements as WalletElement[]
+        elements: data.elements as unknown as WalletElement[]
       };
     } catch (error) {
       console.error('💥 Export layer error:', error);
@@ -390,7 +391,7 @@ export class WalletLayoutRecorder {
         id: layer.id,
         layer_name: layer.layer_name,
         layer_order: layer.layer_order,
-        elements: layer.elements as WalletElement[]
+        elements: layer.elements as unknown as WalletElement[]
       }));
     } catch (error) {
       console.error('💥 Export all layers error:', error);
