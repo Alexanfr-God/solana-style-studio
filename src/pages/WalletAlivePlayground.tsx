@@ -26,10 +26,10 @@ const WalletAlivePlayground = () => {
           </div>
         </div>
 
-        {/* Main Layout - Adaptive Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column - Controls (Adaptive sizing) */}
-          <div className="lg:col-span-3 xl:col-span-3 space-y-6">
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Controls */}
+          <div className="space-y-6">
             <ImageUploadSection />
             
             {/* Action Buttons */}
@@ -58,8 +58,8 @@ const WalletAlivePlayground = () => {
             </div>
           </div>
           
-          {/* Right Column - Wallet Preview (Takes most space) */}
-          <div className="lg:col-span-9 xl:col-span-9">
+          {/* Right Column - Wallet Preview */}
+          <div>
             <WalletPreviewContainer />
           </div>
         </div>
