@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { toast } from 'sonner';
-import { Wand, Loader2, AlertCircle, Settings, Zap, Brain } from 'lucide-react';
+import { Wand, Loader2, AlertCircle, Settings, Zap, Brain, Pause } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,7 +26,8 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
     walletAnalysis, 
     activeLayer,
     analyzeCurrentWallet,
-    isAnalyzing
+    isAnalyzing,
+    isDecorateGenerationDisabled
   } = useCustomizationStore();
   
   const [progress, setProgress] = useState(0);
@@ -37,6 +37,11 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
   const [zonePreference, setZonePreference] = useState<'top' | 'bottom' | 'left' | 'right' | 'all'>('all');
 
   const handleGenerate = async () => {
+    if (isDecorateGenerationDisabled) {
+      toast.info("🔧 AI Generation is temporarily paused for development");
+      return;
+    }
+
     if (!prompt) {
       toast.error("Please enter a character description first");
       return;
@@ -159,11 +164,23 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
 
   const hasValidInput = !!prompt;
   const isAnalysisAvailable = !!walletAnalysis;
+  const isDisabled = isDecorateGenerationDisabled || isGenerating || !hasValidInput || disabled || isAnalyzing;
 
   return (
     <div className="space-y-3">
+      {/* Generation Disabled Notice */}
+      {isDecorateGenerationDisabled && (
+        <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-md flex items-center text-xs text-orange-300">
+          <Pause className="h-4 w-4 mr-2" />
+          <div>
+            <div className="font-medium">AI Generation Temporarily Paused</div>
+            <div className="text-orange-300/80">Use Quick Character Select below to test UI flow</div>
+          </div>
+        </div>
+      )}
+
       {/* Analysis Status Indicator */}
-      {isAnalysisAvailable && (
+      {isAnalysisAvailable && !isDecorateGenerationDisabled && (
         <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-md flex items-center text-xs text-green-300">
           <Brain className="h-3 w-3 mr-1" />
           Enhanced AI generation ready with {walletAnalysis.uiStructure.layout.type} wallet analysis
@@ -179,7 +196,7 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         <select 
           value={zonePreference} 
           onChange={(e) => setZonePreference(e.target.value as any)}
-          disabled={isGenerating || isAnalyzing}
+          disabled={isDisabled}
           className="w-full h-8 px-2 py-1 bg-black/20 border border-white/10 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
         >
           <option value="all">All Around Wallet</option>
@@ -194,13 +211,20 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
       <Button
         onClick={handleGenerate}
         className={`w-full font-bold ${
-          isAnalysisAvailable 
-            ? 'bg-gradient-to-r from-green-400 to-purple-500 hover:from-green-500 hover:to-purple-600' 
-            : 'bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600'
+          isDecorateGenerationDisabled 
+            ? 'bg-gradient-to-r from-gray-500 to-gray-600 cursor-not-allowed'
+            : isAnalysisAvailable 
+              ? 'bg-gradient-to-r from-green-400 to-purple-500 hover:from-green-500 hover:to-purple-600' 
+              : 'bg-gradient-to-r from-yellow-400 to-purple-500 hover:from-yellow-500 hover:to-purple-600'
         } text-black`}
-        disabled={isGenerating || !hasValidInput || disabled || isAnalyzing}
+        disabled={isDisabled}
       >
-        {isGenerating ? (
+        {isDecorateGenerationDisabled ? (
+          <>
+            <Pause className="mr-2 h-4 w-4" />
+            AI Generation Paused
+          </>
+        ) : isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Creating Enhanced Costume...
@@ -238,13 +262,13 @@ const GenerateMaskButton = ({ disabled = false }: GenerateMaskButtonProps) => {
         </div>
       )}
       
-      {!hasValidInput && (
+      {!hasValidInput && !isDecorateGenerationDisabled && (
         <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md text-xs text-yellow-300">
           💡 Enter a character description to start generating
         </div>
       )}
       
-      {hasValidInput && !isGenerating && !isAnalyzing && (
+      {hasValidInput && !isGenerating && !isAnalyzing && !isDecorateGenerationDisabled && (
         <div className="text-xs text-white/60 text-center space-y-1">
           <div>🎨 Style: <span className="text-purple-300 font-medium">{maskStyle}</span></div>
           <div>📍 Position: <span className="text-blue-300 font-medium">{zonePreference}</span></div>

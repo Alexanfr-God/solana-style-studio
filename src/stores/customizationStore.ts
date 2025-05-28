@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { defaultLoginStyle, defaultWalletStyle } from '../constants/defaultWalletStyles';
 
@@ -95,6 +94,7 @@ interface CustomizationState {
   walletAnalysis: WalletAnalysis | null;
   isAnalyzing: boolean;
   analysisTimestamp: string | null;
+  isDecorateGenerationDisabled: boolean;
   
   setActiveLayer: (layer: LayerType) => void;
   setStyleForLayer: (layer: LayerType, style: WalletStyle) => void;
@@ -107,6 +107,7 @@ interface CustomizationState {
   setWalletAnalysis: (analysis: WalletAnalysis | null) => void;
   setIsAnalyzing: (isAnalyzing: boolean) => void;
   analyzeCurrentWallet: () => Promise<void>;
+  setIsDecorateGenerationDisabled: (disabled: boolean) => void;
 }
 
 const stylingTips = [
@@ -132,6 +133,7 @@ export const useCustomizationStore = create<CustomizationState>((set, get) => ({
   walletAnalysis: null,
   isAnalyzing: false,
   analysisTimestamp: null,
+  isDecorateGenerationDisabled: true,
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),
   
@@ -166,6 +168,8 @@ export const useCustomizationStore = create<CustomizationState>((set, get) => ({
   setWalletAnalysis: (analysis) => set({ walletAnalysis: analysis }),
 
   setIsAnalyzing: (isAnalyzing) => set({ isAnalyzing }),
+
+  setIsDecorateGenerationDisabled: (disabled) => set({ isDecorateGenerationDisabled: disabled }),
 
   analyzeCurrentWallet: async () => {
     const state = get();

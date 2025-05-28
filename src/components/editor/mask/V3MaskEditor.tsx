@@ -8,7 +8,7 @@ import GenerateMaskButton from './GenerateMaskButton';
 import CharacterButtons from './CharacterButtons';
 import WalletAnalysisIndicator from './WalletAnalysisIndicator';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Info, Eye, EyeOff } from 'lucide-react';
+import { RotateCcw, Info, Eye, EyeOff, Wrench } from 'lucide-react';
 import { useMaskEditorStore } from '@/stores/maskEditorStore';
 import { useCustomizationStore } from '@/stores/customizationStore';
 import { toast } from 'sonner';
@@ -29,7 +29,8 @@ const V3MaskEditor = () => {
     activeLayer, 
     walletAnalysis, 
     analyzeCurrentWallet, 
-    isAnalyzing 
+    isAnalyzing,
+    isDecorateGenerationDisabled
   } = useCustomizationStore();
 
   const [showGuide, setShowGuide] = useState(true);
@@ -57,6 +58,23 @@ const V3MaskEditor = () => {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 relative">
       <div className="lg:col-span-1">
         <div className="flex flex-col space-y-6 md:space-y-8">
+          {/* Development Mode Notice */}
+          {isDecorateGenerationDisabled && (
+            <Card className="bg-orange-500/5 backdrop-blur-md border-orange-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Wrench className="h-5 w-5 text-orange-400" />
+                  <div>
+                    <h3 className="text-sm font-medium text-orange-300">Development Mode</h3>
+                    <p className="text-xs text-orange-300/80 mt-1">
+                      AI generation is temporarily paused. Use Quick Character Select to test UI flow.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="bg-black/30 backdrop-blur-md border-white/10">
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
