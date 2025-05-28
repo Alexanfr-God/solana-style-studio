@@ -189,8 +189,8 @@ export class WalletLayoutRecorder {
           wallet_id: walletId,
           screen: layout.screen,
           wallet_type: layout.walletType,
-          layout_data: layout,
-          dimensions: layout.dimensions
+          layout_data: layout as any, // Cast to any to satisfy Json type
+          dimensions: layout.dimensions as any // Cast to any to satisfy Json type
         })
         .select('id')
         .single();
