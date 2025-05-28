@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { WalletLayout } from '@/services/walletLayoutRecorder';
 
 export interface WalletStyle {
   backgroundColor: string;
@@ -13,11 +14,13 @@ interface WalletCustomizationState {
   uploadedImage: string | null;
   selectedWallet: 'phantom' | 'metamask' | 'solflare';
   isCustomizing: boolean;
+  recordedLayout: WalletLayout | null;
   
   setWalletStyle: (style: Partial<WalletStyle>) => void;
   setUploadedImage: (image: string | null) => void;
   setSelectedWallet: (wallet: 'phantom' | 'metamask' | 'solflare') => void;
   setIsCustomizing: (isCustomizing: boolean) => void;
+  setRecordedLayout: (layout: WalletLayout | null) => void;
   customizeWallet: () => void;
   resetWallet: () => void;
 }
@@ -34,6 +37,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   uploadedImage: null,
   selectedWallet: 'phantom',
   isCustomizing: false,
+  recordedLayout: null,
   
   setWalletStyle: (style) => set((state) => ({
     walletStyle: { ...state.walletStyle, ...style }
@@ -44,6 +48,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setSelectedWallet: (wallet) => set({ selectedWallet: wallet }),
   
   setIsCustomizing: (isCustomizing) => set({ isCustomizing }),
+  
+  setRecordedLayout: (layout) => set({ recordedLayout: layout }),
   
   customizeWallet: () => {
     const { uploadedImage } = get();
@@ -63,6 +69,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   resetWallet: () => set({
     walletStyle: { ...defaultWalletStyle },
     uploadedImage: null,
-    isCustomizing: false
+    isCustomizing: false,
+    recordedLayout: null
   })
 }));

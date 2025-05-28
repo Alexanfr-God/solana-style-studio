@@ -162,6 +162,39 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_layouts: {
+        Row: {
+          created_at: string
+          dimensions: Json
+          id: string
+          layout_data: Json
+          screen: string
+          updated_at: string
+          wallet_id: string
+          wallet_type: string
+        }
+        Insert: {
+          created_at?: string
+          dimensions: Json
+          id?: string
+          layout_data: Json
+          screen: string
+          updated_at?: string
+          wallet_id: string
+          wallet_type?: string
+        }
+        Update: {
+          created_at?: string
+          dimensions?: Json
+          id?: string
+          layout_data?: Json
+          screen?: string
+          updated_at?: string
+          wallet_id?: string
+          wallet_type?: string
+        }
+        Relationships: []
+      }
       wallet_skins: {
         Row: {
           created_at: string
