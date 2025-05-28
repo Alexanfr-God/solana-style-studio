@@ -86,9 +86,7 @@ const LiquidBlob: React.FC<LiquidBlobProps> = ({ color, size, emotion, isAnimati
           fill={`url(#gradient-${emotion})`}
           filter={`url(#glow-${emotion})`}
           animate={morphVariants[emotion]}
-          style={{
-            dropShadow: `0 0 20px ${color}40`
-          }}
+          className="drop-shadow-lg"
         />
         
         {/* Inner highlight */}

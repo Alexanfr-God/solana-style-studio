@@ -149,6 +149,13 @@ const AiPet: React.FC<AiPetProps> = ({
       style={{
         width: size,
         height: size,
+        rotate: getRotation(),
+        ...(zone === 'outside' && { 
+          position: 'absolute',
+          x: position.x,
+          y: position.y,
+          zIndex: 1000
+        })
       }}
       animate={zone === 'outside' ? floatControls : controls}
       onMouseEnter={() => setIsHovered(true)}
@@ -159,15 +166,6 @@ const AiPet: React.FC<AiPetProps> = ({
       onDrag={handleDrag}
       dragMomentum={false}
       whileHover={{ scale: 1.05 }}
-      style={{
-        rotate: getRotation(),
-        ...(zone === 'outside' && { 
-          position: 'absolute',
-          x: position.x,
-          y: position.y,
-          zIndex: 1000
-        })
-      }}
     >
       {/* Liquid Blob */}
       <LiquidBlob 
