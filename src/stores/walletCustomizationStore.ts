@@ -9,7 +9,7 @@ export interface WalletStyle {
   image?: string;
 }
 
-export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy';
+export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
 
 interface AiPetState {
@@ -20,6 +20,8 @@ interface AiPetState {
   isDragging: boolean;
   lastInteraction: number;
   energy: number; // 0-100, affects behavior
+  isHovered: boolean;
+  emotionTimer: NodeJS.Timeout | null;
 }
 
 interface AiPetBehavior {
@@ -52,10 +54,17 @@ interface WalletCustomizationState {
   setAiPetVisibility: (visible: boolean) => void;
   setAiPetDragging: (dragging: boolean) => void;
   setAiPetEnergy: (energy: number) => void;
+  setAiPetHovered: (hovered: boolean) => void;
   setAiPetBehavior: (behavior: Partial<AiPetBehavior>) => void;
   setContainerBounds: (bounds: DOMRect | null) => void;
   triggerAiPetInteraction: () => void;
   updateAiPetEnergy: () => void;
+  setTemporaryEmotion: (emotion: AiPetEmotion, duration?: number) => void;
+  onAiPetHover: () => void;
+  onAiPetClick: () => void;
+  onAiPetDoubleClick: () => void;
+  onCustomizationStart: () => void;
+  onCustomizationComplete: () => void;
   customizeWallet: () => void;
   resetWallet: () => void;
 }
@@ -74,7 +83,9 @@ const defaultAiPetState: AiPetState = {
   position: { x: 0, y: 0 },
   isDragging: false,
   lastInteraction: Date.now(),
-  energy: 80
+  energy: 80,
+  isHovered: false,
+  emotionTimer: null
 };
 
 const defaultAiPetBehavior: AiPetBehavior = {
@@ -136,6 +147,10 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     aiPet: { ...state.aiPet, energy: Math.max(0, Math.min(100, energy)) }
   })),
 
+  setAiPetHovered: (hovered) => set((state) => ({
+    aiPet: { ...state.aiPet, isHovered: hovered }
+  })),
+
   setAiPetBehavior: (behavior) => set((state) => ({
     aiPetBehavior: { ...state.aiPetBehavior, ...behavior }
   })),
@@ -155,59 +170,121 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     const energyDecay = Math.floor(timeSinceInteraction / 60000); // 1 energy per minute
     const newEnergy = Math.max(0, state.aiPet.energy - energyDecay);
     
-    // Auto emotion change based on energy
+    // Auto emotion change based on energy (only if no temporary emotion is set)
     let newEmotion = state.aiPet.emotion;
-    if (newEnergy < 20) newEmotion = 'sleepy';
-    else if (newEnergy > 80) newEmotion = 'excited';
-    else if (newEnergy > 60) newEmotion = 'happy';
-    else newEmotion = 'idle';
+    if (!state.aiPet.emotionTimer) {
+      if (newEnergy < 20) newEmotion = 'sleepy';
+      else if (newEnergy > 80) newEmotion = 'excited';
+      else if (newEnergy > 60) newEmotion = 'happy';
+      else newEmotion = 'idle';
+    }
     
     return {
       aiPet: { ...state.aiPet, energy: newEnergy, emotion: newEmotion }
     };
   }),
+
+  setTemporaryEmotion: (emotion, duration = 4000) => {
+    const state = get();
+    
+    // Clear existing timer
+    if (state.aiPet.emotionTimer) {
+      clearTimeout(state.aiPet.emotionTimer);
+    }
+
+    // Set new emotion
+    set((state) => ({
+      aiPet: { ...state.aiPet, emotion, lastInteraction: Date.now() }
+    }));
+
+    // Set timer to revert to idle
+    const timer = setTimeout(() => {
+      set((state) => ({
+        aiPet: { ...state.aiPet, emotion: 'idle', emotionTimer: null }
+      }));
+    }, duration);
+
+    set((state) => ({
+      aiPet: { ...state.aiPet, emotionTimer: timer }
+    }));
+  },
+
+  onAiPetHover: () => {
+    const { setTemporaryEmotion, setAiPetHovered } = get();
+    setAiPetHovered(true);
+    setTemporaryEmotion('suspicious', 2000);
+  },
+
+  onAiPetClick: () => {
+    const { setTemporaryEmotion, triggerAiPetInteraction } = get();
+    triggerAiPetInteraction();
+    setTemporaryEmotion('wink', 3000);
+  },
+
+  onAiPetDoubleClick: () => {
+    const state = get();
+    const newZone = state.aiPet.zone === 'inside' ? 'outside' : 'inside';
+    const newEmotion = newZone === 'outside' ? 'sleepy' : 'happy';
+    
+    set((prevState) => ({
+      aiPet: { 
+        ...prevState.aiPet, 
+        zone: newZone,
+        emotion: newEmotion,
+        lastInteraction: Date.now()
+      }
+    }));
+
+    get().setTemporaryEmotion(newEmotion, 4000);
+  },
+
+  onCustomizationStart: () => {
+    const { setTemporaryEmotion } = get();
+    setTemporaryEmotion('excited', 2000);
+  },
+
+  onCustomizationComplete: () => {
+    const { setTemporaryEmotion } = get();
+    setTemporaryEmotion('happy', 5000);
+  },
   
   customizeWallet: () => {
-    const { uploadedImage } = get();
+    const { uploadedImage, onCustomizationStart, onCustomizationComplete } = get();
+    
+    onCustomizationStart();
+    
     set((state) => ({
       walletStyle: {
         ...state.walletStyle,
         backgroundColor: '#e93e3e',
         image: uploadedImage || undefined
       },
-      isCustomizing: true,
-      aiPet: {
-        ...state.aiPet,
-        emotion: 'excited',
-        energy: 100,
-        lastInteraction: Date.now()
-      }
+      isCustomizing: true
     }));
     
-    setTimeout(() => set((state) => ({ 
-      isCustomizing: false,
-      aiPet: {
-        ...state.aiPet,
-        emotion: 'happy'
-      }
-    })), 1000);
-
-    setTimeout(() => set((state) => ({
-      aiPet: {
-        ...state.aiPet,
-        emotion: 'idle'
-      }
-    })), 3000);
+    setTimeout(() => {
+      set({ isCustomizing: false });
+      onCustomizationComplete();
+    }, 1000);
   },
   
-  resetWallet: () => set({
-    walletStyle: { ...defaultWalletStyle },
-    uploadedImage: null,
-    isCustomizing: false,
-    recordedLayout: null,
-    recordedLayers: null,
-    aiPet: { ...defaultAiPetState },
-    aiPetBehavior: { ...defaultAiPetBehavior },
-    containerBounds: null
-  })
+  resetWallet: () => {
+    const state = get();
+    
+    // Clear emotion timer
+    if (state.aiPet.emotionTimer) {
+      clearTimeout(state.aiPet.emotionTimer);
+    }
+
+    set({
+      walletStyle: { ...defaultWalletStyle },
+      uploadedImage: null,
+      isCustomizing: false,
+      recordedLayout: null,
+      recordedLayers: null,
+      aiPet: { ...defaultAiPetState },
+      aiPetBehavior: { ...defaultAiPetBehavior },
+      containerBounds: null
+    });
+  }
 }));

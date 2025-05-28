@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import LiquidBlob from './LiquidBlob';
+import LiquidBody from './LiquidBody';
+import Eyes from './Eyes';
+import Mouth from './Mouth';
 
-export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy';
+export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
 
 interface AiPetProps {
@@ -13,6 +15,9 @@ interface AiPetProps {
   size?: number;
   onZoneChange?: (zone: AiPetZone) => void;
   onEmotionChange?: (emotion: AiPetEmotion) => void;
+  onHover?: () => void;
+  onClick?: () => void;
+  onDoubleClick?: () => void;
   containerBounds?: DOMRect;
 }
 
@@ -23,6 +28,9 @@ const AiPet: React.FC<AiPetProps> = ({
   size = 64,
   onZoneChange,
   onEmotionChange,
+  onHover,
+  onClick,
+  onDoubleClick,
   containerBounds
 }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -99,6 +107,7 @@ const AiPet: React.FC<AiPetProps> = ({
   // Click reaction animation
   const handleClick = async () => {
     setIsAnimating(true);
+    onClick?.();
     await controls.start({
       scale: 1.2,
       transition: { duration: 0.1 }
@@ -123,6 +132,7 @@ const AiPet: React.FC<AiPetProps> = ({
     });
     
     onZoneChange?.(newZone);
+    onDoubleClick?.();
     
     await controls.start({
       scale: 1,
@@ -130,6 +140,16 @@ const AiPet: React.FC<AiPetProps> = ({
       transition: { duration: 0.3 }
     });
     setIsAnimating(false);
+  };
+
+  // Handle hover
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    onHover?.();
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
   };
 
   // Drag behavior for outside zone
@@ -158,8 +178,8 @@ const AiPet: React.FC<AiPetProps> = ({
         })
       }}
       animate={zone === 'outside' ? floatControls : controls}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       drag={zone === 'outside'}
@@ -167,13 +187,20 @@ const AiPet: React.FC<AiPetProps> = ({
       dragMomentum={false}
       whileHover={{ scale: 1.05 }}
     >
-      {/* Liquid Blob */}
-      <LiquidBlob 
+      {/* Liquid Body */}
+      <LiquidBody 
         color={color}
         size={size}
         emotion={emotion}
+        zone={zone}
         isAnimating={isAnimating}
       />
+      
+      {/* Eyes */}
+      <Eyes emotion={emotion} size={size} />
+      
+      {/* Mouth */}
+      <Mouth emotion={emotion} size={size} />
       
       {/* Zone indicator */}
       {zone === 'outside' && (

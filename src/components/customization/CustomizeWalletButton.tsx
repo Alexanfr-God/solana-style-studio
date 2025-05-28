@@ -6,7 +6,7 @@ import { Wand2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CustomizeWalletButton = () => {
-  const { uploadedImage, customizeWallet, isCustomizing } = useWalletCustomizationStore();
+  const { uploadedImage, customizeWallet, isCustomizing, onCustomizationStart } = useWalletCustomizationStore();
 
   const handleCustomize = () => {
     if (!uploadedImage) {
@@ -14,6 +14,7 @@ const CustomizeWalletButton = () => {
       return;
     }
     
+    onCustomizationStart();
     customizeWallet();
     toast.success("Applying style to your wallet! 🎨");
   };
