@@ -132,11 +132,9 @@ const AiPet: React.FC<AiPetProps> = ({
         style={{
           background: `radial-gradient(circle, ${color}aa, ${color})`,
           boxShadow: `0 0 20px ${color}40`,
-        }}
-        animate={emotionVariants[emotion]}
-        style={{
           rotate: getRotation(),
         }}
+        animate={emotionVariants[emotion]}
       >
         {/* Inner glow */}
         <motion.div
