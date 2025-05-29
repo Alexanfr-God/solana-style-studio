@@ -1,16 +1,18 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import PhantomBody from './PhantomBody';
+import LottieBody from './LottieBody';
 import PhantomEyes from './PhantomEyes';
 import PhantomMouth from './PhantomMouth';
 
 export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
+export type AiPetBodyType = 'phantom' | 'lottie';
 
 interface AiPetProps {
   emotion?: AiPetEmotion;
   zone?: AiPetZone;
+  bodyType?: AiPetBodyType;
   color?: string;
   size?: number;
   onZoneChange?: (zone: AiPetZone) => void;
@@ -24,6 +26,7 @@ interface AiPetProps {
 const AiPet: React.FC<AiPetProps> = ({
   emotion = 'idle',
   zone = 'inside',
+  bodyType = 'phantom',
   color = '#9945FF',
   size = 64,
   onZoneChange,
@@ -169,7 +172,7 @@ const AiPet: React.FC<AiPetProps> = ({
       style={{
         width: size,
         height: size,
-        rotate: getRotation(),
+        rotate: bodyType === 'phantom' ? getRotation() : 0, // Only rotate phantom body
         ...(zone === 'outside' && { 
           position: 'absolute',
           x: position.x,
@@ -187,20 +190,33 @@ const AiPet: React.FC<AiPetProps> = ({
       dragMomentum={false}
       whileHover={{ scale: 1.05 }}
     >
-      {/* Phantom Body */}
-      <PhantomBody 
-        color={color}
-        size={size}
-        emotion={emotion}
-        zone={zone}
-        isAnimating={isAnimating}
-      />
-      
-      {/* Phantom Eyes */}
-      <PhantomEyes emotion={emotion} size={size} />
-      
-      {/* Phantom Mouth */}
-      <PhantomMouth emotion={emotion} size={size} />
+      {/* Conditional Body Rendering */}
+      {bodyType === 'lottie' ? (
+        <LottieBody 
+          emotion={emotion}
+          zone={zone}
+          size={size}
+          color={color}
+          isAnimating={isAnimating}
+        />
+      ) : (
+        <>
+          {/* Phantom Body */}
+          <PhantomBody 
+            color={color}
+            size={size}
+            emotion={emotion}
+            zone={zone}
+            isAnimating={isAnimating}
+          />
+          
+          {/* Phantom Eyes */}
+          <PhantomEyes emotion={emotion} size={size} />
+          
+          {/* Phantom Mouth */}
+          <PhantomMouth emotion={emotion} size={size} />
+        </>
+      )}
       
       {/* Zone indicator */}
       {zone === 'outside' && (

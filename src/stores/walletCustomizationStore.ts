@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
 
@@ -11,15 +10,17 @@ export interface WalletStyle {
 
 export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
+export type AiPetBodyType = 'phantom' | 'lottie';
 
 interface AiPetState {
   emotion: AiPetEmotion;
   zone: AiPetZone;
+  bodyType: AiPetBodyType;
   isVisible: boolean;
   position: { x: number; y: number };
   isDragging: boolean;
   lastInteraction: number;
-  energy: number; // 0-100, affects behavior
+  energy: number;
   isHovered: boolean;
   emotionTimer: NodeJS.Timeout | null;
 }
@@ -50,6 +51,7 @@ interface WalletCustomizationState {
   setRecordedLayers: (layers: WalletLayoutLayer[] | null) => void;
   setAiPetEmotion: (emotion: AiPetEmotion) => void;
   setAiPetZone: (zone: AiPetZone) => void;
+  setAiPetBodyType: (bodyType: AiPetBodyType) => void;
   setAiPetPosition: (position: { x: number; y: number }) => void;
   setAiPetVisibility: (visible: boolean) => void;
   setAiPetDragging: (dragging: boolean) => void;
@@ -79,6 +81,7 @@ const defaultWalletStyle: WalletStyle = {
 const defaultAiPetState: AiPetState = {
   emotion: 'idle',
   zone: 'inside',
+  bodyType: 'phantom',
   isVisible: true,
   position: { x: 0, y: 0 },
   isDragging: false,
@@ -131,6 +134,10 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     aiPet: { ...state.aiPet, zone, lastInteraction: Date.now() }
   })),
 
+  setAiPetBodyType: (bodyType) => set((state) => ({
+    aiPet: { ...state.aiPet, bodyType }
+  })),
+
   setAiPetPosition: (position) => set((state) => ({
     aiPet: { ...state.aiPet, position }
   })),
@@ -167,10 +174,9 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
 
   updateAiPetEnergy: () => set((state) => {
     const timeSinceInteraction = Date.now() - state.aiPet.lastInteraction;
-    const energyDecay = Math.floor(timeSinceInteraction / 60000); // 1 energy per minute
+    const energyDecay = Math.floor(timeSinceInteraction / 60000);
     const newEnergy = Math.max(0, state.aiPet.energy - energyDecay);
     
-    // Auto emotion change based on energy (only if no temporary emotion is set)
     let newEmotion = state.aiPet.emotion;
     if (!state.aiPet.emotionTimer) {
       if (newEnergy < 20) newEmotion = 'sleepy';
@@ -187,17 +193,14 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setTemporaryEmotion: (emotion, duration = 4000) => {
     const state = get();
     
-    // Clear existing timer
     if (state.aiPet.emotionTimer) {
       clearTimeout(state.aiPet.emotionTimer);
     }
 
-    // Set new emotion
     set((state) => ({
       aiPet: { ...state.aiPet, emotion, lastInteraction: Date.now() }
     }));
 
-    // Set timer to revert to idle
     const timer = setTimeout(() => {
       set((state) => ({
         aiPet: { ...state.aiPet, emotion: 'idle', emotionTimer: null }
@@ -271,7 +274,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   resetWallet: () => {
     const state = get();
     
-    // Clear emotion timer
     if (state.aiPet.emotionTimer) {
       clearTimeout(state.aiPet.emotionTimer);
     }
