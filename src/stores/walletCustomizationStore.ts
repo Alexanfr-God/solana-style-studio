@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
 
@@ -138,48 +139,6 @@ const mockAccounts: WalletAccount[] = [
     name: 'Account 1',
     address: 'A8...5Gh3',
     network: 'Solana',
-    isActive: false
-  },
-  {
-    id: 'account-2',
-    name: 'Account 2', 
-    address: 'B3...7Kx2',
-    network: 'Solana',
-    isActive: false
-  },
-  {
-    id: 'account-3',
-    name: 'Account 3',
-    address: 'C9...4Mn8',
-    network: 'Ethereum',
-    isActive: false
-  },
-  {
-    id: 'account-4',
-    name: 'Account 4',
-    address: 'D2...1Qw5',
-    network: 'Solana',
-    isActive: false
-  },
-  {
-    id: 'account-5',
-    name: 'Account 5',
-    address: 'E7...9Rt3',
-    network: 'Polygon',
-    isActive: false
-  },
-  {
-    id: 'account-6',
-    name: 'Account 6',
-    address: 'F1...6Yu7',
-    network: 'Ethereum',
-    isActive: false
-  },
-  {
-    id: 'account-7',
-    name: 'Account 7',
-    address: 'G5...2As9',
-    network: 'Sui',
     isActive: false
   },
   {
