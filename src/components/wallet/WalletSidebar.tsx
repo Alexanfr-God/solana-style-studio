@@ -161,7 +161,7 @@ const WalletSidebar = () => {
                 </TooltipContent>
               </Tooltip>
             </div>
-          </TooltipProvider>
+          </div>
         </div>
       </div>
     </>
