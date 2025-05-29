@@ -17,7 +17,12 @@ const WalletLayoutRecorderComponent = () => {
     setIsRecording(true);
     try {
       const walletId = `${selectedWallet}-demo-${Date.now()}`;
-      const screenType = currentLayer === 'home' ? 'wallet' : currentLayer;
+      let screenType = currentLayer;
+      
+      // Map current layer to screen type
+      if (currentLayer === 'home') {
+        screenType = 'wallet';
+      }
       
       const layoutId = await WalletLayoutRecorder.recordAndSaveLayout(
         walletId, 
@@ -28,7 +33,12 @@ const WalletLayoutRecorderComponent = () => {
       if (layoutId) {
         const layout = await WalletLayoutRecorder.getLayoutFromDatabase(walletId, screenType);
         setRecordedLayout(layout);
-        toast.success(`${screenType === 'wallet' ? 'Home screen' : 'Login screen'} layout recorded with ${layout?.layers?.length || 0} enhanced layers! ID: ${layoutId}`);
+        
+        const screenName = screenType === 'wallet' ? 'Home screen' : 
+                          screenType === 'receive' ? 'Receive modal' : 
+                          'Login screen';
+        
+        toast.success(`${screenName} layout recorded with ${layout?.layers?.length || 0} enhanced layers! ID: ${layoutId}`);
         console.log('🎯 Recorded Layout with Enhanced Layers:', layout);
       } else {
         toast.error('Failed to record layout');
@@ -99,10 +109,14 @@ const WalletLayoutRecorderComponent = () => {
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
           <div className="text-blue-300 text-sm font-medium mb-1 flex items-center gap-2">
             <Home className="h-4 w-4" />
-            Current Screen: {currentLayer === 'home' ? 'Wallet Home' : 'Login'}
+            Current Screen: {currentLayer === 'home' ? 'Wallet Home' : 
+                           currentLayer === 'receive' ? 'Receive Modal' : 
+                           'Login'}
           </div>
           <div className="text-blue-200 text-xs">
-            Recording will use {currentLayer === 'home' ? 'enhanced home screen' : 'login screen'} classification
+            Recording will use {currentLayer === 'home' ? 'enhanced home screen' : 
+                              currentLayer === 'receive' ? 'receive modal' :
+                              'login screen'} classification
           </div>
         </div>
         

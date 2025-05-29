@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
 
@@ -73,6 +72,7 @@ interface WalletCustomizationState {
   totalChangePercent: string;
   isBalancePositive: boolean;
   showAccountDropdown: boolean;
+  showReceiveModal: boolean;
   
   setWalletStyle: (style: Partial<WalletStyle>) => void;
   setUploadedImage: (image: string | null) => void;
@@ -103,6 +103,7 @@ interface WalletCustomizationState {
   setCurrentLayer: (layer: WalletLayer) => void;
   setActiveAccount: (accountId: string) => void;
   setShowAccountDropdown: (show: boolean) => void;
+  setShowReceiveModal: (show: boolean) => void;
   unlockWallet: () => void;
 }
 
@@ -234,6 +235,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   totalChangePercent: '+5.26%',
   isBalancePositive: true,
   showAccountDropdown: false,
+  showReceiveModal: false,
   
   setWalletStyle: (style) => set((state) => ({
     walletStyle: { ...state.walletStyle, ...style }
@@ -389,6 +391,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   })),
 
   setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
+
+  setShowReceiveModal: (show) => set({ showReceiveModal: show }),
 
   unlockWallet: () => {
     const { setTemporaryEmotion, triggerAiPetInteraction } = get();

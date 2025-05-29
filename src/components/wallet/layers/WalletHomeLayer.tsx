@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Search, MoreVertical, Download, Send, ArrowRightLeft, DollarSign, Plus } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import WalletAccountDropdown from '../WalletAccountDropdown';
 import WalletBottomNavigation from '../WalletBottomNavigation';
+import ReceiveModal from '../ReceiveModal';
 
 const WalletHomeLayer = () => {
   const {
@@ -17,6 +17,7 @@ const WalletHomeLayer = () => {
     isBalancePositive,
     showAccountDropdown,
     setShowAccountDropdown,
+    setShowReceiveModal,
     triggerAiPetInteraction,
     setTemporaryEmotion
   } = useWalletCustomizationStore();
@@ -25,6 +26,11 @@ const WalletHomeLayer = () => {
 
   const handleAction = (action: string) => {
     console.log(`${action} clicked`);
+    
+    if (action === 'Receive') {
+      setShowReceiveModal(true);
+    }
+    
     triggerAiPetInteraction();
     setTemporaryEmotion('excited', 2000);
   };
@@ -197,6 +203,9 @@ const WalletHomeLayer = () => {
       
       {/* Bottom Navigation */}
       <WalletBottomNavigation />
+      
+      {/* Receive Modal */}
+      <ReceiveModal />
     </div>
   );
 };
