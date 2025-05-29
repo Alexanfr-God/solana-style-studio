@@ -1,14 +1,13 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WalletLayoutRecorder, WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { toast } from 'sonner';
-import { Database, Eye, Save, Download, Layers, FileText } from 'lucide-react';
+import { Database, Eye, Save, Download, Layers, FileText, Home } from 'lucide-react';
 
 const WalletLayoutRecorderComponent = () => {
-  const { selectedWallet } = useWalletCustomizationStore();
+  const { selectedWallet, currentLayer } = useWalletCustomizationStore();
   const [isRecording, setIsRecording] = useState(false);
   const [recordedLayout, setRecordedLayout] = useState<WalletLayout | null>(null);
   const [showLayoutViewer, setShowLayoutViewer] = useState(false);
@@ -18,17 +17,19 @@ const WalletLayoutRecorderComponent = () => {
     setIsRecording(true);
     try {
       const walletId = `${selectedWallet}-demo-${Date.now()}`;
+      const screenType = currentLayer === 'home' ? 'wallet' : currentLayer;
+      
       const layoutId = await WalletLayoutRecorder.recordAndSaveLayout(
         walletId, 
-        'login', 
+        screenType, 
         selectedWallet
       );
       
       if (layoutId) {
-        const layout = await WalletLayoutRecorder.getLayoutFromDatabase(walletId, 'login');
+        const layout = await WalletLayoutRecorder.getLayoutFromDatabase(walletId, screenType);
         setRecordedLayout(layout);
-        toast.success(`Layout recorded with ${layout?.layers?.length || 0} layers! ID: ${layoutId}`);
-        console.log('🎯 Recorded Layout with Layers:', layout);
+        toast.success(`${screenType === 'wallet' ? 'Home screen' : 'Login screen'} layout recorded with ${layout?.layers?.length || 0} enhanced layers! ID: ${layoutId}`);
+        console.log('🎯 Recorded Layout with Enhanced Layers:', layout);
       } else {
         toast.error('Failed to record layout');
       }
@@ -49,11 +50,11 @@ const WalletLayoutRecorderComponent = () => {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `wallet-layout-${selectedWallet}-${recordedLayout.screen}-layered.json`;
+    link.download = `wallet-layout-${selectedWallet}-${recordedLayout.screen}-enhanced.json`;
     link.click();
     
     URL.revokeObjectURL(url);
-    toast.success('Layered layout exported successfully!');
+    toast.success('Enhanced layered layout exported successfully!');
   };
 
   const handleExportLayer = (layer: WalletLayoutLayer) => {
@@ -63,11 +64,23 @@ const WalletLayoutRecorderComponent = () => {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `layer-${layer.layer_name.toLowerCase().replace(/\s+/g, '-')}.json`;
+    link.download = `layer-${layer.layer_name.toLowerCase().replace(/\s+/g, '-')}-enhanced.json`;
     link.click();
     
     URL.revokeObjectURL(url);
-    toast.success(`Layer "${layer.layer_name}" exported successfully!`);
+    toast.success(`Enhanced layer "${layer.layer_name}" exported successfully!`);
+  };
+
+  const getLayerPurpose = (layer: WalletLayoutLayer) => {
+    return layer.metadata?.purpose || 'No purpose defined';
+  };
+
+  const getLayerInteractionType = (layer: WalletLayoutLayer) => {
+    return layer.metadata?.interactionType || 'unknown';
+  };
+
+  const getLayerLayoutType = (layer: WalletLayoutLayer) => {
+    return layer.metadata?.layoutType || 'unknown';
   };
 
   return (
@@ -75,12 +88,22 @@ const WalletLayoutRecorderComponent = () => {
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <Database className="h-5 w-5" />
-          Layout Recorder
+          Enhanced Layout Recorder
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-sm text-gray-400">
-          Record UI elements with multi-layer structure for AI customization
+          Record UI elements with enhanced layer classification for targeted AI customization
+        </div>
+
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+          <div className="text-blue-300 text-sm font-medium mb-1 flex items-center gap-2">
+            <Home className="h-4 w-4" />
+            Current Screen: {currentLayer === 'home' ? 'Wallet Home' : 'Login'}
+          </div>
+          <div className="text-blue-200 text-xs">
+            Recording will use {currentLayer === 'home' ? 'enhanced home screen' : 'login screen'} classification
+          </div>
         </div>
         
         <div className="flex gap-2">
@@ -91,7 +114,7 @@ const WalletLayoutRecorderComponent = () => {
             variant="outline"
           >
             <Save className="h-4 w-4 mr-2" />
-            {isRecording ? 'Recording...' : 'Record Layout'}
+            {isRecording ? 'Recording...' : `Record ${currentLayer === 'home' ? 'Home' : 'Login'} Layout`}
           </Button>
           
           <Button
@@ -122,14 +145,15 @@ const WalletLayoutRecorderComponent = () => {
         {recordedLayout && (
           <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
             <div className="text-green-300 text-sm font-medium mb-1">
-              ✅ Multi-Layer Layout Recorded
+              ✅ Enhanced Multi-Layer Layout Recorded
             </div>
             <div className="text-green-200 text-xs space-y-1">
-              <div>Screen: {recordedLayout.screen}</div>
+              <div>Screen: {recordedLayout.screen} ({recordedLayout.screen === 'wallet' ? 'Home' : 'Login'})</div>
               <div>Total Elements: {recordedLayout.elements.length}</div>
-              <div>Layers: {recordedLayout.layers?.length || 0}</div>
+              <div>Enhanced Layers: {recordedLayout.layers?.length || 0}</div>
               <div>Dimensions: {recordedLayout.dimensions.width}x{recordedLayout.dimensions.height}</div>
               <div>Wallet: {recordedLayout.walletType}</div>
+              <div>Version: {recordedLayout.metadata?.version || '1.0.0'}</div>
             </div>
           </div>
         )}
@@ -138,7 +162,7 @@ const WalletLayoutRecorderComponent = () => {
           <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 max-h-60 overflow-y-auto">
             <div className="text-purple-300 text-sm font-medium mb-2 flex items-center gap-2">
               <Layers className="h-4 w-4" />
-              Layers ({recordedLayout.layers.length})
+              Enhanced Layers ({recordedLayout.layers.length})
             </div>
             <div className="space-y-2 text-xs">
               {recordedLayout.layers.map((layer, index) => (
@@ -156,11 +180,12 @@ const WalletLayoutRecorderComponent = () => {
                       <FileText className="h-3 w-3" />
                     </Button>
                   </div>
-                  <div className="text-purple-300 text-xs">
-                    Elements: {layer.elements.length}
-                  </div>
-                  <div className="text-purple-300 text-xs">
-                    Types: {[...new Set(layer.elements.map(e => e.type))].join(', ')}
+                  <div className="text-purple-300 text-xs space-y-1">
+                    <div>Elements: {layer.elements.length}</div>
+                    <div>Purpose: {getLayerPurpose(layer)}</div>
+                    <div>Interaction: {getLayerInteractionType(layer)}</div>
+                    <div>Layout: {getLayerLayoutType(layer)}</div>
+                    <div>Types: {[...new Set(layer.elements.map(e => e.type))].join(', ')}</div>
                   </div>
                 </div>
               ))}

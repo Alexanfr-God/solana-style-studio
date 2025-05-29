@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,6 +29,16 @@ export interface WalletLayoutLayer {
   layer_name: string;
   layer_order: number;
   elements: WalletElement[];
+  metadata?: {
+    purpose?: string;
+    interactionType?: 'static' | 'clickable' | 'input';
+    layoutType?: 'grid' | 'list' | 'single';
+    stylingContext?: {
+      primaryColor?: string;
+      spacing?: string;
+      layout?: string;
+    };
+  };
 }
 
 export interface WalletLayout {
@@ -47,55 +56,266 @@ export interface WalletLayout {
 }
 
 export class WalletLayoutRecorder {
-  // Layer classification logic
-  static classifyElementIntoLayer(element: WalletElement): { layerName: string; order: number } {
+  // Enhanced layer classification for different screens
+  static classifyElementIntoLayer(element: WalletElement, screenType: string = 'login'): { layerName: string; order: number; metadata?: any } {
+    if (screenType === 'wallet' || screenType === 'home') {
+      return this.classifyHomeScreenElement(element);
+    }
+    
+    return this.classifyLoginScreenElement(element);
+  }
+
+  // Specific classification for wallet home screen
+  static classifyHomeScreenElement(element: WalletElement): { layerName: string; order: number; metadata?: any } {
+    const { type, name, position } = element;
+    
+    // Header section (0-116px height based on WalletHomeLayer.tsx)
+    if (position.y >= 0 && position.y < 116) {
+      return { 
+        layerName: 'Header', 
+        order: 1,
+        metadata: {
+          purpose: 'Account navigation and search',
+          interactionType: 'clickable',
+          layoutType: 'single'
+        }
+      };
+    }
+    
+    // Balance section (116-180px approximately)
+    if (position.y >= 116 && position.y < 180) {
+      return { 
+        layerName: 'Balance Section', 
+        order: 2,
+        metadata: {
+          purpose: 'Display total balance and performance',
+          interactionType: 'static',
+          layoutType: 'single'
+        }
+      };
+    }
+    
+    // Action buttons section (180-280px approximately)
+    if (position.y >= 180 && position.y < 280 && type === 'button') {
+      return { 
+        layerName: 'Action Buttons', 
+        order: 3,
+        metadata: {
+          purpose: 'Primary wallet actions (Send, Receive, Swap, Buy)',
+          interactionType: 'clickable',
+          layoutType: 'grid',
+          stylingContext: {
+            layout: '4-column grid',
+            spacing: 'gap-3'
+          }
+        }
+      };
+    }
+    
+    // Action button labels
+    if (position.y >= 180 && position.y < 280 && type === 'text' && 
+        (name.includes('Receive') || name.includes('Send') || name.includes('Swap') || name.includes('Buy'))) {
+      return { 
+        layerName: 'Action Buttons', 
+        order: 3,
+        metadata: {
+          purpose: 'Action button labels',
+          interactionType: 'static',
+          layoutType: 'grid'
+        }
+      };
+    }
+    
+    // Asset list section (280px and below, before bottom nav)
+    if (position.y >= 280 && position.y < 1150) {
+      // Asset list header
+      if (type === 'text' && (name.includes('Assets') || name.includes('See all'))) {
+        return { 
+          layerName: 'Asset List Header', 
+          order: 4,
+          metadata: {
+            purpose: 'Asset section header and controls',
+            interactionType: 'clickable',
+            layoutType: 'single'
+          }
+        };
+      }
+      
+      // Individual asset items
+      if (type === 'container' || (type === 'text' && (name.includes('Solana') || name.includes('Ethereum') || 
+          name.includes('Sui') || name.includes('Polygon') || name.includes('Bitcoin')))) {
+        return { 
+          layerName: 'Asset List', 
+          order: 5,
+          metadata: {
+            purpose: 'Individual cryptocurrency assets with balances',
+            interactionType: 'clickable',
+            layoutType: 'list',
+            stylingContext: {
+              layout: 'vertical list',
+              spacing: 'space-y-2'
+            }
+          }
+        };
+      }
+      
+      // Manage token list button
+      if ((type === 'button' || type === 'text') && name.includes('Manage Token List')) {
+        return { 
+          layerName: 'Asset List Controls', 
+          order: 6,
+          metadata: {
+            purpose: 'Asset management controls',
+            interactionType: 'clickable',
+            layoutType: 'single'
+          }
+        };
+      }
+    }
+    
+    // Bottom navigation (1150px and below)
+    if (position.y >= 1150) {
+      return { 
+        layerName: 'Bottom Navigation', 
+        order: 7,
+        metadata: {
+          purpose: 'Main app navigation tabs',
+          interactionType: 'clickable',
+          layoutType: 'grid',
+          stylingContext: {
+            layout: '5-column grid',
+            spacing: 'grid-cols-5'
+          }
+        }
+      };
+    }
+    
+    // Default fallback
+    return { 
+      layerName: 'Background', 
+      order: 0,
+      metadata: {
+        purpose: 'Background or unclassified elements',
+        interactionType: 'static',
+        layoutType: 'single'
+      }
+    };
+  }
+
+  // Original classification for login screen
+  static classifyLoginScreenElement(element: WalletElement): { layerName: string; order: number; metadata?: any } {
     const { type, name, position } = element;
     
     // Header elements (top 20% of screen)
     if (position.y < 120) {
-      return { layerName: 'Header', order: 1 };
+      return { 
+        layerName: 'Header', 
+        order: 1,
+        metadata: {
+          purpose: 'App branding and navigation',
+          interactionType: 'static',
+          layoutType: 'single'
+        }
+      };
     }
     
     // Main content area
     if (type === 'logo' || name.includes('logo')) {
-      return { layerName: 'Branding', order: 2 };
+      return { 
+        layerName: 'Branding', 
+        order: 2,
+        metadata: {
+          purpose: 'App logo and visual identity',
+          interactionType: 'static',
+          layoutType: 'single'
+        }
+      };
     }
     
-    if (type === 'text' && (name.includes('title') || name.includes('heading'))) {
-      return { layerName: 'Content Text', order: 3 };
+    if (type === 'text' && (name.includes('title') || name.includes('heading') || name.includes('password'))) {
+      return { 
+        layerName: 'Content Text', 
+        order: 3,
+        metadata: {
+          purpose: 'Instructional text and headings',
+          interactionType: 'static',
+          layoutType: 'single'
+        }
+      };
     }
     
     if (type === 'input') {
-      return { layerName: 'Input Fields', order: 4 };
+      return { 
+        layerName: 'Input Fields', 
+        order: 4,
+        metadata: {
+          purpose: 'User input areas',
+          interactionType: 'input',
+          layoutType: 'single'
+        }
+      };
     }
     
     if (type === 'button') {
-      return { layerName: 'Action Buttons', order: 5 };
+      return { 
+        layerName: 'Action Buttons', 
+        order: 5,
+        metadata: {
+          purpose: 'Primary actions',
+          interactionType: 'clickable',
+          layoutType: 'single'
+        }
+      };
     }
     
     if (type === 'link') {
-      return { layerName: 'Navigation Links', order: 6 };
+      return { 
+        layerName: 'Navigation Links', 
+        order: 6,
+        metadata: {
+          purpose: 'Secondary navigation',
+          interactionType: 'clickable',
+          layoutType: 'single'
+        }
+      };
     }
     
     if (type === 'icon') {
-      return { layerName: 'Icons', order: 7 };
+      return { 
+        layerName: 'Icons', 
+        order: 7,
+        metadata: {
+          purpose: 'Visual indicators and icons',
+          interactionType: 'static',
+          layoutType: 'single'
+        }
+      };
     }
     
     // Default container layer
-    return { layerName: 'Background', order: 0 };
+    return { 
+      layerName: 'Background', 
+      order: 0,
+      metadata: {
+        purpose: 'Background containers and structure',
+        interactionType: 'static',
+        layoutType: 'single'
+      }
+    };
   }
 
-  static segmentElementsIntoLayers(elements: WalletElement[]): WalletLayoutLayer[] {
+  static segmentElementsIntoLayers(elements: WalletElement[], screenType: string = 'login'): WalletLayoutLayer[] {
     const layerMap = new Map<string, WalletLayoutLayer>();
     
     elements.forEach(element => {
-      const { layerName, order } = this.classifyElementIntoLayer(element);
+      const { layerName, order, metadata } = this.classifyElementIntoLayer(element, screenType);
       
       if (!layerMap.has(layerName)) {
         layerMap.set(layerName, {
           layer_name: layerName,
           layer_order: order,
-          elements: []
+          elements: [],
+          metadata
         });
       }
       
@@ -238,13 +458,13 @@ export class WalletLayoutRecorder {
       safeZone: { x: 161, y: 260, width: 400, height: 500 },
       metadata: {
         recorded_at: new Date().toISOString(),
-        version: '1.0.0',
-        notes: 'Initial Phantom login screen recording with layer support'
+        version: '2.0.0',
+        notes: 'Enhanced Phantom login screen recording with improved layer classification'
       }
     };
 
-    // Segment elements into layers
-    phantomLoginLayout.layers = this.segmentElementsIntoLayers(phantomLoginLayout.elements);
+    // Segment elements into layers with improved classification
+    phantomLoginLayout.layers = this.segmentElementsIntoLayers(phantomLoginLayout.elements, screen);
     
     return phantomLoginLayout;
   }
@@ -279,7 +499,8 @@ export class WalletLayoutRecorder {
           wallet_layout_id: layoutId,
           layer_name: layer.layer_name,
           layer_order: layer.layer_order,
-          elements: layer.elements as any
+          elements: layer.elements as any,
+          metadata: layer.metadata as any
         }));
 
         const { error: layersError } = await supabase
@@ -290,7 +511,7 @@ export class WalletLayoutRecorder {
           console.error('❌ Layers save error:', layersError);
           // Continue anyway - main layout was saved
         } else {
-          console.log('✅ Layers saved successfully');
+          console.log('✅ Enhanced layers saved successfully');
         }
       }
 
@@ -325,7 +546,7 @@ export class WalletLayoutRecorder {
 
       const layout = layoutData.layout_data as unknown as WalletLayout;
 
-      // Get the layers
+      // Get the layers with enhanced metadata
       const { data: layersData, error: layersError } = await supabase
         .from('wallet_layout_layers')
         .select('*')
@@ -337,7 +558,8 @@ export class WalletLayoutRecorder {
           id: layer.id,
           layer_name: layer.layer_name,
           layer_order: layer.layer_order,
-          elements: layer.elements as unknown as WalletElement[]
+          elements: layer.elements as unknown as WalletElement[],
+          metadata: layer.metadata as unknown as any
         }));
       }
 
@@ -366,7 +588,8 @@ export class WalletLayoutRecorder {
         id: data.id,
         layer_name: data.layer_name,
         layer_order: data.layer_order,
-        elements: data.elements as unknown as WalletElement[]
+        elements: data.elements as unknown as WalletElement[],
+        metadata: data.metadata as unknown as any
       };
     } catch (error) {
       console.error('💥 Export layer error:', error);
@@ -391,7 +614,8 @@ export class WalletLayoutRecorder {
         id: layer.id,
         layer_name: layer.layer_name,
         layer_order: layer.layer_order,
-        elements: layer.elements as unknown as WalletElement[]
+        elements: layer.elements as unknown as WalletElement[],
+        metadata: layer.metadata as unknown as any
       }));
     } catch (error) {
       console.error('💥 Export all layers error:', error);
