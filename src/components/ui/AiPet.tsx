@@ -4,15 +4,23 @@ import PhantomBody from './PhantomBody';
 import LottieBody from './LottieBody';
 import PhantomEyes from './PhantomEyes';
 import PhantomMouth from './PhantomMouth';
+import LibraryEyes from './LibraryEyes';
+import LibraryMouth from './LibraryMouth';
+import EmojiEyes from './EmojiEyes';
+import EmojiMouth from './EmojiMouth';
 
 export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
 export type AiPetBodyType = 'phantom' | 'lottie';
+export type AiPetEyeType = 'phantom' | 'library' | 'emoji';
+export type AiPetMouthType = 'phantom' | 'library' | 'emoji';
 
 interface AiPetProps {
   emotion?: AiPetEmotion;
   zone?: AiPetZone;
   bodyType?: AiPetBodyType;
+  eyeType?: AiPetEyeType;
+  mouthType?: AiPetMouthType;
   color?: string;
   size?: number;
   onZoneChange?: (zone: AiPetZone) => void;
@@ -27,6 +35,8 @@ const AiPet: React.FC<AiPetProps> = ({
   emotion = 'idle',
   zone = 'inside',
   bodyType = 'phantom',
+  eyeType = 'phantom',
+  mouthType = 'phantom',
   color = '#9945FF',
   size = 64,
   onZoneChange,
@@ -165,6 +175,32 @@ const AiPet: React.FC<AiPetProps> = ({
     }
   };
 
+  // Render Eyes Component
+  const renderEyes = () => {
+    switch (eyeType) {
+      case 'library':
+        return <LibraryEyes emotion={emotion} size={size} />;
+      case 'emoji':
+        return <EmojiEyes emotion={emotion} size={size} />;
+      case 'phantom':
+      default:
+        return <PhantomEyes emotion={emotion} size={size} />;
+    }
+  };
+
+  // Render Mouth Component
+  const renderMouth = () => {
+    switch (mouthType) {
+      case 'library':
+        return <LibraryMouth emotion={emotion} size={size} />;
+      case 'emoji':
+        return <EmojiMouth emotion={emotion} size={size} />;
+      case 'phantom':
+      default:
+        return <PhantomMouth emotion={emotion} size={size} />;
+    }
+  };
+
   return (
     <motion.div
       ref={petRef}
@@ -200,21 +236,20 @@ const AiPet: React.FC<AiPetProps> = ({
           isAnimating={isAnimating}
         />
       ) : (
+        <PhantomBody 
+          color={color}
+          size={size}
+          emotion={emotion}
+          zone={zone}
+          isAnimating={isAnimating}
+        />
+      )}
+      
+      {/* Conditional Eyes and Mouth Rendering - Only for phantom body */}
+      {bodyType === 'phantom' && (
         <>
-          {/* Phantom Body */}
-          <PhantomBody 
-            color={color}
-            size={size}
-            emotion={emotion}
-            zone={zone}
-            isAnimating={isAnimating}
-          />
-          
-          {/* Phantom Eyes */}
-          <PhantomEyes emotion={emotion} size={size} />
-          
-          {/* Phantom Mouth */}
-          <PhantomMouth emotion={emotion} size={size} />
+          {renderEyes()}
+          {renderMouth()}
         </>
       )}
       

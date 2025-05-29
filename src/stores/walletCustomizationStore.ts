@@ -11,11 +11,15 @@ export interface WalletStyle {
 export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
 export type AiPetBodyType = 'phantom' | 'lottie';
+export type AiPetEyeType = 'phantom' | 'library' | 'emoji';
+export type AiPetMouthType = 'phantom' | 'library' | 'emoji';
 
 interface AiPetState {
   emotion: AiPetEmotion;
   zone: AiPetZone;
   bodyType: AiPetBodyType;
+  eyeType: AiPetEyeType;
+  mouthType: AiPetMouthType;
   isVisible: boolean;
   position: { x: number; y: number };
   isDragging: boolean;
@@ -52,6 +56,8 @@ interface WalletCustomizationState {
   setAiPetEmotion: (emotion: AiPetEmotion) => void;
   setAiPetZone: (zone: AiPetZone) => void;
   setAiPetBodyType: (bodyType: AiPetBodyType) => void;
+  setAiPetEyeType: (eyeType: AiPetEyeType) => void;
+  setAiPetMouthType: (mouthType: AiPetMouthType) => void;
   setAiPetPosition: (position: { x: number; y: number }) => void;
   setAiPetVisibility: (visible: boolean) => void;
   setAiPetDragging: (dragging: boolean) => void;
@@ -82,6 +88,8 @@ const defaultAiPetState: AiPetState = {
   emotion: 'idle',
   zone: 'inside',
   bodyType: 'phantom',
+  eyeType: 'phantom',
+  mouthType: 'phantom',
   isVisible: true,
   position: { x: 0, y: 0 },
   isDragging: false,
@@ -136,6 +144,14 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
 
   setAiPetBodyType: (bodyType) => set((state) => ({
     aiPet: { ...state.aiPet, bodyType }
+  })),
+
+  setAiPetEyeType: (eyeType) => set((state) => ({
+    aiPet: { ...state.aiPet, eyeType }
+  })),
+
+  setAiPetMouthType: (mouthType) => set((state) => ({
+    aiPet: { ...state.aiPet, mouthType }
   })),
 
   setAiPetPosition: (position) => set((state) => ({
