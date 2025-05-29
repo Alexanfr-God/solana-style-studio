@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,8 +16,6 @@ const WalletPreviewContainer = () => {
     setAiPetEmotion,
     setAiPetZone,
     setAiPetBodyType,
-    setAiPetEyeType,
-    setAiPetMouthType,
     setContainerBounds,
     containerBounds,
     triggerAiPetInteraction,
@@ -97,86 +94,24 @@ const WalletPreviewContainer = () => {
           </div>
         </div>
 
-        {/* AiPet Customization Controls */}
-        <div className="space-y-3 mb-4">
-          {/* Body Type Selector */}
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-white text-xs">Body:</span>
-            <Button
-              variant={aiPet.bodyType === 'phantom' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAiPetBodyType('phantom')}
-              className="text-xs"
-            >
-              👻 Phantom
-            </Button>
-            <Button
-              variant={aiPet.bodyType === 'lottie' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAiPetBodyType('lottie')}
-              className="text-xs"
-            >
-              🌊 Liquid
-            </Button>
-          </div>
-
-          {/* Eyes Type Selector */}
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-white text-xs">Eyes:</span>
-            <Button
-              variant={aiPet.eyeType === 'phantom' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAiPetEyeType('phantom')}
-              className="text-xs"
-            >
-              👻 SVG
-            </Button>
-            <Button
-              variant={aiPet.eyeType === 'library' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAiPetEyeType('library')}
-              className="text-xs"
-            >
-              📚 Icons
-            </Button>
-            <Button
-              variant={aiPet.eyeType === 'emoji' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAiPetEyeType('emoji')}
-              className="text-xs"
-            >
-              😊 Emoji
-            </Button>
-          </div>
-
-          {/* Mouth Type Selector */}
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-white text-xs">Mouth:</span>
-            <Button
-              variant={aiPet.mouthType === 'phantom' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAiPetMouthType('phantom')}
-              className="text-xs"
-            >
-              👻 SVG
-            </Button>
-            <Button
-              variant={aiPet.mouthType === 'library' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAiPetMouthType('library')}
-              className="text-xs"
-            >
-              📚 Icons
-            </Button>
-            <Button
-              variant={aiPet.mouthType === 'emoji' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setAiPetMouthType('emoji')}
-              className="text-xs"
-            >
-              😊 Emoji
-            </Button>
-          </div>
+        {/* Body Type Selector */}
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Button
+            variant={aiPet.bodyType === 'phantom' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setAiPetBodyType('phantom')}
+            className="text-xs"
+          >
+            👻 Phantom
+          </Button>
+          <Button
+            variant={aiPet.bodyType === 'lottie' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setAiPetBodyType('lottie')}
+            className="text-xs"
+          >
+            🌊 Liquid
+          </Button>
         </div>
 
         {/* Design close to the real wallet text */}
@@ -253,8 +188,6 @@ const WalletPreviewContainer = () => {
                     emotion={aiPet.emotion}
                     zone={aiPet.zone}
                     bodyType={aiPet.bodyType}
-                    eyeType={aiPet.eyeType}
-                    mouthType={aiPet.mouthType}
                     color={walletStyle.primaryColor || '#9945FF'}
                     size={96}
                     onZoneChange={setAiPetZone}
@@ -360,8 +293,6 @@ const WalletPreviewContainer = () => {
                 emotion={aiPet.emotion}
                 zone={aiPet.zone}
                 bodyType={aiPet.bodyType}
-                eyeType={aiPet.eyeType}
-                mouthType={aiPet.mouthType}
                 color={walletStyle.primaryColor || '#9945FF'}
                 size={120}
                 onZoneChange={setAiPetZone}
@@ -382,7 +313,7 @@ const WalletPreviewContainer = () => {
             <div className="space-y-2">
               <div>Emotion: {aiPet.emotion}</div>
               <div>Zone: {aiPet.zone}</div>
-              <div>Body: {aiPet.bodyType} | Eyes: {aiPet.eyeType} | Mouth: {aiPet.mouthType}</div>
+              <div>Body Type: {aiPet.bodyType}</div>
               <div>Energy: {aiPet.energy}%</div>
               <div className="space-x-1">
                 {(['idle', 'happy', 'excited', 'sleepy', 'suspicious', 'sad', 'wink'] as AiPetEmotion[]).map(emotion => (
@@ -419,7 +350,7 @@ const WalletPreviewContainer = () => {
             Hover → suspicious • Click → wink • Double-click → zone switch
           </p>
           <p className="text-blue-400/80 text-xs mt-1">
-            Energy: {aiPet.energy}% • Emotion: {aiPet.emotion} • Body: {aiPet.bodyType} • Eyes: {aiPet.eyeType} • Mouth: {aiPet.mouthType}
+            Energy: {aiPet.energy}% • Emotion: {aiPet.emotion} • Body: {aiPet.bodyType} • Last interaction: {Math.floor((Date.now() - aiPet.lastInteraction) / 1000)}s ago
           </p>
           <button
             onClick={() => setDebugMode(!debugMode)}
