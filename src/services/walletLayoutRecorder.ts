@@ -559,7 +559,7 @@ export class WalletLayoutRecorder {
           layer_name: layer.layer_name,
           layer_order: layer.layer_order,
           elements: layer.elements as unknown as WalletElement[],
-          metadata: layer.metadata as unknown as any
+          metadata: layer.metadata as unknown as WalletLayoutLayer["metadata"]
         }));
       }
 
@@ -589,7 +589,7 @@ export class WalletLayoutRecorder {
         layer_name: data.layer_name,
         layer_order: data.layer_order,
         elements: data.elements as unknown as WalletElement[],
-        metadata: data.metadata as unknown as any
+        metadata: data.metadata as unknown as WalletLayoutLayer["metadata"]
       };
     } catch (error) {
       console.error('💥 Export layer error:', error);
@@ -615,7 +615,7 @@ export class WalletLayoutRecorder {
         layer_name: layer.layer_name,
         layer_order: layer.layer_order,
         elements: layer.elements as unknown as WalletElement[],
-        metadata: layer.metadata as unknown as any
+        metadata: layer.metadata as unknown as WalletLayoutLayer["metadata"]
       }));
     } catch (error) {
       console.error('💥 Export all layers error:', error);

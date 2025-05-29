@@ -169,6 +169,7 @@ export type Database = {
           id: string
           layer_name: string
           layer_order: number
+          metadata: Json | null
           updated_at: string
           wallet_layout_id: string
         }
@@ -178,6 +179,7 @@ export type Database = {
           id?: string
           layer_name: string
           layer_order?: number
+          metadata?: Json | null
           updated_at?: string
           wallet_layout_id: string
         }
@@ -187,6 +189,7 @@ export type Database = {
           id?: string
           layer_name?: string
           layer_order?: number
+          metadata?: Json | null
           updated_at?: string
           wallet_layout_id?: string
         }
