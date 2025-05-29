@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
 
@@ -11,6 +12,7 @@ export interface WalletStyle {
 export type AiPetEmotion = 'idle' | 'excited' | 'sleepy' | 'happy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
 export type AiPetBodyType = 'phantom' | 'lottie';
+export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search';
 
 interface AiPetState {
   emotion: AiPetEmotion;
@@ -32,6 +34,26 @@ interface AiPetBehavior {
   emotionTransitions: boolean;
 }
 
+interface WalletAccount {
+  id: string;
+  name: string;
+  address: string;
+  network: string;
+  isActive: boolean;
+}
+
+interface Token {
+  id: string;
+  name: string;
+  symbol: string;
+  amount: string;
+  value: string;
+  change: string;
+  changePercent: string;
+  isPositive: boolean;
+  icon: string;
+}
+
 interface WalletCustomizationState {
   walletStyle: WalletStyle;
   uploadedImage: string | null;
@@ -42,6 +64,15 @@ interface WalletCustomizationState {
   aiPet: AiPetState;
   aiPetBehavior: AiPetBehavior;
   containerBounds: DOMRect | null;
+  currentLayer: WalletLayer;
+  accounts: WalletAccount[];
+  activeAccountId: string;
+  tokens: Token[];
+  totalBalance: string;
+  totalChange: string;
+  totalChangePercent: string;
+  isBalancePositive: boolean;
+  showAccountDropdown: boolean;
   
   setWalletStyle: (style: Partial<WalletStyle>) => void;
   setUploadedImage: (image: string | null) => void;
@@ -69,6 +100,10 @@ interface WalletCustomizationState {
   onCustomizationComplete: () => void;
   customizeWallet: () => void;
   resetWallet: () => void;
+  setCurrentLayer: (layer: WalletLayer) => void;
+  setActiveAccount: (accountId: string) => void;
+  setShowAccountDropdown: (show: boolean) => void;
+  unlockWallet: () => void;
 }
 
 const defaultWalletStyle: WalletStyle = {
@@ -98,6 +133,88 @@ const defaultAiPetBehavior: AiPetBehavior = {
   emotionTransitions: true
 };
 
+const mockAccounts: WalletAccount[] = [
+  {
+    id: 'account-1',
+    name: 'Account 1',
+    address: 'A8...5Gh3',
+    network: 'Solana',
+    isActive: false
+  },
+  {
+    id: 'account-8',
+    name: 'Account 8',
+    address: 'B7...2Kx9',
+    network: 'Solana',
+    isActive: true
+  },
+  {
+    id: 'account-eth',
+    name: 'ETH Account',
+    address: '0x7...3f2a',
+    network: 'Ethereum',
+    isActive: false
+  }
+];
+
+const mockTokens: Token[] = [
+  {
+    id: 'sol',
+    name: 'Solana',
+    symbol: 'SOL',
+    amount: '5.03737',
+    value: '$807.73',
+    change: '+$74.96',
+    changePercent: '+10.23%',
+    isPositive: true,
+    icon: '◎'
+  },
+  {
+    id: 'eth',
+    name: 'Ethereum',
+    symbol: 'ETH',
+    amount: '0.25',
+    value: '$562.50',
+    change: '-$12.30',
+    changePercent: '-2.14%',
+    isPositive: false,
+    icon: 'Ξ'
+  },
+  {
+    id: 'sui',
+    name: 'Sui',
+    symbol: 'SUI',
+    amount: '150.00',
+    value: '$45.75',
+    change: '+$3.20',
+    changePercent: '+7.52%',
+    isPositive: true,
+    icon: '🌊'
+  },
+  {
+    id: 'matic',
+    name: 'Polygon',
+    symbol: 'MATIC',
+    amount: '89.12',
+    value: '$67.84',
+    change: '+$2.15',
+    changePercent: '+3.27%',
+    isPositive: true,
+    icon: '⬡'
+  },
+  {
+    id: 'btc',
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    amount: '0.0123',
+    value: '$789.45',
+    change: '+$45.67',
+    changePercent: '+6.13%',
+    isPositive: true,
+    icon: '₿'
+  }
+];
+
 export const useWalletCustomizationStore = create<WalletCustomizationState>((set, get) => ({
   walletStyle: { ...defaultWalletStyle },
   uploadedImage: null,
@@ -108,6 +225,15 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   aiPet: { ...defaultAiPetState },
   aiPetBehavior: { ...defaultAiPetBehavior },
   containerBounds: null,
+  currentLayer: 'login',
+  accounts: mockAccounts,
+  activeAccountId: 'account-8',
+  tokens: mockTokens,
+  totalBalance: '$2,272.27',
+  totalChange: '+$113.68',
+  totalChangePercent: '+5.26%',
+  isBalancePositive: true,
+  showAccountDropdown: false,
   
   setWalletStyle: (style) => set((state) => ({
     walletStyle: { ...state.walletStyle, ...style }
@@ -250,6 +376,26 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     const { setTemporaryEmotion } = get();
     setTemporaryEmotion('happy', 5000);
   },
+
+  setCurrentLayer: (layer) => set({ currentLayer: layer }),
+
+  setActiveAccount: (accountId) => set((state) => ({
+    activeAccountId: accountId,
+    showAccountDropdown: false,
+    accounts: state.accounts.map(acc => ({
+      ...acc,
+      isActive: acc.id === accountId
+    }))
+  })),
+
+  setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
+
+  unlockWallet: () => {
+    const { setTemporaryEmotion, triggerAiPetInteraction } = get();
+    triggerAiPetInteraction();
+    setTemporaryEmotion('excited', 3000);
+    set({ currentLayer: 'home' });
+  },
   
   customizeWallet: () => {
     const { uploadedImage, onCustomizationStart, onCustomizationComplete } = get();
@@ -286,7 +432,9 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
       recordedLayers: null,
       aiPet: { ...defaultAiPetState },
       aiPetBehavior: { ...defaultAiPetBehavior },
-      containerBounds: null
+      containerBounds: null,
+      currentLayer: 'login',
+      showAccountDropdown: false
     });
   }
 }));
