@@ -3,7 +3,12 @@ import React, { useRef, useEffect } from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import WalletList from './WalletList';
 
-const WalletAccountDropdown = () => {
+interface WalletAccountDropdownProps {
+  context?: 'account-selector' | 'receive-flow' | 'send-flow';
+  onClose?: () => void;
+}
+
+const WalletAccountDropdown = ({ context = 'account-selector', onClose }: WalletAccountDropdownProps) => {
   const {
     walletStyle,
     setShowAccountDropdown,
@@ -17,7 +22,11 @@ const WalletAccountDropdown = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowAccountDropdown(false);
+        if (onClose) {
+          onClose();
+        } else {
+          setShowAccountDropdown(false);
+        }
       }
     };
 
@@ -25,12 +34,38 @@ const WalletAccountDropdown = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [setShowAccountDropdown]);
+  }, [setShowAccountDropdown, onClose]);
 
   const handleAccountSelect = (accountId: string) => {
     setActiveAccount(accountId);
-    setShowAccountDropdown(false);
+    if (onClose) {
+      onClose();
+    } else {
+      setShowAccountDropdown(false);
+    }
     triggerAiPetInteraction();
+  };
+
+  const getTitle = () => {
+    switch (context) {
+      case 'receive-flow':
+        return 'Receive Crypto';
+      case 'send-flow':
+        return 'Send From Account';
+      default:
+        return 'Select Account';
+    }
+  };
+
+  const getDescription = () => {
+    switch (context) {
+      case 'receive-flow':
+        return 'Select an account to receive funds';
+      case 'send-flow':
+        return 'Choose which account to send from';
+      default:
+        return 'Choose which account to use';
+    }
   };
 
   return (
@@ -41,14 +76,19 @@ const WalletAccountDropdown = () => {
     >
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10">
-        <h3 className="text-sm font-medium text-white">Select Account</h3>
-        <p className="text-xs text-gray-400 mt-1">Choose which account to use</p>
+        <h3 className="text-sm font-medium text-white">{getTitle()}</h3>
+        <p className="text-xs text-gray-400 mt-1">{getDescription()}</p>
       </div>
       
       {/* Shared Wallet List */}
       <WalletList 
         context="dropdown" 
         onAccountSelect={handleAccountSelect}
+        metadata={{
+          triggeredBy: context,
+          purpose: context === 'receive-flow' ? 'Display wallet addresses for receive flow' : 'Account selection',
+          sharedElementId: 'walletList'
+        }}
       />
       
       {/* Footer */}
@@ -57,7 +97,11 @@ const WalletAccountDropdown = () => {
           className="w-full text-sm text-gray-400 hover:text-white transition-colors"
           onClick={() => {
             console.log('Add new account');
-            setShowAccountDropdown(false);
+            if (onClose) {
+              onClose();
+            } else {
+              setShowAccountDropdown(false);
+            }
             triggerAiPetInteraction();
           }}
         >

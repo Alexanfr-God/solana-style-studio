@@ -21,6 +21,13 @@ export interface WalletElement {
     mask?: boolean;
     icon?: string;
     clickable?: boolean;
+    'data-shared-element-id'?: string;
+    [key: string]: any;
+  };
+  metadata?: {
+    context?: string;
+    triggeredBy?: string;
+    [key: string]: any;
   };
 }
 
@@ -33,6 +40,9 @@ export interface WalletLayoutLayer {
     purpose?: string;
     interactionType?: 'static' | 'clickable' | 'input';
     layoutType?: 'grid' | 'list' | 'single';
+    sharedElementId?: string;
+    context?: string;
+    triggeredBy?: string;
     stylingContext?: {
       primaryColor?: string;
       spacing?: string;
@@ -62,75 +72,7 @@ export class WalletLayoutRecorder {
       return this.classifyHomeScreenElement(element);
     }
     
-    if (screenType === 'receive') {
-      return this.classifyReceiveScreenElement(element);
-    }
-    
     return this.classifyLoginScreenElement(element);
-  }
-
-  // New classification for receive screen
-  static classifyReceiveScreenElement(element: WalletElement): { layerName: string; order: number; metadata?: any } {
-    const { type, name, position } = element;
-    
-    // Modal header
-    if (position.y < 100 && (type === 'text' && name.includes('Receive'))) {
-      return { 
-        layerName: 'Modal Header', 
-        order: 1,
-        metadata: {
-          purpose: 'Receive modal title and description',
-          interactionType: 'static',
-          layoutType: 'single',
-          context: 'popup'
-        }
-      };
-    }
-    
-    // Wallet list items
-    if (name === 'walletList' || 
-        (type === 'container' && element.properties?.['data-shared-element-id'] === 'walletList') ||
-        (type === 'text' && (name.includes('Account') || name.includes('Solana') || name.includes('Ethereum')))) {
-      return { 
-        layerName: 'Wallet List', 
-        order: 2,
-        metadata: {
-          sharedElementId: 'walletList',
-          purpose: 'Display wallet addresses for receive flow',
-          interactionType: 'clickable',
-          layoutType: 'list',
-          context: 'popup'
-        }
-      };
-    }
-    
-    // Close button
-    if ((type === 'button' && name.includes('Close')) || 
-        (element.properties?.['data-shared-element-id'] === 'closeButton')) {
-      return { 
-        layerName: 'Modal Footer', 
-        order: 3,
-        metadata: {
-          sharedElementId: 'closeButton',
-          purpose: 'Close modal action',
-          interactionType: 'clickable',
-          layoutType: 'single',
-          context: 'popup'
-        }
-      };
-    }
-    
-    // Default backdrop/container
-    return { 
-      layerName: 'Modal Background', 
-      order: 0,
-      metadata: {
-        purpose: 'Modal backdrop and container',
-        interactionType: 'static',
-        layoutType: 'single',
-        context: 'popup'
-      }
-    };
   }
 
   // Specific classification for wallet home screen
@@ -396,75 +338,6 @@ export class WalletLayoutRecorder {
 
   static async recordCurrentLayout(walletId: string, screen: string, walletType: string = 'phantom'): Promise<WalletLayout> {
     console.log('🎯 Starting wallet layout recording...');
-    
-    // Handle receive screen layout
-    if (screen === 'receive') {
-      const receiveLayout: WalletLayout = {
-        screen: 'receive' as any,
-        walletType: walletType as 'phantom',
-        dimensions: { width: 400, height: 600 },
-        elements: [
-          {
-            type: 'container',
-            name: 'modal-backdrop',
-            content: '',
-            position: { x: 0, y: 0 },
-            size: { width: 400, height: 600 },
-            styles: {
-              backgroundColor: 'rgba(0,0,0,0.8)'
-            },
-            metadata: {
-              context: 'popup'
-            }
-          },
-          {
-            type: 'text',
-            name: 'receive-title',
-            content: 'Receive Crypto',
-            position: { x: 50, y: 30 },
-            size: { width: 300, height: 30 },
-            styles: {
-              color: '#ffffff',
-              fontSize: '18px',
-              fontFamily: 'Inter'
-            }
-          },
-          {
-            type: 'container',
-            name: 'wallet-list-container',
-            content: '',
-            position: { x: 20, y: 80 },
-            size: { width: 360, height: 400 },
-            properties: {
-              'data-shared-element-id': 'walletList'
-            }
-          },
-          {
-            type: 'button',
-            name: 'close-button',
-            content: 'Close',
-            position: { x: 50, y: 520 },
-            size: { width: 300, height: 40 },
-            styles: {
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              color: '#ffffff',
-              borderRadius: '8px'
-            },
-            properties: {
-              'data-shared-element-id': 'closeButton'
-            }
-          }
-        ],
-        metadata: {
-          recorded_at: new Date().toISOString(),
-          version: '2.0.0',
-          notes: 'Receive modal screen with shared wallet list components'
-        }
-      };
-
-      receiveLayout.layers = this.segmentElementsIntoLayers(receiveLayout.elements, screen);
-      return receiveLayout;
-    }
     
     // Define the current Phantom login screen layout based on the actual implementation
     const phantomLoginLayout: WalletLayout = {

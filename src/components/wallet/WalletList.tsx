@@ -7,9 +7,14 @@ interface WalletListProps {
   context: 'dropdown' | 'popup';
   onAccountSelect?: (accountId: string) => void;
   onClose?: () => void;
+  metadata?: {
+    triggeredBy?: string;
+    purpose?: string;
+    sharedElementId?: string;
+  };
 }
 
-const WalletList = ({ context, onAccountSelect, onClose }: WalletListProps) => {
+const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListProps) => {
   const {
     accounts,
     activeAccountId,
@@ -45,7 +50,12 @@ const WalletList = ({ context, onAccountSelect, onClose }: WalletListProps) => {
     : "max-h-80 overflow-y-auto";
 
   return (
-    <div className={containerClass}>
+    <div 
+      className={containerClass}
+      data-shared-element-id={metadata?.sharedElementId || 'walletList'}
+      data-context={context}
+      data-triggered-by={metadata?.triggeredBy}
+    >
       {accounts.map((account) => (
         <div
           key={account.id}
@@ -53,7 +63,7 @@ const WalletList = ({ context, onAccountSelect, onClose }: WalletListProps) => {
             account.id === activeAccountId ? 'bg-white/5' : ''
           }`}
           onClick={() => handleAccountSelect(account.id)}
-          data-shared-element-id="walletList"
+          data-shared-element-id="walletItem"
         >
           <div className="flex items-center space-x-3">
             {/* Account Avatar */}
@@ -89,6 +99,7 @@ const WalletList = ({ context, onAccountSelect, onClose }: WalletListProps) => {
             <button
               className="p-1 rounded hover:bg-white/10 transition-colors"
               onClick={(e) => handleCopyAddress(account.address, e)}
+              data-shared-element-id="copyButton"
             >
               {copiedAddress === account.address ? (
                 <Check className="w-3 h-3 text-green-400" />
