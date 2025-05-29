@@ -2,7 +2,7 @@
 import React from 'react';
 import { Search, MoreVertical, Download, Send, ArrowRightLeft, DollarSign, Plus } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import WalletAccountDropdown from '../WalletAccountDropdown';
+import WalletSidebar from '../WalletSidebar';
 import WalletBottomNavigation from '../WalletBottomNavigation';
 
 const WalletHomeLayer = () => {
@@ -39,6 +39,11 @@ const WalletHomeLayer = () => {
     triggerAiPetInteraction();
   };
 
+  const handleAvatarClick = () => {
+    setShowAccountDropdown(true);
+    triggerAiPetInteraction();
+  };
+
   return (
     <div className="h-full flex flex-col" style={{
       backgroundColor: walletStyle.backgroundColor || '#181818',
@@ -47,21 +52,21 @@ const WalletHomeLayer = () => {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <div className="flex items-center space-x-3">
-          {/* Account Avatar */}
+          {/* Account Avatar - Clickable */}
           <div 
             className="relative w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
             style={{ backgroundColor: walletStyle.primaryColor || '#9945FF' }}
-            onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+            onClick={handleAvatarClick}
           >
             <span className="font-medium text-white text-sm">
               {activeAccount?.name.slice(-1) || '8'}
             </span>
           </div>
           
-          {/* Account Info */}
+          {/* Account Info - Clickable */}
           <div 
             className="cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+            onClick={handleAvatarClick}
           >
             <div className="font-medium text-white text-sm">
               {activeAccount?.name || 'Account 8'}
@@ -75,7 +80,7 @@ const WalletHomeLayer = () => {
           <div className="relative">
             <button
               className="flex items-center space-x-1 p-1 rounded hover:bg-white/10 transition-colors"
-              onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+              onClick={handleAvatarClick}
             >
               <div className="w-4 h-4 grid grid-cols-2 gap-0.5">
                 <div className="w-1.5 h-1.5 bg-white/60 rounded-sm"></div>
@@ -84,9 +89,6 @@ const WalletHomeLayer = () => {
                 <div className="w-1.5 h-1.5 bg-white/60 rounded-sm"></div>
               </div>
             </button>
-            
-            {/* Account Dropdown */}
-            {showAccountDropdown && <WalletAccountDropdown />}
           </div>
         </div>
         
@@ -197,6 +199,9 @@ const WalletHomeLayer = () => {
       
       {/* Bottom Navigation */}
       <WalletBottomNavigation />
+      
+      {/* Sidebar */}
+      {showAccountDropdown && <WalletSidebar />}
     </div>
   );
 };
