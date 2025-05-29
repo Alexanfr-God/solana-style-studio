@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
 
@@ -390,7 +391,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
 
   unlockWallet: () => {
-    console.log('Unlocking wallet - changing layer from login to home');
     const { setTemporaryEmotion, triggerAiPetInteraction } = get();
     triggerAiPetInteraction();
     setTemporaryEmotion('excited', 3000);

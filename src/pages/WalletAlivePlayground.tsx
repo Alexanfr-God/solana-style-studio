@@ -1,9 +1,9 @@
 
 import React from 'react';
 import ImageUploadSection from '@/components/customization/ImageUploadSection';
+import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 import CustomizeWalletButton from '@/components/customization/CustomizeWalletButton';
 import WalletLayoutRecorderComponent from '@/components/customization/WalletLayoutRecorder';
-import WalletWithSidebar from '@/components/wallet/WalletWithSidebar';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { RotateCcw } from 'lucide-react';
@@ -65,12 +65,7 @@ const WalletAlivePlayground = () => {
           
           {/* Right Column - Wallet Preview */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-              <h3 className="text-white font-medium mb-4">Wallet Preview</h3>
-              <div className="bg-black rounded-lg overflow-hidden" style={{ height: '600px' }}>
-                <WalletWithSidebar />
-              </div>
-            </div>
+            <WalletPreviewContainer />
           </div>
         </div>
       </div>
