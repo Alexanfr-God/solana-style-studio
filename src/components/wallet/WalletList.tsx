@@ -11,6 +11,9 @@ interface WalletListProps {
     triggeredBy?: string;
     purpose?: string;
     sharedElementId?: string;
+    context?: string;
+    layoutType?: string;
+    animation?: string;
   };
 }
 

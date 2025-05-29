@@ -2,7 +2,7 @@
 import React from 'react';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import { WalletContainer } from '@/components/wallet/WalletContainer';
+import WalletContainer from '@/components/wallet/WalletContainer';
 
 interface MaskPreviewSectionProps {
   topLayer: string | null;
