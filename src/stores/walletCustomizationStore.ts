@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 
 interface Account {
@@ -29,7 +28,7 @@ interface WalletStyle {
 export type AiPetEmotion = 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
 export type AiPetBodyType = 'phantom' | 'lottie';
-export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search';
+export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search' | 'receive';
 
 interface AiPet {
   isVisible: boolean;

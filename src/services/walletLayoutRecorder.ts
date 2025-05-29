@@ -39,10 +39,11 @@ export interface WalletLayoutLayer {
   metadata?: {
     purpose?: string;
     interactionType?: 'static' | 'clickable' | 'input';
-    layoutType?: 'grid' | 'list' | 'single';
+    layoutType?: 'grid' | 'list' | 'single' | 'bottom-sheet';
     sharedElementId?: string;
     context?: string;
     triggeredBy?: string;
+    animation?: string;
     stylingContext?: {
       primaryColor?: string;
       spacing?: string;
@@ -52,7 +53,7 @@ export interface WalletLayoutLayer {
 }
 
 export interface WalletLayout {
-  screen: 'login' | 'wallet' | 'dashboard';
+  screen: 'login' | 'wallet' | 'dashboard' | 'receive';
   walletType: 'phantom' | 'metamask' | 'solflare';
   dimensions: { width: number; height: number };
   elements: WalletElement[];
@@ -72,7 +73,88 @@ export class WalletLayoutRecorder {
       return this.classifyHomeScreenElement(element);
     }
     
+    if (screenType === 'receive') {
+      return this.classifyReceiveScreenElement(element);
+    }
+    
     return this.classifyLoginScreenElement(element);
+  }
+
+  // New classification for receive screen
+  static classifyReceiveScreenElement(element: WalletElement): { layerName: string; order: number; metadata?: any } {
+    const { type, name, position } = element;
+    
+    // Header section (0-70px height)
+    if (position.y >= 0 && position.y < 70) {
+      return { 
+        layerName: 'Receive Header', 
+        order: 1,
+        metadata: {
+          purpose: 'Back navigation and screen title',
+          interactionType: 'clickable',
+          layoutType: 'single',
+          triggeredBy: 'receive-button',
+          animation: 'slide-up'
+        }
+      };
+    }
+    
+    // Content title and description (70-150px)
+    if (position.y >= 70 && position.y < 150 && type === 'text') {
+      return { 
+        layerName: 'Receive Content Header', 
+        order: 2,
+        metadata: {
+          purpose: 'Instructions and context for receive flow',
+          interactionType: 'static',
+          layoutType: 'single',
+          context: 'receive-flow'
+        }
+      };
+    }
+    
+    // Wallet list section (150-800px)
+    if (position.y >= 150 && position.y < 800) {
+      return { 
+        layerName: 'Receive Wallet List', 
+        order: 3,
+        metadata: {
+          purpose: 'Account selection for receiving crypto',
+          interactionType: 'clickable',
+          layoutType: 'bottom-sheet',
+          sharedElementId: 'walletList',
+          context: 'receive-flow',
+          triggeredBy: 'receive-button',
+          animation: 'slide-up'
+        }
+      };
+    }
+    
+    // Instructions section (800px and below)
+    if (position.y >= 800) {
+      return { 
+        layerName: 'Receive Instructions', 
+        order: 4,
+        metadata: {
+          purpose: 'User guidance for receive process',
+          interactionType: 'static',
+          layoutType: 'single',
+          context: 'receive-flow'
+        }
+      };
+    }
+    
+    // Default fallback
+    return { 
+      layerName: 'Receive Background', 
+      order: 0,
+      metadata: {
+        purpose: 'Background or unclassified elements',
+        interactionType: 'static',
+        layoutType: 'bottom-sheet',
+        context: 'receive-flow'
+      }
+    };
   }
 
   // Specific classification for wallet home screen
@@ -338,6 +420,139 @@ export class WalletLayoutRecorder {
 
   static async recordCurrentLayout(walletId: string, screen: string, walletType: string = 'phantom'): Promise<WalletLayout> {
     console.log('🎯 Starting wallet layout recording...');
+    
+    // Handle receive screen layout
+    if (screen === 'receive') {
+      const receiveLayout: WalletLayout = {
+        screen: 'receive',
+        walletType: walletType as 'phantom',
+        dimensions: { width: 722, height: 1202 },
+        elements: [
+          {
+            type: 'container',
+            name: 'receive-header',
+            content: '',
+            position: { x: 0, y: 0 },
+            size: { width: 722, height: 70 },
+            styles: {
+              backgroundColor: '#181818',
+              borderRadius: '0'
+            },
+            metadata: {
+              context: 'receive-flow',
+              triggeredBy: 'receive-button'
+            }
+          },
+          {
+            type: 'button',
+            name: 'back-button',
+            content: 'Back',
+            position: { x: 16, y: 16 },
+            size: { width: 80, height: 40 },
+            styles: {
+              color: '#ffffff',
+              fontSize: '16px',
+              fontFamily: 'Inter'
+            },
+            properties: {
+              clickable: true
+            }
+          },
+          {
+            type: 'text',
+            name: 'receive-title',
+            content: 'Receive Crypto',
+            position: { x: 300, y: 25 },
+            size: { width: 120, height: 24 },
+            styles: {
+              color: '#ffffff',
+              fontSize: '18px',
+              fontFamily: 'Inter'
+            }
+          },
+          {
+            type: 'icon',
+            name: 'qr-code-button',
+            content: 'QR',
+            position: { x: 670, y: 20 },
+            size: { width: 32, height: 32 },
+            styles: {
+              color: '#ffffff'
+            },
+            properties: {
+              clickable: true
+            }
+          },
+          {
+            type: 'text',
+            name: 'select-account-title',
+            content: 'Select Account',
+            position: { x: 16, y: 90 },
+            size: { width: 120, height: 20 },
+            styles: {
+              color: '#ffffff',
+              fontSize: '14px',
+              fontFamily: 'Inter'
+            }
+          },
+          {
+            type: 'text',
+            name: 'select-account-description',
+            content: 'Choose which account you want to receive crypto into',
+            position: { x: 16, y: 115 },
+            size: { width: 400, height: 16 },
+            styles: {
+              color: '#9ca3af',
+              fontSize: '12px',
+              fontFamily: 'Inter'
+            }
+          },
+          {
+            type: 'container',
+            name: 'wallet-list-container',
+            content: '',
+            position: { x: 16, y: 150 },
+            size: { width: 690, height: 600 },
+            styles: {
+              backgroundColor: '#ffffff0d',
+              borderRadius: '12px',
+              border: '1px solid #ffffff1a'
+            },
+            properties: {
+              'data-shared-element-id': 'walletList'
+            },
+            metadata: {
+              sharedElementId: 'walletList',
+              context: 'receive-flow',
+              layoutType: 'bottom-sheet',
+              triggeredBy: 'receive-button',
+              animation: 'slide-up'
+            }
+          },
+          {
+            type: 'container',
+            name: 'instructions-container',
+            content: '',
+            position: { x: 16, y: 800 },
+            size: { width: 690, height: 150 },
+            styles: {
+              backgroundColor: '#3b82f60d',
+              borderRadius: '8px',
+              border: '1px solid #3b82f64d'
+            }
+          }
+        ],
+        safeZone: { x: 16, y: 70, width: 690, height: 700 },
+        metadata: {
+          recorded_at: new Date().toISOString(),
+          version: '2.0.0',
+          notes: 'Receive layer with bottom-sheet layout and shared wallet list'
+        }
+      };
+
+      receiveLayout.layers = this.segmentElementsIntoLayers(receiveLayout.elements, 'receive');
+      return receiveLayout;
+    }
     
     // Define the current Phantom login screen layout based on the actual implementation
     const phantomLoginLayout: WalletLayout = {

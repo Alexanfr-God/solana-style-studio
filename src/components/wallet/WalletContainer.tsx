@@ -1,34 +1,31 @@
+import React from 'react';
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import WalletHomeLayer from './layers/WalletHomeLayer';
+import ReceiveLayer from './layers/ReceiveLayer';
 
-import React, { ReactNode } from 'react';
-import { WalletStyle } from '@/stores/customizationStore';
+const WalletContainer = () => {
+  const { currentLayer } = useWalletCustomizationStore();
 
-interface WalletContainerProps {
-  style: WalletStyle;
-  children: ReactNode;
-  className?: string;
-}
+  const renderLayer = () => {
+    switch (currentLayer) {
+      case 'home':
+        return <WalletHomeLayer />;
+      case 'receive':
+        return <ReceiveLayer />;
+      case 'apps':
+      case 'swap':
+      case 'history':
+      case 'search':
+        // Placeholder for future layers
+        return <WalletHomeLayer />;
+      default:
+        return <WalletHomeLayer />;
+    }
+  };
 
-/**
- * Unified container for wallet UI that maintains consistent dimensions
- * for both the login and wallet screens - 320px width and ~569px height (9:16 ratio)
- */
-export const WalletContainer = ({ style, children, className = "" }: WalletContainerProps) => {
   return (
-    <div 
-      className={`wallet-preview flex flex-col rounded-2xl overflow-hidden w-[320px] ${className}`}
-      style={{
-        backgroundColor: style.backgroundColor || '#131313',
-        backgroundImage: style.backgroundImage,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        color: style.textColor || '#FFFFFF',
-        fontFamily: style.fontFamily,
-        boxShadow: style.boxShadow,
-        // Set fixed dimensions to ensure consistency
-        height: '569px', // Approximately 9:16 ratio with 320px width
-      }}
-    >
-      {children}
+    <div className="relative w-full h-full overflow-hidden">
+      {renderLayer()}
     </div>
   );
 };

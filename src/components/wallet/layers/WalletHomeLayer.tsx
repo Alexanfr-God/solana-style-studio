@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, MoreVertical, Download, Send, ArrowRightLeft, DollarSign, Plus } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -17,11 +16,12 @@ const WalletHomeLayer = () => {
     isBalancePositive,
     showAccountDropdown,
     setShowAccountDropdown,
+    setCurrentLayer,
     triggerAiPetInteraction,
     setTemporaryEmotion
   } = useWalletCustomizationStore();
 
-  const [dropdownContext, setDropdownContext] = useState<'account-selector' | 'receive-flow' | 'send-flow'>('account-selector');
+  const [dropdownContext, setDropdownContext] = useState<'account-selector' | 'send-flow'>('account-selector');
 
   const activeAccount = accounts.find(acc => acc.id === activeAccountId);
 
@@ -29,8 +29,8 @@ const WalletHomeLayer = () => {
     console.log(`${action} clicked`);
     
     if (action === 'Receive') {
-      setDropdownContext('receive-flow');
-      setShowAccountDropdown(true);
+      // Navigate to receive layer instead of showing dropdown
+      setCurrentLayer('receive');
     } else if (action === 'Send') {
       setDropdownContext('send-flow');
       setShowAccountDropdown(true);
@@ -110,7 +110,7 @@ const WalletHomeLayer = () => {
               </div>
             </button>
             
-            {/* Unified Account Dropdown */}
+            {/* Account Dropdown - only for account selector and send flow now */}
             {showAccountDropdown && (
               <WalletAccountDropdown 
                 context={dropdownContext}
