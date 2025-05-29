@@ -3,6 +3,7 @@ import React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import WalletSidebar from './WalletSidebar';
 import WalletHomeLayer from './layers/WalletHomeLayer';
+import WalletLoginLayer from './layers/WalletLoginLayer';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const WalletWithSidebar = () => {
@@ -10,6 +11,8 @@ const WalletWithSidebar = () => {
 
   const renderCurrentLayer = () => {
     switch (currentLayer) {
+      case 'login':
+        return <WalletLoginLayer />;
       case 'home':
         return <WalletHomeLayer />;
       case 'apps':
@@ -21,9 +24,18 @@ const WalletWithSidebar = () => {
       case 'search':
         return <div className="p-6"><h2 className="text-xl font-bold text-white">Search</h2></div>;
       default:
-        return <WalletHomeLayer />;
+        return <WalletLoginLayer />;
     }
   };
+
+  // Если текущий слой - login, не показываем sidebar
+  if (currentLayer === 'login') {
+    return (
+      <div className="h-full w-full">
+        <WalletLoginLayer />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
