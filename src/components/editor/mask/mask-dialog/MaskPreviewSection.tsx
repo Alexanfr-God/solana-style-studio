@@ -2,7 +2,7 @@
 import React from 'react';
 import { LoginScreen } from '@/components/wallet/WalletScreens';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import WalletContainer from '@/components/wallet/WalletContainer';
+import WalletSceneContainer from '@/components/wallet/WalletSceneContainer';
 
 interface MaskPreviewSectionProps {
   topLayer: string | null;
@@ -16,9 +16,9 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="relative bg-black/20 p-6 rounded-xl border border-white/10 w-full h-full flex items-center justify-center">
-        {/* Base wallet UI with fixed dimensions */}
+        {/* Base wallet UI with proper container */}
         <div className="relative">
-          <WalletContainer style={loginStyle} className="relative">
+          <WalletSceneContainer style={loginStyle} renderMode="direct" className="relative">
             {/* Full mask overlay - only shown when using the custom upload or example mask */}
             {customMask && (
               <div 
@@ -71,7 +71,7 @@ export const MaskPreviewSection = ({ topLayer, bottomLayer, customMask }: MaskPr
             )}
             
             <LoginScreen style={loginStyle} />
-          </WalletContainer>
+          </WalletSceneContainer>
         </div>
       </div>
       
