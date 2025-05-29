@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 
 interface Account {
@@ -22,11 +23,20 @@ interface WalletStyle {
   backgroundColor: string;
   primaryColor: string;
   font: string;
+  image?: string;
 }
 
-interface AiPetEmotion {
-  emotion: string;
-  timestamp: number;
+export type AiPetEmotion = 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink';
+export type AiPetZone = 'inside' | 'outside';
+export type AiPetBodyType = 'phantom' | 'lottie';
+export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search';
+
+interface AiPet {
+  isVisible: boolean;
+  emotion: AiPetEmotion;
+  zone: AiPetZone;
+  bodyType: AiPetBodyType;
+  energy: number;
 }
 
 interface WalletCustomizationState {
@@ -40,16 +50,36 @@ interface WalletCustomizationState {
   totalChange: string;
   totalChangePercent: string;
   isBalancePositive: boolean;
-  aiPetEmotion: AiPetEmotion | null;
-  setAiPetEmotion: (emotion: string) => void;
+  aiPetEmotion: { emotion: string; timestamp: number } | null;
+  setAiPetEmotion: (emotion: AiPetEmotion) => void;
   setTemporaryEmotion: (emotion: string, duration: number) => void;
   triggerAiPetInteraction: () => void;
   selectedWallet: string;
   setSelectedWallet: (wallet: string) => void;
-  currentLayer: string;
-  setCurrentLayer: (layer: string) => void;
+  currentLayer: WalletLayer;
+  setCurrentLayer: (layer: WalletLayer) => void;
   showAccountDropdown: boolean;
   setShowAccountDropdown: (show: boolean) => void;
+  
+  // Missing properties for customization
+  uploadedImage: string | null;
+  setUploadedImage: (image: string | null) => void;
+  isCustomizing: boolean;
+  customizeWallet: () => void;
+  onCustomizationStart: () => void;
+  resetWallet: () => void;
+  unlockWallet: () => void;
+  
+  // Missing AI Pet properties
+  aiPet: AiPet;
+  setAiPetZone: (zone: AiPetZone) => void;
+  setAiPetBodyType: (bodyType: AiPetBodyType) => void;
+  containerBounds: DOMRect | null;
+  setContainerBounds: (bounds: DOMRect | null) => void;
+  updateAiPetEnergy: () => void;
+  onAiPetHover: () => void;
+  onAiPetClick: () => void;
+  onAiPetDoubleClick: () => void;
 }
 
 export const useWalletCustomizationStore = create<WalletCustomizationState>()(
@@ -79,6 +109,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     aiPetEmotion: null,
     setAiPetEmotion: (emotion) => {
       set({ aiPetEmotion: { emotion: emotion, timestamp: Date.now() } });
+      set(state => ({ aiPet: { ...state.aiPet, emotion } }));
     },
     setTemporaryEmotion: (emotion, duration) => {
       set({ aiPetEmotion: { emotion: emotion, timestamp: Date.now() } });
@@ -87,15 +118,78 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       }, duration);
     },
     triggerAiPetInteraction: () => {
-      const emotions = ['happy', 'excited', 'curious', 'sleepy', 'neutral'];
+      const emotions: AiPetEmotion[] = ['happy', 'excited', 'wink', 'sleepy', 'idle'];
       const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
       get().setAiPetEmotion(randomEmotion);
     },
     selectedWallet: 'phantom',
     setSelectedWallet: (wallet) => set({ selectedWallet: wallet }),
-    currentLayer: 'home',
+    currentLayer: 'login',
     setCurrentLayer: (layer) => set({ currentLayer: layer }),
     showAccountDropdown: false,
     setShowAccountDropdown: (show: boolean) => set({ showAccountDropdown: show }),
+    
+    // Customization properties
+    uploadedImage: null,
+    setUploadedImage: (image) => set({ uploadedImage: image }),
+    isCustomizing: false,
+    customizeWallet: () => {
+      set({ isCustomizing: true });
+      // Simulate customization process
+      setTimeout(() => {
+        set({ isCustomizing: false });
+        get().triggerAiPetInteraction();
+      }, 3000);
+    },
+    onCustomizationStart: () => set({ isCustomizing: true }),
+    resetWallet: () => {
+      set({
+        walletStyle: {
+          backgroundColor: '#181818',
+          primaryColor: '#9945FF',
+          font: 'Inter'
+        },
+        uploadedImage: null,
+        isCustomizing: false
+      });
+      get().triggerAiPetInteraction();
+    },
+    unlockWallet: () => {
+      set({ currentLayer: 'home' });
+      get().triggerAiPetInteraction();
+    },
+    
+    // AI Pet properties
+    aiPet: {
+      isVisible: true,
+      emotion: 'idle',
+      zone: 'inside',
+      bodyType: 'phantom',
+      energy: 100
+    },
+    setAiPetZone: (zone) => set(state => ({ aiPet: { ...state.aiPet, zone } })),
+    setAiPetBodyType: (bodyType) => set(state => ({ aiPet: { ...state.aiPet, bodyType } })),
+    containerBounds: null,
+    setContainerBounds: (bounds) => set({ containerBounds: bounds }),
+    updateAiPetEnergy: () => {
+      set(state => ({ 
+        aiPet: { 
+          ...state.aiPet, 
+          energy: Math.max(0, state.aiPet.energy - 1) 
+        } 
+      }));
+    },
+    onAiPetHover: () => {
+      get().setAiPetEmotion('suspicious');
+    },
+    onAiPetClick: () => {
+      get().setAiPetEmotion('wink');
+      get().setTemporaryEmotion('wink', 2000);
+    },
+    onAiPetDoubleClick: () => {
+      const currentZone = get().aiPet.zone;
+      get().setAiPetZone(currentZone === 'inside' ? 'outside' : 'inside');
+      get().setAiPetEmotion('excited');
+    },
   })
 );
