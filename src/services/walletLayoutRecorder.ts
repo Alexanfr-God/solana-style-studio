@@ -66,6 +66,8 @@ export interface WalletLayout {
   };
 }
 
+export type ScreenType = 'login' | 'wallet' | 'receive' | 'dashboard' | 'swap' | 'apps' | 'history';
+
 export class WalletLayoutRecorder {
   // Enhanced layer classification for different screens
   static classifyElementIntoLayer(element: WalletElement, screenType: string = 'login'): { layerName: string; order: number; metadata?: any } {

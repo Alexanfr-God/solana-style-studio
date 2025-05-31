@@ -14,14 +14,16 @@ const WalletLayoutRecorderComponent = () => {
   const [showLayersViewer, setShowLayersViewer] = useState(false);
   const [autoRecordEnabled, setAutoRecordEnabled] = useState(true);
 
-  // Auto-record when layer changes to 'apps' or 'swap'
+  // Auto-record when layer changes to 'apps', 'swap', or 'history'
   useEffect(() => {
-    if (autoRecordEnabled && (currentLayer === 'apps' || currentLayer === 'swap') && !isRecording) {
+    if (autoRecordEnabled && (currentLayer === 'apps' || currentLayer === 'swap' || currentLayer === 'history') && !isRecording) {
       console.log(`🎯 Auto-recording ${currentLayer} layer layout...`);
       if (currentLayer === 'apps') {
         handleAutoRecordAppsLayout();
       } else if (currentLayer === 'swap') {
         handleAutoRecordSwapLayout();
+      } else if (currentLayer === 'history') {
+        handleAutoRecordHistoryLayout();
       }
     }
   }, [currentLayer, autoRecordEnabled]);
@@ -80,6 +82,33 @@ const WalletLayoutRecorderComponent = () => {
     }
   };
 
+  const handleAutoRecordHistoryLayout = async () => {
+    setIsRecording(true);
+    try {
+      const walletId = `${selectedWallet}-history-${Date.now()}`;
+      
+      const layoutId = await WalletLayoutRecorder.recordAndSaveLayout(
+        walletId, 
+        'history', 
+        selectedWallet
+      );
+      
+      if (layoutId) {
+        const layout = await WalletLayoutRecorder.getLayoutFromDatabase(walletId, 'history');
+        setRecordedLayout(layout);
+        
+        toast.success(`📋 History screen layout auto-recorded! ${layout?.layers?.length || 0} layers detected. ID: ${layoutId}`);
+        console.log('🎯 Auto-recorded History Layout:', layout);
+      } else {
+        console.warn('Auto-recording failed for History layer');
+      }
+    } catch (error) {
+      console.error('Auto-recording history error:', error);
+    } finally {
+      setIsRecording(false);
+    }
+  };
+
   const handleRecordLayout = async () => {
     setIsRecording(true);
     try {
@@ -93,6 +122,8 @@ const WalletLayoutRecorderComponent = () => {
         screenType = 'apps';
       } else if (currentLayer === 'swap') {
         screenType = 'swap';
+      } else if (currentLayer === 'history') {
+        screenType = 'history';
       }
       
       const layoutId = await WalletLayoutRecorder.recordAndSaveLayout(
@@ -107,7 +138,8 @@ const WalletLayoutRecorderComponent = () => {
         
         const screenName = screenType === 'wallet' ? 'Home screen' : 
                           screenType === 'apps' ? 'Apps screen' : 
-                          screenType === 'swap' ? 'Swap Interface' : 'Login screen';
+                          screenType === 'swap' ? 'Swap Interface' : 
+                          screenType === 'history' ? 'History screen' : 'Login screen';
         
         toast.success(`${screenName} layout recorded with ${layout?.layers?.length || 0} enhanced layers! ID: ${layoutId}`);
         console.log('🎯 Recorded Layout with Enhanced Layers:', layout);
@@ -181,7 +213,7 @@ const WalletLayoutRecorderComponent = () => {
         <div className="flex items-center justify-between p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-purple-400" />
-            <span className="text-purple-300 text-sm font-medium">Auto-record Apps & Swap layers</span>
+            <span className="text-purple-300 text-sm font-medium">Auto-record Apps, Swap & History layers</span>
           </div>
           <Button
             size="sm"
@@ -197,14 +229,16 @@ const WalletLayoutRecorderComponent = () => {
             <Home className="h-4 w-4" />
             Current Screen: {currentLayer === 'home' ? 'Wallet Home' : 
                            currentLayer === 'apps' ? 'Apps/Collectibles' : 
-                           currentLayer === 'swap' ? 'Swap Interface' : 'Login'}
+                           currentLayer === 'swap' ? 'Swap Interface' : 
+                           currentLayer === 'history' ? 'Transaction History' : 'Login'}
           </div>
           <div className="text-blue-200 text-xs">
             Recording will use {currentLayer === 'home' ? 'enhanced home screen' : 
                                currentLayer === 'apps' ? 'apps screen' : 
-                               currentLayer === 'swap' ? 'swap screen' : 'login screen'} classification
+                               currentLayer === 'swap' ? 'swap screen' : 
+                               currentLayer === 'history' ? 'history screen' : 'login screen'} classification
           </div>
-          {(currentLayer === 'apps' || currentLayer === 'swap') && isRecording && (
+          {(currentLayer === 'apps' || currentLayer === 'swap' || currentLayer === 'history') && isRecording && (
             <div className="text-green-300 text-xs mt-1 flex items-center gap-1">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               Auto-recording {currentLayer} layer...
@@ -222,7 +256,8 @@ const WalletLayoutRecorderComponent = () => {
             <Save className="h-4 w-4 mr-2" />
             {isRecording ? 'Recording...' : `Record ${currentLayer === 'home' ? 'Home' : 
                                                     currentLayer === 'apps' ? 'Apps' : 
-                                                    currentLayer === 'swap' ? 'Swap Interface' : 'Login'} Layout`}
+                                                    currentLayer === 'swap' ? 'Swap Interface' : 
+                                                    currentLayer === 'history' ? 'History' : 'Login'} Layout`}
           </Button>
           
           <Button

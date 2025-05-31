@@ -1,0 +1,170 @@
+
+import React from 'react';
+import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-react';
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+
+const HistoryContent = () => {
+  const { walletStyle } = useWalletCustomizationStore();
+
+  const transactions = [
+    {
+      date: 'Apr 11, 2025',
+      items: [
+        {
+          type: 'sent',
+          icon: ArrowRight,
+          title: 'To 3QLo...yJd2',
+          amount: '-5.34M THECOIN',
+          avatar: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
+          isNegative: true
+        }
+      ]
+    },
+    {
+      date: 'Mar 20, 2025',
+      items: [
+        {
+          type: 'swapped',
+          icon: ArrowLeftRight,
+          title: 'pump.fun',
+          amount: '+5.34M THECOIN',
+          subtitle: '-1.01117 SOL',
+          avatar: '/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png',
+          isNegative: false
+        }
+      ]
+    },
+    {
+      date: 'Mar 19, 2025',
+      items: [
+        {
+          type: 'failed',
+          icon: X,
+          title: 'Unknown',
+          amount: 'Transaction failed',
+          subtitle: 'Insufficient funds',
+          isNegative: false,
+          isFailed: true
+        }
+      ]
+    }
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col px-4 py-3 overflow-y-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
+        <button className="p-2 rounded-full hover:bg-white/10 transition-colors">
+          <MoreVertical className="w-5 h-5 text-gray-400" />
+        </button>
+      </div>
+
+      {/* Transaction Groups by Date */}
+      <div className="space-y-4">
+        {transactions.map((group, groupIndex) => (
+          <div key={groupIndex}>
+            {/* Date Header */}
+            <div className="text-xs text-gray-400 mb-3 font-medium">
+              {group.date}
+            </div>
+            
+            {/* Transactions for this date */}
+            <div className="space-y-3">
+              {group.items.map((transaction, itemIndex) => (
+                <div
+                  key={itemIndex}
+                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  {/* Transaction Icon/Avatar */}
+                  <div className="relative">
+                    {transaction.avatar ? (
+                      <div className="w-10 h-10 rounded-full overflow-hidden">
+                        <img
+                          src={transaction.avatar}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          transaction.isFailed
+                            ? 'bg-red-500/20 border border-red-500/30'
+                            : 'bg-gray-600/50'
+                        }`}
+                      >
+                        <transaction.icon
+                          className={`w-5 h-5 ${
+                            transaction.isFailed ? 'text-red-400' : 'text-gray-300'
+                          }`}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Status Icon Overlay */}
+                    <div
+                      className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${
+                        transaction.type === 'sent'
+                          ? 'bg-blue-500'
+                          : transaction.type === 'swapped'
+                          ? 'bg-green-500'
+                          : 'bg-red-500'
+                      }`}
+                    >
+                      <transaction.icon className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+
+                  {/* Transaction Details */}
+                  <div className="flex-1">
+                    <div className="text-white text-sm font-medium">
+                      {transaction.title}
+                    </div>
+                    {transaction.subtitle && (
+                      <div className="text-gray-400 text-xs">
+                        {transaction.subtitle}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Amount */}
+                  <div className="text-right">
+                    <div
+                      className={`text-sm font-medium ${
+                        transaction.isFailed
+                          ? 'text-red-400'
+                          : transaction.isNegative
+                          ? 'text-white'
+                          : 'text-green-400'
+                      }`}
+                    >
+                      {transaction.amount}
+                    </div>
+                    {transaction.subtitle && transaction.type === 'swapped' && (
+                      <div className="text-gray-400 text-xs">
+                        {transaction.subtitle}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Load More Button */}
+      <div className="mt-6 flex justify-center">
+        <button
+          className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+          style={{ color: walletStyle.primaryColor || '#9945FF' }}
+        >
+          Load more transactions
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default HistoryContent;
