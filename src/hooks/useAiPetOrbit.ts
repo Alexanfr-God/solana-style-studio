@@ -1,17 +1,16 @@
-
 import { useEffect, useRef, useCallback } from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { createOrbitAnimation } from '@/services/aiPetBehaviorService';
+import { createOrbitAnimation, OrbitAnimation } from '@/services/aiPetBehaviorService';
 
-// Статичные данные для орбитального поведения
+// Статичные данные для орбитального поведения с правильной типизацией
 const DEFAULT_ORBIT_BEHAVIOR = {
   behaviorName: 'orbit_circulation',
   animationData: {
-    type: 'orbit',
+    type: 'orbit' as const,
     radius: '130%',
-    speed: 'medium',
-    direction: 'clockwise'
-  }
+    speed: 'medium' as const,
+    direction: 'clockwise' as const
+  } as OrbitAnimation
 };
 
 export const useAiPetOrbit = (petElement: HTMLElement | null, containerBounds: DOMRect | null) => {
