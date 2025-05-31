@@ -71,7 +71,7 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
   return (
     <div 
       ref={dropdownRef}
-      className="absolute top-full left-0 mt-2 w-80 bg-black/90 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden animate-fade-in"
+      className="w-80 bg-black/95 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl overflow-hidden animate-fade-in"
       style={{ fontFamily: walletStyle.font || 'Inter' }}
     >
       {/* Header */}

@@ -66,7 +66,7 @@ export interface WalletLayout {
   };
 }
 
-export type ScreenType = 'login' | 'wallet' | 'receive' | 'dashboard' | 'swap' | 'apps' | 'history';
+export type ScreenType = 'login' | 'wallet' | 'receive' | 'dashboard' | 'swap' | 'apps' | 'history' | 'buy';
 
 export class WalletLayoutRecorder {
   // Enhanced layer classification for different screens

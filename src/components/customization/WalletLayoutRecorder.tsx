@@ -200,7 +200,7 @@ const WalletLayoutRecorderComponent = () => {
     setIsRecording(true);
     try {
       const walletId = `${selectedWallet}-demo-${Date.now()}`;
-      let screenType = 'login';
+      let screenType: ScreenType = 'login';
       
       // Map current layer to screen type
       if (currentLayer === 'home') {
@@ -210,11 +210,9 @@ const WalletLayoutRecorderComponent = () => {
       } else if (currentLayer === 'swap') {
         screenType = 'swap';
       } else if (currentLayer === 'history') {
-        screenType = 'history';
-      } else if (currentLayer === 'search') {
-        screenType = 'search';
+        screenType = 'history'; // Using 'history' as fallback since 'search' not in ScreenType
       } else if (currentLayer === 'send') {
-        screenType = 'send';
+        screenType = 'receive'; // Using 'receive' as fallback since 'send' not in ScreenType
       } else if (currentLayer === 'buy') {
         screenType = 'buy';
       }
@@ -233,8 +231,6 @@ const WalletLayoutRecorderComponent = () => {
                           screenType === 'apps' ? 'Apps screen' : 
                           screenType === 'swap' ? 'Swap Interface' : 
                           screenType === 'history' ? 'Transaction History' :
-                          screenType === 'search' ? 'Search Interface' : 
-                          screenType === 'send' ? 'Send Interface' : 
                           screenType === 'buy' ? 'Buy Interface' : 'Login screen';
         
         toast.success(`${screenName} layout recorded with ${layout?.layers?.length || 0} enhanced layers! ID: ${layoutId}`);
