@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { Image, Grid3x3, Palette, Gamepad2 } from 'lucide-react';
+import { Image, Grid, Palette, Gamepad2 } from 'lucide-react';
 
 const AppsLayer = () => {
   const {
@@ -23,7 +24,7 @@ const AppsLayer = () => {
 
   const collectibleIcons = [
     { icon: Image, name: 'Art NFT', color: '#FF6B6B' },
-    { icon: Grid3x3, name: 'Pixel Art', color: '#4ECDC4' },
+    { icon: Grid, name: 'Pixel Art', color: '#4ECDC4' },
     { icon: Palette, name: 'Digital Art', color: '#45B7D1' },
     { icon: Gamepad2, name: 'Game Item', color: '#96CEB4' }
   ];
@@ -110,7 +111,7 @@ const AppsLayer = () => {
         <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
           <div className="flex items-start space-x-3">
             <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Grid3x3 className="w-4 h-4 text-blue-400" />
+              <Grid className="w-4 h-4 text-blue-400" />
             </div>
             <div>
               <h3 className="text-blue-300 font-medium text-sm mb-1">Your Collection</h3>
