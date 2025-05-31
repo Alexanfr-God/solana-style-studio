@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import WalletHomeLayer from './layers/WalletHomeLayer';
 import ReceiveLayer from './layers/ReceiveLayer';
+import AppsLayer from './layers/AppsLayer';
 
 const WalletContainer = () => {
   const { currentLayer } = useWalletCustomizationStore();
@@ -13,6 +15,7 @@ const WalletContainer = () => {
       case 'receive':
         return <ReceiveLayer />;
       case 'apps':
+        return <AppsLayer />;
       case 'swap':
       case 'history':
       case 'search':

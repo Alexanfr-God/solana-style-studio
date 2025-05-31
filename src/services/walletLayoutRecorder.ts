@@ -53,7 +53,7 @@ export interface WalletLayoutLayer {
 }
 
 export interface WalletLayout {
-  screen: 'login' | 'wallet' | 'dashboard' | 'receive';
+  screen: 'login' | 'wallet' | 'dashboard' | 'receive' | 'apps';
   walletType: 'phantom' | 'metamask' | 'solflare';
   dimensions: { width: number; height: number };
   elements: WalletElement[];
@@ -76,8 +76,108 @@ export class WalletLayoutRecorder {
     if (screenType === 'receive') {
       return this.classifyReceiveScreenElement(element);
     }
+
+    if (screenType === 'apps') {
+      return this.classifyAppsScreenElement(element);
+    }
     
     return this.classifyLoginScreenElement(element);
+  }
+
+  // New classification for apps screen
+  static classifyAppsScreenElement(element: WalletElement): { layerName: string; order: number; metadata?: any } {
+    const { type, name, position } = element;
+    
+    // Header section (0-116px height)
+    if (position.y >= 0 && position.y < 116) {
+      return { 
+        layerName: 'Apps Header', 
+        order: 1,
+        metadata: {
+          purpose: 'Header section for apps screen',
+          interactionType: 'static',
+          layoutType: 'single',
+          context: 'apps-flow'
+        }
+      };
+    }
+    
+    // Content title and description (130-200px)
+    if (position.y >= 130 && position.y < 200 && (type === 'text' || type === 'container')) {
+      return { 
+        layerName: 'Apps Content', 
+        order: 2,
+        metadata: {
+          purpose: 'Main content area with collectibles title',
+          interactionType: 'static',
+          layoutType: 'single',
+          context: 'apps-flow'
+        }
+      };
+    }
+    
+    // Collectibles icons grid (200-400px)
+    if (position.y >= 200 && position.y < 400 && type === 'icon') {
+      return { 
+        layerName: 'Collectibles Icons', 
+        order: 3,
+        metadata: {
+          purpose: 'Grid of collectible NFT icons',
+          interactionType: 'clickable',
+          layoutType: 'grid',
+          context: 'apps-flow',
+          stylingContext: {
+            layout: '4-column grid',
+            spacing: 'gap-4'
+          }
+        }
+      };
+    }
+    
+    // Manage collectible list link (400px and below)
+    if (position.y >= 400 && type === 'link') {
+      return { 
+        layerName: 'Action Link', 
+        order: 4,
+        metadata: {
+          purpose: 'Management link for collectibles',
+          interactionType: 'clickable',
+          layoutType: 'single',
+          context: 'apps-flow',
+          animation: 'hover-underline'
+        }
+      };
+    }
+    
+    // Bottom navigation (1150px and below)
+    if (position.y >= 1150) {
+      return { 
+        layerName: 'Bottom Navigation', 
+        order: 5,
+        metadata: {
+          purpose: 'Main app navigation tabs',
+          interactionType: 'clickable',
+          layoutType: 'grid',
+          context: 'apps-flow',
+          stylingContext: {
+            layout: '5-column grid',
+            spacing: 'grid-cols-5'
+          }
+        }
+      };
+    }
+    
+    // Default fallback
+    return { 
+      layerName: 'Apps Background', 
+      order: 0,
+      metadata: {
+        purpose: 'Background or unclassified elements',
+        interactionType: 'static',
+        layoutType: 'single',
+        context: 'apps-flow'
+      }
+    };
   }
 
   // New classification for receive screen
@@ -420,6 +520,146 @@ export class WalletLayoutRecorder {
 
   static async recordCurrentLayout(walletId: string, screen: string, walletType: string = 'phantom'): Promise<WalletLayout> {
     console.log('🎯 Starting wallet layout recording...');
+    
+    // Handle apps screen layout
+    if (screen === 'apps') {
+      const appsLayout: WalletLayout = {
+        screen: 'apps',
+        walletType: walletType as 'phantom',
+        dimensions: { width: 722, height: 1202 },
+        elements: [
+          {
+            type: 'container',
+            name: 'apps-header',
+            content: '',
+            position: { x: 0, y: 0 },
+            size: { width: 722, height: 116 },
+            styles: {
+              backgroundColor: '#181818',
+              borderRadius: '0'
+            },
+            metadata: {
+              context: 'apps-flow'
+            }
+          },
+          {
+            type: 'container',
+            name: 'apps-content',
+            content: '',
+            position: { x: 16, y: 130 },
+            size: { width: 690, height: 600 },
+            styles: {
+              backgroundColor: '#ffffff0d',
+              borderRadius: '12px',
+              border: '1px solid #ffffff1a'
+            },
+            metadata: {
+              context: 'apps-flow'
+            }
+          },
+          {
+            type: 'text',
+            name: 'collectibles-title',
+            content: 'Collectibles',
+            position: { x: 32, y: 160 },
+            size: { width: 200, height: 32 },
+            styles: {
+              color: '#ffffff',
+              fontSize: '24px',
+              fontFamily: 'Inter'
+            }
+          },
+          {
+            type: 'icon',
+            name: 'nft-icon-1',
+            content: 'Art NFT',
+            position: { x: 80, y: 220 },
+            size: { width: 120, height: 120 },
+            styles: {
+              backgroundColor: '#FF6B6B',
+              borderRadius: '12px'
+            },
+            properties: {
+              clickable: true,
+              'data-shared-element-id': 'nft-icon-1'
+            }
+          },
+          {
+            type: 'icon',
+            name: 'nft-icon-2',
+            content: 'Pixel Art',
+            position: { x: 250, y: 220 },
+            size: { width: 120, height: 120 },
+            styles: {
+              backgroundColor: '#4ECDC4',
+              borderRadius: '12px'
+            },
+            properties: {
+              clickable: true,
+              'data-shared-element-id': 'nft-icon-2'
+            }
+          },
+          {
+            type: 'icon',
+            name: 'nft-icon-3',
+            content: 'Digital Art',
+            position: { x: 420, y: 220 },
+            size: { width: 120, height: 120 },
+            styles: {
+              backgroundColor: '#45B7D1',
+              borderRadius: '12px'
+            },
+            properties: {
+              clickable: true,
+              'data-shared-element-id': 'nft-icon-3'
+            }
+          },
+          {
+            type: 'icon',
+            name: 'nft-icon-4',
+            content: 'Game Item',
+            position: { x: 590, y: 220 },
+            size: { width: 120, height: 120 },
+            styles: {
+              backgroundColor: '#96CEB4',
+              borderRadius: '12px'
+            },
+            properties: {
+              clickable: true,
+              'data-shared-element-id': 'nft-icon-4'
+            }
+          },
+          {
+            type: 'link',
+            name: 'manage-collectible-list',
+            content: 'Manage collectible list',
+            position: { x: 300, y: 400 },
+            size: { width: 200, height: 24 },
+            styles: {
+              color: '#9945FF',
+              fontSize: '14px',
+              fontFamily: 'Inter'
+            },
+            properties: {
+              clickable: true,
+              'data-shared-element-id': 'manage-collectible-list'
+            },
+            metadata: {
+              animation: 'hover-underline'
+            }
+          }
+        ],
+        safeZone: { x: 16, y: 130, width: 690, height: 600 },
+        metadata: {
+          recorded_at: new Date().toISOString(),
+          version: '2.0.0',
+          notes: 'Apps layer with collectibles grid and management link'
+        }
+      };
+
+      appsLayout.layers = this.segmentElementsIntoLayers(appsLayout.elements, 'apps');
+      return appsLayout;
+    }
     
     // Handle receive screen layout
     if (screen === 'receive') {
