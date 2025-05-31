@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AIStyleAnalysis {
@@ -36,6 +35,7 @@ export interface ComponentStyle {
   borderRadius?: string;
   boxShadow?: string;
   fontFamily?: string;
+  fontSize?: string;
   animation?: string;
   border?: string;
   backgroundImage?: string;
