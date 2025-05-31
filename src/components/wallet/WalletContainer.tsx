@@ -14,9 +14,11 @@ const WalletContainer = () => {
         return <ReceiveLayer />;
       case 'send':
         return <SendLayer />;
+      case 'swap':
+        // For now, return to home - the swap content will be shown in the home layer
+        return <WalletHomeLayer />;
       case 'home':
       case 'apps':
-      case 'swap':
       case 'history':
       case 'search':
       default:

@@ -28,7 +28,7 @@ interface WalletStyle {
 export type AiPetEmotion = 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink';
 export type AiPetZone = 'inside' | 'outside';
 export type AiPetBodyType = 'phantom' | 'lottie';
-export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search' | 'receive';
+export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search' | 'receive' | 'send';
 
 interface AiPet {
   isVisible: boolean;
@@ -117,7 +117,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       }, duration);
     },
     triggerAiPetInteraction: () => {
-      const emotions: AiPetEmotion[] = ['happy', 'excited', 'wink', 'sleepy', 'idle'];
+      const emotions: AiPetEmotion[] = ['happy', 'excited', 'idle', 'sleepy'];
       const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
       get().setAiPetEmotion(randomEmotion);
     },
@@ -182,8 +182,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       get().setAiPetEmotion('suspicious');
     },
     onAiPetClick: () => {
-      get().setAiPetEmotion('wink');
-      get().setTemporaryEmotion('wink', 2000);
+      get().setAiPetEmotion('happy');
+      get().setTemporaryEmotion('happy', 2000);
     },
     onAiPetDoubleClick: () => {
       const currentZone = get().aiPet.zone;

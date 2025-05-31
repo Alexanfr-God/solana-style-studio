@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Download, Send, ArrowRightLeft, DollarSign, Plus } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -23,6 +24,8 @@ const HomeContent = () => {
       setCurrentLayer('receive');
     } else if (action === 'Send') {
       setCurrentLayer('send');
+    } else if (action === 'Swap') {
+      setCurrentLayer('swap');
     }
     
     triggerAiPetInteraction();
