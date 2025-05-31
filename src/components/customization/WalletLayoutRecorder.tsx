@@ -14,9 +14,9 @@ const WalletLayoutRecorderComponent = () => {
   const [showLayersViewer, setShowLayersViewer] = useState(false);
   const [autoRecordEnabled, setAutoRecordEnabled] = useState(true);
 
-  // Auto-record when layer changes to 'apps', 'swap', or 'history'
+  // Auto-record when layer changes to 'apps', 'swap', 'history', or 'search'
   useEffect(() => {
-    if (autoRecordEnabled && (currentLayer === 'apps' || currentLayer === 'swap' || currentLayer === 'history') && !isRecording) {
+    if (autoRecordEnabled && (currentLayer === 'apps' || currentLayer === 'swap' || currentLayer === 'history' || currentLayer === 'search') && !isRecording) {
       console.log(`🎯 Auto-recording ${currentLayer} layer layout...`);
       if (currentLayer === 'apps') {
         handleAutoRecordAppsLayout();
@@ -24,6 +24,8 @@ const WalletLayoutRecorderComponent = () => {
         handleAutoRecordSwapLayout();
       } else if (currentLayer === 'history') {
         handleAutoRecordHistoryLayout();
+      } else if (currentLayer === 'search') {
+        handleAutoRecordSearchLayout();
       }
     }
   }, [currentLayer, autoRecordEnabled]);
@@ -109,6 +111,33 @@ const WalletLayoutRecorderComponent = () => {
     }
   };
 
+  const handleAutoRecordSearchLayout = async () => {
+    setIsRecording(true);
+    try {
+      const walletId = `${selectedWallet}-search-${Date.now()}`;
+      
+      const layoutId = await WalletLayoutRecorder.recordAndSaveLayout(
+        walletId, 
+        'search', 
+        selectedWallet
+      );
+      
+      if (layoutId) {
+        const layout = await WalletLayoutRecorder.getLayoutFromDatabase(walletId, 'search');
+        setRecordedLayout(layout);
+        
+        toast.success(`🔍 Search screen layout auto-recorded! ${layout?.layers?.length || 0} layers detected. ID: ${layoutId}`);
+        console.log('🎯 Auto-recorded Search Layout:', layout);
+      } else {
+        console.warn('Auto-recording failed for Search layer');
+      }
+    } catch (error) {
+      console.error('Auto-recording search error:', error);
+    } finally {
+      setIsRecording(false);
+    }
+  };
+
   const handleRecordLayout = async () => {
     setIsRecording(true);
     try {
@@ -124,6 +153,8 @@ const WalletLayoutRecorderComponent = () => {
         screenType = 'swap';
       } else if (currentLayer === 'history') {
         screenType = 'history';
+      } else if (currentLayer === 'search') {
+        screenType = 'search';
       }
       
       const layoutId = await WalletLayoutRecorder.recordAndSaveLayout(
@@ -139,7 +170,8 @@ const WalletLayoutRecorderComponent = () => {
         const screenName = screenType === 'wallet' ? 'Home screen' : 
                           screenType === 'apps' ? 'Apps screen' : 
                           screenType === 'swap' ? 'Swap Interface' : 
-                          screenType === 'history' ? 'History screen' : 'Login screen';
+                          screenType === 'history' ? 'History screen' :
+                          screenType === 'search' ? 'Search Interface' : 'Login screen';
         
         toast.success(`${screenName} layout recorded with ${layout?.layers?.length || 0} enhanced layers! ID: ${layoutId}`);
         console.log('🎯 Recorded Layout with Enhanced Layers:', layout);
@@ -213,7 +245,7 @@ const WalletLayoutRecorderComponent = () => {
         <div className="flex items-center justify-between p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-purple-400" />
-            <span className="text-purple-300 text-sm font-medium">Auto-record Apps, Swap & History layers</span>
+            <span className="text-purple-300 text-sm font-medium">Auto-record Apps, Swap, History & Search layers</span>
           </div>
           <Button
             size="sm"
@@ -230,15 +262,17 @@ const WalletLayoutRecorderComponent = () => {
             Current Screen: {currentLayer === 'home' ? 'Wallet Home' : 
                            currentLayer === 'apps' ? 'Apps/Collectibles' : 
                            currentLayer === 'swap' ? 'Swap Interface' : 
-                           currentLayer === 'history' ? 'Transaction History' : 'Login'}
+                           currentLayer === 'history' ? 'Transaction History' :
+                           currentLayer === 'search' ? 'Search Interface' : 'Login'}
           </div>
           <div className="text-blue-200 text-xs">
             Recording will use {currentLayer === 'home' ? 'enhanced home screen' : 
                                currentLayer === 'apps' ? 'apps screen' : 
                                currentLayer === 'swap' ? 'swap screen' : 
-                               currentLayer === 'history' ? 'history screen' : 'login screen'} classification
+                               currentLayer === 'history' ? 'history screen' :
+                               currentLayer === 'search' ? 'search screen' : 'login screen'} classification
           </div>
-          {(currentLayer === 'apps' || currentLayer === 'swap' || currentLayer === 'history') && isRecording && (
+          {(currentLayer === 'apps' || currentLayer === 'swap' || currentLayer === 'history' || currentLayer === 'search') && isRecording && (
             <div className="text-green-300 text-xs mt-1 flex items-center gap-1">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               Auto-recording {currentLayer} layer...
@@ -257,7 +291,8 @@ const WalletLayoutRecorderComponent = () => {
             {isRecording ? 'Recording...' : `Record ${currentLayer === 'home' ? 'Home' : 
                                                     currentLayer === 'apps' ? 'Apps' : 
                                                     currentLayer === 'swap' ? 'Swap Interface' : 
-                                                    currentLayer === 'history' ? 'History' : 'Login'} Layout`}
+                                                    currentLayer === 'history' ? 'History' :
+                                                    currentLayer === 'search' ? 'Search Interface' : 'Login'} Layout`}
           </Button>
           
           <Button
