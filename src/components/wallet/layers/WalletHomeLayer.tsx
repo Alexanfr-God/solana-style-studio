@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -15,7 +16,7 @@ import AiPet from '@/components/ui/AiPet';
 
 const WalletHomeLayer = () => {
   const {
-    walletStyle,
+    getStyleForComponent,
     accounts,
     activeAccountId,
     showAccountDropdown,
@@ -33,6 +34,11 @@ const WalletHomeLayer = () => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const aiPetRef = useRef<HTMLDivElement>(null);
+  
+  // Get component-specific styles
+  const globalStyle = getStyleForComponent('global');
+  const headerStyle = getStyleForComponent('header');
+  const navigationStyle = getStyleForComponent('navigation');
   
   // Используем хук для прямоугольной анимации AI Pet
   useAiPetOrbit(aiPetRef.current, containerBounds, 'rectangle');
@@ -100,12 +106,26 @@ const WalletHomeLayer = () => {
       ref={containerRef}
       className="relative w-full h-full flex flex-col overflow-hidden"
       style={{
-        backgroundColor: walletStyle.backgroundColor || '#181818',
-        fontFamily: walletStyle.font || 'Inter'
+        backgroundColor: globalStyle.backgroundColor || '#181818',
+        fontFamily: globalStyle.fontFamily || 'Inter',
+        backgroundImage: globalStyle.backgroundImage,
+        borderRadius: globalStyle.borderRadius,
+        boxShadow: globalStyle.boxShadow
       }}
     >
-      {/* Header Section */}
-      <div className="relative flex items-center justify-between px-4 py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
+      {/* Header Section with AI-generated styles */}
+      <div 
+        className="relative flex items-center justify-between px-4 py-3 border-b border-white/10"
+        style={{
+          backgroundColor: headerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+          background: headerStyle.gradient || headerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: headerStyle.backdropFilter || 'blur(10px)',
+          borderRadius: headerStyle.borderRadius || '0px',
+          border: headerStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: headerStyle.boxShadow,
+          color: headerStyle.textColor || '#FFFFFF'
+        }}
+      >
         {/* Account Section */}
         <div className="flex items-center space-x-3">
           {/* Clickable Round Avatar */}
@@ -125,9 +145,13 @@ const WalletHomeLayer = () => {
           <button
             onClick={handleAccountDropdownToggle}
             className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 hover:scale-105"
+            style={{
+              borderRadius: headerStyle.borderRadius || '8px',
+              color: headerStyle.textColor || '#FFFFFF'
+            }}
           >
             <div className="text-left">
-              <div className="text-sm font-medium text-white">
+              <div className="text-sm font-medium">
                 {activeAccount?.name || 'Account 1'}
               </div>
               <div className="text-xs text-gray-400">
@@ -144,6 +168,10 @@ const WalletHomeLayer = () => {
         <button
           onClick={handleSearchClick}
           className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          style={{
+            borderRadius: headerStyle.borderRadius || '8px',
+            color: headerStyle.textColor || '#FFFFFF'
+          }}
         >
           <Search className="w-5 h-5 text-gray-400" />
         </button>
@@ -159,7 +187,7 @@ const WalletHomeLayer = () => {
       {/* Dynamic Content based on current layer */}
       {renderContent()}
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation with AI-generated styles */}
       <WalletBottomNavigation />
 
       {/* Account Sidebar */}

@@ -6,11 +6,15 @@ import { useWalletCustomizationStore, WalletLayer } from '@/stores/walletCustomi
 const WalletBottomNavigation = () => {
   const {
     currentLayer,
-    walletStyle,
+    getStyleForComponent,
     setCurrentLayer,
     triggerAiPetInteraction,
     setTemporaryEmotion
   } = useWalletCustomizationStore();
+
+  // Get navigation-specific styles
+  const navigationStyle = getStyleForComponent('navigation');
+  const buttonStyle = getStyleForComponent('buttons');
 
   const navItems = [
     { id: 'home' as WalletLayer, icon: Home, label: 'Home' },
@@ -28,7 +32,17 @@ const WalletBottomNavigation = () => {
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 bg-black/50 backdrop-blur-md">
+    <div 
+      className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10"
+      style={{
+        backgroundColor: navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+        background: navigationStyle.gradient || navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: navigationStyle.backdropFilter || 'blur(10px)',
+        borderRadius: navigationStyle.borderRadius || '0px',
+        border: navigationStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: navigationStyle.boxShadow
+      }}
+    >
       <div className="grid grid-cols-5 items-center">
         {navItems.map(item => (
           <button 
@@ -37,6 +51,9 @@ const WalletBottomNavigation = () => {
               currentLayer === item.id ? 'opacity-100' : 'opacity-50'
             }`}
             onClick={() => handleNavClick(item.id)}
+            style={{
+              borderRadius: navigationStyle.borderRadius || '8px'
+            }}
           >
             <item.icon 
               className={`w-6 h-6 transition-colors ${
@@ -46,7 +63,7 @@ const WalletBottomNavigation = () => {
               }`} 
               style={{
                 color: currentLayer === item.id 
-                  ? walletStyle.primaryColor || '#9945FF'
+                  ? buttonStyle.backgroundColor || '#9945FF'
                   : undefined
               }}
             />
@@ -56,6 +73,12 @@ const WalletBottomNavigation = () => {
                   ? 'text-white' 
                   : 'text-gray-400'
               }`}
+              style={{
+                color: currentLayer === item.id 
+                  ? buttonStyle.textColor || '#FFFFFF'
+                  : undefined,
+                fontFamily: navigationStyle.fontFamily
+              }}
             >
               {item.label}
             </span>

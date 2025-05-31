@@ -18,6 +18,36 @@ interface Token {
   isPositive: boolean;
 }
 
+// Updated comprehensive style interfaces based on AI analysis
+interface ComponentStyle {
+  backgroundColor?: string;
+  gradient?: string;
+  textColor?: string;
+  borderRadius?: string;
+  boxShadow?: string;
+  fontFamily?: string;
+  animation?: string;
+  border?: string;
+  backgroundImage?: string;
+  backdropFilter?: string;
+}
+
+interface WalletStyleSet {
+  global: ComponentStyle;
+  header: ComponentStyle;
+  buttons: ComponentStyle;
+  panels: ComponentStyle;
+  navigation: ComponentStyle;
+  inputs: ComponentStyle;
+  cards: ComponentStyle;
+  aiPet: {
+    zone: AiPetZone;
+    bodyType: AiPetBodyType;
+    emotion: AiPetEmotion;
+  };
+}
+
+// Legacy interface for backward compatibility
 interface WalletStyle {
   backgroundColor: string;
   primaryColor: string;
@@ -46,8 +76,16 @@ interface WalletCustomizationState {
   activeAccountId: string;
   setActiveAccount: (accountId: string) => void;
   tokens: Token[];
+  
+  // New comprehensive style system
+  walletStyleSet: WalletStyleSet;
+  applyStyleSet: (styleSet: WalletStyleSet) => void;
+  getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet'>) => ComponentStyle;
+  
+  // Legacy style system for backward compatibility
   walletStyle: WalletStyle;
   setWalletStyle: (style: Partial<WalletStyle>) => void;
+  
   totalBalance: string;
   totalChange: string;
   totalChangePercent: string;
@@ -65,7 +103,7 @@ interface WalletCustomizationState {
   showAccountSidebar: boolean;
   setShowAccountSidebar: (show: boolean) => void;
   
-  // Missing properties for customization
+  // Customization properties
   uploadedImage: string | null;
   setUploadedImage: (image: string | null) => void;
   isCustomizing: boolean;
@@ -75,7 +113,7 @@ interface WalletCustomizationState {
   lockWallet: () => void;
   unlockWallet: () => void;
   
-  // Missing AI Pet properties
+  // AI Pet properties
   aiPet: AiPet;
   setAiPetZone: (zone: AiPetZone) => void;
   setAiPetBodyType: (bodyType: AiPetBodyType) => void;
@@ -86,6 +124,57 @@ interface WalletCustomizationState {
   onAiPetClick: () => void;
   onAiPetDoubleClick: () => void;
 }
+
+const defaultStyleSet: WalletStyleSet = {
+  global: {
+    backgroundColor: '#181818',
+    fontFamily: 'Inter',
+    backgroundImage: 'url("background.jpg")',
+    borderRadius: '10px',
+    boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
+  },
+  header: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '0px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  buttons: {
+    backgroundColor: '#9945FF',
+    gradient: 'linear-gradient(135deg, #9945FF 0%, #14F195 100%)',
+    textColor: '#FFFFFF',
+    borderRadius: '12px',
+    boxShadow: '0 4px 12px rgba(153, 69, 255, 0.3)'
+  },
+  panels: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '16px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  navigation: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backdropFilter: 'blur(10px)',
+    borderRadius: '0px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  inputs: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    textColor: '#FFFFFF',
+    borderRadius: '8px',
+    border: '1px solid rgba(255, 255, 255, 0.2)'
+  },
+  cards: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: '16px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  aiPet: {
+    zone: 'inside',
+    bodyType: 'phantom',
+    emotion: 'idle'
+  }
+};
 
 export const useWalletCustomizationStore = create<WalletCustomizationState>()(
   (set, get) => ({
@@ -104,6 +193,44 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       { id: '2', name: 'Solana', symbol: 'SOL', icon: '◎', amount: '12.345', value: '$2,345.67', change: '-1.2%', isPositive: false },
       { id: '3', name: 'Bitcoin', symbol: 'BTC', icon: '₿', amount: '0.123', value: '$3,456.78', change: '+0.8%', isPositive: true },
     ],
+    
+    // New comprehensive style system
+    walletStyleSet: defaultStyleSet,
+    applyStyleSet: (styleSet: WalletStyleSet) => {
+      set({ walletStyleSet: styleSet });
+      
+      // Update AI Pet configuration from styleSet
+      if (styleSet.aiPet) {
+        set(state => ({ 
+          aiPet: { 
+            ...state.aiPet, 
+            zone: styleSet.aiPet.zone,
+            bodyType: styleSet.aiPet.bodyType,
+            emotion: styleSet.aiPet.emotion
+          } 
+        }));
+      }
+      
+      // Update legacy walletStyle for backward compatibility
+      const legacyStyle: WalletStyle = {
+        backgroundColor: styleSet.global.backgroundColor || '#181818',
+        primaryColor: styleSet.buttons.backgroundColor || '#9945FF',
+        font: styleSet.global.fontFamily || 'Inter',
+        backgroundImage: styleSet.global.backgroundImage,
+        borderRadius: styleSet.global.borderRadius,
+        boxShadow: styleSet.global.boxShadow
+      };
+      set({ walletStyle: legacyStyle });
+      
+      get().triggerAiPetInteraction();
+    },
+    
+    getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet'>) => {
+      const styleSet = get().walletStyleSet;
+      return styleSet[component] || {};
+    },
+    
+    // Legacy style system for backward compatibility
     walletStyle: {
       backgroundColor: '#181818',
       primaryColor: '#9945FF',
@@ -113,6 +240,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
     },
     setWalletStyle: (style) => set(state => ({ walletStyle: { ...state.walletStyle, ...style } })),
+    
     totalBalance: '$15,691.34',
     totalChange: '+ $123.45',
     totalChangePercent: '+0.78%',
@@ -157,6 +285,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     onCustomizationStart: () => set({ isCustomizing: true }),
     resetWallet: () => {
       set({
+        walletStyleSet: defaultStyleSet,
         walletStyle: {
           backgroundColor: '#181818',
           primaryColor: '#9945FF',
@@ -179,7 +308,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     },
     lockWallet: () => {
       set({ currentLayer: 'login' });
-      // Переводим AI Pet в режим inside при блокировке
       set(state => ({ 
         aiPet: { 
           ...state.aiPet, 
@@ -191,7 +319,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     },
     unlockWallet: () => {
       set({ currentLayer: 'home' });
-      // Автоматически переводим AI Pet в режим циркуляции при разблокировке
       set(state => ({ 
         aiPet: { 
           ...state.aiPet, 
@@ -212,7 +339,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     },
     setAiPetZone: (zone) => {
       set(state => ({ aiPet: { ...state.aiPet, zone } }));
-      // Триггерим анимацию при смене зоны
       get().triggerAiPetInteraction();
     },
     setAiPetBodyType: (bodyType) => set(state => ({ aiPet: { ...state.aiPet, bodyType } })),

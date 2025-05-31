@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,8 +11,7 @@ const ImageUploadSection = () => {
   const { 
     uploadedImage, 
     setUploadedImage, 
-    setWalletStyle, 
-    setAiPetZone, 
+    applyStyleSet,
     triggerAiPetInteraction 
   } = useWalletCustomizationStore();
   
@@ -78,21 +78,12 @@ const ImageUploadSection = () => {
       const walletStyleSet = generateWalletStyleFromAnalysis(analysis);
       setLastGeneratedStyle(walletStyleSet);
       
-      // Apply enhanced styles to wallet - only use properties that exist in WalletStyle
-      setWalletStyle({
-        backgroundColor: walletStyleSet.global.backgroundColor,
-        primaryColor: walletStyleSet.buttons.backgroundColor,
-        font: walletStyleSet.global.fontFamily,
-        backgroundImage: walletStyleSet.global.backgroundImage,
-        borderRadius: walletStyleSet.global.borderRadius,
-        boxShadow: walletStyleSet.global.boxShadow
-      });
+      // Apply the complete WalletStyleSet to the wallet
+      applyStyleSet(walletStyleSet);
       
-      // Configure AI Pet based on analysis
-      setAiPetZone(walletStyleSet.aiPet.zone);
       triggerAiPetInteraction();
       
-      toast.success(`🎨 "${analysis.style}" style applied! Mood: ${analysis.mood}`);
+      toast.success(`🎨 "${analysis.style}" style applied! All components styled with full AI analysis.`);
       
     } catch (error) {
       console.error('AI analysis error:', error);
@@ -233,6 +224,11 @@ const ImageUploadSection = () => {
                       ))}
                     </div>
                   )}
+                </div>
+                
+                <div className="mt-3 p-2 bg-green-500/10 border border-green-500/30 rounded">
+                  <p className="text-green-300 text-xs font-medium">✅ Full WalletStyleSet Applied</p>
+                  <p className="text-green-200 text-xs">Header, buttons, panels, navigation, and global styles updated</p>
                 </div>
               </div>
             )}

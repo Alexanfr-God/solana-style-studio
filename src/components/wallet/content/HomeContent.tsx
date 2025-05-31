@@ -5,7 +5,7 @@ import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const HomeContent = () => {
   const {
-    walletStyle,
+    getStyleForComponent,
     tokens,
     totalBalance,
     totalChange,
@@ -16,6 +16,11 @@ const HomeContent = () => {
     triggerAiPetInteraction,
     setTemporaryEmotion
   } = useWalletCustomizationStore();
+
+  // Get component-specific styles
+  const buttonStyle = getStyleForComponent('buttons');
+  const panelStyle = getStyleForComponent('panels');
+  const globalStyle = getStyleForComponent('global');
 
   const handleAction = (action: string) => {
     console.log(`${action} clicked`);
@@ -45,7 +50,13 @@ const HomeContent = () => {
       {/* Balance Section */}
       <div className="px-6 py-6">
         <div className="text-center">
-          <div className="text-3xl font-bold text-white mb-2">
+          <div 
+            className="text-3xl font-bold text-white mb-2"
+            style={{
+              color: globalStyle.textColor || '#FFFFFF',
+              fontFamily: globalStyle.fontFamily || 'Inter'
+            }}
+          >
             {totalBalance}
           </div>
           <div className="flex items-center justify-center space-x-2">
@@ -60,6 +71,9 @@ const HomeContent = () => {
                   ? 'bg-green-400/20 text-green-400' 
                   : 'bg-red-400/20 text-red-400'
               }`}
+              style={{
+                borderRadius: panelStyle.borderRadius || '4px'
+              }}
             >
               {totalChangePercent}
             </span>
@@ -67,7 +81,7 @@ const HomeContent = () => {
         </div>
       </div>
       
-      {/* Action Buttons */}
+      {/* Action Buttons with AI-generated styles */}
       <div className="grid grid-cols-4 gap-3 px-4 pb-4">
         {[
           { id: 'receive', icon: Download, label: 'Receive' },
@@ -77,47 +91,108 @@ const HomeContent = () => {
         ].map(action => (
           <div key={action.id} className="flex flex-col items-center">
             <button 
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 bg-white/5 hover:bg-white/10 transition-all duration-200 hover:scale-105"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 transition-all duration-200 hover:scale-105"
+              style={{
+                backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+                background: buttonStyle.gradient || buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+                borderRadius: buttonStyle.borderRadius || '16px',
+                boxShadow: buttonStyle.boxShadow,
+                color: buttonStyle.textColor || '#FFFFFF'
+              }}
               onClick={() => handleAction(action.label)}
             >
               <action.icon 
                 className="w-5 h-5" 
-                style={{ color: walletStyle.primaryColor || '#9945FF' }} 
+                style={{ 
+                  color: buttonStyle.textColor || buttonStyle.backgroundColor || '#9945FF'
+                }} 
               />
             </button>
-            <span className="text-xs text-gray-400">{action.label}</span>
+            <span 
+              className="text-xs text-gray-400"
+              style={{
+                color: globalStyle.textColor || '#9CA3AF',
+                fontFamily: globalStyle.fontFamily
+              }}
+            >
+              {action.label}
+            </span>
           </div>
         ))}
       </div>
       
-      {/* Tokens Section */}
+      {/* Tokens Section with panel styles */}
       <div className="flex-1 px-4 pb-20 overflow-auto">
         <div className="flex justify-between items-center mb-4">
-          <span className="font-medium text-white">Assets</span>
-          <span className="text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors">
+          <span 
+            className="font-medium text-white"
+            style={{
+              color: globalStyle.textColor || '#FFFFFF',
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Assets
+          </span>
+          <span 
+            className="text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors"
+            style={{
+              color: globalStyle.textColor || '#9CA3AF',
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
             See all
           </span>
         </div>
         
-        {/* Token List */}
+        {/* Token List with panel styles */}
         <div className="space-y-2">
           {tokens.map(token => (
             <div 
               key={token.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 cursor-pointer hover:scale-[1.02]"
+              className="flex items-center justify-between p-3 rounded-xl transition-all duration-200 cursor-pointer hover:scale-[1.02]"
+              style={{
+                backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+                background: panelStyle.gradient || panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+                borderRadius: panelStyle.borderRadius || '12px',
+                border: panelStyle.border,
+                boxShadow: panelStyle.boxShadow,
+                backdropFilter: panelStyle.backdropFilter
+              }}
               onClick={() => handleTokenClick(token.name)}
             >
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{
+                    backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '50%'
+                  }}
+                >
                   <span className="text-lg">{token.icon}</span>
                 </div>
                 <div>
-                  <div className="font-medium text-white text-sm">{token.name}</div>
+                  <div 
+                    className="font-medium text-white text-sm"
+                    style={{
+                      color: panelStyle.textColor || '#FFFFFF',
+                      fontFamily: globalStyle.fontFamily
+                    }}
+                  >
+                    {token.name}
+                  </div>
                   <div className="text-xs text-gray-400">{token.symbol}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-medium text-white text-sm">{token.amount}</div>
+                <div 
+                  className="font-medium text-white text-sm"
+                  style={{
+                    color: panelStyle.textColor || '#FFFFFF',
+                    fontFamily: globalStyle.fontFamily
+                  }}
+                >
+                  {token.amount}
+                </div>
                 <div className="text-xs text-gray-400">{token.value}</div>
                 <div className={`text-xs ${token.isPositive ? 'text-green-400' : 'text-red-400'}`}>
                   {token.change}
@@ -127,13 +202,29 @@ const HomeContent = () => {
           ))}
         </div>
         
-        {/* Manage Token List */}
+        {/* Manage Token List with panel styles */}
         <button 
-          className="w-full mt-6 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 flex items-center justify-center space-x-2 hover:scale-[1.02]"
+          className="w-full mt-6 p-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 hover:scale-[1.02]"
+          style={{
+            backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            background: panelStyle.gradient || panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            borderRadius: panelStyle.borderRadius || '12px',
+            border: panelStyle.border,
+            boxShadow: panelStyle.boxShadow,
+            backdropFilter: panelStyle.backdropFilter
+          }}
           onClick={() => handleAction('Manage Token List')}
         >
           <Plus className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-400">Manage Token List</span>
+          <span 
+            className="text-sm text-gray-400"
+            style={{
+              color: panelStyle.textColor || '#9CA3AF',
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Manage Token List
+          </span>
         </button>
       </div>
     </>
