@@ -124,37 +124,21 @@ export const saveStyleToLibrary = async (
   userId?: string
 ) => {
   try {
-    // Используем прямой SQL запрос через rpc для обхода проблемы с типами
-    const { data, error } = await supabase.rpc('insert_style_to_library', {
-      p_style_name: styleName,
-      p_style_data: styleData,
-      p_ai_analysis: analysis,
-      p_preview_image_url: previewImageUrl,
-      p_inspiration_image_url: inspirationImageUrl,
-      p_created_by: userId || 'anonymous'
-    });
+    // Используем прямой insert с приведением типов для обхода проблемы с типами
+    const { data, error } = await supabase
+      .from('style_library')
+      .insert([{
+        style_name: styleName,
+        style_data: styleData as any,
+        ai_analysis: analysis as any,
+        preview_image_url: previewImageUrl,
+        inspiration_image_url: inspirationImageUrl,
+        created_by: userId || 'anonymous'
+      }])
+      .select()
+      .single();
 
-    if (error) {
-      // Если RPC функция не существует, используем обычный insert
-      console.log('RPC function not found, using direct insert');
-      
-      const { data: insertData, error: insertError } = await supabase
-        .from('style_library')
-        .insert([{
-          style_name: styleName,
-          style_data: styleData as any,
-          ai_analysis: analysis as any,
-          preview_image_url: previewImageUrl,
-          inspiration_image_url: inspirationImageUrl,
-          created_by: userId || 'anonymous'
-        }])
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      return insertData;
-    }
-    
+    if (error) throw error;
     return data;
   } catch (error) {
     console.error('Error saving style to library:', error);
