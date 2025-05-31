@@ -71,26 +71,30 @@ const ImageUploadSection = () => {
     try {
       toast.info('🤖 AI analyzing your image...');
       
-      // Анализируем изображение с помощью AI
+      // Analyze image with enhanced AI
       const analysis = await analyzeImageWithAI(uploadedImage);
       setLastAnalysis(analysis);
       
-      // Генерируем стили для всех компонентов
+      // Generate comprehensive wallet styles
       const walletStyleSet = generateWalletStyleFromAnalysis(analysis);
       setLastGeneratedStyle(walletStyleSet);
       
-      // Применяем глобальные стили к кошельку
+      // Apply enhanced styles to wallet
       setWalletStyle({
         backgroundColor: walletStyleSet.global.backgroundColor,
         primaryColor: walletStyleSet.buttons.backgroundColor,
-        font: walletStyleSet.global.fontFamily
+        font: walletStyleSet.global.fontFamily,
+        // Apply additional style properties
+        backgroundImage: walletStyleSet.global.backgroundImage,
+        borderRadius: walletStyleSet.global.borderRadius,
+        boxShadow: walletStyleSet.global.boxShadow
       });
       
-      // Устанавливаем AI Pet в режим циркуляции вокруг кошелька
-      setAiPetZone('outside');
+      // Configure AI Pet based on analysis
+      setAiPetZone(walletStyleSet.aiPet.zone);
       triggerAiPetInteraction();
       
-      toast.success(`🎨 Style "${analysis.style}" applied! AI Pet now orbits around the wallet`);
+      toast.success(`🎨 "${analysis.style}" style applied! Mood: ${analysis.mood}`);
       
     } catch (error) {
       console.error('AI analysis error:', error);
@@ -168,7 +172,7 @@ const ImageUploadSection = () => {
               {isAnalyzing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Analyzing style...
+                  Analyzing with AI...
                 </>
               ) : (
                 <>
@@ -190,22 +194,47 @@ const ImageUploadSection = () => {
             )}
 
             {lastAnalysis && (
-              <div className="p-3 bg-black/20 rounded-lg">
-                <h4 className="text-sm font-medium text-white mb-2">Analysis Result:</h4>
-                <div className="text-xs text-gray-300 space-y-1">
-                  <p><span className="text-purple-400">Style:</span> {lastAnalysis.style}</p>
-                  <p><span className="text-purple-400">Mood:</span> {lastAnalysis.mood}</p>
-                  <p><span className="text-purple-400">Font:</span> {lastAnalysis.fontRecommendation}</p>
+              <div className="p-4 bg-black/20 rounded-lg space-y-3">
+                <h4 className="text-sm font-medium text-white mb-2">Enhanced AI Analysis:</h4>
+                <div className="text-xs text-gray-300 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <p><span className="text-purple-400">Style:</span> {lastAnalysis.style}</p>
+                    <p><span className="text-purple-400">Mood:</span> {lastAnalysis.mood}</p>
+                    <p><span className="text-purple-400">Font:</span> {lastAnalysis.fontRecommendation}</p>
+                    <p><span className="text-purple-400">Animation:</span> {lastAnalysis.animationStyle}</p>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <p className="text-purple-400">Design Elements:</p>
+                    <div className="flex gap-2 flex-wrap text-xs">
+                      {lastAnalysis.designElements?.hasGradients && <span className="bg-purple-500/20 px-2 py-1 rounded">Gradients</span>}
+                      {lastAnalysis.designElements?.hasPatterns && <span className="bg-blue-500/20 px-2 py-1 rounded">Patterns</span>}
+                      {lastAnalysis.designElements?.hasTextures && <span className="bg-green-500/20 px-2 py-1 rounded">Textures</span>}
+                      <span className="bg-orange-500/20 px-2 py-1 rounded">{lastAnalysis.designElements?.lighting}</span>
+                    </div>
+                  </div>
+                  
                   <div className="flex items-center space-x-1">
-                    <span className="text-purple-400">Colors:</span>
-                    {lastAnalysis.colors.map((color: string, index: number) => (
+                    <span className="text-purple-400">Color Palette:</span>
+                    {lastAnalysis.colors?.map((color: string, index: number) => (
                       <div 
                         key={index}
-                        className="w-4 h-4 rounded-full border border-white/20"
+                        className="w-4 h-4 rounded-full border border-white/20 flex-shrink-0"
                         style={{ backgroundColor: color }}
+                        title={color}
                       />
                     ))}
                   </div>
+                  
+                  {lastAnalysis.tags && (
+                    <div className="flex flex-wrap gap-1">
+                      {lastAnalysis.tags.map((tag: string, index: number) => (
+                        <span key={index} className="text-xs bg-gray-700/50 px-2 py-1 rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -218,7 +247,7 @@ const ImageUploadSection = () => {
             <div className="text-center">
               <p className="text-white font-medium mb-1">Upload inspiration image</p>
               <p className="text-white/60 text-sm">
-                AI will analyze colors, patterns, and style
+                Enhanced AI will analyze colors, patterns, mood, and style
               </p>
             </div>
             <Button 
