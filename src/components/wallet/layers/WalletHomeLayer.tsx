@@ -12,7 +12,7 @@ import AppsContent from '../content/AppsContent';
 import HistoryContent from '../content/HistoryContent';
 import SearchContent from '../content/SearchContent';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { AiPet } from '@/components/ui/AiPet';
+import AiPet from '@/components/ui/AiPet';
 
 const WalletHomeLayer = () => {
   const {
