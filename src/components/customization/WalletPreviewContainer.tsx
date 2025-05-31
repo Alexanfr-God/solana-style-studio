@@ -32,6 +32,7 @@ const WalletPreviewContainer = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [debugMode, setDebugMode] = useState(false);
+  const [animationType, setAnimationType] = useState<'orbit' | 'rectangle'>('rectangle');
   const walletContainerRef = useRef<HTMLDivElement>(null);
 
   // Set container bounds for AiPet floating behavior
@@ -208,10 +209,33 @@ const WalletPreviewContainer = () => {
           </Button>
         </div>
 
+        {/* Animation Type Selector */}
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Button
+            variant={animationType === 'rectangle' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setAnimationType('rectangle')}
+            className="text-xs"
+          >
+            ⏹️ Rectangle
+          </Button>
+          <Button
+            variant={animationType === 'orbit' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setAnimationType('orbit')}
+            className="text-xs"
+          >
+            ⭕ Orbit
+          </Button>
+        </div>
+
         {/* Current Layer Indicator */}
         <div className="text-center mb-4">
           <p className="text-gray-400 text-sm">
             Current layer: <span className="text-purple-400 capitalize">{currentLayer}</span>
+          </p>
+          <p className="text-blue-400/80 text-xs">
+            Animation: {animationType} • Zone: {aiPet.zone}
           </p>
         </div>
         
@@ -352,7 +376,7 @@ const WalletPreviewContainer = () => {
             Hover → suspicious • Click → wink • Double-click → zone switch
           </p>
           <p className="text-blue-400/80 text-xs mt-1">
-            Energy: {aiPet.energy}% • Emotion: {aiPet.emotion} • Layer: {currentLayer}
+            Energy: {aiPet.energy}% • Emotion: {aiPet.emotion} • Animation: {animationType}
           </p>
           <button
             onClick={() => setDebugMode(!debugMode)}

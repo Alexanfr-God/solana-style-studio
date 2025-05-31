@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -35,8 +34,8 @@ const WalletHomeLayer = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const aiPetRef = useRef<HTMLDivElement>(null);
   
-  // Используем хук для орбитальной анимации AI Pet
-  useAiPetOrbit(aiPetRef.current, containerBounds);
+  // Используем хук для прямоугольной анимации AI Pet
+  useAiPetOrbit(aiPetRef.current, containerBounds, 'rectangle');
 
   const activeAccount = accounts.find(acc => acc.id === activeAccountId);
 

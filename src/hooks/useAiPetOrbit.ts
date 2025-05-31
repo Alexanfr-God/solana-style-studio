@@ -1,6 +1,19 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { createOrbitAnimation, OrbitAnimation } from '@/services/aiPetBehaviorService';
+import { createOrbitAnimation, createRectangleAnimation, OrbitAnimation, RectangleAnimation, PetAnimation } from '@/services/aiPetBehaviorService';
+
+// Конфигурация для прямоугольного движения
+const DEFAULT_RECTANGLE_BEHAVIOR = {
+  behaviorName: 'rectangle_circulation',
+  animationData: {
+    type: 'rectangle' as const,
+    padding: '20%',
+    speed: 'medium' as const,
+    direction: 'clockwise' as const,
+    cornerPause: 500
+  } as RectangleAnimation
+};
 
 // Статичные данные для орбитального поведения с правильной типизацией
 const DEFAULT_ORBIT_BEHAVIOR = {
@@ -13,11 +26,15 @@ const DEFAULT_ORBIT_BEHAVIOR = {
   } as OrbitAnimation
 };
 
-export const useAiPetOrbit = (petElement: HTMLElement | null, containerBounds: DOMRect | null) => {
+export const useAiPetOrbit = (
+  petElement: HTMLElement | null, 
+  containerBounds: DOMRect | null,
+  animationType: 'orbit' | 'rectangle' = 'rectangle'
+) => {
   const { currentLayer, aiPet } = useWalletCustomizationStore();
   const animationCleanupRef = useRef<(() => void) | null>(null);
 
-  const startOrbitAnimation = useCallback(() => {
+  const startAnimation = useCallback(() => {
     if (!petElement || !containerBounds) return;
 
     // Очищаем предыдущую анимацию
@@ -25,17 +42,25 @@ export const useAiPetOrbit = (petElement: HTMLElement | null, containerBounds: D
       animationCleanupRef.current();
     }
 
-    // Запускаем циркуляцию только когда питомец в зоне outside
+    // Запускаем анимацию только когда питомец в зоне outside
     if (aiPet.zone === 'outside' && currentLayer !== 'login') {
-      animationCleanupRef.current = createOrbitAnimation(
-        petElement,
-        containerBounds,
-        DEFAULT_ORBIT_BEHAVIOR.animationData
-      );
+      if (animationType === 'rectangle') {
+        animationCleanupRef.current = createRectangleAnimation(
+          petElement,
+          containerBounds,
+          DEFAULT_RECTANGLE_BEHAVIOR.animationData
+        );
+      } else {
+        animationCleanupRef.current = createOrbitAnimation(
+          petElement,
+          containerBounds,
+          DEFAULT_ORBIT_BEHAVIOR.animationData
+        );
+      }
     }
-  }, [petElement, containerBounds, aiPet.zone, currentLayer]);
+  }, [petElement, containerBounds, aiPet.zone, currentLayer, animationType]);
 
-  const stopOrbitAnimation = useCallback(() => {
+  const stopAnimation = useCallback(() => {
     if (animationCleanupRef.current) {
       animationCleanupRef.current();
       animationCleanupRef.current = null;
@@ -45,18 +70,18 @@ export const useAiPetOrbit = (petElement: HTMLElement | null, containerBounds: D
   // Запускаем/останавливаем анимацию при изменении условий
   useEffect(() => {
     if (currentLayer === 'login') {
-      stopOrbitAnimation();
+      stopAnimation();
     } else {
-      startOrbitAnimation();
+      startAnimation();
     }
 
     return () => {
-      stopOrbitAnimation();
+      stopAnimation();
     };
-  }, [currentLayer, startOrbitAnimation, stopOrbitAnimation]);
+  }, [currentLayer, startAnimation, stopAnimation]);
 
   return {
-    startOrbitAnimation,
-    stopOrbitAnimation
+    startAnimation,
+    stopAnimation
   };
 };
