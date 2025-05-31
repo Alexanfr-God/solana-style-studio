@@ -23,6 +23,9 @@ interface WalletStyle {
   primaryColor: string;
   font: string;
   image?: string;
+  backgroundImage?: string;
+  borderRadius?: string;
+  boxShadow?: string;
 }
 
 export type AiPetEmotion = 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink';
@@ -103,7 +106,10 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     walletStyle: {
       backgroundColor: '#181818',
       primaryColor: '#9945FF',
-      font: 'Inter'
+      font: 'Inter',
+      backgroundImage: 'url("background.jpg")',
+      borderRadius: '10px',
+      boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
     },
     setWalletStyle: (style) => set(state => ({ walletStyle: { ...state.walletStyle, ...style } })),
     totalBalance: '$15,691.34',
@@ -153,7 +159,10 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
         walletStyle: {
           backgroundColor: '#181818',
           primaryColor: '#9945FF',
-          font: 'Inter'
+          font: 'Inter',
+          backgroundImage: 'url("background.jpg")',
+          borderRadius: '10px',
+          boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
         },
         uploadedImage: null,
         isCustomizing: false,

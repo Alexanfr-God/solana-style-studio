@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -79,12 +78,11 @@ const ImageUploadSection = () => {
       const walletStyleSet = generateWalletStyleFromAnalysis(analysis);
       setLastGeneratedStyle(walletStyleSet);
       
-      // Apply enhanced styles to wallet
+      // Apply enhanced styles to wallet - only use properties that exist in WalletStyle
       setWalletStyle({
         backgroundColor: walletStyleSet.global.backgroundColor,
         primaryColor: walletStyleSet.buttons.backgroundColor,
         font: walletStyleSet.global.fontFamily,
-        // Apply additional style properties
         backgroundImage: walletStyleSet.global.backgroundImage,
         borderRadius: walletStyleSet.global.borderRadius,
         boxShadow: walletStyleSet.global.boxShadow
