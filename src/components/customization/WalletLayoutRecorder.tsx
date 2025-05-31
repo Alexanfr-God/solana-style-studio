@@ -14,11 +14,15 @@ const WalletLayoutRecorderComponent = () => {
   const [showLayersViewer, setShowLayersViewer] = useState(false);
   const [autoRecordEnabled, setAutoRecordEnabled] = useState(true);
 
-  // Auto-record when layer changes to 'apps'
+  // Auto-record when layer changes to 'apps' or 'swap'
   useEffect(() => {
-    if (autoRecordEnabled && currentLayer === 'apps' && !isRecording) {
-      console.log('🎯 Auto-recording Apps layer layout...');
-      handleAutoRecordAppsLayout();
+    if (autoRecordEnabled && (currentLayer === 'apps' || currentLayer === 'swap') && !isRecording) {
+      console.log(`🎯 Auto-recording ${currentLayer} layer layout...`);
+      if (currentLayer === 'apps') {
+        handleAutoRecordAppsLayout();
+      } else if (currentLayer === 'swap') {
+        handleAutoRecordSwapLayout();
+      }
     }
   }, [currentLayer, autoRecordEnabled]);
 
@@ -49,6 +53,33 @@ const WalletLayoutRecorderComponent = () => {
     }
   };
 
+  const handleAutoRecordSwapLayout = async () => {
+    setIsRecording(true);
+    try {
+      const walletId = `${selectedWallet}-swap-${Date.now()}`;
+      
+      const layoutId = await WalletLayoutRecorder.recordAndSaveLayout(
+        walletId, 
+        'swap', 
+        selectedWallet
+      );
+      
+      if (layoutId) {
+        const layout = await WalletLayoutRecorder.getLayoutFromDatabase(walletId, 'swap');
+        setRecordedLayout(layout);
+        
+        toast.success(`🔄 Swap screen layout auto-recorded! ${layout?.layers?.length || 0} layers detected. ID: ${layoutId}`);
+        console.log('🎯 Auto-recorded Swap Layout:', layout);
+      } else {
+        console.warn('Auto-recording failed for Swap layer');
+      }
+    } catch (error) {
+      console.error('Auto-recording swap error:', error);
+    } finally {
+      setIsRecording(false);
+    }
+  };
+
   const handleRecordLayout = async () => {
     setIsRecording(true);
     try {
@@ -60,6 +91,8 @@ const WalletLayoutRecorderComponent = () => {
         screenType = 'wallet';
       } else if (currentLayer === 'apps') {
         screenType = 'apps';
+      } else if (currentLayer === 'swap') {
+        screenType = 'swap';
       }
       
       const layoutId = await WalletLayoutRecorder.recordAndSaveLayout(
@@ -73,7 +106,8 @@ const WalletLayoutRecorderComponent = () => {
         setRecordedLayout(layout);
         
         const screenName = screenType === 'wallet' ? 'Home screen' : 
-                          screenType === 'apps' ? 'Apps screen' : 'Login screen';
+                          screenType === 'apps' ? 'Apps screen' : 
+                          screenType === 'swap' ? 'Swap Interface' : 'Login screen';
         
         toast.success(`${screenName} layout recorded with ${layout?.layers?.length || 0} enhanced layers! ID: ${layoutId}`);
         console.log('🎯 Recorded Layout with Enhanced Layers:', layout);
@@ -147,7 +181,7 @@ const WalletLayoutRecorderComponent = () => {
         <div className="flex items-center justify-between p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-purple-400" />
-            <span className="text-purple-300 text-sm font-medium">Auto-record Apps layer</span>
+            <span className="text-purple-300 text-sm font-medium">Auto-record Apps & Swap layers</span>
           </div>
           <Button
             size="sm"
@@ -162,16 +196,18 @@ const WalletLayoutRecorderComponent = () => {
           <div className="text-blue-300 text-sm font-medium mb-1 flex items-center gap-2">
             <Home className="h-4 w-4" />
             Current Screen: {currentLayer === 'home' ? 'Wallet Home' : 
-                           currentLayer === 'apps' ? 'Apps/Collectibles' : 'Login'}
+                           currentLayer === 'apps' ? 'Apps/Collectibles' : 
+                           currentLayer === 'swap' ? 'Swap Interface' : 'Login'}
           </div>
           <div className="text-blue-200 text-xs">
             Recording will use {currentLayer === 'home' ? 'enhanced home screen' : 
-                               currentLayer === 'apps' ? 'apps screen' : 'login screen'} classification
+                               currentLayer === 'apps' ? 'apps screen' : 
+                               currentLayer === 'swap' ? 'swap screen' : 'login screen'} classification
           </div>
-          {currentLayer === 'apps' && isRecording && (
+          {(currentLayer === 'apps' || currentLayer === 'swap') && isRecording && (
             <div className="text-green-300 text-xs mt-1 flex items-center gap-1">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              Auto-recording Apps layer...
+              Auto-recording {currentLayer} layer...
             </div>
           )}
         </div>
@@ -185,7 +221,8 @@ const WalletLayoutRecorderComponent = () => {
           >
             <Save className="h-4 w-4 mr-2" />
             {isRecording ? 'Recording...' : `Record ${currentLayer === 'home' ? 'Home' : 
-                                                    currentLayer === 'apps' ? 'Apps' : 'Login'} Layout`}
+                                                    currentLayer === 'apps' ? 'Apps' : 
+                                                    currentLayer === 'swap' ? 'Swap Interface' : 'Login'} Layout`}
           </Button>
           
           <Button
@@ -220,7 +257,8 @@ const WalletLayoutRecorderComponent = () => {
             </div>
             <div className="text-green-200 text-xs space-y-1">
               <div>Screen: {recordedLayout.screen} ({recordedLayout.screen === 'wallet' ? 'Home' : 
-                                                    recordedLayout.screen === 'apps' ? 'Apps/Collectibles' : 'Login'})</div>
+                                                    recordedLayout.screen === 'apps' ? 'Apps/Collectibles' : 
+                                                    recordedLayout.screen === 'swap' ? 'Swap Interface' : 'Login'})</div>
               <div>Total Elements: {recordedLayout.elements.length}</div>
               <div>Enhanced Layers: {recordedLayout.layers?.length || 0}</div>
               <div>Dimensions: {recordedLayout.dimensions.width}x{recordedLayout.dimensions.height}</div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, MoreVertical } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -6,6 +5,7 @@ import WalletAccountDropdown from '../WalletAccountDropdown';
 import WalletBottomNavigation from '../WalletBottomNavigation';
 import HomeContent from '../content/HomeContent';
 import AppsContent from '../content/AppsContent';
+import SwapContent from '../content/SwapContent';
 
 const WalletHomeLayer = () => {
   const {
@@ -35,6 +35,8 @@ const WalletHomeLayer = () => {
     switch (currentLayer) {
       case 'apps':
         return <AppsContent />;
+      case 'swap':
+        return <SwapContent />;
       case 'home':
       default:
         return <HomeContent />;
