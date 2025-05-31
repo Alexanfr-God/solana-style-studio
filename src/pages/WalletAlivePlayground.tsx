@@ -6,10 +6,10 @@ import CustomizeWalletButton from '@/components/customization/CustomizeWalletBut
 import WalletLayoutRecorderComponent from '@/components/customization/WalletLayoutRecorder';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Lock } from 'lucide-react';
 
 const WalletAlivePlayground = () => {
-  const { resetWallet } = useWalletCustomizationStore();
+  const { resetWallet, lockWallet } = useWalletCustomizationStore();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
@@ -37,6 +37,15 @@ const WalletAlivePlayground = () => {
             {/* Action Buttons */}
             <div className="space-y-4">
               <CustomizeWalletButton />
+              
+              <Button 
+                variant="outline" 
+                onClick={lockWallet}
+                className="w-full border-orange-500/50 text-orange-300 hover:bg-orange-500/10"
+              >
+                <Lock className="mr-2 h-4 w-4" />
+                Lock Wallet (Go to Login)
+              </Button>
               
               <Button 
                 variant="outline" 

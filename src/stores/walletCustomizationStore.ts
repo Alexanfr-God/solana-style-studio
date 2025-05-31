@@ -72,6 +72,7 @@ interface WalletCustomizationState {
   customizeWallet: () => void;
   onCustomizationStart: () => void;
   resetWallet: () => void;
+  lockWallet: () => void;
   unlockWallet: () => void;
   
   // Missing AI Pet properties
@@ -135,7 +136,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     selectedWallet: 'phantom',
     setSelectedWallet: (wallet) => set({ selectedWallet: wallet }),
     currentLayer: 'login',
-    setCurrentLayer: (layer) => set({ currentLayer: layer }),
+    setCurrentLayer: (layer: WalletLayer) => set({ currentLayer: layer }),
     showAccountDropdown: false,
     setShowAccountDropdown: (show: boolean) => set({ showAccountDropdown: show }),
     showAccountSidebar: false,
@@ -176,6 +177,18 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       });
       get().triggerAiPetInteraction();
     },
+    lockWallet: () => {
+      set({ currentLayer: 'login' });
+      // Переводим AI Pet в режим inside при блокировке
+      set(state => ({ 
+        aiPet: { 
+          ...state.aiPet, 
+          zone: 'inside',
+          emotion: 'idle'
+        } 
+      }));
+      get().triggerAiPetInteraction();
+    },
     unlockWallet: () => {
       set({ currentLayer: 'home' });
       // Автоматически переводим AI Pet в режим циркуляции при разблокировке
@@ -204,7 +217,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     },
     setAiPetBodyType: (bodyType) => set(state => ({ aiPet: { ...state.aiPet, bodyType } })),
     containerBounds: null,
-    setContainerBounds: (bounds) => set({ containerBounds: bounds }),
+    setContainerBounds: (bounds: DOMRect | null) => set({ containerBounds: bounds }),
     updateAiPetEnergy: () => {
       set(state => ({ 
         aiPet: { 
