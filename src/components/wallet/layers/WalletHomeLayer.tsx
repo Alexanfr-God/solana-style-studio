@@ -2,6 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useAiPetOrbit } from '@/hooks/useAiPetOrbit';
 import WalletAccountDropdown from '../WalletAccountDropdown';
 import WalletBottomNavigation from '../WalletBottomNavigation';
 import AccountSidebar from '../AccountSidebar';
@@ -11,6 +12,7 @@ import AppsContent from '../content/AppsContent';
 import HistoryContent from '../content/HistoryContent';
 import SearchContent from '../content/SearchContent';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { AiPet } from '@/components/ui/AiPet';
 
 const WalletHomeLayer = () => {
   const {
@@ -24,10 +26,17 @@ const WalletHomeLayer = () => {
     currentLayer,
     setCurrentLayer,
     triggerAiPetInteraction,
-    setTemporaryEmotion
+    setTemporaryEmotion,
+    containerBounds,
+    setContainerBounds,
+    aiPet
   } = useWalletCustomizationStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const aiPetRef = useRef<HTMLDivElement>(null);
+  
+  // Используем хук для орбитальной анимации AI Pet
+  useAiPetOrbit(aiPetRef.current, containerBounds);
 
   const activeAccount = accounts.find(acc => acc.id === activeAccountId);
 
@@ -49,13 +58,26 @@ const WalletHomeLayer = () => {
     setTemporaryEmotion('excited', 2000);
   };
 
-  // Update container bounds when component mounts
+  // Обновляем границы контейнера для AI Pet
   useEffect(() => {
     if (containerRef.current) {
       const bounds = containerRef.current.getBoundingClientRect();
-      // Store bounds if needed for AI pet positioning
+      setContainerBounds(bounds);
     }
-  }, []);
+  }, [setContainerBounds]);
+
+  // Отслеживаем изменения размера контейнера
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const bounds = containerRef.current.getBoundingClientRect();
+        setContainerBounds(bounds);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [setContainerBounds]);
 
   // Render content based on current layer
   const renderContent = () => {
@@ -83,6 +105,24 @@ const WalletHomeLayer = () => {
         fontFamily: walletStyle.font || 'Inter'
       }}
     >
+      {/* AI Pet - позиционируется абсолютно и может выходить за границы кошелька */}
+      {aiPet.isVisible && aiPet.zone === 'outside' && currentLayer !== 'login' && (
+        <div
+          ref={aiPetRef}
+          className="absolute z-50 pointer-events-auto"
+          style={{
+            width: '50px',
+            height: '50px',
+            // Начальная позиция будет управляться анимацией орбиты
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)'
+          }}
+        >
+          <AiPet />
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="relative flex items-center justify-between px-4 py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
         {/* Account Section */}

@@ -156,12 +156,27 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
           font: 'Inter'
         },
         uploadedImage: null,
-        isCustomizing: false
+        isCustomizing: false,
+        aiPet: {
+          isVisible: true,
+          emotion: 'idle',
+          zone: 'inside',
+          bodyType: 'phantom',
+          energy: 100
+        }
       });
       get().triggerAiPetInteraction();
     },
     unlockWallet: () => {
       set({ currentLayer: 'home' });
+      // Автоматически переводим AI Pet в режим циркуляции при разблокировке
+      set(state => ({ 
+        aiPet: { 
+          ...state.aiPet, 
+          zone: 'outside',
+          emotion: 'excited'
+        } 
+      }));
       get().triggerAiPetInteraction();
     },
     
@@ -173,7 +188,11 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       bodyType: 'phantom',
       energy: 100
     },
-    setAiPetZone: (zone) => set(state => ({ aiPet: { ...state.aiPet, zone } })),
+    setAiPetZone: (zone) => {
+      set(state => ({ aiPet: { ...state.aiPet, zone } }));
+      // Триггерим анимацию при смене зоны
+      get().triggerAiPetInteraction();
+    },
     setAiPetBodyType: (bodyType) => set(state => ({ aiPet: { ...state.aiPet, bodyType } })),
     containerBounds: null,
     setContainerBounds: (bounds) => set({ containerBounds: bounds }),

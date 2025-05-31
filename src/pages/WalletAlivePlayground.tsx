@@ -4,12 +4,13 @@ import ImageUploadSection from '@/components/customization/ImageUploadSection';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 import CustomizeWalletButton from '@/components/customization/CustomizeWalletButton';
 import WalletLayoutRecorderComponent from '@/components/customization/WalletLayoutRecorder';
+import AiStyleAnalyzer from '@/components/ai/AiStyleAnalyzer';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Sparkles } from 'lucide-react';
 
 const WalletAlivePlayground = () => {
-  const { resetWallet } = useWalletCustomizationStore();
+  const { resetWallet, uploadedImage } = useWalletCustomizationStore();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
@@ -20,10 +21,10 @@ const WalletAlivePlayground = () => {
             Wallet UI Customization Studio
           </h1>
           <p className="text-gray-400 text-lg">
-            AI-powered wallet interface customization with layout recording
+            AI-powered wallet interface customization with AI Pet circulation
           </p>
           <div className="mt-2 inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm px-3 py-1 rounded-full">
-            🎯 Layout Recording Enabled
+            🤖 AI Style Analysis + Pet Orbit Enabled
           </div>
         </div>
 
@@ -32,6 +33,14 @@ const WalletAlivePlayground = () => {
           {/* Left Column - Controls */}
           <div className="space-y-6">
             <ImageUploadSection />
+            
+            {/* AI Style Analyzer */}
+            <AiStyleAnalyzer 
+              uploadedImage={uploadedImage}
+              onStyleGenerated={(styleData) => {
+                console.log('Новый стиль сгенерирован:', styleData);
+              }}
+            />
             
             {/* Action Buttons */}
             <div className="space-y-4">
@@ -52,14 +61,27 @@ const WalletAlivePlayground = () => {
             
             {/* Development Notes */}
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-              <h4 className="text-blue-300 font-medium mb-2">🚀 Next Steps</h4>
+              <h4 className="text-blue-300 font-medium mb-2">🚀 AI Features Active</h4>
               <ul className="text-blue-200 text-sm space-y-1">
-                <li>• ✅ Wallet layout recording system</li>
-                <li>• Connect AI style analysis</li>
-                <li>• Add MetaMask & Solflare previews</li>
-                <li>• Implement per-element customization</li>
-                <li>• Add NFT minting capability</li>
+                <li>• ✅ AI Style Analysis & Component Styling</li>
+                <li>• ✅ AI Pet Orbital Circulation (30% outside)</li>
+                <li>• ✅ Style Library with Like System</li>
+                <li>• ✅ Comprehensive Component Storage</li>
+                <li>• 🔄 GPT-4 Vision Integration (Backend)</li>
+                <li>• 🔄 Google Fonts API Integration</li>
+                <li>• 🔄 DALL-E Icon Generation</li>
               </ul>
+            </div>
+
+            {/* AI Pet Status */}
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+              <h4 className="text-purple-300 font-medium mb-2">🐾 AI Pet Status</h4>
+              <div className="text-purple-200 text-sm space-y-1">
+                <p>• Orbital circulation around wallet</p>
+                <p>• Expands wallet boundaries by 30%</p>
+                <p>• Reactive to user interactions</p>
+                <p>• Smooth orbital animations</p>
+              </div>
             </div>
           </div>
           

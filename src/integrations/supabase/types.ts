@@ -63,6 +63,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_pet_behaviors: {
+        Row: {
+          animation_data: Json
+          behavior_name: string
+          created_at: string
+          duration_ms: number | null
+          id: string
+          is_active: boolean | null
+          trigger_conditions: Json
+        }
+        Insert: {
+          animation_data: Json
+          behavior_name: string
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          is_active?: boolean | null
+          trigger_conditions: Json
+        }
+        Update: {
+          animation_data?: Json
+          behavior_name?: string
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          is_active?: boolean | null
+          trigger_conditions?: Json
+        }
+        Relationships: []
+      }
       ai_requests: {
         Row: {
           created_at: string | null
@@ -162,6 +192,127 @@ export type Database = {
         }
         Relationships: []
       }
+      style_library: {
+        Row: {
+          ai_analysis: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          inspiration_image_url: string | null
+          is_featured: boolean | null
+          like_count: number | null
+          preview_image_url: string | null
+          style_data: Json
+          style_name: string
+          updated_at: string
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inspiration_image_url?: string | null
+          is_featured?: boolean | null
+          like_count?: number | null
+          preview_image_url?: string | null
+          style_data: Json
+          style_name: string
+          updated_at?: string
+        }
+        Update: {
+          ai_analysis?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inspiration_image_url?: string | null
+          is_featured?: boolean | null
+          like_count?: number | null
+          preview_image_url?: string | null
+          style_data?: Json
+          style_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      style_likes: {
+        Row: {
+          created_at: string
+          id: string
+          style_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          style_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          style_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "style_likes_style_id_fkey"
+            columns: ["style_id"]
+            isOneToOne: false
+            referencedRelation: "style_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_components: {
+        Row: {
+          component_name: string
+          component_type: string
+          created_at: string
+          id: string
+          is_interactive: boolean | null
+          layer_name: string | null
+          position: Json | null
+          style_properties: Json
+          updated_at: string
+          wallet_layout_id: string
+        }
+        Insert: {
+          component_name: string
+          component_type: string
+          created_at?: string
+          id?: string
+          is_interactive?: boolean | null
+          layer_name?: string | null
+          position?: Json | null
+          style_properties?: Json
+          updated_at?: string
+          wallet_layout_id: string
+        }
+        Update: {
+          component_name?: string
+          component_type?: string
+          created_at?: string
+          id?: string
+          is_interactive?: boolean | null
+          layer_name?: string | null
+          position?: Json | null
+          style_properties?: Json
+          updated_at?: string
+          wallet_layout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_components_wallet_layout_id_fkey"
+            columns: ["wallet_layout_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_layouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallet_layout_layers: {
         Row: {
           created_at: string
@@ -205,36 +356,56 @@ export type Database = {
       }
       wallet_layouts: {
         Row: {
+          ai_analysis: Json | null
+          ai_style_applied: boolean | null
           created_at: string
           dimensions: Json
           id: string
+          inspiration_image_url: string | null
           layout_data: Json
           screen: string
+          style_library_id: string | null
           updated_at: string
           wallet_id: string
           wallet_type: string
         }
         Insert: {
+          ai_analysis?: Json | null
+          ai_style_applied?: boolean | null
           created_at?: string
           dimensions: Json
           id?: string
+          inspiration_image_url?: string | null
           layout_data: Json
           screen: string
+          style_library_id?: string | null
           updated_at?: string
           wallet_id: string
           wallet_type?: string
         }
         Update: {
+          ai_analysis?: Json | null
+          ai_style_applied?: boolean | null
           created_at?: string
           dimensions?: Json
           id?: string
+          inspiration_image_url?: string | null
           layout_data?: Json
           screen?: string
+          style_library_id?: string | null
           updated_at?: string
           wallet_id?: string
           wallet_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wallet_layouts_style_library_id_fkey"
+            columns: ["style_library_id"]
+            isOneToOne: false
+            referencedRelation: "style_library"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wallet_skins: {
         Row: {
