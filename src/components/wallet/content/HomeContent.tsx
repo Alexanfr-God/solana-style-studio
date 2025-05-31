@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Download, Send, ArrowRightLeft, DollarSign, Plus } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -23,7 +22,7 @@ const HomeContent = () => {
     if (action === 'Receive') {
       setCurrentLayer('receive');
     } else if (action === 'Send') {
-      setShowAccountDropdown(true);
+      setCurrentLayer('send');
     }
     
     triggerAiPetInteraction();
