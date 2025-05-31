@@ -53,7 +53,7 @@ export interface WalletLayoutLayer {
 }
 
 export interface WalletLayout {
-  screen: 'login' | 'wallet' | 'dashboard' | 'receive' | 'apps';
+  screen: 'login' | 'wallet' | 'dashboard' | 'receive' | 'apps' | 'swap';
   walletType: 'phantom' | 'metamask' | 'solflare';
   dimensions: { width: number; height: number };
   elements: WalletElement[];
@@ -80,8 +80,154 @@ export class WalletLayoutRecorder {
     if (screenType === 'apps') {
       return this.classifyAppsScreenElement(element);
     }
+
+    if (screenType === 'swap') {
+      return this.classifySwapScreenElement(element);
+    }
     
     return this.classifyLoginScreenElement(element);
+  }
+
+  // New classification for swap screen
+  static classifySwapScreenElement(element: WalletElement): { layerName: string; order: number; metadata?: any } {
+    const { type, name, position } = element;
+    
+    // Header section (0-116px height)
+    if (position.y >= 0 && position.y < 116) {
+      return { 
+        layerName: 'Swap Header', 
+        order: 1,
+        metadata: {
+          purpose: 'Header section for swap screen',
+          interactionType: 'static',
+          layoutType: 'single',
+          context: 'swap-flow'
+        }
+      };
+    }
+    
+    // Swap interface section (116-600px)
+    if (position.y >= 116 && position.y < 600) {
+      if (name.includes('pay') || name.includes('Pay')) {
+        return { 
+          layerName: 'Swap Pay Section', 
+          order: 2,
+          metadata: {
+            purpose: 'Token input section for paying',
+            interactionType: 'input',
+            layoutType: 'single',
+            context: 'swap-flow'
+          }
+        };
+      }
+      
+      if (name.includes('swap') && type === 'button') {
+        return { 
+          layerName: 'Swap Button', 
+          order: 3,
+          metadata: {
+            purpose: 'Main swap action button',
+            interactionType: 'clickable',
+            layoutType: 'single',
+            context: 'swap-flow'
+          }
+        };
+      }
+      
+      if (name.includes('receive') || name.includes('Receive')) {
+        return { 
+          layerName: 'Swap Receive Section', 
+          order: 4,
+          metadata: {
+            purpose: 'Token output section for receiving',
+            interactionType: 'input',
+            layoutType: 'single',
+            context: 'swap-flow'
+          }
+        };
+      }
+      
+      if (name.includes('action') && type === 'button') {
+        return { 
+          layerName: 'Swap Action Button', 
+          order: 5,
+          metadata: {
+            purpose: 'Primary swap execution button',
+            interactionType: 'clickable',
+            layoutType: 'single',
+            context: 'swap-flow'
+          }
+        };
+      }
+    }
+    
+    // Tokens section (600px and below, before bottom nav)
+    if (position.y >= 600 && position.y < 1150) {
+      if (name.includes('tokens') || name.includes('Tokens')) {
+        return { 
+          layerName: 'Tokens Header', 
+          order: 6,
+          metadata: {
+            purpose: 'Tokens section header',
+            interactionType: 'static',
+            layoutType: 'single',
+            context: 'swap-flow'
+          }
+        };
+      }
+      
+      if (name.includes('filter')) {
+        return { 
+          layerName: 'Tokens Filters', 
+          order: 7,
+          metadata: {
+            purpose: 'Token filtering controls',
+            interactionType: 'clickable',
+            layoutType: 'grid',
+            context: 'swap-flow'
+          }
+        };
+      }
+      
+      if (name.includes('token-item')) {
+        return { 
+          layerName: 'Tokens List', 
+          order: 8,
+          metadata: {
+            purpose: 'Individual token items in list',
+            interactionType: 'clickable',
+            layoutType: 'list',
+            context: 'swap-flow'
+          }
+        };
+      }
+    }
+    
+    // Bottom navigation (1150px and below)
+    if (position.y >= 1150) {
+      return { 
+        layerName: 'Bottom Navigation', 
+        order: 9,
+        metadata: {
+          purpose: 'Main app navigation tabs',
+          interactionType: 'clickable',
+          layoutType: 'grid',
+          context: 'swap-flow'
+        }
+      };
+    }
+    
+    // Default fallback
+    return { 
+      layerName: 'Swap Background', 
+      order: 0,
+      metadata: {
+        purpose: 'Background or unclassified elements',
+        interactionType: 'static',
+        layoutType: 'single',
+        context: 'swap-flow'
+      }
+    };
   }
 
   // New classification for apps screen
@@ -520,6 +666,110 @@ export class WalletLayoutRecorder {
 
   static async recordCurrentLayout(walletId: string, screen: string, walletType: string = 'phantom'): Promise<WalletLayout> {
     console.log('🎯 Starting wallet layout recording...');
+    
+    // Handle swap screen layout
+    if (screen === 'swap') {
+      const swapLayout: WalletLayout = {
+        screen: 'swap',
+        walletType: walletType as 'phantom',
+        dimensions: { width: 722, height: 1202 },
+        elements: [
+          {
+            type: 'container',
+            name: 'swap-header',
+            content: '',
+            position: { x: 0, y: 0 },
+            size: { width: 722, height: 116 },
+            styles: {
+              backgroundColor: '#181818',
+              borderRadius: '0'
+            },
+            metadata: {
+              context: 'swap-flow'
+            }
+          },
+          {
+            type: 'container',
+            name: 'you-pay-section',
+            content: '',
+            position: { x: 16, y: 130 },
+            size: { width: 690, height: 120 },
+            styles: {
+              backgroundColor: '#ffffff0d',
+              borderRadius: '12px',
+              border: '1px solid #ffffff1a'
+            },
+            metadata: {
+              context: 'swap-flow'
+            }
+          },
+          {
+            type: 'button',
+            name: 'swap-tokens-button',
+            content: 'Swap',
+            position: { x: 356, y: 270 },
+            size: { width: 40, height: 40 },
+            styles: {
+              backgroundColor: '#ffffff1a',
+              borderRadius: '50%'
+            },
+            properties: {
+              clickable: true
+            }
+          },
+          {
+            type: 'container',
+            name: 'you-receive-section',
+            content: '',
+            position: { x: 16, y: 330 },
+            size: { width: 690, height: 120 },
+            styles: {
+              backgroundColor: '#ffffff0d',
+              borderRadius: '12px',
+              border: '1px solid #ffffff1a'
+            },
+            metadata: {
+              context: 'swap-flow'
+            }
+          },
+          {
+            type: 'button',
+            name: 'swap-action-button',
+            content: 'Swap',
+            position: { x: 16, y: 470 },
+            size: { width: 690, height: 48 },
+            styles: {
+              backgroundColor: '#9945FF',
+              borderRadius: '12px'
+            },
+            properties: {
+              clickable: true
+            }
+          },
+          {
+            type: 'text',
+            name: 'tokens-title',
+            content: 'Tokens',
+            position: { x: 16, y: 540 },
+            size: { width: 100, height: 28 },
+            styles: {
+              color: '#ffffff',
+              fontSize: '20px',
+              fontFamily: 'Inter'
+            }
+          }
+        ],
+        safeZone: { x: 16, y: 130, width: 690, height: 400 },
+        metadata: {
+          recorded_at: new Date().toISOString(),
+          version: '2.0.0',
+          notes: 'Swap layer with token exchange interface and token list'
+        }
+      };
+
+      swapLayout.layers = this.segmentElementsIntoLayers(swapLayout.elements, 'swap');
+      return swapLayout;
+    }
     
     // Handle apps screen layout
     if (screen === 'apps') {
