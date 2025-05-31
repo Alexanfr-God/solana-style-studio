@@ -4,6 +4,7 @@ import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import WalletHomeLayer from './layers/WalletHomeLayer';
 import ReceiveLayer from './layers/ReceiveLayer';
 import SendLayer from './layers/SendLayer';
+import BuyLayer from './layers/BuyLayer';
 
 const WalletContainer = () => {
   const { currentLayer } = useWalletCustomizationStore();
@@ -14,6 +15,8 @@ const WalletContainer = () => {
         return <ReceiveLayer />;
       case 'send':
         return <SendLayer />;
+      case 'buy':
+        return <BuyLayer />;
       case 'swap':
         // For now, return to home - the swap content will be shown in the home layer
         return <WalletHomeLayer />;

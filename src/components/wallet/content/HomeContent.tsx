@@ -26,6 +26,8 @@ const HomeContent = () => {
       setCurrentLayer('send');
     } else if (action === 'Swap') {
       setCurrentLayer('swap');
+    } else if (action === 'Buy') {
+      setCurrentLayer('buy');
     }
     
     triggerAiPetInteraction();
