@@ -99,14 +99,13 @@ const AccountSidebar = () => {
               key={account.id}
               onClick={() => handleAccountSelect(account.id)}
               className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 hover:bg-white/10 ${
-                activeAccountId === account.id ? 'ring-1' : ''
+                activeAccountId === account.id ? 'ring-1 ring-purple-500' : ''
               }`}
               style={{
                 backgroundColor: activeAccountId === account.id 
                   ? containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)' 
                   : 'transparent',
                 borderRadius: containerStyle.borderRadius || '12px',
-                ringColor: buttonStyle.backgroundColor || '#9945FF',
                 transition: containerStyle.transition
               }}
             >
