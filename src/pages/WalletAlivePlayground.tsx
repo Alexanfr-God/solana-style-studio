@@ -4,13 +4,12 @@ import ImageUploadSection from '@/components/customization/ImageUploadSection';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 import CustomizeWalletButton from '@/components/customization/CustomizeWalletButton';
 import WalletLayoutRecorderComponent from '@/components/customization/WalletLayoutRecorder';
-import AiStyleAnalyzer from '@/components/ai/AiStyleAnalyzer';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { RotateCcw, Sparkles } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 const WalletAlivePlayground = () => {
-  const { resetWallet, uploadedImage } = useWalletCustomizationStore();
+  const { resetWallet } = useWalletCustomizationStore();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
@@ -32,15 +31,8 @@ const WalletAlivePlayground = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Controls */}
           <div className="space-y-6">
+            {/* Combined Image Upload & AI Style Analysis */}
             <ImageUploadSection />
-            
-            {/* AI Style Analyzer */}
-            <AiStyleAnalyzer 
-              uploadedImage={uploadedImage}
-              onStyleGenerated={(styleData) => {
-                console.log('Новый стиль сгенерирован:', styleData);
-              }}
-            />
             
             {/* Action Buttons */}
             <div className="space-y-4">

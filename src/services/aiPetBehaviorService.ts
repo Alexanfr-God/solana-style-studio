@@ -1,6 +1,4 @@
 
-import { supabase } from '@/integrations/supabase/client';
-
 export interface AiPetBehavior {
   id: string;
   behaviorName: string;
@@ -16,28 +14,6 @@ export interface OrbitAnimation {
   speed: 'slow' | 'medium' | 'fast';
   direction: 'clockwise' | 'counterclockwise';
 }
-
-export const loadAiPetBehaviors = async (): Promise<AiPetBehavior[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('ai_pet_behaviors')
-      .select('*')
-      .eq('is_active', true);
-
-    if (error) throw error;
-    return data.map(item => ({
-      id: item.id,
-      behaviorName: item.behavior_name,
-      triggerConditions: item.trigger_conditions,
-      animationData: item.animation_data,
-      durationMs: item.duration_ms || 2000,
-      isActive: item.is_active
-    }));
-  } catch (error) {
-    console.error('Error loading AI Pet behaviors:', error);
-    return [];
-  }
-};
 
 export const calculateOrbitPosition = (
   containerBounds: DOMRect,
@@ -64,15 +40,18 @@ export const createOrbitAnimation = (
   
   const radiusMultiplier = parseFloat(options.radius.replace('%', '')) / 100;
   const speedMultiplier = {
-    slow: 0.01,
-    medium: 0.02,
-    fast: 0.04
+    slow: 0.008,
+    medium: 0.015,
+    fast: 0.025
   }[options.speed];
   
   const animate = () => {
     const position = calculateOrbitPosition(containerBounds, angle, radiusMultiplier);
     
-    element.style.transform = `translate(${position.x - 25}px, ${position.y - 25}px)`;
+    // Позиционируем относительно контейнера кошелька
+    element.style.left = `${position.x - 25}px`;
+    element.style.top = `${position.y - 25}px`;
+    element.style.transform = 'none'; // Убираем transform, используем left/top
     
     angle += options.direction === 'clockwise' ? speedMultiplier : -speedMultiplier;
     if (angle > Math.PI * 2) angle = 0;
@@ -83,5 +62,9 @@ export const createOrbitAnimation = (
   
   animate();
   
-  return () => cancelAnimationFrame(animationId);
+  return () => {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+    }
+  };
 };

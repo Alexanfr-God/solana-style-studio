@@ -1,12 +1,22 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { createOrbitAnimation, loadAiPetBehaviors } from '@/services/aiPetBehaviorService';
+import { createOrbitAnimation } from '@/services/aiPetBehaviorService';
+
+// Статичные данные для орбитального поведения
+const DEFAULT_ORBIT_BEHAVIOR = {
+  behaviorName: 'orbit_circulation',
+  animationData: {
+    type: 'orbit',
+    radius: '130%',
+    speed: 'medium',
+    direction: 'clockwise'
+  }
+};
 
 export const useAiPetOrbit = (petElement: HTMLElement | null, containerBounds: DOMRect | null) => {
   const { currentLayer, aiPet } = useWalletCustomizationStore();
   const animationCleanupRef = useRef<(() => void) | null>(null);
-  const behaviorsRef = useRef<any[]>([]);
 
   const startOrbitAnimation = useCallback(() => {
     if (!petElement || !containerBounds) return;
@@ -18,17 +28,11 @@ export const useAiPetOrbit = (petElement: HTMLElement | null, containerBounds: D
 
     // Запускаем циркуляцию только когда питомец в зоне outside
     if (aiPet.zone === 'outside' && currentLayer !== 'login') {
-      const orbitBehavior = behaviorsRef.current.find(
-        b => b.behaviorName === 'orbit_circulation'
+      animationCleanupRef.current = createOrbitAnimation(
+        petElement,
+        containerBounds,
+        DEFAULT_ORBIT_BEHAVIOR.animationData
       );
-
-      if (orbitBehavior) {
-        animationCleanupRef.current = createOrbitAnimation(
-          petElement,
-          containerBounds,
-          orbitBehavior.animationData
-        );
-      }
     }
   }, [petElement, containerBounds, aiPet.zone, currentLayer]);
 
@@ -37,15 +41,6 @@ export const useAiPetOrbit = (petElement: HTMLElement | null, containerBounds: D
       animationCleanupRef.current();
       animationCleanupRef.current = null;
     }
-  }, []);
-
-  // Загружаем поведения при монтировании
-  useEffect(() => {
-    const loadBehaviors = async () => {
-      const behaviors = await loadAiPetBehaviors();
-      behaviorsRef.current = behaviors;
-    };
-    loadBehaviors();
   }, []);
 
   // Запускаем/останавливаем анимацию при изменении условий

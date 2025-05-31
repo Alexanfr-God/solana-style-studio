@@ -105,24 +105,6 @@ const WalletHomeLayer = () => {
         fontFamily: walletStyle.font || 'Inter'
       }}
     >
-      {/* AI Pet - позиционируется абсолютно и может выходить за границы кошелька */}
-      {aiPet.isVisible && aiPet.zone === 'outside' && currentLayer !== 'login' && (
-        <div
-          ref={aiPetRef}
-          className="absolute z-50 pointer-events-auto"
-          style={{
-            width: '50px',
-            height: '50px',
-            // Начальная позиция будет управляться анимацией орбиты
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          <AiPet />
-        </div>
-      )}
-
       {/* Header Section */}
       <div className="relative flex items-center justify-between px-4 py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
         {/* Account Section */}

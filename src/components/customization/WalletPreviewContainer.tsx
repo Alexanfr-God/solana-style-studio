@@ -185,15 +185,6 @@ const WalletPreviewContainer = () => {
             >
               MetaMask
             </Button>
-            <Button
-              variant={selectedWallet === 'solflare' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedWallet('solflare')}
-              className="text-xs"
-              disabled
-            >
-              Solflare
-            </Button>
           </div>
         </div>
 
@@ -224,12 +215,49 @@ const WalletPreviewContainer = () => {
           </p>
         </div>
         
-        {/* Centered wallet container */}
-        <div className="flex-1 flex items-center justify-center overflow-auto relative">
+        {/* Wallet container with AI Pet orbital zone */}
+        <div className="flex-1 flex items-center justify-center overflow-visible relative">
+          {/* AI Pet в режиме outside - позиционируется относительно этого контейнера */}
+          {aiPet.isVisible && aiPet.zone === 'outside' && containerBounds && (
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                width: `${containerBounds.width * 1.6}px`,
+                height: `${containerBounds.height * 1.6}px`,
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <div
+                className="absolute pointer-events-auto"
+                style={{
+                  width: '50px',
+                  height: '50px'
+                }}
+              >
+                <AiPet
+                  emotion={aiPet.emotion}
+                  zone={aiPet.zone}
+                  bodyType={aiPet.bodyType}
+                  color={walletStyle.primaryColor || '#9945FF'}
+                  size={50}
+                  onZoneChange={setAiPetZone}
+                  onEmotionChange={setAiPetEmotion}
+                  onHover={onAiPetHover}
+                  onClick={onAiPetClick}
+                  onDoubleClick={onAiPetDoubleClick}
+                  containerBounds={containerBounds}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Wallet container */}
           <div
             ref={walletContainerRef}
             className={`
-              relative rounded-2xl transition-all duration-1000
+              relative rounded-2xl transition-all duration-1000 z-10
               ${isCustomizing ? 'scale-105 animate-pulse' : 'scale-100'}
             `}
             style={{
@@ -284,31 +312,10 @@ const WalletPreviewContainer = () => {
             )}
           </div>
         </div>
-
-        {/* AiPet in outside zone */}
-        {aiPet.isVisible && aiPet.zone === 'outside' && containerBounds && (
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="relative w-full h-full pointer-events-auto">
-              <AiPet
-                emotion={aiPet.emotion}
-                zone={aiPet.zone}
-                bodyType={aiPet.bodyType}
-                color={walletStyle.primaryColor || '#9945FF'}
-                size={120}
-                onZoneChange={setAiPetZone}
-                onEmotionChange={setAiPetEmotion}
-                onHover={onAiPetHover}
-                onClick={onAiPetClick}
-                onDoubleClick={onAiPetDoubleClick}
-                containerBounds={containerBounds}
-              />
-            </div>
-          </div>
-        )}
         
         {/* Debug UI */}
         {debugMode && (
-          <div className="absolute bottom-4 left-4 bg-black/80 p-4 rounded-lg text-white text-xs">
+          <div className="absolute bottom-4 left-4 bg-black/80 p-4 rounded-lg text-white text-xs z-50">
             <h4 className="font-bold mb-2">AiPet Debug</h4>
             <div className="space-y-2">
               <div>Emotion: {aiPet.emotion}</div>
@@ -339,7 +346,7 @@ const WalletPreviewContainer = () => {
         
         <div className="mt-4 text-center">
           <p className="text-white/60 text-sm">
-            Upload an image and click "Customize Wallet" to see the magic! ✨
+            Upload an image and click "Apply AI Style" to see the magic! ✨
           </p>
           <p className="text-purple-400/80 text-xs mt-1">
             Hover → suspicious • Click → wink • Double-click → zone switch
