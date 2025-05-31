@@ -6,7 +6,7 @@ import { useWalletCustomizationStore, AiPetEmotion } from '@/stores/walletCustom
 import { Eye, EyeOff, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 import AiPet from '@/components/ui/AiPet';
-import WalletContainer from '@/components/wallet/WalletContainer';
+import WalletHomeLayer from '@/components/wallet/layers/WalletHomeLayer';
 
 const WalletPreviewContainer = () => {
   const {
@@ -273,7 +273,7 @@ const WalletPreviewContainer = () => {
                 {renderLoginScreen()}
               </>
             ) : (
-              <WalletContainer />
+              <WalletHomeLayer />
             )}
             
             {/* Customization Indicator */}
