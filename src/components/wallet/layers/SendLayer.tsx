@@ -66,7 +66,7 @@ const cryptoNetworks: CryptoNetwork[] = [
 
 const SendLayer = () => {
   const {
-    walletStyle,
+    getStyleForComponent,
     setCurrentLayer,
     triggerAiPetInteraction,
     setTemporaryEmotion
@@ -74,6 +74,13 @@ const SendLayer = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+
+  // Get component-specific styles
+  const overlayStyle = getStyleForComponent('overlays');
+  const searchInputStyle = getStyleForComponent('searchInputs');
+  const containerStyle = getStyleForComponent('containers');
+  const buttonStyle = getStyleForComponent('buttons');
+  const globalStyle = getStyleForComponent('global');
 
   const handleBack = () => {
     setCurrentLayer('home');
@@ -104,29 +111,55 @@ const SendLayer = () => {
 
   return (
     <div 
-      className="absolute inset-0 bg-black/95 backdrop-blur-md animate-slide-in-bottom"
+      className="absolute inset-0 animate-slide-in-bottom"
       style={{
-        backgroundColor: walletStyle.backgroundColor || '#181818',
-        fontFamily: walletStyle.font || 'Inter'
+        backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
+        backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
+        fontFamily: globalStyle.fontFamily || 'Inter'
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+      <div 
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{
+          borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+        }}
+      >
         <button
           onClick={handleBack}
           className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors"
+          style={{
+            borderRadius: buttonStyle.borderRadius || '8px',
+            transition: buttonStyle.transition
+          }}
         >
           <ArrowLeft className="w-5 h-5 text-white" />
-          <span className="text-white font-medium">Back</span>
+          <span 
+            className="text-white font-medium"
+            style={{
+              color: globalStyle.textColor,
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Back
+          </span>
         </button>
         
-        <h1 className="text-lg font-semibold text-white">Send Crypto</h1>
+        <h1 
+          className="text-lg font-semibold text-white"
+          style={{
+            color: globalStyle.textColor,
+            fontFamily: globalStyle.fontFamily
+          }}
+        >
+          Send Crypto
+        </h1>
         
         <div className="w-[60px]"></div>
       </div>
 
       {/* Search Bar */}
-      <div className="px-4 py-4 border-b border-white/10">
+      <div className="px-4 py-4 border-b" style={{ borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)' }}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -134,8 +167,16 @@ const SendLayer = () => {
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/30 transition-colors"
-            style={{ fontFamily: walletStyle.font || 'Inter' }}
+            className="w-full pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors"
+            style={{
+              backgroundColor: searchInputStyle.backgroundColor || 'rgba(255, 255, 255, 0.08)',
+              border: searchInputStyle.border || '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: searchInputStyle.borderRadius || '12px',
+              fontFamily: globalStyle.fontFamily,
+              color: searchInputStyle.textColor,
+              backdropFilter: searchInputStyle.backdropFilter,
+              transition: searchInputStyle.transition
+            }}
           />
         </div>
       </div>
@@ -143,19 +184,39 @@ const SendLayer = () => {
       {/* Content */}
       <div className="flex-1 px-4 py-4 overflow-y-auto">
         <div className="mb-4">
-          <h2 className="text-sm font-medium text-white mb-2">Select Network</h2>
-          <p className="text-xs text-gray-400">
+          <h2 
+            className="text-sm font-medium text-white mb-2"
+            style={{
+              color: globalStyle.textColor,
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Select Network
+          </h2>
+          <p 
+            className="text-xs text-gray-400"
+            style={{ fontFamily: globalStyle.fontFamily }}
+          >
             Choose which network you want to send crypto from
           </p>
         </div>
 
         {/* Crypto Networks List */}
-        <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden mb-6">
+        <div 
+          className="rounded-xl border overflow-hidden mb-6"
+          style={{
+            backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            borderRadius: containerStyle.borderRadius || '16px',
+            border: containerStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: containerStyle.backdropFilter
+          }}
+        >
           {filteredNetworks.map((network) => (
             <div
               key={network.id}
               className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 cursor-pointer"
               onClick={() => handleNetworkSelect(network.name)}
+              style={{ transition: containerStyle.transition }}
             >
               <div className="flex items-center space-x-3">
                 {/* Network Icon */}
@@ -174,10 +235,19 @@ const SendLayer = () => {
                 
                 {/* Network Info */}
                 <div>
-                  <div className="font-medium text-white text-sm">
+                  <div 
+                    className="font-medium text-white text-sm"
+                    style={{
+                      color: globalStyle.textColor,
+                      fontFamily: globalStyle.fontFamily
+                    }}
+                  >
                     {network.name}
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div 
+                    className="text-xs text-gray-400"
+                    style={{ fontFamily: globalStyle.fontFamily }}
+                  >
                     {network.symbol}
                   </div>
                 </div>
@@ -185,10 +255,19 @@ const SendLayer = () => {
               
               {/* Balance */}
               <div className="text-right">
-                <div className="font-medium text-white text-sm">
+                <div 
+                  className="font-medium text-white text-sm"
+                  style={{
+                    color: globalStyle.textColor,
+                    fontFamily: globalStyle.fontFamily
+                  }}
+                >
                   {network.balance} {network.symbol}
                 </div>
-                <div className="text-xs text-gray-400">
+                <div 
+                  className="text-xs text-gray-400"
+                  style={{ fontFamily: globalStyle.fontFamily }}
+                >
                   {network.balanceUsd}
                 </div>
               </div>
@@ -198,19 +277,31 @@ const SendLayer = () => {
 
         {filteredNetworks.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-400 text-sm">No networks found</p>
+            <p 
+              className="text-gray-400 text-sm"
+              style={{ fontFamily: globalStyle.fontFamily }}
+            >
+              No networks found
+            </p>
           </div>
         )}
       </div>
 
       {/* Close Button */}
-      <div className="p-4 border-t border-white/10">
+      <div className="p-4 border-t" style={{ borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)' }}>
         <button
           onClick={handleClose}
-          className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center justify-center space-x-2"
+          className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+          style={{
+            backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
+            borderRadius: buttonStyle.borderRadius || '12px',
+            transition: buttonStyle.transition,
+            color: buttonStyle.textColor || '#FFFFFF',
+            fontFamily: globalStyle.fontFamily
+          }}
         >
-          <X className="w-5 h-5 text-white" />
-          <span className="text-white font-medium">Close</span>
+          <X className="w-5 h-5" />
+          <span className="font-medium">Close</span>
         </button>
       </div>
     </div>

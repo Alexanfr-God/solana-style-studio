@@ -66,7 +66,7 @@ const cryptoNetworks: CryptoNetwork[] = [
 
 const ReceiveLayer = () => {
   const {
-    walletStyle,
+    getStyleForComponent,
     setCurrentLayer,
     triggerAiPetInteraction,
     setTemporaryEmotion
@@ -74,6 +74,12 @@ const ReceiveLayer = () => {
   
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Get component-specific styles
+  const overlayStyle = getStyleForComponent('overlays');
+  const containerStyle = getStyleForComponent('containers');
+  const buttonStyle = getStyleForComponent('buttons');
+  const globalStyle = getStyleForComponent('global');
 
   const handleBack = () => {
     setCurrentLayer('home');
@@ -108,27 +114,57 @@ const ReceiveLayer = () => {
 
   return (
     <div 
-      className="absolute inset-0 bg-black/95 backdrop-blur-md animate-slide-in-bottom"
+      className="absolute inset-0 animate-slide-in-bottom"
       style={{
-        backgroundColor: walletStyle.backgroundColor || '#181818',
-        fontFamily: walletStyle.font || 'Inter'
+        backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
+        backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
+        fontFamily: globalStyle.fontFamily || 'Inter'
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+      <div 
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{
+          borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+        }}
+      >
         <button
           onClick={handleBack}
           className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors"
+          style={{
+            borderRadius: buttonStyle.borderRadius || '8px',
+            transition: buttonStyle.transition
+          }}
         >
           <ArrowLeft className="w-5 h-5 text-white" />
-          <span className="text-white font-medium">Back</span>
+          <span 
+            className="text-white font-medium"
+            style={{
+              color: globalStyle.textColor,
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Back
+          </span>
         </button>
         
-        <h1 className="text-lg font-semibold text-white">Receive Crypto</h1>
+        <h1 
+          className="text-lg font-semibold text-white"
+          style={{
+            color: globalStyle.textColor,
+            fontFamily: globalStyle.fontFamily
+          }}
+        >
+          Receive Crypto
+        </h1>
         
         <button
           className="p-2 rounded-lg hover:bg-white/10 transition-colors"
           onClick={() => handleQrCode('All')}
+          style={{
+            borderRadius: buttonStyle.borderRadius || '8px',
+            transition: buttonStyle.transition
+          }}
         >
           <QrCode className="w-5 h-5 text-white" />
         </button>
@@ -137,18 +173,38 @@ const ReceiveLayer = () => {
       {/* Content */}
       <div className="flex-1 px-4 py-6 overflow-y-auto">
         <div className="mb-6">
-          <h2 className="text-sm font-medium text-white mb-2">Select Network</h2>
-          <p className="text-xs text-gray-400">
+          <h2 
+            className="text-sm font-medium text-white mb-2"
+            style={{
+              color: globalStyle.textColor,
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Select Network
+          </h2>
+          <p 
+            className="text-xs text-gray-400"
+            style={{ fontFamily: globalStyle.fontFamily }}
+          >
             Choose which network you want to receive crypto on
           </p>
         </div>
 
         {/* Crypto Networks List */}
-        <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden mb-6">
+        <div 
+          className="rounded-xl border overflow-hidden mb-6"
+          style={{
+            backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            borderRadius: containerStyle.borderRadius || '16px',
+            border: containerStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: containerStyle.backdropFilter
+          }}
+        >
           {cryptoNetworks.map((network) => (
             <div
               key={network.id}
               className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0"
+              style={{ transition: containerStyle.transition }}
             >
               <div className="flex items-center space-x-3">
                 {/* Network Icon */}
@@ -162,10 +218,19 @@ const ReceiveLayer = () => {
                 
                 {/* Network Info */}
                 <div>
-                  <div className="font-medium text-white text-sm">
+                  <div 
+                    className="font-medium text-white text-sm"
+                    style={{
+                      color: globalStyle.textColor,
+                      fontFamily: globalStyle.fontFamily
+                    }}
+                  >
                     {network.name}
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div 
+                    className="text-xs text-gray-400"
+                    style={{ fontFamily: globalStyle.fontFamily }}
+                  >
                     {network.symbol}
                   </div>
                 </div>
@@ -173,7 +238,10 @@ const ReceiveLayer = () => {
               
               {/* Address and Actions */}
               <div className="flex items-center space-x-3">
-                <span className="text-xs text-gray-300 font-mono">
+                <span 
+                  className="text-xs text-gray-300 font-mono"
+                  style={{ fontFamily: 'monospace' }}
+                >
                   {network.address}
                 </span>
                 
@@ -181,6 +249,10 @@ const ReceiveLayer = () => {
                   <button
                     className="p-1.5 rounded hover:bg-white/10 transition-colors"
                     onClick={() => handleQrCode(network.name)}
+                    style={{
+                      borderRadius: buttonStyle.borderRadius || '4px',
+                      transition: buttonStyle.transition
+                    }}
                   >
                     <QrCode className="w-4 h-4 text-gray-400 hover:text-white" />
                   </button>
@@ -188,6 +260,10 @@ const ReceiveLayer = () => {
                   <button
                     className="p-1.5 rounded hover:bg-white/10 transition-colors"
                     onClick={() => handleCopyAddress(network.address, network.name)}
+                    style={{
+                      borderRadius: buttonStyle.borderRadius || '4px',
+                      transition: buttonStyle.transition
+                    }}
                   >
                     {copiedAddress === network.address ? (
                       <Check className="w-4 h-4 text-green-400" />
@@ -203,13 +279,20 @@ const ReceiveLayer = () => {
       </div>
 
       {/* Close Button */}
-      <div className="p-4 border-t border-white/10">
+      <div className="p-4 border-t" style={{ borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)' }}>
         <button
           onClick={handleClose}
-          className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center justify-center space-x-2"
+          className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+          style={{
+            backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
+            borderRadius: buttonStyle.borderRadius || '12px',
+            transition: buttonStyle.transition,
+            color: buttonStyle.textColor || '#FFFFFF',
+            fontFamily: globalStyle.fontFamily
+          }}
         >
-          <X className="w-5 h-5 text-white" />
-          <span className="text-white font-medium">Close</span>
+          <X className="w-5 h-5" />
+          <span className="font-medium">Close</span>
         </button>
       </div>
     </div>

@@ -26,10 +26,13 @@ interface ComponentStyle {
   borderRadius?: string;
   boxShadow?: string;
   fontFamily?: string;
+  fontSize?: string;
   animation?: string;
   border?: string;
   backgroundImage?: string;
   backdropFilter?: string;
+  transition?: string;
+  opacity?: string;
 }
 
 interface WalletStyleSet {
@@ -40,6 +43,9 @@ interface WalletStyleSet {
   navigation: ComponentStyle;
   inputs: ComponentStyle;
   cards: ComponentStyle;
+  overlays: ComponentStyle;
+  containers: ComponentStyle;
+  searchInputs: ComponentStyle;
   aiPet: {
     zone: AiPetZone;
     bodyType: AiPetBodyType;
@@ -168,6 +174,23 @@ const defaultStyleSet: WalletStyleSet = {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: '16px',
     border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  overlays: {
+    backgroundColor: 'rgba(24, 24, 24, 0.9)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '16px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  containers: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: '16px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  searchInputs: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    textColor: '#FFFFFF',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.2)'
   },
   aiPet: {
     zone: 'inside',
