@@ -30,15 +30,16 @@ export interface AIStyleAnalysis {
 }
 
 export interface ComponentStyle {
-  backgroundColor: string;
-  textColor: string;
-  borderColor: string;
-  borderRadius: string;
-  fontSize: string;
-  fontFamily: string;
-  boxShadow: string;
-  backgroundImage?: string;
+  backgroundColor?: string;
   gradient?: string;
+  textColor?: string;
+  borderRadius?: string;
+  boxShadow?: string;
+  fontFamily?: string;
+  animation?: string;
+  border?: string;
+  backgroundImage?: string;
+  backdropFilter?: string;
 }
 
 export interface WalletStyleSet {
@@ -47,10 +48,12 @@ export interface WalletStyleSet {
   buttons: ComponentStyle;
   panels: ComponentStyle;
   navigation: ComponentStyle;
+  inputs: ComponentStyle;
+  cards: ComponentStyle;
   aiPet: {
     zone: 'inside' | 'outside';
-    behavior: 'orbit' | 'idle' | 'excited';
-    colors: string[];
+    bodyType: 'phantom' | 'lottie';
+    emotion: 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink';
   };
 }
 
@@ -135,7 +138,6 @@ export const generateWalletStyleFromAnalysis = (analysis: AIStyleAnalysis): Wall
         ? createGradient(colorPalette.background, colorPalette.primary + '22')
         : colorPalette.background,
       textColor: colorPalette.text,
-      borderColor: colorPalette.secondary + '44',
       borderRadius,
       fontSize: '14px',
       fontFamily: fontRecommendation,
@@ -149,7 +151,6 @@ export const generateWalletStyleFromAnalysis = (analysis: AIStyleAnalysis): Wall
         ? createGradient(colorPalette.primary + 'CC', colorPalette.secondary + 'AA')
         : colorPalette.primary + 'CC',
       textColor: colorPalette.text,
-      borderColor: colorPalette.secondary + '66',
       borderRadius,
       fontSize: '16px',
       fontFamily: fontRecommendation,
@@ -163,7 +164,6 @@ export const generateWalletStyleFromAnalysis = (analysis: AIStyleAnalysis): Wall
         ? createGradient(colorPalette.secondary, colorPalette.accent)
         : colorPalette.secondary,
       textColor: colorPalette.text,
-      borderColor: colorPalette.accent + '88',
       borderRadius: style === 'sharp' ? '6px' : '16px',
       fontSize: '14px',
       fontFamily: fontRecommendation,
@@ -175,7 +175,6 @@ export const generateWalletStyleFromAnalysis = (analysis: AIStyleAnalysis): Wall
     panels: {
       backgroundColor: colorPalette.background + '88',
       textColor: colorPalette.text,
-      borderColor: colorPalette.secondary + '33',
       borderRadius,
       fontSize: '14px',
       fontFamily: fontRecommendation,
@@ -189,16 +188,34 @@ export const generateWalletStyleFromAnalysis = (analysis: AIStyleAnalysis): Wall
         ? createGradient(colorPalette.primary + 'DD', colorPalette.background)
         : colorPalette.primary + 'DD',
       textColor: colorPalette.text,
-      borderColor: colorPalette.secondary + '55',
       borderRadius: '16px',
       fontSize: '12px',
       fontFamily: fontRecommendation,
       boxShadow: getShadow('strong')
     },
+    inputs: {
+      backgroundColor: colorPalette.background + 'AA',
+      textColor: colorPalette.text,
+      borderRadius: style === 'sharp' ? '4px' : '8px',
+      fontSize: '14px',
+      fontFamily: fontRecommendation,
+      border: `1px solid ${colorPalette.secondary}44`,
+      boxShadow: getShadow('light')
+    },
+    cards: {
+      backgroundColor: colorPalette.background + '66',
+      textColor: colorPalette.text,
+      borderRadius,
+      fontSize: '14px',
+      fontFamily: fontRecommendation,
+      border: `1px solid ${colorPalette.primary}33`,
+      boxShadow: getShadow('medium'),
+      backdropFilter: 'blur(10px)'
+    },
     aiPet: {
       zone: 'outside',
-      behavior: analysis.animationStyle === 'bouncy' ? 'excited' : 'orbit',
-      colors: [colorPalette.primary, colorPalette.secondary, colorPalette.accent]
+      bodyType: 'phantom',
+      emotion: analysis.animationStyle === 'bouncy' ? 'excited' : 'idle'
     }
   };
 };
