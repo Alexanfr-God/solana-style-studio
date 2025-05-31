@@ -4,6 +4,7 @@ import { Search, ChevronDown } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import WalletAccountDropdown from '../WalletAccountDropdown';
 import WalletBottomNavigation from '../WalletBottomNavigation';
+import AccountSidebar from '../AccountSidebar';
 import HomeContent from '../content/HomeContent';
 import SwapContent from '../content/SwapContent';
 import AppsContent from '../content/AppsContent';
@@ -18,6 +19,8 @@ const WalletHomeLayer = () => {
     activeAccountId,
     showAccountDropdown,
     setShowAccountDropdown,
+    showAccountSidebar,
+    setShowAccountSidebar,
     currentLayer,
     setCurrentLayer,
     triggerAiPetInteraction,
@@ -38,6 +41,12 @@ const WalletHomeLayer = () => {
     setShowAccountDropdown(!showAccountDropdown);
     triggerAiPetInteraction();
     setTemporaryEmotion('happy', 1500);
+  };
+
+  const handleAvatarClick = () => {
+    setShowAccountSidebar(true);
+    triggerAiPetInteraction();
+    setTemporaryEmotion('excited', 2000);
   };
 
   // Update container bounds when component mounts
@@ -78,13 +87,18 @@ const WalletHomeLayer = () => {
       <div className="relative flex items-center justify-between px-4 py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
         {/* Account Section */}
         <div className="flex items-center space-x-3">
-          {/* Round Avatar - No click behavior */}
-          <Avatar className="w-10 h-10">
-            <AvatarImage src="" alt={activeAccount?.name} />
-            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
-              {activeAccount?.name.charAt(0) || 'A'}
-            </AvatarFallback>
-          </Avatar>
+          {/* Clickable Round Avatar */}
+          <button
+            onClick={handleAvatarClick}
+            className="transition-transform duration-200 hover:scale-105"
+          >
+            <Avatar className="w-10 h-10">
+              <AvatarImage src="" alt={activeAccount?.name} />
+              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
+                {activeAccount?.name.charAt(0) || 'A'}
+              </AvatarFallback>
+            </Avatar>
+          </button>
           
           {/* Square Account Selector Button */}
           <button
@@ -126,6 +140,9 @@ const WalletHomeLayer = () => {
 
       {/* Bottom Navigation */}
       <WalletBottomNavigation />
+
+      {/* Account Sidebar */}
+      <AccountSidebar />
     </div>
   );
 };

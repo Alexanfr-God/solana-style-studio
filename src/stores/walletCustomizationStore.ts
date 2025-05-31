@@ -59,6 +59,8 @@ interface WalletCustomizationState {
   setCurrentLayer: (layer: WalletLayer) => void;
   showAccountDropdown: boolean;
   setShowAccountDropdown: (show: boolean) => void;
+  showAccountSidebar: boolean;
+  setShowAccountSidebar: (show: boolean) => void;
   
   // Missing properties for customization
   uploadedImage: string | null;
@@ -87,6 +89,9 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       { id: '1', name: 'Account 1', address: '0x123...', network: 'Ethereum' },
       { id: '2', name: 'Account 2', address: '0x456...', network: 'Ethereum' },
       { id: '3', name: 'Account 3', address: '0x789...', network: 'Ethereum' },
+      { id: '4', name: 'Account 4', address: '0xabc...', network: 'Ethereum' },
+      { id: '5', name: 'Account 5', address: '0xdef...', network: 'Ethereum' },
+      { id: '6', name: 'Account 6', address: '0x111...', network: 'Ethereum' },
     ],
     activeAccountId: '1',
     setActiveAccount: (accountId: string) => set({ activeAccountId: accountId }),
@@ -127,6 +132,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
     setCurrentLayer: (layer) => set({ currentLayer: layer }),
     showAccountDropdown: false,
     setShowAccountDropdown: (show: boolean) => set({ showAccountDropdown: show }),
+    showAccountSidebar: false,
+    setShowAccountSidebar: (show: boolean) => set({ showAccountSidebar: show }),
     
     // Customization properties
     uploadedImage: null,
