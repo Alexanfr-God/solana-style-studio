@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { WalletLayoutRecorder, WalletLayout, WalletLayoutLayer } from '@/services/walletLayoutRecorder';
+import { WalletLayoutRecorder, WalletLayout, WalletLayoutLayer, ScreenType } from '@/services/walletLayoutRecorder';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { toast } from 'sonner';
 import { Database, Eye, Save, Download, Layers, FileText, Home, Zap } from 'lucide-react';
@@ -210,9 +210,9 @@ const WalletLayoutRecorderComponent = () => {
       } else if (currentLayer === 'swap') {
         screenType = 'swap';
       } else if (currentLayer === 'history') {
-        screenType = 'history'; // Using 'history' as fallback since 'search' not in ScreenType
+        screenType = 'history';
       } else if (currentLayer === 'send') {
-        screenType = 'receive'; // Using 'receive' as fallback since 'send' not in ScreenType
+        screenType = 'receive';
       } else if (currentLayer === 'buy') {
         screenType = 'buy';
       }

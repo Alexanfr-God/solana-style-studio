@@ -53,7 +53,7 @@ export interface WalletLayoutLayer {
 }
 
 export interface WalletLayout {
-  screen: 'login' | 'wallet' | 'dashboard' | 'receive' | 'apps' | 'swap';
+  screen: 'login' | 'wallet' | 'dashboard' | 'receive' | 'apps' | 'swap' | 'history' | 'buy';
   walletType: 'phantom' | 'metamask' | 'solflare';
   dimensions: { width: number; height: number };
   elements: WalletElement[];
