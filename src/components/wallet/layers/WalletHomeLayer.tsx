@@ -5,6 +5,10 @@ import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import WalletAccountDropdown from '../WalletAccountDropdown';
 import WalletBottomNavigation from '../WalletBottomNavigation';
 import HomeContent from '../content/HomeContent';
+import SwapContent from '../content/SwapContent';
+import AppsContent from '../content/AppsContent';
+import HistoryContent from '../content/HistoryContent';
+import SearchContent from '../content/SearchContent';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const WalletHomeLayer = () => {
@@ -14,6 +18,7 @@ const WalletHomeLayer = () => {
     activeAccountId,
     showAccountDropdown,
     setShowAccountDropdown,
+    currentLayer,
     setCurrentLayer,
     triggerAiPetInteraction,
     setTemporaryEmotion
@@ -42,6 +47,23 @@ const WalletHomeLayer = () => {
       // Store bounds if needed for AI pet positioning
     }
   }, []);
+
+  // Render content based on current layer
+  const renderContent = () => {
+    switch (currentLayer) {
+      case 'swap':
+        return <SwapContent />;
+      case 'apps':
+        return <AppsContent />;
+      case 'history':
+        return <HistoryContent />;
+      case 'search':
+        return <SearchContent />;
+      case 'home':
+      default:
+        return <HomeContent />;
+    }
+  };
 
   return (
     <div 
@@ -99,8 +121,8 @@ const WalletHomeLayer = () => {
         )}
       </div>
 
-      {/* Home Content */}
-      <HomeContent />
+      {/* Dynamic Content based on current layer */}
+      {renderContent()}
 
       {/* Bottom Navigation */}
       <WalletBottomNavigation />
