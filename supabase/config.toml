@@ -45,7 +45,7 @@ enabled = true
 enabled = true
 
 [functions.generate-wallet-mask-v3]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-wallet-mask]
 verify_jwt = false
@@ -57,7 +57,4 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.analyze-feedback]
-verify_jwt = true
-
-[functions.analyze-style]
 verify_jwt = true

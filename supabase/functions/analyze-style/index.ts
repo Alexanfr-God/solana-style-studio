@@ -1,60 +1,9 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-// Security: Rate limiting storage
-const requestCounts = new Map<string, { count: number; timestamp: number }>();
-const RATE_LIMIT_WINDOW = 60000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 5;
-
-function validateAndSanitizeInput(input: any): { imageUrl: string; isValid: boolean; error?: string } {
-  if (!input || typeof input !== 'object') {
-    return { imageUrl: '', isValid: false, error: 'Invalid request body' };
-  }
-
-  const { imageUrl } = input;
-  
-  if (!imageUrl || typeof imageUrl !== 'string') {
-    return { imageUrl: '', isValid: false, error: 'Image URL is required and must be a string' };
-  }
-
-  // Sanitize URL - basic validation
-  try {
-    const url = new URL(imageUrl);
-    if (!['http:', 'https:', 'data:'].includes(url.protocol)) {
-      return { imageUrl: '', isValid: false, error: 'Invalid URL protocol' };
-    }
-    
-    // Limit URL length to prevent DoS
-    if (imageUrl.length > 2048) {
-      return { imageUrl: '', isValid: false, error: 'URL too long' };
-    }
-    
-    return { imageUrl: imageUrl.trim(), isValid: true };
-  } catch {
-    return { imageUrl: '', isValid: false, error: 'Invalid URL format' };
-  }
-}
-
-function checkRateLimit(clientId: string): boolean {
-  const now = Date.now();
-  const clientData = requestCounts.get(clientId);
-  
-  if (!clientData || now - clientData.timestamp > RATE_LIMIT_WINDOW) {
-    requestCounts.set(clientId, { count: 1, timestamp: now });
-    return true;
-  }
-  
-  if (clientData.count >= MAX_REQUESTS_PER_WINDOW) {
-    return false;
-  }
-  
-  clientData.count++;
-  return true;
 }
 
 serve(async (req) => {
@@ -62,77 +11,12 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  // Security: Get client IP for rate limiting
-  const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
-  
-  // Security: Rate limiting
-  if (!checkRateLimit(clientIP)) {
-    return new Response(
-      JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-      { 
-        status: 429, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-
-  // Security: Authentication check
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('⚠️ Unauthorized access attempt from:', clientIP);
-    return new Response(
-      JSON.stringify({ error: 'Authentication required' }),
-      { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-
-  // Security: Validate JWT with Supabase
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-  
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase configuration');
-    return new Response(
-      JSON.stringify({ error: 'Server configuration error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    global: { headers: { Authorization: authHeader } }
-  });
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    console.log('🚫 Authentication failed:', authError?.message);
-    return new Response(
-      JSON.stringify({ error: 'Invalid authentication token' }),
-      { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-
-  console.log('✅ Authenticated user:', user.id);
-
-  // Read and validate request body
+  // Read request body only once to avoid "Body already consumed" error
   let parsedBody;
   try {
-    const rawBody = await req.text();
-    if (rawBody.length > 10240) { // 10KB limit
-      throw new Error('Request body too large');
-    }
-    parsedBody = JSON.parse(rawBody);
+    parsedBody = await req.json();
   } catch (e) {
-    console.error('Invalid request body:', e);
+    console.error('Invalid JSON in request body:', e);
     return new Response(
       JSON.stringify({ error: 'Invalid JSON in request body' }),
       { 
@@ -142,21 +26,19 @@ serve(async (req) => {
     );
   }
 
-  // Security: Input validation and sanitization
-  const validation = validateAndSanitizeInput(parsedBody);
-  if (!validation.isValid) {
-    console.error('Input validation failed:', validation.error);
+  const { imageUrl } = parsedBody;
+
+  if (!imageUrl) {
     return new Response(
-      JSON.stringify({ error: validation.error }),
+      JSON.stringify({ error: 'Image URL is required' }),
       { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    );
+    )
   }
 
-  const imageUrl = validation.imageUrl;
-  console.log('🔍 Starting AI style analysis for user:', user.id, 'image:', imageUrl.substring(0, 100) + '...');
+  console.log('🔍 Starting AI style analysis for image:', imageUrl);
 
   const openAiApiKey = Deno.env.get("OPENAI_API_KEY")
   if (!openAiApiKey) {
@@ -168,7 +50,7 @@ serve(async (req) => {
     // Analyze image with GPT-4 Vision
     const analysis = await analyzeImageWithGPT4Vision(imageUrl, openAiApiKey)
     
-    console.log('✅ AI analysis completed successfully for user:', user.id);
+    console.log('✅ AI analysis completed successfully:', analysis);
     
     return new Response(
       JSON.stringify(analysis),
@@ -178,7 +60,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('💥 AI analysis error for user:', user.id, error)
+    console.error('💥 AI analysis error:', error)
     
     // Fallback to enhanced mock analysis if AI fails
     console.log('🔄 Falling back to enhanced analysis due to error');
@@ -188,7 +70,6 @@ serve(async (req) => {
 })
 
 async function analyzeImageWithGPT4Vision(imageUrl: string, apiKey: string) {
-  // Security: Sanitize prompt to prevent injection
   const prompt = `Analyze this image as a comprehensive design reference for a crypto wallet interface. Provide an enhanced analysis in JSON format for full UI customization.
 
 Return ONLY valid JSON with no markdown formatting, no commentary, no code blocks:

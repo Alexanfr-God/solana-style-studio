@@ -10,8 +10,6 @@ import { useEffect, useState } from 'react';
 const Index = () => {
   const [mounted, setMounted] = useState(false);
   
-  console.log('🔍 Index component rendered');
-  
   // Add enhanced logging to help debug mobile rendering and showcase section
   useEffect(() => {
     console.log('Index component mounted');

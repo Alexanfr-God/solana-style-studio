@@ -1,5 +1,5 @@
 
-import { FC, ReactNode, useMemo, createContext, useState, useContext, useCallback, useEffect } from 'react';
+import { FC, ReactNode, useMemo, createContext, useState, useContext, useCallback } from 'react';
 import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { 
@@ -14,8 +14,7 @@ import {
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { toast } from "sonner";
-import { phantomAuthService } from '@/services/phantomAuthService';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 // Import the styles for the modal
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -25,15 +24,13 @@ interface WalletContextExtendedProps {
   isAuthenticating: boolean;
   isAuthenticated: boolean;
   hasRejectedSignature: boolean;
-  supabaseUser: any;
 }
 
 const WalletContextExtended = createContext<WalletContextExtendedProps>({
   signMessageOnConnect: async () => {},
   isAuthenticating: false,
   isAuthenticated: false,
-  hasRejectedSignature: false,
-  supabaseUser: null
+  hasRejectedSignature: false
 });
 
 export const useExtendedWallet = () => useContext(WalletContextExtended);
@@ -89,19 +86,7 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasRejectedSignature, setHasRejectedSignature] = useState(false);
-  const [supabaseUser, setSupabaseUser] = useState<any>(null);
   
-  // Слушаем изменения в Supabase auth
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔄 Supabase auth state change:', event, session?.user?.id);
-      setSupabaseUser(session?.user || null);
-      setIsAuthenticated(!!session?.user);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   const signMessageOnConnect = useCallback(async (publicKeyStr: string) => {
     if (!signMessage || !publicKey || hasRejectedSignature) return;
     
@@ -112,26 +97,15 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         "Welcome to Wallet Coast Customs ⚡ Your identity, your style, your wallet. Let's customize the future."
       );
       
-      // Подписываем сообщение в Phantom
-      console.log('📝 Requesting signature from Phantom...');
+      // This will trigger the Phantom wallet interface to show the custom message
       const signature = await signMessage(message);
       
-      // Аутентифицируемся в Supabase
-      console.log('🔐 Authenticating with Supabase...');
-      const authResult = await phantomAuthService.authenticateWithPhantom(publicKeyStr, signature);
-      
-      if (authResult.success) {
-        setIsAuthenticated(true);
-        setHasRejectedSignature(false);
-        toast.success(`Welcome! Wallet ${publicKeyStr.slice(0, 8)}... authenticated successfully`);
-        console.log("✅ Phantom + Supabase authentication successful");
-      } else {
-        toast.error(`Authentication failed: ${authResult.error}`);
-        console.error("❌ Authentication failed:", authResult.error);
-      }
-      
+      // If we got here, the user signed the message successfully
+      setIsAuthenticated(true);
+      setHasRejectedSignature(false);
+      console.log("Message signed successfully:", signature);
     } catch (error: any) {
-      console.error("❌ Error during authentication:", error);
+      console.error("Error signing message:", error);
       setHasRejectedSignature(true);
       toast.error(`Signature error: ${error?.message || 'User declined to sign'}`);
     } finally {
@@ -143,9 +117,8 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     signMessageOnConnect,
     isAuthenticating,
     isAuthenticated,
-    hasRejectedSignature,
-    supabaseUser
-  }), [signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature, supabaseUser]);
+    hasRejectedSignature
+  }), [signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature]);
 
   return (
     <WalletContextExtended.Provider value={value}>

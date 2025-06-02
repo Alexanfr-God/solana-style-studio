@@ -27,19 +27,7 @@ const WALLET_ICONS: Record<string, React.ReactNode> = {
 // WalletSelector component with explicit React.FC type
 const WalletSelector: React.FC = () => {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
-  const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature, supabaseUser } = useExtendedWallet();
-
-  // Добавляем детальное логирование
-  console.log('🔍 WalletSelector rendered');
-  console.log('🔍 Wallet state:', { 
-    connected, 
-    connecting, 
-    isAuthenticating, 
-    isAuthenticated, 
-    walletName: wallet?.adapter?.name,
-    publicKey: publicKey?.toString(),
-    walletsLength: wallets.length 
-  });
+  const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
 
   // Filter and sort wallets by readiness
   const availableWallets = useMemo(() => {
@@ -49,26 +37,22 @@ const WalletSelector: React.FC = () => {
     const notDetected = wallets.filter(
       ({ readyState }) => readyState !== WalletReadyState.Installed
     );
-    console.log('🔍 Available wallets:', { installed: installed.length, notDetected: notDetected.length });
     return [...installed, ...notDetected];
   }, [wallets]);
 
   // Trigger sign message after wallet is connected
   useEffect(() => {
     if (connected && publicKey && !isAuthenticated && !isAuthenticating && !hasRejectedSignature) {
-      console.log('🔍 Triggering sign message for:', publicKey.toString());
       signMessageOnConnect(publicKey.toString());
     }
   }, [connected, publicKey, signMessageOnConnect, isAuthenticated, isAuthenticating, hasRejectedSignature]);
 
   // Handle disconnect with toast notification
   const handleDisconnect = useCallback(async () => {
-    console.log('🔍 Disconnect clicked');
     try {
       await disconnect();
       toast.success('Wallet disconnected');
     } catch (error: any) {
-      console.error('🔍 Disconnect error:', error);
       toast.error(`Error disconnecting: ${error?.message || 'Unknown error'}`);
     }
   }, [disconnect]);
@@ -76,11 +60,9 @@ const WalletSelector: React.FC = () => {
   // Handle wallet selection
   const handleWalletSelect = useCallback(
     async (walletName: WalletName) => {
-      console.log('🔍 Wallet selected:', walletName);
       try {
         select(walletName);
       } catch (error: any) {
-        console.error('🔍 Wallet selection error:', error);
         toast.error(`Error selecting wallet: ${error?.message || 'Unknown error'}`);
       }
     },
@@ -98,31 +80,22 @@ const WalletSelector: React.FC = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button 
-            variant={connected && isAuthenticated ? "default" : "outline"} 
+            variant={connected ? "default" : "outline"} 
             className={`flex items-center gap-2 transition-all duration-300 ${
-              connected && isAuthenticated ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-black/30 backdrop-blur-sm'
+              connected ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-black/30 backdrop-blur-sm'
             }`}
             disabled={isAuthenticating}
-            onClick={() => console.log('🔍 WalletSelector button clicked')}
           >
             {connecting || isAuthenticating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>{isAuthenticating ? 'Signing...' : 'Connecting...'}</span>
               </>
-            ) : connected && wallet && isAuthenticated ? (
+            ) : connected && wallet ? (
               <div className="flex items-center gap-2 wallet-connect-animation">
                 {WALLET_ICONS[wallet.adapter.name] || null}
                 <span>{shortenAddress(publicKey?.toString() || '')}</span>
                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span className="text-xs text-green-300">✓ Auth</span>
-              </div>
-            ) : connected && wallet ? (
-              <div className="flex items-center gap-2">
-                {WALLET_ICONS[wallet.adapter.name] || null}
-                <span>{shortenAddress(publicKey?.toString() || '')}</span>
-                <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></span>
-                <span className="text-xs text-yellow-300">Sign needed</span>
               </div>
             ) : (
               <span>Connect Wallet</span>
@@ -141,12 +114,7 @@ const WalletSelector: React.FC = () => {
                     <TooltipTrigger asChild>
                       <DropdownMenuItem
                         disabled={!isInstalled}
-                        onClick={() => {
-                          console.log('🔍 Wallet item clicked:', item.adapter.name, 'installed:', isInstalled);
-                          if (isInstalled) {
-                            handleWalletSelect(item.adapter.name);
-                          }
-                        }}
+                        onClick={() => isInstalled && handleWalletSelect(item.adapter.name)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         {/* Display wallet icon if available */}
