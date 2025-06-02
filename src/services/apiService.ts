@@ -7,16 +7,17 @@ export async function generateStyle(prompt: string, image: string | null, layer:
   try {
     console.log(`Generating style for ${layer} with prompt: ${prompt}`);
     
-    // Security: Get current user and ensure authentication
+    // Получаем текущего пользователя из Supabase auth (который связан с Phantom кошельком)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      throw new Error('Authentication required. Please log in to generate styles.');
+      throw new Error('Phantom wallet authentication required. Please connect your wallet and sign the message.');
     }
     
     const userId = user.id;
-    console.log('✅ Authenticated user for style generation:', userId);
+    console.log('✅ Authenticated Phantom wallet user:', userId);
+    console.log('💰 Wallet address:', user.user_metadata?.wallet_address);
     
-    // Security: Input validation
+    // Валидация входных данных
     if (!prompt && !image) {
       throw new Error('Either a prompt or an image is required for style generation.');
     }
@@ -33,13 +34,13 @@ export async function generateStyle(prompt: string, image: string | null, layer:
       throw new Error('Image must be a valid URL string.');
     }
     
-    // Security: Validate layer type
+    // Валидация типа слоя
     const validLayers: LayerType[] = ['login', 'wallet'];
     if (!validLayers.includes(layer)) {
       throw new Error('Invalid layer type specified.');
     }
 
-    // Create a pending AI request with user validation
+    // Создаем запрос с валидацией пользователя
     const requestData = await aiRequestService.createRequest({
       prompt: prompt || '',
       image_url: image,
@@ -49,19 +50,20 @@ export async function generateStyle(prompt: string, image: string | null, layer:
 
     console.log('📝 Created AI request:', requestData?.id);
 
-    // Security: Get session for authenticated request
+    // Получаем сессию для аутентифицированного запроса
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      throw new Error('No active session found. Please log in again.');
+      throw new Error('No active session found. Please connect your Phantom wallet again.');
     }
 
-    // Call our edge function with authentication
+    // Вызываем edge function с аутентификацией
     const { data, error } = await supabase.functions.invoke('generate-style', {
       body: {
         prompt: prompt || '',
         image_url: image,
         layer_type: layer,
-        user_id: userId
+        user_id: userId,
+        wallet_address: user.user_metadata?.wallet_address
       },
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -70,9 +72,9 @@ export async function generateStyle(prompt: string, image: string | null, layer:
 
     if (error) {
       console.error('Edge function error:', error);
-      // Provide user-friendly error messages
+      // Предоставляем пользователю понятные сообщения об ошибках
       if (error.message?.includes('Authentication required')) {
-        throw new Error('Please log in to generate styles.');
+        throw new Error('Please connect your Phantom wallet and sign the message.');
       } else if (error.message?.includes('Rate limit exceeded')) {
         throw new Error('Too many requests. Please wait a moment before trying again.');
       } else {
@@ -82,7 +84,7 @@ export async function generateStyle(prompt: string, image: string | null, layer:
 
     console.log('Generated style data:', data);
     
-    // Map the style result to our WalletStyle format
+    // Преобразуем результат стиля в формат WalletStyle
     const generatedStyle: WalletStyle = {
       backgroundColor: data.style?.backgroundColor || '#131313',
       backgroundImage: data.style?.backgroundImage,
@@ -96,16 +98,16 @@ export async function generateStyle(prompt: string, image: string | null, layer:
       styleNotes: data.style?.styleNotes
     };
 
-    console.log('✅ Style generation completed for user:', userId);
+    console.log('✅ Style generation completed for Phantom wallet user:', userId);
     return generatedStyle;
     
   } catch (error) {
     console.error('Error generating style:', error);
     
-    // Security: Don't expose internal errors to users
+    // Не раскрываем внутренние ошибки пользователям
     const userFriendlyMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     
-    // Return a default style in case of error
+    // Возвращаем стиль по умолчанию в случае ошибки
     if (layer === 'login') {
       return {
         backgroundColor: '#131313',

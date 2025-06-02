@@ -5,7 +5,7 @@ import { useCustomizationStore } from '../../stores/customizationStore';
 import { useToast } from '@/hooks/use-toast';
 import { generateStyle } from '../../services/apiService';
 import { Wand, Loader2, Lock } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useExtendedWallet } from '@/context/WalletContextProvider';
 
 const GenerateButton = () => {
   const { 
@@ -17,37 +17,20 @@ const GenerateButton = () => {
     setIsGenerating 
   } = useCustomizationStore();
   const { toast } = useToast();
-
-  // Security: Check authentication status
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
-
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-    };
-    
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session?.user);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { isAuthenticated, supabaseUser, isAuthenticating } = useExtendedWallet();
 
   const handleGenerate = async () => {
-    // Security: Validate authentication
-    if (!isAuthenticated) {
+    // Проверяем аутентификацию через Supabase (связанную с Phantom)
+    if (!isAuthenticated || !supabaseUser) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to generate custom styles.",
+        title: "Phantom wallet required",
+        description: "Please connect your Phantom wallet and sign the message to generate styles",
         variant: "destructive",
       });
       return;
     }
 
-    // Security: Input validation
+    // Валидация входных данных
     if (!prompt && !uploadedImage) {
       toast({
         title: "Missing information",
@@ -57,7 +40,6 @@ const GenerateButton = () => {
       return;
     }
 
-    // Security: Prompt length validation
     if (prompt && prompt.length > 500) {
       toast({
         title: "Prompt too long",
@@ -67,7 +49,7 @@ const GenerateButton = () => {
       return;
     }
 
-    // Show initial generation toast
+    // Показываем начальное уведомление
     toast({
       title: `Generating ${activeLayer === 'login' ? 'Login' : 'Wallet'} Style`,
       description: "Creating a custom background and color scheme. This may take a moment...",
@@ -78,7 +60,6 @@ const GenerateButton = () => {
       const generatedStyle = await generateStyle(prompt, uploadedImage, activeLayer);
       setStyleForLayer(activeLayer, generatedStyle);
       
-      // Security: Don't expose internal error details in success message
       const displayMessage = generatedStyle.styleNotes?.includes('Error:') 
         ? 'Style generation encountered an issue, but a default style has been applied.'
         : generatedStyle.styleNotes || `New collectible style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`;
@@ -92,7 +73,6 @@ const GenerateButton = () => {
     } catch (error) {
       console.error("Generation error:", error);
       
-      // Security: Provide user-friendly error messages
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       
       toast({
@@ -105,7 +85,7 @@ const GenerateButton = () => {
     }
   };
 
-  const isDisabled = isGenerating || (!prompt && !uploadedImage) || isAuthenticated === false;
+  const isDisabled = isGenerating || (!prompt && !uploadedImage) || !isAuthenticated || isAuthenticating;
 
   return (
     <Button
@@ -121,7 +101,12 @@ const GenerateButton = () => {
       ) : !isAuthenticated ? (
         <>
           <Lock className="mr-2 h-4 w-4" />
-          Login Required
+          Connect Phantom Wallet
+        </>
+      ) : isAuthenticating ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Authenticating...
         </>
       ) : (
         <>

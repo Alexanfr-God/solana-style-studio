@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletName, WalletReadyState } from '@solana/wallet-adapter-base';
@@ -27,7 +26,7 @@ const WALLET_ICONS: Record<string, React.ReactNode> = {
 // WalletSelector component with explicit React.FC type
 const WalletSelector: React.FC = () => {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
-  const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
+  const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature, supabaseUser } = useExtendedWallet();
 
   // Filter and sort wallets by readiness
   const availableWallets = useMemo(() => {
@@ -80,9 +79,9 @@ const WalletSelector: React.FC = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button 
-            variant={connected ? "default" : "outline"} 
+            variant={connected && isAuthenticated ? "default" : "outline"} 
             className={`flex items-center gap-2 transition-all duration-300 ${
-              connected ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-black/30 backdrop-blur-sm'
+              connected && isAuthenticated ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-black/30 backdrop-blur-sm'
             }`}
             disabled={isAuthenticating}
           >
@@ -91,11 +90,19 @@ const WalletSelector: React.FC = () => {
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>{isAuthenticating ? 'Signing...' : 'Connecting...'}</span>
               </>
-            ) : connected && wallet ? (
+            ) : connected && wallet && isAuthenticated ? (
               <div className="flex items-center gap-2 wallet-connect-animation">
                 {WALLET_ICONS[wallet.adapter.name] || null}
                 <span>{shortenAddress(publicKey?.toString() || '')}</span>
                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span className="text-xs text-green-300">✓ Auth</span>
+              </div>
+            ) : connected && wallet ? (
+              <div className="flex items-center gap-2">
+                {WALLET_ICONS[wallet.adapter.name] || null}
+                <span>{shortenAddress(publicKey?.toString() || '')}</span>
+                <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                <span className="text-xs text-yellow-300">Sign needed</span>
               </div>
             ) : (
               <span>Connect Wallet</span>
