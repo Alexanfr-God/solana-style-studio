@@ -6,7 +6,7 @@ import PromptInput from './PromptInput';
 import GenerateButton from './GenerateButton';
 import ResetButton from './ResetButton';
 import DualWalletPreview from '../wallet/DualWalletPreview';
-import EditorHeader from './EditorHeader';
+import EditorHeaderWithWallet from './EditorHeaderWithWallet';
 import WalletRider from './WalletRider';
 import EditorTabs from './EditorTabs';
 import StyleNotesDisplay from '../wallet/StyleNotesDisplay';
@@ -17,6 +17,8 @@ import MaskEditor from './mask/MaskEditor';
 
 const V1Customizer = () => {
   const { editorMode } = useCustomizationStore();
+  
+  console.log('🔍 V1Customizer rendered, editorMode:', editorMode);
 
   const renderEditor = () => {
     switch (editorMode) {
@@ -34,7 +36,7 @@ const V1Customizer = () => {
   return (
     <div className="w-full py-4 md:py-6 px-2 md:px-6 bg-black">
       <div className="max-w-screen-xl mx-auto">
-        <EditorHeader />
+        <EditorHeaderWithWallet />
         
         <WalletRider />
         

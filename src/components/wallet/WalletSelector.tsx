@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletName, WalletReadyState } from '@solana/wallet-adapter-base';
@@ -28,6 +29,18 @@ const WalletSelector: React.FC = () => {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
   const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature, supabaseUser } = useExtendedWallet();
 
+  // Добавляем детальное логирование
+  console.log('🔍 WalletSelector rendered');
+  console.log('🔍 Wallet state:', { 
+    connected, 
+    connecting, 
+    isAuthenticating, 
+    isAuthenticated, 
+    walletName: wallet?.adapter?.name,
+    publicKey: publicKey?.toString(),
+    walletsLength: wallets.length 
+  });
+
   // Filter and sort wallets by readiness
   const availableWallets = useMemo(() => {
     const installed = wallets.filter(
@@ -36,22 +49,26 @@ const WalletSelector: React.FC = () => {
     const notDetected = wallets.filter(
       ({ readyState }) => readyState !== WalletReadyState.Installed
     );
+    console.log('🔍 Available wallets:', { installed: installed.length, notDetected: notDetected.length });
     return [...installed, ...notDetected];
   }, [wallets]);
 
   // Trigger sign message after wallet is connected
   useEffect(() => {
     if (connected && publicKey && !isAuthenticated && !isAuthenticating && !hasRejectedSignature) {
+      console.log('🔍 Triggering sign message for:', publicKey.toString());
       signMessageOnConnect(publicKey.toString());
     }
   }, [connected, publicKey, signMessageOnConnect, isAuthenticated, isAuthenticating, hasRejectedSignature]);
 
   // Handle disconnect with toast notification
   const handleDisconnect = useCallback(async () => {
+    console.log('🔍 Disconnect clicked');
     try {
       await disconnect();
       toast.success('Wallet disconnected');
     } catch (error: any) {
+      console.error('🔍 Disconnect error:', error);
       toast.error(`Error disconnecting: ${error?.message || 'Unknown error'}`);
     }
   }, [disconnect]);
@@ -59,9 +76,11 @@ const WalletSelector: React.FC = () => {
   // Handle wallet selection
   const handleWalletSelect = useCallback(
     async (walletName: WalletName) => {
+      console.log('🔍 Wallet selected:', walletName);
       try {
         select(walletName);
       } catch (error: any) {
+        console.error('🔍 Wallet selection error:', error);
         toast.error(`Error selecting wallet: ${error?.message || 'Unknown error'}`);
       }
     },
@@ -84,6 +103,7 @@ const WalletSelector: React.FC = () => {
               connected && isAuthenticated ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-black/30 backdrop-blur-sm'
             }`}
             disabled={isAuthenticating}
+            onClick={() => console.log('🔍 WalletSelector button clicked')}
           >
             {connecting || isAuthenticating ? (
               <>
@@ -121,7 +141,12 @@ const WalletSelector: React.FC = () => {
                     <TooltipTrigger asChild>
                       <DropdownMenuItem
                         disabled={!isInstalled}
-                        onClick={() => isInstalled && handleWalletSelect(item.adapter.name)}
+                        onClick={() => {
+                          console.log('🔍 Wallet item clicked:', item.adapter.name, 'installed:', isInstalled);
+                          if (isInstalled) {
+                            handleWalletSelect(item.adapter.name);
+                          }
+                        }}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         {/* Display wallet icon if available */}
