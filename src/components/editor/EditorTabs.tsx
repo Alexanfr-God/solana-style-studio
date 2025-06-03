@@ -3,12 +3,18 @@ import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FileImage, SlidersHorizontal, Layers } from 'lucide-react';
 import { useCustomizationStore, EditorModeType } from '@/stores/customizationStore';
+import { useNavigate } from 'react-router-dom';
 
 const EditorTabs = () => {
   const { setEditorMode, editorMode } = useCustomizationStore();
+  const navigate = useNavigate();
 
   const handleTabChange = (value: EditorModeType) => {
     setEditorMode(value);
+  };
+
+  const handleFineTuneClick = () => {
+    navigate('/wallet-alive-playground');
   };
 
   return (
@@ -26,17 +32,16 @@ const EditorTabs = () => {
             </div>
           </TabsTrigger>
           
-          <TabsTrigger 
-            value="fine-tune" 
-            disabled 
-            className="flex items-center gap-2"
+          <button
+            onClick={handleFineTuneClick}
+            className="flex items-center gap-2 justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-white/10 text-white"
           >
             <SlidersHorizontal className="h-4 w-4" />
             <div className="flex flex-col items-start text-xs">
               <span className="font-medium">Fine-tune</span>
               <span className="text-[10px] opacity-80">UI/UX customization</span>
             </div>
-          </TabsTrigger>
+          </button>
           
           <TabsTrigger 
             value="decorate" 
