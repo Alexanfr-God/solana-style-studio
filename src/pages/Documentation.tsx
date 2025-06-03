@@ -98,43 +98,50 @@ const sections = [{
         
         <div className="space-y-6">
           <div>
-            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q2 2025 — MVP Is Here</span></p>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q2 2025 — MVP Launched</span></p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
-              <li>Launch of V1: AI-generated login screen skins for Phantom</li>
-              <li>Developing our own custom Solana smart contract for native NFT minting with royalty control and unique wallet skin logic</li>
-              <li>First 1-of-1 skins live for early testing & community feedback</li>
-              <li>🎯 Participating in <strong>Solana Breakout Hackathon</strong> to showcase tech & secure visibility</li>
+              <li>✅ First live demo version: AI-generated login screens via Supabase + DALL·E</li>
+              <li>✅ Development of custom Solana smart contract (wallet skins, royalties, collections)</li>
+              <li>✅ Custom GPT built: generates full UI structure (JSON + layered PNGs)</li>
+              <li>✅ V2 demo released: AI-driven UI style generation (fonts, buttons, animations, backgrounds)</li>
+              <li>✅ V3 mask architecture implemented: Safe Zone logic and Replicate SDXL rendering</li>
+              <li>✅ Participated in Solana Breakout Hackathon to validate vision and technology</li>
             </ul>
           </div>
           
           <div>
-            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q3 2025 — Opening the Gates</span></p>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q3 2025 — Product Growth & Development</span></p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
-              <li>Public beta goes live 🌍</li>
-              <li>NFT royalties, revenue-sharing logic & wallet linking</li>
-              <li>Community Gallery: display trending skins, collections, and limited drops</li>
-              <li>🧠 <strong>Private fundraising round begins</strong> (angels + micro-funds)</li>
-              <li>🛠️ Actively recruiting top-tier developers, AI engineers & Web3 visionaries to scale the core product</li>
+              <li>🎨 Public release of Style Editor (v2): hybrid AI + manual interface customization</li>
+              <li>🎭 Completion of Wallet Mask system (v3): preview and fallback logic</li>
+              <li>🤖 AI Companion development begins: emotions, voice interaction, behavioral response</li>
+              <li>💬 Gathering feedback from closed group testing (focus groups & early community)</li>
+              <li>👥 Expanding the core team: frontend, backend, and AI developers</li>
+              <li>💸 Actively pursuing grants and strategic investment opportunities</li>
+              <li>🔌 Starting integration with Web3 marketplaces (no names disclosed)</li>
             </ul>
           </div>
           
           <div>
-            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q4 2025 — Ecosystem Expansion</span></p>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q4 2025 — Scaling & Customization</span></p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
-              <li>Partner drops with meme coins, creators, and Solana-native brands</li>
-              <li>Integration with marketplaces: Magic Eden, Tensor, and others</li>
-              <li>Skin rarity, user profiles, creator leaderboards</li>
-              <li>📣 <strong>Seed fundraising round</strong> (for scaling custom GPT, AI infra & BD hires)</li>
+              <li>🎁 Partnered drops and visual collaborations with Web3 projects and communities</li>
+              <li>💎 Skin rarity levels, collectible layers, creator profiles</li>
+              <li>🧠 Expansion of AI infrastructure: custom model development and style control logic</li>
+              <li>🌐 Early testing of omnichain skin ownership via LayerZero</li>
+              <li>🔒 AI Companion prototypes early security behaviors: detect anomalies, protect users</li>
             </ul>
           </div>
           
           <div>
-            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">2026 — Beyond Phantom</span></p>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">2026 — From Product to Protocol</span></p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
-              <li>Full Phantom API integration for live wallet theming</li>
-              <li>Animated wallets: motion-reactive styles powered by AI ✨</li>
-              <li>Cross-wallet skin layers: Backpack, Solflare, and more</li>
-              <li>Omnichain ownership via <strong>LayerZero integration</strong> 🌐</li>
+              <li>🔗 Potential direct integrations with major Web3 wallets</li>
+              <li>🐾 AI Companion becomes persistent layer: emotional, behavioral, voice-enabled</li>
+              <li>🎞️ Animated skins: motion-reactive styles responding to user interaction</li>
+              <li>👛 Cross-wallet theming: apply one skin across multiple wallets</li>
+              <li>🌍 Omnichain skins: unified visual identity across ecosystems</li>
+              <li>🛡️ Real-time AI Guardian: behavioral analysis and protective logic during wallet usage</li>
             </ul>
           </div>
           
