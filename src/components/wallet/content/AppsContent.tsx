@@ -1,129 +1,93 @@
 
 import React from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { Image, Grid, Palette, Gamepad2 } from 'lucide-react';
 
 const AppsContent = () => {
-  const { getStyleForComponent } = useWalletCustomizationStore();
+  const {
+    walletStyle,
+    triggerAiPetInteraction,
+    setTemporaryEmotion
+  } = useWalletCustomizationStore();
 
-  const cardsStyle = getStyleForComponent('cards');
+  const handleCollectibleClick = (iconName: string) => {
+    console.log(`Clicked collectible: ${iconName}`);
+    triggerAiPetInteraction();
+    setTemporaryEmotion('excited', 2000);
+  };
 
-  const apps = [
-    { id: 1, name: 'DeFi Exchange', icon: '🔄', description: 'Trade tokens' },
-    { id: 2, name: 'NFT Marketplace', icon: '🖼️', description: 'Buy & sell NFTs' },
-    { id: 3, name: 'Staking Pool', icon: '💎', description: 'Earn rewards' },
-    { id: 4, name: 'Governance', icon: '🗳️', description: 'Vote on proposals' },
-    { id: 5, name: 'Lending', icon: '🏦', description: 'Borrow & lend' },
-    { id: 6, name: 'Analytics', icon: '📊', description: 'Track portfolio' }
+  const handleManageListClick = () => {
+    console.log('Manage collectible list clicked');
+    triggerAiPetInteraction();
+    setTemporaryEmotion('happy', 1500);
+  };
+
+  const collectibleIcons = [
+    { icon: Image, name: 'Art NFT', color: '#FF6B6B' },
+    { icon: Grid, name: 'Pixel Art', color: '#4ECDC4' },
+    { icon: Palette, name: 'Digital Art', color: '#45B7D1' },
+    { icon: Gamepad2, name: 'Game Item', color: '#96CEB4' }
   ];
 
   return (
-    <div 
-      className="flex-1 p-4 space-y-6 overflow-y-auto"
-      data-layer="apps"
-      data-component="apps-content"
-    >
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold px-2" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-          DApps
-        </h2>
-        
-        <div 
-          className="grid grid-cols-2 gap-4"
-          data-component="apps-grid"
+    <div className="flex-1 px-4 pb-20 overflow-auto" id="apps-content-container">
+      {/* Apps Content */}
+      <div className="mb-8" id="apps-main-section">
+        <h2 
+          id="collectibles-title"
+          className="text-2xl font-semibold text-white mb-2"
+          style={{ 
+            color: walletStyle.primaryColor || '#FFFFFF',
+            fontFamily: walletStyle.font || 'Inter'
+          }}
         >
-          {apps.map((app) => (
-            <div 
-              key={app.id}
-              className="p-4 rounded-xl border transition-all duration-200 hover:scale-[1.02] cursor-pointer"
-              data-component="app-card"
-              style={{
-                backgroundColor: cardsStyle.backgroundColor || 'var(--wallet-bg-secondary, rgba(255, 255, 255, 0.05))',
-                borderRadius: cardsStyle.borderRadius || '12px',
-                border: cardsStyle.border || '1px solid var(--wallet-color-secondary, rgba(255, 255, 255, 0.1))',
-                boxShadow: cardsStyle.boxShadow || '0 2px 8px rgba(153, 69, 255, 0.1)'
-              }}
+          No collectibles found
+        </h2>
+        <p id="collectibles-description" className="text-sm text-gray-400 mb-6">
+          You don't own any collectibles yet. Get your first collectible on a marketplace.
+        </p>
+
+        {/* Collectibles Grid */}
+        <div id="collectibles-grid" className="grid grid-cols-4 gap-4 mb-8">
+          {collectibleIcons.map((item, index) => (
+            <button
+              key={index}
+              id={`collectible-icon-${index + 1}`}
+              onClick={() => handleCollectibleClick(item.name)}
+              className="flex flex-col items-center p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 hover:scale-105 group"
+              data-shared-element-id={`nft-icon-${index + 1}`}
             >
-              <div className="text-center space-y-3">
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mx-auto"
-                  data-component="app-icon"
-                  style={{
-                    backgroundColor: 'var(--wallet-color-primary, #9945FF)20',
-                    color: 'var(--wallet-color-primary, #9945FF)'
-                  }}
-                >
-                  {app.icon}
-                </div>
-                <div>
-                  <div 
-                    className="font-semibold text-sm"
-                    data-component="app-name"
-                    style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}
-                  >
-                    {app.name}
-                  </div>
-                  <div 
-                    className="text-xs opacity-70 mt-1"
-                    style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}
-                  >
-                    {app.description}
-                  </div>
-                </div>
+              <div 
+                className="w-16 h-16 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200"
+                style={{ backgroundColor: item.color }}
+              >
+                <item.icon className="w-8 h-8 text-white" />
               </div>
-            </div>
+              <span className="text-xs text-gray-400 text-center group-hover:text-white transition-colors">
+                {item.name}
+              </span>
+            </button>
           ))}
         </div>
 
-        {/* Featured Apps Section */}
-        <div className="space-y-4 mt-8">
-          <h3 className="text-lg font-semibold px-2" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-            Featured
-          </h3>
-          
-          <div 
-            className="p-6 rounded-xl border"
-            style={{
-              backgroundColor: cardsStyle.backgroundColor || 'var(--wallet-bg-secondary, rgba(255, 255, 255, 0.05))',
-              borderRadius: cardsStyle.borderRadius || '12px',
-              border: cardsStyle.border || '1px solid var(--wallet-color-accent, rgba(20, 241, 149, 0.3))',
-              boxShadow: cardsStyle.boxShadow || '0 4px 16px rgba(20, 241, 149, 0.1)'
+        {/* Manage Collectible List Link */}
+        <div className="flex justify-center" id="manage-collectible-section">
+          <button
+            id="manage-collectible-list"
+            onClick={handleManageListClick}
+            className="relative text-sm font-medium transition-all duration-300 group"
+            style={{ 
+              color: walletStyle.primaryColor || '#9945FF',
+              fontFamily: walletStyle.font || 'Inter'
             }}
+            data-shared-element-id="manage-collectible-list"
           >
-            <div className="flex items-center space-x-4">
-              <div 
-                className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl"
-                style={{
-                  backgroundColor: 'var(--wallet-color-accent, #14F195)20',
-                  color: 'var(--wallet-color-accent, #14F195)'
-                }}
-              >
-                🚀
-              </div>
-              <div className="flex-1">
-                <h4 
-                  className="text-lg font-semibold"
-                  style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}
-                >
-                  Solana Summer
-                </h4>
-                <p 
-                  className="text-sm opacity-70 mt-1"
-                  style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}
-                >
-                  Participate in the biggest DeFi event of the year
-                </p>
-                <button 
-                  className="mt-3 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105"
-                  style={{
-                    backgroundColor: 'var(--wallet-color-accent, #14F195)',
-                    color: 'var(--wallet-bg-primary, #000000)'
-                  }}
-                >
-                  Learn More
-                </button>
-              </div>
-            </div>
-          </div>
+            <span className="relative z-10">Manage collectible list</span>
+            <div 
+              className="absolute bottom-0 left-0 w-full h-0.5 transform scale-x-0 transition-transform duration-300 group-hover:scale-x-100 origin-left"
+              style={{ backgroundColor: walletStyle.primaryColor || '#9945FF' }}
+            />
+          </button>
         </div>
       </div>
     </div>

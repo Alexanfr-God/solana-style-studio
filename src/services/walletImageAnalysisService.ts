@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DetailedImageAnalysis {
@@ -42,15 +43,6 @@ export interface DetailedImageAnalysis {
 }
 
 export interface WalletComponentStyles {
-  // Global and Layer Backgrounds
-  globalBackground: ComponentStyle;
-  loginLayerBackground: ComponentStyle;
-  homeLayerBackground: ComponentStyle;
-  swapLayerBackground: ComponentStyle;
-  appsLayerBackground: ComponentStyle;
-  historyLayerBackground: ComponentStyle;
-  searchLayerBackground: ComponentStyle;
-  
   // Header Components
   headerContainer: ComponentStyle;
   walletTitle: ComponentStyle;
@@ -70,14 +62,6 @@ export interface WalletComponentStyles {
   totalBalanceLabel: ComponentStyle;
   balanceAmount: ComponentStyle;
   balanceUSD: ComponentStyle;
-  
-  // Assets Section
-  assetsContainer: ComponentStyle;
-  assetItem: ComponentStyle;
-  assetIcon: ComponentStyle;
-  assetName: ComponentStyle;
-  assetBalance: ComponentStyle;
-  assetValue: ComponentStyle;
   
   // Action Buttons
   actionButtonsContainer: ComponentStyle;
@@ -110,19 +94,6 @@ export interface WalletComponentStyles {
   amountInput: ComponentStyle;
   addressInput: ComponentStyle;
   
-  // Swap Components
-  swapContainer: ComponentStyle;
-  swapCard: ComponentStyle;
-  swapFromToken: ComponentStyle;
-  swapToToken: ComponentStyle;
-  swapArrow: ComponentStyle;
-  
-  // Apps Components
-  appsGrid: ComponentStyle;
-  appCard: ComponentStyle;
-  appIcon: ComponentStyle;
-  appName: ComponentStyle;
-  
   // AI Pet
   aiPet: {
     zone: 'inside' | 'outside';
@@ -154,7 +125,6 @@ export interface ComponentStyle {
   padding?: string;
   margin?: string;
   animation?: string;
-  backgroundImage?: string;
 }
 
 export interface WalletImageAnalysisResult {

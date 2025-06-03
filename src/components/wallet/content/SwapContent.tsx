@@ -1,191 +1,258 @@
 
 import React, { useState } from 'react';
-import { ArrowUpDown, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowUpDown, Settings, Info } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const SwapContent = () => {
+  const {
+    getStyleForComponent,
+    triggerAiPetInteraction,
+    setTemporaryEmotion
+  } = useWalletCustomizationStore();
+
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
-  const { getStyleForComponent } = useWalletCustomizationStore();
+  const [fromToken, setFromToken] = useState('SOL');
+  const [toToken, setToToken] = useState('USDC');
 
-  const containersStyle = getStyleForComponent('containers');
-  const cardsStyle = getStyleForComponent('cards');
-  const buttonsStyle = getStyleForComponent('buttons');
-  const inputsStyle = getStyleForComponent('inputs');
+  // Get component-specific styles
+  const containerStyle = getStyleForComponent('containers');
+  const inputStyle = getStyleForComponent('searchInputs');
+  const buttonStyle = getStyleForComponent('buttons');
+  const panelStyle = getStyleForComponent('panels');
+  const globalStyle = getStyleForComponent('global');
+
+  const handleSwap = () => {
+    console.log('Swap initiated');
+    triggerAiPetInteraction();
+    setTemporaryEmotion('excited', 2000);
+  };
+
+  const handleFlipTokens = () => {
+    setFromToken(toToken);
+    setToToken(fromToken);
+    setFromAmount(toAmount);
+    setToAmount(fromAmount);
+    triggerAiPetInteraction();
+    setTemporaryEmotion('happy', 1500);
+  };
 
   return (
-    <div 
-      className="flex-1 p-4 space-y-6 overflow-y-auto"
-      data-layer="swap"
-      data-component="swap-content"
-    >
+    <div className="flex-1 px-4 pb-20 overflow-auto">
       {/* Swap Container */}
       <div 
-        className="p-6 rounded-2xl border"
-        data-component="swap-container"
+        className="mt-6 p-6 rounded-xl border hover:scale-[1.01] transition-transform duration-200"
         style={{
-          backgroundColor: containersStyle.backgroundColor || 'var(--wallet-bg-secondary, rgba(255, 255, 255, 0.05))',
-          backdropFilter: containersStyle.backdropFilter || 'blur(16px)',
-          borderRadius: containersStyle.borderRadius || '16px',
-          border: containersStyle.border || '1px solid var(--wallet-color-secondary, rgba(255, 255, 255, 0.1))',
-          boxShadow: containersStyle.boxShadow || '0 4px 20px rgba(153, 69, 255, 0.15)'
+          backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+          borderRadius: containerStyle.borderRadius || '16px',
+          border: containerStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: containerStyle.boxShadow,
+          backdropFilter: containerStyle.backdropFilter,
+          transition: containerStyle.transition
         }}
       >
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-            Swap
-          </h2>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="h-8 w-8 rounded-lg hover:bg-white/10"
-          >
-            <Settings className="h-4 w-4" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }} />
-          </Button>
-        </div>
-
-        {/* From Token */}
-        <div 
-          className="p-4 rounded-xl border mb-4"
-          data-component="swap-from-token"
-          style={{
-            backgroundColor: cardsStyle.backgroundColor || 'var(--wallet-bg-secondary, rgba(255, 255, 255, 0.03))',
-            borderRadius: cardsStyle.borderRadius || '12px',
-            border: cardsStyle.border || '1px solid var(--wallet-color-primary, rgba(153, 69, 255, 0.3))',
-            boxShadow: cardsStyle.boxShadow || '0 2px 8px rgba(153, 69, 255, 0.1)'
-          }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm opacity-70" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-              From
-            </span>
-            <span className="text-sm opacity-70" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-              Balance: 12.345
-            </span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div 
-              className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
-              style={{
-                backgroundColor: 'var(--wallet-color-primary, #9945FF)20',
-                color: 'var(--wallet-color-primary, #9945FF)'
-              }}
-            >
-              ◎
-            </div>
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="0.0"
-                value={fromAmount}
-                onChange={(e) => setFromAmount(e.target.value)}
-                className="w-full bg-transparent text-xl font-semibold outline-none"
-                style={{
-                  color: 'var(--wallet-color-text, #FFFFFF)',
-                  fontFamily: inputsStyle.fontFamily || 'var(--wallet-font-primary, Inter)'
-                }}
-              />
-              <div className="text-sm opacity-70" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-                SOL
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Swap Arrow */}
-        <div className="flex justify-center mb-4">
-          <button 
-            className="p-2 rounded-full border transition-all duration-200 hover:scale-110"
-            data-component="swap-arrow"
+          <h2 
+            className="text-xl font-semibold"
             style={{
-              backgroundColor: 'var(--wallet-color-secondary, rgba(255, 255, 255, 0.1))',
-              border: '1px solid var(--wallet-color-secondary, rgba(255, 255, 255, 0.2))'
+              color: globalStyle.textColor || '#FFFFFF',
+              fontFamily: globalStyle.fontFamily
             }}
           >
-            <ArrowUpDown className="h-4 w-4" style={{ color: 'var(--wallet-color-accent, #14F195)' }} />
+            Swap
+          </h2>
+          <button 
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            style={{
+              borderRadius: buttonStyle.borderRadius || '8px'
+            }}
+          >
+            <Settings className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
-        {/* To Token */}
+        {/* From Token Input */}
         <div 
-          className="p-4 rounded-xl border mb-6"
-          data-component="swap-to-token"
+          className="p-4 rounded-xl mb-2"
           style={{
-            backgroundColor: cardsStyle.backgroundColor || 'var(--wallet-bg-secondary, rgba(255, 255, 255, 0.03))',
-            borderRadius: cardsStyle.borderRadius || '12px',
-            border: cardsStyle.border || '1px solid var(--wallet-color-accent, rgba(20, 241, 149, 0.3))',
-            boxShadow: cardsStyle.boxShadow || '0 2px 8px rgba(20, 241, 149, 0.1)'
+            backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            borderRadius: panelStyle.borderRadius || '12px',
+            border: panelStyle.border,
+            backdropFilter: panelStyle.backdropFilter
           }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm opacity-70" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-              To
+          <div className="flex justify-between items-center mb-2">
+            <span 
+              className="text-sm text-gray-400"
+              style={{ fontFamily: globalStyle.fontFamily }}
+            >
+              From
             </span>
-            <span className="text-sm opacity-70" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-              Balance: 0.000
+            <span 
+              className="text-sm text-gray-400"
+              style={{ fontFamily: globalStyle.fontFamily }}
+            >
+              Balance: 5.03737 SOL
             </span>
           </div>
           <div className="flex items-center space-x-3">
-            <div 
-              className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+            <input
+              type="text"
+              placeholder="0.0"
+              value={fromAmount}
+              onChange={(e) => setFromAmount(e.target.value)}
+              className="flex-1 bg-transparent text-2xl font-medium text-white placeholder-gray-500 focus:outline-none"
               style={{
-                backgroundColor: 'var(--wallet-color-accent, #14F195)20',
-                color: 'var(--wallet-color-accent, #14F195)'
+                fontFamily: globalStyle.fontFamily,
+                color: globalStyle.textColor
+              }}
+            />
+            <button 
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+              style={{
+                backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
+                borderRadius: buttonStyle.borderRadius || '8px',
+                transition: buttonStyle.transition
               }}
             >
-              Ξ
-            </div>
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="0.0"
-                value={toAmount}
-                onChange={(e) => setToAmount(e.target.value)}
-                className="w-full bg-transparent text-xl font-semibold outline-none"
-                style={{
-                  color: 'var(--wallet-color-text, #FFFFFF)',
-                  fontFamily: inputsStyle.fontFamily || 'var(--wallet-font-primary, Inter)'
-                }}
-              />
-              <div className="text-sm opacity-70" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-                ETH
+              <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                <span className="text-xs font-bold">◎</span>
               </div>
+              <span 
+                className="font-medium"
+                style={{
+                  color: buttonStyle.textColor || '#FFFFFF',
+                  fontFamily: globalStyle.fontFamily
+                }}
+              >
+                {fromToken}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Swap Direction Button */}
+        <div className="flex justify-center my-4">
+          <button
+            onClick={handleFlipTokens}
+            className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110"
+            style={{
+              backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '50%',
+              transition: buttonStyle.transition
+            }}
+          >
+            <ArrowUpDown className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+
+        {/* To Token Input */}
+        <div 
+          className="p-4 rounded-xl mb-6"
+          style={{
+            backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            borderRadius: panelStyle.borderRadius || '12px',
+            border: panelStyle.border,
+            backdropFilter: panelStyle.backdropFilter
+          }}
+        >
+          <div className="flex justify-between items-center mb-2">
+            <span 
+              className="text-sm text-gray-400"
+              style={{ fontFamily: globalStyle.fontFamily }}
+            >
+              To
+            </span>
+            <span 
+              className="text-sm text-gray-400"
+              style={{ fontFamily: globalStyle.fontFamily }}
+            >
+              Balance: 0 USDC
+            </span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input
+              type="text"
+              placeholder="0.0"
+              value={toAmount}
+              onChange={(e) => setToAmount(e.target.value)}
+              className="flex-1 bg-transparent text-2xl font-medium text-white placeholder-gray-500 focus:outline-none"
+              style={{
+                fontFamily: globalStyle.fontFamily,
+                color: globalStyle.textColor
+              }}
+            />
+            <button 
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+              style={{
+                backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
+                borderRadius: buttonStyle.borderRadius || '8px',
+                transition: buttonStyle.transition
+              }}
+            >
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-xs font-bold">$</span>
+              </div>
+              <span 
+                className="font-medium"
+                style={{
+                  color: buttonStyle.textColor || '#FFFFFF',
+                  fontFamily: globalStyle.fontFamily
+                }}
+              >
+                {toToken}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Swap Info */}
+        <div 
+          className="p-3 rounded-lg mb-6"
+          style={{
+            backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.03)',
+            borderRadius: panelStyle.borderRadius || '8px'
+          }}
+        >
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-2">
+              <Info className="w-4 h-4 text-gray-400" />
+              <span 
+                className="text-gray-400"
+                style={{ fontFamily: globalStyle.fontFamily }}
+              >
+                Rate
+              </span>
             </div>
+            <span 
+              className="text-white"
+              style={{
+                color: globalStyle.textColor,
+                fontFamily: globalStyle.fontFamily
+              }}
+            >
+              1 SOL ≈ 224.7 USDC
+            </span>
           </div>
         </div>
 
         {/* Swap Button */}
-        <Button 
-          className="w-full py-4 text-lg font-semibold rounded-xl transition-all duration-200 hover:scale-[1.02]"
-          data-component="swap-button"
+        <button
+          onClick={handleSwap}
+          className="w-full py-4 rounded-xl font-medium transition-all duration-200 hover:scale-105"
           style={{
-            backgroundColor: buttonsStyle.backgroundColor || buttonsStyle.gradient || 'var(--wallet-color-primary, #9945FF)',
-            background: buttonsStyle.gradient || buttonsStyle.backgroundColor || 'linear-gradient(135deg, var(--wallet-color-primary, #9945FF), var(--wallet-color-accent, #14F195))',
-            color: buttonsStyle.textColor || 'var(--wallet-color-text, #FFFFFF)',
-            borderRadius: buttonsStyle.borderRadius || '12px',
-            boxShadow: buttonsStyle.boxShadow || '0 4px 12px rgba(153, 69, 255, 0.3)',
-            fontFamily: 'var(--wallet-font-primary, Inter)'
+            backgroundColor: buttonStyle.backgroundColor || '#9945FF',
+            background: buttonStyle.gradient || buttonStyle.backgroundColor,
+            color: buttonStyle.textColor || '#FFFFFF',
+            borderRadius: buttonStyle.borderRadius || '12px',
+            boxShadow: buttonStyle.boxShadow,
+            fontFamily: globalStyle.fontFamily,
+            transition: buttonStyle.transition
           }}
         >
-          Swap Tokens
-        </Button>
-
-        {/* Swap Details */}
-        <div className="mt-4 space-y-2 text-sm opacity-70" style={{ color: 'var(--wallet-color-text, #FFFFFF)' }}>
-          <div className="flex justify-between">
-            <span>Rate</span>
-            <span>1 SOL = 0.0234 ETH</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Fee</span>
-            <span>0.3%</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Minimum received</span>
-            <span>0.0232 ETH</span>
-          </div>
-        </div>
+          Swap
+        </button>
       </div>
     </div>
   );
