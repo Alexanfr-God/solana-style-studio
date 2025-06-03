@@ -193,11 +193,11 @@ export const saveWalletStyleToLibrary = async (
       .from('style_library')
       .insert({
         style_name: styleName,
-        style_data: styles,
-        ai_analysis: analysis,
+        style_data: styles as any,
+        ai_analysis: analysis as any,
         inspiration_image_url: imageUrl,
         created_by: 'user'
-      })
+      } as any)
       .select()
       .single();
 
