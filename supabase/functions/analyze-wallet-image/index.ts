@@ -48,7 +48,35 @@ interface DetailedAnalysis {
   };
 }
 
+interface ComponentStyle {
+  backgroundColor?: string;
+  gradient?: string;
+  textColor?: string;
+  borderRadius?: string;
+  boxShadow?: string;
+  fontFamily?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  border?: string;
+  backdropFilter?: string;
+  transition?: string;
+  opacity?: string;
+  padding?: string;
+  margin?: string;
+  animation?: string;
+  backgroundImage?: string;
+}
+
 interface WalletComponentStyles {
+  // Global and Layer Backgrounds
+  globalBackground: ComponentStyle;
+  loginLayerBackground: ComponentStyle;
+  homeLayerBackground: ComponentStyle;
+  swapLayerBackground: ComponentStyle;
+  appsLayerBackground: ComponentStyle;
+  historyLayerBackground: ComponentStyle;
+  searchLayerBackground: ComponentStyle;
+  
   // Header Components
   headerContainer: ComponentStyle;
   walletTitle: ComponentStyle;
@@ -68,6 +96,14 @@ interface WalletComponentStyles {
   totalBalanceLabel: ComponentStyle;
   balanceAmount: ComponentStyle;
   balanceUSD: ComponentStyle;
+  
+  // Assets Section
+  assetsContainer: ComponentStyle;
+  assetItem: ComponentStyle;
+  assetIcon: ComponentStyle;
+  assetName: ComponentStyle;
+  assetBalance: ComponentStyle;
+  assetValue: ComponentStyle;
   
   // Action Buttons
   actionButtonsContainer: ComponentStyle;
@@ -100,6 +136,20 @@ interface WalletComponentStyles {
   amountInput: ComponentStyle;
   addressInput: ComponentStyle;
   
+  // Swap Components
+  swapContainer: ComponentStyle;
+  swapCard: ComponentStyle;
+  swapFromToken: ComponentStyle;
+  swapToToken: ComponentStyle;
+  swapArrow: ComponentStyle;
+  swapButton: ComponentStyle;
+  
+  // Apps Components
+  appsGrid: ComponentStyle;
+  appCard: ComponentStyle;
+  appIcon: ComponentStyle;
+  appName: ComponentStyle;
+  
   // AI Pet
   aiPet: {
     zone: 'inside' | 'outside';
@@ -113,24 +163,6 @@ interface WalletComponentStyles {
   // Global Styles
   globalContainer: ComponentStyle;
   backgroundOverlay: ComponentStyle;
-}
-
-interface ComponentStyle {
-  backgroundColor?: string;
-  gradient?: string;
-  textColor?: string;
-  borderRadius?: string;
-  boxShadow?: string;
-  fontFamily?: string;
-  fontSize?: string;
-  fontWeight?: string;
-  border?: string;
-  backdropFilter?: string;
-  transition?: string;
-  opacity?: string;
-  padding?: string;
-  margin?: string;
-  animation?: string;
 }
 
 serve(async (req) => {
@@ -152,7 +184,6 @@ serve(async (req) => {
 
     console.log("Starting detailed wallet image analysis...");
 
-    // Detailed analysis prompt for GPT-4o with vision
     const analysisPrompt = `
     Analyze this image in extreme detail for wallet UI styling. I need a comprehensive analysis covering:
 
@@ -219,7 +250,6 @@ serve(async (req) => {
     }
     `;
 
-    // Call GPT-4o with vision for analysis
     const analysisResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -249,21 +279,17 @@ serve(async (req) => {
     const analysisData = await analysisResponse.json();
     let analysisContent = analysisData.choices[0].message.content;
     
-    // Clean and parse analysis
     analysisContent = analysisContent.replace(/```json|```/g, "").trim();
     const analysis: DetailedAnalysis = JSON.parse(analysisContent);
 
     console.log("Analysis completed:", analysis);
 
-    // Generate comprehensive wallet component styles
-    const walletStyles = generateWalletComponentStyles(analysis);
+    const walletStyles = generateComprehensiveWalletStyles(analysis);
 
-    // Create Supabase client and save analysis
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Save to style_library for future reference
     const { data: savedStyle, error: saveError } = await supabase
       .from("style_library")
       .insert({
@@ -272,7 +298,7 @@ serve(async (req) => {
         ai_analysis: analysis,
         inspiration_image_url: imageUrl,
         created_by: "wallet-alive-system"
-      })
+      } as any)
       .select()
       .single();
 
@@ -309,10 +335,9 @@ serve(async (req) => {
   }
 });
 
-function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletComponentStyles {
+function generateComprehensiveWalletStyles(analysis: DetailedAnalysis): WalletComponentStyles {
   const { colors, typography, designElements, composition, aiPetCharacteristics } = analysis;
   
-  // Helper functions for consistent styling
   const getBorderRadius = (size: 'small' | 'medium' | 'large') => {
     const radii = { small: '8px', medium: '12px', large: '20px' };
     return radii[size];
@@ -331,7 +356,55 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
     return `linear-gradient(135deg, ${from}, ${to})`;
   };
 
+  const getLayerBackground = (opacity: string) => {
+    return designElements.hasGradients 
+      ? getGradient(`${colors.background}${opacity}`, `${colors.primary}10`)
+      : `${colors.background}${opacity}`;
+  };
+
   return {
+    // Global and Layer Backgrounds
+    globalBackground: {
+      backgroundColor: colors.background,
+      backgroundImage: designElements.hasGradients 
+        ? getGradient(`${colors.background}F0`, `${colors.primary}05`)
+        : undefined,
+      fontFamily: typography.primary,
+      textColor: colors.text,
+    },
+    loginLayerBackground: {
+      backgroundColor: getLayerBackground('E6'),
+      backdropFilter: 'blur(12px)',
+      borderRadius: getBorderRadius('large'),
+      boxShadow: getShadow('medium'),
+    },
+    homeLayerBackground: {
+      backgroundColor: getLayerBackground('F0'),
+      backgroundImage: designElements.hasPatterns 
+        ? `radial-gradient(circle at 20% 50%, ${colors.primary}10 0%, transparent 50%), radial-gradient(circle at 80% 20%, ${colors.accent}08 0%, transparent 50%)`
+        : undefined,
+    },
+    swapLayerBackground: {
+      backgroundColor: getLayerBackground('E8'),
+      backgroundImage: designElements.hasGradients 
+        ? getGradient(`${colors.secondary}15`, `${colors.accent}10`)
+        : undefined,
+    },
+    appsLayerBackground: {
+      backgroundColor: getLayerBackground('EA'),
+      backgroundImage: designElements.hasGeometry 
+        ? `repeating-linear-gradient(45deg, transparent, transparent 10px, ${colors.primary}05 10px, ${colors.primary}05 20px)`
+        : undefined,
+    },
+    historyLayerBackground: {
+      backgroundColor: getLayerBackground('EC'),
+      backdropFilter: 'blur(8px)',
+    },
+    searchLayerBackground: {
+      backgroundColor: getLayerBackground('EE'),
+      backdropFilter: 'blur(16px)',
+    },
+    
     // Header Components
     headerContainer: {
       backgroundColor: `${colors.background}E6`,
@@ -364,7 +437,6 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
       fontSize: '20px',
       fontWeight: '600',
       textColor: colors.text,
-      textAlign: 'center',
     },
     passwordInput: {
       backgroundColor: `${colors.background}CC`,
@@ -408,6 +480,7 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
       padding: '20px',
       backdropFilter: 'blur(16px)',
       border: `1px solid ${colors.secondary}30`,
+      boxShadow: getShadow('medium'),
     },
     totalBalanceLabel: {
       fontFamily: typography.secondary || typography.primary,
@@ -425,6 +498,44 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
       fontSize: '16px',
       textColor: colors.accent,
     },
+
+    // Assets Section
+    assetsContainer: {
+      backgroundColor: `${colors.background}30`,
+      borderRadius: getBorderRadius('large'),
+      padding: '16px',
+      backdropFilter: 'blur(12px)',
+      border: `1px solid ${colors.secondary}25`,
+    },
+    assetItem: {
+      backgroundColor: `${colors.background}20`,
+      borderRadius: getBorderRadius('medium'),
+      padding: '12px',
+      border: `1px solid ${colors.secondary}20`,
+      transition: 'all 0.2s ease',
+      boxShadow: getShadow('subtle'),
+    },
+    assetIcon: {
+      backgroundColor: `${colors.primary}20`,
+      borderRadius: getBorderRadius('small'),
+      textColor: colors.primary,
+    },
+    assetName: {
+      fontFamily: typography.primary,
+      fontSize: '14px',
+      fontWeight: '600',
+      textColor: colors.text,
+    },
+    assetBalance: {
+      fontFamily: typography.primary,
+      fontSize: '14px',
+      textColor: colors.text,
+    },
+    assetValue: {
+      fontFamily: typography.primary,
+      fontSize: '12px',
+      textColor: colors.accent,
+    },
     
     // Action Buttons
     actionButtonsContainer: {
@@ -433,31 +544,37 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
     },
     sendButton: {
       backgroundColor: designElements.hasGradients 
+        ? getGradient(colors.primary, colors.secondary)
+        : colors.primary,
+      borderRadius: getBorderRadius('large'),
+      boxShadow: getShadow('medium'),
+      padding: '16px',
+      textColor: colors.background,
+    },
+    receiveButton: {
+      backgroundColor: designElements.hasGradients 
         ? getGradient(colors.secondary, colors.accent)
         : colors.secondary,
       borderRadius: getBorderRadius('large'),
       boxShadow: getShadow('medium'),
       padding: '16px',
+      textColor: colors.background,
     },
-    receiveButton: {
+    swapButton: {
       backgroundColor: designElements.hasGradients 
-        ? getGradient(colors.accent, colors.secondary)
+        ? getGradient(colors.accent, colors.primary)
         : colors.accent,
       borderRadius: getBorderRadius('large'),
       boxShadow: getShadow('medium'),
       padding: '16px',
-    },
-    swapButton: {
-      backgroundColor: `${colors.primary}80`,
-      borderRadius: getBorderRadius('large'),
-      boxShadow: getShadow('subtle'),
-      padding: '16px',
+      textColor: colors.background,
     },
     buyButton: {
-      backgroundColor: `${colors.accent}60`,
+      backgroundColor: `${colors.accent}80`,
       borderRadius: getBorderRadius('large'),
       boxShadow: getShadow('subtle'),
       padding: '16px',
+      textColor: colors.text,
     },
     
     // Transaction History
@@ -567,6 +684,75 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
       fontFamily: 'monospace',
       fontSize: '14px',
       padding: '12px',
+    },
+
+    // Swap Components
+    swapContainer: {
+      backgroundColor: `${colors.background}40`,
+      borderRadius: getBorderRadius('large'),
+      padding: '20px',
+      backdropFilter: 'blur(16px)',
+      border: `1px solid ${colors.secondary}30`,
+      boxShadow: getShadow('medium'),
+    },
+    swapCard: {
+      backgroundColor: `${colors.background}60`,
+      borderRadius: getBorderRadius('medium'),
+      padding: '16px',
+      border: `1px solid ${colors.secondary}25`,
+      boxShadow: getShadow('subtle'),
+    },
+    swapFromToken: {
+      backgroundColor: `${colors.primary}20`,
+      borderRadius: getBorderRadius('medium'),
+      padding: '12px',
+      border: `1px solid ${colors.primary}40`,
+    },
+    swapToToken: {
+      backgroundColor: `${colors.accent}20`,
+      borderRadius: getBorderRadius('medium'),
+      padding: '12px',
+      border: `1px solid ${colors.accent}40`,
+    },
+    swapArrow: {
+      backgroundColor: `${colors.secondary}30`,
+      borderRadius: '50%',
+      textColor: colors.secondary,
+    },
+    swapButton: {
+      backgroundColor: designElements.hasGradients 
+        ? getGradient(colors.accent, colors.primary)
+        : colors.accent,
+      borderRadius: getBorderRadius('large'),
+      boxShadow: getShadow('medium'),
+      padding: '16px',
+      textColor: colors.background,
+      fontWeight: '700',
+    },
+
+    // Apps Components
+    appsGrid: {
+      backgroundColor: 'transparent',
+      padding: '16px',
+    },
+    appCard: {
+      backgroundColor: `${colors.background}50`,
+      borderRadius: getBorderRadius('large'),
+      padding: '16px',
+      border: `1px solid ${colors.secondary}30`,
+      boxShadow: getShadow('subtle'),
+      transition: 'all 0.2s ease',
+    },
+    appIcon: {
+      backgroundColor: `${colors.primary}20`,
+      borderRadius: getBorderRadius('medium'),
+      textColor: colors.primary,
+    },
+    appName: {
+      fontFamily: typography.primary,
+      fontSize: '14px',
+      fontWeight: '600',
+      textColor: colors.text,
     },
     
     // AI Pet

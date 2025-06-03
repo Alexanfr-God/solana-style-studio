@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Upload, Save, Eye } from 'lucide-react';
@@ -27,12 +26,127 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   
   const { 
-    setWalletStyle, 
+    applyStyleSet,
     setAiPetZone, 
     setAiPetEmotion,
     setAiPetBodyType,
     triggerAiPetInteraction 
   } = useWalletCustomizationStore();
+
+  const applyComprehensiveStyles = (styles: WalletComponentStyles, analysis: DetailedImageAnalysis) => {
+    // Create comprehensive style set for the store
+    const comprehensiveStyleSet = {
+      global: {
+        backgroundColor: analysis.colors.background,
+        backgroundImage: styles.globalBackground?.backgroundImage,
+        fontFamily: analysis.typography.primary,
+        textColor: analysis.colors.text,
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+      },
+      header: {
+        backgroundColor: styles.headerContainer?.backgroundColor,
+        backdropFilter: styles.headerContainer?.backdropFilter,
+        borderRadius: styles.headerContainer?.borderRadius,
+        border: `1px solid ${analysis.colors.secondary}30`,
+        textColor: analysis.colors.text
+      },
+      buttons: {
+        backgroundColor: analysis.colors.primary,
+        gradient: styles.sendButton?.backgroundColor,
+        textColor: analysis.colors.background,
+        borderRadius: '12px',
+        boxShadow: `0 4px 12px ${analysis.colors.primary}30`
+      },
+      panels: {
+        backgroundColor: styles.balanceSection?.backgroundColor,
+        backdropFilter: styles.balanceSection?.backdropFilter,
+        borderRadius: '16px',
+        border: `1px solid ${analysis.colors.secondary}30`,
+        boxShadow: `0 2px 16px ${analysis.colors.primary}15`
+      },
+      navigation: {
+        backgroundColor: styles.bottomNavigation?.backgroundColor,
+        backdropFilter: styles.bottomNavigation?.backdropFilter,
+        borderRadius: '16px 16px 0 0',
+        border: `1px solid ${analysis.colors.secondary}30`
+      },
+      inputs: {
+        backgroundColor: styles.searchInput?.backgroundColor,
+        textColor: analysis.colors.text,
+        borderRadius: '8px',
+        border: `1px solid ${analysis.colors.secondary}40`,
+        backdropFilter: 'blur(8px)'
+      },
+      cards: {
+        backgroundColor: styles.assetItem?.backgroundColor,
+        borderRadius: '12px',
+        border: `1px solid ${analysis.colors.secondary}20`,
+        boxShadow: `0 2px 8px ${analysis.colors.primary}10`
+      },
+      overlays: {
+        backgroundColor: styles.accountSidebar?.backgroundColor,
+        backdropFilter: styles.accountSidebar?.backdropFilter,
+        borderRadius: '16px',
+        border: `1px solid ${analysis.colors.secondary}40`
+      },
+      containers: {
+        backgroundColor: styles.swapContainer?.backgroundColor,
+        borderRadius: '16px',
+        border: `1px solid ${analysis.colors.secondary}30`,
+        backdropFilter: 'blur(16px)'
+      },
+      searchInputs: {
+        backgroundColor: styles.searchInput?.backgroundColor,
+        textColor: analysis.colors.text,
+        borderRadius: '12px',
+        border: `2px solid ${analysis.colors.primary}30`,
+        backdropFilter: 'blur(8px)'
+      },
+      aiPet: {
+        zone: analysis.aiPetCharacteristics.recommendedZone as 'inside' | 'outside',
+        bodyType: analysis.aiPetCharacteristics.recommendedBodyType as 'phantom' | 'lottie',
+        emotion: analysis.aiPetCharacteristics.recommendedEmotion as any
+      }
+    };
+
+    // Apply the comprehensive style set
+    applyStyleSet(comprehensiveStyleSet);
+
+    // Apply CSS variables for dynamic styling
+    const root = document.documentElement;
+    root.style.setProperty('--wallet-bg-primary', analysis.colors.background);
+    root.style.setProperty('--wallet-bg-secondary', `${analysis.colors.background}80`);
+    root.style.setProperty('--wallet-color-primary', analysis.colors.primary);
+    root.style.setProperty('--wallet-color-secondary', analysis.colors.secondary);
+    root.style.setProperty('--wallet-color-accent', analysis.colors.accent);
+    root.style.setProperty('--wallet-color-text', analysis.colors.text);
+    root.style.setProperty('--wallet-font-primary', analysis.typography.primary);
+
+    // Apply layer-specific background styles
+    const layers = [
+      { selector: '[data-layer="login"]', style: styles.loginLayerBackground },
+      { selector: '[data-layer="home"]', style: styles.homeLayerBackground },
+      { selector: '[data-layer="swap"]', style: styles.swapLayerBackground },
+      { selector: '[data-layer="apps"]', style: styles.appsLayerBackground },
+      { selector: '[data-layer="history"]', style: styles.historyLayerBackground },
+      { selector: '[data-layer="search"]', style: styles.searchLayerBackground }
+    ];
+
+    layers.forEach(({ selector, style }) => {
+      const element = document.querySelector(selector) as HTMLElement;
+      if (element && style) {
+        Object.entries(style).forEach(([property, value]) => {
+          if (value && typeof value === 'string') {
+            const cssProperty = property.replace(/([A-Z])/g, '-$1').toLowerCase();
+            element.style.setProperty(cssProperty, value);
+          }
+        });
+      }
+    });
+
+    console.log('Comprehensive styles applied:', comprehensiveStyleSet);
+  };
 
   const handleAnalyzeAndApply = async () => {
     if (!uploadedImage) {
@@ -62,19 +176,10 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
         triggerAiPetInteraction();
       }
       
-      // Apply global wallet styles - fix the background color type issue
-      const backgroundColor = Array.isArray(analysis.colors.background) 
-        ? analysis.colors.background[0] 
-        : analysis.colors.background;
+      // Apply comprehensive styles
+      applyComprehensiveStyles(walletStyles, analysis);
       
-      setWalletStyle({
-        backgroundColor: backgroundColor,
-        primaryColor: analysis.colors.primary,
-        font: analysis.typography.primary,
-        image: uploadedImage
-      });
-      
-      toast.success(`🎨 Analysis complete! Style "${analysis.style}" applied to all components`);
+      toast.success(`🎨 Analysis complete! Style "${analysis.style}" applied to all wallet components including backgrounds and layers`);
       
       // Notify parent component
       if (onStylesGenerated) {
@@ -131,7 +236,7 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
         </div>
         
         <p className="text-gray-300 text-sm mb-4">
-          Upload an image for detailed analysis and apply styles to all wallet components
+          Upload an image for detailed analysis and apply comprehensive styles to all wallet components, layers, and backgrounds
         </p>
 
         {!uploadedImage ? (
@@ -157,12 +262,12 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
               {isAnalyzing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Analyzing in detail...
+                  Analyzing and applying styles...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Apply Detailed Analysis
+                  Apply Comprehensive Analysis
                 </>
               )}
             </Button>
@@ -203,6 +308,8 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
               {renderColorPalette(lastAnalysis.colors)}
               
               <div className="mt-2 pt-2 border-t border-gray-600">
+                <p><span className="text-green-400">✅ Backgrounds:</span> All layers styled</p>
+                <p><span className="text-green-400">✅ Components:</span> Assets, Swap, Apps styled</p>
                 <p><span className="text-blue-400">AI Pet Zone:</span> {lastAnalysis.aiPetCharacteristics.recommendedZone}</p>
                 <p><span className="text-blue-400">AI Pet Type:</span> {lastAnalysis.aiPetCharacteristics.recommendedBodyType}</p>
                 <p><span className="text-blue-400">AI Pet Emotion:</span> {lastAnalysis.aiPetCharacteristics.recommendedEmotion}</p>
@@ -247,6 +354,16 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
                   <span className="text-pink-400">Patterns:</span> {lastAnalysis.patterns.join(', ')}
                 </div>
               )}
+
+              <div className="mt-2 pt-2 border-t border-gray-600">
+                <span className="text-cyan-400">Applied Styles:</span>
+                <ul className="ml-2 space-y-1">
+                  <li>• Layer backgrounds: Login, Home, Swap, Apps, History, Search</li>
+                  <li>• Component styling: Assets, Transactions, Navigation</li>
+                  <li>• CSS variables: Dynamic color theming</li>
+                  <li>• Global theming: Fonts, borders, shadows</li>
+                </ul>
+              </div>
             </div>
           </div>
         )}
