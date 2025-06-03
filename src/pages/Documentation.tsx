@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
@@ -154,28 +155,53 @@ const sections = [{
   id: 'mint',
   title: 'How Mint Works',
   content: <>
-        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🎨 How Minting Will Work</h3>
         
-        <p className="mb-4">When a user finalizes their wallet skin design, it can be minted as a fully functional NFT with one click.</p>
+        <p className="mb-4">When a user finalizes their wallet design in the WCC editor, they'll be able to mint it as a fully functional NFT — unique, dynamic, and ready for use in the Web3 space.</p>
         
-        <p className="mb-4"><strong>Each NFT includes:</strong></p>
+        <p className="mb-4">Each wallet skin NFT includes two key layers:</p>
+        
+        <p className="mb-4"><strong>🖼️ Visual Layer (PNG)</strong></p>
+        <p className="mb-4">This is the skin's artwork — the cover image displayed on marketplaces, collections, and galleries. It shows exactly how the wallet interface will look.</p>
+        
+        <p className="mb-4"><strong>🧬 Data Layer (JSON)</strong></p>
+        <p className="mb-4">Embedded inside the NFT is a structured data file that defines the entire skin:</p>
         
         <ul className="list-disc pl-5 mb-4 space-y-2">
-          <li><strong>🖼️ Visual Layer (PNG):</strong> What users and marketplaces see — the static design preview.</li>
-          <li><strong>🧬 Data Layer (JSON):</strong> Embedded inside the NFT — includes style metadata such as background color, text color, fonts, layout, and theme version (v1, v2, or v3).</li>
+          <li>Background and text colors</li>
+          <li>Fonts and button styles</li>
+          <li>Element positioning</li>
+          <li>Mask design (v3) or full UI structure (v2)</li>
+          <li>Animations, icons, and theme logic</li>
+          <li>Theme version (v2 or v3 only)</li>
         </ul>
         
-        <p className="mb-4">This dual-layer approach allows the skin to function like a dynamic theme:</p>
+        <p className="mb-4">This JSON layer isn't just metadata — it's a blueprint for rendering a live, functional wallet interface.</p>
+        
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🛠️ Minting Options</h3>
+        <p className="mb-4">Users will be able to choose between:</p>
         
         <ul className="list-disc pl-5 mb-4 space-y-2">
-          <li>On marketplaces, it behaves like a visual collectible.</li>
-          <li>Inside supported wallets and apps, it <strong>unpacks into a living UI skin</strong> powered by the metadata.</li>
+          <li><strong>🔹 1-of-1 unique skin</strong> — a one-of-a-kind wallet experience</li>
+          <li><strong>🔹 Mass minting (e.g., 10,000 editions)</strong> — ideal for community drops, collabs, and meme-based projects</li>
         </ul>
         
-        <p className="mb-4">We are building the infrastructure to render these skins live inside wallet interfaces, unlocking utility far beyond static images.</p>
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🌐 Custom Collection Pages</h3>
+        <p className="mb-4">For large-scale mints, WCC will automatically generate a public mint page, where anyone can browse and mint a skin from the collection.</p>
+        
+        <p className="mb-4">Users can even set a custom domain for their drop, such as:</p>
+        <code className="block bg-black/30 p-2 rounded mb-4">wocacu/collection/solana.app</code>
+        
+        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🚀 What's Next</h3>
+        <p className="mb-4">Our goal is to build the infrastructure where these NFTs aren't just collectibles —
+        they become live wallet themes, fully usable inside supported Web3 wallets.</p>
+        
+        <p className="mb-4">On marketplaces, they act as visual assets.<br />
+        Inside wallets, they unlock identity, emotion, and true personalization.</p>
         
         <p className="font-semibold text-lg text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-          This isn't just art — it's <strong>programmable wallet fashion</strong>.
+          This isn't just art.<br />
+          This is <strong>programmable wallet fashion</strong>.
         </p>
       </>
 }, {
