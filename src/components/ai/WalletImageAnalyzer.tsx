@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Upload, Save, Eye } from 'lucide-react';
+import { Sparkles, Upload, Save, Eye, Users } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { 
   analyzeWalletImage, 
@@ -10,6 +9,7 @@ import {
   type WalletComponentStyles,
   type DetailedImageAnalysis 
 } from '@/services/walletImageAnalysisService';
+import { generateHeroesForAllLayers } from '@/services/heroGenerationService';
 import { toast } from 'sonner';
 
 interface WalletImageAnalyzerProps {
@@ -22,6 +22,7 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
   onStylesGenerated 
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGeneratingHeroes, setIsGeneratingHeroes] = useState(false);
   const [lastAnalysis, setLastAnalysis] = useState<DetailedImageAnalysis | null>(null);
   const [lastStyles, setLastStyles] = useState<WalletComponentStyles | null>(null);
   const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
@@ -31,7 +32,8 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
     setAiPetZone, 
     setAiPetEmotion,
     setAiPetBodyType,
-    triggerAiPetInteraction 
+    triggerAiPetInteraction,
+    setAllHeroes
   } = useWalletCustomizationStore();
 
   const handleAnalyzeAndApply = async () => {
@@ -62,7 +64,7 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
         triggerAiPetInteraction();
       }
       
-      // Apply global wallet styles - fix the background color type issue
+      // Apply global wallet styles
       const backgroundColor = Array.isArray(analysis.colors.background) 
         ? analysis.colors.background[0] 
         : analysis.colors.background;
@@ -86,6 +88,39 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
       toast.error('Error analyzing image. Please try a different image.');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleGenerateHeroes = async () => {
+    if (!lastAnalysis) {
+      toast.error('Please analyze an image first');
+      return;
+    }
+
+    setIsGeneratingHeroes(true);
+    try {
+      toast.info('🎭 Generating hero characters for all wallet layers...');
+      
+      const heroes = await generateHeroesForAllLayers({
+        style: lastAnalysis.style,
+        mood: lastAnalysis.mood,
+        colors: {
+          primary: lastAnalysis.colors.primary,
+          secondary: lastAnalysis.colors.secondary,
+          accent: lastAnalysis.colors.accent
+        }
+      });
+
+      setAllHeroes(heroes);
+      
+      const heroCount = Object.keys(heroes).length;
+      toast.success(`🎉 Generated ${heroCount} hero characters for wallet layers!`);
+      
+    } catch (error) {
+      console.error('Hero generation error:', error);
+      toast.error('Error generating heroes. Please try again.');
+    } finally {
+      setIsGeneratingHeroes(false);
     }
   };
 
@@ -166,6 +201,26 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
                 </>
               )}
             </Button>
+
+            {lastAnalysis && (
+              <Button 
+                onClick={handleGenerateHeroes}
+                disabled={isGeneratingHeroes}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                {isGeneratingHeroes ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Generating Heroes...
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-4 h-4 mr-2" />
+                    Generate Heroes for All Layers
+                  </>
+                )}
+              </Button>
+            )}
 
             {lastStyles && lastAnalysis && (
               <div className="flex space-x-2">
