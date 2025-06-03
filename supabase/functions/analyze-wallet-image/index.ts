@@ -49,6 +49,15 @@ interface DetailedAnalysis {
 }
 
 interface WalletComponentStyles {
+  // Global Backgrounds
+  globalBackground: ComponentStyle;
+  loginLayerBackground: ComponentStyle;
+  homeLayerBackground: ComponentStyle;
+  swapLayerBackground: ComponentStyle;
+  appsLayerBackground: ComponentStyle;
+  historyLayerBackground: ComponentStyle;
+  searchLayerBackground: ComponentStyle;
+  
   // Header Components
   headerContainer: ComponentStyle;
   walletTitle: ComponentStyle;
@@ -69,12 +78,34 @@ interface WalletComponentStyles {
   balanceAmount: ComponentStyle;
   balanceUSD: ComponentStyle;
   
+  // Assets Components
+  assetContainer: ComponentStyle;
+  assetTitle: ComponentStyle;
+  assetItem: ComponentStyle;
+  assetIcon: ComponentStyle;
+  assetBalance: ComponentStyle;
+  assetValue: ComponentStyle;
+  
   // Action Buttons
   actionButtonsContainer: ComponentStyle;
   sendButton: ComponentStyle;
   receiveButton: ComponentStyle;
   swapButton: ComponentStyle;
   buyButton: ComponentStyle;
+  
+  // Swap Components
+  swapContainer: ComponentStyle;
+  swapTitle: ComponentStyle;
+  swapFromToken: ComponentStyle;
+  swapToToken: ComponentStyle;
+  swapExchangeButton: ComponentStyle;
+  swapAmountInput: ComponentStyle;
+  
+  // Apps Components
+  appsContainer: ComponentStyle;
+  appsTitle: ComponentStyle;
+  collectibleGrid: ComponentStyle;
+  collectibleItem: ComponentStyle;
   
   // Transaction History
   transactionContainer: ComponentStyle;
@@ -131,6 +162,7 @@ interface ComponentStyle {
   padding?: string;
   margin?: string;
   animation?: string;
+  backgroundImage?: string;
 }
 
 serve(async (req) => {
@@ -150,41 +182,42 @@ serve(async (req) => {
       throw new Error("OpenAI API key not found");
     }
 
-    console.log("Starting detailed wallet image analysis...");
+    console.log("Starting comprehensive wallet image analysis...");
 
-    // Detailed analysis prompt for GPT-4o with vision
+    // Enhanced analysis prompt for complete wallet styling
     const analysisPrompt = `
-    Analyze this image in extreme detail for wallet UI styling. I need a comprehensive analysis covering:
+    Analyze this image comprehensively for complete wallet UI styling. Extract every detail for creating a unified design system:
 
-    VISUAL ANALYSIS:
-    1. Color Palette: Extract all dominant colors, their hex codes, and relationships
-    2. Typography: What fonts would match this aesthetic? Weight, size recommendations
-    3. Lighting & Mood: Bright/dark, warm/cool, energetic/calm
-    4. Textures & Patterns: Any visible textures, patterns, geometric elements
-    5. Composition: Balance, focal points, visual hierarchy
-    6. Design Elements: Gradients, shadows, borders, transparency effects
+    COMPREHENSIVE VISUAL ANALYSIS:
+    1. Color Palette: Extract primary, secondary, accent, background, and text colors with exact hex codes
+    2. Typography: Font families that match this aesthetic, weights, and size hierarchy
+    3. Lighting & Atmosphere: Overall brightness, warmth, energy level
+    4. Textures & Materials: Surface qualities, patterns, geometric elements
+    5. Composition: Visual balance, focal points, depth, layering
+    6. Design Language: Modern/retro/futuristic, minimalist/ornate, organic/geometric
+    7. Background Elements: How backgrounds should look for different sections
 
-    STYLE CHARACTERISTICS:
-    1. Overall aesthetic style (modern, retro, futuristic, organic, etc.)
-    2. Mood and emotional tone
-    3. Level of complexity (minimal, moderate, complex)
-    4. Visual weight and contrast levels
+    WALLET-SPECIFIC STYLING:
+    1. Layer Backgrounds: Different background treatments for Login, Home, Swap, Apps, History
+    2. Component Hierarchy: How different UI elements should be styled relative to each other
+    3. Interactive Elements: Button styles, input fields, navigation elements
+    4. Content Areas: Asset lists, transaction items, collectibles display
 
-    AI PET RECOMMENDATIONS:
-    1. What emotion would fit this style? (idle, happy, excited, sleepy, suspicious, sad, wink)
-    2. Should the pet be inside or outside the wallet?
-    3. Which body type fits better? (phantom ghost-like, lottie fluid)
-    4. Animation style recommendations
+    AI PET INTEGRATION:
+    1. Pet emotion that matches the style
+    2. Inside or outside wallet placement
+    3. Phantom or Lottie body type recommendation
+    4. Animation style (smooth/bouncy/energetic/calm)
 
     Return ONLY valid JSON with this exact structure:
     {
       "style": "concise style name",
-      "mood": "overall mood description",
+      "mood": "overall mood description", 
       "colors": {
-        "dominant": ["color1", "color2", "color3"],
+        "dominant": ["#hex1", "#hex2", "#hex3"],
         "primary": "#hex",
-        "secondary": "#hex", 
-        "accent": "#hex",
+        "secondary": "#hex",
+        "accent": "#hex", 
         "background": "#hex",
         "text": "#hex"
       },
@@ -195,12 +228,12 @@ serve(async (req) => {
         "size": "small/medium/large"
       },
       "lighting": "bright/medium/dark",
-      "contrast": "low/medium/high",
+      "contrast": "low/medium/high", 
       "textures": ["texture1", "texture2"],
       "patterns": ["pattern1", "pattern2"],
       "composition": {
         "balance": "centered/asymmetric/dynamic",
-        "focusArea": "center/top/bottom/left/right",
+        "focusArea": "center/top/bottom/left/right", 
         "complexity": "minimal/moderate/complex"
       },
       "designElements": {
@@ -211,15 +244,15 @@ serve(async (req) => {
         "hasShadows": true/false
       },
       "aiPetCharacteristics": {
-        "recommendedEmotion": "emotion name",
+        "recommendedEmotion": "idle/happy/excited/sleepy/suspicious/sad/wink",
         "recommendedZone": "inside/outside",
-        "recommendedBodyType": "phantom/lottie",
+        "recommendedBodyType": "phantom/lottie", 
         "animationStyle": "smooth/bouncy/energetic/calm"
       }
     }
     `;
 
-    // Call GPT-4o with vision for analysis
+    // Call GPT-4o with vision for comprehensive analysis
     const analysisResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -237,7 +270,7 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 1500
+        max_tokens: 2000
       }),
     });
 
@@ -253,17 +286,17 @@ serve(async (req) => {
     analysisContent = analysisContent.replace(/```json|```/g, "").trim();
     const analysis: DetailedAnalysis = JSON.parse(analysisContent);
 
-    console.log("Analysis completed:", analysis);
+    console.log("Comprehensive analysis completed:", analysis);
 
-    // Generate comprehensive wallet component styles
-    const walletStyles = generateWalletComponentStyles(analysis);
+    // Generate complete wallet component styles
+    const walletStyles = generateComprehensiveWalletStyles(analysis);
 
     // Create Supabase client and save analysis
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Save to style_library for future reference
+    // Save to style_library
     const { data: savedStyle, error: saveError } = await supabase
       .from("style_library")
       .insert({
@@ -271,7 +304,7 @@ serve(async (req) => {
         style_data: walletStyles,
         ai_analysis: analysis,
         inspiration_image_url: imageUrl,
-        created_by: "wallet-alive-system"
+        created_by: "wallet-comprehensive-system"
       })
       .select()
       .single();
@@ -279,7 +312,7 @@ serve(async (req) => {
     if (saveError) {
       console.error("Error saving style:", saveError);
     } else {
-      console.log("Style saved successfully:", savedStyle?.id);
+      console.log("Comprehensive style saved successfully:", savedStyle?.id);
     }
 
     return new Response(
@@ -295,7 +328,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error in analyze-wallet-image function:", error);
+    console.error("Error in comprehensive wallet analysis:", error);
     return new Response(
       JSON.stringify({
         success: false,
@@ -309,10 +342,10 @@ serve(async (req) => {
   }
 });
 
-function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletComponentStyles {
-  const { colors, typography, designElements, composition, aiPetCharacteristics } = analysis;
+function generateComprehensiveWalletStyles(analysis: DetailedAnalysis): WalletComponentStyles {
+  const { colors, typography, designElements, composition, lighting, aiPetCharacteristics } = analysis;
   
-  // Helper functions for consistent styling
+  // Helper functions for comprehensive styling
   const getBorderRadius = (size: 'small' | 'medium' | 'large') => {
     const radii = { small: '8px', medium: '12px', large: '20px' };
     return radii[size];
@@ -327,11 +360,72 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
     return shadows[intensity];
   };
   
-  const getGradient = (from: string, to: string) => {
-    return `linear-gradient(135deg, ${from}, ${to})`;
+  const getGradient = (from: string, to: string, direction = '135deg') => {
+    return `linear-gradient(${direction}, ${from}, ${to})`;
+  };
+
+  const getBackgroundTreatment = (layer: string) => {
+    const baseColor = colors.background;
+    const accent = colors.accent;
+    
+    switch (layer) {
+      case 'login':
+        return designElements.hasGradients 
+          ? getGradient(baseColor, `${accent}20`)
+          : `${baseColor}F0`;
+      case 'home':
+        return designElements.hasGradients
+          ? getGradient(`${baseColor}E0`, `${colors.primary}10`)
+          : `${baseColor}E8`;
+      case 'swap':
+        return designElements.hasGradients
+          ? getGradient(`${colors.secondary}15`, `${accent}15`)
+          : `${baseColor}E5`;
+      case 'apps':
+        return designElements.hasGradients
+          ? getGradient(`${accent}10`, `${colors.primary}10`)
+          : `${baseColor}EA`;
+      default:
+        return `${baseColor}E0`;
+    }
   };
 
   return {
+    // Global Backgrounds - Enhanced for each layer
+    globalBackground: {
+      backgroundColor: colors.background,
+      backgroundImage: designElements.hasGradients 
+        ? getGradient(colors.background, `${colors.primary}15`)
+        : undefined,
+      fontFamily: typography.primary,
+      textColor: colors.text,
+    },
+    loginLayerBackground: {
+      backgroundColor: getBackgroundTreatment('login'),
+      backdropFilter: 'blur(16px)',
+      borderRadius: getBorderRadius('large'),
+    },
+    homeLayerBackground: {
+      backgroundColor: getBackgroundTreatment('home'),
+      backdropFilter: 'blur(12px)',
+    },
+    swapLayerBackground: {
+      backgroundColor: getBackgroundTreatment('swap'),
+      backdropFilter: 'blur(14px),
+    },
+    appsLayerBackground: {
+      backgroundColor: getBackgroundTreatment('apps'),
+      backdropFilter: 'blur(10px)',
+    },
+    historyLayerBackground: {
+      backgroundColor: getBackgroundTreatment('history'),
+      backdropFilter: 'blur(12px)',
+    },
+    searchLayerBackground: {
+      backgroundColor: getBackgroundTreatment('search'),
+      backdropFilter: 'blur(16px)',
+    },
+    
     // Header Components
     headerContainer: {
       backgroundColor: `${colors.background}E6`,
@@ -353,18 +447,16 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
     
     // Login Layer
     loginContainer: {
-      backgroundColor: designElements.hasGradients 
-        ? getGradient(colors.background, `${colors.primary}20`)
-        : colors.background,
+      backgroundColor: getBackgroundTreatment('login'),
       borderRadius: getBorderRadius('large'),
       padding: '24px',
+      boxShadow: getShadow('medium'),
     },
     passwordTitle: {
       fontFamily: typography.primary,
       fontSize: '20px',
       fontWeight: '600',
       textColor: colors.text,
-      textAlign: 'center',
     },
     passwordInput: {
       backgroundColor: `${colors.background}CC`,
@@ -408,6 +500,7 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
       padding: '20px',
       backdropFilter: 'blur(16px)',
       border: `1px solid ${colors.secondary}30`,
+      boxShadow: getShadow('subtle'),
     },
     totalBalanceLabel: {
       fontFamily: typography.secondary || typography.primary,
@@ -425,6 +518,46 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
       fontSize: '16px',
       textColor: colors.accent,
     },
+
+    // Assets Components - New comprehensive styling
+    assetContainer: {
+      backgroundColor: `${colors.background}30`,
+      borderRadius: getBorderRadius('medium'),
+      backdropFilter: 'blur(8px)',
+      padding: '16px',
+      border: `1px solid ${colors.secondary}20`,
+    },
+    assetTitle: {
+      fontFamily: typography.primary,
+      fontSize: '18px',
+      fontWeight: '600',
+      textColor: colors.text,
+      marginBottom: '12px',
+    },
+    assetItem: {
+      backgroundColor: `${colors.background}40`,
+      borderRadius: getBorderRadius('small'),
+      border: `1px solid ${colors.secondary}20`,
+      padding: '12px',
+      transition: 'all 0.2s ease',
+      backdropFilter: 'blur(4px)',
+    },
+    assetIcon: {
+      borderRadius: '50%',
+      backgroundColor: `${colors.accent}20`,
+      padding: '8px',
+    },
+    assetBalance: {
+      fontFamily: typography.primary,
+      fontSize: '16px',
+      fontWeight: '600',
+      textColor: colors.text,
+    },
+    assetValue: {
+      fontFamily: typography.primary,
+      fontSize: '14px',
+      textColor: `${colors.text}70`,
+    },
     
     // Action Buttons
     actionButtonsContainer: {
@@ -438,6 +571,8 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
       borderRadius: getBorderRadius('large'),
       boxShadow: getShadow('medium'),
       padding: '16px',
+      textColor: colors.background,
+      fontWeight: '600',
     },
     receiveButton: {
       backgroundColor: designElements.hasGradients 
@@ -446,18 +581,94 @@ function generateWalletComponentStyles(analysis: DetailedAnalysis): WalletCompon
       borderRadius: getBorderRadius('large'),
       boxShadow: getShadow('medium'),
       padding: '16px',
+      textColor: colors.background,
+      fontWeight: '600',
     },
     swapButton: {
       backgroundColor: `${colors.primary}80`,
       borderRadius: getBorderRadius('large'),
       boxShadow: getShadow('subtle'),
       padding: '16px',
+      textColor: colors.text,
     },
     buyButton: {
       backgroundColor: `${colors.accent}60`,
       borderRadius: getBorderRadius('large'),
       boxShadow: getShadow('subtle'),
       padding: '16px',
+      textColor: colors.text,
+    },
+
+    // Swap Components - Comprehensive styling
+    swapContainer: {
+      backgroundColor: `${colors.background}50`,
+      borderRadius: getBorderRadius('large'),
+      padding: '20px',
+      backdropFilter: 'blur(12px)',
+      border: `1px solid ${colors.secondary}30`,
+      boxShadow: getShadow('medium'),
+    },
+    swapTitle: {
+      fontFamily: typography.primary,
+      fontSize: '20px',
+      fontWeight: '600',
+      textColor: colors.text,
+      marginBottom: '16px',
+    },
+    swapFromToken: {
+      backgroundColor: `${colors.background}60`,
+      borderRadius: getBorderRadius('medium'),
+      padding: '16px',
+      border: `1px solid ${colors.secondary}40`,
+      marginBottom: '8px',
+    },
+    swapToToken: {
+      backgroundColor: `${colors.background}60`,
+      borderRadius: getBorderRadius('medium'),
+      padding: '16px',
+      border: `1px solid ${colors.secondary}40`,
+      marginTop: '8px',
+    },
+    swapExchangeButton: {
+      backgroundColor: colors.accent,
+      borderRadius: '50%',
+      padding: '12px',
+      boxShadow: getShadow('medium'),
+      textColor: colors.background,
+    },
+    swapAmountInput: {
+      backgroundColor: `${colors.background}40`,
+      border: `1px solid ${colors.secondary}50`,
+      borderRadius: getBorderRadius('medium'),
+      textColor: colors.text,
+      fontFamily: typography.primary,
+      fontSize: '18px',
+      padding: '16px',
+    },
+
+    // Apps Components
+    appsContainer: {
+      backgroundColor: `${colors.background}20`,
+      borderRadius: getBorderRadius('medium'),
+      padding: '16px',
+    },
+    appsTitle: {
+      fontFamily: typography.primary,
+      fontSize: '18px',
+      fontWeight: '600',
+      textColor: colors.text,
+    },
+    collectibleGrid: {
+      backgroundColor: 'transparent',
+      padding: '8px',
+    },
+    collectibleItem: {
+      backgroundColor: `${colors.background}40`,
+      borderRadius: getBorderRadius('medium'),
+      padding: '12px',
+      border: `1px solid ${colors.secondary}20`,
+      transition: 'all 0.2s ease',
+      boxShadow: getShadow('subtle'),
     },
     
     // Transaction History

@@ -43,6 +43,15 @@ export interface DetailedImageAnalysis {
 }
 
 export interface WalletComponentStyles {
+  // Global Backgrounds - Added comprehensive layer backgrounds
+  globalBackground: ComponentStyle;
+  loginLayerBackground: ComponentStyle;
+  homeLayerBackground: ComponentStyle;
+  swapLayerBackground: ComponentStyle;
+  appsLayerBackground: ComponentStyle;
+  historyLayerBackground: ComponentStyle;
+  searchLayerBackground: ComponentStyle;
+  
   // Header Components
   headerContainer: ComponentStyle;
   walletTitle: ComponentStyle;
@@ -62,6 +71,14 @@ export interface WalletComponentStyles {
   totalBalanceLabel: ComponentStyle;
   balanceAmount: ComponentStyle;
   balanceUSD: ComponentStyle;
+
+  // Assets Components - Added comprehensive asset styling
+  assetContainer: ComponentStyle;
+  assetTitle: ComponentStyle;
+  assetItem: ComponentStyle;
+  assetIcon: ComponentStyle;
+  assetBalance: ComponentStyle;
+  assetValue: ComponentStyle;
   
   // Action Buttons
   actionButtonsContainer: ComponentStyle;
@@ -69,6 +86,20 @@ export interface WalletComponentStyles {
   receiveButton: ComponentStyle;
   swapButton: ComponentStyle;
   buyButton: ComponentStyle;
+
+  // Swap Components - Added comprehensive swap styling
+  swapContainer: ComponentStyle;
+  swapTitle: ComponentStyle;
+  swapFromToken: ComponentStyle;
+  swapToToken: ComponentStyle;
+  swapExchangeButton: ComponentStyle;
+  swapAmountInput: ComponentStyle;
+
+  // Apps Components - Added apps styling
+  appsContainer: ComponentStyle;
+  appsTitle: ComponentStyle;
+  collectibleGrid: ComponentStyle;
+  collectibleItem: ComponentStyle;
   
   // Transaction History
   transactionContainer: ComponentStyle;
@@ -125,6 +156,7 @@ export interface ComponentStyle {
   padding?: string;
   margin?: string;
   animation?: string;
+  backgroundImage?: string;
 }
 
 export interface WalletImageAnalysisResult {
@@ -137,7 +169,7 @@ export interface WalletImageAnalysisResult {
 
 export const analyzeWalletImage = async (imageUrl: string): Promise<WalletImageAnalysisResult> => {
   try {
-    console.log('Starting wallet image analysis for:', imageUrl);
+    console.log('Starting comprehensive wallet image analysis for:', imageUrl);
     
     const { data, error } = await supabase.functions.invoke('analyze-wallet-image', {
       body: { imageUrl }
@@ -148,7 +180,7 @@ export const analyzeWalletImage = async (imageUrl: string): Promise<WalletImageA
       throw new Error(error.message);
     }
 
-    console.log('Analysis completed successfully:', data);
+    console.log('Comprehensive analysis completed successfully:', data);
     return data as WalletImageAnalysisResult;
     
   } catch (error) {
