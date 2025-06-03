@@ -66,7 +66,7 @@ const WalletPreviewContainer = () => {
 
   const renderLoginScreen = () => (
     <div className="relative p-6" style={{
-      backgroundColor: '#181818',
+      backgroundColor: walletStyle.backgroundColor || '#181818',
       height: '541px',
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
