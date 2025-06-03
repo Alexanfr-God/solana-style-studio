@@ -192,7 +192,7 @@ export const saveWalletStyleToLibrary = async (
     const { data, error } = await supabase
       .from('style_library')
       .insert({
-        style_name: styleName,  // Fix: use style_name instead of styleName
+        style_name: styleName,
         style_data: styles,
         ai_analysis: analysis,
         inspiration_image_url: imageUrl,
