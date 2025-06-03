@@ -36,18 +36,18 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
 
   const handleAnalyzeAndApply = async () => {
     if (!uploadedImage) {
-      toast.error('Пожалуйста, загрузите изображение для анализа');
+      toast.error('Please upload an image for analysis');
       return;
     }
 
     setIsAnalyzing(true);
     try {
-      toast.info('🔍 Начинаю детальный анализ изображения...');
+      toast.info('🔍 Starting detailed image analysis...');
       
       const result = await analyzeWalletImage(uploadedImage);
       
       if (!result.success) {
-        throw new Error(result.error || 'Анализ не удался');
+        throw new Error(result.error || 'Analysis failed');
       }
 
       const { analysis, walletStyles } = result;
@@ -74,7 +74,7 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
         image: uploadedImage
       });
       
-      toast.success(`🎨 Анализ завершен! Стиль "${analysis.style}" применен ко всем компонентам`);
+      toast.success(`🎨 Analysis complete! Style "${analysis.style}" applied to all components`);
       
       // Notify parent component
       if (onStylesGenerated) {
@@ -82,8 +82,8 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
       }
       
     } catch (error) {
-      console.error('Ошибка анализа:', error);
-      toast.error('Ошибка при анализе изображения. Попробуйте другое изображение.');
+      console.error('Analysis error:', error);
+      toast.error('Error analyzing image. Please try a different image.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -91,23 +91,23 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
 
   const handleSaveToLibrary = async () => {
     if (!lastStyles || !lastAnalysis || !uploadedImage) {
-      toast.error('Нет данных для сохранения');
+      toast.error('No data to save');
       return;
     }
 
     try {
       const styleName = `${lastAnalysis.style} - ${lastAnalysis.mood}`;
       await saveWalletStyleToLibrary(styleName, lastStyles, lastAnalysis, uploadedImage);
-      toast.success('🎉 Стиль сохранен в библиотеку!');
+      toast.success('🎉 Style saved to library!');
     } catch (error) {
-      console.error('Ошибка сохранения:', error);
-      toast.error('Ошибка при сохранении стиля');
+      console.error('Save error:', error);
+      toast.error('Error saving style');
     }
   };
 
   const renderColorPalette = (colors: DetailedImageAnalysis['colors']) => (
     <div className="flex items-center space-x-1">
-      <span className="text-purple-400 text-xs">Палитра:</span>
+      <span className="text-purple-400 text-xs">Palette:</span>
       {Object.entries(colors).slice(0, 5).map(([key, color], index) => {
         const colorValue = Array.isArray(color) ? color[0] : color;
         return (
@@ -131,14 +131,14 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
         </div>
         
         <p className="text-gray-300 text-sm mb-4">
-          Загрузите изображение для детального анализа и применения стилей ко всем компонентам кошелька
+          Upload an image for detailed analysis and apply styles to all wallet components
         </p>
 
         {!uploadedImage ? (
           <div className="flex items-center justify-center p-6 border-2 border-dashed border-gray-600 rounded-lg">
             <div className="text-center">
               <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-400 text-sm">Загрузите изображение выше</p>
+              <p className="text-gray-400 text-sm">Upload an image above</p>
             </div>
           </div>
         ) : (
@@ -157,12 +157,12 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
               {isAnalyzing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Анализирую детально...
+                  Analyzing in detail...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Применить детальный анализ
+                  Apply Detailed Analysis
                 </>
               )}
             </Button>
@@ -175,7 +175,7 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
                   className="flex-1 border-green-500/50 text-green-300 hover:bg-green-500/10"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Сохранить
+                  Save
                 </Button>
                 
                 <Button 
@@ -184,7 +184,7 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
                   className="flex-1 border-blue-500/50 text-blue-300 hover:bg-blue-500/10"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  {showDetailedAnalysis ? 'Скрыть' : 'Детали'}
+                  {showDetailedAnalysis ? 'Hide' : 'Details'}
                 </Button>
               </div>
             )}
@@ -193,19 +193,19 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
 
         {lastAnalysis && (
           <div className="mt-4 p-3 bg-black/20 rounded-lg">
-            <h4 className="text-sm font-medium text-white mb-2">Результат анализа:</h4>
+            <h4 className="text-sm font-medium text-white mb-2">Analysis Result:</h4>
             <div className="text-xs text-gray-300 space-y-1">
-              <p><span className="text-purple-400">Стиль:</span> {lastAnalysis.style}</p>
-              <p><span className="text-purple-400">Настроение:</span> {lastAnalysis.mood}</p>
-              <p><span className="text-purple-400">Шрифт:</span> {lastAnalysis.typography.primary}</p>
-              <p><span className="text-purple-400">Освещение:</span> {lastAnalysis.lighting}</p>
-              <p><span className="text-purple-400">Контраст:</span> {lastAnalysis.contrast}</p>
+              <p><span className="text-purple-400">Style:</span> {lastAnalysis.style}</p>
+              <p><span className="text-purple-400">Mood:</span> {lastAnalysis.mood}</p>
+              <p><span className="text-purple-400">Font:</span> {lastAnalysis.typography.primary}</p>
+              <p><span className="text-purple-400">Lighting:</span> {lastAnalysis.lighting}</p>
+              <p><span className="text-purple-400">Contrast:</span> {lastAnalysis.contrast}</p>
               {renderColorPalette(lastAnalysis.colors)}
               
               <div className="mt-2 pt-2 border-t border-gray-600">
-                <p><span className="text-blue-400">AI Pet зона:</span> {lastAnalysis.aiPetCharacteristics.recommendedZone}</p>
-                <p><span className="text-blue-400">AI Pet тип:</span> {lastAnalysis.aiPetCharacteristics.recommendedBodyType}</p>
-                <p><span className="text-blue-400">AI Pet эмоция:</span> {lastAnalysis.aiPetCharacteristics.recommendedEmotion}</p>
+                <p><span className="text-blue-400">AI Pet Zone:</span> {lastAnalysis.aiPetCharacteristics.recommendedZone}</p>
+                <p><span className="text-blue-400">AI Pet Type:</span> {lastAnalysis.aiPetCharacteristics.recommendedBodyType}</p>
+                <p><span className="text-blue-400">AI Pet Emotion:</span> {lastAnalysis.aiPetCharacteristics.recommendedEmotion}</p>
               </div>
             </div>
           </div>
@@ -213,38 +213,38 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
 
         {showDetailedAnalysis && lastAnalysis && (
           <div className="mt-4 p-3 bg-black/30 rounded-lg">
-            <h4 className="text-sm font-medium text-white mb-3">Детальный анализ:</h4>
+            <h4 className="text-sm font-medium text-white mb-3">Detailed Analysis:</h4>
             <div className="text-xs text-gray-300 space-y-2">
               
               <div>
-                <span className="text-yellow-400">Дизайн элементы:</span>
+                <span className="text-yellow-400">Design Elements:</span>
                 <ul className="ml-2 space-y-1">
-                  <li>• Градиенты: {lastAnalysis.designElements.hasGradients ? '✅' : '❌'}</li>
-                  <li>• Паттерны: {lastAnalysis.designElements.hasPatterns ? '✅' : '❌'}</li>
-                  <li>• Текстуры: {lastAnalysis.designElements.hasTextures ? '✅' : '❌'}</li>
-                  <li>• Геометрия: {lastAnalysis.designElements.hasGeometry ? '✅' : '❌'}</li>
-                  <li>• Тени: {lastAnalysis.designElements.hasShadows ? '✅' : '❌'}</li>
+                  <li>• Gradients: {lastAnalysis.designElements.hasGradients ? '✅' : '❌'}</li>
+                  <li>• Patterns: {lastAnalysis.designElements.hasPatterns ? '✅' : '❌'}</li>
+                  <li>• Textures: {lastAnalysis.designElements.hasTextures ? '✅' : '❌'}</li>
+                  <li>• Geometry: {lastAnalysis.designElements.hasGeometry ? '✅' : '❌'}</li>
+                  <li>• Shadows: {lastAnalysis.designElements.hasShadows ? '✅' : '❌'}</li>
                 </ul>
               </div>
 
               <div>
-                <span className="text-green-400">Композиция:</span>
+                <span className="text-green-400">Composition:</span>
                 <ul className="ml-2 space-y-1">
-                  <li>• Баланс: {lastAnalysis.composition.balance}</li>
-                  <li>• Фокус: {lastAnalysis.composition.focusArea}</li>
-                  <li>• Сложность: {lastAnalysis.composition.complexity}</li>
+                  <li>• Balance: {lastAnalysis.composition.balance}</li>
+                  <li>• Focus: {lastAnalysis.composition.focusArea}</li>
+                  <li>• Complexity: {lastAnalysis.composition.complexity}</li>
                 </ul>
               </div>
 
               {lastAnalysis.textures.length > 0 && (
                 <div>
-                  <span className="text-orange-400">Текстуры:</span> {lastAnalysis.textures.join(', ')}
+                  <span className="text-orange-400">Textures:</span> {lastAnalysis.textures.join(', ')}
                 </div>
               )}
 
               {lastAnalysis.patterns.length > 0 && (
                 <div>
-                  <span className="text-pink-400">Паттерны:</span> {lastAnalysis.patterns.join(', ')}
+                  <span className="text-pink-400">Patterns:</span> {lastAnalysis.patterns.join(', ')}
                 </div>
               )}
             </div>

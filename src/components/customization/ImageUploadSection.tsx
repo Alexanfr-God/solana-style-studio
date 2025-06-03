@@ -18,13 +18,13 @@ const ImageUploadSection = () => {
 
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('Файл слишком большой. Максимум 10MB');
+      toast.error('File too large. Maximum 10MB');
       return;
     }
 
     // Check file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Пожалуйста, выберите изображение');
+      toast.error('Please select an image');
       return;
     }
 
@@ -34,28 +34,28 @@ const ImageUploadSection = () => {
       reader.onload = (event) => {
         const result = event.target?.result as string;
         setUploadedImage(result);
-        toast.success('Изображение загружено');
+        toast.success('Image uploaded');
         setIsUploading(false);
       };
       reader.onerror = () => {
-        toast.error('Ошибка загрузки изображения');
+        toast.error('Error uploading image');
         setIsUploading(false);
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      toast.error('Ошибка обработки файла');
+      toast.error('Error processing file');
       setIsUploading(false);
     }
   };
 
   const handleRemoveImage = () => {
     setUploadedImage(null);
-    toast.info('Изображение удалено');
+    toast.info('Image removed');
   };
 
   const handleStyleGenerated = (styleData: any, analysis?: any) => {
     console.log('Style generated:', { styleData, analysis });
-    toast.success('Стиль успешно применен к кошельку!');
+    toast.success('Style successfully applied to wallet!');
   };
 
   return (
@@ -68,7 +68,7 @@ const ImageUploadSection = () => {
               AI Image Analysis & Style Generation
             </h2>
             <p className="text-gray-400 text-sm">
-              Загрузите изображение для создания уникального стиля кошелька
+              Upload an image to create unique wallet styles
             </p>
           </div>
 
@@ -80,7 +80,7 @@ const ImageUploadSection = () => {
               onClick={() => setAnalysisMode('basic')}
               className="text-xs"
             >
-              Базовый анализ
+              Basic Analysis
             </Button>
             <Button
               variant={analysisMode === 'detailed' ? 'default' : 'outline'}
@@ -88,7 +88,7 @@ const ImageUploadSection = () => {
               onClick={() => setAnalysisMode('detailed')}
               className="text-xs"
             >
-              Детальный анализ
+              Detailed Analysis
             </Button>
           </div>
 
@@ -114,10 +114,10 @@ const ImageUploadSection = () => {
                   )}
                   <div className="text-white/80">
                     <p className="font-medium">
-                      {isUploading ? 'Загрузка...' : 'Загрузить изображение'}
+                      {isUploading ? 'Uploading...' : 'Upload Image'}
                     </p>
                     <p className="text-sm text-white/60 mt-1">
-                      PNG, JPG, WebP до 10MB
+                      PNG, JPG, WebP up to 10MB
                     </p>
                   </div>
                 </label>
@@ -139,7 +139,7 @@ const ImageUploadSection = () => {
                 </Button>
                 <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs text-white">
                   <Image className="w-3 h-3 inline mr-1" />
-                  Изображение готово к анализу
+                  Image ready for analysis
                 </div>
               </div>
             )}
@@ -161,11 +161,11 @@ const ImageUploadSection = () => {
           {/* Info Section */}
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
             <h4 className="text-blue-300 font-medium mb-2 text-sm">
-              ℹ️ Режимы анализа
+              ℹ️ Analysis Modes
             </h4>
             <div className="text-blue-200 text-xs space-y-1">
-              <p><strong>Базовый:</strong> Быстрый анализ с применением общих стилей</p>
-              <p><strong>Детальный:</strong> Глубокий анализ всех компонентов кошелька</p>
+              <p><strong>Basic:</strong> Quick analysis with general styling</p>
+              <p><strong>Detailed:</strong> Deep analysis of all wallet components</p>
             </div>
           </div>
         </div>
