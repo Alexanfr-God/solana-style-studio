@@ -51,17 +51,6 @@ interface WalletStyleSet {
     bodyType: AiPetBodyType;
     emotion: AiPetEmotion;
   };
-  heroes: {
-    login?: string;
-    home?: string;
-    apps?: string;
-    swap?: string;
-    history?: string;
-    search?: string;
-    receive?: string;
-    send?: string;
-    buy?: string;
-  };
 }
 
 // Legacy interface for backward compatibility
@@ -97,10 +86,7 @@ interface WalletCustomizationState {
   // New comprehensive style system
   walletStyleSet: WalletStyleSet;
   applyStyleSet: (styleSet: WalletStyleSet) => void;
-  getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet' | 'heroes'>) => ComponentStyle;
-  getHeroForLayer: (layer: WalletLayer) => string | undefined;
-  setHeroForLayer: (layer: WalletLayer, heroUrl: string) => void;
-  setAllHeroes: (heroes: { [key: string]: string }) => void;
+  getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet'>) => ComponentStyle;
   
   // Legacy style system for backward compatibility
   walletStyle: WalletStyle;
@@ -210,8 +196,7 @@ const defaultStyleSet: WalletStyleSet = {
     zone: 'inside',
     bodyType: 'phantom',
     emotion: 'idle'
-  },
-  heroes: {}
+  }
 };
 
 export const useWalletCustomizationStore = create<WalletCustomizationState>()(
@@ -263,35 +248,9 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       get().triggerAiPetInteraction();
     },
     
-    getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet' | 'heroes'>) => {
+    getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet'>) => {
       const styleSet = get().walletStyleSet;
       return styleSet[component] || {};
-    },
-    
-    getHeroForLayer: (layer: WalletLayer) => {
-      const styleSet = get().walletStyleSet;
-      return styleSet.heroes[layer];
-    },
-    
-    setHeroForLayer: (layer: WalletLayer, heroUrl: string) => {
-      set(state => ({
-        walletStyleSet: {
-          ...state.walletStyleSet,
-          heroes: {
-            ...state.walletStyleSet.heroes,
-            [layer]: heroUrl
-          }
-        }
-      }));
-    },
-    
-    setAllHeroes: (heroes: { [key: string]: string }) => {
-      set(state => ({
-        walletStyleSet: {
-          ...state.walletStyleSet,
-          heroes: heroes
-        }
-      }));
     },
     
     // Legacy style system for backward compatibility

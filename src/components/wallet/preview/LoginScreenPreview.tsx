@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
-import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { 
   Eye,
   EyeOff,
@@ -95,7 +94,6 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const { isGenerating } = useCustomizationStore();
-  const { getHeroForLayer } = useWalletCustomizationStore();
   const [textStyle, setTextStyle] = useState<React.CSSProperties>({});
 
   // Recalculate optimal text style whenever the background or accent color changes
@@ -107,8 +105,6 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
       hasBackgroundImage
     ));
   }, [style.backgroundColor, style.accentColor, style.backgroundImage]);
-
-  const loginHero = getHeroForLayer('login');
 
   const handleUnlock = () => {
     toast({
@@ -161,40 +157,28 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
     <div 
       className="wallet-preview flex flex-col rounded-2xl overflow-hidden w-full h-full relative"
       style={{
-        // Use hero image as background if available, otherwise use style background
-        backgroundImage: loginHero ? `url(${loginHero})` : style.backgroundImage || getBackgroundStyle().backgroundImage,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundColor: !loginHero ? style.backgroundColor || '#131313' : undefined,
+        ...getBackgroundStyle(),
         color: style.textColor || '#FFFFFF',
         fontFamily: style.fontFamily,
         boxShadow: style.boxShadow || '0 10px 25px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
       }}
     >
-      {/* Dark overlay for better text readability when hero is present */}
-      {loginHero && (
-        <div className="absolute inset-0 bg-black/40 z-0" />
-      )}
-
       {/* Animated overlay for extra visual effect - kept low opacity */}
       <div 
-        className="absolute inset-0 z-1 opacity-20" 
+        className="absolute inset-0 z-0 opacity-20" 
         style={{
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.74 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23" + (style.accentColor?.replace('#', '') || '9945FF') + "' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E\")",
         }}
       />
 
-      {/* Header with centered phantom branding */}
+      {/* Header with centered phantom branding - reduced padding for full height */}
       <div className="p-3 flex justify-center items-center relative z-10">
         <div 
           className="text-center relative" 
-          style={{
-            ...textStyle,
-            // Enhanced text shadow for hero backgrounds
-            textShadow: loginHero ? '0 0 10px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.3)' : textStyle.textShadow
-          }}
+          style={textStyle}
         >
           phantom
+          {/* Add subtle animated accent line below text for better visibility */}
           <div 
             className="absolute bottom-0 left-0 w-full h-[2px] transform origin-left"
             style={{ 
@@ -208,15 +192,15 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
           className="h-4 w-4 cursor-pointer transition-transform hover:scale-110 hover:rotate-12 absolute right-3" 
           style={{ 
             color: style.accentColor || '#9945FF', 
-            filter: loginHero ? 'drop-shadow(0 0 4px rgba(0,0,0,0.8))' : 'drop-shadow(0 0 2px rgba(0,0,0,0.3))'
+            filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))' 
           }} 
         />
       </div>
       
-      {/* Content area - positioned to work with or without hero */}
+      {/* Logo and Content area - optimized spacing for full height */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 pt-6 relative z-10">
-        {/* Only show phantom logo when NOT generating and NO hero is present */}
-        {!isGenerating && !loginHero && (
+        {/* Animated Ghost Logo - only displayed when NOT generating */}
+        {!isGenerating && (
           <div className="mb-8 relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
             <img 
               src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
@@ -234,29 +218,29 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
           </div>
         )}
         
-        {/* Content container - enhanced styling for hero backgrounds */}
+        {/* Content container with optimized spacing for full height */}
         <div className="w-full flex flex-col items-center space-y-4 relative z-10">
-          {/* Login Title - enhanced for hero backgrounds */}
+          {/* Login Title - reduced margin */}
           <h2 
             className="text-xl font-medium" 
             style={{ 
               color: style.textColor || '#FFFFFF', 
-              textShadow: loginHero ? '0 0 10px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6)' : getTextShadow(),
+              textShadow: getTextShadow(),
               letterSpacing: '0.5px'
             }}
           >
             Enter your password
           </h2>
           
-          {/* Enhanced password field for hero backgrounds */}
+          {/* Password field with enhanced styling - optimized size */}
           <div className="w-full max-w-xs">
             <div 
               className="h-10 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
               style={{ 
-                backgroundColor: loginHero ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.07)',
+                backgroundColor: 'rgba(255, 255, 255, 0.07)',
                 borderRadius: style.borderRadius || '100px',
                 border: `1px solid ${style.accentColor}40`,
-                boxShadow: loginHero ? 'inset 0 1px 3px rgba(0,0,0,0.3), 0 0 10px rgba(0,0,0,0.2)' : 'inset 0 1px 3px rgba(0,0,0,0.1)',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
                 transition: 'all 0.3s ease'
               }}
             >
@@ -287,7 +271,48 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             </div>
           </div>
           
-          {/* ... keep existing code (forgot password, unlock button) */}
+          {/* Forgot password link - reduced margin */}
+          <div 
+            className="w-full max-w-xs text-center"
+            onClick={handleForgotPassword}
+          >
+            <span 
+              className="text-gray-400 text-xs cursor-pointer hover:text-gray-300 relative group"
+              style={{ transition: 'all 0.3s ease' }}
+            >
+              Forgot password?
+              <span 
+                className="absolute left-0 right-0 bottom-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform" 
+                style={{ backgroundColor: style.accentColor || '#9945FF' }}
+              />
+            </span>
+          </div>
+          
+          {/* Enhanced Unlock Button - optimized size */}
+          <div className="w-full max-w-xs mt-3">
+            <button 
+              onClick={handleUnlock}
+              className="w-full h-10 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98] text-sm"
+              style={{ 
+                backgroundColor: style.buttonColor || '#9b87f5',
+                color: style.buttonTextColor || '#000000',
+                borderRadius: style.borderRadius || '100px',
+                boxShadow: `0 4px 10px ${style.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
+              }}
+            >
+              {/* Button shine effect */}
+              <span 
+                className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{
+                  background: `linear-gradient(45deg, transparent 25%, ${style.accentColor || '#9b87f5'}40 50%, transparent 75%)`,
+                  backgroundSize: '200% 200%',
+                  animation: 'shine 1.5s infinite linear'
+                }}
+              />
+              
+              <span className="relative z-10">Unlock</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
