@@ -62,9 +62,13 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
         triggerAiPetInteraction();
       }
       
-      // Apply global wallet styles
+      // Apply global wallet styles - fix the background color type issue
+      const backgroundColor = Array.isArray(analysis.colors.background) 
+        ? analysis.colors.background[0] 
+        : analysis.colors.background;
+      
       setWalletStyle({
-        backgroundColor: analysis.colors.background,
+        backgroundColor: backgroundColor,
         primaryColor: analysis.colors.primary,
         font: analysis.typography.primary,
         image: uploadedImage
@@ -104,14 +108,17 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
   const renderColorPalette = (colors: DetailedImageAnalysis['colors']) => (
     <div className="flex items-center space-x-1">
       <span className="text-purple-400 text-xs">Палитра:</span>
-      {Object.entries(colors).slice(0, 5).map(([key, color], index) => (
-        <div 
-          key={index}
-          className="w-4 h-4 rounded-full border border-white/20 relative group"
-          style={{ backgroundColor: color }}
-          title={`${key}: ${color}`}
-        />
-      ))}
+      {Object.entries(colors).slice(0, 5).map(([key, color], index) => {
+        const colorValue = Array.isArray(color) ? color[0] : color;
+        return (
+          <div 
+            key={index}
+            className="w-4 h-4 rounded-full border border-white/20 relative group"
+            style={{ backgroundColor: colorValue }}
+            title={`${key}: ${colorValue}`}
+          />
+        );
+      })}
     </div>
   );
 
