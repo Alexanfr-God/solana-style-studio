@@ -59,7 +59,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({ onAction, sty
             <span 
               className="text-xs mt-2"
               style={{ 
-                color: containerStyle.textColor || '#FFFFFF',
+                color: containerStyle.color || '#FFFFFF',
                 fontFamily: containerStyle.fontFamily 
               }}
             >
