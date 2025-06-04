@@ -1,233 +1,102 @@
 
 import React from 'react';
-import { Download, Send, ArrowRightLeft, DollarSign, Plus } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletStyles } from '@/hooks/useWalletStyles';
+import WalletAssetItem from '../preview/WalletAssetItem';
+import WalletActionButtons from '../preview/WalletActionButtons';
 
 const HomeContent = () => {
-  const {
-    getStyleForComponent,
-    tokens,
-    totalBalance,
-    totalChange,
-    totalChangePercent,
-    isBalancePositive,
-    setCurrentLayer,
-    setShowAccountDropdown,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
-  } = useWalletCustomizationStore();
+  const { tokens, totalBalance, totalChange, isBalancePositive } = useWalletCustomizationStore();
+  const { getComponentStyle, getTokenColorStyle, tokenColors } = useWalletStyles();
 
-  // Get component-specific styles
-  const buttonStyle = getStyleForComponent('buttons');
-  const panelStyle = getStyleForComponent('panels');
-  const globalStyle = getStyleForComponent('global');
+  const handleAssetClick = (tokenName: string) => {
+    console.log(`Clicked on ${tokenName}`);
+  };
 
   const handleAction = (action: string) => {
-    console.log(`${action} clicked`);
-    
-    if (action === 'Receive') {
-      setCurrentLayer('receive');
-    } else if (action === 'Send') {
-      setCurrentLayer('send');
-    } else if (action === 'Swap') {
-      setCurrentLayer('swap');
-    } else if (action === 'Buy') {
-      setCurrentLayer('buy');
-    }
-    
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 2000);
+    console.log(`Action: ${action}`);
   };
 
-  const handleTokenClick = (tokenName: string) => {
-    console.log(`${tokenName} token clicked`);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('happy', 2000);
-  };
+  const balanceStyle = getComponentStyle('global');
+  const changeStyle = getTokenColorStyle(totalChange);
 
   return (
-    <>
+    <div className="flex-1 overflow-y-auto px-4 pb-4">
       {/* Balance Section */}
-      <div className="px-6 py-6">
-        <div className="text-center">
-          <div 
-            className="text-3xl font-bold text-white mb-2"
-            style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily || 'Inter'
-            }}
-          >
-            {totalBalance}
-          </div>
-          <div className="flex items-center justify-center space-x-2">
-            <span 
-              className={`font-medium ${isBalancePositive ? 'text-green-400' : 'text-red-400'}`}
-            >
-              {totalChange}
-            </span>
-            <span 
-              className={`text-sm px-2 py-0.5 rounded ${
-                isBalancePositive 
-                  ? 'bg-green-400/20 text-green-400' 
-                  : 'bg-red-400/20 text-red-400'
-              }`}
-              style={{
-                borderRadius: panelStyle.borderRadius || '4px'
-              }}
-            >
-              {totalChangePercent}
-            </span>
-          </div>
+      <div className="pt-4 pb-6 text-center">
+        <div 
+          className="text-sm opacity-70 mb-1"
+          style={{ color: balanceStyle.color }}
+        >
+          Total Balance
+        </div>
+        <div 
+          className="text-3xl font-bold mb-1"
+          style={{ 
+            color: balanceStyle.color,
+            fontFamily: balanceStyle.fontFamily 
+          }}
+        >
+          {totalBalance}
+        </div>
+        <div 
+          className="text-sm font-medium"
+          style={changeStyle}
+        >
+          {totalChange}
         </div>
       </div>
-      
-      {/* Action Buttons with AI-generated styles */}
-      <div className="grid grid-cols-4 gap-3 px-4 pb-4">
-        {[
-          { id: 'receive', icon: Download, label: 'Receive' },
-          { id: 'send', icon: Send, label: 'Send' },
-          { id: 'swap', icon: ArrowRightLeft, label: 'Swap' },
-          { id: 'buy', icon: DollarSign, label: 'Buy' }
-        ].map(action => (
-          <div key={action.id} className="flex flex-col items-center">
-            <button 
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2 transition-all duration-200 hover:scale-105"
-              style={{
-                backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                background: buttonStyle.gradient || buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                borderRadius: buttonStyle.borderRadius || '16px',
-                boxShadow: buttonStyle.boxShadow,
-                color: buttonStyle.textColor || '#FFFFFF'
-              }}
-              onClick={() => handleAction(action.label)}
-            >
-              <action.icon 
-                className="w-5 h-5" 
-                style={{ 
-                  color: buttonStyle.textColor || buttonStyle.backgroundColor || '#9945FF'
-                }} 
-              />
-            </button>
-            <span 
-              className="text-xs text-gray-400"
-              style={{
-                color: globalStyle.textColor || '#9CA3AF',
-                fontFamily: globalStyle.fontFamily
-              }}
-            >
-              {action.label}
-            </span>
-          </div>
-        ))}
-      </div>
-      
-      {/* Tokens Section with panel styles */}
-      <div className="flex-1 px-4 pb-20 overflow-auto">
-        <div className="flex justify-between items-center mb-4">
+
+      {/* Action Buttons */}
+      <WalletActionButtons 
+        onAction={handleAction} 
+        style={{ 
+          accentColor: tokenColors.info,
+          borderRadius: getComponentStyle('buttons').borderRadius 
+        }} 
+      />
+
+      {/* Assets Section */}
+      <div className="mt-6">
+        <div 
+          className="flex justify-between items-center mb-4"
+          style={{ color: balanceStyle.color }}
+        >
+          <span className="font-medium">Assets</span>
           <span 
-            className="font-medium text-white"
-            style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily
-            }}
-          >
-            Assets
-          </span>
-          <span 
-            className="text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors"
-            style={{
-              color: globalStyle.textColor || '#9CA3AF',
-              fontFamily: globalStyle.fontFamily
+            className="text-sm opacity-70 cursor-pointer hover:opacity-100"
+            style={{ 
+              color: tokenColors.info,
+              transition: 'opacity 0.2s ease'
             }}
           >
             See all
           </span>
         </div>
         
-        {/* Token List with panel styles */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           {tokens.map(token => (
-            <div 
+            <WalletAssetItem
               key={token.id}
-              className="flex items-center justify-between p-3 rounded-xl transition-all duration-200 cursor-pointer hover:scale-[1.02]"
+              image={`/lovable-uploads/placeholder-${token.symbol.toLowerCase()}.png`}
+              name={token.name}
+              ticker={token.symbol}
+              amount={token.amount}
+              value={token.value}
+              change={token.change}
+              color={token.isPositive ? tokenColors.positive : tokenColors.negative}
+              onClick={() => handleAssetClick(token.name)}
               style={{
-                backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                background: panelStyle.gradient || panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                borderRadius: panelStyle.borderRadius || '12px',
-                border: panelStyle.border,
-                boxShadow: panelStyle.boxShadow,
-                backdropFilter: panelStyle.backdropFilter
+                backgroundColor: getComponentStyle('cards').backgroundColor,
+                borderRadius: getComponentStyle('cards').borderRadius,
+                accentColor: tokenColors.info,
+                textColor: balanceStyle.color
               }}
-              onClick={() => handleTokenClick(token.name)}
-            >
-              <div className="flex items-center space-x-3">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{
-                    backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '50%'
-                  }}
-                >
-                  <span className="text-lg">{token.icon}</span>
-                </div>
-                <div>
-                  <div 
-                    className="font-medium text-white text-sm"
-                    style={{
-                      color: panelStyle.textColor || '#FFFFFF',
-                      fontFamily: globalStyle.fontFamily
-                    }}
-                  >
-                    {token.name}
-                  </div>
-                  <div className="text-xs text-gray-400">{token.symbol}</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div 
-                  className="font-medium text-white text-sm"
-                  style={{
-                    color: panelStyle.textColor || '#FFFFFF',
-                    fontFamily: globalStyle.fontFamily
-                  }}
-                >
-                  {token.amount}
-                </div>
-                <div className="text-xs text-gray-400">{token.value}</div>
-                <div className={`text-xs ${token.isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                  {token.change}
-                </div>
-              </div>
-            </div>
+            />
           ))}
         </div>
-        
-        {/* Manage Token List with panel styles */}
-        <button 
-          className="w-full mt-6 p-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 hover:scale-[1.02]"
-          style={{
-            backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-            background: panelStyle.gradient || panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-            borderRadius: panelStyle.borderRadius || '12px',
-            border: panelStyle.border,
-            boxShadow: panelStyle.boxShadow,
-            backdropFilter: panelStyle.backdropFilter
-          }}
-          onClick={() => handleAction('Manage Token List')}
-        >
-          <Plus className="w-4 h-4 text-gray-400" />
-          <span 
-            className="text-sm text-gray-400"
-            style={{
-              color: panelStyle.textColor || '#9CA3AF',
-              fontFamily: globalStyle.fontFamily
-            }}
-          >
-            Manage Token List
-          </span>
-        </button>
       </div>
-    </>
+    </div>
   );
 };
 

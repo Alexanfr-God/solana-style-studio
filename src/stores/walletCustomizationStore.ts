@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { WalletStyleSet, TokenColors, StatusColors, AiPetEmotion, AiPetZone, AiPetBodyType, ComponentStyle } from '@/types/walletStyleSchema';
 
 interface Account {
   id: string;
@@ -27,7 +28,11 @@ interface ComponentStyle {
   boxShadow?: string;
   fontFamily?: string;
   fontSize?: string;
-  animation?: string;
+  animation?: {
+    transition: string;
+    duration: string;
+    easing: string;
+  };
   border?: string;
   backgroundImage?: string;
   backdropFilter?: string;
@@ -51,6 +56,8 @@ interface WalletStyleSet {
     bodyType: AiPetBodyType;
     emotion: AiPetEmotion;
   };
+  tokenColors: TokenColors;
+  statusColors: StatusColors;
 }
 
 // Legacy interface for backward compatibility
@@ -86,7 +93,9 @@ interface WalletCustomizationState {
   // New comprehensive style system
   walletStyleSet: WalletStyleSet;
   applyStyleSet: (styleSet: WalletStyleSet) => void;
-  getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet'>) => ComponentStyle;
+  getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet' | 'tokenColors' | 'statusColors'>) => ComponentStyle;
+  getTokenColors: () => TokenColors;
+  getStatusColors: () => StatusColors;
   
   // Legacy style system for backward compatibility
   walletStyle: WalletStyle;
@@ -137,43 +146,98 @@ const defaultStyleSet: WalletStyleSet = {
     fontFamily: 'Inter',
     backgroundImage: 'url("background.jpg")',
     borderRadius: '10px',
-    boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)'
+    boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
+    animation: {
+      transition: 'all 0.3s ease',
+      duration: '0.3s',
+      easing: 'ease'
+    }
   },
   header: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     backdropFilter: 'blur(10px)',
     borderRadius: '0px',
-    border: '1px solid rgba(255, 255, 255, 0.1)'
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    animation: {
+      transition: 'backdrop-filter 0.2s ease'
+    }
   },
   buttons: {
     backgroundColor: '#9945FF',
     gradient: 'linear-gradient(135deg, #9945FF 0%, #14F195 100%)',
     textColor: '#FFFFFF',
     borderRadius: '12px',
-    boxShadow: '0 4px 12px rgba(153, 69, 255, 0.3)'
+    boxShadow: '0 4px 12px rgba(153, 69, 255, 0.3)',
+    animation: {
+      transition: 'all 0.2s ease'
+    },
+    states: {
+      default: {
+        backgroundColor: '#9945FF',
+        textColor: '#FFFFFF'
+      },
+      hover: {
+        backgroundColor: '#8A3FE6',
+        boxShadow: '0 6px 16px rgba(153, 69, 255, 0.4)'
+      },
+      active: {
+        backgroundColor: '#7A35CC'
+      }
+    }
   },
   panels: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     backdropFilter: 'blur(10px)',
     borderRadius: '16px',
-    border: '1px solid rgba(255, 255, 255, 0.1)'
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    animation: {
+      transition: 'all 0.3s ease'
+    }
   },
   navigation: {
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     backdropFilter: 'blur(10px)',
     borderRadius: '0px',
-    border: '1px solid rgba(255, 255, 255, 0.1)'
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    animation: {
+      transition: 'background-color 0.2s ease'
+    }
   },
   inputs: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     textColor: '#FFFFFF',
     borderRadius: '8px',
-    border: '1px solid rgba(255, 255, 255, 0.2)'
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    animation: {
+      transition: 'border-color 0.2s ease, background-color 0.2s ease'
+    },
+    states: {
+      default: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.2)'
+      },
+      focus: {
+        border: '1px solid #9945FF',
+        boxShadow: '0 0 0 2px rgba(153, 69, 255, 0.2)'
+      }
+    }
   },
   cards: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: '16px',
-    border: '1px solid rgba(255, 255, 255, 0.1)'
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    animation: {
+      transition: 'all 0.2s ease'
+    },
+    states: {
+      default: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)'
+      },
+      hover: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+      }
+    }
   },
   overlays: {
     backgroundColor: 'rgba(24, 24, 24, 0.9)',
@@ -190,7 +254,23 @@ const defaultStyleSet: WalletStyleSet = {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     textColor: '#FFFFFF',
     borderRadius: '12px',
-    border: '1px solid rgba(255, 255, 255, 0.2)'
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    animation: {
+      transition: 'all 0.2s ease'
+    }
+  },
+  tokenColors: {
+    positive: '#10B981', // Green
+    negative: '#EF4444', // Red  
+    neutral: '#6B7280',  // Gray
+    warning: '#F59E0B', // Yellow
+    info: '#3B82F6'     // Blue
+  },
+  statusColors: {
+    success: '#10B981',
+    error: '#EF4444',
+    pending: '#F59E0B',
+    inactive: '#6B7280'
   },
   aiPet: {
     zone: 'inside',
@@ -248,9 +328,17 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>()(
       get().triggerAiPetInteraction();
     },
     
-    getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet'>) => {
+    getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet' | 'tokenColors' | 'statusColors'>) => {
       const styleSet = get().walletStyleSet;
       return styleSet[component] || {};
+    },
+    
+    getTokenColors: () => {
+      return get().walletStyleSet.tokenColors;
+    },
+    
+    getStatusColors: () => {
+      return get().walletStyleSet.statusColors;
     },
     
     // Legacy style system for backward compatibility

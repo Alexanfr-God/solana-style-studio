@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { WalletStyle } from '@/stores/customizationStore';
+import React, { useState } from 'react';
+import { useWalletStyles } from '@/hooks/useWalletStyles';
 
 interface WalletAssetItemProps {
   image: string;
@@ -12,7 +12,12 @@ interface WalletAssetItemProps {
   color?: string;
   isLocked?: boolean;
   onClick: () => void;
-  style: WalletStyle;
+  style: {
+    backgroundColor?: string;
+    borderRadius?: string;
+    accentColor?: string;
+    textColor?: string;
+  };
 }
 
 const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
@@ -27,21 +32,45 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
   onClick,
   style
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const { getComponentStyle } = useWalletStyles();
+
+  const cardStyle = getComponentStyle('cards');
+  const interactiveStyle = {
+    ...cardStyle,
+    backgroundColor: style.backgroundColor || cardStyle.backgroundColor,
+    borderRadius: style.borderRadius || cardStyle.borderRadius,
+    color: style.textColor || cardStyle.textColor,
+    cursor: 'pointer',
+    transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+    transition: cardStyle.animation?.transition || 'all 0.2s ease'
+  };
+
   return (
     <div 
-      className="mb-3 p-4 rounded-xl flex justify-between items-center cursor-pointer active:bg-opacity-80"
-      style={{ 
-        backgroundColor: 'rgba(40, 40, 40, 0.6)',
-        borderRadius: style.borderRadius || '16px',
-      }}
+      className="mb-3 p-4 rounded-xl flex justify-between items-center"
+      style={interactiveStyle}
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-center">
         <div className="mr-3 relative">
-          <img src={image} alt={name} className="h-10 w-10" />
+          <div 
+            className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white"
+            style={{ backgroundColor: style.accentColor || '#9945FF' }}
+          >
+            {name[0]}
+          </div>
           {isLocked && (
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-black rounded-full flex items-center justify-center border border-gray-700">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+            <div 
+              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border"
+              style={{ 
+                backgroundColor: cardStyle.backgroundColor,
+                borderColor: style.textColor + '40'
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: style.textColor }}>
                 <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
@@ -49,14 +78,40 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
           )}
         </div>
         <div>
-          <div className="font-medium">{name}</div>
-          <div className="text-xs text-gray-400">{amount} {ticker}</div>
+          <div 
+            className="font-medium"
+            style={{ 
+              color: style.textColor,
+              fontFamily: cardStyle.fontFamily 
+            }}
+          >
+            {name}
+          </div>
+          <div 
+            className="text-xs opacity-70"
+            style={{ color: style.textColor }}
+          >
+            {amount} {ticker}
+          </div>
         </div>
       </div>
       <div className="text-right">
-        <div className="font-medium">{value}</div>
+        <div 
+          className="font-medium"
+          style={{ 
+            color: style.textColor,
+            fontFamily: cardStyle.fontFamily 
+          }}
+        >
+          {value}
+        </div>
         {change && (
-          <div className={`text-xs ${color ? color : 'text-gray-400'}`}>{change}</div>
+          <div 
+            className="text-xs"
+            style={{ color: color || style.textColor }}
+          >
+            {change}
+          </div>
         )}
       </div>
     </div>
