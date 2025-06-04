@@ -52,7 +52,7 @@ const HomeContent = () => {
         onAction={handleAction} 
         style={{ 
           accentColor: tokenColors.info,
-          borderRadius: getComponentStyle('buttons').borderRadius 
+          borderRadius: getComponentStyle('buttons').borderRadius || '12px'
         }} 
       />
 
@@ -88,7 +88,7 @@ const HomeContent = () => {
               onClick={() => handleAssetClick(token.name)}
               style={{
                 backgroundColor: getComponentStyle('cards').backgroundColor,
-                borderRadius: getComponentStyle('cards').borderRadius,
+                borderRadius: getComponentStyle('cards').borderRadius || '16px',
                 accentColor: tokenColors.info,
                 textColor: balanceStyle.color
               }}

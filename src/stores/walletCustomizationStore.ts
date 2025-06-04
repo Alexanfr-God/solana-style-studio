@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { WalletStyleSet, TokenColors, StatusColors, AiPetEmotion, AiPetZone, AiPetBodyType, ComponentStyle } from '@/types/walletStyleSchema';
 
@@ -19,47 +20,6 @@ interface Token {
   isPositive: boolean;
 }
 
-// Updated comprehensive style interfaces based on AI analysis
-interface ComponentStyle {
-  backgroundColor?: string;
-  gradient?: string;
-  textColor?: string;
-  borderRadius?: string;
-  boxShadow?: string;
-  fontFamily?: string;
-  fontSize?: string;
-  animation?: {
-    transition: string;
-    duration: string;
-    easing: string;
-  };
-  border?: string;
-  backgroundImage?: string;
-  backdropFilter?: string;
-  transition?: string;
-  opacity?: string;
-}
-
-interface WalletStyleSet {
-  global: ComponentStyle;
-  header: ComponentStyle;
-  buttons: ComponentStyle;
-  panels: ComponentStyle;
-  navigation: ComponentStyle;
-  inputs: ComponentStyle;
-  cards: ComponentStyle;
-  overlays: ComponentStyle;
-  containers: ComponentStyle;
-  searchInputs: ComponentStyle;
-  aiPet: {
-    zone: AiPetZone;
-    bodyType: AiPetBodyType;
-    emotion: AiPetEmotion;
-  };
-  tokenColors: TokenColors;
-  statusColors: StatusColors;
-}
-
 // Legacy interface for backward compatibility
 interface WalletStyle {
   backgroundColor: string;
@@ -71,9 +31,6 @@ interface WalletStyle {
   boxShadow?: string;
 }
 
-export type AiPetEmotion = 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink';
-export type AiPetZone = 'inside' | 'outside';
-export type AiPetBodyType = 'phantom' | 'lottie';
 export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search' | 'receive' | 'send' | 'buy';
 
 interface AiPet {
@@ -159,7 +116,9 @@ const defaultStyleSet: WalletStyleSet = {
     borderRadius: '0px',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     animation: {
-      transition: 'backdrop-filter 0.2s ease'
+      transition: 'backdrop-filter 0.2s ease',
+      duration: '0.2s',
+      easing: 'ease'
     }
   },
   buttons: {
@@ -169,7 +128,9 @@ const defaultStyleSet: WalletStyleSet = {
     borderRadius: '12px',
     boxShadow: '0 4px 12px rgba(153, 69, 255, 0.3)',
     animation: {
-      transition: 'all 0.2s ease'
+      transition: 'all 0.2s ease',
+      duration: '0.2s',
+      easing: 'ease'
     },
     states: {
       default: {
@@ -191,7 +152,9 @@ const defaultStyleSet: WalletStyleSet = {
     borderRadius: '16px',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     animation: {
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s ease',
+      duration: '0.3s',
+      easing: 'ease'
     }
   },
   navigation: {
@@ -200,7 +163,9 @@ const defaultStyleSet: WalletStyleSet = {
     borderRadius: '0px',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     animation: {
-      transition: 'background-color 0.2s ease'
+      transition: 'background-color 0.2s ease',
+      duration: '0.2s',
+      easing: 'ease'
     }
   },
   inputs: {
@@ -209,7 +174,9 @@ const defaultStyleSet: WalletStyleSet = {
     borderRadius: '8px',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     animation: {
-      transition: 'border-color 0.2s ease, background-color 0.2s ease'
+      transition: 'border-color 0.2s ease, background-color 0.2s ease',
+      duration: '0.2s',
+      easing: 'ease'
     },
     states: {
       default: {
@@ -227,7 +194,9 @@ const defaultStyleSet: WalletStyleSet = {
     borderRadius: '16px',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     animation: {
-      transition: 'all 0.2s ease'
+      transition: 'all 0.2s ease',
+      duration: '0.2s',
+      easing: 'ease'
     },
     states: {
       default: {
@@ -256,7 +225,9 @@ const defaultStyleSet: WalletStyleSet = {
     borderRadius: '12px',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     animation: {
-      transition: 'all 0.2s ease'
+      transition: 'all 0.2s ease',
+      duration: '0.2s',
+      easing: 'ease'
     }
   },
   tokenColors: {

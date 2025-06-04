@@ -29,7 +29,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({ onAction, sty
     <div className="grid grid-cols-4 gap-2 px-4 pt-0 pb-4">
       {actions.map(action => {
         const isHovered = hoveredAction === action.id;
-        const actionButtonStyle = {
+        const actionButtonStyle: React.CSSProperties = {
           height: '56px',
           width: '56px',
           borderRadius: style.borderRadius || buttonStyle.borderRadius || '16px',
