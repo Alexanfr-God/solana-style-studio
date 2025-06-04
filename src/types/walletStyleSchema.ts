@@ -7,7 +7,7 @@ export interface AnimationConfig {
 }
 
 export interface InteractiveStates {
-  default: ComponentStyle;
+  default?: ComponentStyle;
   hover?: Partial<ComponentStyle>;
   active?: Partial<ComponentStyle>;
   focus?: Partial<ComponentStyle>;
@@ -18,7 +18,7 @@ export interface ComponentStyle {
   backgroundColor?: string;
   gradient?: string;
   textColor?: string;
-  borderRadius?: string;
+  borderRadius?: string | number;
   boxShadow?: string;
   fontFamily?: string;
   fontSize?: string;
@@ -27,6 +27,7 @@ export interface ComponentStyle {
   backgroundImage?: string;
   backdropFilter?: string;
   opacity?: string;
+  transition?: string;
   // Animation support
   animation?: AnimationConfig;
   // Interactive states
@@ -34,11 +35,11 @@ export interface ComponentStyle {
 }
 
 export interface TokenColors {
-  positive: string;    // Green for gains
-  negative: string;    // Red for losses
-  neutral: string;     // Gray for no change
-  warning: string;     // Yellow for warnings
-  info: string;        // Blue for info
+  positive: string;
+  negative: string;
+  neutral: string;
+  warning: string;
+  info: string;
 }
 
 export interface StatusColors {

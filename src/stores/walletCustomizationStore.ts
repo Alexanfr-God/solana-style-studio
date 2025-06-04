@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { WalletStyleSet, AiPetEmotion, AiPetZone, AiPetBodyType, ComponentStyle } from '@/types/walletStyleSchema';
 
@@ -5,6 +6,7 @@ interface Account {
   id: string;
   name: string;
   address: string;
+  network: string;
 }
 
 interface Token {
@@ -25,13 +27,20 @@ interface AiPetState {
   energy: number;
 }
 
+export type WalletLayer = 'home' | 'apps' | 'swap' | 'history' | 'search' | 'send' | 'receive' | 'buy';
+
 interface WalletCustomizationState {
-  walletStyle: WalletStyleSet;
+  walletStyle: WalletStyleSet & {
+    backgroundColor?: string;
+    primaryColor?: string;
+    font?: string;
+    image?: string;
+  };
   selectedWallet: 'phantom' | 'metamask';
   isCustomizing: boolean;
   aiPet: AiPetState;
   containerBounds: DOMRect | null;
-  currentLayer: string;
+  currentLayer: WalletLayer;
   accounts: Account[];
   activeAccountId: string | null;
   tokens: Token[];
@@ -40,10 +49,11 @@ interface WalletCustomizationState {
   isBalancePositive: boolean;
   showAccountSidebar: boolean;
   showAccountDropdown: boolean;
+  uploadedImage: string | null;
 
   // Methods
   setSelectedWallet: (wallet: 'phantom' | 'metamask') => void;
-  setCurrentLayer: (layer: string) => void;
+  setCurrentLayer: (layer: WalletLayer) => void;
   setContainerBounds: (bounds: DOMRect) => void;
   unlockWallet: () => void;
   getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet' | 'tokenColors' | 'statusColors'>) => ComponentStyle;
@@ -61,9 +71,18 @@ interface WalletCustomizationState {
   setAiPetZone: (zone: AiPetZone) => void;
   setAiPetBodyType: (bodyType: AiPetBodyType) => void;
   setTemporaryEmotion: (emotion: AiPetEmotion, duration: number) => void;
+  setWalletStyle: (style: Partial<WalletStyleSet & { backgroundColor?: string; primaryColor?: string; font?: string; image?: string }>) => void;
+  setUploadedImage: (image: string | null) => void;
+  customizeWallet: () => void;
+  onCustomizationStart: () => void;
 }
 
-const initialWalletStyle: WalletStyleSet = {
+const initialWalletStyle: WalletStyleSet & {
+  backgroundColor?: string;
+  primaryColor?: string;
+  font?: string;
+  image?: string;
+} = {
   global: {
     backgroundColor: '#181818',
     textColor: '#FFFFFF',
@@ -75,6 +94,8 @@ const initialWalletStyle: WalletStyleSet = {
   },
   header: {},
   buttons: {
+    backgroundColor: '#9945FF',
+    textColor: '#FFFFFF',
     borderRadius: '12px',
     animation: {
       transition: 'all 0.2s ease',
@@ -84,13 +105,18 @@ const initialWalletStyle: WalletStyleSet = {
   navigation: {},
   inputs: {},
   cards: {
+    backgroundColor: 'rgba(40, 40, 40, 0.8)',
+    textColor: '#FFFFFF',
     borderRadius: '16px',
     animation: {
       transition: 'all 0.2s ease',
     },
   },
   overlays: {},
-  containers: {},
+  containers: {
+    backgroundColor: 'rgba(40, 40, 40, 0.8)',
+    textColor: '#FFFFFF',
+  },
   searchInputs: {},
   tokenColors: {
     positive: '#34D399',
@@ -110,6 +136,9 @@ const initialWalletStyle: WalletStyleSet = {
     bodyType: 'phantom',
     emotion: 'idle',
   },
+  backgroundColor: '#181818',
+  primaryColor: '#9945FF',
+  font: 'Inter',
 };
 
 export type { AiPetEmotion, AiPetZone, AiPetBodyType };
@@ -128,8 +157,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   containerBounds: null,
   currentLayer: 'home',
   accounts: [
-    { id: '1', name: 'Main Account', address: '3QLo...yJd2' },
-    { id: '2', name: 'Savings', address: '7YTp...x9kL' },
+    { id: '1', name: 'Main Account', address: '3QLo...yJd2', network: 'Solana' },
+    { id: '2', name: 'Savings', address: '7YTp...x9kL', network: 'Solana' },
   ],
   activeAccountId: '1',
   tokens: [
@@ -141,12 +170,12 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   isBalancePositive: true,
   showAccountSidebar: false,
   showAccountDropdown: false,
+  uploadedImage: null,
 
   setSelectedWallet: (wallet) => set({ selectedWallet: wallet }),
   setCurrentLayer: (layer) => set({ currentLayer: layer }),
   setContainerBounds: (bounds) => set({ containerBounds: bounds }),
   unlockWallet: () => {
-    // Unlock logic here
     set({ currentLayer: 'home' });
   },
   getStyleForComponent: (component) => {
@@ -159,7 +188,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setShowAccountSidebar: (show) => set({ showAccountSidebar: show }),
   setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
   triggerAiPetInteraction: () => {
-    // Example: reset energy or change emotion briefly
     const aiPet = get().aiPet;
     set({ aiPet: { ...aiPet, emotion: 'excited' } });
     setTimeout(() => {
@@ -213,5 +241,21 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
       const currentAiPet = get().aiPet;
       set({ aiPet: { ...currentAiPet, emotion: 'idle' } });
     }, duration);
+  },
+  setWalletStyle: (style) => {
+    set((state) => ({
+      walletStyle: { ...state.walletStyle, ...style }
+    }));
+  },
+  setUploadedImage: (image) => set({ uploadedImage: image }),
+  customizeWallet: () => {
+    set({ isCustomizing: true });
+    // Simulate customization process
+    setTimeout(() => {
+      set({ isCustomizing: false });
+    }, 2000);
+  },
+  onCustomizationStart: () => {
+    set({ isCustomizing: true });
   },
 }));
