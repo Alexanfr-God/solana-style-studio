@@ -6,7 +6,13 @@ import WalletAssetItem from '../preview/WalletAssetItem';
 import WalletActionButtons from '../preview/WalletActionButtons';
 
 const HomeContent = () => {
-  const { tokens, totalBalance, totalChange, isBalancePositive } = useWalletCustomizationStore();
+  const { 
+    tokens, 
+    totalBalance, 
+    totalChange, 
+    isBalancePositive,
+    setCurrentLayer 
+  } = useWalletCustomizationStore();
   const { getComponentStyle, getTokenColorStyle, tokenColors, getTransition } = useWalletStyles();
 
   const handleAssetClick = (tokenName: string) => {
@@ -15,6 +21,22 @@ const HomeContent = () => {
 
   const handleAction = (action: string) => {
     console.log(`Action: ${action}`);
+    switch (action) {
+      case 'Receive':
+        setCurrentLayer('receive');
+        break;
+      case 'Send':
+        setCurrentLayer('send');
+        break;
+      case 'Buy':
+        setCurrentLayer('buy');
+        break;
+      case 'Swap':
+        setCurrentLayer('swap');
+        break;
+      default:
+        console.log(`Unknown action: ${action}`);
+    }
   };
 
   const balanceStyle = getComponentStyle('global');
