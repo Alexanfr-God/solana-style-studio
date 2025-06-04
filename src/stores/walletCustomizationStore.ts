@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { WalletStyleSet, AiPetEmotion, AiPetZone, AiPetBodyType, ComponentStyle } from '@/types/walletStyleSchema';
 
@@ -27,7 +26,7 @@ interface AiPetState {
   energy: number;
 }
 
-export type WalletLayer = 'home' | 'apps' | 'swap' | 'history' | 'search' | 'send' | 'receive' | 'buy';
+export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search' | 'send' | 'receive' | 'buy';
 
 interface WalletCustomizationState {
   walletStyle: WalletStyleSet & {
@@ -56,6 +55,8 @@ interface WalletCustomizationState {
   setCurrentLayer: (layer: WalletLayer) => void;
   setContainerBounds: (bounds: DOMRect) => void;
   unlockWallet: () => void;
+  lockWallet: () => void;
+  resetWallet: () => void;
   getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet' | 'tokenColors' | 'statusColors'>) => ComponentStyle;
   getTokenColors: () => WalletStyleSet['tokenColors'];
   getStatusColors: () => WalletStyleSet['statusColors'];
@@ -155,7 +156,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     energy: 100,
   },
   containerBounds: null,
-  currentLayer: 'home',
+  currentLayer: 'login',
   accounts: [
     { id: '1', name: 'Main Account', address: '3QLo...yJd2', network: 'Solana' },
     { id: '2', name: 'Savings', address: '7YTp...x9kL', network: 'Solana' },
@@ -177,6 +178,17 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setContainerBounds: (bounds) => set({ containerBounds: bounds }),
   unlockWallet: () => {
     set({ currentLayer: 'home' });
+  },
+  lockWallet: () => {
+    set({ currentLayer: 'login' });
+  },
+  resetWallet: () => {
+    set({ 
+      walletStyle: initialWalletStyle,
+      currentLayer: 'login',
+      uploadedImage: null,
+      isCustomizing: false 
+    });
   },
   getStyleForComponent: (component) => {
     const style = get().walletStyle[component];
