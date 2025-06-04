@@ -33,7 +33,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
   style
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const { getComponentStyle } = useWalletStyles();
+  const { getComponentStyle, getTransition } = useWalletStyles();
 
   const cardStyle = getComponentStyle('cards');
   const interactiveStyle: React.CSSProperties = {
@@ -42,7 +42,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
     color: style.textColor || cardStyle.textColor,
     cursor: 'pointer',
     transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-    transition: cardStyle.animation?.transition || 'all 0.2s ease'
+    transition: getTransition('cards')
   };
 
   return (
@@ -66,7 +66,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
               className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border"
               style={{ 
                 backgroundColor: cardStyle.backgroundColor,
-                borderColor: style.textColor + '40'
+                borderColor: (style.textColor || '#FFFFFF') + '40'
               }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: style.textColor }}>

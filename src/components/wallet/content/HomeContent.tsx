@@ -7,7 +7,7 @@ import WalletActionButtons from '../preview/WalletActionButtons';
 
 const HomeContent = () => {
   const { tokens, totalBalance, totalChange, isBalancePositive } = useWalletCustomizationStore();
-  const { getComponentStyle, getTokenColorStyle, tokenColors } = useWalletStyles();
+  const { getComponentStyle, getTokenColorStyle, tokenColors, getTransition } = useWalletStyles();
 
   const handleAssetClick = (tokenName: string) => {
     console.log(`Clicked on ${tokenName}`);
@@ -52,7 +52,7 @@ const HomeContent = () => {
         onAction={handleAction} 
         style={{ 
           accentColor: tokenColors.info,
-          borderRadius: getComponentStyle('buttons').borderRadius || '12px'
+          borderRadius: String(getComponentStyle('buttons').borderRadius || '12px')
         }} 
       />
 
@@ -67,7 +67,7 @@ const HomeContent = () => {
             className="text-sm opacity-70 cursor-pointer hover:opacity-100"
             style={{ 
               color: tokenColors.info,
-              transition: 'opacity 0.2s ease'
+              transition: getTransition('global')
             }}
           >
             See all
@@ -88,7 +88,7 @@ const HomeContent = () => {
               onClick={() => handleAssetClick(token.name)}
               style={{
                 backgroundColor: getComponentStyle('cards').backgroundColor,
-                borderRadius: getComponentStyle('cards').borderRadius || '16px',
+                borderRadius: String(getComponentStyle('cards').borderRadius || '16px'),
                 accentColor: tokenColors.info,
                 textColor: balanceStyle.color
               }}

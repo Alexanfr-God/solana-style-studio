@@ -36,11 +36,18 @@ export const useWalletStyles = () => {
     return style;
   };
 
+  // Helper to get transition string from animation config
+  const getTransition = (component: keyof Omit<import('@/types/walletStyleSchema').WalletStyleSet, 'aiPet' | 'tokenColors' | 'statusColors'>) => {
+    const style = getStyleForComponent(component);
+    return style.animation?.transition || 'all 0.2s ease';
+  };
+
   return {
     getComponentStyle,
     getTokenColorStyle,
     getStatusStyle,
     getButtonStyle,
+    getTransition,
     tokenColors: getTokenColors(),
     statusColors: getStatusColors()
   };

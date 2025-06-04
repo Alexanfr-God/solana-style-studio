@@ -13,7 +13,7 @@ interface WalletActionButtonsProps {
 
 const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({ onAction, style }) => {
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
-  const { getComponentStyle } = useWalletStyles();
+  const { getComponentStyle, getTransition } = useWalletStyles();
 
   const actions = [
     { id: 'receive', icon: Download, label: 'Receive' },
@@ -38,7 +38,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({ onAction, sty
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          transition: buttonStyle.animation?.transition || 'all 0.2s ease',
+          transition: getTransition('buttons'),
           transform: isHovered ? 'scale(1.05)' : 'scale(1)',
           boxShadow: isHovered ? `0 4px 12px ${style.accentColor}40` : 'none'
         };
