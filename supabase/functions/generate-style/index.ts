@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -10,8 +9,8 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// Конфигурация
-const N8N_WEBHOOK_URL = 'https://wacocu.app.n8n.cloud/webhook-test/ai-wallet-designer';
+// Конфигурация - UPDATED to production URL
+const N8N_WEBHOOK_URL = 'https://wacocu.app.n8n.cloud/webhook/ai-wallet-designer';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 // Анализ изображения через GPT-4o
@@ -143,6 +142,7 @@ serve(async (req) => {
     console.log('📝 User prompt:', prompt);
     console.log('🖼️ Image URL:', image_url);
     console.log('🎯 Layer type:', layer_type);
+    console.log('🌐 Using production N8N URL:', N8N_WEBHOOK_URL);
 
     // Шаг 1: Анализ изображения (если есть)
     let styleBlueprint;
@@ -218,8 +218,9 @@ serve(async (req) => {
       source: 'lovable-app'
     };
 
-    // Шаг 3: Отправка в N8N
-    console.log('🤖 Sending to N8N agents...');
+    // Шаг 3: Отправка в N8N - Enhanced logging
+    console.log('🤖 Sending to N8N production webhook...');
+    console.log('📡 N8N URL:', N8N_WEBHOOK_URL);
     
     const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
       method: 'POST',
@@ -229,13 +230,18 @@ serve(async (req) => {
       body: JSON.stringify(n8nPayload)
     });
 
+    console.log('📊 N8N Response Status:', n8nResponse.status);
+    console.log('📊 N8N Response Headers:', Object.fromEntries(n8nResponse.headers.entries()));
+
     if (!n8nResponse.ok) {
-      throw new Error(`N8N workflow failed: ${n8nResponse.status} ${n8nResponse.statusText}`);
+      const errorText = await n8nResponse.text();
+      console.error('❌ N8N Error Response:', errorText);
+      throw new Error(`N8N workflow failed: ${n8nResponse.status} ${n8nResponse.statusText} - ${errorText}`);
     }
 
     const walletSkin = await n8nResponse.json();
     
-    console.log('🎉 N8N agents completed successfully');
+    console.log('🎉 N8N production workflow completed successfully');
     console.log('📊 Quality score:', walletSkin.metadata?.qualityScore);
 
     // Шаг 4: Преобразование результата в формат WalletStyle
@@ -276,6 +282,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Error in AI wallet generation:', error);
+    
+    // Enhanced error logging for debugging
+    console.error('🔍 Error details:', {
+      message: error.message,
+      stack: error.stack,
+      n8nUrl: N8N_WEBHOOK_URL
+    });
     
     // Fallback к базовому стилю
     const fallbackStyle = {
