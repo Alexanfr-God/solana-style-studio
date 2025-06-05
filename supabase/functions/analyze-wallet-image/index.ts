@@ -1,5 +1,9 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import OpenAI from 'https://esm.sh/openai@4.28.0'
+
+// N8N Webhook URL for AI Wallet Designer
+const N8N_WEBHOOK_URL = 'https://wacocu.app.n8n.cloud/webhook/ai-wallet-designer'
 
 // Logging System Integration
 interface LogEntry {
@@ -57,12 +61,13 @@ class EdgeFunctionLogger {
       id: logId,
       timestamp: new Date().toISOString(),
       level: 'info',
-      module: 'ImageAnalysis',
+      module: 'WalletAliveAnalysis',
       action: 'analysis_start',
       data: {
         imageUrl: imageUrl.substring(0, 100) + '...',
         prompt,
         aiModel: 'gpt-4o',
+        n8nIntegration: true,
         hasAdditionalContext: !!prompt
       },
       userId,
@@ -73,22 +78,49 @@ class EdgeFunctionLogger {
     }
 
     await this.persistLog(logEntry)
-    console.log(`🔍 [${this.sessionId}] Starting image analysis`)
+    console.log(`🔍 [${this.sessionId}] Starting wallet image analysis with N8N integration`)
     return logId
   }
 
-  async logImageAnalysisSuccess(logId: string, styleBlueprint: any, tokenUsage: number): Promise<void> {
+  async logN8NIntegration(logId: string, success: boolean, result?: any, error?: string): Promise<void> {
+    const logEntry: LogEntry = {
+      id: `${logId}_n8n`,
+      timestamp: new Date().toISOString(),
+      level: success ? 'success' : 'warn',
+      module: 'N8NIntegration',
+      action: success ? 'n8n_success' : 'n8n_fallback',
+      data: {
+        n8nProcessed: success,
+        qualityScore: result?.metadata?.qualityScore || null,
+        agentsUsed: result?.metadata?.agentsUsed || [],
+        error: error || null,
+        fallbackUsed: !success
+      },
+      sessionId: this.sessionId,
+      performance: {
+        startTime: 0,
+        endTime: Date.now(),
+        duration: Date.now()
+      }
+    }
+
+    await this.persistLog(logEntry)
+    console.log(`🤖 [${this.sessionId}] N8N integration: ${success ? 'SUCCESS' : 'FALLBACK'}`)
+  }
+
+  async logAnalysisComplete(logId: string, styleBlueprint: any, n8nResult: any): Promise<void> {
     const logEntry: LogEntry = {
       id: logId,
       timestamp: new Date().toISOString(),
       level: 'success',
-      module: 'ImageAnalysis',
+      module: 'WalletAliveAnalysis',
       action: 'analysis_complete',
       data: {
         confidenceScore: styleBlueprint.meta?.confidenceScore || 0,
         styleTitle: styleBlueprint.meta?.title || 'Unknown',
         styleTheme: styleBlueprint.meta?.theme || 'Unknown',
-        tokenUsage,
+        n8nEnhanced: !!n8nResult,
+        enhancedQuality: n8nResult?.metadata?.qualityScore || null,
         colorPalette: styleBlueprint.colorSystem?.primary || null,
         fontRecommendation: styleBlueprint.typography?.fontFamily || null
       },
@@ -101,54 +133,7 @@ class EdgeFunctionLogger {
     }
 
     await this.persistLog(logEntry)
-    console.log(`✅ [${this.sessionId}] Analysis completed successfully`)
-  }
-
-  async logImageAnalysisError(logId: string, error: string, errorType: string): Promise<void> {
-    const logEntry: LogEntry = {
-      id: logId,
-      timestamp: new Date().toISOString(),
-      level: 'error',
-      module: 'ImageAnalysis',
-      action: 'analysis_failed',
-      data: {
-        error,
-        errorType,
-        fallbackUsed: true
-      },
-      sessionId: this.sessionId,
-      performance: {
-        startTime: 0,
-        endTime: Date.now(),
-        duration: Date.now()
-      }
-    }
-
-    await this.persistLog(logEntry)
-    console.error(`❌ [${this.sessionId}] Analysis failed: ${error}`)
-  }
-
-  async logPerformanceMetric(action: string, duration: number, success: boolean): Promise<void> {
-    const logEntry: LogEntry = {
-      id: `perf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      level: success ? 'info' : 'warn',
-      module: 'Performance',
-      action,
-      data: {
-        duration,
-        success,
-        performanceGrade: duration < 5000 ? 'excellent' : duration < 10000 ? 'good' : 'needs_improvement'
-      },
-      sessionId: this.sessionId,
-      performance: {
-        startTime: Date.now() - duration,
-        endTime: Date.now(),
-        duration
-      }
-    }
-
-    await this.persistLog(logEntry)
+    console.log(`✅ [${this.sessionId}] Wallet analysis completed with enhancement`)
   }
 }
 
@@ -252,7 +237,7 @@ interface StyleBlueprint {
 }
 
 // System Prompt для максимально детального анализа
-const SYSTEM_PROMPT = `You are an elite AI Art Director and UX Designer specializing in Web3 wallet customization. Your expertise spans luxury fashion, meme culture, crypto aesthetics, and user interface design.
+const SYSTEM_PROMPT = `You are an elite AI Art Director and UX Designer specializing in Web3 wallet customization for WalletAlive Playground. Your expertise spans luxury fashion, meme culture, crypto aesthetics, and user interface design.
 
 CRITICAL INSTRUCTIONS:
 1. Analyze the uploaded image with the precision of a professional art critic
@@ -281,26 +266,7 @@ QUALITY STANDARDS:
 - All suggestions must respect Web3 aesthetic trends
 - Consider mobile-first design principles
 
-Remember: This analysis will be used by AI agents to create a cohesive, professional wallet skin that users will want to mint as NFTs.`
-
-const USER_PROMPT_TEMPLATE = `Analyze this image for Web3 wallet skin generation:
-
-Context: This image will inspire the visual design of a cryptocurrency wallet interface. The wallet consists of multiple layers (login, home, send, receive, settings) with the following constraints:
-
-- Center area (safe zone) must remain clear for UI elements
-- Decorative styling applied to edges and background
-- Must maintain professional appearance while incorporating the image's aesthetic
-- Target audience: Web3 natives, crypto enthusiasts, NFT collectors
-
-Please provide a comprehensive StyleBlueprint that captures:
-1. The essence and mood of this image
-2. Specific color palette with hex codes
-3. Typography that matches the aesthetic
-4. Interactive element styling
-5. Cultural/community references
-6. Technical implementation guidance
-
-Focus on creating a design system that would make users say "WOW" when they see their customized wallet.`
+Remember: This analysis will be processed by N8N AI agents to create a cohesive, professional wallet skin for WalletAlive Playground.`
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -355,7 +321,24 @@ export default async function handler(req: Request) {
     })
 
     // Construct enhanced prompt
-    let enhancedPrompt = USER_PROMPT_TEMPLATE
+    let enhancedPrompt = `Analyze this image for WalletAlive Playground customization:
+
+Context: This image will inspire the visual design of a cryptocurrency wallet interface for WalletAlive Playground. The wallet consists of multiple layers with the following constraints:
+
+- Center area (safe zone) must remain clear for UI elements
+- Decorative styling applied to edges and background
+- Must maintain professional appearance while incorporating the image's aesthetic
+- Target audience: Web3 natives, crypto enthusiasts, NFT collectors, WalletAlive users
+
+Please provide a comprehensive StyleBlueprint that captures:
+1. The essence and mood of this image
+2. Specific color palette with hex codes
+3. Typography that matches the aesthetic
+4. Interactive element styling
+5. Cultural/community references
+6. Technical implementation guidance for WalletAlive
+
+Focus on creating a design system that would make users say "WOW" when they see their customized wallet in WalletAlive Playground.`
     
     if (additionalContext) {
       enhancedPrompt += `\n\nAdditional Context: ${additionalContext}`
@@ -412,47 +395,129 @@ export default async function handler(req: Request) {
       throw new Error('Failed to parse AI response as JSON')
     }
 
-    // Log performance metrics
     const analysisDuration = Date.now() - analysisStartTime
-    await logger.logPerformanceMetric('image_analysis', analysisDuration, true)
+    console.log(`📊 Analysis completed in ${analysisDuration}ms`)
 
-    // Log success
+    // **NEW: N8N Integration for WalletAlive Playground**
+    let n8nResult = null
+    let n8nSuccess = false
+
+    // Determine webhook URL
+    const targetWebhook = webhookUrl || N8N_WEBHOOK_URL
+
+    if (targetWebhook && targetWebhook.includes('n8n')) {
+      console.log('🤖 Starting N8N Multi-Agent Processing...')
+      
+      try {
+        // Create WalletBlueprint for N8N
+        const walletBlueprintForN8N = walletBlueprint || {
+          layer: "home",
+          elements: {
+            background: true,
+            buttons: true,
+            aiPet: true,
+            navigation: true,
+            inputs: false
+          },
+          layout: {
+            width: 320,
+            height: 569,
+            safeZone: {
+              x: 80,
+              y: 108,
+              width: 160,
+              height: 336
+            }
+          }
+        }
+
+        // Prepare N8N payload
+        const n8nPayload = {
+          userPrompt: additionalContext || 'WalletAlive Playground style generation',
+          styleBlueprint: styleBlueprint,
+          walletBlueprint: walletBlueprintForN8N,
+          imageUrl: imageUrl,
+          userId: 'wallet-alive-user',
+          timestamp: new Date().toISOString(),
+          source: 'wallet-alive-playground',
+          sessionId: logger['sessionId']
+        }
+
+        console.log('📤 Sending to N8N:', targetWebhook)
+
+        const n8nResponse = await fetch(targetWebhook, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(n8nPayload)
+        })
+
+        if (n8nResponse.ok) {
+          n8nResult = await n8nResponse.json()
+          n8nSuccess = true
+          console.log('🎉 N8N Multi-Agent processing completed!')
+          console.log('📊 Quality Score:', n8nResult.metadata?.qualityScore || 'N/A')
+        } else {
+          const errorText = await n8nResponse.text()
+          console.warn(`⚠️ N8N call failed: ${n8nResponse.status} - ${errorText}`)
+        }
+      } catch (n8nError) {
+        console.warn('⚠️ N8N integration error:', n8nError.message)
+      }
+    }
+
+    // Log N8N integration result
+    await logger.logN8NIntegration(analysisLogId, n8nSuccess, n8nResult, n8nSuccess ? null : 'N8N call failed')
+
+    // Prepare final response
     const tokenUsage = response.usage?.total_tokens || 0
-    await logger.logImageAnalysisSuccess(analysisLogId, styleBlueprint, tokenUsage)
 
-    // Add timestamp and processing metadata
     const finalResult = {
       success: true,
       timestamp: new Date().toISOString(),
       imageUrl,
       styleBlueprint,
+      
+      // **NEW: Enhanced styles from N8N**
+      enhancedStyles: n8nResult?.generatedStyles || null,
+      
       processingMeta: {
         model: "gpt-4o",
-        promptVersion: "v2.0",
+        promptVersion: "v2.1-wallet-alive",
         confidenceScore: styleBlueprint.meta?.confidenceScore || 0.8,
         processingTime: analysisDuration,
         sessionId: logger['sessionId'],
-        tokenUsage
+        tokenUsage,
+        
+        // **NEW: N8N metadata**
+        n8nProcessed: n8nSuccess,
+        n8nQualityScore: n8nResult?.metadata?.qualityScore || null,
+        agentsUsed: n8nResult?.metadata?.agentsUsed || ['ImageAnalysis'],
+        enhancementApplied: n8nSuccess
       }
     }
+
+    // Log completion
+    await logger.logAnalysisComplete(analysisLogId, styleBlueprint, n8nResult)
 
     // Save to Supabase for learning/analytics
     try {
       await supabase
         .from('style_library')
         .insert({
-          style_name: `${styleBlueprint.meta?.title || 'AI Analysis'} - ${styleBlueprint.meta?.theme || 'Custom'}`,
-          style_data: styleBlueprint,
+          style_name: `${styleBlueprint.meta?.title || 'WalletAlive Analysis'} - ${styleBlueprint.meta?.theme || 'Custom'}`,
+          style_data: n8nResult?.generatedStyles || styleBlueprint,
           ai_analysis: styleBlueprint,
           inspiration_image_url: imageUrl,
-          created_by: "ai-style-blueprint-v2"
+          created_by: "wallet-alive-playground"
         })
     } catch (dbError) {
       console.warn('Failed to save to style library:', dbError)
     }
 
-    // Send webhook if provided (for n8n integration)
-    if (webhookUrl) {
+    // Send webhook notification if provided (additional webhook support)
+    if (webhookUrl && webhookUrl !== targetWebhook) {
       try {
         await fetch(webhookUrl, {
           method: 'POST',
@@ -460,14 +525,14 @@ export default async function handler(req: Request) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            event: 'style_analysis_complete',
+            event: 'wallet_alive_analysis_complete',
             data: finalResult,
             timestamp: new Date().toISOString()
           })
         })
-        console.log('Webhook sent successfully to:', webhookUrl)
+        console.log('📬 Additional webhook sent successfully')
       } catch (webhookError) {
-        console.warn('Failed to send webhook:', webhookError)
+        console.warn('Failed to send additional webhook:', webhookError)
       }
     }
 
@@ -482,22 +547,78 @@ export default async function handler(req: Request) {
     )
 
   } catch (error) {
-    console.error('Error in image analysis:', error)
+    console.error('💥 Error in WalletAlive image analysis:', error)
     
     // Log error
     if (analysisLogId) {
-      await logger.logImageAnalysisError(
-        analysisLogId, 
-        error.message || 'Unknown error',
-        error.name || 'UnknownError'
-      )
+      const errorLogEntry: LogEntry = {
+        id: `${analysisLogId}_error`,
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        module: 'WalletAliveAnalysis',
+        action: 'analysis_failed',
+        data: {
+          error: error.message || 'Unknown error',
+          errorType: error.name || 'UnknownError',
+          fallbackUsed: true
+        },
+        sessionId: logger['sessionId'],
+        performance: {
+          startTime: 0,
+          endTime: Date.now(),
+          duration: Date.now()
+        }
+      }
+      
+      await logger['persistLog'](errorLogEntry)
     }
     
+    // Return fallback response for WalletAlive
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message || 'Internal server error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        fallback: {
+          styleBlueprint: {
+            meta: {
+              title: "WalletAlive Fallback Style",
+              theme: "modern",
+              keywords: ["fallback", "wallet", "crypto"],
+              inspiration: ["web3", "modern ui"],
+              confidenceScore: 0.6
+            },
+            colorSystem: {
+              primary: "#6366f1",
+              secondary: ["#8b5cf6", "#f59e0b"],
+              accent: ["#10b981"],
+              neutral: "#6b7280",
+              gradient: {
+                from: "#6366f1",
+                to: "#8b5cf6",
+                angle: "135deg"
+              },
+              colorTheory: "complementary",
+              temperature: "cool"
+            },
+            mood: {
+              emotions: ["confident", "modern"],
+              energyLevel: "medium",
+              targetAudience: ["crypto users"],
+              vibe: "professional"
+            },
+            typography: {
+              fontFamily: "Inter, sans-serif",
+              category: "sans-serif",
+              weight: "medium",
+              case: "mixed",
+              fontDecorations: [],
+              intendedEffect: "clean and readable",
+              readabilityScore: 0.9
+            },
+            styleTags: ["fallback", "modern", "web3", "wallet-alive"]
+          }
+        }
       }),
       {
         status: 500,
