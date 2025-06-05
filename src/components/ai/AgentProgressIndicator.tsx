@@ -3,13 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
-
-interface AgentStatus {
-  name: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  result?: any;
-  error?: string;
-}
+import { AgentStatus } from '../../types/agentTypes';
 
 interface AgentProgressIndicatorProps {
   agents: AgentStatus[];

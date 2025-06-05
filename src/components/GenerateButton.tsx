@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { generateStyle } from '../services/apiService';
 import { Wand, Brain, Zap } from 'lucide-react';
 import AgentProgressIndicator from './ai/AgentProgressIndicator';
+import { AgentStatus } from '../types/agentTypes';
 
 const GenerateButton = () => {
   const { 
@@ -19,12 +20,12 @@ const GenerateButton = () => {
   const { toast } = useToast();
   
   const [showAgentProgress, setShowAgentProgress] = useState(false);
-  const [agentStatuses, setAgentStatuses] = useState([
-    { name: 'StyleAgent', status: 'pending' as const },
-    { name: 'FontAgent', status: 'pending' as const },
-    { name: 'ButtonAgent', status: 'pending' as const },
-    { name: 'CharacterAgent', status: 'pending' as const },
-    { name: 'LayoutAgent', status: 'pending' as const }
+  const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>([
+    { name: 'StyleAgent', status: 'pending' },
+    { name: 'FontAgent', status: 'pending' },
+    { name: 'ButtonAgent', status: 'pending' },
+    { name: 'CharacterAgent', status: 'pending' },
+    { name: 'LayoutAgent', status: 'pending' }
   ]);
   const [currentAgent, setCurrentAgent] = useState<string>();
 
