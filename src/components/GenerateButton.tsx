@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useCustomizationStore } from '../stores/customizationStore';
 import { useToast } from '@/components/ui/use-toast';
 import { generateStyle } from '../services/apiService';
-import { Wand, Brain, Zap } from 'lucide-react';
+import { Wand, Brain, Zap, Sparkles } from 'lucide-react';
 import AgentProgressIndicator from './ai/AgentProgressIndicator';
 import { AgentStatus } from '../types/agentTypes';
 
@@ -30,10 +30,10 @@ const GenerateButton = () => {
   const [currentAgent, setCurrentAgent] = useState<string>();
 
   const handleGenerate = async () => {
-    if (!prompt) {
+    if (!prompt && !uploadedImage) {
       toast({
-        title: "Missing description",
-        description: "Please enter a style description first",
+        title: "Missing information",
+        description: "Please enter a style description or upload an image",
         variant: "destructive",
       });
       return;
@@ -48,10 +48,18 @@ const GenerateButton = () => {
     );
 
     try {
-      // Simulate agent progress updates
+      // Show N8N pipeline progress
       const agentSequence = ['StyleAgent', 'FontAgent', 'ButtonAgent'];
       if (activeLayer === 'wallet') agentSequence.push('CharacterAgent');
       agentSequence.push('LayoutAgent');
+
+      // Show initial toast
+      toast({
+        title: uploadedImage ? "🧠 N8N Multi-Agent Pipeline" : "🎨 N8N Style Generation",
+        description: uploadedImage 
+          ? `Analyzing image and running ${agentSequence.length} specialized AI agents...`
+          : `Processing prompt with ${agentSequence.length} AI agents via N8N...`,
+      });
 
       // Start agent simulation
       let currentIndex = 0;
@@ -82,7 +90,7 @@ const GenerateButton = () => {
           );
           setCurrentAgent(undefined);
         }
-      }, 1500);
+      }, 2000); // Slower progress for N8N workflow
 
       const generatedStyle = await generateStyle(prompt, uploadedImage, activeLayer);
       
@@ -94,9 +102,13 @@ const GenerateButton = () => {
         statuses.map(s => ({ ...s, status: 'completed' as const }))
       );
       
+      const isN8NGenerated = generatedStyle.styleNotes?.includes('N8N');
+      
       toast({
-        title: "🎨 AI Multi-Agent Style Generated",
-        description: `Enhanced style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'} using ${agentSequence.length} specialized agents`,
+        title: isN8NGenerated ? "🎉 N8N Multi-Agent Success!" : "✅ Style Generated",
+        description: isN8NGenerated 
+          ? `Advanced N8N pipeline completed - ${generatedStyle.styleNotes}`
+          : `Style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
       });
 
       // Hide progress after a delay
@@ -117,8 +129,8 @@ const GenerateButton = () => {
       }
 
       toast({
-        title: "Generation failed",
-        description: "Failed to generate style. Please try again.",
+        title: "N8N Generation failed",
+        description: "N8N workflow error. Using fallback style.",
         variant: "destructive",
       });
 
@@ -131,44 +143,47 @@ const GenerateButton = () => {
   };
 
   const hasImage = !!uploadedImage;
-  const isEnhanced = hasImage; // Enhanced mode when image is provided
+  const isN8NMode = true; // Always use N8N now
 
   return (
     <div className="space-y-4">
       <Button
         onClick={handleGenerate}
         className={`w-full font-bold ${
-          isEnhanced 
-            ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' 
+          hasImage 
+            ? 'bg-gradient-to-r from-purple-500 via-blue-500 to-green-500 hover:from-purple-600 hover:via-blue-600 hover:to-green-600' 
             : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
         }`}
-        disabled={isGenerating || !prompt}
+        disabled={isGenerating || (!prompt && !uploadedImage)}
       >
         {isGenerating ? (
           <>
             <Brain className="mr-2 h-4 w-4 animate-pulse" />
-            AI Agents Working...
+            N8N Agents Working...
           </>
-        ) : isEnhanced ? (
+        ) : hasImage ? (
           <>
-            <Brain className="mr-2 h-4 w-4" />
-            Generate Enhanced Style
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate with N8N Pipeline
           </>
         ) : (
           <>
-            <Zap className="mr-2 h-4 w-4" />
-            Generate Style
+            <Brain className="mr-2 h-4 w-4" />
+            Generate with N8N
           </>
         )}
       </Button>
 
-      {isEnhanced && !isGenerating && (
+      {isN8NMode && !isGenerating && (
         <div className="text-xs text-center text-white/60 space-y-1">
           <div className="flex items-center justify-center space-x-1">
-            <Brain className="h-3 w-3 text-purple-400" />
-            <span>Enhanced mode: Uses specialized AI agents</span>
+            <Brain className="h-3 w-3 text-blue-400" />
+            <span>Powered by N8N Multi-Agent Pipeline</span>
           </div>
           <div>StyleAgent • FontAgent • ButtonAgent • LayoutAgent</div>
+          {hasImage && (
+            <div className="text-purple-400">+ Advanced Image Analysis via GPT-4o</div>
+          )}
         </div>
       )}
 
