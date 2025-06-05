@@ -431,6 +431,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
           walletStyle: defaultWalletStyle,
           currentLayer: 'home',
           selectedWallet: 'phantom',
+          uploadedImage: null,
           aiPet: {
             isVisible: true,
             emotion: 'idle',
@@ -491,7 +492,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
         set({ isCustomizing: true });
         setTimeout(() => {
           set({ isCustomizing: false });
-        }, 3000);
+        }, 5000); // Extended time for analysis
       },
       onCustomizationStart: () => {
         set({ isCustomizing: true });
@@ -521,6 +522,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
         set({
           currentBlueprint: blueprint,
           walletStyle: updatedStyle,
+          isCustomizing: false, // Complete the customization process
           
           components: {
             ...get().components,

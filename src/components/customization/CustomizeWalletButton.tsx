@@ -4,25 +4,51 @@ import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { Wand2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { analyzeImageWithBlueprint } from '@/services/styleBlueprintService';
+
+// Hardcoded settings for simplified UX
+const N8N_WEBHOOK_URL = 'https://wacocu.app.n8n.cloud/webhook/ai-wallet-designer';
+const DEFAULT_PROMPT = 'Analyze this image and create a custom Web3 wallet style';
 
 const CustomizeWalletButton = () => {
-  const { uploadedImage, customizeWallet, isCustomizing, onCustomizationStart } = useWalletCustomizationStore();
+  const { uploadedImage, isCustomizing, onCustomizationStart, applyStyleFromBlueprint } = useWalletCustomizationStore();
 
-  const handleCustomize = () => {
+  const handleCustomize = async () => {
     if (!uploadedImage) {
       toast.error("Please upload a style inspiration image first!");
       return;
     }
     
     onCustomizationStart();
-    customizeWallet();
-    toast.success("Applying style to your wallet! 🎨");
+    
+    try {
+      toast.info("Analyzing image and generating wallet style...");
+      
+      // Perform StyleBlueprint analysis with hardcoded settings
+      const result = await analyzeImageWithBlueprint(
+        uploadedImage,
+        DEFAULT_PROMPT,
+        undefined, // wallet blueprint
+        N8N_WEBHOOK_URL
+      );
+
+      // Automatically apply the generated style
+      applyStyleFromBlueprint(result.styleBlueprint);
+      
+      toast.success(`Wallet customized successfully! 🎨`, {
+        description: `Applied ${result.styleBlueprint.meta.theme} theme`
+      });
+
+    } catch (error) {
+      console.error('Customization error:', error);
+      toast.error('Failed to customize wallet. Please try again.');
+    }
   };
 
   return (
     <Button 
       onClick={handleCustomize}
-      disabled={isCustomizing}
+      disabled={isCustomizing || !uploadedImage}
       className={`
         w-full h-12 text-lg font-semibold transition-all duration-300
         ${uploadedImage 
@@ -35,7 +61,7 @@ const CustomizeWalletButton = () => {
       {isCustomizing ? (
         <>
           <Sparkles className="h-5 w-5 mr-2 animate-spin" />
-          Customizing...
+          Analyzing & Customizing...
         </>
       ) : (
         <>
