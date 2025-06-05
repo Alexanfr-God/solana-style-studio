@@ -78,6 +78,22 @@ export class FrontendLogger {
     console.log(`💾 [Save] Style saved to library: ${styleName}`);
   }
 
+  // User Interaction Logging (missing method)
+  async logUserInteraction(
+    action: 'upload' | 'generate' | 'like' | 'dislike' | 'mint' | 'share' | 'apply_style' | 'save_style',
+    elementId: string,
+    details: string
+  ): Promise<void> {
+    await logger.logUserInteraction(
+      action,
+      elementId,
+      details,
+      this.currentUserId || undefined
+    );
+
+    console.log(`👤 [Interaction] ${action} on ${elementId}: ${details}`);
+  }
+
   // Wallet Customization Tracking
   async logWalletCustomization(customizationType: string, details: string): Promise<void> {
     await logger.logUserInteraction(

@@ -19,7 +19,7 @@ interface LogEntry {
   user_id?: string;
   session_id: string;
   performance: {
-    startTime: number;
+    startTime?: number;
     endTime?: number;
     duration?: number;
   };
@@ -66,7 +66,22 @@ const LoggingDashboard: React.FC = () => {
         return;
       }
 
-      setLogs(data || []);
+      // Transform Supabase data to match our LogEntry interface
+      const transformedLogs: LogEntry[] = (data || []).map(log => ({
+        id: log.id,
+        timestamp: log.timestamp,
+        level: log.level as 'debug' | 'info' | 'warn' | 'error' | 'success',
+        module: log.module,
+        action: log.action,
+        data: typeof log.data === 'object' ? log.data as Record<string, any> : {},
+        user_id: log.user_id || undefined,
+        session_id: log.session_id,
+        performance: typeof log.performance === 'object' ? 
+          log.performance as { startTime?: number; endTime?: number; duration?: number } : 
+          {}
+      }));
+
+      setLogs(transformedLogs);
     } catch (error) {
       console.error('Failed to load logs:', error);
     } finally {
@@ -97,17 +112,25 @@ const LoggingDashboard: React.FC = () => {
       const errorRate = totalLogs > 0 ? (errorLogs.length / totalLogs) * 100 : 0;
       
       const responseTimes = logsData
-        .filter(log => log.performance?.duration)
-        .map(log => log.performance.duration);
+        .filter(log => {
+          const perf = typeof log.performance === 'object' ? log.performance as any : null;
+          return perf && typeof perf.duration === 'number';
+        })
+        .map(log => {
+          const perf = log.performance as any;
+          return perf.duration;
+        });
+      
       const averageResponseTime = responseTimes.length > 0
-        ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+        ? responseTimes.reduce((sum: number, time: number) => sum + time, 0) / responseTimes.length
         : 0;
 
       const activeUsers = new Set(logsData.map(log => log.user_id).filter(Boolean)).size;
 
       // Top errors
       const errorCounts = errorLogs.reduce((acc, log) => {
-        const error = log.data?.error || 'Unknown Error';
+        const data = typeof log.data === 'object' ? log.data as any : {};
+        const error = data?.error || 'Unknown Error';
         acc[error] = (acc[error] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
