@@ -21,7 +21,7 @@ export interface ConductorResponse {
   sessionId: string;
   analysis?: Record<string, unknown>;
   styleResult?: Record<string, unknown>;
-  recommendations?: Record<string, unknown>;
+  recommendations?: AIRecommendations;
   nextSteps?: string[];
   error?: string;
 }
@@ -211,7 +211,7 @@ export class AIConductorService {
    * Получение рекомендаций AI Pet
    */
   static extractAIPetRecommendations(conductorResponse: ConductorResponse) {
-    const recommendations = conductorResponse.recommendations as AIRecommendations;
+    const recommendations = conductorResponse.recommendations;
     return recommendations?.aiPetCustomization || {
       recommendedEmotion: 'idle',
       customAnimations: ['subtle bounce'],

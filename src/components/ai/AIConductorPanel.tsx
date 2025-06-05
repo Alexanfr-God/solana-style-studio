@@ -174,11 +174,11 @@ const AIConductorPanel: React.FC<AIConductorPanelProps> = ({
               </div>
             )}
 
-            {response.recommendations && (
+            {response.recommendations && response.recommendations.styleImprovements && (
               <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
                 <h4 className="font-medium text-purple-300 mb-2">AI Recommendations:</h4>
                 <div className="text-purple-200 text-sm space-y-1">
-                  {response.recommendations.styleImprovements?.slice(0, 3).map((improvement: string, index: number) => (
+                  {response.recommendations.styleImprovements.slice(0, 3).map((improvement: string, index: number) => (
                     <div key={index} className="flex items-center gap-2">
                       <Wand2 className="h-3 w-3" />
                       {improvement}
