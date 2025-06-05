@@ -19,9 +19,9 @@ export interface ConductorRequest {
 export interface ConductorResponse {
   success: boolean;
   sessionId: string;
-  analysis?: any;
-  styleResult?: any;
-  recommendations?: any;
+  analysis?: Record<string, unknown>;
+  styleResult?: Record<string, unknown>;
+  recommendations?: Record<string, unknown>;
   nextSteps?: string[];
   error?: string;
 }
@@ -149,7 +149,7 @@ export class AIConductorService {
         .limit(limit);
 
       if (error) throw error;
-      return data;
+      return data || [];
     } catch (error) {
       console.error('Error fetching user sessions:', error);
       return [];
@@ -226,14 +226,18 @@ export class AIConductorService {
     const aiPetRec = this.extractAIPetRecommendations(conductorResponse);
     const analysis = conductorResponse.analysis;
     
+    const emotion = aiPetRec.recommendedEmotion;
+    const validEmotions = ['idle', 'happy', 'excited', 'sleepy', 'suspicious', 'sad', 'wink'];
+    const finalEmotion = validEmotions.includes(emotion) ? emotion : 'idle';
+    
     return {
-      emotion: aiPetRec.recommendedEmotion as 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink',
+      emotion: finalEmotion as 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink',
       zone: 'inside' as const,
       bodyType: 'phantom' as const,
       customAnimations: aiPetRec.customAnimations,
       interactionTriggers: aiPetRec.interactionTriggers,
-      colorScheme: analysis?.colors?.primary || '#9945FF',
-      personality: aiPetRec.recommendedEmotion
+      colorScheme: (analysis as any)?.colors?.primary || '#9945FF',
+      personality: finalEmotion
     };
   }
 }
