@@ -1,273 +1,228 @@
 import { create } from 'zustand';
-import { WalletStyleSet, AiPetEmotion, AiPetZone, AiPetBodyType, ComponentStyle } from '@/types/walletStyleSchema';
+import { persist } from 'zustand/middleware';
+import { generateStyle } from '@/services/apiService';
+import type { StyleBlueprint } from '@/services/styleBlueprintService';
+import { blueprintToWalletStyles } from '@/services/styleBlueprintService';
 
-interface Account {
-  id: string;
-  name: string;
-  address: string;
-  network: string;
+export type LayerType = 'login' | 'wallet';
+
+export interface WalletStyle {
+  backgroundColor: string;
+  backgroundImage?: string;
+  accentColor: string;
+  textColor: string;
+  buttonColor: string;
+  buttonTextColor: string;
+  borderRadius: string;
+  fontFamily: string;
+  boxShadow: string;
+  styleNotes?: string;
 }
 
-interface Token {
-  id: string;
-  name: string;
-  symbol: string;
-  amount: string;
-  value: string;
-  change?: string;
-  isPositive: boolean;
-}
-
-interface AiPetState {
-  isVisible: boolean;
-  emotion: AiPetEmotion;
-  zone: AiPetZone;
-  bodyType: AiPetBodyType;
-  energy: number;
-}
-
-export type WalletLayer = 'login' | 'home' | 'apps' | 'swap' | 'history' | 'search' | 'send' | 'receive' | 'buy';
-
-interface WalletCustomizationState {
-  walletStyle: WalletStyleSet & {
-    backgroundColor?: string;
-    primaryColor?: string;
-    font?: string;
-    image?: string;
+interface ComponentStyles {
+  header: {
+    backgroundColor: string;
+    color: string;
+    fontFamily: string;
   };
-  selectedWallet: 'phantom' | 'metamask';
-  isCustomizing: boolean;
-  aiPet: AiPetState;
-  containerBounds: DOMRect | null;
-  currentLayer: WalletLayer;
-  accounts: Account[];
-  activeAccountId: string | null;
-  tokens: Token[];
-  totalBalance: string;
-  totalChange: string;
-  isBalancePositive: boolean;
-  showAccountSidebar: boolean;
-  showAccountDropdown: boolean;
-  uploadedImage: string | null;
-
-  // Methods
-  setSelectedWallet: (wallet: 'phantom' | 'metamask') => void;
-  setCurrentLayer: (layer: WalletLayer) => void;
-  setContainerBounds: (bounds: DOMRect) => void;
-  unlockWallet: () => void;
-  lockWallet: () => void;
-  resetWallet: () => void;
-  getStyleForComponent: (component: keyof Omit<WalletStyleSet, 'aiPet' | 'tokenColors' | 'statusColors'>) => ComponentStyle;
-  getTokenColors: () => WalletStyleSet['tokenColors'];
-  getStatusColors: () => WalletStyleSet['statusColors'];
-  setActiveAccount: (accountId: string) => void;
-  setShowAccountSidebar: (show: boolean) => void;
-  setShowAccountDropdown: (show: boolean) => void;
-  triggerAiPetInteraction: () => void;
-  updateAiPetEnergy: () => void;
-  onAiPetHover: () => void;
-  onAiPetClick: () => void;
-  onAiPetDoubleClick: () => void;
-  setAiPetEmotion: (emotion: AiPetEmotion) => void;
-  setAiPetZone: (zone: AiPetZone) => void;
-  setAiPetBodyType: (bodyType: AiPetBodyType) => void;
-  setTemporaryEmotion: (emotion: AiPetEmotion, duration: number) => void;
-  setWalletStyle: (style: Partial<WalletStyleSet & { backgroundColor?: string; primaryColor?: string; font?: string; image?: string }>) => void;
-  setUploadedImage: (image: string | null) => void;
-  customizeWallet: () => void;
-  onCustomizationStart: () => void;
+  buttons: {
+    backgroundColor: string;
+    color: string;
+    borderRadius: string;
+    boxShadow: string;
+  };
+  inputs: {
+    backgroundColor: string;
+    borderColor: string;
+    focusColor: string;
+  };
 }
 
-const initialWalletStyle: WalletStyleSet & {
-  backgroundColor?: string;
-  primaryColor?: string;
-  font?: string;
-  image?: string;
-} = {
-  global: {
-    backgroundColor: '#181818',
-    textColor: '#FFFFFF',
-    fontFamily: 'Inter',
-    borderRadius: '12px',
-    animation: {
-      transition: 'all 0.2s ease',
-    },
-  },
-  header: {},
-  buttons: {
-    backgroundColor: '#9945FF',
-    textColor: '#FFFFFF',
-    borderRadius: '12px',
-    animation: {
-      transition: 'all 0.2s ease',
-    },
-  },
-  panels: {},
-  navigation: {},
-  inputs: {},
-  cards: {
-    backgroundColor: 'rgba(40, 40, 40, 0.8)',
-    textColor: '#FFFFFF',
-    borderRadius: '16px',
-    animation: {
-      transition: 'all 0.2s ease',
-    },
-  },
-  overlays: {},
-  containers: {
-    backgroundColor: 'rgba(40, 40, 40, 0.8)',
-    textColor: '#FFFFFF',
-  },
-  searchInputs: {},
-  tokenColors: {
-    positive: '#34D399',
-    negative: '#EF4444',
-    neutral: '#9CA3AF',
-    warning: '#FBBF24',
-    info: '#3B82F6',
-  },
-  statusColors: {
-    success: '#10B981',
-    error: '#EF4444',
-    pending: '#FBBF24',
-    inactive: '#6B7280',
-  },
-  aiPet: {
-    zone: 'inside',
-    bodyType: 'phantom',
-    emotion: 'idle',
-  },
-  backgroundColor: '#181818',
-  primaryColor: '#9945FF',
-  font: 'Inter',
+interface WalletCustomizationStore {
+  loginStyle: WalletStyle;
+  walletStyle: WalletStyle;
+  activeLayer: LayerType;
+  prompt: string;
+  uploadedImage: string | null;
+  isGenerating: boolean;
+  editorMode: 'create-style' | 'fine-tune' | 'decorate';
+  components: ComponentStyles;
+  
+  setBackgroundColor: (color: string) => void;
+  setLoginStyle: (style: WalletStyle) => void;
+  setWalletStyle: (style: WalletStyle) => void;
+  setStyleForLayer: (layer: LayerType, style: WalletStyle) => void;
+  setActiveLayer: (layer: LayerType) => void;
+  setPrompt: (prompt: string) => void;
+  setUploadedImage: (image: string | null) => void;
+  setIsGenerating: (isGenerating: boolean) => void;
+  setEditorMode: (mode: 'create-style' | 'fine-tune' | 'decorate') => void;
+  resetStyles: () => void;
+  lockWallet: () => void;
+  
+  currentBlueprint: StyleBlueprint | null;
+  applyStyleFromBlueprint: (blueprint: StyleBlueprint) => void;
+}
+
+const defaultLoginStyle: WalletStyle = {
+  backgroundColor: '#131313',
+  accentColor: '#9945FF',
+  textColor: '#FFFFFF',
+  buttonColor: '#9945FF',
+  buttonTextColor: '#000000',
+  borderRadius: '100px',
+  fontFamily: 'Inter, sans-serif',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+  styleNotes: 'default login style'
 };
 
-export type { AiPetEmotion, AiPetZone, AiPetBodyType };
+const defaultWalletStyle: WalletStyle = {
+  backgroundColor: '#131313',
+  accentColor: '#9945FF',
+  textColor: '#FFFFFF',
+  buttonColor: 'rgba(40, 40, 40, 0.8)',
+  buttonTextColor: '#9945FF',
+  borderRadius: '16px',
+  fontFamily: 'Inter, sans-serif',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+  styleNotes: 'default wallet style'
+};
 
-export const useWalletCustomizationStore = create<WalletCustomizationState>((set, get) => ({
-  walletStyle: initialWalletStyle,
-  selectedWallet: 'phantom',
-  isCustomizing: false,
-  aiPet: {
-    isVisible: true,
-    emotion: 'idle',
-    zone: 'inside',
-    bodyType: 'phantom',
-    energy: 100,
-  },
-  containerBounds: null,
-  currentLayer: 'login',
-  accounts: [
-    { id: '1', name: 'Main Account', address: '3QLo...yJd2', network: 'Solana' },
-    { id: '2', name: 'Savings', address: '7YTp...x9kL', network: 'Solana' },
-  ],
-  activeAccountId: '1',
-  tokens: [
-    { id: '1', name: 'TheCoin', symbol: 'THECOIN', amount: '12.34M', value: '$123.45M', change: '+5.67%', isPositive: true },
-    { id: '2', name: 'Solana', symbol: 'SOL', amount: '5.03', value: '$1,127.61', change: '-1.23%', isPositive: false },
-  ],
-  totalBalance: '$124.57M',
-  totalChange: '+4.44%',
-  isBalancePositive: true,
-  showAccountSidebar: false,
-  showAccountDropdown: false,
-  uploadedImage: null,
-
-  setSelectedWallet: (wallet) => set({ selectedWallet: wallet }),
-  setCurrentLayer: (layer) => set({ currentLayer: layer }),
-  setContainerBounds: (bounds) => set({ containerBounds: bounds }),
-  unlockWallet: () => {
-    set({ currentLayer: 'home' });
-  },
-  lockWallet: () => {
-    set({ currentLayer: 'login' });
-  },
-  resetWallet: () => {
-    set({ 
-      walletStyle: initialWalletStyle,
-      currentLayer: 'login',
+export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
+  persist(
+    (set, get) => ({
+      loginStyle: defaultLoginStyle,
+      walletStyle: defaultWalletStyle,
+      activeLayer: 'wallet',
+      prompt: '',
       uploadedImage: null,
-      isCustomizing: false 
-    });
-  },
-  getStyleForComponent: (component) => {
-    const style = get().walletStyle[component];
-    return style || {};
-  },
-  getTokenColors: () => get().walletStyle.tokenColors,
-  getStatusColors: () => get().walletStyle.statusColors,
-  setActiveAccount: (accountId) => set({ activeAccountId: accountId }),
-  setShowAccountSidebar: (show) => set({ showAccountSidebar: show }),
-  setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
-  triggerAiPetInteraction: () => {
-    const aiPet = get().aiPet;
-    set({ aiPet: { ...aiPet, emotion: 'excited' } });
-    setTimeout(() => {
-      const currentAiPet = get().aiPet;
-      set({ aiPet: { ...currentAiPet, emotion: 'idle' } });
-    }, 1500);
-  },
-  updateAiPetEnergy: () => {
-    const aiPet = get().aiPet;
-    let newEnergy = aiPet.energy - 1;
-    if (newEnergy < 0) newEnergy = 100;
-    set({ aiPet: { ...aiPet, energy: newEnergy } });
-  },
-  onAiPetHover: () => {
-    const aiPet = get().aiPet;
-    set({ aiPet: { ...aiPet, emotion: 'suspicious' } });
-    setTimeout(() => {
-      const currentAiPet = get().aiPet;
-      set({ aiPet: { ...currentAiPet, emotion: 'idle' } });
-    }, 1500);
-  },
-  onAiPetClick: () => {
-    const aiPet = get().aiPet;
-    set({ aiPet: { ...aiPet, emotion: 'wink' } });
-    setTimeout(() => {
-      const currentAiPet = get().aiPet;
-      set({ aiPet: { ...currentAiPet, emotion: 'idle' } });
-    }, 1500);
-  },
-  onAiPetDoubleClick: () => {
-    const aiPet = get().aiPet;
-    const newZone = aiPet.zone === 'inside' ? 'outside' : 'inside';
-    set({ aiPet: { ...aiPet, zone: newZone } });
-  },
-  setAiPetEmotion: (emotion) => {
-    const aiPet = get().aiPet;
-    set({ aiPet: { ...aiPet, emotion } });
-  },
-  setAiPetZone: (zone) => {
-    const aiPet = get().aiPet;
-    set({ aiPet: { ...aiPet, zone } });
-  },
-  setAiPetBodyType: (bodyType) => {
-    const aiPet = get().aiPet;
-    set({ aiPet: { ...aiPet, bodyType } });
-  },
-  setTemporaryEmotion: (emotion, duration) => {
-    const aiPet = get().aiPet;
-    set({ aiPet: { ...aiPet, emotion } });
-    setTimeout(() => {
-      const currentAiPet = get().aiPet;
-      set({ aiPet: { ...currentAiPet, emotion: 'idle' } });
-    }, duration);
-  },
-  setWalletStyle: (style) => {
-    set((state) => ({
-      walletStyle: { ...state.walletStyle, ...style }
-    }));
-  },
-  setUploadedImage: (image) => set({ uploadedImage: image }),
-  customizeWallet: () => {
-    set({ isCustomizing: true });
-    // Simulate customization process
-    setTimeout(() => {
-      set({ isCustomizing: false });
-    }, 2000);
-  },
-  onCustomizationStart: () => {
-    set({ isCustomizing: true });
-  },
-}));
+      isGenerating: false,
+      editorMode: 'create-style',
+      components: {
+        header: {
+          backgroundColor: '#1e1e1e',
+          color: '#ffffff',
+          fontFamily: 'Inter, sans-serif',
+        },
+        buttons: {
+          backgroundColor: '#9945FF',
+          color: '#ffffff',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+        },
+        inputs: {
+          backgroundColor: '#2b2b2b',
+          borderColor: '#444444',
+          focusColor: '#9945FF',
+        },
+      },
+      
+      setBackgroundColor: (color: string) => {
+        if (get().activeLayer === 'login') {
+          set((state) => ({
+            loginStyle: { ...state.loginStyle, backgroundColor: color },
+          }));
+        } else {
+          set((state) => ({
+            walletStyle: { ...state.walletStyle, backgroundColor: color },
+          }));
+        }
+      },
+      setLoginStyle: (style: WalletStyle) => set({ loginStyle: style }),
+      setWalletStyle: (style: WalletStyle) => set({ walletStyle: style }),
+      setStyleForLayer: (layer: LayerType, style: WalletStyle) => {
+        if (layer === 'login') {
+          set({ loginStyle: style });
+        } else {
+          set({ walletStyle: style });
+        }
+      },
+      setActiveLayer: (layer: LayerType) => set({ activeLayer: layer }),
+      setPrompt: (prompt: string) => set({ prompt }),
+      setUploadedImage: (image: string | null) => set({ uploadedImage: image }),
+      setIsGenerating: (isGenerating: boolean) => set({ isGenerating }),
+      setEditorMode: (mode: 'create-style' | 'fine-tune' | 'decorate') => set({ editorMode: mode }),
+      resetStyles: () => {
+        set({ 
+          loginStyle: defaultLoginStyle, 
+          walletStyle: defaultWalletStyle,
+          components: {
+            header: {
+              backgroundColor: '#1e1e1e',
+              color: '#ffffff',
+              fontFamily: 'Inter, sans-serif',
+            },
+            buttons: {
+              backgroundColor: '#9945FF',
+              color: '#ffffff',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+            },
+            inputs: {
+              backgroundColor: '#2b2b2b',
+              borderColor: '#444444',
+              focusColor: '#9945FF',
+            },
+          }
+        });
+      },
+      lockWallet: () => {
+        set({
+          walletStyle: {
+            ...get().walletStyle,
+            styleNotes: 'Locked. Unlock in settings.',
+          },
+        });
+      },
+      
+      currentBlueprint: null,
+      
+      applyStyleFromBlueprint: (blueprint: StyleBlueprint) => {
+        const walletStyles = blueprintToWalletStyles(blueprint);
+        
+        set({
+          currentBlueprint: blueprint,
+          backgroundColor: walletStyles.backgroundColor,
+          backgroundImage: walletStyles.backgroundImage,
+          accentColor: walletStyles.accentColor,
+          textColor: walletStyles.textColor,
+          fontFamily: walletStyles.fontFamily,
+          borderRadius: walletStyles.borderRadius,
+          boxShadow: walletStyles.boxShadow,
+          
+          components: {
+            ...get().components,
+            header: {
+              ...get().components.header,
+              backgroundColor: blueprint.colorSystem.neutral,
+              color: walletStyles.textColor,
+              fontFamily: blueprint.typography.fontFamily,
+            },
+            buttons: {
+              ...get().components.buttons,
+              backgroundColor: blueprint.colorSystem.primary,
+              color: walletStyles.buttonTextColor,
+              borderRadius: walletStyles.borderRadius,
+              boxShadow: blueprint.lighting.shadows,
+            },
+            inputs: {
+              ...get().components.inputs,
+              backgroundColor: blueprint.interactionHints.loginBox.background,
+              borderColor: blueprint.interactionHints.loginBox.border,
+              focusColor: blueprint.interactionHints.loginBox.focusState,
+            }
+          }
+        });
+        
+        console.log('Applied StyleBlueprint to wallet:', {
+          title: blueprint.meta.title,
+          theme: blueprint.meta.theme,
+          confidence: blueprint.meta.confidenceScore
+        });
+      },
+    }),
+    {
+      name: 'wallet-customization-storage',
+    }
+  )
+);
