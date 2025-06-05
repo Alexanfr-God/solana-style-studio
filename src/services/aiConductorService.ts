@@ -194,7 +194,6 @@ export class AIConductorService {
         throw new Error('No style result found in session');
       }
 
-      // Здесь можно добавить логику применения стиля к конкретному кошельку
       console.log('Applying style to wallet:', walletId, session.style_result);
       
       return {
@@ -228,7 +227,7 @@ export class AIConductorService {
     const analysis = conductorResponse.analysis;
     
     return {
-      emotion: aiPetRec.recommendedEmotion as any,
+      emotion: aiPetRec.recommendedEmotion as 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink',
       zone: 'inside' as const,
       bodyType: 'phantom' as const,
       customAnimations: aiPetRec.customAnimations,
