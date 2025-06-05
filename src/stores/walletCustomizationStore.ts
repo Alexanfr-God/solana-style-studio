@@ -61,6 +61,32 @@ interface Account {
   address: string;
   balance: string;
   avatar?: string;
+  network: string;
+}
+
+interface Token {
+  id: string;
+  name: string;
+  symbol: string;
+  amount: string;
+  value: string;
+  change: string;
+  isPositive: boolean;
+}
+
+interface TokenColors {
+  positive: string;
+  negative: string;
+  neutral: string;
+  warning: string;
+  info: string;
+}
+
+interface StatusColors {
+  success: string;
+  error: string;
+  pending: string;
+  inactive: string;
 }
 
 interface WalletCustomizationStore {
@@ -103,6 +129,12 @@ interface WalletCustomizationStore {
   setShowAccountSidebar: (show: boolean) => void;
   setShowAccountDropdown: (show: boolean) => void;
   
+  // Wallet Data
+  tokens: Token[];
+  totalBalance: string;
+  totalChange: string;
+  isBalancePositive: boolean;
+  
   // Style Management
   setBackgroundColor: (color: string) => void;
   setLoginStyle: (style: WalletStyle) => void;
@@ -120,6 +152,8 @@ interface WalletCustomizationStore {
   
   // Component Styling
   getStyleForComponent: (component: string) => any;
+  getTokenColors: () => TokenColors;
+  getStatusColors: () => StatusColors;
   
   // Customization Methods
   customizeWallet: () => void;
@@ -164,16 +198,54 @@ const defaultAccounts: Account[] = [
     name: 'Main Account',
     address: '7Z8...K9L',
     balance: '2.45 SOL',
-    avatar: undefined
+    avatar: undefined,
+    network: 'Solana'
   },
   {
     id: 'account2', 
     name: 'Trading Account',
     address: '9M3...X2Y',
     balance: '0.12 SOL',
-    avatar: undefined
+    avatar: undefined,
+    network: 'Solana'
   }
 ];
+
+const defaultTokens: Token[] = [
+  {
+    id: 'sol',
+    name: 'Solana',
+    symbol: 'SOL',
+    amount: '2.45',
+    value: '$412.30',
+    change: '+5.2%',
+    isPositive: true
+  },
+  {
+    id: 'usdc',
+    name: 'USD Coin',
+    symbol: 'USDC',
+    amount: '150.00',
+    value: '$150.00',
+    change: '+0.1%',
+    isPositive: true
+  }
+];
+
+const defaultTokenColors: TokenColors = {
+  positive: '#10B981',
+  negative: '#EF4444',
+  neutral: '#6B7280',
+  warning: '#F59E0B',
+  info: '#3B82F6'
+};
+
+const defaultStatusColors: StatusColors = {
+  success: '#10B981',
+  error: '#EF4444',
+  pending: '#F59E0B',
+  inactive: '#6B7280'
+};
 
 export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
   persist(
@@ -277,6 +349,12 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
       setShowAccountSidebar: (show) => set({ showAccountSidebar: show }),
       setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
       
+      // Wallet Data
+      tokens: defaultTokens,
+      totalBalance: '$562.30',
+      totalChange: '+5.2%',
+      isBalancePositive: true,
+      
       // Style Management
       setBackgroundColor: (color: string) => {
         if (get().activeLayer === 'login') {
@@ -370,7 +448,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
           global: {
             backgroundColor: state.walletStyle.backgroundColor,
             textColor: state.walletStyle.textColor,
-            fontFamily: state.walletStyle.fontFamily
+            fontFamily: state.walletStyle.fontFamily,
+            color: state.walletStyle.textColor
           },
           header: state.components.header,
           buttons: state.components.buttons,
@@ -393,11 +472,19 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
             backgroundColor: state.walletStyle.backgroundColor,
             borderRadius: state.walletStyle.borderRadius,
             boxShadow: state.walletStyle.boxShadow
+          },
+          cards: {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: state.walletStyle.borderRadius,
+            boxShadow: state.walletStyle.boxShadow
           }
         };
         
         return baseStyles[component as keyof typeof baseStyles] || baseStyles.global;
       },
+      
+      getTokenColors: () => defaultTokenColors,
+      getStatusColors: () => defaultStatusColors,
       
       // Customization Methods
       customizeWallet: () => {

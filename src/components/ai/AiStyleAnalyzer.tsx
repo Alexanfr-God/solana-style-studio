@@ -15,7 +15,7 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastGeneratedStyle, setLastGeneratedStyle] = useState<any>(null);
   const [lastAnalysis, setLastAnalysis] = useState<any>(null);
-  const { setWalletStyle, setAiPetZone, triggerAiPetInteraction } = useWalletCustomizationStore();
+  const { setWalletStyle, setAiPetZone, triggerAiPetInteraction, walletStyle } = useWalletCustomizationStore();
 
   const handleAnalyzeAndApply = async () => {
     if (!uploadedImage) {
@@ -35,12 +35,17 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
       const walletStyleSet = generateWalletStyleFromAnalysis(analysis);
       setLastGeneratedStyle(walletStyleSet);
       
-      // Применяем глобальные стили к кошельку
-      setWalletStyle({
+      // Применяем глобальные стили к кошельку с полным объектом WalletStyle
+      const completeStyle = {
+        ...walletStyle, // Keep existing properties
         backgroundColor: walletStyleSet.global.backgroundColor,
+        accentColor: walletStyleSet.buttons.backgroundColor,
         primaryColor: walletStyleSet.buttons.backgroundColor,
+        fontFamily: walletStyleSet.global.fontFamily,
         font: walletStyleSet.global.fontFamily
-      });
+      };
+      
+      setWalletStyle(completeStyle);
       
       // Устанавливаем AI Pet в режим циркуляции вокруг кошелька
       setAiPetZone('outside');

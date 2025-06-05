@@ -31,7 +31,8 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
     setAiPetZone, 
     setAiPetEmotion,
     setAiPetBodyType,
-    triggerAiPetInteraction 
+    triggerAiPetInteraction,
+    walletStyle
   } = useWalletCustomizationStore();
 
   const handleAnalyzeAndApply = async () => {
@@ -62,17 +63,22 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
         triggerAiPetInteraction();
       }
       
-      // Apply global wallet styles - fix the background color type issue
+      // Apply global wallet styles with complete WalletStyle object
       const backgroundColor = Array.isArray(analysis.colors.background) 
         ? analysis.colors.background[0] 
         : analysis.colors.background;
       
-      setWalletStyle({
+      const completeStyle = {
+        ...walletStyle, // Keep existing properties
         backgroundColor: backgroundColor,
+        accentColor: analysis.colors.primary,
         primaryColor: analysis.colors.primary,
+        fontFamily: analysis.typography.primary,
         font: analysis.typography.primary,
         image: uploadedImage
-      });
+      };
+      
+      setWalletStyle(completeStyle);
       
       toast.success(`🎨 Analysis complete! Style "${analysis.style}" applied to all components`);
       
