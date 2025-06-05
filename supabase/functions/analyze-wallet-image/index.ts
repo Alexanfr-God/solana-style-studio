@@ -1,6 +1,156 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import OpenAI from 'https://esm.sh/openai@4.28.0'
+
+// Logging System Integration
+interface LogEntry {
+  id: string
+  timestamp: string
+  level: 'debug' | 'info' | 'warn' | 'error' | 'success'
+  module: string
+  action: string
+  data: Record<string, any>
+  userId?: string
+  sessionId: string
+  performance: {
+    startTime: number
+    endTime?: number
+    duration?: number
+  }
+}
+
+class EdgeFunctionLogger {
+  private sessionId: string
+  private supabaseClient: any
+
+  constructor(supabaseClient: any) {
+    this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    this.supabaseClient = supabaseClient
+  }
+
+  private async persistLog(logEntry: LogEntry): Promise<void> {
+    try {
+      const { error } = await this.supabaseClient
+        .from('system_logs')
+        .insert({
+          id: logEntry.id,
+          timestamp: logEntry.timestamp,
+          level: logEntry.level,
+          module: logEntry.module,
+          action: logEntry.action,
+          data: logEntry.data,
+          user_id: logEntry.userId,
+          session_id: logEntry.sessionId,
+          performance: logEntry.performance
+        })
+
+      if (error) {
+        console.error('Failed to persist log:', error)
+      }
+    } catch (error) {
+      console.error('Logging error:', error)
+    }
+  }
+
+  async logImageAnalysisStart(imageUrl: string, prompt: string, userId?: string): Promise<string> {
+    const logId = `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const logEntry: LogEntry = {
+      id: logId,
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      module: 'ImageAnalysis',
+      action: 'analysis_start',
+      data: {
+        imageUrl: imageUrl.substring(0, 100) + '...',
+        prompt,
+        aiModel: 'gpt-4o',
+        hasAdditionalContext: !!prompt
+      },
+      userId,
+      sessionId: this.sessionId,
+      performance: {
+        startTime: Date.now()
+      }
+    }
+
+    await this.persistLog(logEntry)
+    console.log(`🔍 [${this.sessionId}] Starting image analysis`)
+    return logId
+  }
+
+  async logImageAnalysisSuccess(logId: string, styleBlueprint: any, tokenUsage: number): Promise<void> {
+    const logEntry: LogEntry = {
+      id: logId,
+      timestamp: new Date().toISOString(),
+      level: 'success',
+      module: 'ImageAnalysis',
+      action: 'analysis_complete',
+      data: {
+        confidenceScore: styleBlueprint.meta?.confidenceScore || 0,
+        styleTitle: styleBlueprint.meta?.title || 'Unknown',
+        styleTheme: styleBlueprint.meta?.theme || 'Unknown',
+        tokenUsage,
+        colorPalette: styleBlueprint.colorSystem?.primary || null,
+        fontRecommendation: styleBlueprint.typography?.fontFamily || null
+      },
+      sessionId: this.sessionId,
+      performance: {
+        startTime: 0,
+        endTime: Date.now(),
+        duration: Date.now()
+      }
+    }
+
+    await this.persistLog(logEntry)
+    console.log(`✅ [${this.sessionId}] Analysis completed successfully`)
+  }
+
+  async logImageAnalysisError(logId: string, error: string, errorType: string): Promise<void> {
+    const logEntry: LogEntry = {
+      id: logId,
+      timestamp: new Date().toISOString(),
+      level: 'error',
+      module: 'ImageAnalysis',
+      action: 'analysis_failed',
+      data: {
+        error,
+        errorType,
+        fallbackUsed: true
+      },
+      sessionId: this.sessionId,
+      performance: {
+        startTime: 0,
+        endTime: Date.now(),
+        duration: Date.now()
+      }
+    }
+
+    await this.persistLog(logEntry)
+    console.error(`❌ [${this.sessionId}] Analysis failed: ${error}`)
+  }
+
+  async logPerformanceMetric(action: string, duration: number, success: boolean): Promise<void> {
+    const logEntry: LogEntry = {
+      id: `perf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      level: success ? 'info' : 'warn',
+      module: 'Performance',
+      action,
+      data: {
+        duration,
+        success,
+        performanceGrade: duration < 5000 ? 'excellent' : duration < 10000 ? 'good' : 'needs_improvement'
+      },
+      sessionId: this.sessionId,
+      performance: {
+        startTime: Date.now() - duration,
+        endTime: Date.now(),
+        duration
+      }
+    }
+
+    await this.persistLog(logEntry)
+  }
+}
 
 // StyleBlueprint v2 Interface
 interface StyleBlueprint {
@@ -159,18 +309,30 @@ const corsHeaders = {
 }
 
 export default async function handler(req: Request) {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { 
+      status: 405, 
+      headers: corsHeaders 
+    })
+  }
+
+  // Initialize Supabase client
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  )
+
+  // Initialize logger
+  const logger = new EdgeFunctionLogger(supabase)
+
+  let analysisLogId: string
+
   try {
-    if (req.method === 'OPTIONS') {
-      return new Response('ok', { headers: corsHeaders })
-    }
-
-    if (req.method !== 'POST') {
-      return new Response('Method not allowed', { 
-        status: 405, 
-        headers: corsHeaders 
-      })
-    }
-
     // Parse request
     const { imageUrl, additionalContext = '', walletBlueprint = null, webhookUrl = null } = await req.json()
 
@@ -183,6 +345,9 @@ export default async function handler(req: Request) {
         }
       )
     }
+
+    // Start logging
+    analysisLogId = await logger.logImageAnalysisStart(imageUrl, additionalContext)
 
     // Initialize OpenAI
     const openai = new OpenAI({
@@ -199,6 +364,9 @@ export default async function handler(req: Request) {
     if (walletBlueprint) {
       enhancedPrompt += `\n\nWallet Structure: ${JSON.stringify(walletBlueprint, null, 2)}`
     }
+
+    // Log performance start
+    const analysisStartTime = Date.now()
 
     // Call GPT-4 Vision API
     const response = await openai.chat.completions.create({
@@ -244,6 +412,14 @@ export default async function handler(req: Request) {
       throw new Error('Failed to parse AI response as JSON')
     }
 
+    // Log performance metrics
+    const analysisDuration = Date.now() - analysisStartTime
+    await logger.logPerformanceMetric('image_analysis', analysisDuration, true)
+
+    // Log success
+    const tokenUsage = response.usage?.total_tokens || 0
+    await logger.logImageAnalysisSuccess(analysisLogId, styleBlueprint, tokenUsage)
+
     // Add timestamp and processing metadata
     const finalResult = {
       success: true,
@@ -254,17 +430,14 @@ export default async function handler(req: Request) {
         model: "gpt-4o",
         promptVersion: "v2.0",
         confidenceScore: styleBlueprint.meta?.confidenceScore || 0.8,
-        processingTime: Date.now()
+        processingTime: analysisDuration,
+        sessionId: logger['sessionId'],
+        tokenUsage
       }
     }
 
     // Save to Supabase for learning/analytics
     try {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
-
       await supabase
         .from('style_library')
         .insert({
@@ -275,7 +448,7 @@ export default async function handler(req: Request) {
           created_by: "ai-style-blueprint-v2"
         })
     } catch (dbError) {
-      console.warn('Failed to save to database:', dbError)
+      console.warn('Failed to save to style library:', dbError)
     }
 
     // Send webhook if provided (for n8n integration)
@@ -295,7 +468,6 @@ export default async function handler(req: Request) {
         console.log('Webhook sent successfully to:', webhookUrl)
       } catch (webhookError) {
         console.warn('Failed to send webhook:', webhookError)
-        // Don't fail the request if webhook fails
       }
     }
 
@@ -311,6 +483,15 @@ export default async function handler(req: Request) {
 
   } catch (error) {
     console.error('Error in image analysis:', error)
+    
+    // Log error
+    if (analysisLogId) {
+      await logger.logImageAnalysisError(
+        analysisLogId, 
+        error.message || 'Unknown error',
+        error.name || 'UnknownError'
+      )
+    }
     
     return new Response(
       JSON.stringify({

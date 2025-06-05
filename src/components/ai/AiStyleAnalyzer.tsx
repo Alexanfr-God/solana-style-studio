@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Upload, Heart } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { analyzeImageWithAI, generateWalletStyleFromAnalysis, saveStyleToLibrary } from '@/services/aiStyleAnalysisService';
 import { toast } from 'sonner';
+import { frontendLogger } from '@/services/frontendLogger';
 
 interface AiStyleAnalyzerProps {
   uploadedImage: string | null;
@@ -24,8 +24,15 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
     }
 
     setIsAnalyzing(true);
+    
+    // Log the start of style generation
+    await frontendLogger.logStyleGeneration('AI Style Analysis', true);
+    
     try {
       toast.info('🤖 AI анализирует ваше изображение...');
+      
+      // Log image analysis start
+      console.log('🔍 Starting AI style analysis...');
       
       // Анализируем изображение с помощью AI
       const analysis = await analyzeImageWithAI(uploadedImage);
@@ -51,6 +58,9 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
       setAiPetZone('outside');
       triggerAiPetInteraction();
       
+      // Log successful application
+      await frontendLogger.logStyleApplication(`AI ${analysis.style}`, completeStyle);
+      
       toast.success(`🎨 Стиль "${analysis.style}" применен! AI Pet теперь циркулирует вокруг кошелька`);
       
       // Уведомляем родительский компонент
@@ -60,6 +70,10 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
       
     } catch (error) {
       console.error('Ошибка AI анализа:', error);
+      
+      // Log the error
+      await frontendLogger.logUserError('AI_ANALYSIS_ERROR', error.message, 'ai_style_analyzer');
+      
       toast.error('Ошибка при анализе изображения. Попробуйте другое изображение.');
     } finally {
       setIsAnalyzing(false);
@@ -82,9 +96,16 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
         uploadedImage
       );
       
+      // Log save to library
+      await frontendLogger.logSaveToLibrary(styleName);
+      
       toast.success('🎉 Стиль сохранен в библиотеку!');
     } catch (error) {
       console.error('Ошибка сохранения стиля:', error);
+      
+      // Log the error
+      await frontendLogger.logUserError('SAVE_TO_LIBRARY_ERROR', error.message, 'ai_style_analyzer');
+      
       toast.error('Ошибка при сохранении стиля');
     }
   };

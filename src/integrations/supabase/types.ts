@@ -266,6 +266,45 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          action: string
+          created_at: string
+          data: Json
+          id: string
+          level: string
+          module: string
+          performance: Json
+          session_id: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          data?: Json
+          id?: string
+          level: string
+          module: string
+          performance?: Json
+          session_id: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          level?: string
+          module?: string
+          performance?: Json
+          session_id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       wallet_components: {
         Row: {
           component_name: string

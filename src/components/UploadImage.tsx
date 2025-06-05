@@ -1,9 +1,9 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCustomizationStore } from '../stores/customizationStore';
 import { Upload, X } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { frontendLogger } from '@/services/frontendLogger';
 
 const UploadImage = () => {
   const { uploadedImage, setUploadedImage } = useCustomizationStore();
@@ -11,12 +11,13 @@ const UploadImage = () => {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
+      await frontendLogger.logUserError('FILE_TOO_LARGE', `File size: ${file.size} bytes`, 'upload_image');
       toast({
         title: "Image too large",
         description: "Please select an image under 5MB",
@@ -28,17 +29,26 @@ const UploadImage = () => {
     setIsUploading(true);
     const reader = new FileReader();
     
-    reader.onloadend = () => {
-      setUploadedImage(reader.result as string);
+    reader.onloadend = async () => {
+      const imageUrl = reader.result as string;
+      setUploadedImage(imageUrl);
       setIsUploading(false);
+      
+      // Log successful upload
+      await frontendLogger.logImageUpload(imageUrl, file.size, file.type);
+      
       toast({
         title: "Image uploaded",
         description: "Your reference image has been uploaded",
       });
     };
     
-    reader.onerror = () => {
+    reader.onerror = async () => {
       setIsUploading(false);
+      
+      // Log upload error
+      await frontendLogger.logUserError('UPLOAD_ERROR', 'FileReader error', 'upload_image');
+      
       toast({
         title: "Upload failed",
         description: "Failed to upload image. Please try again.",
@@ -53,9 +63,13 @@ const UploadImage = () => {
     fileInputRef.current?.click();
   };
 
-  const handleRemoveImage = () => {
+  const handleRemoveImage = async () => {
     setUploadedImage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    
+    // Log image removal
+    await frontendLogger.logUserInteraction('generate', 'upload_image', 'Image removed');
+    
     toast({
       title: "Image removed",
       description: "Reference image has been removed",
