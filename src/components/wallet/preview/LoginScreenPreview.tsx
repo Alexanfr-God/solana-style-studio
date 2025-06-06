@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
 import { 
@@ -197,31 +198,31 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         />
       </div>
       
-      {/* Main content area with ghost at top and login form at bottom */}
+      {/* Main content area restructured */}
       <div className="flex-1 flex flex-col relative z-10">
-        {/* Ghost Logo in upper area - only displayed when NOT generating */}
+        {/* Ghost Logo in center area - larger and more prominent */}
         {!isGenerating && (
-          <div className="flex-1 flex items-center justify-center pt-8 pb-4">
-            <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
+          <div className="flex-1 flex items-center justify-center py-8">
+            <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 12px ' + style.accentColor + '60)' }}>
               <img 
                 src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
                 alt="Phantom Ghost Logo" 
-                width="120" 
-                height="120" 
-                className="max-w-[120px] animate-pulse-slow"
+                width="160" 
+                height="160" 
+                className="max-w-[160px] animate-pulse-slow"
                 style={{
-                  filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
+                  filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2) brightness(1.1)` : 'brightness(1.1)'
                 }}
               />
-              <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-                style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
+              <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-25" 
+                style={{ border: `3px solid ${style.accentColor || '#9945FF'}` }}
               />
             </div>
           </div>
         )}
         
-        {/* Login Form - positioned in bottom area */}
-        <div className="px-6 pb-6 space-y-4">
+        {/* Login Form - positioned in bottom area with tighter spacing */}
+        <div className="px-6 pb-6 space-y-3">
           {/* Login Title */}
           <h2 
             className="text-center text-lg font-medium" 
@@ -273,9 +274,9 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             </div>
           </div>
           
-          {/* Forgot password link */}
+          {/* Forgot password link - moved closer to password field */}
           <div 
-            className="w-full text-center"
+            className="w-full text-center pt-1"
             onClick={handleForgotPassword}
           >
             <span 
@@ -290,8 +291,8 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             </span>
           </div>
           
-          {/* Enhanced Unlock Button */}
-          <div className="w-full pt-2">
+          {/* Enhanced Unlock Button - moved closer to forgot password */}
+          <div className="w-full pt-3">
             <button 
               onClick={handleUnlock}
               className="w-full h-12 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98]"
