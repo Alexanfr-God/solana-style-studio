@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,21 +64,21 @@ const WalletPreviewContainer = () => {
   };
 
   const renderLoginScreen = () => (
-    <div className="relative p-6" style={{
+    <div className="relative p-6 flex flex-col" style={{
       backgroundColor: walletStyle.backgroundColor || '#181818',
       height: '541px',
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
     }}>
-      {/* AiPet - Centered in available space above button */}
-      {aiPet.isVisible && aiPet.zone === 'inside' && (
-        <div className="flex justify-center mt-8 mb-8">
+      {/* AiPet - Centered in the main area */}
+      <div className="flex-1 flex items-center justify-center">
+        {aiPet.isVisible && aiPet.zone === 'inside' && (
           <AiPet 
             emotion={aiPet.emotion}
             zone={aiPet.zone}
             bodyType={aiPet.bodyType}
             color={walletStyle.primaryColor || '#9945FF'}
-            size={96}
+            size={120}
             onZoneChange={setAiPetZone}
             onEmotionChange={setAiPetEmotion}
             onHover={onAiPetHover}
@@ -87,65 +86,62 @@ const WalletPreviewContainer = () => {
             onDoubleClick={onAiPetDoubleClick}
             containerBounds={containerBounds}
           />
-        </div>
-      )}
+        )}
+      </div>
       
-      {/* Login Form - Centered */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-xs space-y-6">
-          {/* Password Title */}
-          <h2 className="text-center font-medium text-white" style={{
-            fontFamily: walletStyle.font || 'Inter',
-            fontSize: '20px'
-          }}>
-            Enter your password
-          </h2>
-          
-          {/* Password Input */}
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={e => {
-                setPassword(e.target.value);
+      {/* Login Form - Compact and positioned at bottom */}
+      <div className="space-y-3 mb-6">
+        {/* Password Title */}
+        <h2 className="text-center font-medium text-white text-lg" style={{
+          fontFamily: walletStyle.font || 'Inter'
+        }}>
+          Enter your password
+        </h2>
+        
+        {/* Password Input */}
+        <div className="relative max-w-xs mx-auto">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={e => {
+              setPassword(e.target.value);
+              triggerAiPetInteraction();
+            }}
+            placeholder="Password"
+            className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm"
+            style={{
+              backgroundColor: '#0f0f0f',
+              fontFamily: walletStyle.font || 'Inter'
+            }}
+          />
+          {password && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowPassword(!showPassword);
                 triggerAiPetInteraction();
               }}
-              placeholder="Password"
-              className="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 border-none outline-none"
-              style={{
-                backgroundColor: '#0f0f0f',
-                fontFamily: walletStyle.font || 'Inter'
-              }}
-            />
-            {password && (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPassword(!showPassword);
-                  triggerAiPetInteraction();
-                }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            )}
-          </div>
-          
-          {/* Forgot Password Link */}
-          <div className="text-center">
-            <button
-              className="text-gray-400 hover:text-gray-300 text-sm"
-              style={{ fontFamily: walletStyle.font || 'Inter' }}
-              onClick={triggerAiPetInteraction}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
             >
-              Forgot password?
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
-          </div>
+          )}
+        </div>
+        
+        {/* Forgot Password Link */}
+        <div className="text-center">
+          <button
+            className="text-gray-400 hover:text-gray-300 text-sm"
+            style={{ fontFamily: walletStyle.font || 'Inter' }}
+            onClick={triggerAiPetInteraction}
+          >
+            Forgot password?
+          </button>
         </div>
       </div>
       
-      {/* Unlock Button - Positioned at bottom */}
-      <div className="absolute left-6 right-6" style={{ bottom: '25px' }}>
+      {/* Unlock Button - At the very bottom */}
+      <div className="px-0">
         <button
           className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
           style={{
