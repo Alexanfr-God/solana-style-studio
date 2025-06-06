@@ -171,7 +171,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         }}
       />
 
-      {/* Header with centered phantom branding - reduced padding for full height */}
+      {/* Header with centered phantom branding */}
       <div className="p-3 flex justify-center items-center relative z-10">
         <div 
           className="text-center relative" 
@@ -197,32 +197,34 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         />
       </div>
       
-      {/* Logo and Content area - optimized spacing for full height */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 pt-6 relative z-10">
-        {/* Animated Ghost Logo - only displayed when NOT generating */}
+      {/* Main content area with ghost at top and login form at bottom */}
+      <div className="flex-1 flex flex-col relative z-10">
+        {/* Ghost Logo in upper area - only displayed when NOT generating */}
         {!isGenerating && (
-          <div className="mb-8 relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
-            <img 
-              src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
-              alt="Phantom Ghost Logo" 
-              width="100" 
-              height="100" 
-              className="max-w-[100px] animate-pulse-slow"
-              style={{
-                filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
-              }}
-            />
-            <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-              style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
-            />
+          <div className="flex-1 flex items-center justify-center pt-8 pb-4">
+            <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
+              <img 
+                src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
+                alt="Phantom Ghost Logo" 
+                width="120" 
+                height="120" 
+                className="max-w-[120px] animate-pulse-slow"
+                style={{
+                  filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
+                }}
+              />
+              <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
+                style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
+              />
+            </div>
           </div>
         )}
         
-        {/* Content container with optimized spacing for full height */}
-        <div className="w-full flex flex-col items-center space-y-4 relative z-10">
-          {/* Login Title - reduced margin */}
+        {/* Login Form - positioned in bottom area */}
+        <div className="px-6 pb-6 space-y-4">
+          {/* Login Title */}
           <h2 
-            className="text-xl font-medium" 
+            className="text-center text-lg font-medium" 
             style={{ 
               color: style.textColor || '#FFFFFF', 
               textShadow: getTextShadow(),
@@ -232,10 +234,10 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             Enter your password
           </h2>
           
-          {/* Password field with enhanced styling - optimized size */}
-          <div className="w-full max-w-xs">
+          {/* Password field with enhanced styling */}
+          <div className="w-full">
             <div 
-              className="h-10 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
+              className="h-12 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
               style={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.07)',
                 borderRadius: style.borderRadius || '100px',
@@ -248,7 +250,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white transition-colors text-sm"
+                className="w-full bg-transparent border-none outline-none text-white transition-colors"
                 placeholder="Password"
                 style={{
                   caretColor: style.accentColor || '#9945FF',
@@ -271,13 +273,13 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             </div>
           </div>
           
-          {/* Forgot password link - reduced margin */}
+          {/* Forgot password link */}
           <div 
-            className="w-full max-w-xs text-center"
+            className="w-full text-center"
             onClick={handleForgotPassword}
           >
             <span 
-              className="text-gray-400 text-xs cursor-pointer hover:text-gray-300 relative group"
+              className="text-gray-400 text-sm cursor-pointer hover:text-gray-300 relative group"
               style={{ transition: 'all 0.3s ease' }}
             >
               Forgot password?
@@ -288,11 +290,11 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             </span>
           </div>
           
-          {/* Enhanced Unlock Button - optimized size */}
-          <div className="w-full max-w-xs mt-3">
+          {/* Enhanced Unlock Button */}
+          <div className="w-full pt-2">
             <button 
               onClick={handleUnlock}
-              className="w-full h-10 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98] text-sm"
+              className="w-full h-12 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98]"
               style={{ 
                 backgroundColor: style.buttonColor || '#9b87f5',
                 color: style.buttonTextColor || '#000000',
