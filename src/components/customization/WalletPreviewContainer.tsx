@@ -74,7 +74,7 @@ const WalletPreviewContainer = () => {
       <div className="flex-1 flex items-center justify-center">
         <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + (walletStyle.primaryColor || '#9945FF') + '50)' }}>
           <img 
-            src="/lovable-uploads/30b03f94-e591-4935-a3e0-5a3b9bffac9e.png" 
+            src="/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png" 
             alt="Phantom Ghost Logo" 
             width="120" 
             height="120" 
