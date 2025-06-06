@@ -171,14 +171,13 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         }}
       />
 
-      {/* Header with centered phantom branding - reduced padding for full height */}
-      <div className="p-3 flex justify-center items-center relative z-10">
+      {/* Header with centered phantom branding */}
+      <div className="p-4 flex justify-center items-center relative z-10">
         <div 
           className="text-center relative" 
           style={textStyle}
         >
           phantom
-          {/* Add subtle animated accent line below text for better visibility */}
           <div 
             className="absolute bottom-0 left-0 w-full h-[2px] transform origin-left"
             style={{ 
@@ -197,122 +196,101 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         />
       </div>
       
-      {/* Logo and Content area - optimized spacing for full height */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 pt-6 relative z-10">
-        {/* Animated Ghost Logo - only displayed when NOT generating */}
-        {!isGenerating && (
-          <div className="mb-8 relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
-            <img 
-              src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
-              alt="Phantom Ghost Logo" 
-              width="100" 
-              height="100" 
-              className="max-w-[100px] animate-pulse-slow"
-              style={{
-                filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
-              }}
-            />
-            <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-              style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
-            />
-          </div>
-        )}
+      {/* Upper space for AI Pet - this space is reserved for AI pet positioning */}
+      <div className="flex-1 relative z-10" />
+      
+      {/* Login form positioned in lower section */}
+      <div className="p-6 pb-8 relative z-10 space-y-6">
+        {/* Login Title */}
+        <h2 
+          className="text-xl font-medium text-center" 
+          style={{ 
+            color: style.textColor || '#FFFFFF', 
+            textShadow: getTextShadow(),
+            letterSpacing: '0.5px'
+          }}
+        >
+          Enter your password
+        </h2>
         
-        {/* Content container with optimized spacing for full height */}
-        <div className="w-full flex flex-col items-center space-y-4 relative z-10">
-          {/* Login Title - reduced margin */}
-          <h2 
-            className="text-xl font-medium" 
+        {/* Password field with enhanced styling */}
+        <div className="w-full">
+          <div 
+            className="h-12 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
             style={{ 
-              color: style.textColor || '#FFFFFF', 
-              textShadow: getTextShadow(),
-              letterSpacing: '0.5px'
+              backgroundColor: 'rgba(255, 255, 255, 0.07)',
+              borderRadius: style.borderRadius || '100px',
+              border: `1px solid ${style.accentColor}40`,
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease'
             }}
           >
-            Enter your password
-          </h2>
-          
-          {/* Password field with enhanced styling - optimized size */}
-          <div className="w-full max-w-xs">
-            <div 
-              className="h-10 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
-              style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.07)',
-                borderRadius: style.borderRadius || '100px',
-                border: `1px solid ${style.accentColor}40`,
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
-                transition: 'all 0.3s ease'
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-white transition-colors"
+              placeholder="Password"
+              style={{
+                caretColor: style.accentColor || '#9945FF',
               }}
-            >
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white transition-colors text-sm"
-                placeholder="Password"
-                style={{
-                  caretColor: style.accentColor || '#9945FF',
-                }}
-              />
-              {password.length > 0 && (
-                <button 
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-gray-400 hover:text-white transition-colors flex items-center justify-center"
-                  style={{ color: style.accentColor || '#9945FF' }}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              )}
-              
-              {/* Line animation for focus effect */}
-              <div className="absolute bottom-0 left-0 w-full h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform"
-                style={{ backgroundColor: style.accentColor || '#9945FF' }}
-              />
-            </div>
+            />
+            {password.length > 0 && (
+              <button 
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 text-gray-400 hover:text-white transition-colors flex items-center justify-center"
+                style={{ color: style.accentColor || '#9945FF' }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            )}
+            
+            <div className="absolute bottom-0 left-0 w-full h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform"
+              style={{ backgroundColor: style.accentColor || '#9945FF' }}
+            />
           </div>
-          
-          {/* Forgot password link - reduced margin */}
-          <div 
-            className="w-full max-w-xs text-center"
-            onClick={handleForgotPassword}
+        </div>
+        
+        {/* Forgot password link */}
+        <div 
+          className="w-full text-center"
+          onClick={handleForgotPassword}
+        >
+          <span 
+            className="text-gray-400 text-sm cursor-pointer hover:text-gray-300 relative group"
+            style={{ transition: 'all 0.3s ease' }}
+          >
+            Forgot password?
+            <span 
+              className="absolute left-0 right-0 bottom-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform" 
+              style={{ backgroundColor: style.accentColor || '#9945FF' }}
+            />
+          </span>
+        </div>
+        
+        {/* Enhanced Unlock Button */}
+        <div className="w-full">
+          <button 
+            onClick={handleUnlock}
+            className="w-full h-12 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98]"
+            style={{ 
+              backgroundColor: style.buttonColor || '#9b87f5',
+              color: style.buttonTextColor || '#000000',
+              borderRadius: style.borderRadius || '100px',
+              boxShadow: `0 4px 10px ${style.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
+            }}
           >
             <span 
-              className="text-gray-400 text-xs cursor-pointer hover:text-gray-300 relative group"
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              Forgot password?
-              <span 
-                className="absolute left-0 right-0 bottom-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform" 
-                style={{ backgroundColor: style.accentColor || '#9945FF' }}
-              />
-            </span>
-          </div>
-          
-          {/* Enhanced Unlock Button - optimized size */}
-          <div className="w-full max-w-xs mt-3">
-            <button 
-              onClick={handleUnlock}
-              className="w-full h-10 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98] text-sm"
-              style={{ 
-                backgroundColor: style.buttonColor || '#9b87f5',
-                color: style.buttonTextColor || '#000000',
-                borderRadius: style.borderRadius || '100px',
-                boxShadow: `0 4px 10px ${style.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
+              className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{
+                background: `linear-gradient(45deg, transparent 25%, ${style.accentColor || '#9b87f5'}40 50%, transparent 75%)`,
+                backgroundSize: '200% 200%',
+                animation: 'shine 1.5s infinite linear'
               }}
-            >
-              {/* Button shine effect */}
-              <span 
-                className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{
-                  background: `linear-gradient(45deg, transparent 25%, ${style.accentColor || '#9b87f5'}40 50%, transparent 75%)`,
-                  backgroundSize: '200% 200%',
-                  animation: 'shine 1.5s infinite linear'
-                }}
-              />
-              
-              <span className="relative z-10">Unlock</span>
-            </button>
-          </div>
+            />
+            
+            <span className="relative z-10">Unlock</span>
+          </button>
         </div>
       </div>
     </div>

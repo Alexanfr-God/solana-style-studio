@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,15 +64,15 @@ const WalletPreviewContainer = () => {
   };
 
   const renderLoginScreen = () => (
-    <div className="relative p-6" style={{
+    <div className="relative h-full flex flex-col" style={{
       backgroundColor: walletStyle.backgroundColor || '#181818',
       height: '541px',
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
     }}>
-      {/* AiPet - Centered in available space above button */}
+      {/* AI Pet positioned in upper section */}
       {aiPet.isVisible && aiPet.zone === 'inside' && (
-        <div className="flex justify-center mt-8 mb-8">
+        <div className="flex-1 flex items-center justify-center pt-8 pb-4">
           <AiPet 
             emotion={aiPet.emotion}
             zone={aiPet.zone}
@@ -90,9 +89,9 @@ const WalletPreviewContainer = () => {
         </div>
       )}
       
-      {/* Login Form - Centered */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-xs space-y-6">
+      {/* Login Form positioned at bottom - now handled by LoginScreenPreview */}
+      <div className="p-6 space-y-6">
+        <div className="w-full max-w-xs mx-auto space-y-6">
           {/* Password Title */}
           <h2 className="text-center font-medium text-white" style={{
             fontFamily: walletStyle.font || 'Inter',
@@ -141,22 +140,20 @@ const WalletPreviewContainer = () => {
               Forgot password?
             </button>
           </div>
+          
+          {/* Unlock Button */}
+          <button
+            className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
+            style={{
+              backgroundColor: walletStyle.primaryColor || '#a390f5',
+              fontFamily: walletStyle.font || 'Inter',
+              borderRadius: '12px'
+            }}
+            onClick={handleUnlock}
+          >
+            Unlock
+          </button>
         </div>
-      </div>
-      
-      {/* Unlock Button - Positioned at bottom */}
-      <div className="absolute left-6 right-6" style={{ bottom: '25px' }}>
-        <button
-          className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: walletStyle.primaryColor || '#a390f5',
-            fontFamily: walletStyle.font || 'Inter',
-            borderRadius: '12px'
-          }}
-          onClick={handleUnlock}
-        >
-          Unlock
-        </button>
       </div>
     </div>
   );
@@ -321,8 +318,35 @@ const WalletPreviewContainer = () => {
                   backgroundColor: '#111111'
                 }} />
                 
-                {/* Main Section */}
-                {renderLoginScreen()}
+                {/* Main Section with AI Pet in upper area */}
+                <div className="relative h-full flex flex-col" style={{
+                  backgroundColor: walletStyle.backgroundColor || '#181818',
+                  height: '541px',
+                  borderBottomLeftRadius: '1rem',
+                  borderBottomRightRadius: '1rem'
+                }}>
+                  {/* AI Pet positioned in upper section */}
+                  {aiPet.isVisible && aiPet.zone === 'inside' && (
+                    <div className="flex-1 flex items-center justify-center pt-8">
+                      <AiPet 
+                        emotion={aiPet.emotion}
+                        zone={aiPet.zone}
+                        bodyType={aiPet.bodyType}
+                        color={walletStyle.primaryColor || '#9945FF'}
+                        size={96}
+                        onZoneChange={setAiPetZone}
+                        onEmotionChange={setAiPetEmotion}
+                        onHover={onAiPetHover}
+                        onClick={onAiPetClick}
+                        onDoubleClick={onAiPetDoubleClick}
+                        containerBounds={containerBounds}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Login form area - now empty space, form is handled by component */}
+                  <div className="h-[200px]" />
+                </div>
               </>
             ) : (
               <WalletContainer />
