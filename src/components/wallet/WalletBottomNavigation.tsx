@@ -33,7 +33,7 @@ const WalletBottomNavigation = () => {
 
   return (
     <div 
-      className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 z-30"
+      className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10"
       style={{
         backgroundColor: navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
         background: navigationStyle.gradient || navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',

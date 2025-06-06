@@ -46,7 +46,7 @@ const AccountSidebar = () => {
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 z-50"
+        className="fixed inset-0 z-40"
         onClick={handleClose}
         style={{
           backgroundColor: overlayStyle.backgroundColor?.replace('E6', '80') || 'rgba(0, 0, 0, 0.5)',
@@ -56,7 +56,7 @@ const AccountSidebar = () => {
       
       {/* Sidebar */}
       <div 
-        className="fixed left-0 top-0 h-full w-80 z-60 flex flex-col animate-slide-in-right"
+        className="fixed left-0 top-0 h-full w-80 z-50 flex flex-col animate-slide-in-right"
         style={{
           backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
           backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
