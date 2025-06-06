@@ -70,23 +70,23 @@ const WalletPreviewContainer = () => {
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
     }}>
-      {/* AiPet - Centered in the main area */}
+      {/* Phantom Ghost Icon - Centered in the main area */}
       <div className="flex-1 flex items-center justify-center">
-        {aiPet.isVisible && aiPet.zone === 'inside' && (
-          <AiPet 
-            emotion={aiPet.emotion}
-            zone={aiPet.zone}
-            bodyType={aiPet.bodyType}
-            color={walletStyle.primaryColor || '#9945FF'}
-            size={120}
-            onZoneChange={setAiPetZone}
-            onEmotionChange={setAiPetEmotion}
-            onHover={onAiPetHover}
-            onClick={onAiPetClick}
-            onDoubleClick={onAiPetDoubleClick}
-            containerBounds={containerBounds}
+        <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + (walletStyle.primaryColor || '#9945FF') + '50)' }}>
+          <img 
+            src="/lovable-uploads/30b03f94-e591-4935-a3e0-5a3b9bffac9e.png" 
+            alt="Phantom Ghost Logo" 
+            width="120" 
+            height="120" 
+            className="max-w-[120px] animate-pulse-slow"
+            style={{
+              filter: walletStyle.primaryColor ? `hue-rotate(${getHueRotate(walletStyle.primaryColor)}deg) saturate(1.2)` : 'none'
+            }}
           />
-        )}
+          <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
+            style={{ border: `2px solid ${walletStyle.primaryColor || '#9945FF'}` }}
+          />
+        </div>
       </div>
       
       {/* Login Form - Compact and positioned at bottom */}
@@ -156,6 +156,30 @@ const WalletPreviewContainer = () => {
       </div>
     </div>
   );
+
+  // Helper function for hue rotation (needed for the ghost icon styling)
+  const getHueRotate = (color: string): number => {
+    let r = 0, g = 0, b = 0;
+    
+    if (color.startsWith('#')) {
+      const hex = color.replace('#', '');
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+    } else if (color.startsWith('rgb')) {
+      const match = color.match(/\d+/g);
+      if (match && match.length >= 3) {
+        r = parseInt(match[0]);
+        g = parseInt(match[1]);
+        b = parseInt(match[2]);
+      }
+    }
+    
+    const baseHue = 280; // Purple hue for #9945FF (phantom's default)
+    const targetHue = ((r * 0.3) + (g * 0.6) + (b * 0.1)) % 360;
+    
+    return targetHue - baseHue;
+  };
 
   return (
     <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
