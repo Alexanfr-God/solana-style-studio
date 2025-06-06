@@ -163,7 +163,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         boxShadow: style.boxShadow || '0 10px 25px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
       }}
     >
-      {/* Animated overlay for extra visual effect - kept low opacity */}
+      {/* Animated overlay for extra visual effect */}
       <div 
         className="absolute inset-0 z-0 opacity-20" 
         style={{
@@ -171,14 +171,13 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         }}
       />
 
-      {/* Header with centered phantom branding - reduced padding for full height */}
+      {/* Header with centered phantom branding */}
       <div className="p-3 flex justify-center items-center relative z-10">
         <div 
           className="text-center relative" 
           style={textStyle}
         >
           phantom
-          {/* Add subtle animated accent line below text for better visibility */}
           <div 
             className="absolute bottom-0 left-0 w-full h-[2px] transform origin-left"
             style={{ 
@@ -197,32 +196,35 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         />
       </div>
       
-      {/* Logo and Content area - optimized spacing for full height */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 pt-6 relative z-10">
-        {/* Animated Ghost Logo - only displayed when NOT generating */}
-        {!isGenerating && (
-          <div className="mb-8 relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
-            <img 
-              src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
-              alt="Phantom Ghost Logo" 
-              width="100" 
-              height="100" 
-              className="max-w-[100px] animate-pulse-slow"
-              style={{
-                filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
-              }}
-            />
-            <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-              style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
-            />
-          </div>
-        )}
+      {/* Main container with three zones */}
+      <div className="flex-1 flex flex-col relative z-10">
         
-        {/* Content container with optimized spacing for full height */}
-        <div className="w-full flex flex-col items-center space-y-4 relative z-10">
-          {/* Login Title - reduced margin */}
+        {/* Center Zone - Ghost Logo */}
+        <div className="flex-1 flex items-center justify-center">
+          {!isGenerating && (
+            <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
+              <img 
+                src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
+                alt="Phantom Ghost Logo" 
+                width="120" 
+                height="120" 
+                className="max-w-[120px] animate-pulse-slow"
+                style={{
+                  filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
+                }}
+              />
+              <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
+                style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
+              />
+            </div>
+          )}
+        </div>
+        
+        {/* Bottom Zone - Login Form */}
+        <div className="pb-6 px-4 space-y-3">
+          {/* Login Title */}
           <h2 
-            className="text-xl font-medium" 
+            className="text-lg font-medium text-center" 
             style={{ 
               color: style.textColor || '#FFFFFF', 
               textShadow: getTextShadow(),
@@ -232,8 +234,8 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             Enter your password
           </h2>
           
-          {/* Password field with enhanced styling - optimized size */}
-          <div className="w-full max-w-xs">
+          {/* Password field */}
+          <div className="w-full max-w-sm mx-auto">
             <div 
               className="h-10 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
               style={{ 
@@ -264,16 +266,15 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
                 </button>
               )}
               
-              {/* Line animation for focus effect */}
               <div className="absolute bottom-0 left-0 w-full h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform"
                 style={{ backgroundColor: style.accentColor || '#9945FF' }}
               />
             </div>
           </div>
           
-          {/* Forgot password link - reduced margin */}
+          {/* Forgot password link */}
           <div 
-            className="w-full max-w-xs text-center"
+            className="w-full max-w-sm mx-auto text-center"
             onClick={handleForgotPassword}
           >
             <span 
@@ -288,8 +289,8 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
             </span>
           </div>
           
-          {/* Enhanced Unlock Button - optimized size */}
-          <div className="w-full max-w-xs mt-3">
+          {/* Unlock Button */}
+          <div className="w-full max-w-sm mx-auto pt-2">
             <button 
               onClick={handleUnlock}
               className="w-full h-10 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98] text-sm"
@@ -300,7 +301,6 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
                 boxShadow: `0 4px 10px ${style.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
               }}
             >
-              {/* Button shine effect */}
               <span 
                 className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{
