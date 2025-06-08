@@ -1,5 +1,6 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const N8N_WEBHOOK_URL = "https://wacocu.app.n8n.cloud/webhook/wallet-ai-designer";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1097,6 +1098,7 @@ const fullWalletStructure = {
 
   // N8N WORKFLOW ИНТЕГРАЦИЯ
   n8nIntegration: {
+    webhookUrl: N8N_WEBHOOK_URL,
     webhookEndpoint: "/webhook/wallet-customization",
     
     expectedPayload: {
@@ -1104,8 +1106,8 @@ const fullWalletStructure = {
       imageUrl: "string", 
       imageBase64: "string (optional)",
       preferences: {
-        mood: "string (optional)", // corporate, gaming, artistic, minimal
-        riskLevel: "string (optional)" // conservative, moderate, aggressive
+        mood: "string (optional)",
+        riskLevel: "string (optional)"
       }
     },
 
@@ -1143,9 +1145,7 @@ const fullWalletStructure = {
     responseFormat: {
       success: true,
       themeId: "generated-theme-uuid",
-      appliedStyles: {
-        // Финальные CSS переменные
-      },
+      appliedStyles: {},
       metadata: {
         imageAnalysis: {
           dominantColors: ["#color1", "#color2", "#color3"],
@@ -1175,7 +1175,6 @@ const fullWalletStructure = {
     },
 
     improvementData: {
-      // Данные для улучшения AI агентов
       successfulPatterns: [
         {
           imageType: "corporate_photo",
@@ -1373,7 +1372,38 @@ const fullWalletStructure = {
   }
 };
 
-// Функция для подсчета общего количества элементов
+// Helper function for N8N webhook calls
+async function callN8NWebhook(payload) {
+  try {
+    console.log('🚀 Calling N8N webhook:', N8N_WEBHOOK_URL);
+    
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...payload,
+        timestamp: new Date().toISOString(),
+        source: 'wallet-customization-structure',
+        walletStructure: fullWalletStructure
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`N8N webhook failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ N8N webhook response:', result);
+    return result;
+
+  } catch (error) {
+    console.error('❌ N8N webhook error:', error);
+    throw error;
+  }
+}
+
 function calculateTotalElements(obj) {
   let count = 0;
   
@@ -1405,7 +1435,6 @@ function countElementsRecursive(elements) {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -1416,8 +1445,8 @@ serve(async (req) => {
 
     console.log(`🚀 Wallet Customization Structure API called: ${path}`);
 
+    // GET - Получить полную структуру
     if (path.endsWith('/wallet-customization-structure') || path.endsWith('/wallet-structure')) {
-      // GET - Получить полную структуру
       if (req.method === 'GET') {
         const totalElements = calculateTotalElements(fullWalletStructure);
         
@@ -1428,7 +1457,8 @@ serve(async (req) => {
             totalElements,
             version: "2.0.0",
             timestamp: new Date().toISOString(),
-            endpoint: path
+            endpoint: path,
+            n8nWebhookUrl: N8N_WEBHOOK_URL
           }
         };
 
@@ -1439,22 +1469,60 @@ serve(async (req) => {
         });
       }
 
-      // POST - Применить тему (заготовка для будущего)
+      // POST - Применить тему
       if (req.method === 'POST') {
         const { theme, userId } = await req.json();
         
         console.log(`🎨 Theme application requested for user: ${userId}`);
         
-        // Здесь будет логика применения темы через AI агенты
         const response = {
           success: true,
           message: "Theme application endpoint ready for AI agents integration",
           theme,
           userId,
-          status: "prepared_for_ai_agents"
+          status: "prepared_for_ai_agents",
+          n8nWebhookUrl: N8N_WEBHOOK_URL
         };
 
         return new Response(JSON.stringify(response), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // NEW: POST - Trigger AI Customization via N8N
+    if (path.endsWith('/trigger-ai-customization') && req.method === 'POST') {
+      const payload = await req.json();
+      
+      console.log(`🎯 AI Customization trigger requested:`, payload);
+      
+      try {
+        // Call N8N webhook with the payload
+        const n8nResult = await callN8NWebhook(payload);
+        
+        const response = {
+          success: true,
+          message: "AI Customization triggered successfully",
+          n8nResponse: n8nResult,
+          payload,
+          timestamp: new Date().toISOString(),
+          webhookUrl: N8N_WEBHOOK_URL
+        };
+
+        return new Response(JSON.stringify(response), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+      } catch (error) {
+        console.error('❌ Failed to trigger N8N workflow:', error);
+        
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message,
+          message: "Failed to trigger AI Customization workflow",
+          webhookUrl: N8N_WEBHOOK_URL
+        }), {
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -1467,7 +1535,8 @@ serve(async (req) => {
         service: "wallet-customization-structure",
         version: "2.0.0",
         totalElements: calculateTotalElements(fullWalletStructure),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        n8nWebhookUrl: N8N_WEBHOOK_URL
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -1479,6 +1548,7 @@ serve(async (req) => {
       availableEndpoints: [
         "GET /wallet-structure - Get full wallet structure",
         "POST /wallet-structure - Apply theme (prepared for AI)",
+        "POST /trigger-ai-customization - Trigger N8N AI workflow",
         "GET /health - Health check"
       ]
     }), {
@@ -1491,7 +1561,8 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ 
       error: error.message,
-      service: "wallet-customization-structure"
+      service: "wallet-customization-structure",
+      n8nWebhookUrl: N8N_WEBHOOK_URL
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
