@@ -11,7 +11,13 @@ const N8N_WEBHOOK_URL = 'https://wacocu.app.n8n.cloud/webhook/ai-wallet-designer
 const DEFAULT_PROMPT = 'Analyze this image and create a custom Web3 wallet style';
 
 const CustomizeWalletButton = () => {
-  const { uploadedImage, isCustomizing, onCustomizationStart, applyStyleFromBlueprint } = useWalletCustomizationStore();
+  const { 
+    uploadedImage, 
+    isCustomizing, 
+    onCustomizationStartWithTimeout, 
+    applyStyleFromBlueprint,
+    resetCustomizationState 
+  } = useWalletCustomizationStore();
 
   const handleCustomize = async () => {
     if (!uploadedImage) {
@@ -19,7 +25,8 @@ const CustomizeWalletButton = () => {
       return;
     }
     
-    onCustomizationStart();
+    console.log('🎨 Starting wallet customization process...');
+    onCustomizationStartWithTimeout();
     
     try {
       toast.info("Analyzing image and generating wallet style...");
@@ -35,13 +42,18 @@ const CustomizeWalletButton = () => {
       // Automatically apply the generated style
       applyStyleFromBlueprint(result.styleBlueprint);
       
+      console.log('✅ Wallet customization completed successfully');
       toast.success(`Wallet customized successfully! 🎨`, {
         description: `Applied ${result.styleBlueprint.meta.theme} theme`
       });
 
     } catch (error) {
-      console.error('Customization error:', error);
+      console.error('💥 Customization error:', error);
       toast.error('Failed to customize wallet. Please try again.');
+    } finally {
+      // Always reset the customization state, regardless of success or failure
+      console.log('🔄 Resetting customization state in finally block');
+      resetCustomizationState();
     }
   };
 

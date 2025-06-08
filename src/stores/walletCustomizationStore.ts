@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { generateStyle } from '@/services/apiService';
@@ -158,6 +157,8 @@ interface WalletCustomizationStore {
   // Customization Methods
   customizeWallet: () => void;
   onCustomizationStart: () => void;
+  onCustomizationStartWithTimeout: () => void;
+  resetCustomizationState: () => void;
   
   // StyleBlueprint Integration
   currentBlueprint: StyleBlueprint | null;
@@ -246,6 +247,8 @@ const defaultStatusColors: StatusColors = {
   pending: '#F59E0B',
   inactive: '#6B7280'
 };
+
+let customizationTimeoutId: number | null = null;
 
 export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
   persist(
@@ -386,7 +389,14 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
       },
       setActiveLayer: (layer: LayerType) => set({ activeLayer: layer }),
       setPrompt: (prompt: string) => set({ prompt }),
-      setUploadedImage: (image: string | null) => set({ uploadedImage: image }),
+      setUploadedImage: (image: string | null) => {
+        // Reset customization state when new image is uploaded
+        if (image !== null && get().isCustomizing) {
+          console.log('🔄 New image uploaded, resetting customization state');
+          get().resetCustomizationState();
+        }
+        set({ uploadedImage: image });
+      },
       setIsGenerating: (isGenerating: boolean) => set({ isGenerating }),
       setEditorMode: (mode: 'create-style' | 'fine-tune' | 'decorate') => set({ editorMode: mode }),
       resetStyles: () => {
@@ -432,6 +442,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
           currentLayer: 'home',
           selectedWallet: 'phantom',
           uploadedImage: null,
+          isCustomizing: false,
           aiPet: {
             isVisible: true,
             emotion: 'idle',
@@ -494,8 +505,38 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
           set({ isCustomizing: false });
         }, 5000); // Extended time for analysis
       },
+      
       onCustomizationStart: () => {
         set({ isCustomizing: true });
+      },
+      
+      onCustomizationStartWithTimeout: () => {
+        console.log('🚀 Starting customization with safety timeout...');
+        
+        // Clear any existing timeout
+        if (customizationTimeoutId) {
+          clearTimeout(customizationTimeoutId);
+        }
+        
+        set({ isCustomizing: true });
+        
+        // Set safety timeout for 30 seconds
+        customizationTimeoutId = window.setTimeout(() => {
+          console.warn('⚠️ Customization timeout reached (30s), forcing state reset');
+          get().resetCustomizationState();
+        }, 30000);
+      },
+      
+      resetCustomizationState: () => {
+        console.log('🔄 Force resetting customization state');
+        
+        // Clear timeout if it exists
+        if (customizationTimeoutId) {
+          clearTimeout(customizationTimeoutId);
+          customizationTimeoutId = null;
+        }
+        
+        set({ isCustomizing: false });
       },
       
       // StyleBlueprint Integration
@@ -547,6 +588,12 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
             }
           }
         });
+        
+        // Clear timeout since customization completed successfully
+        if (customizationTimeoutId) {
+          clearTimeout(customizationTimeoutId);
+          customizationTimeoutId = null;
+        }
         
         console.log('Applied StyleBlueprint to wallet:', {
           title: blueprint.meta.title,
