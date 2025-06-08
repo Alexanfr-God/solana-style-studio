@@ -5,7 +5,7 @@ export class WalletAPIClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = Deno.env.get('SUPABASE_URL') || '';
+    this.baseUrl = Deno.env.get('WALLET_API_URL') || '';
     console.log('🔌 WalletAPIClient initialized');
   }
 
