@@ -1,6 +1,13 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Utility function for structured logging
+function log(component: string, level: string, message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] [SupabaseService::${component}] [${level}] ${message}`;
+  console.log(logMessage, data ? JSON.stringify(data, null, 2) : '');
+}
+
 export class SupabaseService {
   private supabase;
 
@@ -9,11 +16,16 @@ export class SupabaseService {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     this.supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('🗄️ SupabaseService initialized');
+    log('Constructor', 'INFO', 'SupabaseService initialized', { url: supabaseUrl });
   }
 
   async saveAnalysis(type: string, analysis: any): Promise<string> {
-    console.log(`💾 Saving ${type} analysis`);
+    log('SaveAnalysis', 'INFO', `Saving ${type} analysis`, { 
+      analysisId: analysis.analysisId,
+      confidence: analysis.confidence 
+    });
+    
+    const startTime = Date.now();
     
     try {
       const { data, error } = await this.supabase
@@ -26,18 +38,41 @@ export class SupabaseService {
         .select()
         .single();
 
-      if (error) throw error;
+      const duration = Date.now() - startTime;
+
+      if (error) {
+        log('SaveAnalysis', 'ERROR', `Failed to save ${type} analysis`, { 
+          duration: `${duration}ms`,
+          error: error.message 
+        });
+        throw error;
+      }
       
-      console.log(`✅ ${type} analysis saved:`, data.id);
+      log('SaveAnalysis', 'INFO', `${type} analysis saved successfully`, { 
+        duration: `${duration}ms`,
+        recordId: data.id,
+        analysisId: analysis.analysisId
+      });
+      
       return data.id;
+      
     } catch (error) {
-      console.error(`❌ Error saving ${type} analysis:`, error);
+      const duration = Date.now() - startTime;
+      log('SaveAnalysis', 'ERROR', `Database error saving ${type} analysis`, { 
+        duration: `${duration}ms`,
+        error: error.message 
+      });
       throw error;
     }
   }
 
   async saveCustomization(customization: any): Promise<string> {
-    console.log('🎨 Saving customization result');
+    log('SaveCustomization', 'INFO', 'Saving customization result', { 
+      themeId: customization.themeId,
+      success: customization.success 
+    });
+    
+    const startTime = Date.now();
     
     try {
       const { data, error } = await this.supabase
@@ -50,18 +85,42 @@ export class SupabaseService {
         .select()
         .single();
 
-      if (error) throw error;
+      const duration = Date.now() - startTime;
+
+      if (error) {
+        log('SaveCustomization', 'ERROR', 'Failed to save customization', { 
+          duration: `${duration}ms`,
+          error: error.message 
+        });
+        throw error;
+      }
       
-      console.log('✅ Customization saved:', data.id);
+      log('SaveCustomization', 'INFO', 'Customization saved successfully', { 
+        duration: `${duration}ms`,
+        recordId: data.id,
+        themeId: customization.themeId
+      });
+      
       return data.id;
+      
     } catch (error) {
-      console.error('❌ Error saving customization:', error);
+      const duration = Date.now() - startTime;
+      log('SaveCustomization', 'ERROR', 'Database error saving customization', { 
+        duration: `${duration}ms`,
+        error: error.message 
+      });
       throw error;
     }
   }
 
   async saveFullResult(result: any): Promise<string> {
-    console.log('📦 Saving full analysis result');
+    log('SaveFullResult', 'INFO', 'Saving full analysis result', { 
+      hasWalletAnalysis: !!result.walletAnalysis,
+      hasImageAnalysis: !!result.imageAnalysis,
+      hasCustomization: !!result.customization
+    });
+    
+    const startTime = Date.now();
     
     try {
       const { data, error } = await this.supabase
@@ -76,18 +135,37 @@ export class SupabaseService {
         .select()
         .single();
 
-      if (error) throw error;
+      const duration = Date.now() - startTime;
+
+      if (error) {
+        log('SaveFullResult', 'ERROR', 'Failed to save full result', { 
+          duration: `${duration}ms`,
+          error: error.message 
+        });
+        throw error;
+      }
       
-      console.log('✅ Full result saved:', data.id);
+      log('SaveFullResult', 'INFO', 'Full result saved successfully', { 
+        duration: `${duration}ms`,
+        recordId: data.id
+      });
+      
       return data.id;
+      
     } catch (error) {
-      console.error('❌ Error saving full result:', error);
+      const duration = Date.now() - startTime;
+      log('SaveFullResult', 'ERROR', 'Database error saving full result', { 
+        duration: `${duration}ms`,
+        error: error.message 
+      });
       throw error;
     }
   }
 
   async getAnalysisHistory(limit: number = 50): Promise<any[]> {
-    console.log(`📚 Fetching analysis history (limit: ${limit})`);
+    log('GetHistory', 'INFO', `Fetching analysis history`, { limit });
+    
+    const startTime = Date.now();
     
     try {
       const { data, error } = await this.supabase
@@ -96,18 +174,37 @@ export class SupabaseService {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      if (error) throw error;
+      const duration = Date.now() - startTime;
+
+      if (error) {
+        log('GetHistory', 'ERROR', 'Failed to fetch analysis history', { 
+          duration: `${duration}ms`,
+          error: error.message 
+        });
+        throw error;
+      }
       
-      console.log(`✅ Retrieved ${data.length} analysis records`);
+      log('GetHistory', 'INFO', 'Analysis history fetched successfully', { 
+        duration: `${duration}ms`,
+        recordCount: data.length
+      });
+      
       return data;
+      
     } catch (error) {
-      console.error('❌ Error fetching analysis history:', error);
+      const duration = Date.now() - startTime;
+      log('GetHistory', 'ERROR', 'Database error fetching history', { 
+        duration: `${duration}ms`,
+        error: error.message 
+      });
       throw error;
     }
   }
 
   async saveFeedback(sessionId: string, feedback: any): Promise<void> {
-    console.log('💬 Saving user feedback');
+    log('SaveFeedback', 'INFO', 'Saving user feedback', { sessionId });
+    
+    const startTime = Date.now();
     
     try {
       const { error } = await this.supabase
@@ -118,18 +215,38 @@ export class SupabaseService {
           created_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      const duration = Date.now() - startTime;
+
+      if (error) {
+        log('SaveFeedback', 'ERROR', 'Failed to save feedback', { 
+          duration: `${duration}ms`,
+          sessionId,
+          error: error.message 
+        });
+        throw error;
+      }
       
-      console.log('✅ Feedback saved for session:', sessionId);
+      log('SaveFeedback', 'INFO', 'Feedback saved successfully', { 
+        duration: `${duration}ms`,
+        sessionId
+      });
+      
     } catch (error) {
-      console.error('❌ Error saving feedback:', error);
+      const duration = Date.now() - startTime;
+      log('SaveFeedback', 'ERROR', 'Database error saving feedback', { 
+        duration: `${duration}ms`,
+        sessionId,
+        error: error.message 
+      });
       throw error;
     }
   }
 
   async createUserSession(userId?: string): Promise<string> {
     const sessionId = crypto.randomUUID();
-    console.log('🎫 Creating user session:', sessionId);
+    log('CreateSession', 'INFO', 'Creating user session', { sessionId, userId });
+    
+    const startTime = Date.now();
     
     try {
       const { error } = await this.supabase
@@ -140,26 +257,62 @@ export class SupabaseService {
           created_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      const duration = Date.now() - startTime;
+
+      if (error) {
+        log('CreateSession', 'ERROR', 'Failed to create session', { 
+          duration: `${duration}ms`,
+          sessionId,
+          error: error.message 
+        });
+        throw error;
+      }
       
-      console.log('✅ User session created:', sessionId);
+      log('CreateSession', 'INFO', 'User session created successfully', { 
+        duration: `${duration}ms`,
+        sessionId
+      });
+      
       return sessionId;
+      
     } catch (error) {
-      console.error('❌ Error creating session:', error);
+      const duration = Date.now() - startTime;
+      log('CreateSession', 'ERROR', 'Database error creating session', { 
+        duration: `${duration}ms`,
+        sessionId,
+        error: error.message 
+      });
       throw error;
     }
   }
 
   async testConnection(): Promise<boolean> {
+    log('TestConnection', 'INFO', 'Testing database connection');
+    
+    const startTime = Date.now();
+    
     try {
       const { data, error } = await this.supabase
         .from('ai_analysis_results')
         .select('count')
         .limit(1);
 
-      return !error;
+      const duration = Date.now() - startTime;
+      const isConnected = !error;
+
+      log('TestConnection', isConnected ? 'INFO' : 'ERROR', `Database connection test result: ${isConnected}`, { 
+        duration: `${duration}ms`,
+        error: error?.message
+      });
+
+      return isConnected;
+      
     } catch (error) {
-      console.error('❌ Supabase connection test failed:', error);
+      const duration = Date.now() - startTime;
+      log('TestConnection', 'ERROR', 'Database connection test failed', { 
+        duration: `${duration}ms`,
+        error: error.message 
+      });
       return false;
     }
   }

@@ -1,205 +1,326 @@
 
-import type { WalletStructure, WalletElement, WalletAnalysis } from "../types/wallet.types.ts";
-import type { ElementAnalysis } from "../types/ai.types.ts";
+import type { WalletStructure } from "../types/wallet.types.ts";
+import type { WalletAnalysis, ElementAnalysis } from "../types/ai.types.ts";
 
-export class WalletAnalyzer {
+// Utility function for structured logging
+function log(component: string, level: string, message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] [WalletAnalyzer::${component}] [${level}] ${message}`;
+  console.log(logMessage, data ? JSON.stringify(data, null, 2) : '');
+}
+
+export class WalletAnalyzerAI {
   constructor() {
-    console.log('🧠 WalletAnalyzer initialized');
+    log('Constructor', 'INFO', 'WalletAnalyzerAI initialized');
   }
 
-  async analyzeWallet(walletData: WalletStructure): Promise<WalletAnalysis> {
-    console.log('🔍 Analyzing wallet structure');
+  async analyzeWallet(structure: WalletStructure): Promise<WalletAnalysis> {
+    const analysisId = crypto.randomUUID();
+    const startTime = Date.now();
     
-    const elementAnalyses: { [elementId: string]: ElementAnalysis } = {};
+    log('AnalyzeWallet', 'INFO', 'Starting wallet analysis', { 
+      analysisId,
+      walletType: structure.metadata.walletType,
+      totalScreens: structure.metadata.totalScreens,
+      totalElements: structure.metadata.totalCustomizableElements
+    });
+
+    try {
+      // Collect all elements from all screens
+      const allElements: { [elementId: string]: any } = {};
+      
+      structure.screens.forEach((screen, screenIndex) => {
+        log('AnalyzeWallet', 'DEBUG', `Processing screen: ${screen.screenId}`, { 
+          screenIndex,
+          elementsCount: Object.keys(screen.elements).length 
+        });
+        
+        Object.entries(screen.elements).forEach(([elementId, element]) => {
+          allElements[`${screen.screenId}_${elementId}`] = {
+            ...element,
+            screenId: screen.screenId,
+            screenPriority: screen.priority
+          };
+        });
+      });
+
+      log('AnalyzeWallet', 'INFO', `Collected ${Object.keys(allElements).length} elements for analysis`);
+
+      // Analyze each element
+      const elementAnalysis: { [elementId: string]: ElementAnalysis } = {};
+      let processedElements = 0;
+      
+      for (const [elementId, element] of Object.entries(allElements)) {
+        log('AnalyzeElement', 'DEBUG', `Analyzing element: ${elementId}`, { 
+          progress: `${processedElements + 1}/${Object.keys(allElements).length}` 
+        });
+        
+        try {
+          elementAnalysis[elementId] = await this.analyzeElement(element, elementId);
+          processedElements++;
+          
+          if (processedElements % 5 === 0) {
+            log('AnalyzeWallet', 'INFO', `Progress: analyzed ${processedElements}/${Object.keys(allElements).length} elements`);
+          }
+        } catch (error) {
+          log('AnalyzeElement', 'ERROR', `Failed to analyze element: ${elementId}`, { error: error.message });
+          // Continue with other elements
+        }
+      }
+
+      log('AnalyzeWallet', 'INFO', 'Generating global insights');
+      const globalInsights = await this.generateGlobalInsights(structure, elementAnalysis);
+
+      const processingTime = Date.now() - startTime;
+      
+      const walletAnalysis: WalletAnalysis = {
+        analysisId,
+        confidence: this.calculateOverallConfidence(elementAnalysis),
+        processingTime,
+        result: {
+          elementAnalysis,
+          globalInsights,
+          metadata: structure.metadata
+        },
+        elementAnalysis,
+        globalInsights
+      };
+
+      log('AnalyzeWallet', 'INFO', 'Wallet analysis completed successfully', { 
+        analysisId,
+        processingTime: `${processingTime}ms`,
+        elementsAnalyzed: Object.keys(elementAnalysis).length,
+        confidence: walletAnalysis.confidence
+      });
+
+      return walletAnalysis;
+
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      log('AnalyzeWallet', 'ERROR', 'Wallet analysis failed', { 
+        analysisId,
+        processingTime: `${processingTime}ms`,
+        error: error.message 
+      });
+      throw error;
+    }
+  }
+
+  private async analyzeElement(element: any, elementId: string): Promise<ElementAnalysis> {
+    log('AnalyzeElement', 'DEBUG', `Starting element analysis: ${elementId}`);
     
-    // Analyze each element
-    for (const element of walletData.elements) {
-      elementAnalyses[element.elementType] = await this.analyzeElement(element);
+    try {
+      // Use GPT-4 to analyze the element
+      const analysis = await this.callGPT4ForElementAnalysis(element, elementId);
+      
+      const elementAnalysis: ElementAnalysis = {
+        semanticType: analysis.semanticType || element.elementType || 'unknown',
+        functionalPurpose: analysis.functionalPurpose || 'UI component',
+        importanceLevel: this.determineImportanceLevel(element, analysis),
+        customizationPotential: {
+          colors: analysis.customizationPotential?.colors || true,
+          fonts: analysis.customizationPotential?.fonts || true,
+          sizes: analysis.customizationPotential?.sizes || true,
+          effects: analysis.customizationPotential?.effects || true
+        }
+      };
+
+      log('AnalyzeElement', 'DEBUG', `Element analysis completed: ${elementId}`, { 
+        semanticType: elementAnalysis.semanticType,
+        importance: elementAnalysis.importanceLevel 
+      });
+
+      return elementAnalysis;
+
+    } catch (error) {
+      log('AnalyzeElement', 'ERROR', `Element analysis failed: ${elementId}`, { error: error.message });
+      
+      // Return fallback analysis
+      return {
+        semanticType: element.elementType || 'unknown',
+        functionalPurpose: 'UI component',
+        importanceLevel: 'MEDIUM',
+        customizationPotential: {
+          colors: true,
+          fonts: true,
+          sizes: true,
+          effects: true
+        }
+      };
+    }
+  }
+
+  private async callGPT4ForElementAnalysis(element: any, elementId: string): Promise<any> {
+    const apiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) {
+      throw new Error('OpenAI API key not configured');
     }
 
-    const globalInsights = this.generateGlobalInsights(walletData, elementAnalyses);
+    log('GPT4ElementAnalysis', 'DEBUG', `Calling GPT-4 for element: ${elementId}`);
 
-    return {
-      analysisId: crypto.randomUUID(),
-      confidence: this.calculateOverallConfidence(elementAnalyses),
-      processingTime: Date.now(),
-      result: {
-        elementAnalysis: elementAnalyses,
-        globalInsights,
-        recommendations: this.generateRecommendations(walletData, elementAnalyses)
+    const prompt = `Analyze this wallet UI element for customization purposes:
+
+Element ID: ${elementId}
+Element Type: ${element.elementType}
+Current Styles: ${JSON.stringify(element.currentStyles)}
+Screen: ${element.screenId}
+AI Instructions: ${JSON.stringify(element.aiInstructions)}
+
+Return a JSON object with:
+{
+  "semanticType": "button|text|input|container|icon|image|navigation|list",
+  "functionalPurpose": "clear description of what this element does",
+  "importanceLevel": "CRITICAL|HIGH|MEDIUM|LOW",
+  "customizationPotential": {
+    "colors": boolean,
+    "fonts": boolean,
+    "sizes": boolean,
+    "effects": boolean
+  },
+  "recommendations": ["specific customization suggestions"]
+}
+
+Consider financial app UI patterns and user experience principles.`;
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'You are a UI/UX expert specializing in financial app design and customization.' },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: 500,
+          temperature: 0.2
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        log('GPT4ElementAnalysis', 'ERROR', `OpenAI API error: ${response.status}`, { error: errorText });
+        throw new Error(`OpenAI API error: ${response.status}`);
       }
-    };
-  }
 
-  private async analyzeElement(element: WalletElement): Promise<ElementAnalysis> {
-    console.log('🔍 Analyzing element:', element.elementType);
-    
-    // Determine semantic type based on element type
-    const semanticType = this.determineSemanticType(element.elementType);
-    const functionalPurpose = this.determineFunctionalPurpose(element.elementType);
-    const importanceLevel = this.determineImportanceLevel(element.elementType);
-    
-    return {
-      semanticType,
-      functionalPurpose,
-      importanceLevel,
-      customizationPotential: {
-        colors: this.canCustomizeColors(element),
-        fonts: this.canCustomizeFonts(element),
-        sizes: this.canCustomizeSizes(element),
-        effects: this.canCustomizeEffects(element)
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+      
+      if (!content) {
+        throw new Error('No content in OpenAI response');
       }
-    };
+
+      return JSON.parse(content);
+
+    } catch (error) {
+      log('GPT4ElementAnalysis', 'ERROR', `GPT-4 element analysis failed: ${elementId}`, { error: error.message });
+      throw error;
+    }
   }
 
-  private determineSemanticType(elementType: string): string {
-    const typeMap: { [key: string]: string } = {
-      'button': 'interactive',
-      'text': 'content',
-      'background': 'visual',
-      'icon': 'decorative',
-      'input': 'interactive',
-      'card': 'container',
-      'header': 'navigation',
-      'footer': 'navigation'
-    };
+  private determineImportanceLevel(element: any, analysis: any): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
+    // Use AI analysis if available
+    if (analysis.importanceLevel) {
+      return analysis.importanceLevel;
+    }
+
+    // Fallback logic based on element properties
+    if (element.aiInstructions?.priority === 'HIGH') return 'HIGH';
+    if (element.elementType === 'button') return 'HIGH';
+    if (element.elementType === 'text' && element.screenId === 'home') return 'HIGH';
+    if (element.elementType === 'container') return 'MEDIUM';
     
-    return typeMap[elementType.toLowerCase()] || 'unknown';
+    return 'MEDIUM';
   }
 
-  private determineFunctionalPurpose(elementType: string): string {
-    const purposeMap: { [key: string]: string } = {
-      'button': 'user_action',
-      'text': 'information_display',
-      'background': 'visual_foundation',
-      'icon': 'visual_cue',
-      'input': 'data_entry',
-      'card': 'content_grouping',
-      'header': 'navigation',
-      'footer': 'secondary_actions'
-    };
+  private async generateGlobalInsights(structure: WalletStructure, elementAnalysis: { [elementId: string]: ElementAnalysis }): Promise<any> {
+    log('GlobalInsights', 'INFO', 'Generating global wallet insights');
     
-    return purposeMap[elementType.toLowerCase()] || 'utility';
+    try {
+      const criticalElements = Object.entries(elementAnalysis)
+        .filter(([_, analysis]) => analysis.importanceLevel === 'CRITICAL')
+        .map(([elementId, _]) => elementId);
+
+      const designPatterns = this.identifyDesignPatterns(structure, elementAnalysis);
+
+      const insights = {
+        walletType: structure.metadata.walletType,
+        designPatterns,
+        criticalElements,
+        totalCustomizableElements: Object.keys(elementAnalysis).length,
+        screenDistribution: this.analyzeScreenDistribution(structure),
+        recommendedCustomizationAreas: this.getRecommendedAreas(elementAnalysis)
+      };
+
+      log('GlobalInsights', 'INFO', 'Global insights generated', { 
+        patternsFound: designPatterns.length,
+        criticalElementsCount: criticalElements.length 
+      });
+
+      return insights;
+
+    } catch (error) {
+      log('GlobalInsights', 'ERROR', 'Failed to generate global insights', { error: error.message });
+      
+      // Return fallback insights
+      return {
+        walletType: structure.metadata.walletType,
+        designPatterns: ['standard-layout'],
+        criticalElements: [],
+        totalCustomizableElements: Object.keys(elementAnalysis).length
+      };
+    }
   }
 
-  private determineImportanceLevel(elementType: string): 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' {
-    const criticalElements = ['button', 'input', 'header'];
-    const highElements = ['text', 'card', 'icon'];
-    const mediumElements = ['background', 'footer'];
+  private identifyDesignPatterns(structure: WalletStructure, elementAnalysis: { [elementId: string]: ElementAnalysis }): string[] {
+    const patterns = [];
     
-    if (criticalElements.includes(elementType.toLowerCase())) return 'CRITICAL';
-    if (highElements.includes(elementType.toLowerCase())) return 'HIGH';
-    if (mediumElements.includes(elementType.toLowerCase())) return 'MEDIUM';
-    return 'LOW';
-  }
-
-  private canCustomizeColors(element: WalletElement): boolean {
-    return element.customizable && 
-           (element.currentStyles?.backgroundColor !== undefined ||
-            element.currentStyles?.color !== undefined);
-  }
-
-  private canCustomizeFonts(element: WalletElement): boolean {
-    return element.customizable && 
-           (element.currentStyles?.fontFamily !== undefined ||
-            element.currentStyles?.fontSize !== undefined);
-  }
-
-  private canCustomizeSizes(element: WalletElement): boolean {
-    return element.customizable && 
-           (element.currentStyles?.width !== undefined ||
-            element.currentStyles?.height !== undefined);
-  }
-
-  private canCustomizeEffects(element: WalletElement): boolean {
-    return element.customizable && 
-           (element.currentStyles?.borderRadius !== undefined ||
-            element.currentStyles?.boxShadow !== undefined);
-  }
-
-  private generateGlobalInsights(walletData: WalletStructure, analyses: { [key: string]: ElementAnalysis }) {
-    const elementTypes = Object.keys(analyses);
-    const criticalElements = elementTypes.filter(type => 
-      analyses[type].importanceLevel === 'CRITICAL'
-    );
-
-    return {
-      walletType: walletData.metadata.walletType,
-      designPatterns: this.identifyDesignPatterns(analyses),
-      criticalElements,
-      customizabilityScore: this.calculateCustomizabilityScore(analyses)
-    };
-  }
-
-  private identifyDesignPatterns(analyses: { [key: string]: ElementAnalysis }): string[] {
-    const patterns: string[] = [];
+    // Basic pattern detection
+    const hasNavigation = Object.values(elementAnalysis).some(analysis => 
+      analysis.semanticType.includes('navigation'));
     
-    const interactiveCount = Object.values(analyses)
-      .filter(a => a.semanticType === 'interactive').length;
+    const hasCardLayout = Object.values(elementAnalysis).some(analysis => 
+      analysis.semanticType.includes('container'));
     
-    if (interactiveCount > 5) patterns.push('interaction_heavy');
-    if (interactiveCount < 3) patterns.push('content_focused');
+    if (hasNavigation) patterns.push('bottom-navigation');
+    if (hasCardLayout) patterns.push('card-based-layout');
+    if (structure.screens.length > 1) patterns.push('multi-screen');
     
-    const colorCustomizable = Object.values(analyses)
-      .filter(a => a.customizationPotential.colors).length;
-    
-    if (colorCustomizable > analyses.length * 0.7) patterns.push('highly_customizable');
-    
-    return patterns;
+    return patterns.length > 0 ? patterns : ['standard-layout'];
   }
 
-  private calculateCustomizabilityScore(analyses: { [key: string]: ElementAnalysis }): number {
-    const total = Object.keys(analyses).length;
-    if (total === 0) return 0;
-    
-    const customizable = Object.values(analyses).reduce((sum, analysis) => {
-      const potential = analysis.customizationPotential;
-      const score = (potential.colors ? 1 : 0) + 
-                   (potential.fonts ? 1 : 0) + 
-                   (potential.sizes ? 1 : 0) + 
-                   (potential.effects ? 1 : 0);
-      return sum + score;
-    }, 0);
-    
-    return (customizable / (total * 4)) * 100;
+  private analyzeScreenDistribution(structure: WalletStructure): any {
+    return structure.screens.reduce((acc, screen) => {
+      acc[screen.screenId] = Object.keys(screen.elements).length;
+      return acc;
+    }, {} as { [screenId: string]: number });
   }
 
-  private calculateOverallConfidence(analyses: { [key: string]: ElementAnalysis }): number {
-    const elementCount = Object.keys(analyses).length;
-    return Math.min(0.7 + (elementCount * 0.05), 0.95);
-  }
-
-  private generateRecommendations(walletData: WalletStructure, analyses: { [key: string]: ElementAnalysis }) {
+  private getRecommendedAreas(elementAnalysis: { [elementId: string]: ElementAnalysis }): string[] {
     const recommendations = [];
     
-    const criticalElements = Object.entries(analyses)
-      .filter(([_, analysis]) => analysis.importanceLevel === 'CRITICAL')
-      .map(([elementType, _]) => elementType);
+    const hasHighImportanceElements = Object.values(elementAnalysis).some(analysis => 
+      analysis.importanceLevel === 'HIGH' || analysis.importanceLevel === 'CRITICAL');
     
-    if (criticalElements.length > 0) {
-      recommendations.push({
-        type: 'priority',
-        message: `Focus on customizing critical elements: ${criticalElements.join(', ')}`,
-        elements: criticalElements
-      });
+    if (hasHighImportanceElements) {
+      recommendations.push('primary-actions');
     }
     
-    const highlyCustomizable = Object.entries(analyses)
-      .filter(([_, analysis]) => 
-        Object.values(analysis.customizationPotential).filter(Boolean).length > 2
-      )
-      .map(([elementType, _]) => elementType);
-    
-    if (highlyCustomizable.length > 0) {
-      recommendations.push({
-        type: 'opportunity',
-        message: `High customization potential: ${highlyCustomizable.join(', ')}`,
-        elements: highlyCustomizable
-      });
-    }
+    recommendations.push('color-scheme', 'typography', 'spacing');
     
     return recommendations;
   }
+
+  private calculateOverallConfidence(elementAnalysis: { [elementId: string]: ElementAnalysis }): number {
+    const elementCount = Object.keys(elementAnalysis).length;
+    if (elementCount === 0) return 0.5;
+    
+    // Simple confidence calculation - can be enhanced
+    return Math.min(0.9, 0.6 + (elementCount * 0.05));
+  }
 }
 
-export const walletAnalyzer = new WalletAnalyzer();
+export const walletAnalyzer = new WalletAnalyzerAI();

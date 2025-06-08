@@ -1,16 +1,25 @@
 
 import type { WalletStructure, WalletMetadata } from "../types/wallet.types.ts";
 
+// Utility function for structured logging
+function log(component: string, level: string, message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] [WalletAPIClient::${component}] [${level}] ${message}`;
+  console.log(logMessage, data ? JSON.stringify(data, null, 2) : '');
+}
+
 export class WalletAPIClient {
   private baseUrl: string;
 
   constructor() {
     this.baseUrl = Deno.env.get('WALLET_API_URL') || '';
-    console.log('🔌 WalletAPIClient initialized');
+    log('Constructor', 'INFO', 'WalletAPIClient initialized', { baseUrl: this.baseUrl });
   }
 
   async fetchWalletStructure(walletType: string): Promise<WalletStructure> {
-    console.log('📥 Fetching wallet structure for:', walletType);
+    log('FetchStructure', 'INFO', `Fetching wallet structure for: ${walletType}`);
+    
+    const startTime = Date.now();
     
     try {
       const response = await fetch(`${this.baseUrl}/functions/v1/wallet-customization-structure`, {
@@ -22,17 +31,40 @@ export class WalletAPIClient {
         body: JSON.stringify({ walletType })
       });
 
+      const duration = Date.now() - startTime;
+
       if (!response.ok) {
+        log('FetchStructure', 'ERROR', `API request failed: ${response.status}`, { 
+          walletType,
+          duration: `${duration}ms`,
+          status: response.status,
+          statusText: response.statusText
+        });
         throw new Error(`Failed to fetch wallet structure: ${response.statusText}`);
       }
 
       const data = await response.json();
+      
+      log('FetchStructure', 'INFO', `Wallet structure fetched successfully`, { 
+        walletType,
+        duration: `${duration}ms`,
+        totalScreens: data.metadata?.totalScreens || 0,
+        totalElements: data.metadata?.totalCustomizableElements || 0
+      });
+
       return data;
 
     } catch (error) {
-      console.error('❌ Error fetching wallet structure:', error);
+      const duration = Date.now() - startTime;
+      log('FetchStructure', 'ERROR', `Failed to fetch wallet structure`, { 
+        walletType,
+        duration: `${duration}ms`,
+        error: error.message 
+      });
       
-      // Fallback structure
+      // Return fallback structure
+      log('FetchStructure', 'WARN', 'Using fallback wallet structure', { walletType });
+      
       return {
         metadata: {
           walletType,
@@ -48,20 +80,47 @@ export class WalletAPIClient {
   }
 
   async validateWalletType(walletType: string): Promise<boolean> {
-    console.log('✅ Validating wallet type:', walletType);
+    log('ValidateType', 'INFO', `Validating wallet type: ${walletType}`);
     
     const supportedTypes = ['phantom', 'solana', 'metamask', 'coinbase'];
-    return supportedTypes.includes(walletType.toLowerCase());
+    const isValid = supportedTypes.includes(walletType.toLowerCase());
+    
+    log('ValidateType', isValid ? 'INFO' : 'WARN', `Wallet type validation result: ${isValid}`, { 
+      walletType,
+      supportedTypes 
+    });
+    
+    return isValid;
   }
 
   async fetchWalletMetadata(walletType: string): Promise<WalletMetadata> {
-    console.log('📊 Fetching wallet metadata for:', walletType);
+    log('FetchMetadata', 'INFO', `Fetching wallet metadata for: ${walletType}`);
     
-    const structure = await this.fetchWalletStructure(walletType);
-    return structure.metadata;
+    try {
+      const structure = await this.fetchWalletStructure(walletType);
+      
+      log('FetchMetadata', 'INFO', 'Wallet metadata fetched successfully', { 
+        walletType,
+        version: structure.metadata.version,
+        totalElements: structure.metadata.totalCustomizableElements
+      });
+      
+      return structure.metadata;
+      
+    } catch (error) {
+      log('FetchMetadata', 'ERROR', 'Failed to fetch wallet metadata', { 
+        walletType,
+        error: error.message 
+      });
+      throw error;
+    }
   }
 
   async testConnection(): Promise<boolean> {
+    log('TestConnection', 'INFO', 'Testing wallet API connection');
+    
+    const startTime = Date.now();
+    
     try {
       const response = await fetch(`${this.baseUrl}/functions/v1/wallet-customization-structure`, {
         method: 'GET',
@@ -70,9 +129,22 @@ export class WalletAPIClient {
         }
       });
       
-      return response.ok;
+      const duration = Date.now() - startTime;
+      const isConnected = response.ok;
+      
+      log('TestConnection', isConnected ? 'INFO' : 'ERROR', `Connection test result: ${isConnected}`, { 
+        duration: `${duration}ms`,
+        status: response.status
+      });
+      
+      return isConnected;
+      
     } catch (error) {
-      console.error('❌ Connection test failed:', error);
+      const duration = Date.now() - startTime;
+      log('TestConnection', 'ERROR', 'Connection test failed', { 
+        duration: `${duration}ms`,
+        error: error.message 
+      });
       return false;
     }
   }
