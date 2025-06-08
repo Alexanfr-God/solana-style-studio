@@ -1,22 +1,4 @@
 
-export interface AIRequest {
-  type: 'wallet_analysis' | 'image_analysis' | 'style_generation' | 'full_customization';
-  walletType: string;
-  imageUrl?: string;
-  customPrompt?: string;
-  walletAnalysis?: any;
-  imageAnalysis?: any;
-  userId?: string;
-}
-
-export interface AIResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-  timestamp: string;
-  requestId: string;
-}
-
 export interface AIAnalysisResult {
   analysisId: string;
   confidence: number;
@@ -34,6 +16,15 @@ export interface ImageAnalysis extends AIAnalysisResult {
     primary: string;
     energy: 'high' | 'medium' | 'low';
     formality: 'formal' | 'casual' | 'mixed';
+  };
+}
+
+export interface WalletAnalysis extends AIAnalysisResult {
+  elementAnalysis: { [elementId: string]: ElementAnalysis };
+  globalInsights: {
+    walletType: string;
+    designPatterns: string[];
+    criticalElements: string[];
   };
 }
 
@@ -57,23 +48,4 @@ export interface CustomizationResult {
     elements: { [elementId: string]: any };
   };
   applicationResult?: any;
-}
-
-export interface LearningData {
-  timestamp: string;
-  requestType: string;
-  requestData: AIRequest;
-  responseData: AIResponse;
-  success: boolean;
-  processingTime: number;
-  patterns: any;
-}
-
-export interface AIAgentConfig {
-  name: string;
-  version: string;
-  capabilities: string[];
-  maxTokens: number;
-  temperature: number;
-  model: string;
 }

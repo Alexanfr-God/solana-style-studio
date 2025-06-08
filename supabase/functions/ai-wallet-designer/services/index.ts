@@ -1,40 +1,26 @@
 
-// Service implementations for external integrations
+// Services for external integrations and utilities
 
-export class ImageProcessingService {
+export class AIServiceManager {
   constructor() {
-    console.log('🖼️ ImageProcessingService initialized');
+    console.log('🔌 AIServiceManager initialized');
   }
 
-  async processImage(imageData: string) {
-    console.log('🔄 Processing image...');
-    // TODO: Implement image processing
+  async connectToOpenAI() {
+    console.log('🤖 Connecting to OpenAI...');
+    // TODO: Implement OpenAI connection
+    return { connected: true, model: 'gpt-4o-mini' };
+  }
+
+  async processImageAnalysis(imageUrl: string) {
+    console.log('🖼️ Processing image analysis for:', imageUrl);
+    // TODO: Implement image analysis service
     return {
-      processedUrl: 'https://example.com/processed-image.png',
-      metadata: {
-        width: 1024,
-        height: 768,
-        format: 'PNG'
-      }
-    };
-  }
-}
-
-export class DatabaseService {
-  constructor() {
-    console.log('💾 DatabaseService initialized');
-  }
-
-  async saveDesign(designData: any) {
-    console.log('💾 Saving design to database:', designData);
-    // TODO: Implement database save logic
-    return {
-      id: crypto.randomUUID(),
-      status: 'saved',
+      analysisId: crypto.randomUUID(),
+      status: 'completed',
       timestamp: new Date().toISOString()
     };
   }
 }
 
-export const imageProcessingService = new ImageProcessingService();
-export const databaseService = new DatabaseService();
+export const aiServiceManager = new AIServiceManager();
