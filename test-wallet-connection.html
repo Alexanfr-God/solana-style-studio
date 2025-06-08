@@ -1,0 +1,529 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet API Connection Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #9945FF 0%, #6B73FF 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border: 2px solid #f0f0f0;
+            border-radius: 15px;
+            background: #fafafa;
+        }
+        
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .test-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 180px;
+        }
+        
+        .test-btn.primary {
+            background: linear-gradient(135deg, #9945FF 0%, #6B73FF 100%);
+            color: white;
+        }
+        
+        .test-btn.secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        
+        .test-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result-area {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #f0f0f0;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #9945FF;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #9945FF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .element-list {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .element-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #9945FF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Wallet API Test Suite</h1>
+            <p>Comprehensive testing of our wallet customization system</p>
+        </div>
+        
+        <div class="content">
+            <!-- Health Check Section -->
+            <div class="test-section">
+                <h2>📊 Health Check Test</h2>
+                <div class="button-group">
+                    <button class="test-btn primary" onclick="testHealthCheck()">
+                        Test Health Endpoint
+                    </button>
+                </div>
+                <div id="health-result" class="result-area">
+                    Click "Test Health Endpoint" to check if our wallet-ai-customizer service is running...
+                </div>
+            </div>
+            
+            <!-- Wallet Structure Test Section -->
+            <div class="test-section">
+                <h2>🏗️ Wallet Structure Test</h2>
+                <div class="button-group">
+                    <button class="test-btn secondary" onclick="testWalletStructure()">
+                        Get Wallet Structure
+                    </button>
+                    <button class="test-btn secondary" onclick="testPhantomWallet()">
+                        Test Phantom Wallet
+                    </button>
+                </div>
+                <div class="stats" id="wallet-stats" style="display: none;">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-elements">0</div>
+                        <div class="stat-label">Total Elements</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="customizable-elements">0</div>
+                        <div class="stat-label">Customizable Elements</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-screens">0</div>
+                        <div class="stat-label">Screens</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="response-time">0ms</div>
+                        <div class="stat-label">Response Time</div>
+                    </div>
+                </div>
+                <div id="wallet-result" class="result-area">
+                    Click "Get Wallet Structure" to retrieve and analyze all 74 wallet elements...
+                </div>
+            </div>
+            
+            <!-- API Connection Test -->
+            <div class="test-section">
+                <h2>🔗 Full System Test</h2>
+                <div class="button-group">
+                    <button class="test-btn primary" onclick="runFullTest()">
+                        Run Complete Test Suite
+                    </button>
+                </div>
+                <div id="full-test-result" class="result-area">
+                    Click "Run Complete Test Suite" to test all endpoints and validate system integrity...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://opxordptvpvzmhakvdde.supabase.co/functions/v1';
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9weG9yZHB0dnB2em1oYWt2ZGRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTY2NjgsImV4cCI6MjA2MjI5MjY2OH0.uHDqEycZqhQ02zMvmikDjMXsqeVU792Ei61ceavk6iw';
+        
+        function updateStatus(elementId, message, type = 'loading') {
+            const element = document.getElementById(elementId);
+            const statusClass = type === 'success' ? 'success' : type === 'error' ? 'error' : 'loading';
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⏳';
+            element.innerHTML = `<span class="status ${statusClass}">${icon} ${message}</span>\n\n`;
+        }
+        
+        function appendResult(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML += message + '\n';
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        async function testHealthCheck() {
+            updateStatus('health-result', 'Testing health endpoint...', 'loading');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE}/wallet-ai-customizer/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const responseTime = Date.now() - startTime;
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'healthy') {
+                    updateStatus('health-result', `Health check passed! (${responseTime}ms)`, 'success');
+                    appendResult('health-result', `✅ Status: ${data.status}`);
+                    appendResult('health-result', `⏱️ Response time: ${responseTime}ms`);
+                    appendResult('health-result', `📅 Timestamp: ${data.timestamp}`);
+                    appendResult('health-result', '\n🔧 Service Status:');
+                    
+                    if (data.services) {
+                        Object.entries(data.services).forEach(([service, status]) => {
+                            appendResult('health-result', `  ${service}: ${status === 'ready' ? '✅' : '❌'} ${status}`);
+                        });
+                    }
+                } else {
+                    updateStatus('health-result', 'Health check failed', 'error');
+                    appendResult('health-result', `Status: ${response.status}`);
+                    appendResult('health-result', `Response: ${JSON.stringify(data, null, 2)}`);
+                }
+            } catch (error) {
+                updateStatus('health-result', 'Health check failed with error', 'error');
+                appendResult('health-result', `Error: ${error.message}`);
+                appendResult('health-result', '\n💡 Possible issues:');
+                appendResult('health-result', '  - Edge function not deployed');
+                appendResult('health-result', '  - CORS configuration');
+                appendResult('health-result', '  - Network connectivity');
+            }
+        }
+        
+        async function testWalletStructure() {
+            updateStatus('wallet-result', 'Fetching wallet structure...', 'loading');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE}/wallet-customization-structure`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ walletType: 'phantom' })
+                });
+                
+                const responseTime = Date.now() - startTime;
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus('wallet-result', `Wallet structure retrieved! (${responseTime}ms)`, 'success');
+                    
+                    // Update stats
+                    updateWalletStats(data, responseTime);
+                    
+                    // Show detailed analysis
+                    appendResult('wallet-result', `📊 Wallet Analysis:`);
+                    appendResult('wallet-result', `  Type: ${data.metadata?.walletType || 'phantom'}`);
+                    appendResult('wallet-result', `  Version: ${data.metadata?.version || 'N/A'}`);
+                    appendResult('wallet-result', `  Total Screens: ${data.screens?.length || 0}`);
+                    
+                    let totalElements = 0;
+                    let customizableElements = 0;
+                    
+                    if (data.screens) {
+                        data.screens.forEach((screen, index) => {
+                            appendResult('wallet-result', `\n📱 Screen ${index + 1}: ${screen.screenId}`);
+                            appendResult('wallet-result', `  Priority: ${screen.priority}`);
+                            
+                            if (screen.elements) {
+                                const screenElements = Object.keys(screen.elements).length;
+                                totalElements += screenElements;
+                                
+                                appendResult('wallet-result', `  Elements: ${screenElements}`);
+                                
+                                Object.entries(screen.elements).forEach(([elementId, element]) => {
+                                    if (element.customizable) {
+                                        customizableElements++;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    appendResult('wallet-result', `\n🎯 Summary:`);
+                    appendResult('wallet-result', `  Total Elements Found: ${totalElements}`);
+                    appendResult('wallet-result', `  Customizable Elements: ${customizableElements}`);
+                    appendResult('wallet-result', `  Expected Elements: 74`);
+                    appendResult('wallet-result', `  Status: ${totalElements >= 70 ? '✅ Good' : '⚠️ Check needed'}`);
+                    
+                } else {
+                    updateStatus('wallet-result', 'Failed to get wallet structure', 'error');
+                    appendResult('wallet-result', `Status: ${response.status}`);
+                    appendResult('wallet-result', `Response: ${JSON.stringify(data, null, 2)}`);
+                }
+            } catch (error) {
+                updateStatus('wallet-result', 'Wallet structure test failed', 'error');
+                appendResult('wallet-result', `Error: ${error.message}`);
+            }
+        }
+        
+        async function testPhantomWallet() {
+            updateStatus('wallet-result', 'Testing specific Phantom wallet...', 'loading');
+            await testWalletStructure();
+        }
+        
+        function updateWalletStats(data, responseTime) {
+            const statsContainer = document.getElementById('wallet-stats');
+            statsContainer.style.display = 'grid';
+            
+            let totalElements = 0;
+            let customizableElements = 0;
+            
+            if (data.screens) {
+                data.screens.forEach(screen => {
+                    if (screen.elements) {
+                        totalElements += Object.keys(screen.elements).length;
+                        Object.values(screen.elements).forEach(element => {
+                            if (element.customizable) customizableElements++;
+                        });
+                    }
+                });
+            }
+            
+            document.getElementById('total-elements').textContent = totalElements;
+            document.getElementById('customizable-elements').textContent = customizableElements;
+            document.getElementById('total-screens').textContent = data.screens?.length || 0;
+            document.getElementById('response-time').textContent = `${responseTime}ms`;
+        }
+        
+        async function runFullTest() {
+            updateStatus('full-test-result', 'Running complete test suite...', 'loading');
+            
+            const results = {
+                healthCheck: false,
+                walletStructure: false,
+                totalElements: 0,
+                errors: []
+            };
+            
+            // Test 1: Health Check
+            appendResult('full-test-result', '🔍 Test 1: Health Check');
+            try {
+                const healthResponse = await fetch(`${API_BASE}/wallet-ai-customizer/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const healthData = await healthResponse.json();
+                if (healthResponse.ok && healthData.status === 'healthy') {
+                    results.healthCheck = true;
+                    appendResult('full-test-result', '  ✅ Health check passed');
+                } else {
+                    results.errors.push('Health check failed');
+                    appendResult('full-test-result', '  ❌ Health check failed');
+                }
+            } catch (error) {
+                results.errors.push(`Health check error: ${error.message}`);
+                appendResult('full-test-result', `  ❌ Health check error: ${error.message}`);
+            }
+            
+            // Test 2: Wallet Structure
+            appendResult('full-test-result', '\n🔍 Test 2: Wallet Structure');
+            try {
+                const walletResponse = await fetch(`${API_BASE}/wallet-customization-structure`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ walletType: 'phantom' })
+                });
+                
+                const walletData = await walletResponse.json();
+                if (walletResponse.ok) {
+                    results.walletStructure = true;
+                    
+                    // Count elements
+                    if (walletData.screens) {
+                        walletData.screens.forEach(screen => {
+                            if (screen.elements) {
+                                results.totalElements += Object.keys(screen.elements).length;
+                            }
+                        });
+                    }
+                    
+                    appendResult('full-test-result', `  ✅ Wallet structure retrieved`);
+                    appendResult('full-test-result', `  📊 Found ${results.totalElements} elements`);
+                } else {
+                    results.errors.push('Wallet structure retrieval failed');
+                    appendResult('full-test-result', '  ❌ Wallet structure failed');
+                }
+            } catch (error) {
+                results.errors.push(`Wallet structure error: ${error.message}`);
+                appendResult('full-test-result', `  ❌ Wallet structure error: ${error.message}`);
+            }
+            
+            // Final Results
+            appendResult('full-test-result', '\n📋 Final Results:');
+            const allPassed = results.healthCheck && results.walletStructure && results.totalElements >= 70;
+            
+            if (allPassed) {
+                updateStatus('full-test-result', 'All tests passed! System is working correctly.', 'success');
+                appendResult('full-test-result', '🎉 System Status: HEALTHY');
+                appendResult('full-test-result', '✅ All endpoints responding');
+                appendResult('full-test-result', `✅ Found ${results.totalElements}/74 expected elements`);
+                appendResult('full-test-result', '🚀 Ready for wallet customization!');
+            } else {
+                updateStatus('full-test-result', 'Some tests failed. Check details below.', 'error');
+                appendResult('full-test-result', '⚠️ System Status: ISSUES DETECTED');
+                results.errors.forEach(error => {
+                    appendResult('full-test-result', `❌ ${error}`);
+                });
+            }
+        }
+        
+        // Auto-run health check on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                appendResult('health-result', '🎯 Ready to test! Click the button above to start...');
+                appendResult('wallet-result', '🎯 Ready to test wallet structure! Click any button above...');
+                appendResult('full-test-result', '🎯 Ready for complete system test! Click the button above...');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
