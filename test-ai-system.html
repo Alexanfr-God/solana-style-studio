@@ -1,0 +1,409 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Wallet Designer System Test</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0D1117 0%, #1C1C1C 100%);
+            color: #E6EDF3;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #9945FF;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #9945FF 0%, #6B73FF 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(153, 69, 255, 0.3);
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(153, 69, 255, 0.4);
+        }
+        
+        .test-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .step-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            margin-bottom: 15px;
+        }
+        
+        .step-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #58A6FF;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        
+        .status-success {
+            background: rgba(46, 160, 67, 0.2);
+            color: #2EA043;
+            border: 1px solid rgba(46, 160, 67, 0.3);
+        }
+        
+        .status-error {
+            background: rgba(248, 81, 73, 0.2);
+            color: #F85149;
+            border: 1px solid rgba(248, 81, 73, 0.3);
+        }
+        
+        .step-details {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .duration {
+            color: #7C8F8F;
+            font-weight: 500;
+        }
+        
+        .css-preview {
+            background: #0D1117;
+            border: 1px solid #30363D;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+        
+        .css-preview pre {
+            margin: 0;
+            color: #E6EDF3;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .error-message {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            color: #F85149;
+            margin-top: 15px;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, rgba(153, 69, 255, 0.1) 0%, rgba(107, 115, 255, 0.1) 100%);
+            border: 1px solid rgba(153, 69, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary h3 {
+            margin-top: 0;
+            color: #9945FF;
+        }
+        
+        .final-result {
+            background: rgba(46, 160, 67, 0.1);
+            border: 1px solid rgba(46, 160, 67, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .final-result h3 {
+            margin-top: 0;
+            color: #2EA043;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Wallet Designer System Test</h1>
+            <p>Test the complete AI customization pipeline</p>
+            <button id="testButton" class="test-button" onclick="runSystemTest()">
+                🚀 Run System Test
+            </button>
+        </div>
+        
+        <div id="results" class="results" style="display: none;"></div>
+    </div>
+
+    <script>
+        let isTestRunning = false;
+
+        async function runSystemTest() {
+            if (isTestRunning) return;
+            
+            isTestRunning = true;
+            const button = document.getElementById('testButton');
+            const results = document.getElementById('results');
+            
+            // Update button state
+            button.disabled = true;
+            button.innerHTML = '<div class="loading"></div>Running AI System Test...';
+            
+            // Show results container
+            results.style.display = 'block';
+            results.innerHTML = '<div class="summary"><h3>🔄 Testing AI System...</h3><p>Please wait while we test all AI agents and components.</p></div>';
+            
+            try {
+                console.log('Starting AI system test...');
+                
+                const response = await fetch('/functions/v1/ai-wallet-designer/test-system', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getSupabaseKey()}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('AI system test completed:', data);
+                
+                displayResults(data);
+                
+            } catch (error) {
+                console.error('Error running system test:', error);
+                displayError(error);
+            } finally {
+                // Reset button
+                isTestRunning = false;
+                button.disabled = false;
+                button.innerHTML = '🚀 Run System Test';
+            }
+        }
+        
+        function displayResults(data) {
+            const results = document.getElementById('results');
+            
+            let html = '';
+            
+            // Summary
+            html += `
+                <div class="summary">
+                    <h3>📊 Test Summary</h3>
+                    <p><strong>Overall Success:</strong> ${data.success ? '✅ Yes' : '❌ No'}</p>
+                    <p><strong>Total Duration:</strong> <span class="duration">${data.totalDuration}ms</span></p>
+                    <p><strong>Steps Completed:</strong> ${data.summary?.passed || 0}/${data.summary?.total || 0}</p>
+                    <p><strong>Failed Steps:</strong> ${data.summary?.failed || 0}</p>
+                </div>
+            `;
+            
+            // Individual steps
+            if (data.steps && data.steps.length > 0) {
+                data.steps.forEach(step => {
+                    html += `
+                        <div class="step-card">
+                            <div class="step-header">
+                                <div class="step-title">
+                                    ${getStepIcon(step.step)} ${formatStepName(step.step)}
+                                </div>
+                                <div class="status-badge ${step.success ? 'status-success' : 'status-error'}">
+                                    ${step.success ? '✅ Success' : '❌ Failed'}
+                                </div>
+                            </div>
+                            <div class="step-details">
+                                <p><strong>Duration:</strong> <span class="duration">${step.duration}ms</span></p>
+                                ${step.error ? `<div class="error-message"><strong>Error:</strong> ${step.error}</div>` : ''}
+                                ${step.result ? `<div class="result-preview">${formatResult(step.step, step.result)}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Final result with CSS
+            if (data.finalResult) {
+                html += `
+                    <div class="final-result">
+                        <h3>🎨 Generated Customization</h3>
+                        <p><strong>Theme ID:</strong> ${data.finalResult.customization?.themeId || 'N/A'}</p>
+                        <p><strong>Success:</strong> ${data.finalResult.customization?.success ? '✅ Yes' : '❌ No'}</p>
+                        ${formatGeneratedCSS(data.finalResult)}
+                    </div>
+                `;
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        function displayError(error) {
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-title">❌ Test Failed</div>
+                    </div>
+                    <div class="error-message">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getStepIcon(step) {
+            const icons = {
+                'image_analysis': '🖼️',
+                'wallet_analysis': '👛',
+                'style_generation': '🎨',
+                'full_customization': '✨'
+            };
+            return icons[step] || '🔧';
+        }
+        
+        function formatStepName(step) {
+            const names = {
+                'image_analysis': 'Image Analysis',
+                'wallet_analysis': 'Wallet Analysis', 
+                'style_generation': 'Style Generation',
+                'full_customization': 'Full Customization'
+            };
+            return names[step] || step.replace('_', ' ');
+        }
+        
+        function formatResult(step, result) {
+            if (!result) return '';
+            
+            switch(step) {
+                case 'image_analysis':
+                    return `
+                        <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                        <p><strong>Dominant Colors:</strong> ${result.colorPalette?.dominant?.join(', ') || 'N/A'}</p>
+                        <p><strong>Mood:</strong> ${result.moodProfile?.primary || 'N/A'}</p>
+                    `;
+                case 'wallet_analysis':
+                    return `
+                        <p><strong>Analysis ID:</strong> ${result.analysisId}</p>
+                        <p><strong>Elements Analyzed:</strong> ${Object.keys(result.elementAnalysis || {}).length}</p>
+                        <p><strong>Critical Elements:</strong> ${result.globalInsights?.criticalElements?.length || 0}</p>
+                    `;
+                case 'style_generation':
+                    return `
+                        <p><strong>Theme ID:</strong> ${result.themeId}</p>
+                        <p><strong>CSS Variables:</strong> ${Object.keys(result.generatedCSS?.variables || {}).length}</p>
+                        <p><strong>Element Styles:</strong> ${Object.keys(result.generatedCSS?.elements || {}).length}</p>
+                    `;
+                default:
+                    return `<p><strong>Result available:</strong> ✅</p>`;
+            }
+        }
+        
+        function formatGeneratedCSS(finalResult) {
+            if (!finalResult.customization?.generatedCSS) {
+                return '<p>No CSS generated</p>';
+            }
+            
+            const css = finalResult.customization.generatedCSS;
+            let cssText = '';
+            
+            // CSS Variables
+            if (css.variables && Object.keys(css.variables).length > 0) {
+                cssText += ':root {\n';
+                Object.entries(css.variables).forEach(([key, value]) => {
+                    cssText += `  ${key}: ${value};\n`;
+                });
+                cssText += '}\n\n';
+            }
+            
+            // Element styles
+            if (css.elements && Object.keys(css.elements).length > 0) {
+                Object.entries(css.elements).forEach(([selector, styles]) => {
+                    cssText += `.${selector} {\n`;
+                    Object.entries(styles).forEach(([prop, value]) => {
+                        cssText += `  ${prop}: ${value};\n`;
+                    });
+                    cssText += '}\n\n';
+                });
+            }
+            
+            return `
+                <div class="css-preview">
+                    <h4>Generated CSS:</h4>
+                    <pre><code>${cssText || 'No CSS generated'}</code></pre>
+                </div>
+            `;
+        }
+        
+        function getSupabaseKey() {
+            // This should be replaced with your actual Supabase anon key
+            // For testing, you might want to get it from environment or config
+            return 'YOUR_SUPABASE_ANON_KEY';
+        }
+        
+        // Auto-run test on page load for quick testing
+        window.addEventListener('load', () => {
+            console.log('AI System Test page loaded');
+            // Uncomment the line below to auto-run the test
+            // setTimeout(() => runSystemTest(), 1000);
+        });
+    </script>
+</body>
+</html>
