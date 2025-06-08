@@ -1,4 +1,3 @@
-
 // Utility logging
 function log(component: string, level: string, message: string, data?: any) {
   const timestamp = new Date().toISOString();
