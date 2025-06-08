@@ -49,3 +49,20 @@ export interface CustomizationResult {
   };
   applicationResult?: any;
 }
+
+export interface AIRequest {
+  type: 'wallet_analysis' | 'image_analysis' | 'style_generation' | 'full_customization';
+  walletType: string;
+  imageUrl?: string;
+  customPrompt?: string;
+  walletAnalysis?: WalletAnalysis;
+  imageAnalysis?: ImageAnalysis;
+}
+
+export interface AIResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+  timestamp: string;
+  requestId: string;
+}
