@@ -45,18 +45,77 @@ class N8NConductor {
     const startTime = Date.now();
     
     try {
+      // ИСПРАВЛЕНИЕ 1: Правильный payload для n8n
       const n8nPayload = {
-        sessionId: payload.sessionId,
+        sessionId: payload.sessionId || `session_${Date.now()}`,
         timestamp: new Date().toISOString(),
-        walletStructure: payload.walletStructure,
-        walletId: payload.walletId,
+        walletStructure: payload.walletStructure || {
+          type: payload.walletId || 'phantom',
+          elements: payload.walletElements || [],
+          metadata: {
+            walletId: payload.walletId || 'default',
+            version: '1.0'
+          }
+        },
         imageData: payload.imageData,
         customPrompt: payload.customPrompt || 'Create a modern and professional wallet design',
         processingMode: 'full_customization',
         learningEnabled: true,
         requestSource: 'edge_function',
-        userAgent: 'wallet-ai-customizer/1.0'
+        userAgent: 'wallet-ai-customizer/1.0',
+        startTime: Date.now()
       };
+      
+      // ИСПРАВЛЕНИЕ 2: Валидация данных ПЕРЕД отправкой в n8n
+      console.log('🔍 Validating payload for n8n:', {
+        hasSessionId: !!n8nPayload.sessionId,
+        hasWalletStructure: !!n8nPayload.walletStructure,
+        hasImageData: !!n8nPayload.imageData,
+        imageDataType: typeof n8nPayload.imageData,
+        imageDataLength: n8nPayload.imageData?.length || 0
+      });
+
+      // Проверяем обязательные поля
+      if (!n8nPayload.sessionId) {
+        console.error('❌ Missing sessionId for n8n');
+        return {
+          success: false,
+          error: 'Missing sessionId'
+        };
+      }
+
+      if (!n8nPayload.walletStructure) {
+        console.error('❌ Missing walletStructure for n8n');
+        return {
+          success: false,
+          error: 'Missing walletStructure'
+        };
+      }
+
+      if (!n8nPayload.imageData) {
+        console.error('❌ Missing imageData for n8n');
+        return {
+          success: false,
+          error: 'Missing imageData'
+        };
+      }
+
+      // ИСПРАВЛЕНИЕ 3: Исправить обработку imageData
+      let processedImageData = n8nPayload.imageData;
+
+      if (typeof processedImageData !== 'string') {
+        console.log('🔄 Converting imageData to base64...');
+        // Конвертируем в base64 если это не строка
+        if (processedImageData instanceof ArrayBuffer) {
+          processedImageData = btoa(String.fromCharCode(...new Uint8Array(processedImageData)));
+        } else if (typeof processedImageData === 'object') {
+          processedImageData = JSON.stringify(processedImageData);
+        }
+      }
+
+      // Обновляем payload
+      n8nPayload.imageData = processedImageData;
+      console.log('✅ ImageData processed, length:', processedImageData.length);
       
       // Detailed logging before request
       console.log('🚀 Starting n8n request at:', new Date().toISOString());
@@ -64,7 +123,7 @@ class N8NConductor {
       console.log('🚀 SENDING TO N8N:', this.n8nWebhookUrl);
       console.log('📦 PAYLOAD PREVIEW:', {
         sessionId: n8nPayload.sessionId,
-        walletType: n8nPayload.walletId, 
+        walletType: n8nPayload.walletStructure?.type, 
         hasImage: !!n8nPayload.imageData,
         imageSize: n8nPayload.imageData?.length || 0,
         prompt: n8nPayload.customPrompt
@@ -90,6 +149,19 @@ class N8NConductor {
       console.log('📡 N8N RESPONSE HEADERS:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ n8n error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText.substring(0, 500) // первые 500 символов
+        });
+        
+        // Если это ошибка валидации от n8n
+        if (errorText.includes('Missing required fields')) {
+          console.error('🚨 N8N VALIDATION ERROR: Check payload format!');
+          console.error('📋 Sent payload keys:', Object.keys(n8nPayload));
+        }
+        
         throw new Error(`N8N webhook error: ${response.status} ${response.statusText}`);
       }
       
