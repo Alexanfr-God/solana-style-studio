@@ -51,7 +51,9 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
           cursor: 'pointer',
           transition: getTransition('buttons'),
           transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-          boxShadow: isHovered ? `0 4px 12px ${style.accentColor}40` : 'none'
+          boxShadow: isHovered ? `0 4px 12px ${style.accentColor}40` : 'none',
+          position: 'relative',
+          zIndex: showAccountDropdown ? 5 : 15
         };
 
         return (
