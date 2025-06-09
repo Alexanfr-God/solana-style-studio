@@ -1,12 +1,12 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// Commented out non-existing imports
-// import { WalletAPIClient } from "./core/wallet-api-client.ts";
-// import { ImageProcessor } from "./core/image-processor.ts";
-// import { N8NConductor } from "./core/n8n-conductor.ts";
-// import { LearningCollector } from "./core/learning-collector.ts";
-// import { NFTStub } from "./services/nft-stub.ts";
-// import { ValidationService } from "./services/validation.ts";
+import { WalletAPIClient } from "./core/wallet-api-client.ts";
+import { ImageProcessor } from "./core/image-processor.ts";
+import { N8NConductor } from "./core/n8n-conductor.ts";
+import { LearningCollector } from "./core/learning-collector.ts";
+import { NFTStub } from "./services/nft-stub.ts";
+import { ValidationService } from "./services/validation.ts";
 
 // CORS headers
 const corsHeaders = {
@@ -22,66 +22,7 @@ function log(component: string, level: string, message: string, data?: any) {
   console.log(logMessage, data ? JSON.stringify(data, null, 2) : '');
 }
 
-// Temporary stub services until real ones are implemented
-class WalletAPIClient {
-  async getWalletStructure(walletId: string) {
-    log('WalletAPI', 'INFO', 'Getting wallet structure', { walletId });
-    return { walletId, structure: 'mock_structure' };
-  }
-}
-
-class ImageProcessor {
-  async processUploadedImage(file: File) {
-    log('ImageProcessor', 'INFO', 'Processing image', { fileName: file.name });
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = btoa(
-      Array.from(new Uint8Array(arrayBuffer))
-        .map(byte => String.fromCharCode(byte))
-        .join('')
-    );
-    return {
-      base64Data: `data:${file.type};base64,${base64}`,
-      imageSize: file.size,
-      format: file.type
-    };
-  }
-}
-
-class N8NConductor {
-  async triggerCustomization(data: any) {
-    log('N8NConductor', 'INFO', 'Triggering customization', data);
-    return { success: true, message: 'Customization triggered' };
-  }
-}
-
-class LearningCollector {
-  async collectUserSession(data: any) {
-    log('LearningCollector', 'INFO', 'Collecting user session', data);
-  }
-  
-  async saveUserRating(sessionId: string, rating: number, feedback: string) {
-    log('LearningCollector', 'INFO', 'Saving user rating', { sessionId, rating, feedback });
-  }
-}
-
-class NFTStub {
-  async prepareMetadata(sessionId: string) {
-    log('NFTStub', 'INFO', 'Preparing NFT metadata', { sessionId });
-    return { success: true, metadata: 'mock_nft_data' };
-  }
-}
-
-class ValidationService {
-  async validateCustomizeRequest(data: any) {
-    log('ValidationService', 'INFO', 'Validating request', data);
-    if (!data.walletId || !data.imageFile) {
-      return { valid: false, error: 'Missing walletId or imageFile' };
-    }
-    return { valid: true };
-  }
-}
-
-// Initialize services
+// Initialize services with REAL classes
 const walletAPI = new WalletAPIClient();
 const imageProcessor = new ImageProcessor();
 const n8nConductor = new N8NConductor();
