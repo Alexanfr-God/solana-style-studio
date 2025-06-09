@@ -4,23 +4,20 @@ import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { Wand2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { analyzeImageWithBlueprint } from '@/services/styleBlueprintService';
-
-// Hardcoded settings for simplified UX
-const N8N_WEBHOOK_URL = 'https://wacocu.app.n8n.cloud/webhook/wallet-customizer';
-const DEFAULT_PROMPT = 'Analyze this image and create a custom Web3 wallet style';
+import { customizeWalletWithAI } from '@/services/walletAiCustomizerService';
 
 const CustomizeWalletButton = () => {
   const { 
     uploadedImage, 
+    uploadedFile,
     isCustomizing, 
     onCustomizationStartWithTimeout, 
-    applyStyleFromBlueprint,
+    applyStyleFromAiCustomizer,
     resetCustomizationState 
   } = useWalletCustomizationStore();
 
   const handleCustomize = async () => {
-    if (!uploadedImage) {
+    if (!uploadedFile || !uploadedImage) {
       toast.error("Please upload a style inspiration image first!");
       return;
     }
@@ -31,21 +28,24 @@ const CustomizeWalletButton = () => {
     try {
       toast.info("Analyzing image and generating wallet style...");
       
-      // Perform StyleBlueprint analysis with hardcoded settings
-      const result = await analyzeImageWithBlueprint(
-        uploadedImage,
-        DEFAULT_PROMPT,
-        undefined, // wallet blueprint
-        N8N_WEBHOOK_URL
+      // Call the wallet-ai-customizer edge function
+      const result = await customizeWalletWithAI(
+        uploadedFile,
+        'phantom', // walletId
+        'Analyze this image and create a custom Web3 wallet style' // customPrompt
       );
 
-      // Automatically apply the generated style
-      applyStyleFromBlueprint(result.styleBlueprint);
-      
-      console.log('✅ Wallet customization completed successfully');
-      toast.success(`Wallet customized successfully! 🎨`, {
-        description: `Applied ${result.styleBlueprint.meta.theme} theme`
-      });
+      if (result.success) {
+        // Apply the generated style
+        applyStyleFromAiCustomizer(result);
+        
+        console.log('✅ Wallet customization completed successfully');
+        toast.success(`Wallet customized successfully! 🎨`, {
+          description: `AI analysis completed`
+        });
+      } else {
+        throw new Error(result.error || 'Customization failed');
+      }
 
     } catch (error) {
       console.error('💥 Customization error:', error);

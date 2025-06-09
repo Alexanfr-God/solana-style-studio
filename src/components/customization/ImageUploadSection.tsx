@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,7 @@ const ImageUploadSection = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
-        setUploadedImage(result);
+        setUploadedImage(result, file); // Pass both base64 and File object
         toast.success('Image uploaded - ready for customization!');
         setIsUploading(false);
       };
@@ -45,7 +44,7 @@ const ImageUploadSection = () => {
   };
 
   const handleRemoveImage = () => {
-    setUploadedImage(null);
+    setUploadedImage(null, null);
     toast.info('Image removed');
   };
 

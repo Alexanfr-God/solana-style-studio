@@ -94,6 +94,7 @@ interface WalletCustomizationStore {
   activeLayer: LayerType;
   prompt: string;
   uploadedImage: string | null;
+  uploadedFile: File | null;
   isGenerating: boolean;
   isCustomizing: boolean;
   editorMode: 'create-style' | 'fine-tune' | 'decorate';
@@ -141,7 +142,7 @@ interface WalletCustomizationStore {
   setStyleForLayer: (layer: LayerType, style: WalletStyle) => void;
   setActiveLayer: (layer: LayerType) => void;
   setPrompt: (prompt: string) => void;
-  setUploadedImage: (image: string | null) => void;
+  setUploadedImage: (image: string | null, file?: File | null) => void;
   setIsGenerating: (isGenerating: boolean) => void;
   setEditorMode: (mode: 'create-style' | 'fine-tune' | 'decorate') => void;
   resetStyles: () => void;
@@ -163,6 +164,7 @@ interface WalletCustomizationStore {
   // StyleBlueprint Integration
   currentBlueprint: StyleBlueprint | null;
   applyStyleFromBlueprint: (blueprint: StyleBlueprint) => void;
+  applyStyleFromAiCustomizer: (result: any) => void;
 }
 
 const defaultLoginStyle: WalletStyle = {
@@ -258,6 +260,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
       activeLayer: 'wallet',
       prompt: '',
       uploadedImage: null,
+      uploadedFile: null,
       isGenerating: false,
       isCustomizing: false,
       editorMode: 'create-style',
@@ -389,13 +392,13 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
       },
       setActiveLayer: (layer: LayerType) => set({ activeLayer: layer }),
       setPrompt: (prompt: string) => set({ prompt }),
-      setUploadedImage: (image: string | null) => {
+      setUploadedImage: (image: string | null, file?: File | null) => {
         // Reset customization state when new image is uploaded
         if (image !== null && get().isCustomizing) {
           console.log('🔄 New image uploaded, resetting customization state');
           get().resetCustomizationState();
         }
-        set({ uploadedImage: image });
+        set({ uploadedImage: image, uploadedFile: file || null });
       },
       setIsGenerating: (isGenerating: boolean) => set({ isGenerating }),
       setEditorMode: (mode: 'create-style' | 'fine-tune' | 'decorate') => set({ editorMode: mode }),
@@ -600,6 +603,43 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
           theme: blueprint.meta.theme,
           confidence: blueprint.meta.confidenceScore
         });
+      },
+      
+      applyStyleFromAiCustomizer: (result: any) => {
+        console.log('🎨 Applying AI customizer result:', result);
+        
+        if (result.success && result.result) {
+          const styles = result.result.generatedStyles;
+          
+          if (styles && styles.variables) {
+            const updatedStyle = {
+              backgroundColor: styles.variables['--background-color'] || get().walletStyle.backgroundColor,
+              accentColor: styles.variables['--primary-color'] || get().walletStyle.accentColor,
+              textColor: styles.variables['--text-color'] || get().walletStyle.textColor,
+              buttonColor: styles.variables['--primary-color'] || get().walletStyle.buttonColor,
+              buttonTextColor: styles.variables['--text-color'] || get().walletStyle.buttonTextColor,
+              borderRadius: get().walletStyle.borderRadius,
+              fontFamily: get().walletStyle.fontFamily,
+              boxShadow: get().walletStyle.boxShadow,
+              styleNotes: `AI Generated - Theme: ${result.result.aiAnalysis?.styleType || 'custom'}`,
+              primaryColor: styles.variables['--primary-color'] || get().walletStyle.accentColor,
+              font: get().walletStyle.fontFamily
+            };
+            
+            set({
+              walletStyle: updatedStyle,
+              isCustomizing: false,
+            });
+            
+            console.log('✅ AI customizer styles applied successfully');
+          }
+        }
+        
+        // Clear timeout since customization completed
+        if (customizationTimeoutId) {
+          clearTimeout(customizationTimeoutId);
+          customizationTimeoutId = null;
+        }
       },
     }),
     {

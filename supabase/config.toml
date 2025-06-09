@@ -51,6 +51,9 @@ verify_jwt = false
 [functions.generate-wallet-mask]
 verify_jwt = false
 
+[functions.wallet-ai-customizer]
+verify_jwt = false
+
 [functions.generate-style]
 verify_jwt = true
 
