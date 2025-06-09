@@ -31,13 +31,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
   const containerStyle = getComponentStyle('containers');
   
   return (
-    <div 
-      className={`grid grid-cols-4 gap-2 px-4 pt-0 pb-4 ${showAccountDropdown ? 'z-10' : 'z-20'}`}
-      style={{
-        position: 'relative',
-        zIndex: showAccountDropdown ? 10 : 20
-      }}
-    >
+    <div className="grid grid-cols-4 gap-2 px-4 pt-0 pb-4">
       {actions.map(action => {
         const isHovered = hoveredAction === action.id;
         const actionButtonStyle: React.CSSProperties = {
@@ -51,9 +45,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
           cursor: 'pointer',
           transition: getTransition('buttons'),
           transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-          boxShadow: isHovered ? `0 4px 12px ${style.accentColor}40` : 'none',
-          position: 'relative',
-          zIndex: showAccountDropdown ? 5 : 15
+          boxShadow: isHovered ? `0 4px 12px ${style.accentColor}40` : 'none'
         };
 
         return (
