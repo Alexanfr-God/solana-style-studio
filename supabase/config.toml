@@ -53,6 +53,9 @@ verify_jwt = false
 
 [functions.wallet-ai-customizer]
 verify_jwt = false
+import_map = "./import_map.json"
+environment = { }
+timeout = 300000
 
 [functions.generate-style]
 verify_jwt = true

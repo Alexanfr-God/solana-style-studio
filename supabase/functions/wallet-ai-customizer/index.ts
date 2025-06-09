@@ -58,6 +58,9 @@ class N8NConductor {
         userAgent: 'wallet-ai-customizer/1.0'
       };
       
+      // Detailed logging before request
+      console.log('🚀 Starting n8n request at:', new Date().toISOString());
+      console.log('📊 Request payload size:', JSON.stringify(n8nPayload).length, 'bytes');
       console.log('🚀 SENDING TO N8N:', this.n8nWebhookUrl);
       console.log('📦 PAYLOAD PREVIEW:', {
         sessionId: n8nPayload.sessionId,
@@ -74,13 +77,17 @@ class N8NConductor {
           'X-Session-ID': payload.sessionId
         },
         body: JSON.stringify(n8nPayload),
-        signal: AbortSignal.timeout(120000)
+        signal: AbortSignal.timeout(240000) // 4 minutes
       });
       
-      console.log('📡 N8N RESPONSE STATUS:', response.status);
+      // Detailed logging after response
+      const endTime = Date.now();
+      const duration = (endTime - startTime) / 1000;
+      console.log('✅ n8n response received at:', new Date().toISOString());
+      console.log('⏱️  Total request duration:', duration, 'seconds');
+      console.log('📦 Response size:', response.headers.get('content-length') || 'unknown', 'bytes');
+      console.log('🔍 Response status:', response.status, response.statusText);
       console.log('📡 N8N RESPONSE HEADERS:', Object.fromEntries(response.headers.entries()));
-      
-      const duration = Date.now() - startTime;
       
       if (!response.ok) {
         throw new Error(`N8N webhook error: ${response.status} ${response.statusText}`);
@@ -91,25 +98,44 @@ class N8NConductor {
       
       log('TriggerCustomization', 'INFO', 'N8N customization completed', {
         sessionId: payload.sessionId,
-        duration: `${duration}ms`,
+        duration: `${duration}s`,
         success: result.success
       });
       
       return result;
       
     } catch (error) {
-      const duration = Date.now() - startTime;
+      const endTime = Date.now();
+      const duration = (endTime - startTime) / 1000;
+      
+      console.error('❌ n8n request failed after', duration, 'seconds');
+      console.error('🔍 Error type:', error.name);
+      console.error('📝 Error message:', error.message);
+      
+      // Special timeout handling
+      if (error.name === 'AbortError' || error.message.includes('timeout')) {
+        console.error('⏰ TIMEOUT ERROR: n8n workflow took too long');
+        console.error('🔧 Suggestion: n8n workflow took', duration, 'seconds, increase timeout or optimize workflow');
+      }
+      
       log('TriggerCustomization', 'ERROR', 'N8N customization failed', {
         sessionId: payload.sessionId,
-        duration: `${duration}ms`,
-        error: error.message
+        duration: `${duration}s`,
+        error: error.message,
+        errorType: error.name
       });
       
       return {
         success: false,
         sessionId: payload.sessionId,
-        error: 'N8N customization temporarily unavailable',
-        details: error.message
+        error: error.name === 'AbortError' ? 'AI processing timeout' : 'N8N customization temporarily unavailable',
+        details: `Request failed after ${duration}s. ${error.name === 'AbortError' ? 'n8n workflow may be taking too long.' : error.message}`,
+        timestamp: new Date().toISOString(),
+        debugInfo: {
+          errorType: error.name,
+          duration: duration,
+          maxTimeout: 240
+        }
       };
     }
   }
@@ -326,14 +352,23 @@ async function handleCustomizeWallet(req: Request) {
       error: error.message 
     });
     
+    // Improved error response for timeout cases
+    const isTimeout = error.name === 'AbortError' || error.message.includes('timeout');
+    
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
-        sessionId
+        error: isTimeout ? 'AI processing timeout' : error.message,
+        details: isTimeout ? 'Request failed due to timeout. n8n workflow may be taking too long.' : undefined,
+        sessionId,
+        timestamp: new Date().toISOString(),
+        debugInfo: isTimeout ? {
+          errorType: error.name,
+          maxTimeout: 240
+        } : undefined
       }),
       { 
-        status: 500, 
+        status: isTimeout ? 408 : 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
