@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -175,13 +174,6 @@ const WalletHomeLayer = () => {
         >
           <Search className="w-5 h-5 text-gray-400" />
         </button>
-
-        {/* Centered Account Dropdown with increased z-index */}
-        {showAccountDropdown && (
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-[100]">
-            <WalletAccountDropdown context="account-selector" />
-          </div>
-        )}
       </div>
 
       {/* Dynamic Content based on current layer */}
@@ -192,6 +184,11 @@ const WalletHomeLayer = () => {
 
       {/* Account Sidebar */}
       <AccountSidebar />
+
+      {/* Dropdown rendered at root level for proper layering */}
+      {showAccountDropdown && (
+        <WalletAccountDropdown context="account-selector" />
+      )}
     </div>
   );
 };
