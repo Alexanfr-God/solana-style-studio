@@ -250,6 +250,7 @@ const defaultStatusColors: StatusColors = {
   inactive: '#6B7280'
 };
 
+// КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Увеличиваем timeout с 30 секунд до 5 минут
 let customizationTimeoutId: number | null = null;
 
 export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
@@ -514,7 +515,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
       },
       
       onCustomizationStartWithTimeout: () => {
-        console.log('🚀 Starting customization with safety timeout...');
+        console.log('🚀 Starting customization with 5-minute timeout...');
         
         // Clear any existing timeout
         if (customizationTimeoutId) {
@@ -523,15 +524,16 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
         
         set({ isCustomizing: true });
         
-        // Set safety timeout for 30 seconds
+        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Увеличиваем timeout до 5 минут (300 секунд)
         customizationTimeoutId = window.setTimeout(() => {
-          console.warn('⚠️ Customization timeout reached (30s), forcing state reset');
+          console.warn('⚠️ Customization timeout reached (5 minutes), this may indicate a real issue');
+          console.warn('🔧 AI processing should normally complete within 3-4 minutes');
           get().resetCustomizationState();
-        }, 30000);
+        }, 300000); // 5 минут вместо 30 секунд
       },
       
       resetCustomizationState: () => {
-        console.log('🔄 Force resetting customization state');
+        console.log('🔄 Resetting customization state');
         
         // Clear timeout if it exists
         if (customizationTimeoutId) {
