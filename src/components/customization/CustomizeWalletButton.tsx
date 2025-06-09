@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { analyzeImageWithBlueprint } from '@/services/styleBlueprintService';
 
 // Hardcoded settings for simplified UX
-const N8N_WEBHOOK_URL = 'https://wacocu.app.n8n.cloud/webhook/ai-wallet-designer';
+const N8N_WEBHOOK_URL = 'https://wacocu.app.n8n.cloud/webhook/wallet-customizer';
 const DEFAULT_PROMPT = 'Analyze this image and create a custom Web3 wallet style';
 
 const CustomizeWalletButton = () => {
