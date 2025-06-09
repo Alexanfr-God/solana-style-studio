@@ -1,12 +1,13 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { WalletAPIClient } from "./core/wallet-api-client.ts";
-import { ImageProcessor } from "./core/image-processor.ts";
-import { N8NConductor } from "./core/n8n-conductor.ts";
-import { LearningCollector } from "./core/learning-collector.ts";
-import { NFTStub } from "./services/nft-stub.ts";
-import { ValidationService } from "./services/validation.ts";
+
+// Temporarily commented out - files don't exist yet
+// import { WalletAPIClient } from "./core/wallet-api-client.ts";
+// import { ImageProcessor } from "./core/image-processor.ts";
+// import { N8NConductor } from "./core/n8n-conductor.ts";
+// import { LearningCollector } from "./core/learning-collector.ts";
+// import { ValidationService } from "./services/validation.ts";
+// import { NFTStub } from "./services/nft-stub.ts";
 
 // CORS headers
 const corsHeaders = {
@@ -22,7 +23,157 @@ function log(component: string, level: string, message: string, data?: any) {
   console.log(logMessage, data ? JSON.stringify(data, null, 2) : '');
 }
 
-// Initialize services with REAL classes
+// Working stub classes with real N8N connection
+class N8NConductor {
+  private n8nWebhookUrl: string;
+  
+  constructor() {
+    this.n8nWebhookUrl = 'https://wacocu.app.n8n.cloud/webhook/wallet-customizer';
+    log('N8NConductor', 'INFO', 'N8NConductor initialized', { 
+      hasWebhookUrl: !!this.n8nWebhookUrl 
+    });
+  }
+  
+  async triggerCustomization(payload: any) {
+    log('TriggerCustomization', 'INFO', 'Starting N8N customization process', {
+      sessionId: payload.sessionId,
+      walletId: payload.walletId,
+      hasImage: !!payload.imageData,
+      webhookUrl: this.n8nWebhookUrl
+    });
+    
+    const startTime = Date.now();
+    
+    try {
+      const n8nPayload = {
+        sessionId: payload.sessionId,
+        timestamp: new Date().toISOString(),
+        walletStructure: payload.walletStructure,
+        walletId: payload.walletId,
+        imageData: payload.imageData,
+        customPrompt: payload.customPrompt || 'Create a modern and professional wallet design',
+        processingMode: 'full_customization',
+        learningEnabled: true,
+        requestSource: 'edge_function',
+        userAgent: 'wallet-ai-customizer/1.0'
+      };
+      
+      console.log('🚀 SENDING TO N8N:', this.n8nWebhookUrl);
+      console.log('📦 PAYLOAD PREVIEW:', {
+        sessionId: n8nPayload.sessionId,
+        walletType: n8nPayload.walletId, 
+        hasImage: !!n8nPayload.imageData,
+        imageSize: n8nPayload.imageData?.length || 0,
+        prompt: n8nPayload.customPrompt
+      });
+      
+      const response = await fetch(this.n8nWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-ID': payload.sessionId
+        },
+        body: JSON.stringify(n8nPayload),
+        signal: AbortSignal.timeout(120000)
+      });
+      
+      console.log('📡 N8N RESPONSE STATUS:', response.status);
+      console.log('📡 N8N RESPONSE HEADERS:', Object.fromEntries(response.headers.entries()));
+      
+      const duration = Date.now() - startTime;
+      
+      if (!response.ok) {
+        throw new Error(`N8N webhook error: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('📨 N8N RESPONSE DATA:', result);
+      
+      log('TriggerCustomization', 'INFO', 'N8N customization completed', {
+        sessionId: payload.sessionId,
+        duration: `${duration}ms`,
+        success: result.success
+      });
+      
+      return result;
+      
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      log('TriggerCustomization', 'ERROR', 'N8N customization failed', {
+        sessionId: payload.sessionId,
+        duration: `${duration}ms`,
+        error: error.message
+      });
+      
+      return {
+        success: false,
+        sessionId: payload.sessionId,
+        error: 'N8N customization temporarily unavailable',
+        details: error.message
+      };
+    }
+  }
+}
+
+class WalletAPIClient {
+  async getWalletStructure(walletId: string) {
+    log('WalletAPI', 'INFO', 'Getting wallet structure', { walletId });
+    return { 
+      walletId, 
+      structure: 'mock_structure',
+      metadata: {
+        totalCustomizableElements: 0,
+        totalScreens: 0
+      }
+    };
+  }
+}
+
+class ImageProcessor {
+  async processUploadedImage(file: File) {
+    log('ImageProcessor', 'INFO', 'Processing image', { fileName: file.name, size: file.size });
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = btoa(
+      Array.from(new Uint8Array(arrayBuffer))
+        .map(byte => String.fromCharCode(byte))
+        .join('')
+    );
+    return {
+      base64Data: `data:${file.type};base64,${base64}`,
+      imageSize: file.size,
+      format: file.type
+    };
+  }
+}
+
+class LearningCollector {
+  async collectUserSession(data: any) {
+    log('LearningCollector', 'INFO', 'Collecting user session', data);
+  }
+  
+  async saveUserRating(sessionId: string, rating: number, feedback: string) {
+    log('LearningCollector', 'INFO', 'Saving user rating', { sessionId, rating, feedback });
+  }
+}
+
+class NFTStub {
+  async prepareMetadata(sessionId: string) {
+    log('NFTStub', 'INFO', 'Preparing NFT metadata', { sessionId });
+    return { success: true, metadata: 'mock_nft_data' };
+  }
+}
+
+class ValidationService {
+  async validateCustomizeRequest(data: any) {
+    log('ValidationService', 'INFO', 'Validating request', data);
+    if (!data.walletId || !data.imageFile) {
+      return { valid: false, error: 'Missing walletId or imageFile' };
+    }
+    return { valid: true };
+  }
+}
+
+// Initialize services with working stub classes
 const walletAPI = new WalletAPIClient();
 const imageProcessor = new ImageProcessor();
 const n8nConductor = new N8NConductor();
