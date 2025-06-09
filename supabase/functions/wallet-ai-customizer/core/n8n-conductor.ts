@@ -1,4 +1,3 @@
-
 // Utility logging
 function log(component: string, level: string, message: string, data?: any) {
   const timestamp = new Date().toISOString();
@@ -60,7 +59,18 @@ export class N8NConductor {
       log('TriggerCustomization', 'INFO', 'Sending payload to N8N', {
         sessionId: payload.sessionId,
         payloadSize: JSON.stringify(n8nPayload).length,
-        webhookUrl: this.n8nWebhookUrl ? 'configured' : 'missing'
+        webhookUrl: this.n8nWebhookUrl,
+        imageDataSize: payload.imageData?.length || 0,
+        walletElementsCount: payload.walletStructure?.metadata?.totalCustomizableElements || 0
+      });
+
+      console.log('🚀 SENDING TO N8N:', this.n8nWebhookUrl);
+      console.log('📦 PAYLOAD PREVIEW:', {
+        sessionId: n8nPayload.sessionId,
+        walletType: n8nPayload.walletId, 
+        hasImage: !!n8nPayload.imageData,
+        imageSize: n8nPayload.imageData?.length || 0,
+        prompt: n8nPayload.customPrompt
       });
       
       // Check webhook URL
@@ -79,6 +89,9 @@ export class N8NConductor {
         body: JSON.stringify(n8nPayload),
         signal: AbortSignal.timeout(this.timeout)
       });
+
+      console.log('📡 N8N RESPONSE STATUS:', response.status);
+      console.log('📡 N8N RESPONSE HEADERS:', Object.fromEntries(response.headers.entries()));
       
       const duration = Date.now() - startTime;
       
@@ -87,6 +100,8 @@ export class N8NConductor {
       }
       
       const result = await response.json();
+
+      console.log('📨 N8N RESPONSE DATA:', result);
       
       log('TriggerCustomization', 'INFO', 'N8N customization completed', {
         sessionId: payload.sessionId,
