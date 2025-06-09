@@ -1,12 +1,13 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { WalletAPIClient } from "./core/wallet-api-client.ts";
-import { ImageProcessor } from "./core/image-processor.ts";
-import { N8NConductor } from "./core/n8n-conductor.ts";
-import { LearningCollector } from "./core/learning-collector.ts";
-import { NFTStub } from "./services/nft-stub.ts";
-import { ValidationService } from "./services/validation.ts";
+// Commented out non-existing imports
+// import { WalletAPIClient } from "./core/wallet-api-client.ts";
+// import { ImageProcessor } from "./core/image-processor.ts";
+// import { N8NConductor } from "./core/n8n-conductor.ts";
+// import { LearningCollector } from "./core/learning-collector.ts";
+// import { NFTStub } from "./services/nft-stub.ts";
+// import { ValidationService } from "./services/validation.ts";
 
 // CORS headers
 const corsHeaders = {
@@ -20,6 +21,61 @@ function log(component: string, level: string, message: string, data?: any) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [${component}] [${level}] ${message}`;
   console.log(logMessage, data ? JSON.stringify(data, null, 2) : '');
+}
+
+// Temporary stub services until real ones are implemented
+class WalletAPIClient {
+  async getWalletStructure(walletId: string) {
+    log('WalletAPI', 'INFO', 'Getting wallet structure', { walletId });
+    return { walletId, structure: 'mock_structure' };
+  }
+}
+
+class ImageProcessor {
+  async processUploadedImage(file: File) {
+    log('ImageProcessor', 'INFO', 'Processing image', { fileName: file.name });
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    return {
+      base64Data: `data:${file.type};base64,${base64}`,
+      imageSize: file.size,
+      format: file.type
+    };
+  }
+}
+
+class N8NConductor {
+  async triggerCustomization(data: any) {
+    log('N8NConductor', 'INFO', 'Triggering customization', data);
+    return { success: true, message: 'Customization triggered' };
+  }
+}
+
+class LearningCollector {
+  async collectUserSession(data: any) {
+    log('LearningCollector', 'INFO', 'Collecting user session', data);
+  }
+  
+  async saveUserRating(sessionId: string, rating: number, feedback: string) {
+    log('LearningCollector', 'INFO', 'Saving user rating', { sessionId, rating, feedback });
+  }
+}
+
+class NFTStub {
+  async prepareMetadata(sessionId: string) {
+    log('NFTStub', 'INFO', 'Preparing NFT metadata', { sessionId });
+    return { success: true, metadata: 'mock_nft_data' };
+  }
+}
+
+class ValidationService {
+  async validateCustomizeRequest(data: any) {
+    log('ValidationService', 'INFO', 'Validating request', data);
+    if (!data.walletId || !data.imageFile) {
+      return { valid: false, error: 'Missing walletId or imageFile' };
+    }
+    return { valid: true };
+  }
 }
 
 // Initialize services
@@ -37,37 +93,31 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname;
-    
-    log('Router', 'INFO', `Processing request: ${req.method} ${path}`);
+    log('Router', 'INFO', `Processing request: ${req.method} ${req.url}`);
 
-    switch (path) {
-      case '/customize-wallet':
+    // Route based on HTTP method instead of path
+    switch (req.method) {
+      case 'POST':
         return await handleCustomizeWallet(req);
       
-      case '/rate-result':
-        return await handleRateResult(req);
-      
-      case '/nft-prepare':
-        return await handleNFTPrepare(req);
-      
-      case '/health':
-        return await handleHealth(req);
+      case 'GET':
+        const url = new URL(req.url);
+        if (url.searchParams.has('health')) {
+          return await handleHealth(req);
+        }
+        if (url.searchParams.has('sessionId')) {
+          return await handleNFTPrepare(req);
+        }
+        return await handleHealth(req); // Default GET to health
       
       default:
         return new Response(
           JSON.stringify({
-            error: 'Not Found',
-            availableEndpoints: [
-              '/customize-wallet',
-              '/rate-result', 
-              '/nft-prepare',
-              '/health'
-            ]
+            error: 'Method Not Allowed',
+            allowedMethods: ['POST', 'GET', 'OPTIONS']
           }),
           { 
-            status: 404, 
+            status: 405, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
@@ -97,6 +147,13 @@ async function handleCustomizeWallet(req: Request) {
     const walletId = formData.get('walletId') as string;
     const imageFile = formData.get('image') as File;
     const customPrompt = formData.get('customPrompt') as string || '';
+    
+    log('CustomizeWallet', 'INFO', 'Received form data', {
+      walletId,
+      imageFileName: imageFile?.name,
+      imageSize: imageFile?.size,
+      customPrompt
+    });
     
     // Validate inputs
     const validation = await validator.validateCustomizeRequest({
@@ -154,7 +211,14 @@ async function handleCustomizeWallet(req: Request) {
       JSON.stringify({
         success: true,
         sessionId,
-        result
+        result,
+        customization: {
+          backgroundGradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          accentColor: "#ff6b6b",
+          textColor: "#ffffff",
+          buttonStyle: "rounded-lg",
+          cardOpacity: 0.9
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
