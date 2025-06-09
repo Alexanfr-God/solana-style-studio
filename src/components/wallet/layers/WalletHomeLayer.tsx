@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -45,6 +46,7 @@ const WalletHomeLayer = () => {
   const activeAccount = accounts.find(acc => acc.id === activeAccountId);
 
   const handleSearchClick = () => {
+    console.log('🔍 Search clicked, setting layer to search');
     setCurrentLayer('search');
     triggerAiPetInteraction();
     setTemporaryEmotion('excited', 2000);
@@ -83,19 +85,26 @@ const WalletHomeLayer = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [setContainerBounds]);
 
-  // Render content based on current layer
+  // Render content based on current layer with debugging
   const renderContent = () => {
+    console.log(`🎨 Rendering content for layer: ${currentLayer}`);
+    
     switch (currentLayer) {
       case 'swap':
+        console.log('📊 Rendering SwapContent');
         return <SwapContent />;
       case 'apps':
+        console.log('📱 Rendering AppsContent');
         return <AppsContent />;
       case 'history':
+        console.log('🕐 Rendering HistoryContent');
         return <HistoryContent />;
       case 'search':
+        console.log('🔍 Rendering SearchContent');
         return <SearchContent />;
       case 'home':
       default:
+        console.log('🏠 Rendering HomeContent');
         return <HomeContent showAccountDropdown={showAccountDropdown} />;
     }
   };
@@ -114,7 +123,7 @@ const WalletHomeLayer = () => {
     >
       {/* Header Section with AI-generated styles */}
       <div 
-        className="relative flex items-center justify-between px-4 py-3 border-b border-white/10"
+        className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 z-[10]"
         style={{
           backgroundColor: headerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
           background: headerStyle.gradient || headerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
@@ -176,8 +185,10 @@ const WalletHomeLayer = () => {
         </button>
       </div>
 
-      {/* Dynamic Content based on current layer */}
-      {renderContent()}
+      {/* Dynamic Content based on current layer with isolated stacking context */}
+      <div className="relative flex-1 z-[1]">
+        {renderContent()}
+      </div>
 
       {/* Bottom Navigation with AI-generated styles */}
       <WalletBottomNavigation />

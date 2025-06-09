@@ -47,7 +47,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
   const changeStyle = getTokenColorStyle(totalChange);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pb-4 relative z-[1]">
+    <div className="relative flex-1 overflow-y-auto px-4 pb-4 z-[1]">
       {/* Balance Section */}
       <div className="pt-4 pb-6 text-center">
         <div 
@@ -73,15 +73,17 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
         </div>
       </div>
 
-      {/* Action Buttons with conditional z-index */}
-      <WalletActionButtons 
-        onAction={handleAction} 
-        style={{ 
-          accentColor: tokenColors.info,
-          borderRadius: String(getComponentStyle('buttons').borderRadius || '12px')
-        }}
-        showAccountDropdown={showAccountDropdown}
-      />
+      {/* Action Buttons with proper z-index isolation */}
+      <div className="relative z-[2]">
+        <WalletActionButtons 
+          onAction={handleAction} 
+          style={{ 
+            accentColor: tokenColors.info,
+            borderRadius: String(getComponentStyle('buttons').borderRadius || '12px')
+          }}
+          showAccountDropdown={showAccountDropdown}
+        />
+      </div>
 
       {/* Assets Section */}
       <div className="mt-6">

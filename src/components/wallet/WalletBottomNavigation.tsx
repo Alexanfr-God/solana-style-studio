@@ -25,15 +25,18 @@ const WalletBottomNavigation = () => {
   ];
 
   const handleNavClick = (layerId: WalletLayer) => {
+    console.log(`🔄 Navigation clicked: ${layerId}, current: ${currentLayer}`);
     setCurrentLayer(layerId);
     triggerAiPetInteraction();
     setTemporaryEmotion('happy', 2000);
-    console.log(`Navigated to ${layerId} layer`);
+    console.log(`✅ Navigation set to: ${layerId}`);
   };
+
+  console.log(`🎯 Current layer in navigation: ${currentLayer}`);
 
   return (
     <div 
-      className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10"
+      className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 z-[5]"
       style={{
         backgroundColor: navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
         background: navigationStyle.gradient || navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
