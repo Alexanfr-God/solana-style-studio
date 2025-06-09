@@ -11,7 +11,7 @@ export class N8NConductor {
   private timeout = 120000; // 2 minutes
   
   constructor() {
-    this.n8nWebhookUrl = Deno.env.get('N8N_WEBHOOK_URL') || '';
+    this.n8nWebhookUrl = 'https://wacocu.app.n8n.cloud/webhook/wallet-customizer';
     log('Constructor', 'INFO', 'N8NConductor initialized', { 
       hasWebhookUrl: !!this.n8nWebhookUrl 
     });
