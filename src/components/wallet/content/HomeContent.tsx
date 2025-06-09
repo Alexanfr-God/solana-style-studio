@@ -47,7 +47,13 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
   const changeStyle = getTokenColorStyle(totalChange);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 pb-4">
+    <div 
+      className="flex-1 overflow-y-auto px-4 pb-4"
+      style={{
+        position: 'relative',
+        zIndex: 1
+      }}
+    >
       {/* Balance Section */}
       <div className="pt-4 pb-6 text-center">
         <div 
