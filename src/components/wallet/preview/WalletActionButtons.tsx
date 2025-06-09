@@ -9,9 +9,14 @@ interface WalletActionButtonsProps {
     accentColor?: string;
     borderRadius?: string;
   };
+  showAccountDropdown?: boolean;
 }
 
-const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({ onAction, style }) => {
+const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({ 
+  onAction, 
+  style, 
+  showAccountDropdown = false 
+}) => {
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
   const { getComponentStyle, getTransition } = useWalletStyles();
 
@@ -26,7 +31,13 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({ onAction, sty
   const containerStyle = getComponentStyle('containers');
   
   return (
-    <div className="grid grid-cols-4 gap-2 px-4 pt-0 pb-4">
+    <div 
+      className={`grid grid-cols-4 gap-2 px-4 pt-0 pb-4 ${showAccountDropdown ? 'z-10' : 'z-20'}`}
+      style={{
+        position: 'relative',
+        zIndex: showAccountDropdown ? 10 : 20
+      }}
+    >
       {actions.map(action => {
         const isHovered = hoveredAction === action.id;
         const actionButtonStyle: React.CSSProperties = {

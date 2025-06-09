@@ -5,7 +5,11 @@ import { useWalletStyles } from '@/hooks/useWalletStyles';
 import WalletAssetItem from '../preview/WalletAssetItem';
 import WalletActionButtons from '../preview/WalletActionButtons';
 
-const HomeContent = () => {
+interface HomeContentProps {
+  showAccountDropdown?: boolean;
+}
+
+const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }) => {
   const { 
     tokens, 
     totalBalance, 
@@ -69,13 +73,14 @@ const HomeContent = () => {
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons with conditional z-index */}
       <WalletActionButtons 
         onAction={handleAction} 
         style={{ 
           accentColor: tokenColors.info,
           borderRadius: String(getComponentStyle('buttons').borderRadius || '12px')
-        }} 
+        }}
+        showAccountDropdown={showAccountDropdown}
       />
 
       {/* Assets Section */}
