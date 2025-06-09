@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Commented out non-existing imports
@@ -35,7 +34,11 @@ class ImageProcessor {
   async processUploadedImage(file: File) {
     log('ImageProcessor', 'INFO', 'Processing image', { fileName: file.name });
     const arrayBuffer = await file.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const base64 = btoa(
+      Array.from(new Uint8Array(arrayBuffer))
+        .map(byte => String.fromCharCode(byte))
+        .join('')
+    );
     return {
       base64Data: `data:${file.type};base64,${base64}`,
       imageSize: file.size,
