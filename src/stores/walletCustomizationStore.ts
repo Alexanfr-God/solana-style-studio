@@ -165,6 +165,16 @@ interface WalletCustomizationStore {
   currentBlueprint: StyleBlueprint | null;
   applyStyleFromBlueprint: (blueprint: StyleBlueprint) => void;
   applyStyleFromAiCustomizer: (result: any) => void;
+  
+  // Full API Customization Methods
+  applyFullApiCustomization: (customization: any) => void;
+  validateApiCustomization: (customization: any) => { isValid: boolean; errors: string[]; warnings: string[] };
+  getExcludedElements: () => string[];
+  
+  // Enhanced styling methods for API
+  setStyleForElement: (elementPath: string, style: any) => void;
+  getStyleForElement: (elementPath: string) => any;
+  bulkUpdateStyles: (styleUpdates: Record<string, any>) => void;
 }
 
 const defaultLoginStyle: WalletStyle = {
@@ -252,6 +262,18 @@ const defaultStatusColors: StatusColors = {
 
 // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Увеличиваем timeout с 30 секунд до 5 минут
 let customizationTimeoutId: number | null = null;
+
+// API Customization Protection List
+const EXCLUDED_FROM_API = [
+  'logo',
+  'aiPet', 
+  'aiPetContainer',
+  'brandLogo',
+  'companyLogo',
+  'aiPetEmotion',
+  'aiPetZone',
+  'aiPetBodyType'
+] as const;
 
 export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
   persist(
@@ -643,6 +665,256 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
           customizationTimeoutId = null;
         }
       },
+
+      // NEW API CUSTOMIZATION METHODS
+      applyFullApiCustomization: (customization: any) => {
+        console.log('🎨 Applying full API customization:', customization);
+        
+        // Validate and filter out excluded elements
+        const validation = get().validateApiCustomization(customization);
+        if (!validation.isValid) {
+          console.error('❌ API customization validation failed:', validation.errors);
+          return;
+        }
+
+        try {
+          const state = get();
+          
+          // Apply login screen customization
+          if (customization.loginScreen) {
+            const loginUpdates = get().processLoginScreenCustomization(customization.loginScreen);
+            set((state) => ({
+              loginStyle: { ...state.loginStyle, ...loginUpdates }
+            }));
+          }
+
+          // Apply wallet screen customization  
+          if (customization.walletScreen) {
+            const walletUpdates = get().processWalletScreenCustomization(customization.walletScreen);
+            set((state) => ({
+              walletStyle: { ...state.walletStyle, ...walletUpdates },
+              components: { ...state.components, ...walletUpdates.components }
+            }));
+          }
+
+          // Apply global customization
+          if (customization.global) {
+            const globalUpdates = get().processGlobalCustomization(customization.global);
+            set((state) => ({
+              walletStyle: { ...state.walletStyle, ...globalUpdates.wallet },
+              loginStyle: { ...state.loginStyle, ...globalUpdates.login },
+              components: { ...state.components, ...globalUpdates.components }
+            }));
+          }
+
+          console.log('✅ Full API customization applied successfully');
+          
+        } catch (error) {
+          console.error('💥 Error applying API customization:', error);
+        }
+      },
+
+      validateApiCustomization: (customization: any) => {
+        const errors: string[] = [];
+        const warnings: string[] = [];
+        
+        // Check for excluded elements
+        const checkForExcluded = (obj: any, path = '') => {
+          if (typeof obj !== 'object' || obj === null) return;
+          
+          Object.keys(obj).forEach(key => {
+            const currentPath = path ? `${path}.${key}` : key;
+            
+            if (EXCLUDED_FROM_API.some(excluded => 
+              key.toLowerCase().includes(excluded.toLowerCase())
+            )) {
+              warnings.push(`Element '${currentPath}' is excluded from API customization`);
+              return;
+            }
+            
+            if (typeof obj[key] === 'object') {
+              checkForExcluded(obj[key], currentPath);
+            }
+          });
+        };
+
+        checkForExcluded(customization);
+
+        // Validate required structure
+        if (!customization.loginScreen && !customization.walletScreen && !customization.global) {
+          errors.push('At least one customization section (loginScreen, walletScreen, global) is required');
+        }
+
+        // Validate color formats
+        const validateColors = (obj: any, path = '') => {
+          if (typeof obj !== 'object' || obj === null) return;
+          
+          Object.keys(obj).forEach(key => {
+            if (key.toLowerCase().includes('color') && typeof obj[key] === 'string') {
+              const colorValue = obj[key];
+              const isValidColor = /^(#[0-9A-Fa-f]{3,8}|rgb\(|rgba\(|hsl\(|hsla\(|[a-zA-Z]+)/.test(colorValue);
+              if (!isValidColor) {
+                errors.push(`Invalid color format at ${path}.${key}: ${colorValue}`);
+              }
+            }
+            
+            if (typeof obj[key] === 'object') {
+              validateColors(obj[key], path ? `${path}.${key}` : key);
+            }
+          });
+        };
+
+        validateColors(customization);
+
+        return {
+          isValid: errors.length === 0,
+          errors,
+          warnings
+        };
+      },
+
+      getExcludedElements: () => [...EXCLUDED_FROM_API],
+
+      setStyleForElement: (elementPath: string, style: any) => {
+        console.log(`🎨 Setting style for element: ${elementPath}`, style);
+        
+        // Check if element is excluded
+        if (EXCLUDED_FROM_API.some(excluded => 
+          elementPath.toLowerCase().includes(excluded.toLowerCase())
+        )) {
+          console.warn(`⚠️ Element '${elementPath}' is excluded from API customization`);
+          return;
+        }
+
+        // Apply style based on element path
+        const pathParts = elementPath.split('.');
+        const [section, component, property] = pathParts;
+
+        const state = get();
+        
+        if (section === 'walletStyle' && component) {
+          set((state) => ({
+            walletStyle: {
+              ...state.walletStyle,
+              [component]: property ? { ...state.walletStyle[component], [property]: style } : style
+            }
+          }));
+        } else if (section === 'components' && component) {
+          set((state) => ({
+            components: {
+              ...state.components,
+              [component]: property ? { ...state.components[component], [property]: style } : style
+            }
+          }));
+        }
+      },
+
+      getStyleForElement: (elementPath: string) => {
+        const pathParts = elementPath.split('.');
+        const [section, component, property] = pathParts;
+        const state = get();
+
+        if (section === 'walletStyle' && component) {
+          const componentStyle = state.walletStyle[component];
+          return property ? componentStyle?.[property] : componentStyle;
+        } else if (section === 'components' && component) {
+          const componentStyle = state.components[component];
+          return property ? componentStyle?.[property] : componentStyle;
+        }
+
+        return null;
+      },
+
+      bulkUpdateStyles: (styleUpdates: Record<string, any>) => {
+        console.log('🎨 Bulk updating styles:', Object.keys(styleUpdates).length, 'elements');
+        
+        Object.entries(styleUpdates).forEach(([elementPath, style]) => {
+          get().setStyleForElement(elementPath, style);
+        });
+      },
+
+      // Helper methods for processing API customization
+      processLoginScreenCustomization: (loginScreen: any) => {
+        const updates: any = {};
+        
+        if (loginScreen.background) {
+          updates.backgroundColor = loginScreen.background.color || updates.backgroundColor;
+          updates.backgroundImage = loginScreen.background.image?.url || updates.backgroundImage;
+        }
+        
+        if (loginScreen.unlockButton) {
+          updates.buttonColor = loginScreen.unlockButton.background?.color || updates.buttonColor;
+          updates.buttonTextColor = loginScreen.unlockButton.text?.color || updates.buttonTextColor;
+          updates.borderRadius = loginScreen.unlockButton.border?.radius?.all || updates.borderRadius;
+        }
+
+        if (loginScreen.phantomText) {
+          updates.textColor = loginScreen.phantomText.color || updates.textColor;
+          updates.fontFamily = loginScreen.phantomText.fontFamily || updates.fontFamily;
+        }
+        
+        return updates;
+      },
+
+      processWalletScreenCustomization: (walletScreen: any) => {
+        const updates: any = { components: {} };
+        
+        if (walletScreen.header) {
+          updates.components.header = {
+            backgroundColor: walletScreen.header.container?.background?.color,
+            color: walletScreen.header.accountInfo?.color,
+            fontFamily: walletScreen.header.accountInfo?.fontFamily
+          };
+        }
+
+        if (walletScreen.actionButtons) {
+          updates.components.buttons = {
+            backgroundColor: walletScreen.actionButtons.receiveButton?.background?.color,
+            color: walletScreen.actionButtons.buttonLabels?.color,
+            borderRadius: walletScreen.actionButtons.receiveButton?.border?.radius?.all
+          };
+        }
+
+        if (walletScreen.navigation) {
+          updates.components.navigation = {
+            backgroundColor: walletScreen.navigation.container?.background?.color,
+            borderRadius: walletScreen.navigation.container?.border?.radius?.all
+          };
+        }
+        
+        return updates;
+      },
+
+      processGlobalCustomization: (global: any) => {
+        const updates: any = { wallet: {}, login: {}, components: {} };
+        
+        if (global.fonts?.primary) {
+          const fontFamily = global.fonts.primary.family;
+          updates.wallet.fontFamily = fontFamily;
+          updates.login.fontFamily = fontFamily;
+        }
+
+        if (global.colors?.primary) {
+          const primaryColor = global.colors.primary['500'] || global.colors.primary.main;
+          updates.wallet.accentColor = primaryColor;
+          updates.login.accentColor = primaryColor;
+        }
+
+        if (global.borders?.radiusScale) {
+          const borderRadius = global.borders.radiusScale.md || global.borders.radiusScale.default;
+          updates.wallet.borderRadius = borderRadius;
+          updates.login.borderRadius = borderRadius;
+        }
+
+        if (global.shadows?.elevation) {
+          const boxShadow = global.shadows.elevation.md || global.shadows.elevation.default;
+          updates.wallet.boxShadow = boxShadow?.offsetX ? 
+            `${boxShadow.offsetX} ${boxShadow.offsetY} ${boxShadow.blurRadius} ${boxShadow.color}` : 
+            boxShadow;
+        }
+        
+        return updates;
+      }
     }),
     {
       name: 'wallet-customization-storage',
