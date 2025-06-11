@@ -807,7 +807,7 @@ class N8NConductor {
   private n8nWebhookUrl: string;
   
   constructor() {
-    this.n8nWebhookUrl = 'https://wacocu.app.n8n.cloud/webhook/wallet-customizer';
+    this.n8nWebhookUrl = 'https://wacocu.app.n8n.cloud/webhook/wallet-customizer-v2';
     log('N8NConductor', 'INFO', 'N8NConductor initialized', { 
       hasWebhookUrl: !!this.n8nWebhookUrl 
     });
