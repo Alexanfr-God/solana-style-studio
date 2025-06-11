@@ -1,6 +1,14 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// Import API types for validation and conversion
+import type { 
+  WalletCustomizationData, 
+  FullWalletCustomizationResponse,
+  CustomizationValidation,
+  EXCLUDED_FROM_API_CUSTOMIZATION
+} from "./types/api.types.ts";
+
 // Temporarily commented out - files don't exist yet
 // import { WalletAPIClient } from "./core/wallet-api-client.ts";
 // import { ImageProcessor } from "./core/image-processor.ts";
@@ -21,6 +29,777 @@ function log(component: string, level: string, message: string, data?: any) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [${component}] [${level}] ${message}`;
   console.log(logMessage, data ? JSON.stringify(data, null, 2) : '');
+}
+
+// API Schema Integration Helper Functions
+class APISchemaConverter {
+  static validateCustomizationData(data: any): CustomizationValidation {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    
+    // Check for excluded elements
+    const checkForExcluded = (obj: any, path = '') => {
+      if (typeof obj !== 'object' || obj === null) return;
+      
+      Object.keys(obj).forEach(key => {
+        const currentPath = path ? `${path}.${key}` : key;
+        
+        if (['logo', 'aiPet', 'aiPetContainer', 'brandLogo', 'companyLogo'].some(excluded => 
+          key.toLowerCase().includes(excluded.toLowerCase())
+        )) {
+          warnings.push(`Element '${currentPath}' is excluded from API customization`);
+          return;
+        }
+        
+        if (typeof obj[key] === 'object') {
+          checkForExcluded(obj[key], currentPath);
+        }
+      });
+    };
+
+    checkForExcluded(data);
+
+    // Validate required structure
+    if (!data.loginScreen && !data.walletScreen && !data.global) {
+      errors.push('At least one customization section (loginScreen, walletScreen, global) is required');
+    }
+
+    // Validate color formats
+    const validateColors = (obj: any, path = '') => {
+      if (typeof obj !== 'object' || obj === null) return;
+      
+      Object.keys(obj).forEach(key => {
+        if (key.toLowerCase().includes('color') && typeof obj[key] === 'string') {
+          const colorValue = obj[key];
+          const isValidColor = /^(#[0-9A-Fa-f]{3,8}|rgb\(|rgba\(|hsl\(|hsla\(|[a-zA-Z]+)/.test(colorValue);
+          if (!isValidColor) {
+            errors.push(`Invalid color format at ${path}.${key}: ${colorValue}`);
+          }
+        }
+        
+        if (typeof obj[key] === 'object') {
+          validateColors(obj[key], path ? `${path}.${key}` : key);
+        }
+      });
+    };
+
+    validateColors(data);
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  static convertToStoreFormat(apiData: WalletCustomizationData): any {
+    const storeFormat = {
+      walletStyle: {},
+      loginStyle: {},
+      components: {}
+    };
+
+    // Convert login screen customization
+    if (apiData.loginScreen) {
+      if (apiData.loginScreen.background?.color) {
+        storeFormat.loginStyle.backgroundColor = apiData.loginScreen.background.color;
+      }
+      if (apiData.loginScreen.unlockButton) {
+        storeFormat.loginStyle.buttonColor = apiData.loginScreen.unlockButton.background?.color;
+        storeFormat.loginStyle.buttonTextColor = apiData.loginScreen.unlockButton.text?.color;
+        storeFormat.loginStyle.borderRadius = apiData.loginScreen.unlockButton.border?.radius?.all;
+      }
+      if (apiData.loginScreen.phantomText) {
+        storeFormat.loginStyle.textColor = apiData.loginScreen.phantomText.color;
+        storeFormat.loginStyle.fontFamily = apiData.loginScreen.phantomText.fontFamily;
+      }
+    }
+
+    // Convert wallet screen customization
+    if (apiData.walletScreen) {
+      if (apiData.walletScreen.header) {
+        storeFormat.components.header = {
+          backgroundColor: apiData.walletScreen.header.container?.background?.color,
+          color: apiData.walletScreen.header.accountInfo?.color,
+          fontFamily: apiData.walletScreen.header.accountInfo?.fontFamily
+        };
+      }
+      if (apiData.walletScreen.actionButtons) {
+        storeFormat.components.buttons = {
+          backgroundColor: apiData.walletScreen.actionButtons.receiveButton?.background?.color,
+          color: apiData.walletScreen.actionButtons.buttonLabels?.color,
+          borderRadius: apiData.walletScreen.actionButtons.receiveButton?.border?.radius?.all
+        };
+      }
+    }
+
+    // Convert global customization
+    if (apiData.global) {
+      if (apiData.global.fonts?.primary) {
+        const fontFamily = apiData.global.fonts.primary.family;
+        storeFormat.walletStyle.fontFamily = fontFamily;
+        storeFormat.loginStyle.fontFamily = fontFamily;
+      }
+      if (apiData.global.colors?.primary) {
+        const primaryColor = apiData.global.colors.primary['500'] || apiData.global.colors.primary.main;
+        storeFormat.walletStyle.accentColor = primaryColor;
+        storeFormat.loginStyle.accentColor = primaryColor;
+      }
+    }
+
+    return storeFormat;
+  }
+
+  static convertFromN8NResult(n8nResult: any): FullWalletCustomizationResponse {
+    const timestamp = new Date().toISOString();
+    
+    if (!n8nResult.success) {
+      return {
+        success: false,
+        error: n8nResult.error || 'N8N customization failed',
+        timestamp
+      };
+    }
+
+    // Extract customization data from N8N result
+    const customizationData: WalletCustomizationData = {
+      loginScreen: {
+        background: {
+          color: n8nResult.result?.loginStyle?.backgroundColor
+        },
+        unlockButton: {
+          background: { color: n8nResult.result?.loginStyle?.buttonColor },
+          text: { color: n8nResult.result?.loginStyle?.buttonTextColor, fontSize: '16px', fontWeight: 'normal' },
+          border: { radius: { all: n8nResult.result?.loginStyle?.borderRadius }, width: '1px', style: 'solid', color: '#transparent' },
+          shadow: { offsetX: '0px', offsetY: '4px', blurRadius: '12px', color: 'rgba(0,0,0,0.25)' },
+          states: {
+            default: {},
+            hover: {},
+            active: {},
+            disabled: {},
+            focus: {}
+          },
+          size: {}
+        },
+        passwordInput: {
+          background: { color: '#2b2b2b' },
+          text: { fontSize: '16px', fontWeight: 'normal', color: '#ffffff' },
+          placeholder: { fontSize: '16px', fontWeight: 'normal', color: '#888888' },
+          border: { width: '1px', style: 'solid', color: '#444444' },
+          shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+          states: {
+            default: {},
+            focus: {},
+            error: {},
+            disabled: {},
+            valid: {}
+          },
+          size: {}
+        },
+        phantomText: {
+          fontFamily: n8nResult.result?.loginStyle?.fontFamily || 'Inter, sans-serif',
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: n8nResult.result?.loginStyle?.textColor || '#ffffff'
+        }
+      },
+      walletScreen: {
+        header: {
+          container: {
+            background: { color: n8nResult.result?.walletStyle?.backgroundColor },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            size: {},
+            padding: { all: '16px' },
+            layout: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+          },
+          accountSelector: {
+            background: { color: 'transparent' },
+            text: { fontSize: '16px', fontWeight: 'normal', color: n8nResult.result?.walletStyle?.textColor },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            states: {
+              default: {},
+              hover: {},
+              active: {},
+              disabled: {},
+              focus: {}
+            },
+            size: {}
+          },
+          searchButton: {
+            background: { color: 'transparent' },
+            text: { fontSize: '16px', fontWeight: 'normal', color: n8nResult.result?.walletStyle?.textColor },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            states: {
+              default: {},
+              hover: {},
+              active: {},
+              disabled: {},
+              focus: {}
+            },
+            size: {}
+          },
+          avatar: {
+            size: '32px',
+            background: { color: n8nResult.result?.walletStyle?.accentColor },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            placeholder: { fontSize: '14px', fontWeight: 'normal', color: '#ffffff' }
+          },
+          accountInfo: {
+            fontFamily: n8nResult.result?.walletStyle?.fontFamily || 'Inter, sans-serif',
+            fontSize: '16px',
+            fontWeight: 'normal',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          }
+        },
+        balance: {
+          container: {
+            background: { color: 'transparent' },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            size: {},
+            padding: { all: '16px' },
+            layout: { display: 'flex', flexDirection: 'column', alignItems: 'center' }
+          },
+          totalBalanceLabel: {
+            fontSize: '14px',
+            fontWeight: 'normal',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          },
+          totalBalanceValue: {
+            fontSize: '32px',
+            fontWeight: 'bold',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          },
+          changeIndicator: {
+            fontSize: '16px',
+            fontWeight: 'normal',
+            color: '#10B981'
+          }
+        },
+        actionButtons: {
+          container: {
+            background: { color: 'transparent' },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            size: {},
+            padding: { all: '16px' },
+            layout: { display: 'flex', justifyContent: 'space-around', alignItems: 'center' }
+          },
+          receiveButton: {
+            background: { color: n8nResult.result?.walletStyle?.buttonColor },
+            text: { fontSize: '14px', fontWeight: 'normal', color: n8nResult.result?.walletStyle?.buttonTextColor },
+            border: { radius: { all: n8nResult.result?.walletStyle?.borderRadius }, width: '1px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '4px', blurRadius: '12px', color: 'rgba(0,0,0,0.25)' },
+            states: {
+              default: {},
+              hover: {},
+              active: {},
+              disabled: {},
+              focus: {}
+            },
+            size: {}
+          },
+          sendButton: {
+            background: { color: n8nResult.result?.walletStyle?.buttonColor },
+            text: { fontSize: '14px', fontWeight: 'normal', color: n8nResult.result?.walletStyle?.buttonTextColor },
+            border: { radius: { all: n8nResult.result?.walletStyle?.borderRadius }, width: '1px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '4px', blurRadius: '12px', color: 'rgba(0,0,0,0.25)' },
+            states: {
+              default: {},
+              hover: {},
+              active: {},
+              disabled: {},
+              focus: {}
+            },
+            size: {}
+          },
+          swapButton: {
+            background: { color: n8nResult.result?.walletStyle?.buttonColor },
+            text: { fontSize: '14px', fontWeight: 'normal', color: n8nResult.result?.walletStyle?.buttonTextColor },
+            border: { radius: { all: n8nResult.result?.walletStyle?.borderRadius }, width: '1px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '4px', blurRadius: '12px', color: 'rgba(0,0,0,0.25)' },
+            states: {
+              default: {},
+              hover: {},
+              active: {},
+              disabled: {},
+              focus: {}
+            },
+            size: {}
+          },
+          buyButton: {
+            background: { color: n8nResult.result?.walletStyle?.buttonColor },
+            text: { fontSize: '14px', fontWeight: 'normal', color: n8nResult.result?.walletStyle?.buttonTextColor },
+            border: { radius: { all: n8nResult.result?.walletStyle?.borderRadius }, width: '1px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '4px', blurRadius: '12px', color: 'rgba(0,0,0,0.25)' },
+            states: {
+              default: {},
+              hover: {},
+              active: {},
+              disabled: {},
+              focus: {}
+            },
+            size: {}
+          },
+          buttonLabels: {
+            fontSize: '12px',
+            fontWeight: 'normal',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          },
+          buttonIcons: {
+            size: '20px',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          }
+        },
+        assets: {
+          container: {
+            background: { color: 'transparent' },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            size: {},
+            padding: { all: '16px' },
+            layout: { display: 'flex', flexDirection: 'column' }
+          },
+          sectionTitle: {
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          },
+          seeAllButton: {
+            background: { color: 'transparent' },
+            text: { fontSize: '14px', fontWeight: 'normal', color: n8nResult.result?.walletStyle?.accentColor },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            states: {
+              default: {},
+              hover: {},
+              active: {},
+              disabled: {},
+              focus: {}
+            },
+            size: {}
+          },
+          assetItem: {
+            container: {
+              background: { color: 'rgba(255,255,255,0.05)' },
+              border: { radius: { all: '8px' }, width: '1px', style: 'solid', color: 'rgba(255,255,255,0.1)' },
+              shadow: { offsetX: '0px', offsetY: '2px', blurRadius: '8px', color: 'rgba(0,0,0,0.1)' },
+              size: {},
+              padding: { all: '12px' },
+              layout: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+            },
+            layout: { display: 'flex', alignItems: 'center' },
+            states: {
+              default: {},
+              hover: {},
+              selected: {},
+              disabled: {}
+            },
+            spacing: { all: '8px' }
+          },
+          assetIcon: {
+            size: '24px',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          },
+          assetName: {
+            fontSize: '16px',
+            fontWeight: 'normal',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          },
+          assetTicker: {
+            fontSize: '14px',
+            fontWeight: 'normal',
+            color: '#888888'
+          },
+          assetAmount: {
+            fontSize: '16px',
+            fontWeight: 'normal',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          },
+          assetValue: {
+            fontSize: '14px',
+            fontWeight: 'normal',
+            color: '#888888'
+          },
+          assetChange: {
+            fontSize: '14px',
+            fontWeight: 'normal',
+            color: '#10B981'
+          }
+        },
+        navigation: {
+          container: {
+            background: { color: 'rgba(0,0,0,0.5)' },
+            border: { radius: { all: '0px' }, width: '1px', style: 'solid', color: 'rgba(255,255,255,0.1)' },
+            shadow: { offsetX: '0px', offsetY: '-4px', blurRadius: '20px', color: 'rgba(0,0,0,0.3)' },
+            size: {},
+            padding: { all: '16px' },
+            layout: { display: 'flex', justifyContent: 'space-around', alignItems: 'center' }
+          },
+          homeButton: {
+            background: { color: 'transparent' },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            states: {
+              default: {},
+              active: {},
+              hover: {},
+              disabled: {}
+            },
+            size: {},
+            spacing: { all: '8px' }
+          },
+          appsButton: {
+            background: { color: 'transparent' },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            states: {
+              default: {},
+              active: {},
+              hover: {},
+              disabled: {}
+            },
+            size: {},
+            spacing: { all: '8px' }
+          },
+          swapButton: {
+            background: { color: 'transparent' },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            states: {
+              default: {},
+              active: {},
+              hover: {},
+              disabled: {}
+            },
+            size: {},
+            spacing: { all: '8px' }
+          },
+          historyButton: {
+            background: { color: 'transparent' },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            states: {
+              default: {},
+              active: {},
+              hover: {},
+              disabled: {}
+            },
+            size: {},
+            spacing: { all: '8px' }
+          },
+          searchButton: {
+            background: { color: 'transparent' },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            shadow: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            states: {
+              default: {},
+              active: {},
+              hover: {},
+              disabled: {}
+            },
+            size: {},
+            spacing: { all: '8px' }
+          },
+          buttonIcons: {
+            size: '24px',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          },
+          buttonLabels: {
+            fontSize: '12px',
+            fontWeight: 'normal',
+            color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+          }
+        }
+      },
+      global: {
+        fonts: {
+          primary: {
+            family: n8nResult.result?.walletStyle?.fontFamily || 'Inter, sans-serif',
+            weights: [400, 600, 700],
+            fallbacks: ['system-ui', 'sans-serif']
+          },
+          fallbacks: ['system-ui', 'sans-serif']
+        },
+        colors: {
+          primary: {
+            '500': n8nResult.result?.walletStyle?.accentColor || '#9945FF',
+            '50': '#f0f0ff',
+            '100': '#e5e5ff',
+            '200': '#d1d1ff',
+            '300': '#b3b3ff',
+            '400': '#8080ff',
+            '600': '#7a34e6',
+            '700': '#6b2bcc',
+            '800': '#5a24b3',
+            '900': '#4b1d99'
+          },
+          secondary: {
+            '500': '#6B7280',
+            '50': '#f9fafb',
+            '100': '#f3f4f6',
+            '200': '#e5e7eb',
+            '300': '#d1d5db',
+            '400': '#9ca3af',
+            '600': '#4b5563',
+            '700': '#374151',
+            '800': '#1f2937',
+            '900': '#111827'
+          },
+          accent: {
+            '500': n8nResult.result?.walletStyle?.accentColor || '#9945FF',
+            '50': '#f0f0ff',
+            '100': '#e5e5ff',
+            '200': '#d1d1ff',
+            '300': '#b3b3ff',
+            '400': '#8080ff',
+            '600': '#7a34e6',
+            '700': '#6b2bcc',
+            '800': '#5a24b3',
+            '900': '#4b1d99'
+          },
+          neutral: {
+            '500': '#6B7280',
+            '50': '#f9fafb',
+            '100': '#f3f4f6',
+            '200': '#e5e7eb',
+            '300': '#d1d5db',
+            '400': '#9ca3af',
+            '600': '#4b5563',
+            '700': '#374151',
+            '800': '#1f2937',
+            '900': '#111827'
+          },
+          semantic: {
+            success: {
+              light: '#10B981',
+              main: '#059669',
+              dark: '#047857',
+              contrastText: '#ffffff'
+            },
+            error: {
+              light: '#EF4444',
+              main: '#DC2626',
+              dark: '#B91C1C',
+              contrastText: '#ffffff'
+            },
+            warning: {
+              light: '#F59E0B',
+              main: '#D97706',
+              dark: '#B45309',
+              contrastText: '#ffffff'
+            },
+            info: {
+              light: '#3B82F6',
+              main: '#2563EB',
+              dark: '#1D4ED8',
+              contrastText: '#ffffff'
+            }
+          },
+          gradients: {
+            primary: {
+              type: 'linear',
+              direction: '135deg',
+              stops: [
+                { color: n8nResult.result?.walletStyle?.accentColor || '#9945FF', position: '0%' },
+                { color: '#764ba2', position: '100%' }
+              ]
+            },
+            secondary: {
+              type: 'linear',
+              direction: '90deg',
+              stops: [
+                { color: '#6B7280', position: '0%' },
+                { color: '#4B5563', position: '100%' }
+              ]
+            },
+            accent: {
+              type: 'radial',
+              direction: 'circle',
+              stops: [
+                { color: n8nResult.result?.walletStyle?.accentColor || '#9945FF', position: '0%' },
+                { color: '#764ba2', position: '100%' }
+              ]
+            },
+            background: {
+              type: 'linear',
+              direction: '180deg',
+              stops: [
+                { color: n8nResult.result?.walletStyle?.backgroundColor || '#131313', position: '0%' },
+                { color: '#000000', position: '100%' }
+              ]
+            }
+          }
+        },
+        borders: {
+          radiusScale: {
+            none: '0px',
+            sm: '4px',
+            md: n8nResult.result?.walletStyle?.borderRadius || '8px',
+            lg: '12px',
+            xl: '16px',
+            full: '9999px'
+          },
+          widthScale: {
+            none: '0px',
+            thin: '1px',
+            medium: '2px',
+            thick: '4px'
+          },
+          styles: {
+            default: {
+              width: '1px',
+              style: 'solid',
+              color: 'rgba(255,255,255,0.1)',
+              radius: { all: n8nResult.result?.walletStyle?.borderRadius || '8px' }
+            },
+            focus: {
+              width: '2px',
+              style: 'solid',
+              color: n8nResult.result?.walletStyle?.accentColor || '#9945FF',
+              radius: { all: n8nResult.result?.walletStyle?.borderRadius || '8px' }
+            },
+            error: {
+              width: '1px',
+              style: 'solid',
+              color: '#EF4444',
+              radius: { all: n8nResult.result?.walletStyle?.borderRadius || '8px' }
+            },
+            success: {
+              width: '1px',
+              style: 'solid',
+              color: '#10B981',
+              radius: { all: n8nResult.result?.walletStyle?.borderRadius || '8px' }
+            }
+          }
+        },
+        shadows: {
+          elevation: {
+            none: { offsetX: '0px', offsetY: '0px', blurRadius: '0px', color: 'transparent' },
+            sm: { offsetX: '0px', offsetY: '1px', blurRadius: '3px', color: 'rgba(0,0,0,0.1)' },
+            md: { offsetX: '0px', offsetY: '4px', blurRadius: '12px', color: 'rgba(0,0,0,0.25)' },
+            lg: { offsetX: '0px', offsetY: '8px', blurRadius: '24px', color: 'rgba(0,0,0,0.3)' },
+            xl: { offsetX: '0px', offsetY: '12px', blurRadius: '32px', color: 'rgba(0,0,0,0.4)' },
+            '2xl': { offsetX: '0px', offsetY: '20px', blurRadius: '40px', color: 'rgba(0,0,0,0.5)' }
+          },
+          colors: {
+            default: 'rgba(0,0,0,0.25)',
+            colored: n8nResult.result?.walletStyle?.accentColor ? `${n8nResult.result.walletStyle.accentColor}40` : 'rgba(153,69,255,0.25)',
+            inset: 'rgba(0,0,0,0.1)'
+          },
+          styles: {
+            button: { offsetX: '0px', offsetY: '4px', blurRadius: '12px', color: 'rgba(0,0,0,0.25)' },
+            card: { offsetX: '0px', offsetY: '2px', blurRadius: '8px', color: 'rgba(0,0,0,0.1)' },
+            dropdown: { offsetX: '0px', offsetY: '8px', blurRadius: '24px', color: 'rgba(0,0,0,0.3)' },
+            modal: { offsetX: '0px', offsetY: '20px', blurRadius: '40px', color: 'rgba(0,0,0,0.5)' }
+          }
+        },
+        spacing: {
+          scale: {
+            xs: '4px',
+            sm: '8px',
+            md: '16px',
+            lg: '24px',
+            xl: '32px',
+            '2xl': '48px',
+            '3xl': '64px'
+          },
+          layouts: {
+            container: { all: '16px' },
+            section: { all: '24px' },
+            component: { all: '12px' },
+            element: { all: '8px' }
+          }
+        },
+        animations: {
+          durations: {
+            instant: '0ms',
+            fast: '150ms',
+            normal: '300ms',
+            slow: '500ms',
+            slower: '750ms'
+          },
+          easings: {
+            linear: 'linear',
+            easeIn: 'ease-in',
+            easeOut: 'ease-out',
+            easeInOut: 'ease-in-out',
+            bounce: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+            elastic: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+          },
+          transitions: {
+            fade: { name: 'fade', duration: '300ms', timingFunction: 'ease-in-out' },
+            slide: { name: 'slide', duration: '300ms', timingFunction: 'ease-out' },
+            scale: { name: 'scale', duration: '200ms', timingFunction: 'ease-in-out' },
+            rotate: { name: 'rotate', duration: '400ms', timingFunction: 'ease-in-out' }
+          }
+        }
+      },
+      dropdownMenus: {
+        accountDropdown: {
+          container: {
+            background: { color: 'rgba(24,24,24,0.95)' },
+            border: { radius: { all: '16px' }, width: '1px', style: 'solid', color: 'rgba(255,255,255,0.1)' },
+            shadow: { offsetX: '0px', offsetY: '20px', blurRadius: '40px', color: 'rgba(0,0,0,0.5)' },
+            size: {},
+            padding: { all: '8px' },
+            layout: { display: 'flex', flexDirection: 'column' }
+          },
+          backdrop: {
+            color: 'rgba(0,0,0,0.5)',
+            blur: '4px',
+            opacity: 0.8
+          },
+          header: {
+            background: { color: 'transparent' },
+            text: {
+              fontSize: '16px',
+              fontWeight: 'bold',
+              color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+            },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            padding: { all: '12px' }
+          },
+          items: {
+            background: { color: 'transparent' },
+            text: {
+              fontSize: '14px',
+              fontWeight: 'normal',
+              color: n8nResult.result?.walletStyle?.textColor || '#ffffff'
+            },
+            border: { width: '0px', style: 'solid', color: 'transparent' },
+            states: {
+              default: {},
+              hover: {},
+              selected: {},
+              disabled: {}
+            },
+            padding: { all: '12px' }
+          }
+        }
+      }
+    };
+
+    return {
+      success: true,
+      result: {
+        appliedCustomization: customizationData,
+        excludedElements: ['logo', 'aiPet', 'aiPetContainer', 'brandLogo', 'companyLogo'],
+        warnings: n8nResult.warnings || [],
+        performance: {
+          elementsProcessed: Object.keys(customizationData.walletScreen || {}).length + 
+                            Object.keys(customizationData.loginScreen || {}).length + 
+                            Object.keys(customizationData.global || {}).length,
+          processingTime: n8nResult.processingTime || 0
+        }
+      },
+      timestamp
+    };
+  }
 }
 
 // Working stub classes with real N8N connection
@@ -288,32 +1067,63 @@ serve(async (req) => {
   try {
     log('Router', 'INFO', `Processing request: ${req.method} ${req.url}`);
 
-    // Route based on HTTP method instead of path
-    switch (req.method) {
-      case 'POST':
-        return await handleCustomizeWallet(req);
-      
-      case 'GET':
-        const url = new URL(req.url);
-        if (url.searchParams.has('health')) {
-          return await handleHealth(req);
+    const url = new URL(req.url);
+    
+    // Route based on path for better organization
+    switch (url.pathname) {
+      case '/':
+      case '/customize':
+        if (req.method === 'POST') {
+          return await handleCustomizeWallet(req);
         }
-        if (url.searchParams.has('sessionId')) {
+        break;
+        
+      case '/customize-with-api':
+        if (req.method === 'POST') {
+          return await handleCustomizeWithAPI(req);
+        }
+        break;
+        
+      case '/health':
+        return await handleHealth(req);
+        
+      case '/prepare-nft':
+        if (req.method === 'GET') {
           return await handleNFTPrepare(req);
         }
-        return await handleHealth(req); // Default GET to health
-      
+        break;
+        
       default:
-        return new Response(
-          JSON.stringify({
-            error: 'Method Not Allowed',
-            allowedMethods: ['POST', 'GET', 'OPTIONS']
-          }),
-          { 
-            status: 405, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        // Fallback to method-based routing for backward compatibility
+        switch (req.method) {
+          case 'POST':
+            return await handleCustomizeWallet(req);
+          case 'GET':
+            if (url.searchParams.has('health')) {
+              return await handleHealth(req);
+            }
+            if (url.searchParams.has('sessionId')) {
+              return await handleNFTPrepare(req);
+            }
+            return await handleHealth(req);
+          default:
+            return new Response(
+              JSON.stringify({
+                error: 'Method Not Allowed',
+                allowedMethods: ['POST', 'GET', 'OPTIONS'],
+                availableEndpoints: [
+                  '/customize - POST: Original image-based customization',
+                  '/customize-with-api - POST: Direct API schema customization',
+                  '/health - GET: Health check',
+                  '/prepare-nft - GET: NFT preparation'
+                ]
+              }),
+              { 
+                status: 405, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            );
+        }
     }
   } catch (error) {
     log('Router', 'ERROR', 'Unhandled error', { error: error.message });
@@ -330,6 +1140,112 @@ serve(async (req) => {
   }
 });
 
+// NEW: Direct API Schema Customization Handler
+async function handleCustomizeWithAPI(req: Request) {
+  const sessionId = crypto.randomUUID();
+  log('CustomizeWithAPI', 'INFO', 'Starting direct API customization', { sessionId });
+  
+  try {
+    // Parse JSON request body (not FormData)
+    const requestBody = await req.json();
+    const { customization, options = {} } = requestBody;
+    
+    log('CustomizeWithAPI', 'INFO', 'Received API customization data', {
+      sessionId,
+      hasLoginScreen: !!customization?.loginScreen,
+      hasWalletScreen: !!customization?.walletScreen,
+      hasGlobal: !!customization?.global,
+      options
+    });
+    
+    // Validate the customization data against API schema
+    const validation = APISchemaConverter.validateCustomizationData(customization);
+    
+    if (!validation.isValid) {
+      log('CustomizeWithAPI', 'ERROR', 'Validation failed', { 
+        sessionId, 
+        errors: validation.errors 
+      });
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation failed',
+          details: validation.errors,
+          warnings: validation.warnings,
+          sessionId,
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Log validation warnings if any
+    if (validation.warnings.length > 0) {
+      log('CustomizeWithAPI', 'WARN', 'Validation warnings', { 
+        sessionId, 
+        warnings: validation.warnings 
+      });
+    }
+
+    // Convert API format to store format for compatibility
+    const storeFormat = APISchemaConverter.convertToStoreFormat(customization);
+    
+    log('CustomizeWithAPI', 'INFO', 'Converted to store format', {
+      sessionId,
+      storeFormat: Object.keys(storeFormat)
+    });
+
+    // Create a mock N8N result in the expected format
+    const mockN8NResult = {
+      success: true,
+      result: storeFormat,
+      sessionId,
+      processingTime: 0.1,
+      warnings: validation.warnings,
+      timestamp: new Date().toISOString()
+    };
+
+    // Convert to full API response format
+    const apiResponse = APISchemaConverter.convertFromN8NResult(mockN8NResult);
+    
+    log('CustomizeWithAPI', 'INFO', 'API customization completed', { 
+      sessionId,
+      elementsProcessed: apiResponse.result?.performance?.elementsProcessed || 0
+    });
+    
+    return new Response(
+      JSON.stringify(apiResponse),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+    
+  } catch (error) {
+    log('CustomizeWithAPI', 'ERROR', 'API customization failed', { 
+      sessionId, 
+      error: error.message 
+    });
+    
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+        sessionId,
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}
+
+// MODIFIED: Original customization handler with API format response
 async function handleCustomizeWallet(req: Request) {
   const sessionId = crypto.randomUUID();
   log('CustomizeWallet', 'INFO', 'Starting wallet customization', { sessionId });
@@ -398,21 +1314,13 @@ async function handleCustomizeWallet(req: Request) {
       walletId
     });
     
+    // NEW: Convert N8N result to API format
+    const apiFormatResponse = APISchemaConverter.convertFromN8NResult(result);
+    
     log('CustomizeWallet', 'INFO', 'Customization completed', { sessionId });
     
     return new Response(
-      JSON.stringify({
-        success: true,
-        sessionId,
-        result,
-        customization: {
-          backgroundGradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          accentColor: "#ff6b6b",
-          textColor: "#ffffff",
-          buttonStyle: "rounded-lg",
-          cardOpacity: 0.9
-        }
-      }),
+      JSON.stringify(apiFormatResponse),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
