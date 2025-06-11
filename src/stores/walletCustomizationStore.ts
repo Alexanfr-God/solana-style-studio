@@ -175,6 +175,11 @@ interface WalletCustomizationStore {
   setStyleForElement: (elementPath: string, style: any) => void;
   getStyleForElement: (elementPath: string) => any;
   bulkUpdateStyles: (styleUpdates: Record<string, any>) => void;
+  
+  // Helper methods for processing API customization
+  processLoginScreenCustomization: (loginScreen: any) => any;
+  processWalletScreenCustomization: (walletScreen: any) => any;
+  processGlobalCustomization: (global: any) => any;
 }
 
 const defaultLoginStyle: WalletStyle = {
