@@ -1,3 +1,4 @@
+
 // Utility logging
 function log(component: string, level: string, message: string, data?: any) {
   const timestamp = new Date().toISOString();
@@ -10,7 +11,7 @@ export class N8NConductor {
   private timeout = 120000; // 2 minutes
   
   constructor() {
-    this.n8nWebhookUrl = 'https://wacocu.app.n8n.cloud/webhook/wallet-customizer';
+    this.n8nWebhookUrl = 'https://wacocu.app.n8n.cloud/webhook/wallet-customizer-v2';
     log('Constructor', 'INFO', 'N8NConductor initialized', { 
       hasWebhookUrl: !!this.n8nWebhookUrl 
     });
