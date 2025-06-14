@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 // Import API types for validation and conversion
 import type { 
@@ -8,6 +9,11 @@ import type {
   CustomizationValidation,
   EXCLUDED_FROM_API_CUSTOMIZATION
 } from "./types/api.types.ts";
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Temporarily commented out - files don't exist yet
 // import { WalletAPIClient } from "./core/wallet-api-client.ts";
@@ -29,6 +35,192 @@ function log(component: string, level: string, message: string, data?: any) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [${component}] [${level}] ${message}`;
   console.log(logMessage, data ? JSON.stringify(data, null, 2) : '');
+}
+
+// Database Integration Helper Functions
+class DatabaseIntegration {
+  // Get wallet structure analysis from database
+  static async getWalletStructureAnalysis(walletType: string, screenType: string = 'login', version: string = '1.0') {
+    log('DatabaseIntegration', 'INFO', 'Fetching wallet structure analysis', { walletType, screenType, version });
+    
+    try {
+      const { data, error } = await supabase
+        .from('wallet_structure_analysis')
+        .select('*')
+        .eq('wallet_type', walletType)
+        .eq('screen_type', screenType)
+        .eq('version', version)
+        .maybeSingle();
+
+      if (error) {
+        log('DatabaseIntegration', 'ERROR', 'Failed to fetch wallet structure', { error: error.message });
+        return null;
+      }
+
+      if (!data) {
+        log('DatabaseIntegration', 'WARN', 'No wallet structure found, using default', { walletType, screenType });
+        return null;
+      }
+
+      log('DatabaseIntegration', 'INFO', 'Successfully fetched wallet structure', { id: data.id });
+      return data;
+    } catch (error) {
+      log('DatabaseIntegration', 'ERROR', 'Exception fetching wallet structure', { error: error.message });
+      return null;
+    }
+  }
+
+  // Check image analysis cache
+  static async getImageAnalysisFromCache(imageUrl: string, imageHash?: string) {
+    log('DatabaseIntegration', 'INFO', 'Checking image analysis cache', { imageUrl: imageUrl.substring(0, 50) + '...', imageHash });
+    
+    try {
+      let query = supabase.from('image_analysis_cache').select('*');
+      
+      if (imageHash) {
+        query = query.eq('image_hash', imageHash);
+      } else {
+        query = query.eq('image_url', imageUrl);
+      }
+      
+      const { data, error } = await query.maybeSingle();
+
+      if (error) {
+        log('DatabaseIntegration', 'ERROR', 'Failed to check image cache', { error: error.message });
+        return null;
+      }
+
+      if (data) {
+        log('DatabaseIntegration', 'INFO', 'Found cached image analysis', { id: data.id, age: new Date().getTime() - new Date(data.created_at).getTime() });
+      }
+
+      return data;
+    } catch (error) {
+      log('DatabaseIntegration', 'ERROR', 'Exception checking image cache', { error: error.message });
+      return null;
+    }
+  }
+
+  // Save image analysis to cache
+  static async saveImageAnalysisToCache(imageUrl: string, analysisResult: any, imageHash?: string, analysisDuration?: number) {
+    log('DatabaseIntegration', 'INFO', 'Saving image analysis to cache', { imageUrl: imageUrl.substring(0, 50) + '...', imageHash });
+    
+    try {
+      const { data, error } = await supabase
+        .from('image_analysis_cache')
+        .insert({
+          image_url: imageUrl,
+          image_hash: imageHash,
+          analysis_result: analysisResult,
+          analysis_duration_ms: analysisDuration,
+          analysis_version: '1.0'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        log('DatabaseIntegration', 'ERROR', 'Failed to save image analysis', { error: error.message });
+        return null;
+      }
+
+      log('DatabaseIntegration', 'INFO', 'Successfully saved image analysis', { id: data.id });
+      return data;
+    } catch (error) {
+      log('DatabaseIntegration', 'ERROR', 'Exception saving image analysis', { error: error.message });
+      return null;
+    }
+  }
+
+  // Create customization result entry
+  static async createCustomizationResult(sessionId: string, walletStructureId?: string, imageAnalysisId?: string, userId?: string) {
+    log('DatabaseIntegration', 'INFO', 'Creating customization result entry', { sessionId, walletStructureId, imageAnalysisId });
+    
+    try {
+      const { data, error } = await supabase
+        .from('customization_results')
+        .insert({
+          session_id: sessionId,
+          user_id: userId,
+          wallet_structure_id: walletStructureId,
+          image_analysis_id: imageAnalysisId,
+          status: 'processing',
+          customization_data: {}
+        })
+        .select()
+        .single();
+
+      if (error) {
+        log('DatabaseIntegration', 'ERROR', 'Failed to create customization result', { error: error.message });
+        return null;
+      }
+
+      log('DatabaseIntegration', 'INFO', 'Successfully created customization result', { id: data.id });
+      return data;
+    } catch (error) {
+      log('DatabaseIntegration', 'ERROR', 'Exception creating customization result', { error: error.message });
+      return null;
+    }
+  }
+
+  // Update customization result with N8N payload and result
+  static async updateCustomizationResult(
+    resultId: string, 
+    updates: {
+      n8nPayload?: any,
+      n8nResult?: any,
+      status?: string,
+      processingTimeMs?: number,
+      errorDetails?: any,
+      qualityScore?: number,
+      customizationData?: any
+    }
+  ) {
+    log('DatabaseIntegration', 'INFO', 'Updating customization result', { resultId, status: updates.status });
+    
+    try {
+      const { data, error } = await supabase
+        .from('customization_results')
+        .update({
+          ...(updates.n8nPayload && { n8n_payload: updates.n8nPayload }),
+          ...(updates.n8nResult && { n8n_result: updates.n8nResult }),
+          ...(updates.status && { status: updates.status }),
+          ...(updates.processingTimeMs && { processing_time_ms: updates.processingTimeMs }),
+          ...(updates.errorDetails && { error_details: updates.errorDetails }),
+          ...(updates.qualityScore && { quality_score: updates.qualityScore }),
+          ...(updates.customizationData && { customization_data: updates.customizationData })
+        })
+        .eq('id', resultId)
+        .select()
+        .single();
+
+      if (error) {
+        log('DatabaseIntegration', 'ERROR', 'Failed to update customization result', { error: error.message });
+        return null;
+      }
+
+      log('DatabaseIntegration', 'INFO', 'Successfully updated customization result', { id: data.id });
+      return data;
+    } catch (error) {
+      log('DatabaseIntegration', 'ERROR', 'Exception updating customization result', { error: error.message });
+      return null;
+    }
+  }
+
+  // Generate image hash for caching
+  static async generateImageHash(imageData: string): Promise<string> {
+    try {
+      // Create a simple hash from image data for caching purposes
+      const encoder = new TextEncoder();
+      const data = encoder.encode(imageData.substring(0, 1000)); // Use first 1000 chars for hash
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex.substring(0, 32); // First 32 chars
+    } catch (error) {
+      log('DatabaseIntegration', 'ERROR', 'Failed to generate image hash', { error: error.message });
+      return crypto.randomUUID(); // Fallback to random UUID
+    }
+  }
 }
 
 // API Schema Integration Helper Functions
@@ -802,7 +994,7 @@ class APISchemaConverter {
   }
 }
 
-// Working stub classes with real N8N connection
+// Enhanced N8N Conductor with Database Integration
 class N8NConductor {
   private n8nWebhookUrl: string;
   
@@ -812,13 +1004,139 @@ class N8NConductor {
       hasWebhookUrl: !!this.n8nWebhookUrl 
     });
   }
+
+  // Create comprehensive N8N payload with database integration
+  async createComprehensivePayload(params: {
+    sessionId: string,
+    walletId: string,
+    imageData: string,
+    customPrompt: string,
+    walletStructureAnalysis?: any,
+    imageAnalysis?: any
+  }) {
+    log('N8NConductor', 'INFO', 'Creating comprehensive N8N payload', { sessionId: params.sessionId });
+
+    const { sessionId, walletId, imageData, customPrompt, walletStructureAnalysis, imageAnalysis } = params;
+
+    // Build comprehensive payload structure
+    const comprehensivePayload = {
+      // Session and metadata
+      sessionId,
+      timestamp: new Date().toISOString(),
+      processingMode: 'full_customization_v2',
+      
+      // Wallet analysis from database
+      walletAnalysis: walletStructureAnalysis ? {
+        loginScreen: {
+          uiStructure: walletStructureAnalysis.ui_structure,
+          functionalContext: walletStructureAnalysis.functional_context,
+          generationContext: walletStructureAnalysis.generation_context,
+          safeZones: walletStructureAnalysis.safe_zones,
+          colorPalette: walletStructureAnalysis.color_palette,
+          typography: walletStructureAnalysis.typography,
+          interactivity: walletStructureAnalysis.interactivity
+        },
+        metadata: {
+          walletType: walletStructureAnalysis.wallet_type,
+          screenType: walletStructureAnalysis.screen_type,
+          version: walletStructureAnalysis.version
+        }
+      } : {
+        // Fallback wallet structure
+        loginScreen: {
+          uiStructure: { layout: { type: "login" } },
+          functionalContext: { purpose: "Wallet authentication" },
+          generationContext: { promptEnhancement: "Create a modern wallet login interface" },
+          safeZones: { criticalElements: ["login button", "input fields"] },
+          colorPalette: { primary: "#9945FF", background: "#131313" },
+          typography: { fontFamily: "Inter, sans-serif" },
+          interactivity: { buttons: [], inputs: [] }
+        },
+        metadata: {
+          walletType: walletId || 'phantom',
+          screenType: 'login',
+          version: '1.0'
+        }
+      },
+
+      // Image analysis from cache or new analysis
+      imageAnalysis: imageAnalysis ? {
+        colorPalette: imageAnalysis.analysis_result?.colorPalette || {},
+        mood: imageAnalysis.analysis_result?.mood || "modern",
+        style: imageAnalysis.analysis_result?.style || "professional",
+        composition: imageAnalysis.analysis_result?.composition || {},
+        dominantColors: imageAnalysis.analysis_result?.dominantColors || [],
+        metadata: {
+          imageHash: imageAnalysis.image_hash,
+          analysisVersion: imageAnalysis.analysis_version,
+          cacheAge: new Date().getTime() - new Date(imageAnalysis.created_at).getTime()
+        }
+      } : {
+        // Placeholder for new analysis
+        colorPalette: {},
+        mood: "unknown",
+        style: "unknown",
+        composition: {},
+        dominantColors: [],
+        metadata: {
+          requiresAnalysis: true
+        }
+      },
+
+      // Customization context
+      customizationContext: {
+        userPrompt: customPrompt,
+        stylePreferences: {
+          modern: true,
+          professional: true,
+          accessible: true
+        },
+        preserveElements: [
+          "logo", "aiPet", "aiPetContainer", "brandLogo", "companyLogo",
+          "login button", "input fields", "navigation elements"
+        ],
+        customizationPriority: [
+          "colors", "typography", "spacing", "effects", "animations"
+        ]
+      },
+
+      // Raw data for processing
+      imageData,
+      
+      // Processing configuration
+      processingConfig: {
+        learningEnabled: true,
+        qualityChecks: true,
+        preserveAccessibility: true,
+        generateAlternatives: false
+      },
+
+      // Request metadata
+      requestMetadata: {
+        source: 'edge_function_v2',
+        userAgent: 'wallet-ai-customizer/2.0',
+        startTime: Date.now(),
+        databaseIntegration: true
+      }
+    };
+
+    log('N8NConductor', 'INFO', 'Comprehensive payload created', {
+      sessionId,
+      hasWalletAnalysis: !!walletStructureAnalysis,
+      hasImageAnalysis: !!imageAnalysis,
+      payloadSize: JSON.stringify(comprehensivePayload).length
+    });
+
+    return comprehensivePayload;
+  }
   
   async triggerCustomization(payload: any) {
     log('TriggerCustomization', 'INFO', 'Starting N8N customization process', {
       sessionId: payload.sessionId,
-      walletId: payload.walletId,
+      walletId: payload.walletId || payload.walletAnalysis?.metadata?.walletType,
       hasImage: !!payload.imageData,
-      webhookUrl: this.n8nWebhookUrl
+      webhookUrl: this.n8nWebhookUrl,
+      hasComprehensiveData: !!(payload.walletAnalysis && payload.imageAnalysis)
     });
     
     const startTime = Date.now();
@@ -1245,59 +1563,79 @@ async function handleCustomizeWithAPI(req: Request) {
   }
 }
 
-// MODIFIED: Original customization handler with API format response
+// MODIFIED: Enhanced customization handler with database integration
 async function handleCustomizeWallet(req: Request) {
   const sessionId = crypto.randomUUID();
-  log('CustomizeWallet', 'INFO', 'Starting wallet customization', { sessionId });
+  log('CustomizeWallet', 'INFO', 'Starting enhanced wallet customization', { sessionId });
   
   try {
     // Parse form data
     const formData = await req.formData();
-    const walletId = formData.get('walletId') as string;
+    const walletId = formData.get('walletId') as string || 'phantom';
     const imageUrl = formData.get('imageUrl') as string;
     const customPrompt = formData.get('customPrompt') as string || '';
     
-    log('CustomizeWallet', 'INFO', 'Received form data', {
-      walletId,
-      imageUrl,
-      customPrompt
-    });
-    
-    // Validate inputs
-    const validation = await validator.validateCustomizeRequest({
-      walletId,
-      imageUrl,
-      customPrompt
-    });
-    
-    if (!validation.valid) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: validation.error
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    log('CustomizeWallet', 'INFO', 'Received form data', { walletId, imageUrl, customPrompt });
 
-    // Step 1: Get wallet structure
-    log('CustomizeWallet', 'INFO', 'Fetching wallet structure', { walletId });
-    const walletStructure = await walletAPI.getWalletStructure(walletId);
+    // STAGE 2: Database Integration Steps
     
-    // Step 2: Use image URL directly
-    log('CustomizeWallet', 'INFO', 'Using image URL', { imageUrl });
+    // Step 1: Get wallet structure from database
+    const walletStructureAnalysis = await DatabaseIntegration.getWalletStructureAnalysis(walletId, 'login');
     
-    // Step 3: Save user session
-    log('CustomizeWallet', 'INFO', 'Saving user session');
-    await learningCollector.collectUserSession({
+    // Step 2: Check image analysis cache
+    const imageHash = await DatabaseIntegration.generateImageHash(imageUrl);
+    let imageAnalysis = await DatabaseIntegration.getImageAnalysisFromCache(imageUrl, imageHash);
+    
+    // Step 3: Create customization result entry
+    const customizationEntry = await DatabaseIntegration.createCustomizationResult(
+      sessionId, 
+      walletStructureAnalysis?.id, 
+      imageAnalysis?.id
+    );
+
+    // Step 4: Create comprehensive N8N payload
+    const comprehensivePayload = await n8nConductor.createComprehensivePayload({
       sessionId,
       walletId,
+      imageData: imageUrl,
       customPrompt,
-      imageInfo: {
-        url: imageUrl
+      walletStructureAnalysis,
+      imageAnalysis
+    });
+
+    // Step 5: Save N8N payload to database
+    if (customizationEntry) {
+      await DatabaseIntegration.updateCustomizationResult(customizationEntry.id, {
+        n8nPayload: comprehensivePayload,
+        status: 'processing'
+      });
+    }
+
+    // Step 6: Trigger N8N with comprehensive data
+    const n8nResult = await n8nConductor.triggerCustomization(comprehensivePayload);
+
+    // Step 7: Update database with results
+    if (customizationEntry && n8nResult) {
+      await DatabaseIntegration.updateCustomizationResult(customizationEntry.id, {
+        n8nResult: n8nResult,
+        status: n8nResult.success ? 'completed' : 'failed',
+        processingTimeMs: Date.now() - comprehensivePayload.requestMetadata.startTime,
+        customizationData: n8nResult.result || {}
+      });
+    }
+
+    // Step 8: Convert to API response format
+    const apiResponse = APISchemaConverter.convertFromN8NResult(n8nResult);
+
+    log('CustomizeWallet', 'INFO', 'Enhanced customization completed', { 
+      sessionId, 
+      success: apiResponse.success,
+      databaseIntegration: true
+    });
+
+    return new Response(JSON.stringify(apiResponse), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
       }
     });
     
