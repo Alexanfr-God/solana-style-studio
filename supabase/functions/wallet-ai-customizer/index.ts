@@ -1654,35 +1654,6 @@ async function handleCustomizeWallet(req: Request) {
     });
   }
 }
-    
-  } catch (error) {
-    log('CustomizeWallet', 'ERROR', 'Customization failed', { 
-      sessionId, 
-      error: error.message 
-    });
-    
-    // Improved error response for timeout cases
-    const isTimeout = error.name === 'AbortError' || error.message.includes('timeout');
-    
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: isTimeout ? 'AI processing timeout' : error.message,
-        details: isTimeout ? 'Request failed due to timeout. n8n workflow may be taking too long.' : undefined,
-        sessionId,
-        timestamp: new Date().toISOString(),
-        debugInfo: isTimeout ? {
-          errorType: error.name,
-          maxTimeout: 240
-        } : undefined
-      }),
-      { 
-        status: isTimeout ? 408 : 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  }
-}
 
 async function handleRateResult(req: Request) {
   log('RateResult', 'INFO', 'Processing user rating');
