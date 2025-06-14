@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { Wand2, Sparkles, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { customizeWalletWithAI } from '@/services/walletAiCustomizerService';
+import { unifiedN8NService } from '@/services/unifiedN8NService';
 
 const CustomizeWalletButton = () => {
   const { 
@@ -50,24 +50,37 @@ const CustomizeWalletButton = () => {
         }
       }, 90000);
       
-      // Call the wallet-ai-customizer edge function
-      const result = await customizeWalletWithAI(
+      // Call the unified N8N service
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const result = await unifiedN8NService.executeCustomization(
+        sessionId,
         uploadedImage,
-        'phantom', // walletId
-        'Analyze this image and create a custom Web3 wallet style' // customPrompt
+        'Analyze this image and create a custom Web3 wallet style',
+        'phantom'
       );
 
       if (result.success) {
-        // Apply the generated style
-        applyStyleFromAiCustomizer(result);
+        // Convert unified result to old format for compatibility
+        const compatibleResult = {
+          success: true,
+          result: {
+            themeId: `unified_${sessionId}`,
+            generatedStyles: result.generatedStyles,
+            aiAnalysis: result.aiAnalysis
+          },
+          processingTime: `${(result.processingTime / 1000).toFixed(1)}s`
+        };
         
-        console.log('✅ Wallet customization completed successfully');
+        // Apply the generated style
+        applyStyleFromAiCustomizer(compatibleResult);
+        
+        console.log('✅ Unified wallet customization completed successfully');
         toast.success(`Wallet customized successfully! 🎨`, {
-          description: `AI analysis completed in ${result.processingTime || 'under 5 minutes'}`
+          description: `AI analysis completed in ${compatibleResult.processingTime}`
         });
       } else {
         // Обработка различных типов ошибок
-        if (result.error === 'AI processing timeout') {
+        if (result.error === 'AI processing timeout' || result.error?.includes('timeout')) {
           toast.error('AI processing is taking longer than expected', {
             description: 'The design is complex and needs more time. Try a simpler image or try again later.',
             duration: 10000
