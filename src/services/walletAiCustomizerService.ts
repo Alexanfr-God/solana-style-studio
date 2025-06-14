@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export async function customizeWalletWithAI(
-  imageFile: File,
+  imageUrl: string,
   walletId: string = 'phantom',
   customPrompt: string = 'Create a modern professional design'
 ) {
@@ -10,8 +10,7 @@ export async function customizeWalletWithAI(
   
   try {
     console.log('🎨 Starting wallet AI customization...', {
-      fileName: imageFile.name,
-      fileSize: imageFile.size,
+      imageUrl,
       walletId,
       promptLength: customPrompt.length,
       startTime: new Date().toISOString()
@@ -20,7 +19,7 @@ export async function customizeWalletWithAI(
     // Prepare FormData for the edge function
     const formData = new FormData();
     formData.append('walletId', walletId);
-    formData.append('image', imageFile);
+    formData.append('imageUrl', imageUrl);
     formData.append('customPrompt', customPrompt);
 
     console.log('📤 Sending request to wallet-ai-customizer edge function...');

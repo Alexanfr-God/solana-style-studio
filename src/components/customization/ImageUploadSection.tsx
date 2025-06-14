@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, X, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { supabase } from '@/integrations/supabase/client';
 
 const ImageUploadSection = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -25,25 +26,54 @@ const ImageUploadSection = () => {
 
     setIsUploading(true);
     try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setUploadedImage(result, file); // Pass both base64 and File object
-        toast.success('Image uploaded - ready for customization!');
-        setIsUploading(false);
-      };
-      reader.onerror = () => {
-        toast.error('Error uploading image');
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      // Generate unique filename
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('wallet-images')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw new Error('Failed to upload image to storage');
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('wallet-images')
+        .getPublicUrl(data.path);
+
+      // Save URL to store
+      setUploadedImage(publicUrl, file);
+      toast.success('Image uploaded - ready for customization!');
+      
     } catch (error) {
-      toast.error('Error processing file');
+      console.error('Upload failed:', error);
+      toast.error('Error uploading image');
+    } finally {
       setIsUploading(false);
     }
   };
 
-  const handleRemoveImage = () => {
+  const handleRemoveImage = async () => {
+    if (uploadedImage) {
+      // Extract filename from URL to delete from storage
+      try {
+        const url = new URL(uploadedImage);
+        const pathParts = url.pathname.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+        
+        if (fileName) {
+          await supabase.storage
+            .from('wallet-images')
+            .remove([fileName]);
+        }
+      } catch (error) {
+        console.error('Error removing file from storage:', error);
+      }
+    }
+    
     setUploadedImage(null, null);
     toast.info('Image removed');
   };

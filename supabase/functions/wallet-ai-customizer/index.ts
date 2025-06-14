@@ -1043,8 +1043,8 @@ class NFTStub {
 class ValidationService {
   async validateCustomizeRequest(data: any) {
     log('ValidationService', 'INFO', 'Validating request', data);
-    if (!data.walletId || !data.imageFile) {
-      return { valid: false, error: 'Missing walletId or imageFile' };
+    if (!data.walletId || !data.imageUrl) {
+      return { valid: false, error: 'Missing walletId or imageUrl' };
     }
     return { valid: true };
   }
@@ -1254,20 +1254,19 @@ async function handleCustomizeWallet(req: Request) {
     // Parse form data
     const formData = await req.formData();
     const walletId = formData.get('walletId') as string;
-    const imageFile = formData.get('image') as File;
+    const imageUrl = formData.get('imageUrl') as string;
     const customPrompt = formData.get('customPrompt') as string || '';
     
     log('CustomizeWallet', 'INFO', 'Received form data', {
       walletId,
-      imageFileName: imageFile?.name,
-      imageSize: imageFile?.size,
+      imageUrl,
       customPrompt
     });
     
     // Validate inputs
     const validation = await validator.validateCustomizeRequest({
       walletId,
-      imageFile,
+      imageUrl,
       customPrompt
     });
     
@@ -1288,9 +1287,8 @@ async function handleCustomizeWallet(req: Request) {
     log('CustomizeWallet', 'INFO', 'Fetching wallet structure', { walletId });
     const walletStructure = await walletAPI.getWalletStructure(walletId);
     
-    // Step 2: Process image
-    log('CustomizeWallet', 'INFO', 'Processing user image');
-    const imageData = await imageProcessor.processUploadedImage(imageFile);
+    // Step 2: Use image URL directly
+    log('CustomizeWallet', 'INFO', 'Using image URL', { imageUrl });
     
     // Step 3: Save user session
     log('CustomizeWallet', 'INFO', 'Saving user session');
@@ -1299,8 +1297,7 @@ async function handleCustomizeWallet(req: Request) {
       walletId,
       customPrompt,
       imageInfo: {
-        size: imageData.imageSize,
-        format: imageData.format
+        url: imageUrl
       }
     });
     
@@ -1309,7 +1306,7 @@ async function handleCustomizeWallet(req: Request) {
     const result = await n8nConductor.triggerCustomization({
       sessionId,
       walletStructure,
-      imageData: imageData.base64Data,
+      imageData: imageUrl,
       customPrompt,
       walletId
     });

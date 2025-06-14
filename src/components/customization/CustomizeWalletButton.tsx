@@ -9,7 +9,6 @@ import { customizeWalletWithAI } from '@/services/walletAiCustomizerService';
 const CustomizeWalletButton = () => {
   const { 
     uploadedImage, 
-    uploadedFile,
     isCustomizing, 
     onCustomizationStartWithTimeout, 
     applyStyleFromAiCustomizer,
@@ -17,7 +16,7 @@ const CustomizeWalletButton = () => {
   } = useWalletCustomizationStore();
 
   const handleCustomize = async () => {
-    if (!uploadedFile || !uploadedImage) {
+    if (!uploadedImage) {
       toast.error("Please upload a style inspiration image first!");
       return;
     }
@@ -53,7 +52,7 @@ const CustomizeWalletButton = () => {
       
       // Call the wallet-ai-customizer edge function
       const result = await customizeWalletWithAI(
-        uploadedFile,
+        uploadedImage,
         'phantom', // walletId
         'Analyze this image and create a custom Web3 wallet style' // customPrompt
       );
