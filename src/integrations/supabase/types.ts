@@ -126,6 +126,108 @@ export type Database = {
         }
         Relationships: []
       }
+      customization_results: {
+        Row: {
+          created_at: string
+          customization_data: Json
+          error_details: Json | null
+          id: string
+          image_analysis_id: string | null
+          n8n_payload: Json | null
+          n8n_result: Json | null
+          processing_time_ms: number | null
+          quality_score: number | null
+          session_id: string
+          status: string
+          updated_at: string
+          user_feedback: string | null
+          user_id: string | null
+          wallet_structure_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customization_data?: Json
+          error_details?: Json | null
+          id?: string
+          image_analysis_id?: string | null
+          n8n_payload?: Json | null
+          n8n_result?: Json | null
+          processing_time_ms?: number | null
+          quality_score?: number | null
+          session_id: string
+          status?: string
+          updated_at?: string
+          user_feedback?: string | null
+          user_id?: string | null
+          wallet_structure_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customization_data?: Json
+          error_details?: Json | null
+          id?: string
+          image_analysis_id?: string | null
+          n8n_payload?: Json | null
+          n8n_result?: Json | null
+          processing_time_ms?: number | null
+          quality_score?: number | null
+          session_id?: string
+          status?: string
+          updated_at?: string
+          user_feedback?: string | null
+          user_id?: string | null
+          wallet_structure_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customization_results_image_analysis_id_fkey"
+            columns: ["image_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "image_analysis_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customization_results_wallet_structure_id_fkey"
+            columns: ["wallet_structure_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_structure_analysis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_analysis_cache: {
+        Row: {
+          analysis_duration_ms: number | null
+          analysis_result: Json
+          analysis_version: string
+          created_at: string
+          id: string
+          image_hash: string | null
+          image_url: string
+          updated_at: string
+        }
+        Insert: {
+          analysis_duration_ms?: number | null
+          analysis_result?: Json
+          analysis_version?: string
+          created_at?: string
+          id?: string
+          image_hash?: string | null
+          image_url: string
+          updated_at?: string
+        }
+        Update: {
+          analysis_duration_ms?: number | null
+          analysis_result?: Json
+          analysis_version?: string
+          created_at?: string
+          id?: string
+          image_hash?: string | null
+          image_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       image_feedback: {
         Row: {
           created_at: string | null
@@ -464,6 +566,57 @@ export type Database = {
           id?: string
           style_data?: Json
           user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_structure_analysis: {
+        Row: {
+          color_palette: Json
+          created_at: string
+          functional_context: Json
+          generation_context: Json
+          id: string
+          interactivity: Json
+          safe_zones: Json
+          screen_type: string
+          subtype: string | null
+          typography: Json
+          ui_structure: Json
+          updated_at: string
+          version: string
+          wallet_type: string
+        }
+        Insert: {
+          color_palette?: Json
+          created_at?: string
+          functional_context?: Json
+          generation_context?: Json
+          id?: string
+          interactivity?: Json
+          safe_zones?: Json
+          screen_type: string
+          subtype?: string | null
+          typography?: Json
+          ui_structure?: Json
+          updated_at?: string
+          version?: string
+          wallet_type: string
+        }
+        Update: {
+          color_palette?: Json
+          created_at?: string
+          functional_context?: Json
+          generation_context?: Json
+          id?: string
+          interactivity?: Json
+          safe_zones?: Json
+          screen_type?: string
+          subtype?: string | null
+          typography?: Json
+          ui_structure?: Json
+          updated_at?: string
+          version?: string
+          wallet_type?: string
         }
         Relationships: []
       }
