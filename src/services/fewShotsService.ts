@@ -44,6 +44,7 @@ export interface ThemeDefinition {
 export class FewShotsService {
   private static instance: FewShotsService;
   private cache: Map<string, any> = new Map();
+  private useSupabaseStorage = true; // переключатель для использования Supabase Storage
   private baseUrl = '/ai-fewshots';
 
   static getInstance(): FewShotsService {
@@ -61,12 +62,25 @@ export class FewShotsService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/prompts/${category}_examples.json`);
-      if (!response.ok) {
-        throw new Error(`Failed to load few-shots for ${category}: ${response.statusText}`);
+      let examples;
+      
+      if (this.useSupabaseStorage) {
+        // Загружаем из Supabase Storage
+        const response = await fetch(`https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-fewshots/prompts/${category}_examples.json`);
+        if (!response.ok) {
+          throw new Error(`Failed to load few-shots from Supabase for ${category}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        examples = data.examples || data; // поддержка обоих форматов
+      } else {
+        // Локальные файлы (fallback)
+        const response = await fetch(`${this.baseUrl}/prompts/${category}_examples.json`);
+        if (!response.ok) {
+          throw new Error(`Failed to load few-shots for ${category}: ${response.statusText}`);
+        }
+        examples = await response.json();
       }
       
-      const examples = await response.json();
       this.cache.set(cacheKey, examples);
       
       console.log(`✅ Loaded ${examples.length} few-shot examples for ${category}`);
