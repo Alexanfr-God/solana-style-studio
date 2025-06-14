@@ -1,0 +1,70 @@
+[
+  {
+    "input": {
+      "walletType": "phantom",
+      "screenType": "login",
+      "imageDescription": "Meme cat in Gucci style, light background",
+      "dominantColors": ["#F5F5DC", "#DAA520", "#8B4513"],
+      "styleType": "luxury",
+      "moodProfile": "playful"
+    },
+    "expectedPrompt": "Generate a login screen background for a Phantom wallet in luxury cartoon style, using pastel beige and gold colors with playful cat elements. Keep the bottom 40% area clear for UI elements. Avoid any logos or text in the center. Style should be sophisticated yet fun.",
+    "expectedVariables": {
+      "--primary-color": "#DAA520",
+      "--secondary-color": "#F5F5DC", 
+      "--background-color": "#FDFDF5",
+      "--accent-color": "#8B4513"
+    }
+  },
+  {
+    "input": {
+      "walletType": "metamask",
+      "screenType": "login", 
+      "imageDescription": "Cartoon dragon, blue gradient",
+      "dominantColors": ["#1E3A8A", "#3B82F6", "#93C5FD"],
+      "styleType": "fantasy",
+      "moodProfile": "energetic"
+    },
+    "expectedPrompt": "Draw a login background for MetaMask with a cute cartoon dragon, blue gradient background from deep blue to light blue, energetic and magical mood. Center area must remain clear for input fields. Dragon should be positioned in upper corners.",
+    "expectedVariables": {
+      "--primary-color": "#3B82F6",
+      "--secondary-color": "#1E3A8A",
+      "--background-color": "#0F172A", 
+      "--accent-color": "#93C5FD"
+    }
+  },
+  {
+    "input": {
+      "walletType": "phantom",
+      "screenType": "login",
+      "imageDescription": "Cyberpunk neon city, dark purple",
+      "dominantColors": ["#7C3AED", "#A855F7", "#1F2937"],
+      "styleType": "cyberpunk",
+      "moodProfile": "futuristic"
+    },
+    "expectedPrompt": "Create a cyberpunk-style login background with neon purple city lights, dark atmospheric background, futuristic geometric patterns. Keep safe zones clear for wallet interface. Use glowing effects and sharp angular elements.",
+    "expectedVariables": {
+      "--primary-color": "#A855F7",
+      "--secondary-color": "#7C3AED",
+      "--background-color": "#111827",
+      "--accent-color": "#EC4899"
+    }
+  },
+  {
+    "input": {
+      "walletType": "solflare",
+      "screenType": "login",
+      "imageDescription": "Minimalist geometric shapes, white clean",
+      "dominantColors": ["#FFFFFF", "#F3F4F6", "#6B7280"],
+      "styleType": "minimal",
+      "moodProfile": "clean"
+    },
+    "expectedPrompt": "Design a clean minimal login background with subtle geometric shapes, white and light gray palette, professional and modern aesthetic. Ensure maximum contrast for readability. Keep design elements subtle and non-distracting.",
+    "expectedVariables": {
+      "--primary-color": "#374151",
+      "--secondary-color": "#6B7280",
+      "--background-color": "#FFFFFF",
+      "--accent-color": "#10B981"
+    }
+  }
+]

@@ -1,0 +1,64 @@
+{
+  "themeName": "luxury",
+  "description": "Elegant, premium design with gold accents and sophisticated aesthetics",
+  "colorPalette": {
+    "primary": "#DAA520",
+    "secondary": "#F5F5DC",
+    "background": "#1A1A1A",
+    "surface": "#2D2D2D",
+    "text": "#F8F8FF",
+    "accent": "#FFD700",
+    "success": "#32CD32",
+    "warning": "#FFA500",
+    "error": "#DC143C"
+  },
+  "characteristics": {
+    "mood": ["sophisticated", "elegant", "premium", "exclusive"],
+    "visualElements": ["gold-accents", "marble-textures", "elegant-typography", "subtle-patterns"],
+    "atmosphere": "dark-and-luxurious",
+    "complexity": "high"
+  },
+  "backgroundPrompts": {
+    "marble": "Create an elegant marble background with dark base and gold veining, luxury aesthetic, subtle texture, sophisticated appearance",
+    "abstract": "Design a luxury abstract background with gold gradients, dark backdrop, elegant geometric patterns, premium feel",
+    "textural": "Generate a rich textural background with dark leather or fabric appearance, gold highlights, high-end luxury aesthetic"
+  },
+  "elementStyles": {
+    "buttons": {
+      "background": "linear-gradient(135deg, var(--primary-color), var(--accent-color))",
+      "borderRadius": "12px",
+      "border": "1px solid var(--accent-color)",
+      "padding": "16px 32px",
+      "fontWeight": "600",
+      "textTransform": "capitalize",
+      "boxShadow": "0 4px 16px rgba(218, 165, 32, 0.3)"
+    },
+    "cards": {
+      "backgroundColor": "var(--surface-color)",
+      "border": "1px solid rgba(255, 215, 0, 0.2)",
+      "borderRadius": "16px",
+      "backdropFilter": "blur(10px)",
+      "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.3)",
+      "padding": "28px"
+    },
+    "inputs": {
+      "backgroundColor": "rgba(45, 45, 45, 0.9)",
+      "border": "1px solid var(--primary-color)",
+      "borderRadius": "10px",
+      "color": "var(--text-color)",
+      "padding": "16px 20px",
+      "fontSize": "16px"
+    }
+  },
+  "restrictions": [
+    "maintain-elegance",
+    "avoid-gaudy-elements",
+    "use-premium-materials",
+    "ensure-sophisticated-feel"
+  ],
+  "accessibility": {
+    "contrastRatio": 6.8,
+    "colorBlindSafe": true,
+    "readabilityScore": "excellent"
+  }
+}

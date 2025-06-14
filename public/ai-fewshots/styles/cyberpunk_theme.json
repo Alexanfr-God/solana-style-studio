@@ -1,0 +1,61 @@
+{
+  "themeName": "cyberpunk",
+  "description": "Dark futuristic theme with neon accents and digital aesthetics",
+  "colorPalette": {
+    "primary": "#A855F7",
+    "secondary": "#7C3AED", 
+    "background": "#0F0F23",
+    "surface": "#1A1A2E",
+    "text": "#EEEEFF",
+    "accent": "#00D4FF",
+    "success": "#00FF88",
+    "warning": "#FFB800",
+    "error": "#FF0066"
+  },
+  "characteristics": {
+    "mood": ["futuristic", "mysterious", "energetic", "high-tech"],
+    "visualElements": ["neon-glow", "geometric-patterns", "grid-lines", "sharp-angles"],
+    "atmosphere": "dark-with-bright-accents",
+    "complexity": "high"
+  },
+  "backgroundPrompts": {
+    "abstract": "Generate a cyberpunk abstract background with neon purple and blue geometric patterns, dark base with glowing accents, digital grid overlay",
+    "cityscape": "Create a futuristic city skyline at night with neon lights, holographic advertisements, flying vehicles, purple and cyan color scheme",
+    "digital": "Design a digital matrix environment with flowing code, circuit board patterns, glowing connections, dark background with neon highlights"
+  },
+  "elementStyles": {
+    "buttons": {
+      "backgroundColor": "var(--primary-color)",
+      "borderRadius": "4px",
+      "border": "1px solid var(--accent-color)",
+      "boxShadow": "0 0 10px rgba(168, 85, 247, 0.3)",
+      "textTransform": "uppercase",
+      "fontWeight": "600"
+    },
+    "cards": {
+      "backgroundColor": "var(--surface-color)",
+      "border": "1px solid rgba(0, 212, 255, 0.2)",
+      "borderRadius": "8px",
+      "backdropFilter": "blur(10px)",
+      "boxShadow": "0 4px 20px rgba(0, 0, 0, 0.5)"
+    },
+    "inputs": {
+      "backgroundColor": "rgba(26, 26, 46, 0.8)",
+      "border": "1px solid var(--accent-color)",
+      "borderRadius": "4px",
+      "color": "var(--text-color)",
+      "padding": "12px 16px"
+    }
+  },
+  "restrictions": [
+    "maintain-high-contrast",
+    "avoid-overwhelming-animations", 
+    "respect-safe-zones",
+    "ensure-readability"
+  ],
+  "accessibility": {
+    "contrastRatio": 4.8,
+    "colorBlindSafe": true,
+    "readabilityScore": "high"
+  }
+}

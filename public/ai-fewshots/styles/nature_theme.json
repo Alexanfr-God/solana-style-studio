@@ -1,0 +1,61 @@
+{
+  "themeName": "nature",
+  "description": "Organic, earth-toned design inspired by natural elements",
+  "colorPalette": {
+    "primary": "#10B981",
+    "secondary": "#34D399",
+    "background": "#064E3B",
+    "surface": "#065F46", 
+    "text": "#ECFDF5",
+    "accent": "#F59E0B",
+    "success": "#22C55E",
+    "warning": "#FBBF24",
+    "error": "#F87171"
+  },
+  "characteristics": {
+    "mood": ["calm", "organic", "peaceful", "grounded"],
+    "visualElements": ["organic-shapes", "leaf-patterns", "wood-textures", "natural-gradients"],
+    "atmosphere": "warm-and-earthy",
+    "complexity": "medium"
+  },
+  "backgroundPrompts": {
+    "forest": "Generate a serene forest background with soft green tones, dappled sunlight through leaves, organic textures, peaceful atmosphere",
+    "botanical": "Create a botanical illustration background with delicate leaf patterns, watercolor style, green and earth tones, subtle and elegant",
+    "landscape": "Design a natural landscape with rolling hills, soft gradients from green to blue, minimalist mountain silhouettes, calming mood"
+  },
+  "elementStyles": {
+    "buttons": {
+      "backgroundColor": "var(--primary-color)",
+      "borderRadius": "16px",
+      "border": "none",
+      "padding": "14px 28px",
+      "fontWeight": "500",
+      "boxShadow": "0 2px 8px rgba(16, 185, 129, 0.2)"
+    },
+    "cards": {
+      "backgroundColor": "var(--surface-color)",
+      "border": "1px solid rgba(52, 211, 153, 0.2)",
+      "borderRadius": "16px",
+      "backdropFilter": "blur(5px)",
+      "boxShadow": "0 4px 16px rgba(0, 0, 0, 0.1)"
+    },
+    "inputs": {
+      "backgroundColor": "rgba(6, 95, 70, 0.8)",
+      "border": "1px solid var(--primary-color)",
+      "borderRadius": "12px", 
+      "color": "var(--text-color)",
+      "padding": "14px 18px"
+    }
+  },
+  "restrictions": [
+    "maintain-organic-feel",
+    "avoid-sharp-edges",
+    "use-natural-colors-only",
+    "ensure-calming-atmosphere"
+  ],
+  "accessibility": {
+    "contrastRatio": 5.1,
+    "colorBlindSafe": true,
+    "readabilityScore": "good"
+  }
+}

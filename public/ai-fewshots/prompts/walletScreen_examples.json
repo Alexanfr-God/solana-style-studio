@@ -1,0 +1,59 @@
+[
+  {
+    "input": {
+      "walletType": "phantom",
+      "screenType": "home",
+      "imageDescription": "Space nebula, cosmic purple",
+      "dominantColors": ["#8B5CF6", "#A78BFA", "#1E1B4B"],
+      "styleType": "cosmic",
+      "moodProfile": "mysterious"
+    },
+    "expectedPrompt": "Generate a cosmic-themed wallet home screen with nebula backgrounds, purple and violet gradients, starfield elements. Ensure all UI areas remain clearly visible with proper contrast. Balance visual appeal with functional clarity.",
+    "expectedVariables": {
+      "--primary-color": "#8B5CF6",
+      "--secondary-color": "#A78BFA",
+      "--background-color": "#1E1B4B",
+      "--surface-color": "#312E81",
+      "--text-color": "#F8FAFC",
+      "--accent-color": "#F59E0B"
+    }
+  },
+  {
+    "input": {
+      "walletType": "metamask",
+      "screenType": "home",
+      "imageDescription": "Nature forest, green organic",
+      "dominantColors": ["#10B981", "#34D399", "#064E3B"],
+      "styleType": "nature",
+      "moodProfile": "calm"
+    },
+    "expectedPrompt": "Create a nature-inspired wallet interface with forest green tones, organic shapes, and calming natural elements. Maintain excellent readability with earth-tone color palette. Balance natural aesthetics with digital functionality.",
+    "expectedVariables": {
+      "--primary-color": "#10B981",
+      "--secondary-color": "#34D399",
+      "--background-color": "#064E3B",
+      "--surface-color": "#065F46",
+      "--text-color": "#ECFDF5",
+      "--accent-color": "#F59E0B"
+    }
+  },
+  {
+    "input": {
+      "walletType": "solflare",
+      "screenType": "home",
+      "imageDescription": "Abstract art, bright orange",
+      "dominantColors": ["#EA580C", "#FB923C", "#7C2D12"],
+      "styleType": "abstract",
+      "moodProfile": "energetic"
+    },
+    "expectedPrompt": "Design an abstract art-inspired wallet home with vibrant orange gradients, dynamic geometric patterns, energetic color transitions. Ensure UI elements have sufficient contrast and remain functional despite bold background.",
+    "expectedVariables": {
+      "--primary-color": "#EA580C",
+      "--secondary-color": "#FB923C", 
+      "--background-color": "#7C2D12",
+      "--surface-color": "#9A3412",
+      "--text-color": "#FFF7ED",
+      "--accent-color": "#3B82F6"
+    }
+  }
+]

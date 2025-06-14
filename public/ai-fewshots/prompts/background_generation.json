@@ -1,0 +1,44 @@
+[
+  {
+    "input": {
+      "imageDescription": "Sunset landscape, warm colors",
+      "dominantColors": ["#F97316", "#FDE047", "#DC2626"],
+      "styleType": "landscape",
+      "targetElement": "background"
+    },
+    "expectedPrompt": "Generate a warm sunset landscape background with orange, yellow and red gradients. Soft natural lighting, peaceful atmosphere. Ensure the image works as a subtle background without overwhelming foreground UI elements.",
+    "modifications": {
+      "opacity": 0.3,
+      "blur": "slight",
+      "contrast": "low"
+    }
+  },
+  {
+    "input": {
+      "imageDescription": "Digital matrix code, green terminals",
+      "dominantColors": ["#22C55E", "#16A34A", "#000000"],
+      "styleType": "digital",
+      "targetElement": "background"
+    },
+    "expectedPrompt": "Create a matrix-style digital background with flowing green code, terminal aesthetic, black background. Keep code elements subtle and non-distracting. Focus on atmosphere rather than readable text.",
+    "modifications": {
+      "opacity": 0.2,
+      "blur": "none",
+      "contrast": "medium"
+    }
+  },
+  {
+    "input": {
+      "imageDescription": "Watercolor flowers, pastel pink",
+      "dominantColors": ["#F472B6", "#FECACA", "#FEF7FF"],
+      "styleType": "artistic",
+      "targetElement": "background"
+    },
+    "expectedPrompt": "Paint a soft watercolor floral background with pastel pink tones, delicate flower elements, light and airy composition. Maintain subtle, non-intrusive design that enhances rather than competes with UI.",
+    "modifications": {
+      "opacity": 0.4,
+      "blur": "soft",
+      "contrast": "low"
+    }
+  }
+]
