@@ -1636,30 +1636,24 @@ async function handleCustomizeWallet(req: Request) {
     return new Response(JSON.stringify(apiResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-      }
+    
+  } catch (error) {
+    log('CustomizeWallet', 'ERROR', 'Enhanced customization failed', { 
+      sessionId, 
+      error: error.message 
     });
     
-    // Step 4: Send to N8N
-    log('CustomizeWallet', 'INFO', 'Triggering N8N customization');
-    const result = await n8nConductor.triggerCustomization({
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
       sessionId,
-      walletStructure,
-      imageData: imageUrl,
-      customPrompt,
-      walletId
+      timestamp: new Date().toISOString()
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
-    
-    // NEW: Convert N8N result to API format
-    const apiFormatResponse = APISchemaConverter.convertFromN8NResult(result);
-    
-    log('CustomizeWallet', 'INFO', 'Customization completed', { sessionId });
-    
-    return new Response(
-      JSON.stringify(apiFormatResponse),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+  }
+}
     
   } catch (error) {
     log('CustomizeWallet', 'ERROR', 'Customization failed', { 
