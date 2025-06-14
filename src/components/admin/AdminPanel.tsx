@@ -2,6 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CreateGuideImageButton from './CreateGuideImageButton';
+import { ConvertTrainingDataButton } from './ConvertTrainingDataButton';
+import { UniversalTrainingDataManager } from './UniversalTrainingDataManager';
 
 const AdminPanel = () => {
   return (
@@ -18,6 +20,20 @@ const AdminPanel = () => {
             This is a 1024×1024 white canvas with a black rectangle (320×569) at coordinates x=352, y=228.
           </p>
           <CreateGuideImageButton />
+        </CardContent>
+      </Card>
+
+      <UniversalTrainingDataManager />
+
+      <Card className="bg-black/30 backdrop-blur-md border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white">Legacy Background Converter</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-white/70 text-sm mb-4">
+            Устаревший конвертер только для фонов. Используйте универсальный конвертер выше.
+          </p>
+          <ConvertTrainingDataButton />
         </CardContent>
       </Card>
     </div>
