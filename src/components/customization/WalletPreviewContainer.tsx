@@ -1,8 +1,9 @@
+
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore, AiPetEmotion } from '@/stores/walletCustomizationStore';
-import { Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 import AiPet from '@/components/ui/AiPet';
 import WalletContainer from '@/components/wallet/WalletContainer';
@@ -248,16 +249,6 @@ const WalletPreviewContainer = () => {
             ⭕ Orbit
           </Button>
         </div>
-
-        {/* Current Layer Indicator */}
-        <div className="text-center mb-4">
-          <p className="text-gray-400 text-sm">
-            Current layer: <span className="text-purple-400 capitalize">{currentLayer}</span>
-          </p>
-          <p className="text-blue-400/80 text-xs">
-            Animation: {animationType} • Zone: {aiPet.zone}
-          </p>
-        </div>
         
         {/* Wallet container with AI Pet orbital zone */}
         <div className="flex-1 flex items-center justify-center overflow-visible relative">
@@ -387,24 +378,6 @@ const WalletPreviewContainer = () => {
             </div>
           </div>
         )}
-        
-        <div className="mt-4 text-center">
-          <p className="text-white/60 text-sm">
-            Upload an image and click "Apply AI Style" to see the magic! ✨
-          </p>
-          <p className="text-purple-400/80 text-xs mt-1">
-            Hover → suspicious • Click → wink • Double-click → zone switch
-          </p>
-          <p className="text-blue-400/80 text-xs mt-1">
-            Energy: {aiPet.energy}% • Emotion: {aiPet.emotion} • Animation: {animationType}
-          </p>
-          <button
-            onClick={() => setDebugMode(!debugMode)}
-            className="text-xs text-gray-500 hover:text-gray-300 mt-1"
-          >
-            {debugMode ? 'Hide' : 'Show'} Debug UI
-          </button>
-        </div>
       </CardContent>
     </Card>
   );
