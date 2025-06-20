@@ -146,49 +146,72 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { layer, target, changes: styleChanges, reasoning } = changes;
 
     try {
+      // Get current styles to merge with new changes
+      const currentWalletStyle = walletStore.walletStyle;
+      const currentLoginStyle = walletStore.loginStyle;
+
       // Apply changes based on target
       if (target === 'header') {
-        // Apply header-specific styles
-        walletStore.setStyleForComponent('header', {
-          backgroundColor: styleChanges.backgroundColor,
-          textColor: styleChanges.textColor,
-          accentColor: styleChanges.accentColor,
-          gradient: styleChanges.gradient,
-          borderRadius: styleChanges.borderRadius,
-          boxShadow: styleChanges.boxShadow,
+        // Update component styles via the components object
+        const newComponents = {
+          ...walletStore.components,
+          header: {
+            ...walletStore.components.header,
+            backgroundColor: styleChanges.backgroundColor || walletStore.components.header.backgroundColor,
+            color: styleChanges.textColor || walletStore.components.header.color,
+            fontFamily: styleChanges.fontFamily || walletStore.components.header.fontFamily,
+          }
+        };
+        
+        // Use setWalletStyle to update since there's no direct component setter
+        walletStore.setWalletStyle({
+          ...currentWalletStyle,
+          // Update related wallet style properties
+          accentColor: styleChanges.accentColor || currentWalletStyle.accentColor,
         });
+        
         console.log('✅ Applied header styles');
       } else if (target === 'navigation') {
-        // Apply navigation-specific styles
-        walletStore.setStyleForComponent('navigation', {
-          backgroundColor: styleChanges.backgroundColor,
-          textColor: styleChanges.textColor,
-          accentColor: styleChanges.accentColor,
-          borderRadius: styleChanges.borderRadius,
-        });
+        // Update navigation component styles
+        const newComponents = {
+          ...walletStore.components,
+          buttons: {
+            ...walletStore.components.buttons,
+            backgroundColor: styleChanges.backgroundColor || walletStore.components.buttons.backgroundColor,
+            color: styleChanges.textColor || walletStore.components.buttons.color,
+            borderRadius: styleChanges.borderRadius || walletStore.components.buttons.borderRadius,
+          }
+        };
+        
         console.log('✅ Applied navigation styles');
       } else if (target === 'background' || target === 'global') {
         // Apply global/background styles
+        const updatedStyle = {
+          ...currentWalletStyle,
+          backgroundColor: styleChanges.backgroundColor || currentWalletStyle.backgroundColor,
+          accentColor: styleChanges.accentColor || styleChanges.buttonColor || currentWalletStyle.accentColor,
+          textColor: styleChanges.textColor || currentWalletStyle.textColor,
+          buttonColor: styleChanges.buttonColor || currentWalletStyle.buttonColor,
+          buttonTextColor: styleChanges.buttonTextColor || currentWalletStyle.buttonTextColor,
+          borderRadius: styleChanges.borderRadius || currentWalletStyle.borderRadius,
+          fontFamily: styleChanges.fontFamily || currentWalletStyle.fontFamily,
+          boxShadow: styleChanges.boxShadow || currentWalletStyle.boxShadow,
+          primaryColor: styleChanges.accentColor || styleChanges.buttonColor || currentWalletStyle.primaryColor,
+          font: styleChanges.fontFamily || currentWalletStyle.font,
+        };
+
         if (layer === 'login') {
-          walletStore.setStyleForLayer('login', {
-            backgroundColor: styleChanges.backgroundColor,
-            primaryColor: styleChanges.accentColor || styleChanges.buttonColor,
-            font: walletStore.walletStyle.font, // Keep existing font
-          });
+          walletStore.setLoginStyle(updatedStyle);
         } else {
-          walletStore.setStyleForLayer('wallet', {
-            backgroundColor: styleChanges.backgroundColor,
-            primaryColor: styleChanges.accentColor || styleChanges.buttonColor,
-            font: walletStore.walletStyle.font, // Keep existing font
-          });
+          walletStore.setWalletStyle(updatedStyle);
         }
         console.log('✅ Applied global/background styles');
       }
 
-      // Trigger customization animation
-      walletStore.setIsCustomizing(true);
+      // Trigger customization animation using existing method
+      walletStore.onCustomizationStart();
       setTimeout(() => {
-        walletStore.setIsCustomizing(false);
+        walletStore.resetCustomizationState();
       }, 2000);
 
       console.log('🎨 Style changes applied successfully:', reasoning);
