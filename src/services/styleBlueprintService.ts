@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface StyleBlueprint {
@@ -158,7 +157,11 @@ export function blueprintToWalletStyles(blueprint: StyleBlueprint) {
     borderRadius: blueprint.interactionHints.buttonStyle.shape.includes('round') ? '100px' : '12px',
     fontFamily: blueprint.typography.fontFamily,
     boxShadow: blueprint.lighting.shadows || '0 4px 12px rgba(0, 0, 0, 0.25)',
-    styleNotes: `${blueprint.meta.theme} - ${blueprint.mood.vibe} (Confidence: ${blueprint.meta.confidenceScore})`
+    styleNotes: `${blueprint.meta.theme} - ${blueprint.mood.vibe} (Confidence: ${blueprint.meta.confidenceScore})`,
+    // Add missing gradient property
+    gradient: blueprint.colorSystem.gradient 
+      ? `linear-gradient(${blueprint.colorSystem.gradient.angle}, ${blueprint.colorSystem.gradient.from}, ${blueprint.colorSystem.gradient.to})`
+      : `linear-gradient(135deg, ${blueprint.colorSystem.accent[0] || blueprint.colorSystem.primary}, ${blueprint.colorSystem.primary})`
   };
 }
 
