@@ -70,10 +70,14 @@ serve(async (req) => {
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
+    // Try to extract style changes from the response
+    const styleChanges = extractStyleChanges(aiResponse, walletContext);
+
     console.log('✅ GPT response generated successfully');
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
+      styleChanges,
       success: true 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -138,4 +142,45 @@ function buildUserMessage(content: string, walletElement?: string, imageUrl?: st
   }
 
   return message;
+}
+
+function extractStyleChanges(response: string, walletContext: any): any {
+  // Simple pattern matching for style suggestions
+  // In a production app, you might want more sophisticated parsing
+  
+  const colorRegex = /#[0-9A-Fa-f]{6}|rgb\(\d+,\s*\d+,\s*\d+\)|rgba\(\d+,\s*\d+,\s*\d+,\s*[\d.]+\)/g;
+  const colors = response.match(colorRegex);
+  
+  if (colors && colors.length > 0) {
+    return {
+      layer: walletContext?.activeLayer || 'wallet',
+      styles: {
+        backgroundColor: colors[0],
+        accentColor: colors[1] || colors[0],
+      }
+    };
+  }
+  
+  // Check for specific style keywords
+  if (response.toLowerCase().includes('dark theme') || response.toLowerCase().includes('black background')) {
+    return {
+      layer: walletContext?.activeLayer || 'wallet',
+      styles: {
+        backgroundColor: '#1a1a1a',
+        textColor: '#ffffff',
+      }
+    };
+  }
+  
+  if (response.toLowerCase().includes('light theme') || response.toLowerCase().includes('white background')) {
+    return {
+      layer: walletContext?.activeLayer || 'wallet',
+      styles: {
+        backgroundColor: '#ffffff',
+        textColor: '#000000',
+      }
+    };
+  }
+  
+  return null;
 }

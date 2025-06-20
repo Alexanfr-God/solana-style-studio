@@ -15,7 +15,7 @@ export interface ChatMessage {
 }
 
 const ChatInterface = () => {
-  const { messages, isLoading } = useChatStore();
+  const { messages, isLoading, sendMessage } = useChatStore();
   const [selectedElement, setSelectedElement] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -26,6 +26,10 @@ const ChatInterface = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleStarterClick = (message: string) => {
+    sendMessage({ content: message });
+  };
 
   return (
     <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full flex flex-col">
@@ -40,7 +44,11 @@ const ChatInterface = () => {
         </div>
         
         <div className="flex-1 flex flex-col min-h-0">
-          <MessageHistory messages={messages} isLoading={isLoading} />
+          <MessageHistory 
+            messages={messages} 
+            isLoading={isLoading}
+            onStarterClick={handleStarterClick}
+          />
           <div ref={messagesEndRef} />
         </div>
         

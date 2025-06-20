@@ -3,22 +3,25 @@ import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage } from './ChatInterface';
 import { Bot, User, Image as ImageIcon } from 'lucide-react';
+import ChatStarters from './ChatStarters';
 
 interface MessageHistoryProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  onStarterClick?: (message: string) => void;
 }
 
-const MessageHistory = ({ messages, isLoading }: MessageHistoryProps) => {
+const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryProps) => {
   return (
     <ScrollArea className="flex-1 pr-4">
       <div className="space-y-4">
         {messages.length === 0 && (
           <div className="text-center py-8">
             <Bot className="h-12 w-12 text-white/30 mx-auto mb-4" />
-            <p className="text-white/50 text-sm">
+            <p className="text-white/50 text-sm mb-6">
               Start customizing your wallet by describing what you want to change!
             </p>
+            {onStarterClick && <ChatStarters onStarterClick={onStarterClick} />}
           </div>
         )}
         

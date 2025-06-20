@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
+import { useCustomizationStore } from './customizationStore';
 
 interface ChatState {
   messages: ChatMessage[];
@@ -12,6 +13,7 @@ interface ChatState {
     walletElement?: string;
   }) => Promise<void>;
   clearHistory: () => void;
+  applyStyleChanges: (changes: any) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -43,11 +45,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
         element: messageData.walletElement
       });
 
-      // Get wallet context (you can expand this later)
+      // Get current wallet context
+      const customizationState = useCustomizationStore.getState();
       const walletContext = {
         walletType: 'Phantom',
-        activeLayer: 'wallet',
-        currentStyle: {} // Add current wallet style here
+        activeLayer: customizationState.activeLayer,
+        currentStyle: customizationState.activeLayer === 'login' 
+          ? customizationState.loginStyle 
+          : customizationState.walletStyle,
+        availableElements: [
+          'Header Bar', 'Balance Display', 'Login Screen', 'Action Buttons',
+          'Asset List', 'Bottom Navigation', 'Background', 'Color Scheme',
+          'Typography', 'Icons'
+        ]
       };
 
       // Call the Edge Function
@@ -68,10 +78,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
         throw new Error(data?.error || 'Failed to get AI response');
       }
 
+      // Parse GPT response for style changes
+      const responseContent = data.response;
+      
+      // Check if GPT suggested any style changes
+      if (data.styleChanges) {
+        get().applyStyleChanges(data.styleChanges);
+      }
+
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         type: 'assistant',
-        content: data.response,
+        content: responseContent,
         timestamp: new Date(),
       };
 
@@ -93,6 +111,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }],
         isLoading: false
       }));
+    }
+  },
+
+  applyStyleChanges: (changes) => {
+    const customizationStore = useCustomizationStore.getState();
+    
+    if (changes.layer && changes.styles) {
+      if (changes.layer === 'login') {
+        customizationStore.updateLoginStyle(changes.styles);
+      } else if (changes.layer === 'wallet') {
+        customizationStore.updateWalletStyle(changes.styles);
+      }
+      
+      console.log('🎨 Applied style changes:', changes);
     }
   },
 
