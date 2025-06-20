@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -152,37 +151,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       // Apply changes based on target
       if (target === 'header') {
-        // Update component styles via the components object
-        const newComponents = {
-          ...walletStore.components,
-          header: {
-            ...walletStore.components.header,
-            backgroundColor: styleChanges.backgroundColor || walletStore.components.header.backgroundColor,
-            color: styleChanges.textColor || walletStore.components.header.color,
-            fontFamily: styleChanges.fontFamily || walletStore.components.header.fontFamily,
-          }
+        // Update wallet style with header-related changes
+        const updatedStyle = {
+          ...currentWalletStyle,
+          accentColor: styleChanges.accentColor || currentWalletStyle.accentColor,
+          textColor: styleChanges.textColor || currentWalletStyle.textColor,
+          backgroundColor: styleChanges.backgroundColor || currentWalletStyle.backgroundColor,
+          fontFamily: styleChanges.fontFamily || currentWalletStyle.fontFamily,
+          boxShadow: styleChanges.boxShadow || currentWalletStyle.boxShadow,
         };
         
-        // Use setWalletStyle to update since there's no direct component setter
-        walletStore.setWalletStyle({
-          ...currentWalletStyle,
-          // Update related wallet style properties
-          accentColor: styleChanges.accentColor || currentWalletStyle.accentColor,
-        });
-        
+        walletStore.setWalletStyle(updatedStyle);
         console.log('✅ Applied header styles');
       } else if (target === 'navigation') {
-        // Update navigation component styles
-        const newComponents = {
-          ...walletStore.components,
-          buttons: {
-            ...walletStore.components.buttons,
-            backgroundColor: styleChanges.backgroundColor || walletStore.components.buttons.backgroundColor,
-            color: styleChanges.textColor || walletStore.components.buttons.color,
-            borderRadius: styleChanges.borderRadius || walletStore.components.buttons.borderRadius,
-          }
+        // Update wallet style with navigation-related changes
+        const updatedStyle = {
+          ...currentWalletStyle,
+          buttonColor: styleChanges.backgroundColor || currentWalletStyle.buttonColor,
+          buttonTextColor: styleChanges.textColor || currentWalletStyle.buttonTextColor,
+          borderRadius: styleChanges.borderRadius || currentWalletStyle.borderRadius,
+          accentColor: styleChanges.accentColor || currentWalletStyle.accentColor,
         };
         
+        walletStore.setWalletStyle(updatedStyle);
         console.log('✅ Applied navigation styles');
       } else if (target === 'background' || target === 'global') {
         // Apply global/background styles
