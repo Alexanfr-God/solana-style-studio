@@ -71,10 +71,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
 
       if (error) {
+        console.error('❌ Supabase function error:', error);
         throw new Error(`Edge function error: ${error.message}`);
       }
 
       if (!data?.success) {
+        console.error('❌ GPT API error:', data?.error);
         throw new Error(data?.error || 'Failed to get AI response');
       }
 
@@ -102,11 +104,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     } catch (error) {
       console.error('❌ Error sending message:', error);
+      
+      // Determine error message based on error type
+      let errorMessage = 'Sorry, there was an error connecting to the AI. Please check your API settings or try again later.';
+      
+      if (error.message.includes('OpenAI API key not configured')) {
+        errorMessage = 'OpenAI API key is not configured. Please set it in the project settings.';
+      } else if (error.message.includes('OpenAI API error')) {
+        errorMessage = 'There was an error with the OpenAI API. Please try again later.';
+      } else if (error.message.includes('Edge function error')) {
+        errorMessage = 'There was a server error. Please try again later.';
+      }
+      
       set(state => ({
         messages: [...state.messages, {
           id: `error-${Date.now()}`,
           type: 'assistant',
-          content: 'Извините, произошла ошибка при обращении к AI. Проверьте настройки API или попробуйте позже.',
+          content: errorMessage,
           timestamp: new Date(),
         }],
         isLoading: false

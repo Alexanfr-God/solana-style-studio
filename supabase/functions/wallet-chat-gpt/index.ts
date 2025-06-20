@@ -16,6 +16,18 @@ serve(async (req) => {
   }
 
   try {
+    // Check if OpenAI API key is available
+    if (!openAIApiKey) {
+      console.error('❌ OpenAI API key not found in environment variables');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key not configured. Please set OPENAI_API_KEY in Supabase secrets.',
+        success: false 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { 
       content, 
       imageUrl, 
@@ -30,24 +42,36 @@ serve(async (req) => {
       hasContext: !!walletContext
     });
 
-    // Build system prompt based on wallet context
+    // Build system prompt based on wallet context with language detection
     const systemPrompt = buildWalletSystemPrompt(walletContext);
     
     // Build user message with context
     const userMessage = buildUserMessage(content, walletElement, imageUrl);
 
+    // Create messages array with proper structure for OpenAI API
     const messages = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage }
     ];
 
-    // Add image if provided
+    // Handle image if provided - fix the structure for GPT-4 Vision API
     if (imageUrl) {
-      messages[1].content = [
-        { type: 'text', text: userMessage },
-        { type: 'image_url', image_url: { url: imageUrl } }
-      ];
+      messages[1] = {
+        role: 'user',
+        content: [
+          { type: 'text', text: userMessage },
+          { 
+            type: 'image_url', 
+            image_url: { 
+              url: imageUrl,
+              detail: 'low'
+            }
+          }
+        ]
+      };
     }
+
+    console.log('📤 Sending request to OpenAI with model: gpt-4o');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -64,10 +88,18 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('❌ Invalid response structure from OpenAI:', data);
+      throw new Error('Invalid response structure from OpenAI API');
+    }
+
     const aiResponse = data.choices[0].message.content;
 
     // Try to extract style changes from the response
@@ -86,7 +118,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Error in wallet-chat-gpt function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error.message || 'An unexpected error occurred',
       success: false 
     }), {
       status: 500,
@@ -97,6 +129,8 @@ serve(async (req) => {
 
 function buildWalletSystemPrompt(walletContext: any): string {
   return `You are an AI assistant specialized in Web3 wallet UI customization. Your role is to help users customize their wallet interface through conversational interaction.
+
+IMPORTANT LANGUAGE RULE: Always respond in the same language as the user's input. If the user writes in English, respond in English. If the user writes in Russian, respond in Russian. If the user writes in Spanish, respond in Spanish, etc.
 
 WALLET CONTEXT:
 - Current wallet type: ${walletContext?.walletType || 'Phantom'}
