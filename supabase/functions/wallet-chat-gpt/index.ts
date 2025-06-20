@@ -31,6 +31,7 @@ MASTER RULES:
 - Use maximum 5 colors in palette
 - Maintain unity of style across all elements
 - Every change must be justified
+- ALWAYS RESPOND IN ENGLISH ONLY, REGARDLESS OF USER'S LANGUAGE!
 `;
 
 // CHAIN OF THOUGHT TEMPLATE - ENGLISH ONLY
@@ -235,12 +236,13 @@ REMEMBER: Always include structured JSON in your responses for automatic style a
 function buildUserMessage(content: string, walletElement?: string, imageUrl?: string): string {
   let message = content;
 
+  // Keep original content, don't translate user input
   if (walletElement) {
-    message = `Я хочу кастомизировать элемент "${walletElement}". ${content}`;
+    message = `I want to customize element "${walletElement}". ${content}`;
   }
 
   if (imageUrl) {
-    message += '\n\nЯ загрузил изображение для вдохновения. Проанализируй его и предложи, как применить похожую стилистику к моему кошельку.';
+    message += '\n\nI uploaded an image for inspiration. Please analyze it and suggest how to apply similar styling to my wallet.';
   }
 
   return message;
@@ -473,58 +475,14 @@ serve(async (req) => {
 
     console.log('✅ GPT response generated successfully with style changes:', styleChanges);
 
-    // Return response in appropriate format
-    if (sessionId) {
-      // Return FormData response format
-      let parsedResponse;
-      try {
-        const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/);
-        if (jsonMatch) {
-          parsedResponse = JSON.parse(jsonMatch[1]);
-        } else {
-          throw new Error('No JSON found in response');
-        }
-      } catch (error) {
-        // Fallback response
-        parsedResponse = {
-          thinking: {
-            user_request_analysis: "Проанализировал запрос пользователя",
-            chosen_style: chosenStyle?.id || 'default',
-            reasoning: "Выбрал подходящий стиль на основе запроса",
-            color_logic: "Применил цветовую гармонию из выбранного стиля"
-          },
-          changes: styleChanges?.changes || {
-            background: { login_screen: "#1a1a2e", dashboard: "#16213e" },
-            buttons: { primary_color: "#6366f1", text_color: "#ffffff", hover_color: "#8b5cf6" },
-            inputs: { background_color: "#2a2a3e", border_color: "#8b5cf6", text_color: "#ffffff" },
-            text: { primary_color: "#ffffff", secondary_color: "#a0a0a0" }
-          },
-          recommendations: {
-            next_steps: "Можно добавить анимации переходов",
-            style_notes: "Стиль выбран на основе анализа запроса"
-          }
-        };
-      }
-
-      return new Response(JSON.stringify({
-        success: true,
-        result: parsedResponse,
-        sessionId: sessionId,
-        processingTime: Date.now(),
-        chosenStyleId: chosenStyle?.id
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } else {
-      // Return JSON response format (existing)
-      return new Response(JSON.stringify({ 
-        response: aiResponse,
-        styleChanges,
-        success: true 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // FIXED: Return response in correct format that chatStore expects
+    return new Response(JSON.stringify({ 
+      response: aiResponse,
+      styleChanges: styleChanges, // This is what chatStore.ts expects!
+      success: true 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('❌ Error in wallet-chat-gpt function:', error);

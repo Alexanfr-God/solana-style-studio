@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,13 +83,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         throw new Error(data?.error || 'Failed to get AI response');
       }
 
+      console.log('📊 Full GPT response data:', data);
+
       // Parse GPT response for style changes
       const responseContent = data.response;
       
-      // Check if GPT suggested any style changes and apply them
+      // FIXED: Check for style changes in the correct path
       if (data.styleChanges) {
         console.log('🎨 Applying style changes from GPT:', data.styleChanges);
         get().applyStyleChanges(data.styleChanges);
+      } else {
+        console.log('⚠️ No style changes found in response');
       }
 
       const assistantMessage: ChatMessage = {
@@ -109,14 +114,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       console.error('❌ Error sending message:', error);
       
       // Determine error message based on error type
-      let errorMessage = 'Извините, произошла ошибка при подключении к ИИ. Проверьте настройки API или попробуйте позже.';
+      let errorMessage = 'Sorry, there was an error connecting to AI. Please check API settings or try again later.';
       
       if (error.message.includes('OpenAI API key not configured')) {
-        errorMessage = 'OpenAI API ключ не настроен. Пожалуйста, установите его в настройках проекта.';
+        errorMessage = 'OpenAI API key is not configured. Please set it in the project settings.';
       } else if (error.message.includes('OpenAI API error')) {
-        errorMessage = 'Ошибка OpenAI API. Попробуйте позже.';
+        errorMessage = 'OpenAI API error. Please try again later.';
       } else if (error.message.includes('Edge function error')) {
-        errorMessage = 'Ошибка сервера. Попробуйте позже.';
+        errorMessage = 'Server error. Please try again later.';
       }
       
       set(state => ({
@@ -148,6 +153,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Get current styles to merge with new changes
       const currentWalletStyle = walletStore.walletStyle;
       const currentLoginStyle = walletStore.loginStyle;
+
+      console.log('🔧 Processing style changes:', {
+        layer,
+        target,
+        styleChanges,
+        reasoning
+      });
 
       // Apply changes based on target
       if (target === 'header') {
@@ -193,10 +205,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
         if (layer === 'login') {
           walletStore.setLoginStyle(updatedStyle);
+          console.log('✅ Applied login background styles');
         } else {
           walletStore.setWalletStyle(updatedStyle);
+          console.log('✅ Applied wallet background styles');
         }
-        console.log('✅ Applied global/background styles');
       }
 
       // Trigger customization animation using existing method
