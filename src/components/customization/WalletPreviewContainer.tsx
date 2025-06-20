@@ -1,9 +1,8 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore, AiPetEmotion } from '@/stores/walletCustomizationStore';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import AiPet from '@/components/ui/AiPet';
 import WalletContainer from '@/components/wallet/WalletContainer';
