@@ -347,7 +347,7 @@ const WalletPreviewContainer = () => {
                   phantom
                 </span>
               </div>
-              <HelpCircle className="h-5 w-5 text-white/70" />
+              {/* <HelpCircle className="h-5 w-5 text-white/70" /> */}
             </div>
             
             {/* Transition Strip */}
