@@ -2,8 +2,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -16,11 +14,26 @@ serve(async (req) => {
   }
 
   try {
+    // Get and clean the OpenAI API key
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')?.trim();
+
     // Check if OpenAI API key is available
     if (!openAIApiKey) {
       console.error('❌ OpenAI API key not found in environment variables');
       return new Response(JSON.stringify({ 
         error: 'OpenAI API key not configured. Please set OPENAI_API_KEY in Supabase secrets.',
+        success: false 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate API key format
+    if (!openAIApiKey.startsWith('sk-')) {
+      console.error('❌ Invalid OpenAI API key format');
+      return new Response(JSON.stringify({ 
+        error: 'Invalid OpenAI API key format. Key should start with "sk-"',
         success: false 
       }), {
         status: 500,
@@ -73,12 +86,22 @@ serve(async (req) => {
 
     console.log('📤 Sending request to OpenAI with model: gpt-4o');
 
+    // Create clean headers object
+    const requestHeaders = {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    };
+
+    console.log('🔑 API Key validation:', {
+      hasKey: !!openAIApiKey,
+      keyLength: openAIApiKey.length,
+      keyPrefix: openAIApiKey.substring(0, 7) + '...',
+      isValidFormat: openAIApiKey.startsWith('sk-')
+    });
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: requestHeaders,
       body: JSON.stringify({
         model: 'gpt-4o',
         messages,
