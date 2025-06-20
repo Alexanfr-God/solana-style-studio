@@ -55,8 +55,8 @@ serve(async (req) => {
       hasContext: !!walletContext
     });
 
-    // Build system prompt based on wallet context with language detection
-    const systemPrompt = buildWalletSystemPrompt(walletContext);
+    // Build system prompt with COT reasoning and few-shot examples
+    const systemPrompt = buildAdvancedWalletSystemPrompt(walletContext);
     
     // Build user message with context
     const userMessage = buildUserMessage(content, walletElement, imageUrl);
@@ -105,7 +105,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o',
         messages,
-        max_tokens: 1500,
+        max_tokens: 2000,
         temperature: 0.7,
       }),
     });
@@ -125,10 +125,10 @@ serve(async (req) => {
 
     const aiResponse = data.choices[0].message.content;
 
-    // Try to extract style changes from the response
-    const styleChanges = extractStyleChanges(aiResponse, walletContext);
+    // Extract style changes from the structured response
+    const styleChanges = extractAdvancedStyleChanges(aiResponse, walletContext);
 
-    console.log('✅ GPT response generated successfully');
+    console.log('✅ GPT response generated successfully with style changes:', styleChanges);
 
     return new Response(JSON.stringify({ 
       response: aiResponse,
@@ -150,94 +150,187 @@ serve(async (req) => {
   }
 });
 
-function buildWalletSystemPrompt(walletContext: any): string {
-  return `You are an AI assistant specialized in Web3 wallet UI customization. Your role is to help users customize their wallet interface through conversational interaction.
+function buildAdvancedWalletSystemPrompt(walletContext: any): string {
+  return `Ты - элитный Web3 дизайнер кошельков.
 
-IMPORTANT LANGUAGE RULE: Always respond in the same language as the user's input. If the user writes in English, respond in English. If the user writes in Russian, respond in Russian. If the user writes in Spanish, respond in Spanish, etc.
+ТВОЯ СУПЕРСИЛА: создавать гармоничные дизайны поэтапно.
 
-WALLET CONTEXT:
-- Current wallet type: ${walletContext?.walletType || 'Phantom'}
-- Active layer: ${walletContext?.activeLayer || 'wallet'}
-- Current style: ${JSON.stringify(walletContext?.currentStyle || {})}
+ВАЖНО: Всегда отвечай на том же языке, что и пользователь!
 
-CAPABILITIES:
-1. Analyze wallet screenshots and suggest improvements
-2. Modify specific UI elements (colors, fonts, layout, backgrounds)
-3. Apply style presets and themes
-4. Customize login screens and main wallet interfaces
-5. Generate CSS/styling code for implementation
+ТЕКУЩИЙ КОНТЕКСТ КОШЕЛЬКА:
+- Тип кошелька: ${walletContext?.walletType || 'Phantom'}
+- Активный слой: ${walletContext?.activeLayer || 'wallet'}
+- Текущие стили: ${JSON.stringify(walletContext?.currentStyle || {})}
 
-COMMUNICATION STYLE:
-- Be conversational and helpful
-- Ask clarifying questions when needed
-- Provide specific, actionable suggestions
-- Explain changes in simple terms
-- Use emoji occasionally to make it friendly
+ПРОЦЕСС COT (Chain of Thought):
 
-WHEN USER UPLOADS IMAGE:
-- Analyze the visual elements, colors, style
-- Suggest specific customizations based on the image
-- Offer to apply similar styling to their wallet
+1. 🔍 АНАЛИЗ:
+   - Проанализируй запрос пользователя
+   - Определи, какие элементы нужно изменить
+   - Оцени текущее состояние дизайна
 
-WHEN USER SELECTS ELEMENT:
-- Focus on that specific UI component
-- Provide targeted customization options
-- Ask what aspect they want to change
+2. 🎨 ПЛАНИРОВАНИЕ:
+   - Создай/найди идеальную концепцию для фона
+   - Извлеки цветовую палитру (3-5 цветов)
+   - Спланируй стилизацию UI элементов
 
-Always end your responses with a question or suggestion for next steps to keep the conversation flowing.`;
+3. ⚡ ПРИМЕНЕНИЕ:
+   - Стилизуй элементы под палитру
+   - Создай гармоничные переходы
+   - Финализируй в единой стилистике
+
+ПРАВИЛА ГАРМОНИИ:
+- Яркий фон = темные inputs и кнопки
+- Светлый фон = яркие акценты
+- Максимум 2 шрифта
+- Палитра 3-5 цветов максимум
+- Обязательная контрастность для читаемости
+- Соблюдение RUG правил (не блокировать функциональность)
+
+ДОСТУПНЫЕ ЭЛЕМЕНТЫ КОШЕЛЬКА:
+- Header (заголовок, аватар, поиск)
+- Navigation (нижняя навигация)
+- Balance Display (отображение баланса)
+- Buttons (кнопки действий)
+- Cards (карточки активов)
+- Background (фон всего кошелька)
+- Login Screen (экран входа)
+
+ФОРМАТ ОТВЕТА:
+Обязательно включи в свой ответ JSON блок в таком формате:
+
+\`\`\`json
+{
+  "styleChanges": {
+    "layer": "wallet|login",
+    "target": "header|navigation|background|button|card|global",
+    "changes": {
+      "backgroundColor": "#hex_color",
+      "textColor": "#hex_color", 
+      "accentColor": "#hex_color",
+      "buttonColor": "#hex_color",
+      "borderRadius": "8px",
+      "boxShadow": "0 4px 12px rgba(0,0,0,0.1)",
+      "gradient": "linear-gradient(45deg, #color1, #color2)"
+    },
+    "reasoning": "Объяснение почему эти изменения гармоничны"
+  }
+}
+\`\`\`
+
+ПРИМЕР КАЧЕСТВЕННОГО ОТВЕТА:
+
+"🔍 АНАЛИЗ: Пользователь хочет темную тему с фиолетовыми акцентами для header.
+
+🎨 ПЛАНИРОВАНИЕ: Создам темный gradient фон с фиолетовыми акцентами, обеспечу контрастность для текста.
+
+⚡ ПРИМЕНЕНИЕ: Использую темно-серый фон с фиолетовыми градиентами для кнопок.
+
+\`\`\`json
+{
+  "styleChanges": {
+    "layer": "wallet",
+    "target": "header",
+    "changes": {
+      "backgroundColor": "#1a1a2e",
+      "textColor": "#ffffff",
+      "accentColor": "#9945ff",
+      "gradient": "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+      "borderRadius": "12px",
+      "boxShadow": "0 4px 20px rgba(153, 69, 255, 0.3)"
+    },
+    "reasoning": "Темный фон обеспечивает элегантность, фиолетовые акценты создают premium ощущение, а мягкие тени добавляют глубину"
+  }
+}
+\`\`\`
+
+Результат: Создан гармоничный header с темной темой и фиолетовыми акцентами!"
+
+ПОМНИ: Всегда включай структурированный JSON в своих ответах для автоматического применения стилей!`;
 }
 
 function buildUserMessage(content: string, walletElement?: string, imageUrl?: string): string {
   let message = content;
 
   if (walletElement) {
-    message = `I want to customize the "${walletElement}" element. ${content}`;
+    message = `Я хочу кастомизировать элемент "${walletElement}". ${content}`;
   }
 
   if (imageUrl) {
-    message += '\n\nI\'ve uploaded an image for inspiration. Please analyze it and suggest how to apply similar styling to my wallet.';
+    message += '\n\nЯ загрузил изображение для вдохновения. Проанализируй его и предложи, как применить похожую стилистику к моему кошельку.';
   }
 
   return message;
 }
 
-function extractStyleChanges(response: string, walletContext: any): any {
-  // Simple pattern matching for style suggestions
-  // In a production app, you might want more sophisticated parsing
+function extractAdvancedStyleChanges(response: string, walletContext: any): any {
+  console.log('🎨 Extracting style changes from response:', response.substring(0, 200) + '...');
   
-  const colorRegex = /#[0-9A-Fa-f]{6}|rgb\(\d+,\s*\d+,\s*\d+\)|rgba\(\d+,\s*\d+,\s*\d+,\s*[\d.]+\)/g;
-  const colors = response.match(colorRegex);
-  
-  if (colors && colors.length > 0) {
-    return {
-      layer: walletContext?.activeLayer || 'wallet',
-      styles: {
-        backgroundColor: colors[0],
-        accentColor: colors[1] || colors[0],
+  try {
+    // Try to find JSON block in response
+    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      const jsonString = jsonMatch[1];
+      console.log('📦 Found JSON block:', jsonString);
+      
+      const parsed = JSON.parse(jsonString);
+      if (parsed.styleChanges) {
+        console.log('✅ Successfully parsed style changes:', parsed.styleChanges);
+        return parsed.styleChanges;
       }
-    };
+    }
+
+    // Fallback: look for style-related keywords and extract colors
+    const colorRegex = /#[0-9A-Fa-f]{6}|rgb\(\d+,\s*\d+,\s*\d+\)|rgba\(\d+,\s*\d+,\s*\d+,\s*[\d.]+\)/g;
+    const colors = response.match(colorRegex);
+    
+    if (colors && colors.length > 0) {
+      console.log('🎨 Found colors in response:', colors);
+      
+      return {
+        layer: walletContext?.activeLayer || 'wallet',
+        target: 'global',
+        changes: {
+          backgroundColor: colors[0],
+          accentColor: colors[1] || colors[0],
+          textColor: response.toLowerCase().includes('dark') ? '#ffffff' : '#000000',
+        },
+        reasoning: 'Auto-extracted from color analysis'
+      };
+    }
+
+    // Check for theme keywords
+    if (response.toLowerCase().includes('dark theme') || response.toLowerCase().includes('темная тема')) {
+      return {
+        layer: walletContext?.activeLayer || 'wallet',
+        target: 'global',
+        changes: {
+          backgroundColor: '#1a1a1a',
+          textColor: '#ffffff',
+          accentColor: '#9945ff',
+        },
+        reasoning: 'Applied dark theme based on keywords'
+      };
+    }
+    
+    if (response.toLowerCase().includes('light theme') || response.toLowerCase().includes('светлая тема')) {
+      return {
+        layer: walletContext?.activeLayer || 'wallet',
+        target: 'global',
+        changes: {
+          backgroundColor: '#ffffff',
+          textColor: '#000000',
+          accentColor: '#9945ff',
+        },
+        reasoning: 'Applied light theme based on keywords'
+      };
+    }
+
+    console.log('⚠️ No structured style changes found in response');
+    return null;
+    
+  } catch (error) {
+    console.error('❌ Error parsing style changes:', error);
+    return null;
   }
-  
-  // Check for specific style keywords
-  if (response.toLowerCase().includes('dark theme') || response.toLowerCase().includes('black background')) {
-    return {
-      layer: walletContext?.activeLayer || 'wallet',
-      styles: {
-        backgroundColor: '#1a1a1a',
-        textColor: '#ffffff',
-      }
-    };
-  }
-  
-  if (response.toLowerCase().includes('light theme') || response.toLowerCase().includes('white background')) {
-    return {
-      layer: walletContext?.activeLayer || 'wallet',
-      styles: {
-        backgroundColor: '#ffffff',
-        textColor: '#000000',
-      }
-    };
-  }
-  
-  return null;
 }

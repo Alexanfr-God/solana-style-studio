@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
-import { useCustomizationStore } from './customizationStore';
+import { useWalletCustomizationStore } from './walletCustomizationStore';
 
 interface ChatState {
   messages: ChatMessage[];
@@ -45,14 +45,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         element: messageData.walletElement
       });
 
-      // Get current wallet context
-      const customizationState = useCustomizationStore.getState();
+      // Get current wallet context from WalletCustomizationStore
+      const walletStore = useWalletCustomizationStore.getState();
       const walletContext = {
         walletType: 'Phantom',
-        activeLayer: customizationState.activeLayer,
-        currentStyle: customizationState.activeLayer === 'login' 
-          ? customizationState.loginStyle 
-          : customizationState.walletStyle,
+        activeLayer: walletStore.currentLayer,
+        currentStyle: {
+          backgroundColor: walletStore.walletStyle.backgroundColor,
+          primaryColor: walletStore.walletStyle.primaryColor,
+          font: walletStore.walletStyle.font,
+          // Include more current style properties
+        },
         availableElements: [
           'Header Bar', 'Balance Display', 'Login Screen', 'Action Buttons',
           'Asset List', 'Bottom Navigation', 'Background', 'Color Scheme',
@@ -83,8 +86,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Parse GPT response for style changes
       const responseContent = data.response;
       
-      // Check if GPT suggested any style changes
+      // Check if GPT suggested any style changes and apply them
       if (data.styleChanges) {
+        console.log('🎨 Applying style changes from GPT:', data.styleChanges);
         get().applyStyleChanges(data.styleChanges);
       }
 
@@ -100,20 +104,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isLoading: false
       }));
 
-      console.log('✅ GPT response received and added to chat');
+      console.log('✅ GPT response received and style changes applied');
 
     } catch (error) {
       console.error('❌ Error sending message:', error);
       
       // Determine error message based on error type
-      let errorMessage = 'Sorry, there was an error connecting to the AI. Please check your API settings or try again later.';
+      let errorMessage = 'Извините, произошла ошибка при подключении к ИИ. Проверьте настройки API или попробуйте позже.';
       
       if (error.message.includes('OpenAI API key not configured')) {
-        errorMessage = 'OpenAI API key is not configured. Please set it in the project settings.';
+        errorMessage = 'OpenAI API ключ не настроен. Пожалуйста, установите его в настройках проекта.';
       } else if (error.message.includes('OpenAI API error')) {
-        errorMessage = 'There was an error with the OpenAI API. Please try again later.';
+        errorMessage = 'Ошибка OpenAI API. Попробуйте позже.';
       } else if (error.message.includes('Edge function error')) {
-        errorMessage = 'There was a server error. Please try again later.';
+        errorMessage = 'Ошибка сервера. Попробуйте позже.';
       }
       
       set(state => ({
@@ -129,16 +133,68 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   applyStyleChanges: (changes) => {
-    const customizationStore = useCustomizationStore.getState();
+    const walletStore = useWalletCustomizationStore.getState();
     
-    if (changes.layer && changes.styles) {
-      if (changes.layer === 'login') {
-        customizationStore.setStyleForLayer('login', changes.styles);
-      } else if (changes.layer === 'wallet') {
-        customizationStore.setStyleForLayer('wallet', changes.styles);
+    console.log('🎨 Applying style changes:', changes);
+    
+    if (!changes || !changes.changes) {
+      console.log('⚠️ No changes object found');
+      return;
+    }
+
+    // Determine which store method to use based on target and layer
+    const { layer, target, changes: styleChanges, reasoning } = changes;
+
+    try {
+      // Apply changes based on target
+      if (target === 'header') {
+        // Apply header-specific styles
+        walletStore.setStyleForComponent('header', {
+          backgroundColor: styleChanges.backgroundColor,
+          textColor: styleChanges.textColor,
+          accentColor: styleChanges.accentColor,
+          gradient: styleChanges.gradient,
+          borderRadius: styleChanges.borderRadius,
+          boxShadow: styleChanges.boxShadow,
+        });
+        console.log('✅ Applied header styles');
+      } else if (target === 'navigation') {
+        // Apply navigation-specific styles
+        walletStore.setStyleForComponent('navigation', {
+          backgroundColor: styleChanges.backgroundColor,
+          textColor: styleChanges.textColor,
+          accentColor: styleChanges.accentColor,
+          borderRadius: styleChanges.borderRadius,
+        });
+        console.log('✅ Applied navigation styles');
+      } else if (target === 'background' || target === 'global') {
+        // Apply global/background styles
+        if (layer === 'login') {
+          walletStore.setStyleForLayer('login', {
+            backgroundColor: styleChanges.backgroundColor,
+            primaryColor: styleChanges.accentColor || styleChanges.buttonColor,
+            font: walletStore.walletStyle.font, // Keep existing font
+          });
+        } else {
+          walletStore.setStyleForLayer('wallet', {
+            backgroundColor: styleChanges.backgroundColor,
+            primaryColor: styleChanges.accentColor || styleChanges.buttonColor,
+            font: walletStore.walletStyle.font, // Keep existing font
+          });
+        }
+        console.log('✅ Applied global/background styles');
       }
+
+      // Trigger customization animation
+      walletStore.setIsCustomizing(true);
+      setTimeout(() => {
+        walletStore.setIsCustomizing(false);
+      }, 2000);
+
+      console.log('🎨 Style changes applied successfully:', reasoning);
       
-      console.log('🎨 Applied style changes:', changes);
+    } catch (error) {
+      console.error('❌ Error applying style changes:', error);
     }
   },
 
