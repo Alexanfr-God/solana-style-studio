@@ -13,8 +13,8 @@ interface MessageHistoryProps {
 
 const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryProps) => {
   return (
-    <ScrollArea className="flex-1 pr-4">
-      <div className="space-y-4">
+    <ScrollArea className="h-full">
+      <div className="space-y-4 pr-4">
         {messages.length === 0 && (
           <div className="text-center py-8">
             <Bot className="h-12 w-12 text-white/30 mx-auto mb-4" />

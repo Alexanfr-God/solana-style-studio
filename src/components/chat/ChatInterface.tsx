@@ -32,9 +32,10 @@ const ChatInterface = () => {
   };
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full flex flex-col">
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[600px] flex flex-col">
       <CardContent className="p-4 h-full flex flex-col">
-        <div className="mb-4">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 mb-4">
           <h3 className="text-lg font-semibold text-white mb-2">
             Wallet Customization Chat
           </h3>
@@ -43,7 +44,8 @@ const ChatInterface = () => {
           </p>
         </div>
         
-        <div className="flex-1 flex flex-col min-h-0">
+        {/* Scrollable Message Area */}
+        <div className="flex-1 min-h-0 mb-4">
           <MessageHistory 
             messages={messages} 
             isLoading={isLoading}
@@ -52,20 +54,21 @@ const ChatInterface = () => {
           <div ref={messagesEndRef} />
         </div>
         
-        <div className="mt-4">
+        {/* Fixed Input Area */}
+        <div className="flex-shrink-0">
           <MessageInput 
             selectedElement={selectedElement}
             onElementSelect={setSelectedElement}
           />
+          
+          {selectedElement && (
+            <div className="mt-2 p-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
+              <p className="text-sm text-purple-300">
+                Selected element: <span className="font-medium">{selectedElement}</span>
+              </p>
+            </div>
+          )}
         </div>
-        
-        {selectedElement && (
-          <div className="mt-2 p-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
-            <p className="text-sm text-purple-300">
-              Selected element: <span className="font-medium">{selectedElement}</span>
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
