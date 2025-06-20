@@ -331,24 +331,6 @@ const WalletPreviewContainer = () => {
               border: '1px solid white'
             }}
           >
-            {/* Top Bar (Header) */}
-            <div className="w-full flex items-center justify-between px-4 py-3" style={{
-              height: '58px',
-              backgroundColor: '#1a1a1a',
-              borderTopLeftRadius: '1rem',
-              borderTopRightRadius: '1rem'
-            }}>
-              <div className="flex-1 flex justify-center">
-                <span className="font-bold text-white" style={{
-                  fontFamily: walletStyle.font || 'Inter',
-                  fontSize: '16px'
-                }}>
-                  phantom
-                </span>
-              </div>
-              {/* <HelpCircle className="h-5 w-5 text-white/70" /> */}
-            </div>
-            
             {/* Transition Strip */}
             <div className="w-full" style={{
               height: '1px',
