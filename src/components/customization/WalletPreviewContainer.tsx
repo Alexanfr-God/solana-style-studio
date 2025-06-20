@@ -71,8 +71,7 @@ const WalletPreviewContainer = () => {
   const renderLoginScreen = () => (
     <div className="relative p-6 flex flex-col" style={{
       backgroundColor: walletStyle.backgroundColor || '#181818',
-      height: '601px',
-      borderRadius: '1rem'
+      height: '601px'
     }}>
       {/* Phantom Ghost Icon - Centered in the main area */}
       <div className="flex-1 flex items-center justify-center">
