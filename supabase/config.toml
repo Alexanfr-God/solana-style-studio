@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.ai-wallet-designer]
 verify_jwt = false
+
+[functions.wallet-chat-gpt]
+verify_jwt = false
