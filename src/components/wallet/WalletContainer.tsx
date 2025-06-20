@@ -28,7 +28,7 @@ const WalletContainer = () => {
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden rounded-2xl">
       {renderLayer()}
     </div>
   );

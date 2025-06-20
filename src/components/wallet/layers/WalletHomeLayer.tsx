@@ -117,7 +117,7 @@ const WalletHomeLayer = () => {
         backgroundColor: globalStyle.backgroundColor || '#181818',
         fontFamily: globalStyle.fontFamily || 'Inter',
         backgroundImage: globalStyle.backgroundImage,
-        borderRadius: globalStyle.borderRadius,
+        borderRadius: '1rem',
         boxShadow: globalStyle.boxShadow
       }}
     >
@@ -128,7 +128,8 @@ const WalletHomeLayer = () => {
           backgroundColor: headerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
           background: headerStyle.gradient || headerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
           backdropFilter: headerStyle.backdropFilter || 'blur(10px)',
-          borderRadius: headerStyle.borderRadius || '0px',
+          borderTopLeftRadius: '1rem',
+          borderTopRightRadius: '1rem',
           border: headerStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: headerStyle.boxShadow,
           color: headerStyle.textColor || '#FFFFFF'

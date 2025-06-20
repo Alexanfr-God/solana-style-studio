@@ -41,7 +41,8 @@ const WalletBottomNavigation = () => {
         backgroundColor: navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
         background: navigationStyle.gradient || navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
         backdropFilter: navigationStyle.backdropFilter || 'blur(10px)',
-        borderRadius: navigationStyle.borderRadius || '0px',
+        borderBottomLeftRadius: '1rem',
+        borderBottomRightRadius: '1rem',
         border: navigationStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: navigationStyle.boxShadow
       }}
