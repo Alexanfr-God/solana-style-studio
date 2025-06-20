@@ -510,14 +510,14 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
         const state = get();
         const currentStyle = state.activeLayer === 'login' ? state.loginStyle : state.walletStyle;
         
-        // Base global styles that all components inherit
+        // Base global styles that all components inherit - FIXED: Use currentStyle directly
         const globalStyles = {
           backgroundColor: currentStyle.backgroundColor,
           backgroundImage: currentStyle.backgroundImage,
           textColor: currentStyle.textColor,
           fontFamily: currentStyle.fontFamily,
           color: currentStyle.textColor,
-          gradient: currentStyle.gradient,
+          gradient: currentStyle.gradient || `linear-gradient(135deg, ${currentStyle.accentColor || '#9945FF'}, ${currentStyle.backgroundColor || '#131313'})`,
           primaryColor: currentStyle.primaryColor || currentStyle.accentColor,
           accentColor: currentStyle.accentColor,
           borderRadius: currentStyle.borderRadius,
@@ -531,7 +531,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
             backgroundColor: currentStyle.backgroundColor || state.components.header.backgroundColor,
             color: currentStyle.textColor || state.components.header.color,
             fontFamily: currentStyle.fontFamily || state.components.header.fontFamily,
-            gradient: currentStyle.gradient,
+            gradient: currentStyle.gradient || globalStyles.gradient,
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.1)'
           },
@@ -569,7 +569,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
             backgroundColor: currentStyle.backgroundColor,
             borderRadius: currentStyle.borderRadius,
             boxShadow: currentStyle.boxShadow,
-            gradient: currentStyle.gradient
+            gradient: currentStyle.gradient || globalStyles.gradient
           },
           cards: {
             ...globalStyles,

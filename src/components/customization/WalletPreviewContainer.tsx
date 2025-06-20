@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -286,7 +287,7 @@ const WalletPreviewContainer = () => {
                   emotion={aiPet.emotion}
                   zone={aiPet.zone}
                   bodyType={aiPet.bodyType}
-                  color={walletStyle.primaryColor || '#9945FF'}
+                  color={globalStyle.primaryColor || '#9945FF'}
                   size={50}
                   onZoneChange={setAiPetZone}
                   onEmotionChange={setAiPetEmotion}
