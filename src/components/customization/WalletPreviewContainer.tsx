@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -187,7 +188,7 @@ const WalletPreviewContainer = () => {
   };
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full flex flex-col">
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[800px] flex flex-col">
       <CardContent className="p-6 h-full flex flex-col overflow-hidden">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
@@ -357,8 +358,16 @@ const WalletPreviewContainer = () => {
               backgroundColor: '#111111'
             }} />
             
-            {/* Main Section */}
-            {renderLoginScreen()}
+            {/* Main Section - Conditional Rendering Based on Current Layer */}
+            {currentLayer === 'login' ? renderLoginScreen() : (
+              <div style={{
+                height: '541px',
+                borderBottomLeftRadius: '1rem',
+                borderBottomRightRadius: '1rem'
+              }}>
+                <WalletContainer />
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
