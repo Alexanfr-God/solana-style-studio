@@ -1,9 +1,8 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore, AiPetEmotion } from '@/stores/walletCustomizationStore';
-import { Eye, EyeOff, HelpCircle, Lock, Unlock } from 'lucide-react';
+import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import { useState } from 'react';
 import AiPet from '@/components/ui/AiPet';
 import WalletContainer from '@/components/wallet/WalletContainer';
@@ -72,9 +71,8 @@ const WalletPreviewContainer = () => {
   const renderLoginScreen = () => (
     <div className="relative p-6 flex flex-col" style={{
       backgroundColor: walletStyle.backgroundColor || '#181818',
-      height: '541px',
-      borderBottomLeftRadius: '1rem',
-      borderBottomRightRadius: '1rem'
+      height: '601px',
+      borderRadius: '1rem'
     }}>
       {/* Phantom Ghost Icon - Centered in the main area */}
       <div className="flex-1 flex items-center justify-center">
@@ -361,9 +359,8 @@ const WalletPreviewContainer = () => {
             {/* Main Section - Conditional Rendering Based on Current Layer */}
             {currentLayer === 'login' ? renderLoginScreen() : (
               <div style={{
-                height: '541px',
-                borderBottomLeftRadius: '1rem',
-                borderBottomRightRadius: '1rem'
+                height: '601px',
+                borderRadius: '1rem'
               }}>
                 <WalletContainer />
               </div>
