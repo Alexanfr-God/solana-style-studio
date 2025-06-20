@@ -188,7 +188,7 @@ const WalletPreviewContainer = () => {
   };
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[800px] flex flex-col">
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[1200px] flex flex-col">
       <CardContent className="p-6 h-full flex flex-col overflow-hidden">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>

@@ -51,8 +51,8 @@ const WalletAlivePlayground = () => {
             </div>
           </div>
 
-          {/* Main Layout - Fixed Height Container с увеличенной высотой до 800px */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[800px]">
+          {/* Main Layout - Fixed Height Container с увеличенной высотой до 1200px */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[1200px]">
             {/* Left Column - Chat Interface */}
             <div className="space-y-6 h-full overflow-hidden">
               <div className="h-full">
