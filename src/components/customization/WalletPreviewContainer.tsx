@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore, AiPetEmotion } from '@/stores/walletCustomizationStore';
-import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
+import { Eye, EyeOff, HelpCircle, Lock, Unlock } from 'lucide-react';
 import { useState } from 'react';
 import AiPet from '@/components/ui/AiPet';
 import WalletContainer from '@/components/wallet/WalletContainer';
@@ -71,7 +71,9 @@ const WalletPreviewContainer = () => {
   const renderLoginScreen = () => (
     <div className="relative p-6 flex flex-col" style={{
       backgroundColor: walletStyle.backgroundColor || '#181818',
-      height: '601px'
+      height: '541px',
+      borderBottomLeftRadius: '1rem',
+      borderBottomRightRadius: '1rem'
     }}>
       {/* Phantom Ghost Icon - Centered in the main area */}
       <div className="flex-1 flex items-center justify-center">
@@ -185,8 +187,8 @@ const WalletPreviewContainer = () => {
   };
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[1200px] flex flex-col">
-      <CardContent className="p-6 h-full flex flex-col overflow-hidden">
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
+      <CardContent className="p-6 h-full flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
           
@@ -331,23 +333,49 @@ const WalletPreviewContainer = () => {
               border: '1px solid white'
             }}
           >
-            {/* Transition Strip */}
-            <div className="w-full" style={{
-              height: '1px',
-              backgroundColor: '#111111'
-            }} />
+            {currentLayer === 'login' ? (
+              <>
+                {/* Top Bar (Header) */}
+                <div className="w-full flex items-center justify-between px-4 py-3" style={{
+                  height: '58px',
+                  backgroundColor: '#1a1a1a',
+                  borderTopLeftRadius: '1rem',
+                  borderTopRightRadius: '1rem'
+                }}>
+                  <div className="flex-1 flex justify-center">
+                    <span className="font-bold text-white" style={{
+                      fontFamily: walletStyle.font || 'Inter',
+                      fontSize: '16px'
+                    }}>
+                      phantom
+                    </span>
+                  </div>
+                  <HelpCircle className="h-5 w-5 text-white/70" />
+                </div>
+                
+                {/* Transition Strip */}
+                <div className="w-full" style={{
+                  height: '1px',
+                  backgroundColor: '#111111'
+                }} />
+                
+                {/* Main Section */}
+                {renderLoginScreen()}
+              </>
+            ) : (
+              <WalletContainer />
+            )}
             
-            {/* Main Section - Conditional Rendering Based on Current Layer */}
-            {currentLayer === 'login' ? renderLoginScreen() : (
-              <div style={{
-                height: '601px',
-                borderRadius: '1rem'
-              }}>
-                <WalletContainer />
+            {/* Customization Indicator */}
+            {isCustomizing && (
+              <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded animate-bounce">
+                Applying Style...
               </div>
             )}
           </div>
         </div>
+        
+        
       </CardContent>
     </Card>
   );
