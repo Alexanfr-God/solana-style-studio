@@ -51,19 +51,23 @@ const WalletAlivePlayground = () => {
             </div>
           </div>
 
-          {/* Main Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Layout - Fixed Height Container */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[700px]">
             {/* Left Column - Chat Interface */}
-            <div className="space-y-6">
-              <ChatInterface />
+            <div className="space-y-6 h-full overflow-hidden">
+              <div className="h-full">
+                <ChatInterface />
+              </div>
             </div>
             
             {/* Right Column - Wallet Preview */}
-            <div className="lg:col-span-2 space-y-4">
-              <WalletPreviewContainer />
+            <div className="lg:col-span-2 space-y-4 h-full flex flex-col">
+              <div className="flex-1 h-[650px] overflow-hidden">
+                <WalletPreviewContainer />
+              </div>
               
               {/* MINT Button */}
-              <div className="flex justify-center">
+              <div className="flex justify-center flex-shrink-0">
                 <Button
                   onClick={handleMintClick}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105"

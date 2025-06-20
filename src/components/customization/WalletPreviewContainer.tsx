@@ -187,9 +187,9 @@ const WalletPreviewContainer = () => {
   };
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
-      <CardContent className="p-6 h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[650px] flex flex-col flex-shrink-0">
+      <CardContent className="p-6 h-full flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between mb-6 flex-shrink-0">
           <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
           
           {/* Wallet Selector */}
@@ -215,7 +215,7 @@ const WalletPreviewContainer = () => {
         </div>
 
         {/* Body Type Selector */}
-        <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="flex items-center justify-center gap-2 mb-4 flex-shrink-0">
           <Button
             variant={aiPet.bodyType === 'phantom' ? 'default' : 'outline'}
             size="sm"
@@ -235,7 +235,7 @@ const WalletPreviewContainer = () => {
         </div>
 
         {/* Animation Type Selector */}
-        <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="flex items-center justify-center gap-2 mb-4 flex-shrink-0">
           <Button
             variant={animationType === 'rectangle' ? 'default' : 'outline'}
             size="sm"
@@ -254,8 +254,8 @@ const WalletPreviewContainer = () => {
           </Button>
         </div>
         
-        {/* Wallet container with AI Pet orbital zone */}
-        <div className="flex-1 flex items-center justify-center overflow-visible relative">
+        {/* Wallet container with AI Pet orbital zone - Fixed height */}
+        <div className="flex-1 flex items-center justify-center overflow-visible relative min-h-0">
           {/* AI Pet в режиме outside - позиционируется относительно этого контейнера */}
           {aiPet.isVisible && aiPet.zone === 'outside' && containerBounds && (
             <div
@@ -319,7 +319,7 @@ const WalletPreviewContainer = () => {
           <div
             ref={walletContainerRef}
             className={`
-              relative rounded-2xl transition-all duration-1000 z-10
+              relative rounded-2xl transition-all duration-1000 z-10 flex-shrink-0
               ${isCustomizing ? 'scale-105 animate-pulse' : 'scale-100'}
             `}
             style={{
@@ -374,8 +374,6 @@ const WalletPreviewContainer = () => {
             )}
           </div>
         </div>
-        
-        
       </CardContent>
     </Card>
   );
