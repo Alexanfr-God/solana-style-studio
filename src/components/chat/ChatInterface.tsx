@@ -23,7 +23,7 @@ const ChatInterface = () => {
   };
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[600px] flex flex-col">
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[835px] flex flex-col">
       <CardContent className="p-4 h-full flex flex-col">
         {/* Fixed Header */}
         <div className="flex-shrink-0 mb-4">
@@ -36,7 +36,7 @@ const ChatInterface = () => {
         </div>
         
         {/* Fixed Height Message Area */}
-        <div className="flex-1 min-h-0 mb-4 h-[400px]">
+        <div className="flex-1 min-h-0 mb-4 h-[635px]">
           <MessageHistory 
             messages={messages} 
             isLoading={isLoading}
