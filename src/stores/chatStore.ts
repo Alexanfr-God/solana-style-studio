@@ -181,13 +181,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
         throw new Error(`Image generation error: ${response.error.message}`);
       }
 
+      // Handle unified response format - both services now return imageUrl
       const generatedImageUrl = response?.data?.imageUrl || response?.data?.output?.[0];
       
       if (generatedImageUrl) {
         const assistantMessage: ChatMessage = {
           id: `assistant-${Date.now()}`,
           type: 'assistant',
-          content: `Here's your generated image! You can apply it as a background to your wallet.`,
+          content: `Here's your generated image! It's been saved to your gallery and you can apply it as a background to your wallet.`,
           timestamp: new Date(),
           imageUrl: generatedImageUrl,
           isGenerated: true,
@@ -198,7 +199,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           isLoading: false
         }));
 
-        console.log('✅ Image generated successfully:', generatedImageUrl);
+        console.log('✅ Image generated and saved successfully:', generatedImageUrl);
       } else {
         throw new Error('No image returned from generation service');
       }
@@ -227,7 +228,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const updatedStyle = {
       ...walletStore.walletStyle,
       backgroundImage: `url(${imageUrl})`,
-      styleNotes: 'Generated background image applied'
+      styleNotes: 'Generated background image applied from gallery'
     };
     
     walletStore.setWalletStyle(updatedStyle);

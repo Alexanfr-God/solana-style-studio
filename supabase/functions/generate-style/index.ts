@@ -4,7 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { createLayoutAwarePrompt } from "./utils/layoutPrompts.ts";
 import { buildStylePrompt } from "./utils/stylePromptBuilder.ts";
-import { generateBackgroundImage, getDominantColors } from "./utils/imageAnalysis.ts";
+import { generateBackgroundImage, getDominantColors, saveImageToBucket } from "./utils/imageAnalysis.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,11 +18,11 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, image_url, layer_type, user_id } = await req.json();
+    const { prompt, image_url, layer_type, user_id, mode } = await req.json();
 
     // Create a Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get OpenAI API key
@@ -31,8 +31,39 @@ serve(async (req) => {
       throw new Error("OpenAI API key not found");
     }
 
+    console.log(`Processing request - Mode: ${mode}, Layer: ${layer_type}, Prompt: ${prompt}`);
+
+    // Handle image generation mode
+    if (mode === 'image_generation') {
+      console.log("Image generation mode - generating with DALL-E");
+      
+      try {
+        // Generate image with OpenAI
+        const generatedImageUrl = await generateBackgroundImage(prompt, openAiApiKey);
+        console.log("Image generated successfully by OpenAI:", generatedImageUrl.substring(0, 50) + "...");
+        
+        // Save to our storage bucket
+        const publicUrl = await saveImageToBucket(generatedImageUrl, prompt, 'dalle', supabase);
+        console.log("Image saved to bucket:", publicUrl);
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            imageUrl: publicUrl,
+            mode: 'dalle'
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      } catch (error) {
+        console.error("Image generation error:", error);
+        throw new Error(`Failed to generate image: ${error.message}`);
+      }
+    }
+
+    // Handle style generation mode (existing logic)
     console.log(`Starting style generation for ${layer_type} layer`);
-    console.log(`Prompt: ${prompt}`);
     
     // Create layout-aware background prompt based on layer type
     const layoutConfig = await createLayoutAwarePrompt(prompt, layer_type);
@@ -42,8 +73,10 @@ serve(async (req) => {
     if (!image_url) {
       console.log("No image provided, generating one with OpenAI");
       try {
-        backgroundImage = await generateBackgroundImage(layoutConfig.enhancedPrompt, openAiApiKey);
-        console.log("Image generated successfully:", backgroundImage.substring(0, 50) + "...");
+        const generatedImageUrl = await generateBackgroundImage(layoutConfig.enhancedPrompt, openAiApiKey);
+        // Save to bucket and get public URL
+        backgroundImage = await saveImageToBucket(generatedImageUrl, prompt, 'dalle', supabase);
+        console.log("Generated image saved to bucket:", backgroundImage);
       } catch (error) {
         console.error("Image generation error:", error);
         throw new Error(`Failed to generate image: ${error.message}`);
@@ -91,6 +124,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         style: styleJson,
+        imageUrl: backgroundImage
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

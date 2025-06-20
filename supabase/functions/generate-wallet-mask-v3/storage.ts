@@ -1,106 +1,83 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// V4 Architecture: Clean storage operations
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { V4_CONFIG } from './utils/constants.ts';
-
-export async function storeProcessedImage(
-  imageUrl: string,
-  userId: string,
-  supabaseUrl: string,
-  supabaseKey: string,
-  isBackgroundRemoved: boolean = false
-): Promise<{ path: string; publicUrl: string }> {
-  console.log("💾 V4: Storing processed image");
-  
+/**
+ * Saves generated image to Supabase storage bucket
+ * @param imageUrl URL of the generated image from Replicate
+ * @param prompt Original prompt used for generation
+ * @returns Public URL of saved image
+ */
+export async function saveReplicateImageToBucket(
+  imageUrl: string, 
+  prompt: string
+): Promise<string> {
   try {
-    // Download image
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Download the image
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
-      throw new Error(`Failed to download: ${imageResponse.status}`);
+      throw new Error(`Failed to download image: ${imageResponse.status}`);
     }
-    
+
     const imageBlob = await imageResponse.blob();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const suffix = isBackgroundRemoved ? 'v4-nobg' : 'v4-generated';
-    const fileName = `${suffix}-mask-${timestamp}.png`;
-    const filePath = `${userId}/${fileName}`;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Upload to storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('generated-masks')
-      .upload(filePath, imageBlob, {
+    const filename = `replicate-${timestamp}.png`;
+    const filepath = `generated/${filename}`;
+
+    console.log('Uploading image to bucket:', filepath);
+
+    // Upload to storage bucket
+    const { data: storageData, error: storageError } = await supabase.storage
+      .from('generated-images')
+      .upload(filepath, imageBlob, {
         contentType: 'image/png',
-        upsert: false
+        cacheControl: '3600'
       });
-    
-    if (uploadError) {
-      throw new Error(`Upload failed: ${uploadError.message}`);
+
+    if (storageError) {
+      console.error('Storage upload error:', storageError);
+      throw new Error(`Failed to save image: ${storageError.message}`);
     }
-    
+
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('generated-masks')
-      .getPublicUrl(filePath);
-    
-    console.log("✅ V4: Image stored successfully");
-    return {
-      path: filePath,
-      publicUrl: urlData.publicUrl
-    };
-  } catch (error) {
-    console.error("❌ V4: Storage error:", error);
-    throw error;
-  }
-}
+      .from('generated-images')
+      .getPublicUrl(filepath);
 
-export async function storeMaskMetadata(
-  userId: string,
-  maskData: {
-    prompt: string;
-    style: string;
-    imageUrl: string;
-    storagePath?: string;
-    backgroundRemoved: boolean;
-    processingSteps: any[];
-    referenceGuided: boolean;
-    zonePreference: string;
-  },
-  supabaseUrl: string,
-  supabaseKey: string
-): Promise<void> {
-  try {
-    console.log("💾 V4: Storing mask metadata with black square guide reference");
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const publicUrl = urlData.publicUrl;
+    console.log('Image saved successfully:', publicUrl);
 
-    const { error } = await supabase.from('ai_mask_results').insert({
-      user_id: userId,
-      prompt: maskData.prompt,
-      style: maskData.style,
-      image_url: maskData.imageUrl,
-      storage_path: maskData.storagePath,
-      layout: { 
-        v4_architecture: true, 
-        processing_steps: maskData.processingSteps,
-        reference_guided: maskData.referenceGuided,
-        zone_preference: maskData.zonePreference,
-        guide_type: 'black_square'
-      },
-      color_palette: ["#V4", "#NOBG", "#CLEAN"],
-      safe_zone: V4_CONFIG.SAFE_ZONE,
-      transparency_validated: maskData.backgroundRemoved,
-      reference_image_url: V4_CONFIG.GUIDE_IMAGE_URL,
-      wallet_base_image_url: V4_CONFIG.WALLET_BASE_IMAGE
-    });
-    
-    if (error) {
-      console.error("V4: Metadata storage error:", error);
-    } else {
-      console.log("✅ V4: Metadata stored successfully with black square guide reference");
+    // Save metadata to database
+    try {
+      const { error: dbError } = await supabase
+        .from('generated_images')
+        .insert({
+          prompt,
+          storage_path: filepath,
+          public_url: publicUrl,
+          generation_mode: 'replicate',
+          metadata: { 
+            original_url: imageUrl,
+            timestamp,
+            size: imageBlob.size
+          }
+        });
+
+      if (dbError) {
+        console.error('Database insert error:', dbError);
+        // Don't throw here - image is saved, metadata is optional
+      }
+    } catch (metaError) {
+      console.error('Metadata save error:', metaError);
+      // Continue - image is successfully saved
     }
+
+    return publicUrl;
   } catch (error) {
-    console.error("❌ V4: Metadata error:", error);
+    console.error('Error saving Replicate image to bucket:', error);
+    throw error;
   }
 }

@@ -195,6 +195,39 @@ export type Database = {
           },
         ]
       }
+      generated_images: {
+        Row: {
+          created_at: string | null
+          generation_mode: string
+          id: string
+          metadata: Json | null
+          prompt: string
+          public_url: string
+          storage_path: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          generation_mode: string
+          id?: string
+          metadata?: Json | null
+          prompt: string
+          public_url: string
+          storage_path: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          generation_mode?: string
+          id?: string
+          metadata?: Json | null
+          prompt?: string
+          public_url?: string
+          storage_path?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       image_analysis_cache: {
         Row: {
           analysis_duration_ms: number | null
