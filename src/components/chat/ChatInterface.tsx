@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import MessageHistory from './MessageHistory';
 import MessageInput from './MessageInput';
@@ -17,15 +17,6 @@ export interface ChatMessage {
 const ChatInterface = () => {
   const { messages, isLoading, sendMessage } = useChatStore();
   const [selectedElement, setSelectedElement] = useState<string>('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const handleStarterClick = (message: string) => {
     sendMessage({ content: message });
@@ -51,7 +42,6 @@ const ChatInterface = () => {
             isLoading={isLoading}
             onStarterClick={handleStarterClick}
           />
-          <div ref={messagesEndRef} />
         </div>
         
         {/* Fixed Input Area */}
