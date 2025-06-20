@@ -35,8 +35,8 @@ const ChatInterface = () => {
           </p>
         </div>
         
-        {/* Fixed Height Message Area */}
-        <div className="flex-1 min-h-0 mb-4 h-[520px] overflow-hidden">
+        {/* Fixed Height Message Area - Увеличено с 520px до 580px */}
+        <div className="flex-1 min-h-0 mb-4 h-[580px] overflow-hidden">
           <MessageHistory 
             messages={messages} 
             isLoading={isLoading}

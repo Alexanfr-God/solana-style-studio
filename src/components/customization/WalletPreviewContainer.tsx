@@ -187,9 +187,9 @@ const WalletPreviewContainer = () => {
   };
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[650px] flex flex-col flex-shrink-0">
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full flex flex-col">
       <CardContent className="p-6 h-full flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between mb-6 flex-shrink-0">
+        <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
           
           {/* Wallet Selector */}
@@ -215,7 +215,7 @@ const WalletPreviewContainer = () => {
         </div>
 
         {/* Body Type Selector */}
-        <div className="flex items-center justify-center gap-2 mb-4 flex-shrink-0">
+        <div className="flex items-center justify-center gap-2 mb-4">
           <Button
             variant={aiPet.bodyType === 'phantom' ? 'default' : 'outline'}
             size="sm"
@@ -235,7 +235,7 @@ const WalletPreviewContainer = () => {
         </div>
 
         {/* Animation Type Selector */}
-        <div className="flex items-center justify-center gap-2 mb-4 flex-shrink-0">
+        <div className="flex items-center justify-center gap-2 mb-4">
           <Button
             variant={animationType === 'rectangle' ? 'default' : 'outline'}
             size="sm"
@@ -254,8 +254,8 @@ const WalletPreviewContainer = () => {
           </Button>
         </div>
         
-        {/* Wallet container with AI Pet orbital zone - Fixed height */}
-        <div className="flex-1 flex items-center justify-center overflow-visible relative min-h-0">
+        {/* Wallet container with AI Pet orbital zone */}
+        <div className="flex-1 flex items-center justify-center overflow-visible relative">
           {/* AI Pet в режиме outside - позиционируется относительно этого контейнера */}
           {aiPet.isVisible && aiPet.zone === 'outside' && containerBounds && (
             <div
@@ -319,7 +319,7 @@ const WalletPreviewContainer = () => {
           <div
             ref={walletContainerRef}
             className={`
-              relative rounded-2xl transition-all duration-1000 z-10 flex-shrink-0
+              relative rounded-2xl transition-all duration-1000 z-10
               ${isCustomizing ? 'scale-105 animate-pulse' : 'scale-100'}
             `}
             style={{
@@ -333,45 +333,32 @@ const WalletPreviewContainer = () => {
               border: '1px solid white'
             }}
           >
-            {currentLayer === 'login' ? (
-              <>
-                {/* Top Bar (Header) */}
-                <div className="w-full flex items-center justify-between px-4 py-3" style={{
-                  height: '58px',
-                  backgroundColor: '#1a1a1a',
-                  borderTopLeftRadius: '1rem',
-                  borderTopRightRadius: '1rem'
+            {/* Top Bar (Header) */}
+            <div className="w-full flex items-center justify-between px-4 py-3" style={{
+              height: '58px',
+              backgroundColor: '#1a1a1a',
+              borderTopLeftRadius: '1rem',
+              borderTopRightRadius: '1rem'
+            }}>
+              <div className="flex-1 flex justify-center">
+                <span className="font-bold text-white" style={{
+                  fontFamily: walletStyle.font || 'Inter',
+                  fontSize: '16px'
                 }}>
-                  <div className="flex-1 flex justify-center">
-                    <span className="font-bold text-white" style={{
-                      fontFamily: walletStyle.font || 'Inter',
-                      fontSize: '16px'
-                    }}>
-                      phantom
-                    </span>
-                  </div>
-                  <HelpCircle className="h-5 w-5 text-white/70" />
-                </div>
-                
-                {/* Transition Strip */}
-                <div className="w-full" style={{
-                  height: '1px',
-                  backgroundColor: '#111111'
-                }} />
-                
-                {/* Main Section */}
-                {renderLoginScreen()}
-              </>
-            ) : (
-              <WalletContainer />
-            )}
-            
-            {/* Customization Indicator */}
-            {isCustomizing && (
-              <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded animate-bounce">
-                Applying Style...
+                  phantom
+                </span>
               </div>
-            )}
+              <HelpCircle className="h-5 w-5 text-white/70" />
+            </div>
+            
+            {/* Transition Strip */}
+            <div className="w-full" style={{
+              height: '1px',
+              backgroundColor: '#111111'
+            }} />
+            
+            {/* Main Section */}
+            {renderLoginScreen()}
           </div>
         </div>
       </CardContent>

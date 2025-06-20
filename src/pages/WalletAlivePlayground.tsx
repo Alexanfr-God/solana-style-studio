@@ -62,7 +62,7 @@ const WalletAlivePlayground = () => {
             
             {/* Right Column - Wallet Preview */}
             <div className="lg:col-span-2 space-y-4 h-full flex flex-col">
-              <div className="flex-1 h-[650px] overflow-hidden">
+              <div className="flex-1 overflow-hidden">
                 <WalletPreviewContainer />
               </div>
               
