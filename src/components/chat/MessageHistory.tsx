@@ -62,10 +62,10 @@ const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryP
     <div className="relative h-full">
       <ScrollArea 
         ref={scrollAreaRef}
-        className="h-full"
+        className="h-full w-full"
         onScrollCapture={handleScroll}
       >
-        <div className="space-y-4 pr-4 pb-4">
+        <div className="space-y-4 pr-4 pb-4 min-h-full">
           {messages.length === 0 && (
             <div className="text-center py-8">
               <Bot className="h-12 w-12 text-white/30 mx-auto mb-4" />
