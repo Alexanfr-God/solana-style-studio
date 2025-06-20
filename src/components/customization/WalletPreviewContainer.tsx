@@ -9,7 +9,7 @@ import WalletContainer from '@/components/wallet/WalletContainer';
 
 const WalletPreviewContainer = () => {
   const {
-    walletStyle,
+    getStyleForComponent,
     selectedWallet,
     setSelectedWallet,
     isCustomizing,
@@ -34,6 +34,10 @@ const WalletPreviewContainer = () => {
   const [debugMode, setDebugMode] = useState(false);
   const [animationType, setAnimationType] = useState<'orbit' | 'rectangle'>('rectangle');
   const walletContainerRef = useRef<HTMLDivElement>(null);
+
+  // Get unified styles for all components
+  const globalStyle = getStyleForComponent('global');
+  const headerStyle = getStyleForComponent('header');
 
   // Set container bounds for AiPet floating behavior
   useEffect(() => {
@@ -70,26 +74,28 @@ const WalletPreviewContainer = () => {
 
   const renderLoginScreen = () => (
     <div className="relative p-6 flex flex-col" style={{
-      backgroundColor: walletStyle.backgroundColor || '#181818',
+      backgroundColor: globalStyle.backgroundColor || '#181818',
+      backgroundImage: globalStyle.backgroundImage,
+      background: globalStyle.gradient || globalStyle.backgroundColor || '#181818',
       height: '541px',
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
     }}>
       {/* Phantom Ghost Icon - Centered in the main area */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + (walletStyle.primaryColor || '#9945FF') + '50)' }}>
+        <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + (globalStyle.primaryColor || '#9945FF') + '50)' }}>
           <img 
             src="/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png" 
-            alt="Phantom Ghost Logo" 
+            alt="Phantom Glass Logo" 
             width="120" 
             height="120" 
             className="max-w-[120px] animate-pulse-slow"
             style={{
-              filter: walletStyle.primaryColor ? `hue-rotate(${getHueRotate(walletStyle.primaryColor)}deg) saturate(1.2)` : 'none'
+              filter: globalStyle.primaryColor ? `hue-rotate(${getHueRotate(globalStyle.primaryColor)}deg) saturate(1.2)` : 'none'
             }}
           />
           <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-            style={{ border: `2px solid ${walletStyle.primaryColor || '#9945FF'}` }}
+            style={{ border: `2px solid ${globalStyle.primaryColor || '#9945FF'}` }}
           />
         </div>
       </div>
@@ -98,7 +104,8 @@ const WalletPreviewContainer = () => {
       <div className="space-y-3 mb-6">
         {/* Password Title */}
         <h2 className="text-center font-medium text-white text-lg" style={{
-          fontFamily: walletStyle.font || 'Inter'
+          fontFamily: globalStyle.fontFamily || 'Inter',
+          color: globalStyle.textColor || '#FFFFFF'
         }}>
           Enter your password
         </h2>
@@ -116,7 +123,7 @@ const WalletPreviewContainer = () => {
             className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm"
             style={{
               backgroundColor: '#0f0f0f',
-              fontFamily: walletStyle.font || 'Inter'
+              fontFamily: globalStyle.fontFamily || 'Inter'
             }}
           />
           {password && (
@@ -137,7 +144,7 @@ const WalletPreviewContainer = () => {
         <div className="text-center">
           <button
             className="text-gray-400 hover:text-gray-300 text-sm"
-            style={{ fontFamily: walletStyle.font || 'Inter' }}
+            style={{ fontFamily: globalStyle.fontFamily || 'Inter' }}
             onClick={triggerAiPetInteraction}
           >
             Forgot password?
@@ -150,8 +157,8 @@ const WalletPreviewContainer = () => {
         <button
           className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
           style={{
-            backgroundColor: walletStyle.primaryColor || '#a390f5',
-            fontFamily: walletStyle.font || 'Inter',
+            backgroundColor: globalStyle.primaryColor || '#a390f5',
+            fontFamily: globalStyle.fontFamily || 'Inter',
             borderRadius: '12px'
           }}
           onClick={handleUnlock}
@@ -315,7 +322,7 @@ const WalletPreviewContainer = () => {
             )}
           </div>
           
-          {/* Wallet container */}
+          {/* Wallet container - UPDATED TO USE UNIFIED STYLES */}
           <div
             ref={walletContainerRef}
             className={`
@@ -325,8 +332,9 @@ const WalletPreviewContainer = () => {
             style={{
               width: '361px',
               height: '601px',
-              backgroundColor: walletStyle.backgroundColor || '#1a1a1a',
-              backgroundImage: walletStyle.image ? `url(${walletStyle.image})` : undefined,
+              backgroundColor: globalStyle.backgroundColor || '#1a1a1a',
+              backgroundImage: globalStyle.backgroundImage,
+              background: globalStyle.gradient || globalStyle.backgroundColor || '#1a1a1a',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundBlendMode: 'overlay',
@@ -335,17 +343,19 @@ const WalletPreviewContainer = () => {
           >
             {currentLayer === 'login' ? (
               <>
-                {/* Top Bar (Header) */}
+                {/* Top Bar (Header) - UPDATED TO USE UNIFIED STYLES */}
                 <div className="w-full flex items-center justify-between px-4 py-3" style={{
                   height: '58px',
-                  backgroundColor: '#1a1a1a',
+                  backgroundColor: headerStyle.backgroundColor || '#1a1a1a',
+                  background: headerStyle.gradient || headerStyle.backgroundColor || '#1a1a1a',
                   borderTopLeftRadius: '1rem',
                   borderTopRightRadius: '1rem'
                 }}>
                   <div className="flex-1 flex justify-center">
                     <span className="font-bold text-white" style={{
-                      fontFamily: walletStyle.font || 'Inter',
-                      fontSize: '16px'
+                      fontFamily: headerStyle.fontFamily || 'Inter',
+                      fontSize: '16px',
+                      color: headerStyle.color || '#FFFFFF'
                     }}>
                       phantom
                     </span>
@@ -374,8 +384,6 @@ const WalletPreviewContainer = () => {
             )}
           </div>
         </div>
-        
-        
       </CardContent>
     </Card>
   );

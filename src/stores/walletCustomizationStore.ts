@@ -25,6 +25,7 @@ export interface WalletStyle {
   primaryColor?: string;
   font?: string;
   image?: string;
+  gradient?: string;
 }
 
 interface ComponentStyles {
@@ -193,7 +194,8 @@ const defaultLoginStyle: WalletStyle = {
   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
   styleNotes: 'default login style',
   primaryColor: '#9945FF',
-  font: 'Inter, sans-serif'
+  font: 'Inter, sans-serif',
+  gradient: 'linear-gradient(135deg, #9945FF, #FF5733)'
 };
 
 const defaultWalletStyle: WalletStyle = {
@@ -207,7 +209,8 @@ const defaultWalletStyle: WalletStyle = {
   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
   styleNotes: 'default wallet style',
   primaryColor: '#9945FF',
-  font: 'Inter, sans-serif'
+  font: 'Inter, sans-serif',
+  gradient: 'linear-gradient(135deg, #9945FF, #FF5733)'
 };
 
 const defaultAccounts: Account[] = [
@@ -403,12 +406,30 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
       },
       setLoginStyle: (style: WalletStyle) => set({ loginStyle: style }),
       setWalletStyle: (style: WalletStyle) => {
+        const updatedStyle = { 
+          ...style, 
+          primaryColor: style.accentColor || style.primaryColor,
+          font: style.fontFamily || style.font,
+          gradient: style.gradient
+        };
+        
         set({ 
-          walletStyle: { 
-            ...style, 
-            primaryColor: style.accentColor || style.primaryColor,
-            font: style.fontFamily || style.font 
-          } 
+          walletStyle: updatedStyle, 
+          components: {
+            ...get().components,
+            header: {
+              ...get().components.header,
+              backgroundColor: updatedStyle.backgroundColor,
+              color: updatedStyle.textColor,
+              fontFamily: updatedStyle.fontFamily
+            },
+            buttons: {
+              ...get().components.buttons,
+              backgroundColor: updatedStyle.buttonColor || updatedStyle.accentColor,
+              color: updatedStyle.buttonTextColor,
+              borderRadius: updatedStyle.borderRadius
+            }
+          }
         });
       },
       setStyleForLayer: (layer: LayerType, style: WalletStyle) => {
@@ -487,43 +508,78 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
       // Component Styling
       getStyleForComponent: (component: string) => {
         const state = get();
-        const baseStyles = {
-          global: {
-            backgroundColor: state.walletStyle.backgroundColor,
-            textColor: state.walletStyle.textColor,
-            fontFamily: state.walletStyle.fontFamily,
-            color: state.walletStyle.textColor
+        const currentStyle = state.activeLayer === 'login' ? state.loginStyle : state.walletStyle;
+        
+        // Base global styles that all components inherit
+        const globalStyles = {
+          backgroundColor: currentStyle.backgroundColor,
+          backgroundImage: currentStyle.backgroundImage,
+          textColor: currentStyle.textColor,
+          fontFamily: currentStyle.fontFamily,
+          color: currentStyle.textColor,
+          gradient: currentStyle.gradient,
+          primaryColor: currentStyle.primaryColor || currentStyle.accentColor,
+          accentColor: currentStyle.accentColor,
+          borderRadius: currentStyle.borderRadius,
+          boxShadow: currentStyle.boxShadow
+        };
+        
+        const componentStyles = {
+          global: globalStyles,
+          header: {
+            ...globalStyles,
+            backgroundColor: currentStyle.backgroundColor || state.components.header.backgroundColor,
+            color: currentStyle.textColor || state.components.header.color,
+            fontFamily: currentStyle.fontFamily || state.components.header.fontFamily,
+            gradient: currentStyle.gradient,
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           },
-          header: state.components.header,
-          buttons: state.components.buttons,
-          inputs: state.components.inputs,
+          buttons: {
+            ...globalStyles,
+            backgroundColor: currentStyle.buttonColor || currentStyle.accentColor,
+            color: currentStyle.buttonTextColor || currentStyle.textColor,
+            borderRadius: currentStyle.borderRadius || state.components.buttons.borderRadius,
+            boxShadow: currentStyle.boxShadow || state.components.buttons.boxShadow
+          },
+          inputs: {
+            ...globalStyles,
+            backgroundColor: state.components.inputs.backgroundColor,
+            borderColor: state.components.inputs.borderColor,
+            focusColor: currentStyle.accentColor || state.components.inputs.focusColor
+          },
           navigation: {
+            ...globalStyles,
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(10px)',
             borderRadius: '0px',
             border: '1px solid rgba(255, 255, 255, 0.1)',
-            fontFamily: state.walletStyle.fontFamily
+            fontFamily: currentStyle.fontFamily
           },
           overlays: {
+            ...globalStyles,
             backgroundColor: 'rgba(24, 24, 24, 0.95)',
             backdropFilter: 'blur(20px)',
-            borderRadius: '16px',
+            borderRadius: currentStyle.borderRadius || '16px',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)'
           },
           containers: {
-            backgroundColor: state.walletStyle.backgroundColor,
-            borderRadius: state.walletStyle.borderRadius,
-            boxShadow: state.walletStyle.boxShadow
+            ...globalStyles,
+            backgroundColor: currentStyle.backgroundColor,
+            borderRadius: currentStyle.borderRadius,
+            boxShadow: currentStyle.boxShadow,
+            gradient: currentStyle.gradient
           },
           cards: {
+            ...globalStyles,
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: state.walletStyle.borderRadius,
-            boxShadow: state.walletStyle.boxShadow
+            borderRadius: currentStyle.borderRadius,
+            boxShadow: currentStyle.boxShadow
           }
         };
         
-        return baseStyles[component as keyof typeof baseStyles] || baseStyles.global;
+        return componentStyles[component as keyof typeof componentStyles] || componentStyles.global;
       },
       
       getTokenColors: () => defaultTokenColors,
@@ -589,7 +645,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
           boxShadow: walletStyles.boxShadow,
           styleNotes: walletStyles.styleNotes,
           primaryColor: walletStyles.accentColor,
-          font: walletStyles.fontFamily
+          font: walletStyles.fontFamily,
+          gradient: walletStyles.gradient
         };
         
         set({
@@ -652,7 +709,8 @@ export const useWalletCustomizationStore = create<WalletCustomizationStore>()(
               boxShadow: get().walletStyle.boxShadow,
               styleNotes: `AI Generated - Theme: ${result.result.aiAnalysis?.styleType || 'custom'}`,
               primaryColor: styles.variables['--primary-color'] || get().walletStyle.accentColor,
-              font: get().walletStyle.fontFamily
+              font: get().walletStyle.fontFamily,
+              gradient: styles.variables['--background-gradient'] || get().walletStyle.gradient
             };
             
             set({

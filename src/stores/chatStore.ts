@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -161,55 +160,48 @@ export const useChatStore = create<ChatState>((set, get) => ({
         reasoning
       });
 
-      // Apply changes based on target
+      // UNIFIED STYLE APPLICATION - Apply to both walletStyle and components
+      const createUnifiedStyle = (baseStyle: any) => ({
+        ...baseStyle,
+        backgroundColor: styleChanges.backgroundColor || baseStyle.backgroundColor,
+        backgroundImage: styleChanges.backgroundImage || baseStyle.backgroundImage,
+        accentColor: styleChanges.accentColor || styleChanges.buttonColor || baseStyle.accentColor,
+        textColor: styleChanges.textColor || baseStyle.textColor,
+        buttonColor: styleChanges.buttonColor || styleChanges.accentColor || baseStyle.buttonColor,
+        buttonTextColor: styleChanges.buttonTextColor || baseStyle.buttonTextColor,
+        borderRadius: styleChanges.borderRadius || baseStyle.borderRadius,
+        fontFamily: styleChanges.fontFamily || baseStyle.fontFamily,
+        boxShadow: styleChanges.boxShadow || baseStyle.boxShadow,
+        primaryColor: styleChanges.accentColor || styleChanges.buttonColor || baseStyle.primaryColor,
+        font: styleChanges.fontFamily || baseStyle.font,
+        gradient: styleChanges.gradient || baseStyle.gradient
+      });
+
+      // Apply changes based on target and layer
       if (target === 'header') {
-        // Update wallet style with header-related changes
-        const updatedStyle = {
-          ...currentWalletStyle,
-          accentColor: styleChanges.accentColor || currentWalletStyle.accentColor,
-          textColor: styleChanges.textColor || currentWalletStyle.textColor,
-          backgroundColor: styleChanges.backgroundColor || currentWalletStyle.backgroundColor,
-          fontFamily: styleChanges.fontFamily || currentWalletStyle.fontFamily,
-          boxShadow: styleChanges.boxShadow || currentWalletStyle.boxShadow,
-        };
-        
+        const updatedStyle = createUnifiedStyle(currentWalletStyle);
         walletStore.setWalletStyle(updatedStyle);
         console.log('✅ Applied header styles');
       } else if (target === 'navigation') {
-        // Update wallet style with navigation-related changes
-        const updatedStyle = {
-          ...currentWalletStyle,
-          buttonColor: styleChanges.backgroundColor || currentWalletStyle.buttonColor,
-          buttonTextColor: styleChanges.textColor || currentWalletStyle.buttonTextColor,
-          borderRadius: styleChanges.borderRadius || currentWalletStyle.borderRadius,
-          accentColor: styleChanges.accentColor || currentWalletStyle.accentColor,
-        };
-        
+        const updatedStyle = createUnifiedStyle(currentWalletStyle);
         walletStore.setWalletStyle(updatedStyle);
         console.log('✅ Applied navigation styles');
       } else if (target === 'background' || target === 'global') {
-        // Apply global/background styles
-        const updatedStyle = {
-          ...currentWalletStyle,
-          backgroundColor: styleChanges.backgroundColor || currentWalletStyle.backgroundColor,
-          accentColor: styleChanges.accentColor || styleChanges.buttonColor || currentWalletStyle.accentColor,
-          textColor: styleChanges.textColor || currentWalletStyle.textColor,
-          buttonColor: styleChanges.buttonColor || currentWalletStyle.buttonColor,
-          buttonTextColor: styleChanges.buttonTextColor || currentWalletStyle.buttonTextColor,
-          borderRadius: styleChanges.borderRadius || currentWalletStyle.borderRadius,
-          fontFamily: styleChanges.fontFamily || currentWalletStyle.fontFamily,
-          boxShadow: styleChanges.boxShadow || currentWalletStyle.boxShadow,
-          primaryColor: styleChanges.accentColor || styleChanges.buttonColor || currentWalletStyle.primaryColor,
-          font: styleChanges.fontFamily || currentWalletStyle.font,
-        };
-
+        // Apply global/background styles to the appropriate layer
         if (layer === 'login') {
+          const updatedStyle = createUnifiedStyle(currentLoginStyle);
           walletStore.setLoginStyle(updatedStyle);
           console.log('✅ Applied login background styles');
         } else {
+          const updatedStyle = createUnifiedStyle(currentWalletStyle);
           walletStore.setWalletStyle(updatedStyle);
           console.log('✅ Applied wallet background styles');
         }
+      } else {
+        // Default: apply to wallet style
+        const updatedStyle = createUnifiedStyle(currentWalletStyle);
+        walletStore.setWalletStyle(updatedStyle);
+        console.log('✅ Applied default wallet styles');
       }
 
       // Trigger customization animation using existing method
