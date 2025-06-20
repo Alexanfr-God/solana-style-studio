@@ -3,7 +3,7 @@ import React from 'react';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 import ChatInterface from '@/components/chat/ChatInterface';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Coins } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WalletChatProvider } from '@/contexts/WalletChatContext';
 
@@ -12,10 +12,6 @@ const WalletAlivePlayground = () => {
 
   const handleBackClick = () => {
     navigate('/');
-  };
-
-  const handleMintClick = () => {
-    console.log('MINT button clicked - functionality will be added later');
   };
 
   return (
@@ -58,19 +54,8 @@ const WalletAlivePlayground = () => {
             </div>
             
             {/* Right Column - Wallet Preview */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2">
               <WalletPreviewContainer />
-              
-              {/* MINT Button */}
-              <div className="flex justify-center">
-                <Button 
-                  onClick={handleMintClick}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 text-lg font-semibold shadow-lg"
-                >
-                  <Coins className="mr-2 h-5 w-5" />
-                  MINT
-                </Button>
-              </div>
             </div>
           </div>
         </div>
