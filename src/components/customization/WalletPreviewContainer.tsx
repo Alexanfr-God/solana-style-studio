@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -376,45 +375,7 @@ const WalletPreviewContainer = () => {
           </div>
         </div>
         
-        {/* Debug UI */}
-        {debugMode && (
-          <div className="absolute bottom-4 left-4 bg-black/80 p-4 rounded-lg text-white text-xs z-50">
-            <h4 className="font-bold mb-2">AiPet Debug</h4>
-            <div className="space-y-2">
-              <div>Emotion: {aiPet.emotion}</div>
-              <div>Zone: {aiPet.zone}</div>
-              <div>Body Type: {aiPet.bodyType}</div>
-              <div>Energy: {aiPet.energy}%</div>
-              <div>Layer: {currentLayer}</div>
-              <div className="space-x-1">
-                {(['idle', 'happy', 'excited', 'sleepy', 'suspicious', 'sad', 'wink'] as AiPetEmotion[]).map(emotion => (
-                  <button
-                    key={emotion}
-                    onClick={() => setAiPetEmotion(emotion)}
-                    className="bg-purple-600 px-2 py-1 rounded text-xs hover:bg-purple-700"
-                  >
-                    {emotion}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setAiPetZone(aiPet.zone === 'inside' ? 'outside' : 'inside')}
-                className="bg-blue-600 px-2 py-1 rounded text-xs hover:bg-blue-700"
-              >
-                Toggle Zone
-              </button>
-            </div>
-          </div>
-        )}
         
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => setDebugMode(!debugMode)}
-            className="text-xs text-gray-500 hover:text-gray-300"
-          >
-            {debugMode ? 'Hide' : 'Show'} Debug UI
-          </button>
-        </div>
       </CardContent>
     </Card>
   );

@@ -14,6 +14,11 @@ const WalletAlivePlayground = () => {
     navigate('/');
   };
 
+  const handleMintClick = () => {
+    console.log('MINT clicked');
+    // TODO: Implement mint functionality
+  };
+
   return (
     <WalletChatProvider>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
@@ -54,8 +59,18 @@ const WalletAlivePlayground = () => {
             </div>
             
             {/* Right Column - Wallet Preview */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-4">
               <WalletPreviewContainer />
+              
+              {/* MINT Button */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleMintClick}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105"
+                >
+                  🚀 MINT NFT
+                </Button>
+              </div>
             </div>
           </div>
         </div>
