@@ -32,7 +32,7 @@ const ChatInterface = () => {
   };
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[600px] flex flex-col">
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full flex flex-col">
       <CardContent className="p-4 h-full flex flex-col">
         {/* Fixed Header */}
         <div className="flex-shrink-0 mb-4">
