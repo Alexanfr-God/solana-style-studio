@@ -3,21 +3,33 @@ import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
 import { useWalletCustomizationStore } from './walletCustomizationStore';
 
+export type ImageGenerationMode = 'analysis' | 'dalle' | 'replicate';
+
 interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
+  imageGenerationMode: ImageGenerationMode;
+  setImageGenerationMode: (mode: ImageGenerationMode) => void;
   sendMessage: (message: {
     content: string;
     imageUrl?: string | null;
     walletElement?: string;
   }) => Promise<void>;
+  sendImageGenerationMessage: (message: {
+    content: string;
+    mode: ImageGenerationMode;
+  }) => Promise<void>;
   clearHistory: () => void;
   applyStyleChanges: (changes: any) => void;
+  applyGeneratedImage: (imageUrl: string) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isLoading: false,
+  imageGenerationMode: 'analysis',
+
+  setImageGenerationMode: (mode) => set({ imageGenerationMode: mode }),
 
   sendMessage: async (messageData) => {
     const { messages } = get();
@@ -53,7 +65,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
           backgroundColor: walletStore.walletStyle.backgroundColor,
           primaryColor: walletStore.walletStyle.primaryColor,
           font: walletStore.walletStyle.font,
-          // Include more current style properties
         },
         availableElements: [
           'Header Bar', 'Balance Display', 'Login Screen', 'Action Buttons',
@@ -68,7 +79,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           content: messageData.content,
           imageUrl: messageData.imageUrl,
           walletElement: messageData.walletElement,
-          walletContext
+          walletContext,
+          mode: 'analysis'
         }
       });
 
@@ -84,15 +96,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       console.log('📊 Full GPT response data:', data);
 
-      // Parse GPT response for style changes
       const responseContent = data.response;
       
-      // FIXED: Check for style changes in the correct path
       if (data.styleChanges) {
         console.log('🎨 Applying style changes from GPT:', data.styleChanges);
         get().applyStyleChanges(data.styleChanges);
-      } else {
-        console.log('⚠️ No style changes found in response');
       }
 
       const assistantMessage: ChatMessage = {
@@ -112,7 +120,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('❌ Error sending message:', error);
       
-      // Determine error message based on error type
       let errorMessage = 'Sorry, there was an error connecting to AI. Please check API settings or try again later.';
       
       if (error.message.includes('OpenAI API key not configured')) {
@@ -133,6 +140,105 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isLoading: false
       }));
     }
+  },
+
+  sendImageGenerationMessage: async (messageData) => {
+    const { messages } = get();
+    
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: messageData.content,
+      timestamp: new Date(),
+    };
+
+    set({ 
+      messages: [...messages, userMessage],
+      isLoading: true 
+    });
+
+    try {
+      console.log('🖼️ Generating image with mode:', messageData.mode);
+
+      let response;
+      if (messageData.mode === 'dalle') {
+        response = await supabase.functions.invoke('generate-style', {
+          body: {
+            prompt: messageData.content,
+            mode: 'image_generation'
+          }
+        });
+      } else if (messageData.mode === 'replicate') {
+        response = await supabase.functions.invoke('generate-wallet-mask-v3', {
+          body: {
+            prompt: messageData.content
+          }
+        });
+      }
+
+      if (response?.error) {
+        throw new Error(`Image generation error: ${response.error.message}`);
+      }
+
+      const generatedImageUrl = response?.data?.imageUrl || response?.data?.output?.[0];
+      
+      if (generatedImageUrl) {
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          type: 'assistant',
+          content: `Here's your generated image! You can apply it as a background to your wallet.`,
+          timestamp: new Date(),
+          imageUrl: generatedImageUrl,
+          isGenerated: true,
+        };
+
+        set(state => ({
+          messages: [...state.messages, assistantMessage],
+          isLoading: false
+        }));
+
+        console.log('✅ Image generated successfully:', generatedImageUrl);
+      } else {
+        throw new Error('No image returned from generation service');
+      }
+
+    } catch (error) {
+      console.error('❌ Error generating image:', error);
+      
+      set(state => ({
+        messages: [...state.messages, {
+          id: `error-${Date.now()}`,
+          type: 'assistant',
+          content: `Sorry, there was an error generating the image: ${error.message}`,
+          timestamp: new Date(),
+        }],
+        isLoading: false
+      }));
+    }
+  },
+
+  applyGeneratedImage: (imageUrl: string) => {
+    const walletStore = useWalletCustomizationStore.getState();
+    
+    console.log('🖼️ Applying generated image as background:', imageUrl);
+    
+    // Apply image as background to current wallet style
+    const updatedStyle = {
+      ...walletStore.walletStyle,
+      backgroundImage: `url(${imageUrl})`,
+      styleNotes: 'Generated background image applied'
+    };
+    
+    walletStore.setWalletStyle(updatedStyle);
+    
+    // Trigger customization animation
+    walletStore.onCustomizationStart();
+    setTimeout(() => {
+      walletStore.resetCustomizationState();
+    }, 2000);
+    
+    console.log('✅ Generated image applied as background');
   },
 
   applyStyleChanges: (changes) => {

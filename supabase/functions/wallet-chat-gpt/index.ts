@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -357,7 +358,7 @@ serve(async (req) => {
     }
 
     // Handle both JSON and FormData requests
-    let content, imageUrl, walletElement, walletContext, sessionId, walletType, userPrompt;
+    let content, imageUrl, walletElement, walletContext, sessionId, walletType, userPrompt, mode;
     
     const contentType = req.headers.get('content-type') || '';
     
@@ -368,6 +369,7 @@ serve(async (req) => {
       imageUrl = requestData.imageUrl;
       walletElement = requestData.walletElement;
       walletContext = requestData.walletContext;
+      mode = requestData.mode || 'analysis'; // Default to analysis mode
     } else {
       // Handle FormData request (new format)
       const formData = await req.formData();
@@ -375,6 +377,7 @@ serve(async (req) => {
       imageUrl = formData.get('imageUrl') as string;
       userPrompt = formData.get('customPrompt') as string || formData.get('prompt') as string;
       walletType = formData.get('walletType') as string;
+      mode = formData.get('mode') as string || 'analysis';
       
       // Map FormData to existing variables
       content = userPrompt;
@@ -386,9 +389,78 @@ serve(async (req) => {
       hasImage: !!imageUrl,
       hasWalletElement: !!walletElement,
       hasContext: !!walletContext,
+      mode,
       sessionId,
       walletType
     });
+
+    // ROUTER: Handle different modes
+    if (mode === 'dalle' || mode === 'replicate') {
+      console.log(`🎨 Routing to image generation mode: ${mode}`);
+      
+      // For image generation, we'll route to the appropriate service
+      // but for now, let's create a unified response
+      
+      // Initialize Supabase client for calling other functions
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      try {
+        let imageResponse;
+        
+        if (mode === 'dalle') {
+          console.log('🖼️ Calling DALL-E generation...');
+          imageResponse = await supabase.functions.invoke('generate-style', {
+            body: {
+              prompt: content,
+              mode: 'image_generation'
+            }
+          });
+        } else if (mode === 'replicate') {
+          console.log('🎨 Calling Replicate generation...');
+          imageResponse = await supabase.functions.invoke('generate-wallet-mask-v3', {
+            body: {
+              prompt: content
+            }
+          });
+        }
+        
+        if (imageResponse?.error) {
+          throw new Error(`Image generation failed: ${imageResponse.error.message}`);
+        }
+        
+        const generatedImageUrl = imageResponse?.data?.imageUrl || imageResponse?.data?.output?.[0];
+        
+        if (generatedImageUrl) {
+          return new Response(JSON.stringify({
+            success: true,
+            response: `I've generated an image based on your request: "${content}". You can apply it as a background to your wallet or download it.`,
+            imageUrl: generatedImageUrl,
+            mode: mode
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else {
+          throw new Error('No image URL returned from generation service');
+        }
+        
+      } catch (error) {
+        console.error(`❌ ${mode} generation error:`, error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Image generation failed: ${error.message}`,
+          mode: mode
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // DEFAULT: Style analysis mode (existing logic)
+    console.log('🧠 Processing style analysis mode...');
 
     // Load design examples from Supabase
     const designExamples = await loadDesignExamples();
@@ -475,11 +547,12 @@ serve(async (req) => {
 
     console.log('✅ GPT response generated successfully with style changes:', styleChanges);
 
-    // FIXED: Return response in correct format that chatStore expects
+    // Return response in correct format that chatStore expects
     return new Response(JSON.stringify({ 
       response: aiResponse,
-      styleChanges: styleChanges, // This is what chatStore.ts expects!
-      success: true 
+      styleChanges: styleChanges,
+      success: true,
+      mode: 'analysis'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

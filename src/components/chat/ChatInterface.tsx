@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import MessageHistory from './MessageHistory';
 import MessageInput from './MessageInput';
+import ImageGenerationSelector from './ImageGenerationSelector';
 import { useChatStore } from '@/stores/chatStore';
 
 export interface ChatMessage {
@@ -12,14 +13,21 @@ export interface ChatMessage {
   timestamp: Date;
   imageUrl?: string;
   walletElement?: string;
+  isGenerated?: boolean;
 }
 
 const ChatInterface = () => {
-  const { messages, isLoading, sendMessage } = useChatStore();
+  const { messages, isLoading, sendMessage, imageGenerationMode } = useChatStore();
   const [selectedElement, setSelectedElement] = useState<string>('');
 
   const handleStarterClick = (message: string) => {
-    sendMessage({ content: message });
+    if (imageGenerationMode === 'analysis') {
+      sendMessage({ content: message });
+    } else {
+      // For image generation modes, use the specialized method
+      const { sendImageGenerationMessage } = useChatStore.getState();
+      sendImageGenerationMessage({ content: message, mode: imageGenerationMode });
+    }
   };
 
   return (
@@ -30,13 +38,16 @@ const ChatInterface = () => {
           <h3 className="text-lg font-semibold text-white mb-2">
             Wallet Customization Chat
           </h3>
-          <p className="text-sm text-white/70">
+          <p className="text-sm text-white/70 mb-3">
             Describe what you want to change in your wallet, upload images for inspiration, or select specific elements to modify.
           </p>
+          
+          {/* Image Generation Mode Selector */}
+          <ImageGenerationSelector />
         </div>
         
         {/* Fixed Height Message Area */}
-        <div className="flex-1 min-h-0 mb-4 h-[635px]">
+        <div className="flex-1 min-h-0 mb-4 h-[565px]">
           <MessageHistory 
             messages={messages} 
             isLoading={isLoading}
