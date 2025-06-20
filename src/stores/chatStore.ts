@@ -119,9 +119,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     
     if (changes.layer && changes.styles) {
       if (changes.layer === 'login') {
-        customizationStore.updateLoginStyle(changes.styles);
+        customizationStore.setStyleForLayer('login', changes.styles);
       } else if (changes.layer === 'wallet') {
-        customizationStore.updateWalletStyle(changes.styles);
+        customizationStore.setStyleForLayer('wallet', changes.styles);
       }
       
       console.log('🎨 Applied style changes:', changes);
