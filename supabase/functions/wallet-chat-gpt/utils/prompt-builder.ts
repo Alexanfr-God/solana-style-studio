@@ -2,7 +2,7 @@
 // Fixed prompt building utilities with working system prompt
 export function buildAdvancedWalletSystemPrompt(walletContext: any, designExamples: any[], chosenStyle: any): string {
   const FIXED_SYSTEM_PROMPT = `
-You are an ELITE Web3 Wallet Design AI with COMPLETE knowledge of ALL wallet elements.
+You are an ELITE Web3 Wallet Design AI.
 
 CRITICAL: Always return this EXACT JSON format:
 
@@ -22,34 +22,12 @@ CRITICAL: Always return this EXACT JSON format:
 }
 \`\`\`
 
-IMPORTANT: You can now customize ALL these elements:
-- Header Container, Phantom Logo, Account Avatar, Account Selector, Search Button
-- Account Dropdown Menu (dropdown-account-list, dropdown-settings-button)
-- Account Sidebar Panel (sidebar-header, sidebar-account-list, sidebar-footer)
-- Balance Section, Total Balance, Balance Change Indicator
-- Action Buttons (receive-button, send-button, swap-button, buy-button)
-- Buy Layer (buy-header, buy-search, buy-tokens-list)
-- Send Layer (send-header, send-form, send-recent-contacts)
-- Receive Layer (receive-header, receive-qr-code, receive-address)
-- Token List Container, Token Items
-- Bottom Navigation (nav-home, nav-swap, nav-activity, nav-settings)
-
-LAYER TARGETS AVAILABLE:
-- "global" - applies to entire wallet
-- "header" - header elements
-- "sidebar" - account sidebar panel
-- "dropdown" - account dropdown menu  
-- "overlay" - buy/send/receive layers
-- "navigation" - bottom navigation
-- "content" - main content area
-
 NEVER use other formats like "elements" or "analysis" - ONLY styleChanges!
 
 Examples:
-- User: "make sidebar red" → target: "sidebar", backgroundColor: "#ff0000"
-- User: "blue buy layer" → target: "overlay", backgroundColor: "#0066ff"
-- User: "green navigation" → target: "navigation", backgroundColor: "#00ff00"
-- User: "dark theme" → target: "global", backgroundColor: "#1a1a1a", textColor: "#ffffff"
+- User: "make it red" → backgroundColor: "#ff0000"
+- User: "dark theme" → backgroundColor: "#1a1a1a", textColor: "#ffffff"
+- User: "bitcoin style" → backgroundColor: "#f7931a", accentColor: "#000000"
 
 Always include the JSON block in your response!
 `;
@@ -60,22 +38,11 @@ CURRENT WALLET CONTEXT:
 - Wallet type: ${walletContext?.walletType || 'Phantom'}
 - Active layer: ${walletContext?.activeLayer || 'wallet'}
 - Current styles: ${JSON.stringify(walletContext?.currentStyle || {})}
-- Available elements: ${walletContext?.availableElements?.join(', ') || 'All elements'}
 
 ${chosenStyle ? `CHOSEN STYLE: ${chosenStyle.id}` : ''}
 
 DESIGN EXAMPLES AVAILABLE: ${designExamples.length} premium styles loaded
-
-COMPREHENSIVE ELEMENT COVERAGE:
-- ALL header elements (logo, avatar, selector, search)
-- ALL dropdown elements (account list, settings)
-- ALL sidebar elements (header, accounts, footer)
-- ALL overlay layers (buy, send, receive with all sub-elements)
-- ALL navigation elements (home, swap, activity, settings)
-- ALL content elements (balance, tokens, action buttons)
-
-CRITICAL: ALWAYS respond with the JSON structure above for proper frontend integration!
-Target the correct layer based on user request (global, header, sidebar, dropdown, overlay, navigation, content)!`;
+CRITICAL: ALWAYS respond with the JSON structure above for proper frontend integration!`;
 }
 
 export function buildUserMessage(content: string, walletElement?: string, imageUrl?: string): string {
@@ -163,12 +130,9 @@ CURRENT WALLET STATE:
 - Primary: ${walletContext?.currentStyle?.primaryColor || '#9945ff'}
 - Accent: ${walletContext?.currentStyle?.accentColor || '#00d4ff'}
 
-AVAILABLE TARGETS: global, header, sidebar, dropdown, overlay, navigation, content
-
 Transform this wallet into a ${intensityDescription} ${effectType} masterpiece that will make users say WOW!
 
 CRITICAL: Return the exact JSON format specified in the system prompt with the wow-effect styling applied.
-Target the appropriate layer based on the effect scope.
 `;
 }
 

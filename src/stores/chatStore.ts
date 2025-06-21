@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -190,9 +189,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         availableElements: [
           'Header Bar', 'Balance Display', 'Login Screen', 'Action Buttons',
           'Asset List', 'Bottom Navigation', 'Background', 'Color Scheme',
-          'Typography', 'Icons', 'Account Sidebar', 'Account Dropdown',
-          'Buy Layer', 'Send Layer', 'Receive Layer', 'Swap Layer',
-          'Token List', 'Transaction History', 'Settings Panel'
+          'Typography', 'Icons'
         ]
       };
 
@@ -381,28 +378,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
   applyGeneratedImage: (imageUrl: string) => {
     const walletStore = useWalletCustomizationStore.getState();
     
-    console.log('🖼️ Applying generated image as background to ALL layers:', imageUrl);
+    console.log('🖼️ Applying generated image as background:', imageUrl);
     
-    // Apply image as background to BOTH wallet and login styles
-    const backgroundImage = `url(${imageUrl})`;
-    
-    // Update wallet style
-    const updatedWalletStyle = {
+    // Apply image as background to current wallet style
+    const updatedStyle = {
       ...walletStore.walletStyle,
-      backgroundImage: backgroundImage,
+      backgroundImage: `url(${imageUrl})`,
       styleNotes: 'Generated background image applied from gallery'
     };
     
-    // Update login style
-    const updatedLoginStyle = {
-      ...walletStore.loginStyle,
-      backgroundImage: backgroundImage,
-      styleNotes: 'Generated background image applied from gallery'
-    };
-    
-    // Apply to both styles
-    walletStore.setWalletStyle(updatedWalletStyle);
-    walletStore.setLoginStyle(updatedLoginStyle);
+    walletStore.setWalletStyle(updatedStyle);
     
     // Trigger customization animation
     walletStore.onCustomizationStart();
@@ -410,7 +395,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       walletStore.resetCustomizationState();
     }, 2000);
     
-    console.log('✅ Generated image applied as background to BOTH login and wallet layers');
+    console.log('✅ Generated image applied as background');
   },
 
   applyStyleChanges: (changes) => {
@@ -455,14 +440,32 @@ export const useChatStore = create<ChatState>((set, get) => ({
         gradient: styleChanges.gradient || baseStyle.gradient
       });
 
-      // Apply changes to BOTH layers always for consistency
-      const updatedWalletStyle = createUnifiedStyle(currentWalletStyle);
-      const updatedLoginStyle = createUnifiedStyle(currentLoginStyle);
-      
-      walletStore.setWalletStyle(updatedWalletStyle);
-      walletStore.setLoginStyle(updatedLoginStyle);
-      
-      console.log('✅ Applied styles to BOTH wallet and login layers');
+      // Apply changes based on target and layer
+      if (target === 'header') {
+        const updatedStyle = createUnifiedStyle(currentWalletStyle);
+        walletStore.setWalletStyle(updatedStyle);
+        console.log('✅ Applied header styles');
+      } else if (target === 'navigation') {
+        const updatedStyle = createUnifiedStyle(currentWalletStyle);
+        walletStore.setWalletStyle(updatedStyle);
+        console.log('✅ Applied navigation styles');
+      } else if (target === 'background' || target === 'global') {
+        // Apply global/background styles to the appropriate layer
+        if (layer === 'login') {
+          const updatedStyle = createUnifiedStyle(currentLoginStyle);
+          walletStore.setLoginStyle(updatedStyle);
+          console.log('✅ Applied login background styles');
+        } else {
+          const updatedStyle = createUnifiedStyle(currentWalletStyle);
+          walletStore.setWalletStyle(updatedStyle);
+          console.log('✅ Applied wallet background styles');
+        }
+      } else {
+        // Default: apply to wallet style
+        const updatedStyle = createUnifiedStyle(currentWalletStyle);
+        walletStore.setWalletStyle(updatedStyle);
+        console.log('✅ Applied default wallet styles');
+      }
 
       // Trigger customization animation using existing method
       walletStore.onCustomizationStart();

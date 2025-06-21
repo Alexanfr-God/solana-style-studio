@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { useWalletStyles } from '@/hooks/useWalletStyles';
 import { useToast } from '@/hooks/use-toast';
 
 interface Token {
@@ -57,24 +56,14 @@ const popularTokens: Token[] = [
 
 const BuyLayer = () => {
   const {
+    walletStyle,
     setCurrentLayer,
     triggerAiPetInteraction,
-    setTemporaryEmotion,
-    getStyleForComponent
+    setTemporaryEmotion
   } = useWalletCustomizationStore();
   
-  const { getButtonStyle, getTransition } = useWalletStyles();
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
-
-  // Get dynamic styles from the customization system
-  const overlayStyle = getStyleForComponent('overlays');
-  const containerStyle = getStyleForComponent('containers');
-  const globalStyle = getStyleForComponent('global');
-  const headerStyle = getStyleForComponent('header');
-  const inputStyle = getStyleForComponent('searchInputs');
-  const cardStyle = getStyleForComponent('cards');
-  const buttonStyle = getStyleForComponent('buttons');
 
   const handleBack = () => {
     setCurrentLayer('home');
@@ -105,106 +94,52 @@ const BuyLayer = () => {
 
   return (
     <div 
-      className="absolute inset-0 backdrop-blur-md animate-slide-in-bottom"
+      className="absolute inset-0 bg-black/95 backdrop-blur-md animate-slide-in-bottom"
       style={{
-        backgroundColor: overlayStyle.backgroundColor || '#181818',
-        fontFamily: globalStyle.fontFamily || 'Inter',
+        backgroundColor: walletStyle.backgroundColor || '#181818',
+        fontFamily: walletStyle.font || 'Inter'
       }}
     >
       {/* Header */}
-      <div 
-        className="flex items-center justify-between px-4 py-3 border-b border-white/10"
-        style={{
-          backgroundColor: headerStyle.backgroundColor,
-          borderColor: headerStyle.border || 'rgba(255, 255, 255, 0.1)',
-        }}
-      >
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <button
           onClick={handleBack}
           className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors"
-          style={{
-            backgroundColor: buttonStyle.backgroundColor || 'transparent',
-            color: headerStyle.textColor || '#FFFFFF',
-            borderRadius: buttonStyle.borderRadius || '8px',
-            transition: getTransition('buttons'),
-          }}
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Back</span>
+          <ArrowLeft className="w-5 h-5 text-white" />
+          <span className="text-white font-medium">Back</span>
         </button>
         
-        <h1 
-          className="text-lg font-semibold"
-          style={{
-            color: headerStyle.textColor || '#FFFFFF',
-            fontFamily: globalStyle.fontFamily || 'Inter',
-          }}
-        >
-          Buy Crypto
-        </h1>
+        <h1 className="text-lg font-semibold text-white">Buy Crypto</h1>
         
         <div className="w-[60px]"></div>
       </div>
 
       {/* Search Bar */}
-      <div 
-        className="px-4 py-4"
-        style={{
-          backgroundColor: containerStyle.backgroundColor,
-        }}
-      >
+      <div className="px-4 py-4">
         <div className="relative">
-          <Search 
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" 
-            style={{ color: inputStyle.textColor || '#9CA3AF' }}
-          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none transition-colors"
-            style={{
-              backgroundColor: inputStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-              borderColor: inputStyle.border || 'rgba(255, 255, 255, 0.1)',
-              color: inputStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily || 'Inter',
-              borderRadius: inputStyle.borderRadius || '12px',
-              transition: getTransition('searchInputs'),
-            }}
+            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-white/30 transition-colors"
+            style={{ fontFamily: walletStyle.font || 'Inter' }}
           />
         </div>
       </div>
 
       {/* Content */}
-      <div 
-        className="flex-1 px-4 overflow-y-auto pb-20"
-        style={{
-          backgroundColor: containerStyle.backgroundColor,
-        }}
-      >
+      <div className="flex-1 px-4 overflow-y-auto pb-20">
         {/* Get Started Section */}
         <div className="mb-6">
-          <h2 
-            className="text-lg font-semibold mb-4"
-            style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily || 'Inter',
-            }}
-          >
-            Get started
-          </h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Get started</h2>
           <div className="space-y-3">
             {getStartedTokens.map((token) => (
               <div
                 key={token.id}
-                className="flex items-center justify-between p-4 rounded-xl border hover:bg-white/10 transition-colors cursor-pointer"
-                style={{
-                  backgroundColor: cardStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                  borderColor: cardStyle.border || 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: cardStyle.borderRadius || '12px',
-                  transition: getTransition('cards'),
-                }}
+                className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
                 onClick={() => handleTokenBuy(token.name)}
               >
                 <div className="flex items-center space-x-3">
@@ -216,31 +151,13 @@ const BuyLayer = () => {
                     />
                   </div>
                   <div>
-                    <div 
-                      className="font-semibold text-base"
-                      style={{
-                        color: cardStyle.textColor || '#FFFFFF',
-                        fontFamily: globalStyle.fontFamily || 'Inter',
-                      }}
-                    >
+                    <div className="font-semibold text-white text-base">
                       {token.name}
                     </div>
-                    <div 
-                      className="text-sm"
-                      style={{
-                        color: cardStyle.textColor || '#9CA3AF',
-                        opacity: 0.7,
-                      }}
-                    >
+                    <div className="text-sm text-gray-400">
                       {token.symbol}
                     </div>
-                    <div 
-                      className="text-xs mt-1"
-                      style={{
-                        color: cardStyle.textColor || '#6B7280',
-                        opacity: 0.6,
-                      }}
-                    >
+                    <div className="text-xs text-gray-500 mt-1">
                       {token.description}
                     </div>
                   </div>
@@ -250,10 +167,8 @@ const BuyLayer = () => {
                   <button
                     className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     style={{
-                      backgroundColor: buttonStyle.backgroundColor || '#9945FF',
-                      color: buttonStyle.textColor || '#FFFFFF',
-                      borderRadius: buttonStyle.borderRadius || '8px',
-                      transition: getTransition('buttons'),
+                      backgroundColor: walletStyle.primaryColor || '#9945FF',
+                      color: 'white'
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -270,26 +185,12 @@ const BuyLayer = () => {
 
         {/* Popular Tokens Section */}
         <div className="mb-6">
-          <h2 
-            className="text-lg font-semibold mb-4"
-            style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily || 'Inter',
-            }}
-          >
-            Popular tokens
-          </h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Popular tokens</h2>
           <div className="space-y-3">
             {filteredPopularTokens.map((token) => (
               <div
                 key={token.id}
-                className="flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer"
-                style={{
-                  backgroundColor: cardStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                  borderColor: cardStyle.border || 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: cardStyle.borderRadius || '12px',
-                  transition: getTransition('cards'),
-                }}
+                className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
                 onClick={() => handleTokenBuy(token.name)}
               >
                 <div className="flex items-center space-x-3">
@@ -301,22 +202,10 @@ const BuyLayer = () => {
                     />
                   </div>
                   <div>
-                    <div 
-                      className="font-medium text-sm"
-                      style={{
-                        color: cardStyle.textColor || '#FFFFFF',
-                        fontFamily: globalStyle.fontFamily || 'Inter',
-                      }}
-                    >
+                    <div className="font-medium text-white text-sm">
                       {token.name}
                     </div>
-                    <div 
-                      className="text-xs"
-                      style={{
-                        color: cardStyle.textColor || '#9CA3AF',
-                        opacity: 0.7,
-                      }}
-                    >
+                    <div className="text-xs text-gray-400">
                       {token.symbol}
                     </div>
                   </div>
@@ -324,13 +213,7 @@ const BuyLayer = () => {
                 
                 <div className="text-right">
                   <button
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                    style={{
-                      backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
-                      color: buttonStyle.textColor || '#FFFFFF',
-                      borderRadius: buttonStyle.borderRadius || '8px',
-                      transition: getTransition('buttons'),
-                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 text-white transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleTokenBuy(token.name);
@@ -345,40 +228,20 @@ const BuyLayer = () => {
 
           {filteredPopularTokens.length === 0 && searchQuery && (
             <div className="text-center py-6">
-              <p 
-                className="text-sm"
-                style={{
-                  color: globalStyle.textColor || '#9CA3AF',
-                  opacity: 0.7,
-                }}
-              >
-                No tokens found
-              </p>
+              <p className="text-gray-400 text-sm">No tokens found</p>
             </div>
           )}
         </div>
       </div>
 
       {/* Close Button */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 p-4 border-t backdrop-blur-sm"
-        style={{
-          backgroundColor: overlayStyle.backgroundColor || 'rgba(0, 0, 0, 0.8)',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-        }}
-      >
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 bg-black/80 backdrop-blur-sm">
         <button
           onClick={handleClose}
-          className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-          style={{
-            backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
-            color: buttonStyle.textColor || '#FFFFFF',
-            borderRadius: buttonStyle.borderRadius || '8px',
-            transition: getTransition('buttons'),
-          }}
+          className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center justify-center space-x-2"
         >
-          <X className="w-5 h-5" />
-          <span className="font-medium">Close</span>
+          <X className="w-5 h-5 text-white" />
+          <span className="text-white font-medium">Close</span>
         </button>
       </div>
     </div>

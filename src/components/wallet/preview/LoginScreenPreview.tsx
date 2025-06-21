@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
 import { 
@@ -8,6 +7,7 @@ import {
   Copy
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCustomizationStore } from '@/stores/customizationStore';
 
 // Helper function to calculate hue rotation based on accent color
 const getHueRotate = (color: string): number => {
@@ -93,6 +93,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  const { isGenerating } = useCustomizationStore();
   const [textStyle, setTextStyle] = useState<React.CSSProperties>({});
 
   // Recalculate optimal text style whenever the background or accent color changes
@@ -200,21 +201,23 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         
         {/* Center Zone - Ghost Logo */}
         <div className="flex-1 flex items-center justify-center">
-          <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
-            <img 
-              src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
-              alt="Phantom Ghost Logo" 
-              width="120" 
-              height="120" 
-              className="max-w-[120px] animate-pulse-slow"
-              style={{
-                filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
-              }}
-            />
-            <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-              style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
-            />
-          </div>
+          {!isGenerating && (
+            <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
+              <img 
+                src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
+                alt="Phantom Ghost Logo" 
+                width="120" 
+                height="120" 
+                className="max-w-[120px] animate-pulse-slow"
+                style={{
+                  filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
+                }}
+              />
+              <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
+                style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
+              />
+            </div>
+          )}
         </div>
         
         {/* Bottom Zone - Login Form */}

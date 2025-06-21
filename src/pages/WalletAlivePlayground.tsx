@@ -58,7 +58,7 @@ const WalletAlivePlayground = () => {
               <ChatInterface />
             </div>
             
-            {/* Right Column - Wallet Preview - теперь использует новый контейнер с playground компонентами */}
+            {/* Right Column - Wallet Preview */}
             <div className="lg:col-span-2 space-y-4">
               <WalletPreviewContainer />
               
