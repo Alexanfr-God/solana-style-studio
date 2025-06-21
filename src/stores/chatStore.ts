@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -387,4 +388,4 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearHistory: () => set({ messages: [] }),
-});
+}));
