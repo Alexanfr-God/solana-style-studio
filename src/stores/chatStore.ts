@@ -24,6 +24,55 @@ interface ChatState {
   applyGeneratedImage: (imageUrl: string) => void;
 }
 
+// Debug function for image generation
+async function debugImageGeneration(mode: ImageGenerationMode, content: string) {
+  console.log(`🔍 Debug ${mode} generation:`, { content, mode });
+  
+  try {
+    const response = await supabase.functions.invoke(
+      mode === 'dalle' ? 'generate-style' : 'generate-wallet-mask-v3',
+      { body: { prompt: content, mode: mode === 'dalle' ? 'image_generation' : undefined } }
+    );
+    
+    console.log(`📤 ${mode} full response structure:`, {
+      data: response.data,
+      error: response.error,
+      status: response.status
+    });
+    return response;
+  } catch (error) {
+    console.error(`❌ ${mode} error:`, error);
+    throw error;
+  }
+}
+
+// Extract image URL from different response formats
+function extractImageUrl(response: any, mode: ImageGenerationMode): string | null {
+  console.log('🔍 Extracting image URL from response:', response);
+  
+  // Strategy 1: Direct imageUrl in data
+  if (response?.data?.imageUrl) {
+    console.log('✅ Found imageUrl in data:', response.data.imageUrl);
+    return response.data.imageUrl;
+  }
+  
+  // Strategy 2: Replicate format - output array
+  if (response?.data?.output && Array.isArray(response.data.output)) {
+    const imageUrl = response.data.output[0];
+    console.log('✅ Found imageUrl in output array:', imageUrl);
+    return imageUrl;
+  }
+  
+  // Strategy 3: Direct in response
+  if (typeof response === 'string' && response.startsWith('http')) {
+    console.log('✅ Found direct URL:', response);
+    return response;
+  }
+  
+  console.warn('⚠️ No image URL found in response structure');
+  return null;
+}
+
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isLoading: false,
@@ -159,32 +208,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      console.log('🖼️ Generating image with mode:', messageData.mode);
+      console.log('🖼️ Starting image generation with mode:', messageData.mode);
 
-      let response;
-      if (messageData.mode === 'dalle') {
-        response = await supabase.functions.invoke('generate-style', {
-          body: {
-            prompt: messageData.content,
-            mode: 'image_generation'
-          }
-        });
-      } else if (messageData.mode === 'replicate') {
-        response = await supabase.functions.invoke('generate-wallet-mask-v3', {
-          body: {
-            prompt: messageData.content
-          }
-        });
-      }
+      // Use debug function for detailed logging
+      const response = await debugImageGeneration(messageData.mode, messageData.content);
 
+      // Check for Edge Function errors first
       if (response?.error) {
-        throw new Error(`Image generation error: ${response.error.message}`);
+        console.error('❌ Edge Function error:', response.error);
+        throw new Error(`Image generation error: ${response.error.message || JSON.stringify(response.error)}`);
       }
 
-      // Handle unified response format - both services now return imageUrl
-      const generatedImageUrl = response?.data?.imageUrl || response?.data?.output?.[0];
+      // Log the full response structure for debugging
+      console.log('📋 Full response structure:', JSON.stringify(response, null, 2));
+
+      // Extract image URL using improved logic
+      const generatedImageUrl = extractImageUrl(response, messageData.mode);
       
       if (generatedImageUrl) {
+        console.log('✅ Successfully extracted image URL:', generatedImageUrl);
+        
         const assistantMessage: ChatMessage = {
           id: `assistant-${Date.now()}`,
           type: 'assistant',
@@ -199,19 +242,39 @@ export const useChatStore = create<ChatState>((set, get) => ({
           isLoading: false
         }));
 
-        console.log('✅ Image generated and saved successfully:', generatedImageUrl);
+        console.log('🎉 Image generation completed successfully');
       } else {
-        throw new Error('No image returned from generation service');
+        // More detailed error for debugging
+        const errorDetails = {
+          mode: messageData.mode,
+          hasData: !!response?.data,
+          dataKeys: response?.data ? Object.keys(response.data) : [],
+          responseStructure: JSON.stringify(response, null, 2).substring(0, 500) + '...'
+        };
+        
+        console.error('❌ Failed to extract image URL:', errorDetails);
+        throw new Error(`No image returned from generation service. Response structure: ${JSON.stringify(errorDetails)}`);
       }
 
     } catch (error) {
-      console.error('❌ Error generating image:', error);
+      console.error('💥 Image generation error:', error);
+      
+      let errorMessage = `Sorry, there was an error generating the image: ${error.message}`;
+      
+      // More specific error messages
+      if (error.message.includes('403')) {
+        errorMessage = 'Image generation failed: API access denied. Please check your API key permissions.';
+      } else if (error.message.includes('500')) {
+        errorMessage = 'Image generation failed: Server error. Please try again in a moment.';
+      } else if (error.message.includes('non-2xx status')) {
+        errorMessage = 'Image generation failed: Service temporarily unavailable. Please try again.';
+      }
       
       set(state => ({
         messages: [...state.messages, {
           id: `error-${Date.now()}`,
           type: 'assistant',
-          content: `Sorry, there was an error generating the image: ${error.message}`,
+          content: errorMessage,
           timestamp: new Date(),
         }],
         isLoading: false
