@@ -1,5 +1,5 @@
 
-// GPT chat handling logic
+// Enhanced GPT chat handling logic with new response format
 import { buildAdvancedWalletSystemPrompt, buildUserMessage } from '../utils/prompt-builder.ts';
 import { extractAdvancedStyleChanges } from '../utils/json-parser.ts';
 
@@ -13,7 +13,9 @@ export async function processGPTChat(
   openAIApiKey: string = ''
 ) {
   try {
-    // Build system prompt with design library integration
+    console.log('🤖 Processing enhanced GPT chat with new system prompt...');
+    
+    // Build enhanced system prompt
     const systemPrompt = buildAdvancedWalletSystemPrompt(walletContext, designExamples, chosenStyle);
     
     // Build user message with context
@@ -42,6 +44,8 @@ export async function processGPTChat(
       };
     }
 
+    console.log('🔥 Calling OpenAI with enhanced prompt structure...');
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -51,7 +55,7 @@ export async function processGPTChat(
       body: JSON.stringify({
         model: 'gpt-4o',
         messages,
-        max_tokens: 2000,
+        max_tokens: 3000,
         temperature: 0.7,
       }),
     });
@@ -64,21 +68,25 @@ export async function processGPTChat(
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
-    // Extract style changes
+    console.log('🎨 AI Response received, parsing enhanced format...');
+
+    // Extract enhanced style changes using new parser
     const styleChanges = extractAdvancedStyleChanges(aiResponse, walletContext);
+
+    console.log('✅ Enhanced style changes parsed:', styleChanges ? 'SUCCESS' : 'FALLBACK');
 
     return {
       success: true,
       response: aiResponse,
       styleChanges,
-      mode: 'analysis'
+      mode: 'enhanced_analysis'
     };
   } catch (error) {
-    console.error('❌ Error in GPT chat processing:', error);
+    console.error('❌ Error in enhanced GPT chat processing:', error);
     return {
       success: false,
       error: error.message,
-      mode: 'analysis'
+      mode: 'enhanced_analysis'
     };
   }
 }
