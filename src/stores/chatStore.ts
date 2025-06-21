@@ -36,8 +36,7 @@ async function debugImageGeneration(mode: ImageGenerationMode, content: string) 
     
     console.log(`📤 ${mode} full response structure:`, {
       data: response.data,
-      error: response.error,
-      status: response.status
+      error: response.error
     });
     return response;
   } catch (error) {
@@ -388,4 +387,4 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearHistory: () => set({ messages: [] }),
-}));
+});
