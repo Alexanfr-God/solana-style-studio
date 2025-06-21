@@ -1,7 +1,12 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// Import enhanced modules
+import { analyzeWalletStructure, DetailedWalletAnalysis } from './modules/structureAnalyzer.ts';
+import { PHANTOM_WALLET_ELEMENTS, WalletElement, validateCustomization } from './modules/elementRegistry.ts';
+import { buildEnhancedWalletPrompt, validateGptResponse } from './modules/gptPromptBuilder.ts';
+import { validateFullCustomization, ValidationResult } from './modules/customizationValidator.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,18 +54,22 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Processing wallet customization structure request...');
+    console.log('🚀 Processing enhanced wallet customization structure request...');
 
     if (req.method === 'GET') {
       // Return comprehensive wallet structure for AI agents
-      return await handleGetStructure();
+      return await handleGetEnhancedStructure();
     }
 
     if (req.method === 'POST') {
       const requestData = await req.json();
-      const { action, walletType, externalApiUrl, sessionName, theme, userId } = requestData;
+      const { action, walletType, externalApiUrl, sessionName, theme, userId, customization } = requestData;
 
       switch (action) {
+        case 'analyze-structure':
+          return await handleStructureAnalysis(walletType);
+        case 'validate-customization':
+          return await handleCustomizationValidation(customization, walletType);
         case 'analyze-external-wallet':
           return await handleExternalWalletAnalysis(externalApiUrl, sessionName);
         case 'switch-wallet':
@@ -69,6 +78,8 @@ serve(async (req) => {
           return await handleThemeApplication(theme, userId);
         case 'create-collaboration':
           return await handleCollaborationCreation(sessionName, externalApiUrl);
+        case 'build-gpt-prompt':
+          return await handleGptPromptBuilding(requestData);
         default:
           throw new Error(`Unknown action: ${action}`);
       }
@@ -77,7 +88,7 @@ serve(async (req) => {
     throw new Error('Method not allowed');
 
   } catch (error) {
-    console.error('❌ Error in wallet customization structure:', error);
+    console.error('❌ Error in enhanced wallet customization structure:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       success: false 
@@ -88,8 +99,8 @@ serve(async (req) => {
   }
 });
 
-async function handleGetStructure() {
-  console.log('📊 Fetching comprehensive wallet structure...');
+async function handleGetEnhancedStructure() {
+  console.log('📊 Fetching enhanced comprehensive wallet structure...');
 
   // Load all wallet providers
   const { data: providers, error: providersError } = await supabase
@@ -101,14 +112,14 @@ async function handleGetStructure() {
     throw new Error(`Failed to load providers: ${providersError.message}`);
   }
 
-  // Load all wallet elements
-  const { data: elements, error: elementsError } = await supabase
+  // Load all wallet elements from registry
+  const { data: registryElements, error: elementsError } = await supabase
     .from('wallet_element_registry')
     .select('*')
     .order('wallet_type, screen_type, element_name');
 
   if (elementsError) {
-    throw new Error(`Failed to load elements: ${elementsError.message}`);
+    throw new Error(`Failed to load registry elements: ${elementsError.message}`);
   }
 
   // Load active wallet instances
@@ -121,28 +132,144 @@ async function handleGetStructure() {
     throw new Error(`Failed to load instances: ${instancesError.message}`);
   }
 
-  // Build comprehensive structure
-  const structure = buildUniversalWalletStructure(providers || [], elements || [], instances || []);
+  // Generate detailed analysis for primary wallet (Phantom)
+  const phantomAnalysis = analyzeWalletStructure('phantom', 'wallet');
+  
+  // Build enhanced comprehensive structure
+  const structure = buildEnhancedUniversalWalletStructure(
+    providers || [], 
+    registryElements || [], 
+    instances || [],
+    phantomAnalysis
+  );
 
-  console.log('✅ Comprehensive wallet structure built successfully');
+  console.log('✅ Enhanced comprehensive wallet structure built successfully');
+  console.log(`📊 Detailed elements analyzed: ${PHANTOM_WALLET_ELEMENTS.length}`);
+  console.log(`📊 Customizable elements: ${PHANTOM_WALLET_ELEMENTS.filter(el => el.safeZone.canCustomize).length}`);
+  console.log(`📊 Critical elements: ${PHANTOM_WALLET_ELEMENTS.filter(el => el.safeZone.criticalForFunctionality).length}`);
 
   return new Response(JSON.stringify({
     success: true,
     structure,
+    detailedAnalysis: phantomAnalysis,
+    elementRegistry: PHANTOM_WALLET_ELEMENTS,
     metadata: {
       totalProviders: providers?.length || 0,
-      totalElements: elements?.length || 0,
+      totalRegistryElements: registryElements?.length || 0,
+      totalDetailedElements: PHANTOM_WALLET_ELEMENTS.length,
       totalInstances: instances?.length || 0,
-      totalWalletTypes: [...new Set(elements?.map(e => e.wallet_type) || [])].length,
-      version: '2.0.0',
+      totalWalletTypes: [...new Set(registryElements?.map(e => e.wallet_type) || [])].length,
+      customizableElements: PHANTOM_WALLET_ELEMENTS.filter(el => el.safeZone.canCustomize).length,
+      criticalElements: PHANTOM_WALLET_ELEMENTS.filter(el => el.safeZone.criticalForFunctionality).length,
+      version: '2.0.0-enhanced',
       timestamp: new Date().toISOString(),
       capabilities: [
         'multi-wallet-support',
-        'external-api-integration',
+        'external-api-integration', 
         'real-time-switching',
         'collaboration-ready',
-        'ai-agent-optimized'
+        'ai-agent-optimized',
+        'detailed-element-registry',
+        'comprehensive-validation',
+        'enhanced-gpt-prompts',
+        'accessibility-validation',
+        'performance-optimization'
       ]
+    }
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function handleStructureAnalysis(walletType: string = 'phantom') {
+  console.log('🔍 Performing detailed structure analysis for:', walletType);
+  
+  const analysis = analyzeWalletStructure(walletType, 'wallet');
+  
+  // Store analysis in database
+  const { data: analysisRecord, error: storeError } = await supabase
+    .from('wallet_structure_analysis')
+    .insert({
+      wallet_type: walletType,
+      screen_type: 'wallet',
+      ui_structure: analysis.uiStructure,
+      color_palette: analysis.colorSystem,
+      typography: analysis.typography,
+      interactivity: analysis.interactivity,
+      safe_zones: analysis.customizationRules.safeZones,
+      functional_context: {
+        customizationRules: analysis.customizationRules,
+        layoutSystem: analysis.layoutSystem
+      },
+      generation_context: analysis.generationContext,
+      version: analysis.version
+    })
+    .select()
+    .single();
+
+  if (storeError) {
+    console.warn('⚠️ Failed to store analysis:', storeError.message);
+  } else {
+    console.log('✅ Analysis stored with ID:', analysisRecord.id);
+  }
+
+  return new Response(JSON.stringify({
+    success: true,
+    analysis,
+    analysisId: analysisRecord?.id,
+    metadata: {
+      totalElements: analysis.uiStructure.elements.length,
+      customizableElements: analysis.uiStructure.elements.filter(el => el.safeZone.canCustomize).length,
+      criticalElements: analysis.uiStructure.elements.filter(el => el.safeZone.criticalForFunctionality).length,
+      analyzedAt: new Date().toISOString()
+    }
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function handleCustomizationValidation(customization: any, walletType: string = 'phantom') {
+  console.log('✅ Validating customization for:', walletType);
+  
+  const analysis = analyzeWalletStructure(walletType, 'wallet');
+  const validation = validateFullCustomization(customization, analysis);
+  
+  return new Response(JSON.stringify({
+    success: validation.isValid,
+    validation,
+    recommendations: validation.suggestions,
+    criticalErrors: validation.errors.filter(e => e.severity === 'critical'),
+    warnings: validation.warnings,
+    metadata: {
+      validatedAt: new Date().toISOString(),
+      walletType,
+      validationVersion: '2.0.0'
+    }
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function handleGptPromptBuilding(requestData: any) {
+  const { userPrompt, walletType = 'phantom', imageUrl } = requestData;
+  
+  console.log('🤖 Building enhanced GPT prompt for:', walletType);
+  
+  const analysis = analyzeWalletStructure(walletType, 'wallet');
+  const enhancedPrompt = buildEnhancedWalletPrompt(userPrompt, analysis, imageUrl);
+  
+  return new Response(JSON.stringify({
+    success: true,
+    enhancedPrompt,
+    analysis: {
+      totalElements: analysis.uiStructure.elements.length,
+      customizableElements: analysis.uiStructure.elements.filter(el => el.safeZone.canCustomize).length,
+      themeVariations: analysis.generationContext.themeVariations.length
+    },
+    metadata: {
+      walletType,
+      promptLength: enhancedPrompt.length,
+      builtAt: new Date().toISOString()
     }
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -257,41 +384,63 @@ async function handleWalletSwitch(walletType: string) {
     throw new Error(`Failed to load wallet instance: ${instanceError.message}`);
   }
 
+  // Generate detailed analysis for the wallet type
+  const detailedAnalysis = analyzeWalletStructure(walletType, 'wallet');
+
   const walletStructure = {
     walletType,
     elements: elements || [],
     instance: instance || null,
     screens: groupElementsByScreen(elements || []),
+    detailedAnalysis,
     metadata: {
       totalElements: elements?.length || 0,
       screens: [...new Set(elements?.map(e => e.screen_type) || [])],
-      interactiveElements: elements?.filter(e => e.is_interactive).length || 0
+      interactiveElements: elements?.filter(e => e.is_interactive).length || 0,
+      detailedElementsCount: PHANTOM_WALLET_ELEMENTS.length,
+      customizableElementsCount: PHANTOM_WALLET_ELEMENTS.filter(el => el.safeZone.canCustomize).length
     }
   };
 
-  console.log('✅ Wallet switch completed:', walletType);
+  console.log('✅ Enhanced wallet switch completed:', walletType);
 
   return new Response(JSON.stringify({
     success: true,
     walletStructure,
-    message: `Successfully switched to ${walletType} wallet`
+    message: `Successfully switched to ${walletType} wallet with enhanced analysis`
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
 async function handleThemeApplication(theme: any, userId: string) {
-  console.log('🎨 Applying theme:', theme);
+  console.log('🎨 Applying theme with validation:', theme);
 
-  // Here you would implement theme application logic
-  // For now, we'll just store it as a customization result
+  // Validate theme before application
+  const analysis = analyzeWalletStructure('phantom', 'wallet');
+  const validation = validateFullCustomization(theme, analysis);
+
+  if (!validation.isValid) {
+    return new Response(JSON.stringify({
+      success: false,
+      validation,
+      message: 'Theme validation failed',
+      errors: validation.errors
+    }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Store validated theme
   const { data: result, error } = await supabase
     .from('customization_results')
     .insert({
       session_id: `theme_${Date.now()}`,
       customization_data: theme,
       status: 'completed',
-      user_id: userId
+      user_id: userId,
+      quality_score: validation.warnings.length === 0 ? 1.0 : 0.8
     })
     .select()
     .single();
@@ -303,7 +452,8 @@ async function handleThemeApplication(theme: any, userId: string) {
   return new Response(JSON.stringify({
     success: true,
     result,
-    message: 'Theme applied successfully'
+    validation,
+    message: 'Theme applied successfully with validation'
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
@@ -335,8 +485,13 @@ async function handleCollaborationCreation(sessionName: string, apiUrl: string) 
   });
 }
 
-function buildUniversalWalletStructure(providers: WalletProvider[], elements: WalletElement[], instances: WalletInstance[]) {
-  const walletTypes = [...new Set(elements.map(e => e.wallet_type))];
+function buildEnhancedUniversalWalletStructure(
+  providers: WalletProvider[], 
+  registryElements: any[], 
+  instances: WalletInstance[],
+  phantomAnalysis: DetailedWalletAnalysis
+) {
+  const walletTypes = [...new Set(registryElements.map(e => e.wallet_type))];
   
   const structure = {
     providers: providers.reduce((acc, p) => {
@@ -350,16 +505,23 @@ function buildUniversalWalletStructure(providers: WalletProvider[], elements: Wa
     }, {} as any),
     
     walletTypes: walletTypes.reduce((acc, type) => {
-      const typeElements = elements.filter(e => e.wallet_type === type);
+      const typeElements = registryElements.filter(e => e.wallet_type === type);
       const typeInstance = instances.find(i => i.wallet_type === type);
       
       acc[type] = {
         elements: groupElementsByScreen(typeElements),
         instance: typeInstance,
+        detailedElements: type === 'phantom' ? PHANTOM_WALLET_ELEMENTS : [],
+        analysis: type === 'phantom' ? phantomAnalysis : null,
         metadata: {
           totalElements: typeElements.length,
+          detailedElementsCount: type === 'phantom' ? PHANTOM_WALLET_ELEMENTS.length : 0,
           screens: [...new Set(typeElements.map(e => e.screen_type))],
           interactiveElements: typeElements.filter(e => e.is_interactive).length,
+          customizableElements: type === 'phantom' ? 
+            PHANTOM_WALLET_ELEMENTS.filter(el => el.safeZone.canCustomize).length : 0,
+          criticalElements: type === 'phantom' ? 
+            PHANTOM_WALLET_ELEMENTS.filter(el => el.safeZone.criticalForFunctionality).length : 0,
           safeZones: typeElements.filter(e => e.safe_zone).map(e => ({
             element: e.element_name,
             zone: e.safe_zone
@@ -369,47 +531,39 @@ function buildUniversalWalletStructure(providers: WalletProvider[], elements: Wa
       return acc;
     }, {} as any),
     
-    capabilities: {
+    enhancedCapabilities: {
       multiWalletSupport: true,
       externalApiIntegration: true,
       realTimeSwitching: true,
       collaborationReady: true,
-      aiAgentOptimized: true
+      aiAgentOptimized: true,
+      detailedElementRegistry: true,
+      comprehensiveValidation: true,
+      enhancedGptPrompts: true,
+      accessibilityValidation: true,
+      performanceOptimization: true
     },
     
     aiAgentsInstructions: {
-      contextUnderstanding: "Use walletTypes[type].elements to understand wallet structure",
-      safeZoneRespect: "Always check safeZones before applying modifications",
-      interactivityPreservation: "Maintain interactiveElements functionality",
-      collaborationSupport: "External APIs can be integrated via collaboration sessions"
+      contextUnderstanding: "Use walletTypes[type].detailedElements for comprehensive element understanding",
+      safeZoneRespect: "Always check element.safeZone.canCustomize before applying modifications",
+      interactivityPreservation: "Maintain functionality of elements with safeZone.criticalForFunctionality = true",
+      collaborationSupport: "External APIs can be integrated via collaboration sessions",
+      validationRequired: "Always validate customizations using the validation endpoint",
+      promptEnhancement: "Use the build-gpt-prompt action for enhanced context",
+      elementHierarchy: "Respect parent-child relationships in element structure",
+      stateManagement: "Consider all element states (normal, hover, active, disabled)",
+      animationHandling: "Preserve existing animations unless specifically requested to modify"
     },
     
-    exampleThemes: {
-      cyberpunk: {
-        backgroundColor: "#0a0a0a",
-        accentColor: "#00ff88",
-        textColor: "#ffffff",
-        buttonColor: "#ff0080"
-      },
-      minimal: {
-        backgroundColor: "#ffffff",
-        accentColor: "#000000",
-        textColor: "#333333",
-        buttonColor: "#007bff"
-      },
-      warm: {
-        backgroundColor: "#fff5f5",
-        accentColor: "#ff6b6b",
-        textColor: "#2d3748",
-        buttonColor: "#e53e3e"
-      }
-    }
+    detailedAnalysis: phantomAnalysis,
+    elementRegistry: PHANTOM_WALLET_ELEMENTS
   };
 
   return structure;
 }
 
-function groupElementsByScreen(elements: WalletElement[]) {
+function groupElementsByScreen(elements: any[]) {
   return elements.reduce((acc, element) => {
     if (!acc[element.screen_type]) {
       acc[element.screen_type] = [];

@@ -1,51 +1,83 @@
-
-// Fixed GPT chat handling logic with proper format conversion
+import type { WalletContext } from '../types/wallet.ts';
+import type { GPTResponse } from '../types/responses.ts';
 import { buildAdvancedWalletSystemPrompt, buildUserMessage } from '../utils/prompt-builder.ts';
-import { fixedStyleExtraction } from '../utils/json-parser.ts';
+import { analyzeStyleFromResponse, analyzeEnhancedStyleFromResponse } from './styleAnalyzer.ts';
 
 export async function processGPTChat(
   content: string,
-  walletContext: any,
+  walletContext: WalletContext,
   walletElement?: string,
   imageUrl?: string,
-  designExamples: any[] = [],
-  chosenStyle: any = null,
-  openAIApiKey: string = ''
-) {
+  designExamples?: any[],
+  chosenStyle?: any,
+  openAIApiKey?: string
+): Promise<GPTResponse> {
   try {
-    console.log('🤖 Processing GPT chat with fixed system prompt...');
-    
-    // Build fixed system prompt
-    const systemPrompt = buildAdvancedWalletSystemPrompt(walletContext, designExamples, chosenStyle);
-    
-    // Build user message with context
+    console.log('🤖 Processing enhanced GPT chat with detailed wallet structure...');
+
+    // Get enhanced wallet structure and analysis
+    const { supabase } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const supabaseClient = supabase(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Fetch enhanced structure with detailed analysis
+    const { data: structureData, error: structureError } = await supabaseClient.functions.invoke(
+      'wallet-customization-structure',
+      {
+        method: 'POST',
+        body: {
+          action: 'build-gpt-prompt',
+          userPrompt: content,
+          walletType: walletContext.walletType || 'phantom',
+          imageUrl
+        }
+      }
+    );
+
+    if (structureError) {
+      console.warn('⚠️ Failed to get enhanced structure, using fallback');
+    }
+
+    let systemPrompt = '';
+    let enhancedContext = walletContext;
+
+    if (structureData?.success && structureData.enhancedPrompt) {
+      console.log('✅ Using enhanced GPT prompt with detailed wallet analysis');
+      systemPrompt = structureData.enhancedPrompt;
+      enhancedContext = {
+        ...walletContext,
+        enhancedAnalysis: structureData.analysis,
+        totalElements: structureData.analysis.totalElements,
+        customizableElements: structureData.analysis.customizableElements
+      };
+    } else {
+      console.log('📝 Using fallback prompt builder');
+      systemPrompt = buildAdvancedWalletSystemPrompt(walletContext, designExamples || [], chosenStyle);
+    }
+
+    // Build user message with enhanced context
     const userMessage = buildUserMessage(content, walletElement, imageUrl);
 
-    // Create messages array for OpenAI API
+    console.log('📡 Sending enhanced request to OpenAI with detailed wallet context...');
+
     const messages = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage }
     ];
 
-    // Handle image if provided
+    // Add image if provided
     if (imageUrl) {
-      messages[1] = {
+      messages.push({
         role: 'user',
         content: [
-          { type: 'text', text: userMessage },
-          { 
-            type: 'image_url', 
-            image_url: { 
-              url: imageUrl,
-              detail: 'low'
-            }
-          }
+          { type: 'text', text: 'Please analyze this image and apply similar styling to the wallet:' },
+          { type: 'image_url', image_url: { url: imageUrl } }
         ]
-      };
+      });
     }
 
-    console.log('🔥 Calling OpenAI with fixed prompt structure...');
-    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -55,38 +87,90 @@ export async function processGPTChat(
       body: JSON.stringify({
         model: 'gpt-4o',
         messages,
-        max_tokens: 3000,
+        max_tokens: 2000,
         temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      const errorData = await response.text();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
     }
 
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
-    console.log('🎨 AI Response received, parsing with fixed extractor...');
+    console.log('✅ Enhanced GPT response received, processing with validation...');
 
-    // Use fixed style extraction
-    const styleChanges = fixedStyleExtraction(aiResponse);
+    // Validate response if enhanced structure is available
+    let validationResult = null;
+    if (structureData?.success) {
+      try {
+        const parsedResponse = JSON.parse(
+          aiResponse.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || '{}'
+        );
+        
+        const { data: validationData } = await supabaseClient.functions.invoke(
+          'wallet-customization-structure',
+          {
+            method: 'POST',
+            body: {
+              action: 'validate-customization',
+              customization: parsedResponse,
+              walletType: walletContext.walletType || 'phantom'
+            }
+          }
+        );
 
-    console.log('✅ Fixed style changes extracted:', styleChanges ? 'SUCCESS' : 'FALLBACK');
+        if (validationData?.success) {
+          validationResult = validationData.validation;
+          console.log('✅ Response validation completed');
+        }
+      } catch (validationError) {
+        console.warn('⚠️ Response validation failed:', validationError);
+      }
+    }
+
+    // Extract and validate style changes
+    const styleChanges = analyzeEnhancedStyleFromResponse(aiResponse);
+    
+    if (!styleChanges) {
+      console.warn('⚠️ No valid style changes found in enhanced response');
+      return {
+        response: aiResponse,
+        styleChanges: null,
+        success: false,
+        mode: 'analysis',
+        enhancedContext,
+        validation: validationResult
+      };
+    }
+
+    console.log('🎨 Enhanced style changes extracted and validated');
 
     return {
-      success: true,
       response: aiResponse,
       styleChanges,
-      mode: 'analysis'
+      success: true,
+      mode: 'enhanced-analysis',
+      enhancedContext,
+      validation: validationResult,
+      metadata: {
+        totalElements: enhancedContext.totalElements,
+        customizableElements: enhancedContext.customizableElements,
+        validationPassed: validationResult?.isValid,
+        warningsCount: validationResult?.warnings?.length || 0
+      }
     };
+
   } catch (error) {
-    console.error('❌ Error in fixed GPT chat processing:', error);
+    console.error('💥 Enhanced GPT chat processing error:', error);
     return {
+      response: `I encountered an error while processing your request: ${error.message}. Please try again.`,
+      styleChanges: null,
       success: false,
-      error: error.message,
-      mode: 'analysis'
+      mode: 'error',
+      error: error.message
     };
   }
 }
