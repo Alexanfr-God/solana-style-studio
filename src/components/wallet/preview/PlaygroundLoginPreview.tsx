@@ -8,6 +8,7 @@ import {
   Copy
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 // Helper function to calculate hue rotation based on accent color
 const getHueRotate = (color: string): number => {
@@ -89,21 +90,25 @@ const getOptimalTextStyle = (backgroundColor: string, accentColor: string, hasBa
   };
 };
 
-export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
+export const PlaygroundLoginPreview = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  const { isGenerating, loginStyle } = useWalletCustomizationStore();
   const [textStyle, setTextStyle] = useState<React.CSSProperties>({});
+
+  // Use the loginStyle from walletCustomizationStore
+  const currentStyle = loginStyle;
 
   // Recalculate optimal text style whenever the background or accent color changes
   useEffect(() => {
-    const hasBackgroundImage = Boolean(style.backgroundImage);
+    const hasBackgroundImage = Boolean(currentStyle.backgroundImage);
     setTextStyle(getOptimalTextStyle(
-      style.backgroundColor || '#131313', 
-      style.accentColor || '#9945FF',
+      currentStyle.backgroundColor || '#131313', 
+      currentStyle.accentColor || '#9945FF',
       hasBackgroundImage
     ));
-  }, [style.backgroundColor, style.accentColor, style.backgroundImage]);
+  }, [currentStyle.backgroundColor, currentStyle.accentColor, currentStyle.backgroundImage]);
 
   const handleUnlock = () => {
     toast({
@@ -120,9 +125,9 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
   
   // Apply background styles with more advanced effects based on style
   const getBackgroundStyle = () => {
-    if (style.backgroundImage) {
+    if (currentStyle.backgroundImage) {
       return {
-        backgroundImage: style.backgroundImage,
+        backgroundImage: currentStyle.backgroundImage,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       };
@@ -130,26 +135,14 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
     
     // Create a more sophisticated background if no image
     return {
-      background: `linear-gradient(135deg, ${style.backgroundColor || '#131313'} 0%, ${style.accentColor || '#9945FF'}33 100%)`,
+      background: `linear-gradient(135deg, ${currentStyle.backgroundColor || '#131313'} 0%, ${currentStyle.accentColor || '#9945FF'}33 100%)`,
     };
   };
 
   // Get custom text shadow based on theme
   const getTextShadow = () => {
-    const isDark = style.backgroundColor?.includes('#13') || style.backgroundColor?.includes('rgb(19');
+    const isDark = currentStyle.backgroundColor?.includes('#13') || currentStyle.backgroundColor?.includes('rgb(19');
     return isDark ? '0 0 10px rgba(255,255,255,0.3)' : '0 0 10px rgba(0,0,0,0.2)';
-  };
-  
-  // Get appropriate phantom label color (with contrast)
-  const getPhantomLabelColor = () => {
-    const phantomColor = style.textColor || '#FFFFFF';
-    
-    // Check if we need to adjust contrast
-    if (style.backgroundColor) {
-      return getTextContrast(style.backgroundColor);
-    }
-    
-    return phantomColor;
   };
   
   return (
@@ -157,16 +150,16 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
       className="wallet-preview flex flex-col rounded-2xl overflow-hidden w-full h-full relative"
       style={{
         ...getBackgroundStyle(),
-        color: style.textColor || '#FFFFFF',
-        fontFamily: style.fontFamily,
-        boxShadow: style.boxShadow || '0 10px 25px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
+        color: currentStyle.textColor || '#FFFFFF',
+        fontFamily: currentStyle.fontFamily,
+        boxShadow: currentStyle.boxShadow || '0 10px 25px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
       }}
     >
       {/* Animated overlay for extra visual effect */}
       <div 
         className="absolute inset-0 z-0 opacity-20" 
         style={{
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.74 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23" + (style.accentColor?.replace('#', '') || '9945FF') + "' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E\")",
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.74 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23" + (currentStyle.accentColor?.replace('#', '') || '9945FF') + "' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E\")",
         }}
       />
 
@@ -180,7 +173,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
           <div 
             className="absolute bottom-0 left-0 w-full h-[2px] transform origin-left"
             style={{ 
-              backgroundColor: style.accentColor || '#9945FF',
+              backgroundColor: currentStyle.accentColor || '#9945FF',
               animation: 'pulseWidth 3s infinite alternate',
               opacity: 0.6
             }}
@@ -189,7 +182,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         <HelpCircle 
           className="h-4 w-4 cursor-pointer transition-transform hover:scale-110 hover:rotate-12 absolute right-3" 
           style={{ 
-            color: style.accentColor || '#9945FF', 
+            color: currentStyle.accentColor || '#9945FF', 
             filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))' 
           }} 
         />
@@ -200,21 +193,23 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
         
         {/* Center Zone - Ghost Logo */}
         <div className="flex-1 flex items-center justify-center">
-          <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
-            <img 
-              src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
-              alt="Phantom Ghost Logo" 
-              width="120" 
-              height="120" 
-              className="max-w-[120px] animate-pulse-slow"
-              style={{
-                filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
-              }}
-            />
-            <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-              style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
-            />
-          </div>
+          {!isGenerating && (
+            <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + currentStyle.accentColor + '50)' }}>
+              <img 
+                src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
+                alt="Phantom Ghost Logo" 
+                width="120" 
+                height="120" 
+                className="max-w-[120px] animate-pulse-slow"
+                style={{
+                  filter: currentStyle.accentColor ? `hue-rotate(${getHueRotate(currentStyle.accentColor)}deg) saturate(1.2)` : 'none'
+                }}
+              />
+              <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
+                style={{ border: `2px solid ${currentStyle.accentColor || '#9945FF'}` }}
+              />
+            </div>
+          )}
         </div>
         
         {/* Bottom Zone - Login Form */}
@@ -223,7 +218,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
           <h2 
             className="text-lg font-medium text-center" 
             style={{ 
-              color: style.textColor || '#FFFFFF', 
+              color: currentStyle.textColor || '#FFFFFF', 
               textShadow: getTextShadow(),
               letterSpacing: '0.5px'
             }}
@@ -237,8 +232,8 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
               className="h-10 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
               style={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.07)',
-                borderRadius: style.borderRadius || '100px',
-                border: `1px solid ${style.accentColor}40`,
+                borderRadius: currentStyle.borderRadius || '100px',
+                border: `1px solid ${currentStyle.accentColor}40`,
                 boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
                 transition: 'all 0.3s ease'
               }}
@@ -250,21 +245,21 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
                 className="w-full bg-transparent border-none outline-none text-white transition-colors text-sm"
                 placeholder="Password"
                 style={{
-                  caretColor: style.accentColor || '#9945FF',
+                  caretColor: currentStyle.accentColor || '#9945FF',
                 }}
               />
               {password.length > 0 && (
                 <button 
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 text-gray-400 hover:text-white transition-colors flex items-center justify-center"
-                  style={{ color: style.accentColor || '#9945FF' }}
+                  style={{ color: currentStyle.accentColor || '#9945FF' }}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               )}
               
               <div className="absolute bottom-0 left-0 w-full h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform"
-                style={{ backgroundColor: style.accentColor || '#9945FF' }}
+                style={{ backgroundColor: currentStyle.accentColor || '#9945FF' }}
               />
             </div>
           </div>
@@ -281,7 +276,7 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
               Forgot password?
               <span 
                 className="absolute left-0 right-0 bottom-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform" 
-                style={{ backgroundColor: style.accentColor || '#9945FF' }}
+                style={{ backgroundColor: currentStyle.accentColor || '#9945FF' }}
               />
             </span>
           </div>
@@ -292,16 +287,16 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
               onClick={handleUnlock}
               className="w-full h-10 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98] text-sm"
               style={{ 
-                backgroundColor: style.buttonColor || '#9b87f5',
-                color: style.buttonTextColor || '#000000',
-                borderRadius: style.borderRadius || '100px',
-                boxShadow: `0 4px 10px ${style.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
+                backgroundColor: currentStyle.buttonColor || '#9b87f5',
+                color: currentStyle.buttonTextColor || '#000000',
+                borderRadius: currentStyle.borderRadius || '100px',
+                boxShadow: `0 4px 10px ${currentStyle.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
               }}
             >
               <span 
                 className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{
-                  background: `linear-gradient(45deg, transparent 25%, ${style.accentColor || '#9b87f5'}40 50%, transparent 75%)`,
+                  background: `linear-gradient(45deg, transparent 25%, ${currentStyle.accentColor || '#9b87f5'}40 50%, transparent 75%)`,
                   backgroundSize: '200% 200%',
                   animation: 'shine 1.5s infinite linear'
                 }}
@@ -316,4 +311,4 @@ export const LoginScreenPreview = ({ style }: { style: WalletStyle }) => {
   );
 };
 
-export default LoginScreenPreview;
+export default PlaygroundLoginPreview;
