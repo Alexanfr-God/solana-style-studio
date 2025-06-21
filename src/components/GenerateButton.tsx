@@ -39,6 +39,12 @@ const GenerateButton = () => {
       return;
     }
 
+    console.log('🚀 Enhanced generation starting for:', {
+      activeLayer,
+      prompt,
+      hasImage: !!uploadedImage
+    });
+
     setIsGenerating(true);
     setShowAgentProgress(true);
     
@@ -84,7 +90,12 @@ const GenerateButton = () => {
         }
       }, 1500);
 
-      const generatedStyle = await generateStyle(prompt, uploadedImage, activeLayer);
+      // Enhanced generation with layer context
+      const generatedStyle = await generateStyle(prompt, uploadedImage, activeLayer, {
+        layerContext: activeLayer,
+        isLoginScreen: activeLayer === 'login',
+        isWalletScreen: activeLayer === 'wallet'
+      });
       
       clearInterval(progressInterval);
       setStyleForLayer(activeLayer, generatedStyle);
@@ -96,7 +107,7 @@ const GenerateButton = () => {
       
       toast({
         title: "🎨 AI Multi-Agent Style Generated",
-        description: `Enhanced style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'} using ${agentSequence.length} specialized agents`,
+        description: `Enhanced ${activeLayer} style applied using ${agentSequence.length} specialized agents`,
       });
 
       // Hide progress after a delay
@@ -105,6 +116,8 @@ const GenerateButton = () => {
       }, 3000);
       
     } catch (error) {
+      console.error('💥 Generation error:', error);
+      
       // Mark current agent as failed
       if (currentAgent) {
         setAgentStatuses(statuses => 
@@ -118,7 +131,7 @@ const GenerateButton = () => {
 
       toast({
         title: "Generation failed",
-        description: "Failed to generate style. Please try again.",
+        description: `Failed to generate ${activeLayer} style. Please try again.`,
         variant: "destructive",
       });
 
@@ -147,17 +160,17 @@ const GenerateButton = () => {
         {isGenerating ? (
           <>
             <Brain className="mr-2 h-4 w-4 animate-pulse" />
-            AI Agents Working...
+            AI Agents Working on {activeLayer}...
           </>
         ) : isEnhanced ? (
           <>
             <Brain className="mr-2 h-4 w-4" />
-            Generate Enhanced Style
+            Generate Enhanced {activeLayer === 'login' ? 'Login' : 'Wallet'} Style
           </>
         ) : (
           <>
             <Zap className="mr-2 h-4 w-4" />
-            Generate Style
+            Generate {activeLayer === 'login' ? 'Login' : 'Wallet'} Style
           </>
         )}
       </Button>
@@ -166,7 +179,7 @@ const GenerateButton = () => {
         <div className="text-xs text-center text-white/60 space-y-1">
           <div className="flex items-center justify-center space-x-1">
             <Brain className="h-3 w-3 text-purple-400" />
-            <span>Enhanced mode: Uses specialized AI agents</span>
+            <span>Enhanced mode for {activeLayer} layer: Uses specialized AI agents</span>
           </div>
           <div>StyleAgent • FontAgent • ButtonAgent • LayoutAgent</div>
         </div>

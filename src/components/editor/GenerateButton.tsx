@@ -27,28 +27,39 @@ const GenerateButton = () => {
       return;
     }
 
-    // Show initial generation toast
+    console.log('🚀 Starting generation for layer:', activeLayer);
+    console.log('📝 Prompt:', prompt);
+    console.log('🖼️ Has image:', !!uploadedImage);
+
+    // Show initial generation toast with layer info
     toast({
-      title: `Generating ${activeLayer === 'login' ? 'Login' : 'Wallet'} Style`,
-      description: "Creating a custom background and color scheme. This may take a moment...",
+      title: `Generating ${activeLayer === 'login' ? 'Login Screen' : 'Wallet'} Style`,
+      description: `Creating custom background and color scheme for ${activeLayer} layer. This may take a moment...`,
     });
     
     setIsGenerating(true);
     try {
-      const generatedStyle = await generateStyle(prompt, uploadedImage, activeLayer);
+      // Pass additional context to help with layer detection
+      const generatedStyle = await generateStyle(prompt, uploadedImage, activeLayer, {
+        layerContext: activeLayer,
+        isLoginScreen: activeLayer === 'login',
+        isWalletScreen: activeLayer === 'wallet'
+      });
+      
+      console.log('✅ Generated style:', generatedStyle);
       setStyleForLayer(activeLayer, generatedStyle);
       
       toast({
         title: "Style generated successfully",
         description: generatedStyle.styleNotes 
           ? `Applied style: ${generatedStyle.styleNotes}` 
-          : `New collectible style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
+          : `New custom style applied to ${activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}`,
       });
     } catch (error) {
-      console.error("Generation error:", error);
+      console.error("💥 Generation error:", error);
       toast({
         title: "Generation failed",
-        description: "Failed to generate style. Please try again with a different prompt.",
+        description: `Failed to generate style for ${activeLayer} layer. Please try again with a different prompt.`,
         variant: "destructive",
       });
     } finally {
@@ -65,12 +76,12 @@ const GenerateButton = () => {
       {isGenerating ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating Style...
+          Generating {activeLayer === 'login' ? 'Login' : 'Wallet'} Style...
         </>
       ) : (
         <>
           <Wand className="mr-2 h-4 w-4" />
-          Generate Style
+          Generate {activeLayer === 'login' ? 'Login' : 'Wallet'} Style
         </>
       )}
     </Button>
