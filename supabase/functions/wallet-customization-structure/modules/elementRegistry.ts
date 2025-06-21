@@ -757,6 +757,65 @@ export function getElementsByType(type: string): WalletElement[] {
   return PHANTOM_WALLET_ELEMENTS.filter(element => element.type === type);
 }
 
+// NEW: Add the missing validateCustomization function
+export function validateCustomization(elementId: string, changes: any): {
+  isValid: boolean;
+  warnings: string[];
+  errors: string[];
+} {
+  const element = PHANTOM_WALLET_ELEMENTS.find(el => el.id === elementId);
+  
+  if (!element) {
+    return {
+      isValid: false,
+      warnings: [],
+      errors: [`Element '${elementId}' not found in registry`]
+    };
+  }
+
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  // Check if element can be customized
+  if (!element.safeZone.canCustomize) {
+    errors.push(`Element '${elementId}' cannot be customized`);
+  }
+
+  // Check restrictions
+  if (element.safeZone.restrictions.length > 0) {
+    element.safeZone.restrictions.forEach(restriction => {
+      switch (restriction) {
+        case 'preserve-functionality':
+          if (changes.display === 'none') {
+            errors.push('Cannot hide functional elements');
+          }
+          break;
+        case 'maintain-readability':
+          if (changes.fontSize && parseFloat(changes.fontSize) < 12) {
+            warnings.push('Font size too small may affect readability');
+          }
+          break;
+        case 'brand-identity':
+          warnings.push('Changes may affect brand consistency');
+          break;
+      }
+    });
+  }
+
+  // Check critical functionality
+  if (element.safeZone.criticalForFunctionality) {
+    if (changes.opacity !== undefined && changes.opacity < 0.3) {
+      errors.push('Critical elements must remain visible');
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    warnings,
+    errors
+  };
+}
+
 // Export function to build comprehensive wallet structure for GPT
 export function buildComprehensiveWalletStructure(): {
   totalElements: number;
