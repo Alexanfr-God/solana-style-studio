@@ -19,6 +19,8 @@ export async function generateBackgroundImage(prompt: string, apiKey: string): P
   headers.set('Content-Type', 'application/json');
   headers.set('Authorization', `Bearer ${cleanApiKey}`);
 
+  console.log('🎨 Generating image with gpt-image-1 model...');
+
   const imageResponse = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers,
@@ -27,8 +29,8 @@ export async function generateBackgroundImage(prompt: string, apiKey: string): P
       prompt: prompt,
       n: 1,
       size: "1024x1024",
-      quality: "high",
-      response_format: "url"
+      quality: "high"
+      // Note: gpt-image-1 always returns base64, no response_format needed
     }),
   });
 
@@ -39,16 +41,28 @@ export async function generateBackgroundImage(prompt: string, apiKey: string): P
   }
 
   const imageData = await imageResponse.json();
-  if (!imageData.data || !imageData.data[0] || !imageData.data[0].url) {
-    throw new Error('Invalid response from OpenAI API');
+  console.log('✅ OpenAI response received, processing image data...');
+
+  if (!imageData.data || !imageData.data[0]) {
+    throw new Error('Invalid response from OpenAI API - no image data');
   }
 
-  return imageData.data[0].url;
+  // gpt-image-1 returns base64 data, not URL
+  const base64Data = imageData.data[0].b64_json;
+  if (!base64Data) {
+    throw new Error('No base64 image data received from OpenAI API');
+  }
+
+  // Convert base64 to data URL for immediate use
+  const dataUrl = `data:image/png;base64,${base64Data}`;
+  console.log('✅ Image converted to data URL successfully');
+  
+  return dataUrl;
 }
 
 /**
  * Saves generated image to Supabase storage and returns public URL
- * @param imageUrl URL of the generated image
+ * @param imageUrl URL or base64 data URL of the generated image
  * @param prompt Original prompt used for generation
  * @param mode Generation mode ('dalle' or 'replicate')
  * @param supabase Supabase client
@@ -61,16 +75,36 @@ export async function saveImageToBucket(
   supabase: any
 ): Promise<string> {
   try {
-    // Download the image
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to download image: ${imageResponse.status}`);
+    console.log('💾 Saving image to bucket...');
+    
+    let imageBlob: Blob;
+    
+    // Handle different image formats (data URL vs regular URL)
+    if (imageUrl.startsWith('data:')) {
+      // Convert data URL to blob
+      const base64Data = imageUrl.split(',')[1];
+      const binaryData = atob(base64Data);
+      const uint8Array = new Uint8Array(binaryData.length);
+      for (let i = 0; i < binaryData.length; i++) {
+        uint8Array[i] = binaryData.charCodeAt(i);
+      }
+      imageBlob = new Blob([uint8Array], { type: 'image/png' });
+      console.log('✅ Converted data URL to blob');
+    } else {
+      // Download the image from URL
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to download image: ${imageResponse.status}`);
+      }
+      imageBlob = await imageResponse.blob();
+      console.log('✅ Downloaded image from URL');
     }
 
-    const imageBlob = await imageResponse.blob();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `${mode}-${timestamp}.png`;
     const filepath = `generated/${filename}`;
+
+    console.log(`📁 Uploading to path: ${filepath}`);
 
     // Upload to storage bucket
     const { data: storageData, error: storageError } = await supabase.storage
@@ -85,13 +119,15 @@ export async function saveImageToBucket(
       throw new Error(`Failed to save image: ${storageError.message}`);
     }
 
+    console.log('✅ Image uploaded successfully:', storageData);
+
     // Get public URL
     const { data: urlData } = supabase.storage
       .from('generated-images')
       .getPublicUrl(filepath);
 
     const publicUrl = urlData.publicUrl;
-    console.log('Image saved successfully:', publicUrl);
+    console.log('🌐 Public URL generated:', publicUrl);
 
     // Save metadata to database
     try {
@@ -103,7 +139,7 @@ export async function saveImageToBucket(
           public_url: publicUrl,
           generation_mode: mode,
           metadata: { 
-            original_url: imageUrl,
+            original_url: imageUrl.startsWith('data:') ? 'base64_data' : imageUrl,
             timestamp,
             size: imageBlob.size
           }
@@ -112,6 +148,8 @@ export async function saveImageToBucket(
       if (dbError) {
         console.error('Database insert error:', dbError);
         // Don't throw here - image is saved, metadata is optional
+      } else {
+        console.log('✅ Metadata saved to database');
       }
     } catch (metaError) {
       console.error('Metadata save error:', metaError);
@@ -120,7 +158,7 @@ export async function saveImageToBucket(
 
     return publicUrl;
   } catch (error) {
-    console.error('Error saving image to bucket:', error);
+    console.error('💥 Error saving image to bucket:', error);
     throw error;
   }
 }
