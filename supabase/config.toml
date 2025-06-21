@@ -42,35 +42,14 @@ enabled = true
 [edge_functions]
 enabled = true
 
-[functions.wallet-customization-structure]
+[functions.generate-style]
+verify_jwt = true
+
+[functions.wallet-chat-gpt]
 verify_jwt = false
 
 [functions.generate-wallet-mask-v3]
 verify_jwt = false
 
-[functions.generate-wallet-mask]
-verify_jwt = false
-
-[functions.wallet-ai-customizer]
-verify_jwt = false
-import_map = "./import_map.json"
-environment = { }
-timeout = 300000
-
-[functions.generate-style]
-verify_jwt = true
-
-[functions.save-feedback]
-verify_jwt = true
-
-[functions.analyze-feedback]
-verify_jwt = true
-
-[functions.analyze-wallet-image]
-verify_jwt = false
-
-[functions.ai-wallet-designer]
-verify_jwt = false
-
-[functions.wallet-chat-gpt]
+[functions.analyze-wallet-structure]
 verify_jwt = false
