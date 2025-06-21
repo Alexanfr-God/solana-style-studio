@@ -1,7 +1,7 @@
 
 import type { WalletContext } from '../types/wallet.ts';
 import type { GPTResponse } from '../types/responses.ts';
-import { buildAdvancedWalletSystemPrompt, buildUserMessage } from '../utils/prompt-builder.ts';
+import { buildAdvancedWalletSystemPrompt, buildUserMessage, buildWowEffectPrompt } from '../utils/prompt-builder.ts';
 import { analyzeStyleFromResponse, analyzeEnhancedStyleFromResponse } from './styleAnalyzer.ts';
 
 export async function processGPTChat(
@@ -16,6 +16,12 @@ export async function processGPTChat(
   try {
     console.log('🤖 Processing enhanced GPT chat with detailed wallet structure...');
     console.log('🔑 Using OPENA_API_KEY for OpenAI chat completion');
+
+    // Check if this is a WOW-effect request
+    const wowEffectKeywords = ['wow', 'amazing', 'impressive', 'dramatic', 'cyberpunk', 'luxury', 'neon', 'cosmic', 'epic'];
+    const isWowEffectRequest = wowEffectKeywords.some(keyword => 
+      content.toLowerCase().includes(keyword)
+    );
 
     // Get enhanced wallet structure and analysis
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
@@ -59,8 +65,17 @@ export async function processGPTChat(
       systemPrompt = buildAdvancedWalletSystemPrompt(walletContext, designExamples || [], chosenStyle);
     }
 
-    // Build user message with enhanced context
-    const userMessage = buildUserMessage(content, walletElement, imageUrl);
+    // Build user message with enhanced context or WOW-effect
+    let userMessage = '';
+    if (isWowEffectRequest) {
+      console.log('✨ Applying WOW-effect enhancement to prompt');
+      // Detect effect type from content
+      const effectType = detectEffectType(content);
+      const intensity = detectIntensity(content);
+      userMessage = buildWowEffectPrompt(effectType, enhancedContext, intensity);
+    } else {
+      userMessage = buildUserMessage(content, walletElement, imageUrl);
+    }
 
     console.log('📡 Sending enhanced request to OpenAI with detailed wallet context...');
 
@@ -155,14 +170,15 @@ export async function processGPTChat(
       response: aiResponse,
       styleChanges,
       success: true,
-      mode: 'enhanced-analysis',
+      mode: isWowEffectRequest ? 'wow-effect' : 'enhanced-analysis',
       enhancedContext,
       validation: validationResult,
       metadata: {
         totalElements: enhancedContext.totalElements,
         customizableElements: enhancedContext.customizableElements,
         validationPassed: validationResult?.isValid,
-        warningsCount: validationResult?.warnings?.length || 0
+        warningsCount: validationResult?.warnings?.length || 0,
+        wowEffect: isWowEffectRequest
       }
     };
 
@@ -176,4 +192,44 @@ export async function processGPTChat(
       error: error.message
     };
   }
+}
+
+// Helper functions for WOW-effect detection
+function detectEffectType(content: string): string {
+  const contentLower = content.toLowerCase();
+  
+  if (contentLower.includes('cyberpunk') || contentLower.includes('matrix') || contentLower.includes('neon green')) {
+    return 'cyberpunk';
+  }
+  if (contentLower.includes('luxury') || contentLower.includes('gold') || contentLower.includes('premium')) {
+    return 'luxury';
+  }
+  if (contentLower.includes('neon') || contentLower.includes('electric') || contentLower.includes('bright')) {
+    return 'neon';
+  }
+  if (contentLower.includes('cosmic') || contentLower.includes('space') || contentLower.includes('galaxy')) {
+    return 'cosmic';
+  }
+  if (contentLower.includes('minimal') || contentLower.includes('clean') || contentLower.includes('simple')) {
+    return 'minimal';
+  }
+  if (contentLower.includes('retro') || contentLower.includes('80s') || contentLower.includes('vintage')) {
+    return 'retro';
+  }
+  
+  // Default to neon for wow effects
+  return 'neon';
+}
+
+function detectIntensity(content: string): 'subtle' | 'medium' | 'dramatic' {
+  const contentLower = content.toLowerCase();
+  
+  if (contentLower.includes('dramatic') || contentLower.includes('extreme') || contentLower.includes('bold')) {
+    return 'dramatic';
+  }
+  if (contentLower.includes('subtle') || contentLower.includes('gentle') || contentLower.includes('soft')) {
+    return 'subtle';
+  }
+  
+  return 'medium'; // default
 }
