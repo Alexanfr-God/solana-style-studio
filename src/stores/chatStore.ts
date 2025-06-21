@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +69,78 @@ function extractImageUrl(response: any, mode: ImageGenerationMode): string | nul
   }
   
   console.warn('⚠️ No image URL found in response structure');
+  return null;
+}
+
+// Convert GPT's complex JSON response to our style format
+function convertGPTResponseToStyleChanges(gptResponse: any): any {
+  console.log('🔄 Converting GPT response to style changes:', gptResponse);
+  
+  // Handle new enhanced JSON format from GPT
+  if (gptResponse.elements && gptResponse.elements.colors) {
+    const colors = gptResponse.elements.colors;
+    const typography = gptResponse.elements.typography || {};
+    const effects = gptResponse.elements.effects || {};
+    
+    console.log('✅ Found enhanced format with elements.colors');
+    
+    return {
+      layer: 'wallet',
+      target: 'global',
+      changes: {
+        backgroundColor: colors.background || colors.primary,
+        textColor: colors.text || colors.secondary,
+        accentColor: colors.accent || colors.primary,
+        buttonColor: colors.primary,
+        buttonTextColor: colors.secondary || colors.text,
+        borderRadius: gptResponse.elements.spacing?.borderRadius || '12px',
+        fontFamily: typography.fontFamily || 'Inter, sans-serif',
+        boxShadow: effects.boxShadow,
+        gradient: effects.gradient
+      },
+      reasoning: gptResponse.metadata?.style_reasoning || 'GPT style analysis applied'
+    };
+  }
+  
+  // Handle actions format
+  if (gptResponse.actions && Array.isArray(gptResponse.actions)) {
+    console.log('✅ Found actions format, extracting styles');
+    
+    const styleChanges: any = {};
+    
+    gptResponse.actions.forEach((action: any) => {
+      if (action.type === 'style_change') {
+        switch (action.property) {
+          case 'backgroundColor':
+            if (action.elementId?.includes('header') || action.elementId?.includes('main')) {
+              styleChanges.backgroundColor = action.value;
+            }
+            break;
+          case 'gradient':
+            styleChanges.gradient = action.value;
+            break;
+          default:
+            // Map other properties as needed
+            break;
+        }
+      }
+    });
+    
+    return {
+      layer: 'wallet',
+      target: 'global',
+      changes: styleChanges,
+      reasoning: 'Applied from GPT actions analysis'
+    };
+  }
+  
+  // Handle legacy format (if it exists)
+  if (gptResponse.changes) {
+    console.log('✅ Found legacy styleChanges format');
+    return gptResponse;
+  }
+  
+  console.warn('⚠️ Unknown GPT response format, using fallback');
   return null;
 }
 
@@ -147,9 +218,31 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       const responseContent = data.response;
       
+      // Enhanced style changes processing
       if (data.styleChanges) {
-        console.log('🎨 Applying style changes from GPT:', data.styleChanges);
-        get().applyStyleChanges(data.styleChanges);
+        console.log('🎨 Processing style changes from GPT:', data.styleChanges);
+        
+        // Try to parse JSON from response if it's a string
+        let parsedStyleChanges = data.styleChanges;
+        if (typeof data.styleChanges === 'string') {
+          try {
+            parsedStyleChanges = JSON.parse(data.styleChanges);
+          } catch (e) {
+            console.warn('⚠️ Failed to parse styleChanges as JSON, using as-is');
+          }
+        }
+        
+        // Convert to our format
+        const convertedChanges = convertGPTResponseToStyleChanges(parsedStyleChanges);
+        
+        if (convertedChanges) {
+          console.log('✅ Successfully converted style changes:', convertedChanges);
+          get().applyStyleChanges(convertedChanges);
+        } else {
+          console.warn('⚠️ Could not convert style changes');
+        }
+      } else {
+        console.log('ℹ️ No style changes in response');
       }
 
       const assistantMessage: ChatMessage = {
@@ -164,7 +257,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isLoading: false
       }));
 
-      console.log('✅ GPT response received and style changes applied');
+      console.log('✅ GPT response processed and style changes applied');
 
     } catch (error) {
       console.error('❌ Error sending message:', error);
