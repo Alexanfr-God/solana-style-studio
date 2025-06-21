@@ -1,4 +1,3 @@
-
 // Main entry point for generate-style Edge Function
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -27,11 +26,13 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get OpenAI API key
-    const openAiApiKey = Deno.env.get("OPENAI_API_KEY") || "";
+    // Get OpenAI API key (updated to use new secret name)
+    const openAiApiKey = Deno.env.get("OPENA_API_KEY") || "";
     if (!openAiApiKey) {
-      throw new Error("OpenAI API key not found");
+      throw new Error("OpenAI API key not found - OPENA_API_KEY not configured");
     }
+
+    console.log("✅ Using OPENA_API_KEY for OpenAI requests");
 
     // Handle image generation mode
     if (mode === 'image_generation') {

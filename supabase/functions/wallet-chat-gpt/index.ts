@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -35,17 +34,20 @@ serve(async (req) => {
   try {
     console.log('🚀 Processing enhanced wallet chat request...');
 
-    // Get and validate OpenAI API key
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')?.trim();
+    // Get and validate OpenAI API key (updated to use new secret name)
+    const openAIApiKey = Deno.env.get('OPENA_API_KEY')?.trim();
     if (!openAIApiKey || !openAIApiKey.startsWith('sk-')) {
+      console.error('❌ OPENA_API_KEY not configured or invalid format');
       return new Response(JSON.stringify({ 
-        error: 'OpenAI API key not configured or invalid format',
+        error: 'OpenAI API key not configured or invalid format - check OPENA_API_KEY secret',
         success: false 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('✅ Using OPENA_API_KEY for OpenAI requests');
 
     // Parse request data
     let content, imageUrl, walletElement, walletContext, sessionId, walletType, userPrompt, mode;

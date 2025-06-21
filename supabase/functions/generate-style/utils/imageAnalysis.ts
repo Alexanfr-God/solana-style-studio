@@ -11,26 +11,28 @@ export async function generateBackgroundImage(prompt: string, apiKey: string): P
   // Clean and validate API key
   const cleanApiKey = apiKey.trim();
   if (!cleanApiKey || !cleanApiKey.startsWith('sk-')) {
-    throw new Error('Invalid OpenAI API key format');
+    throw new Error('Invalid OpenAI API key format - must start with sk-');
   }
+
+  console.log('🔑 Using OPENA_API_KEY for DALL-E image generation');
 
   // Create proper headers object
   const headers = new Headers();
   headers.set('Content-Type', 'application/json');
   headers.set('Authorization', `Bearer ${cleanApiKey}`);
 
-  console.log('🎨 Generating image with gpt-image-1 model...');
+  console.log('🎨 Generating image with dall-e-3 model...');
 
   const imageResponse = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers,
     body: JSON.stringify({
-      model: "gpt-image-1",
+      model: "dall-e-3",
       prompt: prompt,
       n: 1,
       size: "1024x1024",
-      quality: "high"
-      // Note: gpt-image-1 always returns base64, no response_format needed
+      quality: "hd",
+      response_format: "b64_json"
     }),
   });
 
@@ -47,7 +49,7 @@ export async function generateBackgroundImage(prompt: string, apiKey: string): P
     throw new Error('Invalid response from OpenAI API - no image data');
   }
 
-  // gpt-image-1 returns base64 data, not URL
+  // DALL-E 3 returns base64 data when response_format is b64_json
   const base64Data = imageData.data[0].b64_json;
   if (!base64Data) {
     throw new Error('No base64 image data received from OpenAI API');

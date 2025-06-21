@@ -1,3 +1,4 @@
+
 import type { WalletContext } from '../types/wallet.ts';
 import type { GPTResponse } from '../types/responses.ts';
 import { buildAdvancedWalletSystemPrompt, buildUserMessage } from '../utils/prompt-builder.ts';
@@ -14,10 +15,11 @@ export async function processGPTChat(
 ): Promise<GPTResponse> {
   try {
     console.log('🤖 Processing enhanced GPT chat with detailed wallet structure...');
+    console.log('🔑 Using OPENA_API_KEY for OpenAI chat completion');
 
     // Get enhanced wallet structure and analysis
-    const { supabase } = await import('https://esm.sh/@supabase/supabase-js@2');
-    const supabaseClient = supabase(
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
@@ -94,6 +96,7 @@ export async function processGPTChat(
 
     if (!response.ok) {
       const errorData = await response.text();
+      console.error('💥 OpenAI API error:', errorData);
       throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
     }
 
