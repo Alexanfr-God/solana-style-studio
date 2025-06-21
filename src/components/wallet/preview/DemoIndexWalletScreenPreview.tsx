@@ -1,3 +1,12 @@
+/*
+ * ⚠️ DEMO INDEX DONT TOUCH - THIS FILE IS FOR INDEX PAGE DEMO ONLY ⚠️
+ * 
+ * This file is specifically created for the Index page wallet demo preview.
+ * It should NEVER be modified or used for other purposes.
+ * Any changes to wallet functionality should be made in separate files.
+ * 
+ * DO NOT MODIFY THIS FILE - IT'S PROTECTED FOR DEMO PURPOSES!
+ */
 
 import React, { useState } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
@@ -5,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ChevronDown, Copy, Search } from 'lucide-react';
 import WalletAssetItem from './WalletAssetItem';
 import WalletActionButtons from './WalletActionButtons';
-import IndexWalletActionButtons from './IndexWalletActionButtons';
+import DemoIndexWalletActionButtons from './DemoIndexWalletActionButtons';
 import WalletNavigation from './WalletNavigation';
 
 interface WalletScreenPreviewProps {
@@ -77,7 +86,7 @@ export const WalletScreenPreview = ({ style, isIndexPage = false }: WalletScreen
         
         {/* Action Buttons - Conditional rendering */}
         {isIndexPage ? (
-          <IndexWalletActionButtons onAction={handleAction} style={style} />
+          <DemoIndexWalletActionButtons onAction={handleAction} style={style} />
         ) : (
           <WalletActionButtons onAction={handleAction} style={style} />
         )}

@@ -1,3 +1,12 @@
+/*
+ * ⚠️ DEMO INDEX DONT TOUCH - THIS FILE IS FOR INDEX PAGE DEMO ONLY ⚠️
+ * 
+ * This file contains isolated action buttons specifically for the Index page demo.
+ * It should NEVER be modified or connected to other wallet functionality.
+ * Any changes to wallet action buttons should be made in separate files.
+ * 
+ * DO NOT MODIFY THIS FILE - IT'S PROTECTED FOR DEMO PURPOSES!
+ */
 
 import React, { useState } from 'react';
 import { Download, Send, ArrowRightLeft, DollarSign } from 'lucide-react';

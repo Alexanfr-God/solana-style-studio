@@ -1,3 +1,13 @@
+/*
+ * ⚠️ DEMO INDEX DONT TOUCH - THIS FILE IS FOR INDEX PAGE DEMO ONLY ⚠️
+ * 
+ * This file is specifically created for the Index page wallet demo preview.
+ * It should NEVER be modified or used for other purposes.
+ * Any changes to wallet functionality should be made in separate files.
+ * 
+ * DO NOT MODIFY THIS FILE - IT'S PROTECTED FOR DEMO PURPOSES!
+ */
+
 import React, { useState, useEffect } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
 import { 

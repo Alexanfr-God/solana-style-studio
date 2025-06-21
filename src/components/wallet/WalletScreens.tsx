@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
-import { LoginScreenPreview } from './preview/LoginScreenPreview';
-import { WalletScreenPreview } from './preview/WalletScreenPreview';
+import { DemoIndexLoginScreenPreview } from './preview/DemoIndexLoginScreenPreview';
+import { DemoIndexWalletScreenPreview } from './preview/DemoIndexWalletScreenPreview';
 
 interface WalletScreenProps {
   style: WalletStyle;
@@ -10,9 +10,9 @@ interface WalletScreenProps {
 }
 
 export const LoginScreen = ({ style }: WalletScreenProps) => {
-  return <LoginScreenPreview style={style} />;
+  return <DemoIndexLoginScreenPreview style={style} />;
 };
 
 export const WalletScreen = ({ style, isIndexPage = false }: WalletScreenProps) => {
-  return <WalletScreenPreview style={style} isIndexPage={isIndexPage} />;
+  return <DemoIndexWalletScreenPreview style={style} isIndexPage={isIndexPage} />;
 };
