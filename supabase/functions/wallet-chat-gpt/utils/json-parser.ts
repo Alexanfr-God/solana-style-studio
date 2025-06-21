@@ -1,63 +1,85 @@
-
-// Enhanced JSON parsing utilities for new response format
+// Fixed JSON parsing utilities for consistent format
 import type { EnhancedStyleChanges } from '../types/responses.ts';
 
-export function extractAdvancedStyleChanges(response: string, walletContext: any): EnhancedStyleChanges | any {
+export function fixedStyleExtraction(response: string): any {
+  console.log('🔍 Parsing GPT response:', response.substring(0, 200));
+  
   try {
-    // Try to find JSON block in response
-    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      const jsonString = jsonMatch[1];
-      const parsed = JSON.parse(jsonString);
+    // Strategy 1: Look for new format
+    const newFormatMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+    if (newFormatMatch) {
+      const parsed = JSON.parse(newFormatMatch[1]);
       
-      // Check if it's the new enhanced format
-      if (parsed.analysis && parsed.actions && parsed.elements && parsed.metadata) {
-        return parsed as EnhancedStyleChanges;
+      // Convert new format to old format
+      if (parsed.elements) {
+        console.log('✅ Found new format, converting...');
+        return {
+          layer: 'wallet',
+          target: 'global',
+          changes: {
+            backgroundColor: parsed.elements.colors?.primary || '#1a1a1a',
+            accentColor: parsed.elements.colors?.accent || '#9945ff',
+            textColor: parsed.elements.colors?.text || '#ffffff',
+            buttonColor: parsed.elements.colors?.primary || '#9945ff'
+          },
+          reasoning: parsed.analysis || 'Style applied from GPT response'
+        };
       }
       
-      // Legacy format support
+      // If old format, return as is
       if (parsed.styleChanges) {
+        console.log('✅ Found old format');
         return parsed.styleChanges;
       }
     }
-
-    // Try to find direct JSON in response (without code blocks)
+    
+    // Strategy 2: Direct JSON parsing
     try {
       const directJson = JSON.parse(response);
-      if (directJson.analysis && directJson.actions && directJson.elements) {
-        return directJson as EnhancedStyleChanges;
+      if (directJson.styleChanges) {
+        console.log('✅ Found direct old format');
+        return directJson.styleChanges;
+      }
+      if (directJson.elements) {
+        console.log('✅ Found direct new format, converting...');
+        return {
+          layer: 'wallet',
+          target: 'global',
+          changes: {
+            backgroundColor: directJson.elements.colors?.primary || '#1a1a1a',
+            accentColor: directJson.elements.colors?.accent || '#9945ff',
+            textColor: directJson.elements.colors?.text || '#ffffff',
+            buttonColor: directJson.elements.colors?.primary || '#9945ff'
+          },
+          reasoning: directJson.analysis || 'Style applied from GPT response'
+        };
       }
     } catch (e) {
       // Not direct JSON, continue with fallback
     }
-
-    // Fallback: look for style-related keywords and extract colors
-    const colorRegex = /#[0-9A-Fa-f]{6}|rgb\(\d+,\s*\d+,\s*\d+\)|rgba\(\d+,\s*\d+,\s*\d+,\s*[\d.]+\)/g;
-    const colors = response.match(colorRegex);
     
-    if (colors && colors.length > 0) {
-      return {
-        analysis: "Auto-extracted from color analysis",
-        actions: ["color_extraction"],
-        elements: {
-          colors: {
-            primary: colors[0],
-            accent: colors[1] || colors[0],
-            text: response.toLowerCase().includes('dark') ? '#ffffff' : '#000000',
-          }
-        },
-        metadata: {
-          style_reasoning: 'Auto-extracted from color analysis',
-          nft_ready: true
-        }
-      };
-    }
-
-    return null;
+    // Strategy 3: Fallback
+    console.log('⚠️ Using fallback styles');
+    return {
+      layer: 'wallet',
+      target: 'global', 
+      changes: {
+        backgroundColor: '#1a1a1a',
+        accentColor: '#9945ff',
+        textColor: '#ffffff'
+      },
+      reasoning: 'Fallback styles applied'
+    };
+    
   } catch (error) {
-    console.error('❌ Error parsing enhanced style changes:', error);
+    console.error('❌ JSON parsing error:', error);
     return null;
   }
+}
+
+// Legacy support function
+export function extractAdvancedStyleChanges(response: string, walletContext: any): EnhancedStyleChanges | any {
+  return fixedStyleExtraction(response);
 }
 
 // Legacy support function

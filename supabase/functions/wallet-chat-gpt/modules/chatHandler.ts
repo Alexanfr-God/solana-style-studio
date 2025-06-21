@@ -1,7 +1,7 @@
 
-// Enhanced GPT chat handling logic with new response format
+// Fixed GPT chat handling logic with proper format conversion
 import { buildAdvancedWalletSystemPrompt, buildUserMessage } from '../utils/prompt-builder.ts';
-import { extractAdvancedStyleChanges } from '../utils/json-parser.ts';
+import { fixedStyleExtraction } from '../utils/json-parser.ts';
 
 export async function processGPTChat(
   content: string,
@@ -13,9 +13,9 @@ export async function processGPTChat(
   openAIApiKey: string = ''
 ) {
   try {
-    console.log('🤖 Processing enhanced GPT chat with new system prompt...');
+    console.log('🤖 Processing GPT chat with fixed system prompt...');
     
-    // Build enhanced system prompt
+    // Build fixed system prompt
     const systemPrompt = buildAdvancedWalletSystemPrompt(walletContext, designExamples, chosenStyle);
     
     // Build user message with context
@@ -44,7 +44,7 @@ export async function processGPTChat(
       };
     }
 
-    console.log('🔥 Calling OpenAI with enhanced prompt structure...');
+    console.log('🔥 Calling OpenAI with fixed prompt structure...');
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -68,25 +68,25 @@ export async function processGPTChat(
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
-    console.log('🎨 AI Response received, parsing enhanced format...');
+    console.log('🎨 AI Response received, parsing with fixed extractor...');
 
-    // Extract enhanced style changes using new parser
-    const styleChanges = extractAdvancedStyleChanges(aiResponse, walletContext);
+    // Use fixed style extraction
+    const styleChanges = fixedStyleExtraction(aiResponse);
 
-    console.log('✅ Enhanced style changes parsed:', styleChanges ? 'SUCCESS' : 'FALLBACK');
+    console.log('✅ Fixed style changes extracted:', styleChanges ? 'SUCCESS' : 'FALLBACK');
 
     return {
       success: true,
       response: aiResponse,
       styleChanges,
-      mode: 'enhanced_analysis'
+      mode: 'analysis'
     };
   } catch (error) {
-    console.error('❌ Error in enhanced GPT chat processing:', error);
+    console.error('❌ Error in fixed GPT chat processing:', error);
     return {
       success: false,
       error: error.message,
-      mode: 'enhanced_analysis'
+      mode: 'analysis'
     };
   }
 }

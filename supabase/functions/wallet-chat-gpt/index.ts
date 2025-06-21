@@ -8,6 +8,7 @@ import { processGPTChat } from './modules/chatHandler.ts';
 import { generateImageWithDALLE, generateImageWithReplicate } from './modules/imageGenerator.ts';
 import { validateWalletContext, createDefaultWalletContext } from './modules/walletManager.ts';
 import { loadDesignExamples, chooseStyle } from './utils/storage-manager.ts';
+import { fixedStyleExtraction } from './utils/json-parser.ts';
 
 // Import types
 import type { WalletContext } from './types/wallet.ts';
@@ -149,8 +150,15 @@ serve(async (req) => {
     );
 
     console.log('✅ GPT response generated:', result.success);
+    console.log('🎨 StyleChanges extracted:', result.styleChanges ? 'YES' : 'NO');
 
-    return new Response(JSON.stringify(result), {
+    // Ensure we return the correct format that frontend expects
+    return new Response(JSON.stringify({
+      response: result.response,
+      styleChanges: result.styleChanges, // This is the key format frontend expects
+      success: result.success,
+      mode: result.mode || 'analysis'
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
