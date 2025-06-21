@@ -5,17 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Send, Loader2 } from 'lucide-react';
 import { chatWithAI } from '@/services/apiService';
 import { useCustomizationStore } from '@/stores/customizationStore';
+import { useChatStore } from '@/stores/chatStore';
 import { toast } from 'sonner';
 
 interface MessageInputProps {
-  onMessageSent: (message: string, response: string, styleChanges?: any) => void;
   disabled?: boolean;
   selectedElement: string;
   onElementSelect: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({ 
-  onMessageSent, 
   disabled, 
   selectedElement, 
   onElementSelect 
@@ -23,6 +22,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { uploadedImage, activeLayer, loginStyle, walletStyle } = useCustomizationStore();
+  const { sendMessage } = useChatStore();
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -55,7 +55,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
       
       console.log('✅ Chat response received:', result);
       
-      onMessageSent(currentMessage, result.response, result.styleChanges);
+      // Use the chat store to send the message
+      sendMessage({ content: currentMessage });
       
       if (result.styleChanges) {
         toast.success('Style changes applied from AI suggestions!');
@@ -65,7 +66,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       toast.error('Sorry, there was an error connecting to AI. Please check API settings or try again later.');
       
       // Still add the message to show what user tried to send
-      onMessageSent(currentMessage, 'Sorry, there was an error connecting to AI. Please check API settings or try again later.');
+      sendMessage({ content: currentMessage });
     } finally {
       setIsLoading(false);
     }
