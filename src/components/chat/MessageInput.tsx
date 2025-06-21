@@ -10,9 +10,16 @@ import { toast } from 'sonner';
 interface MessageInputProps {
   onMessageSent: (message: string, response: string, styleChanges?: any) => void;
   disabled?: boolean;
+  selectedElement: string;
+  onElementSelect: React.Dispatch<React.SetStateAction<string>>;
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({ onMessageSent, disabled }) => {
+const MessageInput: React.FC<MessageInputProps> = ({ 
+  onMessageSent, 
+  disabled, 
+  selectedElement, 
+  onElementSelect 
+}) => {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { uploadedImage, activeLayer, loginStyle, walletStyle } = useCustomizationStore();
@@ -28,15 +35,20 @@ const MessageInput: React.FC<MessageInputProps> = ({ onMessageSent, disabled }) 
       console.log('💬 Sending chat message:', {
         message: currentMessage,
         activeLayer,
-        hasImage: !!uploadedImage
+        hasImage: !!uploadedImage,
+        selectedElement
       });
 
-      // Create wallet context for the AI
+      // Create enhanced wallet context for the AI
       const walletContext = {
         walletType: 'phantom',
         activeLayer: activeLayer,
         currentStyle: activeLayer === 'login' ? loginStyle : walletStyle,
-        hasUploadedImage: !!uploadedImage
+        hasUploadedImage: !!uploadedImage,
+        selectedElement: selectedElement || undefined,
+        layerContext: `${activeLayer} layer customization`,
+        isLoginScreen: activeLayer === 'login',
+        isWalletScreen: activeLayer === 'wallet'
       };
 
       const result = await chatWithAI(currentMessage, uploadedImage || undefined, walletContext);
@@ -72,7 +84,7 @@ const MessageInput: React.FC<MessageInputProps> = ({ onMessageSent, disabled }) 
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyPress={handleKeyPress}
-        placeholder={`Ask AI about your ${activeLayer} design...`}
+        placeholder={`Ask AI about your ${activeLayer} design${selectedElement ? ` (${selectedElement})` : ''}...`}
         disabled={disabled || isLoading}
         className="flex-1"
       />
