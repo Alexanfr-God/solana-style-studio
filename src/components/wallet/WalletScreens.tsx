@@ -4,10 +4,15 @@ import { WalletStyle } from '@/stores/customizationStore';
 import { LoginScreenPreview } from './preview/LoginScreenPreview';
 import { WalletScreenPreview } from './preview/WalletScreenPreview';
 
-export const LoginScreen = ({ style }: { style: WalletStyle }) => {
+interface WalletScreenProps {
+  style: WalletStyle;
+  isIndexPage?: boolean;
+}
+
+export const LoginScreen = ({ style }: WalletScreenProps) => {
   return <LoginScreenPreview style={style} />;
 };
 
-export const WalletScreen = ({ style }: { style: WalletStyle }) => {
-  return <WalletScreenPreview style={style} />;
+export const WalletScreen = ({ style, isIndexPage = false }: WalletScreenProps) => {
+  return <WalletScreenPreview style={style} isIndexPage={isIndexPage} />;
 };

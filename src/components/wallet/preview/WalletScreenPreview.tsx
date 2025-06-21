@@ -5,9 +5,15 @@ import { useToast } from '@/hooks/use-toast';
 import { ChevronDown, Copy, Search } from 'lucide-react';
 import WalletAssetItem from './WalletAssetItem';
 import WalletActionButtons from './WalletActionButtons';
+import IndexWalletActionButtons from './IndexWalletActionButtons';
 import WalletNavigation from './WalletNavigation';
 
-export const WalletScreenPreview = ({ style }: { style: WalletStyle }) => {
+interface WalletScreenPreviewProps {
+  style: WalletStyle;
+  isIndexPage?: boolean;
+}
+
+export const WalletScreenPreview = ({ style, isIndexPage = false }: WalletScreenPreviewProps) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("home");
   
@@ -69,8 +75,12 @@ export const WalletScreenPreview = ({ style }: { style: WalletStyle }) => {
           </div>
         </div>
         
-        {/* Action Buttons */}
-        <WalletActionButtons onAction={handleAction} style={style} />
+        {/* Action Buttons - Conditional rendering */}
+        {isIndexPage ? (
+          <IndexWalletActionButtons onAction={handleAction} style={style} />
+        ) : (
+          <WalletActionButtons onAction={handleAction} style={style} />
+        )}
         
         {/* Assets List */}
         <div className="flex-1 overflow-auto px-4 pt-2 pb-4">
