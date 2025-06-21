@@ -33,7 +33,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Processing wallet chat request...');
+    console.log('🚀 Processing enhanced wallet chat request...');
 
     // Get and validate OpenAI API key
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY')?.trim();
@@ -122,11 +122,46 @@ serve(async (req) => {
       }
     }
 
-    // DEFAULT: Style analysis mode
-    console.log('🧠 Processing style analysis mode...');
+    // DEFAULT: Enhanced style analysis mode with structure integration
+    console.log('🧠 Processing enhanced style analysis mode...');
 
     // Validate wallet context
     const validatedWalletContext = validateWalletContext(walletContext);
+    const currentWalletType = validatedWalletContext.walletType || 'phantom';
+
+    // Load comprehensive wallet structure
+    const structureResponse = await supabase.functions.invoke('wallet-customization-structure', {
+      method: 'GET'
+    });
+
+    let walletStructure = null;
+    if (structureResponse.data?.success) {
+      walletStructure = structureResponse.data.structure;
+      console.log('✅ Comprehensive wallet structure loaded');
+    } else {
+      console.warn('⚠️ Failed to load wallet structure, using fallback');
+    }
+
+    // Load wallet-specific elements from registry
+    const { data: registryElements } = await supabase
+      .from('wallet_element_registry')
+      .select('*')
+      .eq('wallet_type', currentWalletType);
+
+    console.log(`📊 Loaded ${registryElements?.length || 0} registry elements for ${currentWalletType}`);
+
+    // Enhance wallet context with structure data
+    const enhancedWalletContext = {
+      ...validatedWalletContext,
+      walletStructure,
+      registryElements: registryElements || [],
+      capabilities: {
+        multiWalletSupport: true,
+        structureAware: true,
+        safeZoneRespect: true,
+        collaborationReady: true
+      }
+    };
 
     // Load design examples
     const designExamples = await loadDesignExamples(supabase);
@@ -138,10 +173,10 @@ serve(async (req) => {
       console.log('🎨 Chosen style:', chosenStyle?.id || 'none');
     }
 
-    // Process GPT chat
+    // Process GPT chat with enhanced context
     const result = await processGPTChat(
       content,
-      validatedWalletContext,
+      enhancedWalletContext,
       walletElement,
       imageUrl,
       designExamples,
@@ -149,21 +184,27 @@ serve(async (req) => {
       openAIApiKey
     );
 
-    console.log('✅ GPT response generated:', result.success);
+    console.log('✅ Enhanced GPT response generated:', result.success);
     console.log('🎨 StyleChanges extracted:', result.styleChanges ? 'YES' : 'NO');
 
     // Ensure we return the correct format that frontend expects
     return new Response(JSON.stringify({
       response: result.response,
-      styleChanges: result.styleChanges, // This is the key format frontend expects
+      styleChanges: result.styleChanges,
       success: result.success,
-      mode: result.mode || 'analysis'
+      mode: result.mode || 'analysis',
+      metadata: {
+        walletType: currentWalletType,
+        structureAware: !!walletStructure,
+        registryElementsCount: registryElements?.length || 0,
+        enhancedAnalysis: true
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('❌ Error in wallet-chat-gpt function:', error);
+    console.error('❌ Error in enhanced wallet-chat-gpt function:', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'An unexpected error occurred',
       success: false 

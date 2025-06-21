@@ -5,18 +5,36 @@ export interface WalletStructureResponse {
   success: boolean;
   structure: any;
   metadata: {
+    totalProviders: number;
     totalElements: number;
+    totalInstances: number;
+    totalWalletTypes: number;
     version: string;
     timestamp: string;
+    capabilities: string[];
   };
 }
 
+export interface WalletSwitchResponse {
+  success: boolean;
+  walletStructure: any;
+  message: string;
+}
+
+export interface CollaborationResponse {
+  success: boolean;
+  sessionId: string;
+  analyzedStructure?: any;
+  message: string;
+}
+
 export class WalletStructureService {
-  private static structure: any = null;
+  private static structure: WalletStructureResponse | null = null;
   private static isLoading = false;
+  private static currentWalletType = 'phantom';
 
   /**
-   * Получить полную структуру кошелька для AI агентов
+   * Get comprehensive wallet structure for AI agents
    */
   static async getWalletStructure(): Promise<WalletStructureResponse> {
     try {
@@ -27,13 +45,12 @@ export class WalletStructureService {
 
       if (this.isLoading) {
         console.log('⏳ Structure already loading, waiting...');
-        // Ждем загрузки
         await new Promise(resolve => setTimeout(resolve, 100));
         return this.getWalletStructure();
       }
 
       this.isLoading = true;
-      console.log('📡 Fetching wallet structure from API...');
+      console.log('📡 Fetching comprehensive wallet structure from API...');
 
       const { data, error } = await supabase.functions.invoke('wallet-customization-structure', {
         method: 'GET'
@@ -51,15 +68,18 @@ export class WalletStructureService {
       this.structure = data;
       this.isLoading = false;
 
-      console.log(`✅ Wallet structure loaded successfully!`);
-      console.log(`📊 Total customizable elements: ${data.metadata.totalElements}`);
-      console.log(`🎯 Ready for AI Agents integration!`);
+      console.log(`✅ Comprehensive wallet structure loaded successfully!`);
+      console.log(`📊 Total providers: ${data.metadata.totalProviders}`);
+      console.log(`📊 Total elements: ${data.metadata.totalElements}`);
+      console.log(`📊 Total wallet types: ${data.metadata.totalWalletTypes}`);
+      console.log(`🎯 Capabilities: ${data.metadata.capabilities.join(', ')}`);
 
-      // Сделать структуру глобально доступной
+      // Make structure globally available
       if (typeof window !== 'undefined') {
         (window as any).walletStructure = data;
-        (window as any).applyCustomTheme = this.applyCustomTheme;
-        console.log('🌐 Wallet structure made globally available on window.walletStructure');
+        (window as any).switchWallet = this.switchWallet.bind(this);
+        (window as any).createCollaboration = this.createCollaboration.bind(this);
+        console.log('🌐 Enhanced wallet structure made globally available');
       }
 
       return data;
@@ -72,21 +92,127 @@ export class WalletStructureService {
   }
 
   /**
-   * Применить кастомную тему (заготовка для AI агентов)
+   * Switch to a different wallet type
    */
-  static async applyCustomTheme(theme: any): Promise<void> {
+  static async switchWallet(walletType: string): Promise<WalletSwitchResponse> {
     try {
-      console.log('🎨 Theme ready for application:', theme);
+      console.log('🔄 Switching to wallet type:', walletType);
+
+      const { data, error } = await supabase.functions.invoke('wallet-customization-structure', {
+        method: 'POST',
+        body: {
+          action: 'switch-wallet',
+          walletType
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error switching wallet:', error);
+        throw new Error(`Failed to switch wallet: ${error.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Wallet switch failed');
+      }
+
+      this.currentWalletType = walletType;
       
-      // В будущем здесь будет реальное применение темы
-      // Пока просто логируем для подготовки к AI агентам
+      // Invalidate cached structure to force reload with new wallet
+      this.structure = null;
+
+      console.log('✅ Wallet switched successfully:', walletType);
+      return data;
+
+    } catch (error) {
+      console.error('💥 Failed to switch wallet:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create collaboration session with external API
+   */
+  static async createCollaboration(sessionName: string, externalApiUrl: string): Promise<CollaborationResponse> {
+    try {
+      console.log('🤝 Creating collaboration session:', sessionName);
+
+      const { data, error } = await supabase.functions.invoke('wallet-customization-structure', {
+        method: 'POST',
+        body: {
+          action: 'create-collaboration',
+          sessionName,
+          externalApiUrl
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error creating collaboration:', error);
+        throw new Error(`Failed to create collaboration: ${error.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Collaboration creation failed');
+      }
+
+      console.log('✅ Collaboration session created:', data.session.id);
+      return data;
+
+    } catch (error) {
+      console.error('💥 Failed to create collaboration:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Analyze external wallet and integrate into system
+   */
+  static async analyzeExternalWallet(apiUrl: string, sessionName: string): Promise<CollaborationResponse> {
+    try {
+      console.log('🔍 Analyzing external wallet:', apiUrl);
+
+      const { data, error } = await supabase.functions.invoke('wallet-customization-structure', {
+        method: 'POST',
+        body: {
+          action: 'analyze-external-wallet',
+          externalApiUrl: apiUrl,
+          sessionName
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error analyzing external wallet:', error);
+        throw new Error(`Failed to analyze external wallet: ${error.message}`);
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'External wallet analysis failed');
+      }
+
+      // Invalidate cache to pick up new elements
+      this.structure = null;
+
+      console.log('✅ External wallet analyzed and integrated:', data.sessionId);
+      return data;
+
+    } catch (error) {
+      console.error('💥 Failed to analyze external wallet:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Apply custom theme with structure awareness
+   */
+  static async applyCustomTheme(theme: any, userId?: string): Promise<void> {
+    try {
+      console.log('🎨 Applying theme with structure awareness:', theme);
       
       const { data, error } = await supabase.functions.invoke('wallet-customization-structure', {
         method: 'POST',
         body: {
+          action: 'apply-theme',
           theme,
-          userId: 'current-user', // В будущем получать из auth
-          action: 'apply-theme'
+          userId: userId || 'current-user'
         }
       });
 
@@ -95,7 +221,7 @@ export class WalletStructureService {
         throw new Error(`Failed to apply theme: ${error.message}`);
       }
 
-      console.log('✅ Theme application response:', data);
+      console.log('✅ Theme applied successfully with structure awareness');
       
     } catch (error) {
       console.error('💥 Failed to apply theme:', error);
@@ -104,62 +230,83 @@ export class WalletStructureService {
   }
 
   /**
-   * Получить примеры готовых тем
+   * Get current wallet type
    */
-  static async getExampleThemes(): Promise<any> {
-    const structure = await this.getWalletStructure();
-    return structure.structure.exampleThemes;
+  static getCurrentWalletType(): string {
+    return this.currentWalletType;
   }
 
   /**
-   * Получить инструкции для AI агентов
+   * Get available wallet types
    */
-  static async getAIAgentsInstructions(): Promise<any> {
+  static async getAvailableWalletTypes(): Promise<string[]> {
     const structure = await this.getWalletStructure();
-    return structure.structure.aiAgentsInstructions;
+    return Object.keys(structure.structure.walletTypes);
   }
 
   /**
-   * Проверить здоровье API
+   * Get wallet providers
+   */
+  static async getWalletProviders(): Promise<any> {
+    const structure = await this.getWalletStructure();
+    return structure.structure.providers;
+  }
+
+  /**
+   * Check system health
    */
   static async healthCheck(): Promise<any> {
     try {
-      const { data, error } = await supabase.functions.invoke('wallet-customization-structure/health', {
-        method: 'GET'
-      });
-
-      if (error) {
-        throw new Error(`Health check failed: ${error.message}`);
-      }
-
-      console.log('✅ Wallet Structure API health check passed:', data);
-      return data;
+      const structure = await this.getWalletStructure();
+      
+      return {
+        status: 'healthy',
+        capabilities: structure.metadata.capabilities,
+        totalElements: structure.metadata.totalElements,
+        version: structure.metadata.version,
+        timestamp: new Date().toISOString()
+      };
 
     } catch (error) {
       console.error('❌ Health check failed:', error);
-      throw error;
+      return {
+        status: 'unhealthy',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
     }
   }
 
   /**
-   * Экспорт структуры для отладки
+   * Export structure for debugging
    */
   static async exportForDebug(): Promise<any> {
     const structure = await this.getWalletStructure();
+    const health = await this.healthCheck();
+    
     return {
       structure: structure.structure,
       metadata: structure.metadata,
+      health,
+      currentWalletType: this.currentWalletType,
       timestamp: new Date().toISOString(),
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server'
     };
   }
+
+  /**
+   * Clear cache and force reload
+   */
+  static clearCache(): void {
+    this.structure = null;
+    console.log('🧹 Cache cleared, next request will fetch fresh data');
+  }
 }
 
-// Автоматическая инициализация при загрузке модуля
+// Auto-initialize when module loads
 if (typeof window !== 'undefined') {
-  // Инициализируем структуру при загрузке страницы
   WalletStructureService.getWalletStructure().catch(error => {
-    console.warn('⚠️ Failed to auto-initialize wallet structure:', error);
+    console.warn('⚠️ Failed to auto-initialize enhanced wallet structure:', error);
   });
 }
 

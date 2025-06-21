@@ -126,6 +126,42 @@ export type Database = {
         }
         Relationships: []
       }
+      collaboration_sessions: {
+        Row: {
+          analysis_result: Json | null
+          created_at: string | null
+          created_by: string | null
+          external_api_url: string | null
+          id: string
+          session_name: string
+          status: string | null
+          updated_at: string | null
+          wallet_data: Json | null
+        }
+        Insert: {
+          analysis_result?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          external_api_url?: string | null
+          id?: string
+          session_name: string
+          status?: string | null
+          updated_at?: string | null
+          wallet_data?: Json | null
+        }
+        Update: {
+          analysis_result?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          external_api_url?: string | null
+          id?: string
+          session_name?: string
+          status?: string | null
+          updated_at?: string | null
+          wallet_data?: Json | null
+        }
+        Relationships: []
+      }
       customization_results: {
         Row: {
           created_at: string
@@ -487,6 +523,113 @@ export type Database = {
           },
         ]
       }
+      wallet_element_registry: {
+        Row: {
+          created_at: string | null
+          element_name: string
+          element_type: string
+          id: string
+          is_interactive: boolean | null
+          parent_element_id: string | null
+          position: Json
+          properties: Json | null
+          provider_id: string | null
+          safe_zone: Json | null
+          screen_type: string
+          updated_at: string | null
+          wallet_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          element_name: string
+          element_type: string
+          id?: string
+          is_interactive?: boolean | null
+          parent_element_id?: string | null
+          position: Json
+          properties?: Json | null
+          provider_id?: string | null
+          safe_zone?: Json | null
+          screen_type: string
+          updated_at?: string | null
+          wallet_type: string
+        }
+        Update: {
+          created_at?: string | null
+          element_name?: string
+          element_type?: string
+          id?: string
+          is_interactive?: boolean | null
+          parent_element_id?: string | null
+          position?: Json
+          properties?: Json | null
+          provider_id?: string | null
+          safe_zone?: Json | null
+          screen_type?: string
+          updated_at?: string | null
+          wallet_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_element_registry_parent_element_id_fkey"
+            columns: ["parent_element_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_element_registry"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_element_registry_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_instances: {
+        Row: {
+          created_at: string | null
+          id: string
+          instance_name: string
+          is_active: boolean | null
+          provider_id: string | null
+          structure_data: Json
+          updated_at: string | null
+          user_id: string | null
+          wallet_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          instance_name: string
+          is_active?: boolean | null
+          provider_id?: string | null
+          structure_data?: Json
+          updated_at?: string | null
+          user_id?: string | null
+          wallet_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          instance_name?: string
+          is_active?: boolean | null
+          provider_id?: string | null
+          structure_data?: Json
+          updated_at?: string | null
+          user_id?: string | null
+          wallet_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_instances_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallet_layout_layers: {
         Row: {
           created_at: string
@@ -580,6 +723,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wallet_providers: {
+        Row: {
+          api_endpoint: string | null
+          api_key_required: boolean | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          status: string | null
+          supported_wallets: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_endpoint?: string | null
+          api_key_required?: boolean | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          status?: string | null
+          supported_wallets?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_endpoint?: string | null
+          api_key_required?: boolean | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          status?: string | null
+          supported_wallets?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       wallet_skins: {
         Row: {

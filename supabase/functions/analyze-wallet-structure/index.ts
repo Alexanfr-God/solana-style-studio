@@ -1,11 +1,17 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Initialize Supabase
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+);
 
 interface WalletStyle {
   backgroundColor: string;
@@ -21,9 +27,12 @@ interface WalletStyle {
 }
 
 interface AnalyzeRequest {
-  loginStyle: WalletStyle;
-  walletStyle: WalletStyle;
+  loginStyle?: WalletStyle;
+  walletStyle?: WalletStyle;
   activeLayer: 'login' | 'wallet';
+  walletType?: string;
+  externalApiUrl?: string;
+  useRegistry?: boolean;
 }
 
 interface WalletAnalysis {
@@ -89,6 +98,8 @@ interface WalletAnalysis {
     preservationRules: string[];
     styleAdaptation: string;
   };
+  registryElements?: any[];
+  externalData?: any;
 }
 
 serve(async (req) => {
@@ -97,37 +108,89 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🔍 Starting wallet structure analysis');
+    console.log('🔍 Starting enhanced wallet structure analysis');
     
     const requestBody = await req.json() as AnalyzeRequest;
-    const { loginStyle, walletStyle, activeLayer } = requestBody;
+    const { 
+      loginStyle, 
+      walletStyle, 
+      activeLayer, 
+      walletType = 'phantom',
+      externalApiUrl,
+      useRegistry = true
+    } = requestBody;
     
     const currentStyle = activeLayer === 'login' ? loginStyle : walletStyle;
     
-    console.log(`📱 Analyzing ${activeLayer} wallet with style:`, currentStyle);
+    console.log(`📱 Analyzing ${activeLayer} wallet (${walletType}) with enhanced structure support`);
     
-    // Анализируем структуру кошелька
-    const analysis: WalletAnalysis = analyzeWalletStructure(currentStyle, activeLayer);
+    let registryElements = [];
+    let externalData = null;
+
+    // Load from registry if requested
+    if (useRegistry) {
+      console.log('📊 Loading elements from registry...');
+      const { data: elements, error } = await supabase
+        .from('wallet_element_registry')
+        .select('*')
+        .eq('wallet_type', walletType)
+        .eq('screen_type', activeLayer);
+
+      if (error) {
+        console.warn('⚠️ Failed to load from registry:', error.message);
+      } else {
+        registryElements = elements || [];
+        console.log(`✅ Loaded ${registryElements.length} elements from registry`);
+      }
+    }
+
+    // Fetch external data if URL provided
+    if (externalApiUrl) {
+      try {
+        console.log('🌐 Fetching external wallet data...');
+        const response = await fetch(externalApiUrl);
+        externalData = await response.json();
+        console.log('✅ External data loaded successfully');
+      } catch (error) {
+        console.warn('⚠️ Failed to fetch external data:', error.message);
+      }
+    }
     
-    console.log('✅ Wallet analysis completed:', analysis);
+    // Analyze structure with enhanced data
+    const analysis: WalletAnalysis = analyzeWalletStructure(
+      currentStyle, 
+      activeLayer, 
+      walletType,
+      registryElements,
+      externalData
+    );
+    
+    console.log('✅ Enhanced wallet analysis completed');
     
     return new Response(
       JSON.stringify({
         success: true,
         analysis,
-        timestamp: new Date().toISOString(),
-        layer: activeLayer
+        metadata: {
+          timestamp: new Date().toISOString(),
+          layer: activeLayer,
+          walletType,
+          registryElementsCount: registryElements.length,
+          hasExternalData: !!externalData,
+          enhancedAnalysis: true
+        }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
-    console.error("💥 Wallet analysis error:", error);
+    console.error("💥 Enhanced wallet analysis error:", error);
     
     return new Response(
       JSON.stringify({ 
         error: "Analysis failed", 
-        details: error.message 
+        details: error.message,
+        success: false
       }),
       { 
         status: 500, 
@@ -137,9 +200,58 @@ serve(async (req) => {
   }
 });
 
-function analyzeWalletStructure(style: WalletStyle, layer: 'login' | 'wallet'): WalletAnalysis {
-  console.log(`🎯 Deep analyzing ${layer} UI structure`);
+function analyzeWalletStructure(
+  style: WalletStyle, 
+  layer: 'login' | 'wallet',
+  walletType: string = 'phantom',
+  registryElements: any[] = [],
+  externalData: any = null
+): WalletAnalysis {
+  console.log(`🎯 Deep analyzing ${layer} UI structure for ${walletType}`);
   
+  // Base analysis (keeping existing logic)
+  const baseAnalysis = getBaseAnalysis(style, layer);
+  
+  // Enhance with registry data
+  if (registryElements.length > 0) {
+    baseAnalysis.uiStructure.layout.primaryElements = [
+      ...baseAnalysis.uiStructure.layout.primaryElements,
+      ...registryElements.map(e => e.element_name)
+    ];
+    
+    baseAnalysis.uiStructure.layout.interactiveElements = [
+      ...baseAnalysis.uiStructure.layout.interactiveElements,
+      ...registryElements.filter(e => e.is_interactive).map(e => e.element_name)
+    ];
+
+    // Add safe zones from registry
+    const safeZones = registryElements
+      .filter(e => e.safe_zone)
+      .map(e => `${e.element_name} (${JSON.stringify(e.safe_zone)})`);
+    
+    if (safeZones.length > 0) {
+      baseAnalysis.uiStructure.safeZone.criticalElements.push(...safeZones);
+    }
+  }
+
+  // Add registry and external data to analysis
+  baseAnalysis.registryElements = registryElements;
+  baseAnalysis.externalData = externalData;
+
+  // Update generation context with registry awareness
+  baseAnalysis.generationContext.promptEnhancement += ` [Enhanced with ${registryElements.length} registry elements for ${walletType}]`;
+  
+  if (registryElements.length > 0) {
+    baseAnalysis.generationContext.preservationRules.push(
+      `Registry elements must be preserved: ${registryElements.map(e => e.element_name).join(', ')}`
+    );
+  }
+
+  return baseAnalysis;
+}
+
+function getBaseAnalysis(style: WalletStyle, layer: 'login' | 'wallet'): WalletAnalysis {
+  // ... keep existing code (login and wallet analysis logic from original file)
   if (layer === 'login') {
     return {
       uiStructure: {
@@ -185,7 +297,7 @@ function analyzeWalletStructure(style: WalletStyle, layer: 'login' | 'wallet'): 
         typography: {
           fontFamily: style.fontFamily,
           primaryTextColor: style.textColor,
-          secondaryTextColor: `${style.textColor}80`, // 50% opacity
+          secondaryTextColor: `${style.textColor}80`,
           textSizes: ["text-2xl (title)", "text-sm (description)", "text-xs (footer)"]
         },
         interactivity: {
@@ -308,7 +420,7 @@ function analyzeWalletStructure(style: WalletStyle, layer: 'login' | 'wallet'): 
         typography: {
           fontFamily: style.fontFamily,
           primaryTextColor: style.textColor,
-          secondaryTextColor: `${style.textColor}70`, // 70% opacity
+          secondaryTextColor: `${style.textColor}70`,
           textSizes: ["text-3xl (balance)", "text-sm (labels)", "text-xs (details)"]
         },
         interactivity: {
