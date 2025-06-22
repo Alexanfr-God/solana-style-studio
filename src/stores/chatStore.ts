@@ -176,20 +176,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
         element: messageData.walletElement
       });
 
-      // Get current wallet context from WalletCustomizationStore
-      const walletStore = useWalletCustomizationStore.getState();
+      // Get current wallet context from CustomizationStore (изменено!)
+      const customizationStore = useCustomizationStore.getState();
       const walletContext = {
         walletType: 'Phantom',
-        activeLayer: walletStore.currentLayer,
+        activeLayer: customizationStore.activeLayer,
         currentStyle: {
-          backgroundColor: walletStore.walletStyle.backgroundColor,
-          primaryColor: walletStore.walletStyle.primaryColor,
-          font: walletStore.walletStyle.font,
+          backgroundColor: customizationStore.activeLayer === 'login' 
+            ? customizationStore.loginStyle.backgroundColor 
+            : customizationStore.walletStyle.backgroundColor,
+          primaryColor: customizationStore.activeLayer === 'login' 
+            ? customizationStore.loginStyle.accentColor 
+            : customizationStore.walletStyle.accentColor,
+          font: customizationStore.activeLayer === 'login' 
+            ? customizationStore.loginStyle.fontFamily 
+            : customizationStore.walletStyle.fontFamily,
         },
         availableElements: [
           'Header Bar', 'Balance Display', 'Login Screen', 'Action Buttons',
           'Asset List', 'Bottom Navigation', 'Background', 'Color Scheme',
-          'Typography', 'Icons'
+          'Typography', 'Icons', 'Border Color', 'Border Animation'
         ]
       };
 
@@ -200,7 +206,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           imageUrl: messageData.imageUrl,
           walletElement: messageData.walletElement,
           walletContext,
-          mode: 'analysis'
+          mode: 'analysis',
+          humanResponse: true // Запрашиваем человеческий ответ
         }
       });
 
@@ -216,7 +223,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       console.log('📊 Full GPT response data:', data);
 
-      const responseContent = data.response;
+      // Используем человеческий ответ вместо JSON
+      const responseContent = data.response || "I've applied the requested changes to your wallet design.";
       
       // Enhanced style changes processing
       if (data.styleChanges) {
@@ -376,30 +384,31 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   applyGeneratedImage: (imageUrl: string) => {
-    const walletStore = useWalletCustomizationStore.getState();
+    const customizationStore = useCustomizationStore.getState();
     
     console.log('🖼️ Applying generated image as background:', imageUrl);
     
-    // Apply image as background to current wallet style
-    const updatedStyle = {
-      ...walletStore.walletStyle,
+    // Применяем изображение на оба слоя если пользователь просит
+    const updatedLoginStyle = {
+      ...customizationStore.loginStyle,
       backgroundImage: `url(${imageUrl})`,
       styleNotes: 'Generated background image applied from gallery'
     };
     
-    walletStore.setWalletStyle(updatedStyle);
+    const updatedWalletStyle = {
+      ...customizationStore.walletStyle,
+      backgroundImage: `url(${imageUrl})`,
+      styleNotes: 'Generated background image applied from gallery'
+    };
     
-    // Trigger customization animation
-    walletStore.onCustomizationStart();
-    setTimeout(() => {
-      walletStore.resetCustomizationState();
-    }, 2000);
+    customizationStore.setStyleForLayer('login', updatedLoginStyle);
+    customizationStore.setStyleForLayer('wallet', updatedWalletStyle);
     
-    console.log('✅ Generated image applied as background');
+    console.log('✅ Generated image applied to both layers');
   },
 
   applyStyleChanges: (changes) => {
-    const walletStore = useWalletCustomizationStore.getState();
+    const customizationStore = useCustomizationStore.getState();
     
     console.log('🎨 Applying style changes:', changes);
     
@@ -408,13 +417,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return;
     }
 
-    // Determine which store method to use based on target and layer
+    // Определяем который слой изменяем
     const { layer, target, changes: styleChanges, reasoning } = changes;
 
     try {
       // Get current styles to merge with new changes
-      const currentWalletStyle = walletStore.walletStyle;
-      const currentLoginStyle = walletStore.loginStyle;
+      const currentWalletStyle = customizationStore.walletStyle;
+      const currentLoginStyle = customizationStore.loginStyle;
 
       console.log('🔧 Processing style changes:', {
         layer,
@@ -423,7 +432,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         reasoning
       });
 
-      // UNIFIED STYLE APPLICATION - Apply to both walletStyle and components
+      // UNIFIED STYLE APPLICATION - Apply to customizationStore
       const createUnifiedStyle = (baseStyle: any) => ({
         ...baseStyle,
         backgroundColor: styleChanges.backgroundColor || baseStyle.backgroundColor,
@@ -435,43 +444,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
         borderRadius: styleChanges.borderRadius || baseStyle.borderRadius,
         fontFamily: styleChanges.fontFamily || baseStyle.fontFamily,
         boxShadow: styleChanges.boxShadow || baseStyle.boxShadow,
-        primaryColor: styleChanges.accentColor || styleChanges.buttonColor || baseStyle.primaryColor,
-        font: styleChanges.fontFamily || baseStyle.font,
-        gradient: styleChanges.gradient || baseStyle.gradient
+        // Добавляем поддержку границы
+        borderColor: styleChanges.borderColor || baseStyle.borderColor,
+        borderWidth: styleChanges.borderWidth || baseStyle.borderWidth,
+        borderAnimation: styleChanges.borderAnimation || baseStyle.borderAnimation
       });
 
-      // Apply changes based on target and layer
-      if (target === 'header') {
-        const updatedStyle = createUnifiedStyle(currentWalletStyle);
-        walletStore.setWalletStyle(updatedStyle);
-        console.log('✅ Applied header styles');
-      } else if (target === 'navigation') {
-        const updatedStyle = createUnifiedStyle(currentWalletStyle);
-        walletStore.setWalletStyle(updatedStyle);
-        console.log('✅ Applied navigation styles');
-      } else if (target === 'background' || target === 'global') {
-        // Apply global/background styles to the appropriate layer
-        if (layer === 'login') {
-          const updatedStyle = createUnifiedStyle(currentLoginStyle);
-          walletStore.setLoginStyle(updatedStyle);
-          console.log('✅ Applied login background styles');
-        } else {
-          const updatedStyle = createUnifiedStyle(currentWalletStyle);
-          walletStore.setWalletStyle(updatedStyle);
-          console.log('✅ Applied wallet background styles');
-        }
+      // Apply changes based on target and layer using customizationStore
+      if (layer === 'login') {
+        const updatedStyle = createUnifiedStyle(currentLoginStyle);
+        customizationStore.setStyleForLayer('login', updatedStyle);
+        console.log('✅ Applied login styles');
       } else {
-        // Default: apply to wallet style
         const updatedStyle = createUnifiedStyle(currentWalletStyle);
-        walletStore.setWalletStyle(updatedStyle);
-        console.log('✅ Applied default wallet styles');
+        customizationStore.setStyleForLayer('wallet', updatedStyle);
+        console.log('✅ Applied wallet styles');
       }
-
-      // Trigger customization animation using existing method
-      walletStore.onCustomizationStart();
-      setTimeout(() => {
-        walletStore.resetCustomizationState();
-      }, 2000);
 
       console.log('🎨 Style changes applied successfully:', reasoning);
       
