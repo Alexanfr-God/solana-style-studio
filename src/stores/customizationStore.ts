@@ -15,9 +15,6 @@ export interface WalletStyle {
   fontFamily: string;
   boxShadow?: string;
   styleNotes?: string;
-  borderColor?: string;
-  borderWidth?: string;
-  borderAnimation?: string;
 }
 
 export interface WalletAnalysis {

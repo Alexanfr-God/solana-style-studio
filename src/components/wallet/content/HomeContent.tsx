@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { useCustomizationStore } from '@/stores/customizationStore'; // Изменено!
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletStyles } from '@/hooks/useWalletStyles';
 import WalletAssetItem from '../preview/WalletAssetItem';
 import WalletActionButtons from '../preview/WalletActionButtons';
 
@@ -9,18 +10,14 @@ interface HomeContentProps {
 }
 
 const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }) => {
-  const { activeLayer, loginStyle, walletStyle } = useCustomizationStore(); // Изменено!
-  const currentStyle = activeLayer === 'login' ? loginStyle : walletStyle;
-
-  // Используем токены из store (пока заглушка, потом можно расширить)
-  const tokens = [
-    { id: 1, name: 'Solana', symbol: 'SOL', amount: '32.4', value: '$2,405.23', change: '+5.2%', isPositive: true },
-    { id: 2, name: 'Bitcoin', symbol: 'BTC', amount: '0.023', value: '$127.19', change: '-2.1%', isPositive: false }
-  ];
-
-  const totalBalance = '$2,532.42';
-  const totalChange = '+3.8%';
-  const isBalancePositive = true;
+  const { 
+    tokens, 
+    totalBalance, 
+    totalChange, 
+    isBalancePositive,
+    setCurrentLayer 
+  } = useWalletCustomizationStore();
+  const { getComponentStyle, getTokenColorStyle, tokenColors, getTransition } = useWalletStyles();
 
   const handleAssetClick = (tokenName: string) => {
     console.log(`Clicked on ${tokenName}`);
@@ -28,50 +25,61 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
 
   const handleAction = (action: string) => {
     console.log(`Action: ${action}`);
+    switch (action) {
+      case 'Receive':
+        setCurrentLayer('receive');
+        break;
+      case 'Send':
+        setCurrentLayer('send');
+        break;
+      case 'Buy':
+        setCurrentLayer('buy');
+        break;
+      case 'Swap':
+        setCurrentLayer('swap');
+        break;
+      default:
+        console.log(`Unknown action: ${action}`);
+    }
   };
 
+  const balanceStyle = getComponentStyle('global');
+  const changeStyle = getTokenColorStyle(totalChange);
+
   return (
-    <div 
-      className="relative flex-1 overflow-y-auto px-4 pb-4 z-[1]"
-      style={{ 
-        borderRadius: currentStyle.borderRadius,
-        overflow: 'hidden' // Исправляем закругление углов
-      }}
-    >
+    <div className="relative flex-1 overflow-y-auto px-4 pb-4 z-[1]">
       {/* Balance Section */}
       <div className="pt-4 pb-6 text-center">
         <div 
           className="text-sm opacity-70 mb-1"
-          style={{ color: currentStyle.textColor }}
+          style={{ color: balanceStyle.color }}
         >
           Total Balance
         </div>
         <div 
           className="text-3xl font-bold mb-1"
           style={{ 
-            color: currentStyle.textColor,
-            fontFamily: currentStyle.fontFamily 
+            color: balanceStyle.color,
+            fontFamily: balanceStyle.fontFamily 
           }}
         >
           {totalBalance}
         </div>
         <div 
           className="text-sm font-medium"
-          style={{ color: isBalancePositive ? '#4ade80' : '#ef4444' }}
+          style={changeStyle}
         >
           {totalChange}
         </div>
       </div>
 
-      {/* Action Buttons с правильными стилями */}
+      {/* Action Buttons with proper z-index isolation */}
       <div className="relative z-[2]">
         <WalletActionButtons 
           onAction={handleAction} 
           style={{ 
-            accentColor: currentStyle.accentColor,
-            borderRadius: currentStyle.borderRadius,
-            buttonColor: currentStyle.buttonColor,
-            buttonTextColor: currentStyle.buttonTextColor
+            accentColor: tokenColors.info,
+            borderRadius: String(getComponentStyle('buttons').borderRadius || '12px')
           }}
           showAccountDropdown={showAccountDropdown}
         />
@@ -81,14 +89,14 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
       <div className="mt-6">
         <div 
           className="flex justify-between items-center mb-4"
-          style={{ color: currentStyle.textColor }}
+          style={{ color: balanceStyle.color }}
         >
           <span className="font-medium">Assets</span>
           <span 
             className="text-sm opacity-70 cursor-pointer hover:opacity-100"
             style={{ 
-              color: currentStyle.accentColor,
-              transition: 'opacity 0.2s ease'
+              color: tokenColors.info,
+              transition: getTransition('global')
             }}
           >
             See all
@@ -105,13 +113,13 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
               amount={token.amount}
               value={token.value}
               change={token.change}
-              color={token.isPositive ? '#4ade80' : '#ef4444'}
+              color={token.isPositive ? tokenColors.positive : tokenColors.negative}
               onClick={() => handleAssetClick(token.name)}
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: currentStyle.borderRadius,
-                accentColor: currentStyle.accentColor,
-                textColor: currentStyle.textColor
+                backgroundColor: getComponentStyle('cards').backgroundColor,
+                borderRadius: String(getComponentStyle('cards').borderRadius || '16px'),
+                accentColor: tokenColors.info,
+                textColor: balanceStyle.color
               }}
             />
           ))}

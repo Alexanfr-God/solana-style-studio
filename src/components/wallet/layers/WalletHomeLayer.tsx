@@ -112,14 +112,13 @@ const WalletHomeLayer = () => {
   return (
     <div 
       ref={containerRef}
-      className="relative w-full h-full flex flex-col"
+      className="relative w-full h-full flex flex-col overflow-hidden"
       style={{
         backgroundColor: globalStyle.backgroundColor || '#181818',
         fontFamily: globalStyle.fontFamily || 'Inter',
         backgroundImage: globalStyle.backgroundImage,
         borderRadius: '1rem',
-        boxShadow: globalStyle.boxShadow,
-        overflow: 'hidden' // Добавляем для правильного закругления
+        boxShadow: globalStyle.boxShadow
       }}
     >
       {/* Header Section with AI-generated styles */}
@@ -188,10 +187,7 @@ const WalletHomeLayer = () => {
       </div>
 
       {/* Dynamic Content based on current layer with isolated stacking context */}
-      <div 
-        className="relative flex-1 z-[1]"
-        style={{ overflow: 'hidden' }} // Исправляем закругление для контента
-      >
+      <div className="relative flex-1 z-[1]">
         {renderContent()}
       </div>
 
