@@ -44,13 +44,14 @@ const AccountSidebar = () => {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay with rounded corners */}
       <div 
-        className="fixed inset-0 z-40"
+        className="fixed top-4 left-4 bottom-4 right-4 z-40"
         onClick={handleClose}
         style={{
           backgroundColor: overlayStyle.backgroundColor?.replace('E6', '80') || 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: overlayStyle.backdropFilter || 'blur(8px)'
+          backdropFilter: overlayStyle.backdropFilter || 'blur(8px)',
+          borderRadius: overlayStyle.borderRadius || '16px'
         }}
       />
       
