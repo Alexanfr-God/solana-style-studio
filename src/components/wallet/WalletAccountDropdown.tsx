@@ -75,9 +75,18 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop with rounded corners */}
       <div 
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998]"
+        className="fixed w-80 backdrop-blur-sm z-[9997] rounded-xl"
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          borderRadius: overlayStyle.borderRadius || '16px',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          height: 'auto',
+          minHeight: '300px'
+        }}
         onClick={() => {
           if (onClose) {
             onClose();
@@ -97,7 +106,10 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
           borderRadius: overlayStyle.borderRadius || '16px',
           border: overlayStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: overlayStyle.boxShadow || '0 20px 40px rgba(0, 0, 0, 0.5)',
-          fontFamily: globalStyle.fontFamily || 'Inter'
+          fontFamily: globalStyle.fontFamily || 'Inter',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)'
         }}
       >
         {/* Header */}
