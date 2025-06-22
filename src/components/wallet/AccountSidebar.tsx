@@ -54,14 +54,16 @@ const AccountSidebar = () => {
         }}
       />
       
-      {/* Sidebar */}
+      {/* Sidebar with rounded corners */}
       <div 
-        className="fixed left-0 top-0 h-full w-80 z-50 flex flex-col animate-slide-in-right"
+        className="fixed top-4 left-4 bottom-4 w-80 z-50 flex flex-col animate-slide-in-right"
         style={{
           backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
           backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
           fontFamily: globalStyle.fontFamily || 'Inter',
-          borderRight: overlayStyle.border || '1px solid rgba(255, 255, 255, 0.1)'
+          border: overlayStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: overlayStyle.borderRadius || '16px',
+          overflow: 'hidden'
         }}
       >
         {/* Header with close button */}
