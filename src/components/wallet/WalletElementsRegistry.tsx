@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Полный реестр всех элементов кошелька из WalletAlivePlayground
@@ -29,7 +30,7 @@ export const convertToOldFormat = (element: DetailedWalletElement): WalletElemen
   customizable: element.customizable
 });
 
-// Обновленные функции используют новый детальный реестр
+// Функции используют новый детальный реестр
 export const getElementsByCategory = (category: string): WalletElement[] => {
   return getDetailedElementsByCategory(category).map(convertToOldFormat);
 };
@@ -123,21 +124,6 @@ export const WALLET_ELEMENTS_REGISTRY: WalletElement[] = [
   { id: 'ai-pet-mouth', name: 'AI Pet Mouth', category: 'AI Pet', description: 'AI pet mouth element', selector: '.ai-pet-mouth', customizable: true },
   { id: 'ai-pet-body', name: 'AI Pet Body', category: 'AI Pet', description: 'AI pet body/shape', selector: '.ai-pet-body', customizable: true }
 ];
-
-// Функция для получения элементов по категории
-export const getElementsByCategory = (category: string): WalletElement[] => {
-  return getDetailedElementsByCategory(category).map(convertToOldFormat);
-};
-
-// Функция для получения всех категорий
-export const getAllCategories = (): string[] => {
-  return getAllDetailedCategories();
-};
-
-// Функция для поиска элементов
-export const searchElements = (query: string): WalletElement[] => {
-  return searchDetailedElements(query).map(convertToOldFormat);
-};
 
 // Компонент для отображения реестра элементов (для отладки)
 export const WalletElementsDebugger: React.FC = () => {
