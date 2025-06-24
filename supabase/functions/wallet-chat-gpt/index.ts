@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -8,6 +9,7 @@ import { generateImageWithDALLE, generateImageWithReplicate } from './modules/im
 import { validateWalletContext, createDefaultWalletContext } from './modules/walletManager.ts';
 import { loadDesignExamples, chooseStyle } from './utils/storage-manager.ts';
 import { fixedStyleExtraction } from './utils/json-parser.ts';
+import { loadWalletElements, formatElementsForGPT } from './modules/walletElementsLoader.ts';
 
 // Import types
 import type { WalletContext } from './types/wallet.ts';
@@ -32,9 +34,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Processing enhanced wallet chat request...');
+    console.log('🚀 Processing enhanced wallet chat request with improved element loading...');
 
-    // Get and validate OpenAI API key (updated to use new secret name)
+    // Get and validate OpenAI API key
     const openAIApiKey = Deno.env.get('OPENA_API_KEY')?.trim();
     if (!openAIApiKey || !openAIApiKey.startsWith('sk-')) {
       console.error('❌ OPENA_API_KEY not configured or invalid format');
@@ -124,14 +126,26 @@ serve(async (req) => {
       }
     }
 
-    // DEFAULT: Enhanced style analysis mode with structure integration
-    console.log('🧠 Processing enhanced style analysis mode...');
+    // DEFAULT: Enhanced style analysis mode with improved element loading
+    console.log('🧠 Processing enhanced style analysis mode with database integration...');
 
     // Validate wallet context
     const validatedWalletContext = validateWalletContext(walletContext);
     const currentWalletType = validatedWalletContext.walletType || 'phantom';
 
-    // Load comprehensive wallet structure
+    // Load wallet elements using new improved loader
+    const elementsData = await loadWalletElements(supabase, currentWalletType);
+    
+    if (elementsData.fallbackUsed) {
+      console.warn('⚠️ Using fallback wallet elements due to database issues');
+    }
+
+    console.log(`📊 Loaded ${elementsData.elements.length} elements (fallback: ${elementsData.fallbackUsed})`);
+
+    // Format elements for GPT
+    const formattedElements = formatElementsForGPT(elementsData.elements, elementsData.instances);
+
+    // Load comprehensive wallet structure (legacy support)
     const structureResponse = await supabase.functions.invoke('wallet-customization-structure', {
       method: 'GET'
     });
@@ -139,29 +153,30 @@ serve(async (req) => {
     let walletStructure = null;
     if (structureResponse.data?.success) {
       walletStructure = structureResponse.data.structure;
-      console.log('✅ Comprehensive wallet structure loaded');
+      console.log('✅ Additional wallet structure loaded');
     } else {
-      console.warn('⚠️ Failed to load wallet structure, using fallback');
+      console.warn('⚠️ Failed to load additional wallet structure, using primary data');
     }
 
-    // Load wallet-specific elements from registry
-    const { data: registryElements } = await supabase
-      .from('wallet_element_registry')
-      .select('*')
-      .eq('wallet_type', currentWalletType);
-
-    console.log(`📊 Loaded ${registryElements?.length || 0} registry elements for ${currentWalletType}`);
-
-    // Enhance wallet context with structure data
+    // Enhance wallet context with comprehensive data
     const enhancedWalletContext = {
       ...validatedWalletContext,
       walletStructure,
-      registryElements: registryElements || [],
+      registryElements: elementsData.elements,
+      walletInstances: elementsData.instances,
+      formattedElements,
       capabilities: {
         multiWalletSupport: true,
         structureAware: true,
         safeZoneRespect: true,
-        collaborationReady: true
+        collaborationReady: true,
+        databaseIntegrated: !elementsData.fallbackUsed
+      },
+      metadata: {
+        totalElements: elementsData.elements.length,
+        interactiveElements: elementsData.elements.filter(e => e.is_interactive).length,
+        customizableElements: elementsData.elements.filter(e => e.properties?.customizable).length,
+        fallbackUsed: elementsData.fallbackUsed
       }
     };
 
@@ -186,10 +201,10 @@ serve(async (req) => {
       openAIApiKey
     );
 
-    console.log('✅ Enhanced GPT response generated:', result.success);
+    console.log('✅ Enhanced GPT response generated with database integration:', result.success);
     console.log('🎨 StyleChanges extracted:', result.styleChanges ? 'YES' : 'NO');
 
-    // Ensure we return the correct format that frontend expects
+    // Return enhanced response format
     return new Response(JSON.stringify({
       response: result.response,
       styleChanges: result.styleChanges,
@@ -198,8 +213,11 @@ serve(async (req) => {
       metadata: {
         walletType: currentWalletType,
         structureAware: !!walletStructure,
-        registryElementsCount: registryElements?.length || 0,
-        enhancedAnalysis: true
+        databaseIntegrated: !elementsData.fallbackUsed,
+        elementsLoaded: elementsData.elements.length,
+        instancesLoaded: elementsData.instances.length,
+        enhancedAnalysis: true,
+        fallbackUsed: elementsData.fallbackUsed
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
