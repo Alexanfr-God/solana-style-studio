@@ -18,21 +18,21 @@ const ImageGenerationSelector = () => {
       key: 'analysis',
       label: 'Style Analysis',
       icon: <Brain className="w-4 h-4" />,
-      description: 'Analyze images and apply color schemes',
+      description: 'Analyze images and apply color schemes to wallet elements',
       color: 'bg-blue-600 hover:bg-blue-700'
     },
     {
       key: 'dalle',
       label: 'DALL-E Images',
       icon: <Image className="w-4 h-4" />,
-      description: 'Generate realistic backgrounds with DALL-E',
+      description: 'Generate realistic backgrounds with DALL-E (describe what you want)',
       color: 'bg-green-600 hover:bg-green-700'
     },
     {
       key: 'replicate',
       label: 'Replicate Art',
       icon: <Sparkles className="w-4 h-4" />,
-      description: 'Create artistic images with Replicate',
+      description: 'Create artistic images with Replicate (describe your vision)',
       color: 'bg-purple-600 hover:bg-purple-700'
     }
   ];
@@ -69,87 +69,18 @@ const ImageGenerationSelector = () => {
         {modes.find(m => m.key === imageGenerationMode)?.description}
       </div>
       
-      {/* Quick Prompts based on mode */}
-      <div className="flex flex-wrap gap-1 mt-2">
+      {/* Mode-specific tips instead of fixed prompts */}
+      <div className="text-xs text-white/40 mt-2 p-2 bg-white/5 rounded">
         {imageGenerationMode === 'dalle' && (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-green-400 hover:text-green-300 h-6 px-2"
-              onClick={() => {
-                const { sendImageGenerationMessage } = useChatStore.getState();
-                sendImageGenerationMessage({ content: 'Generate a cosmic nebula background', mode: 'dalle' });
-              }}
-            >
-              Cosmic
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-green-400 hover:text-green-300 h-6 px-2"
-              onClick={() => {
-                const { sendImageGenerationMessage } = useChatStore.getState();
-                sendImageGenerationMessage({ content: 'Generate a neon cyberpunk background', mode: 'dalle' });
-              }}
-            >
-              Cyberpunk
-            </Button>
-          </>
+          <p>💡 Tips: Try "cosmic nebula background", "neon cyberpunk cityscape", or "abstract crypto patterns"</p>
         )}
         
         {imageGenerationMode === 'replicate' && (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-purple-400 hover:text-purple-300 h-6 px-2"
-              onClick={() => {
-                const { sendImageGenerationMessage } = useChatStore.getState();
-                sendImageGenerationMessage({ content: 'Create abstract crypto art', mode: 'replicate' });
-              }}
-            >
-              Abstract
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-purple-400 hover:text-purple-300 h-6 px-2"
-              onClick={() => {
-                const { sendImageGenerationMessage } = useChatStore.getState();
-                sendImageGenerationMessage({ content: 'Generate pepe meme art', mode: 'replicate' });
-              }}
-            >
-              Meme Art
-            </Button>
-          </>
+          <p>💡 Tips: Try "abstract crypto art", "pepe meme style", or "digital art with crypto symbols"</p>
         )}
         
         {imageGenerationMode === 'analysis' && (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-blue-400 hover:text-blue-300 h-6 px-2"
-              onClick={() => {
-                const { sendMessage } = useChatStore.getState();
-                sendMessage({ content: 'Make it dark mode with neon accents' });
-              }}
-            >
-              Dark Mode
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-blue-400 hover:text-blue-300 h-6 px-2"
-              onClick={() => {
-                const { sendMessage } = useChatStore.getState();
-                sendMessage({ content: 'Apply luxury gold theme' });
-              }}
-            >
-              Luxury
-            </Button>
-          </>
+          <p>💡 Tips: Try "make it dark mode with neon accents", "apply luxury gold theme", or upload an inspiration image</p>
         )}
       </div>
     </div>

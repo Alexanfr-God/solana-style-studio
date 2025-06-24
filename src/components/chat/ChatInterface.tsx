@@ -17,15 +17,15 @@ export interface ChatMessage {
 }
 
 const ChatInterface = () => {
-  const { messages, isLoading, sendMessage, imageGenerationMode } = useChatStore();
+  const { messages, isLoading, sendMessage, sendImageGenerationMessage, imageGenerationMode } = useChatStore();
   const [selectedElement, setSelectedElement] = useState<string>('');
 
   const handleStarterClick = (message: string) => {
+    // Правильно направляем запросы в зависимости от режима
     if (imageGenerationMode === 'analysis') {
       sendMessage({ content: message });
     } else {
-      // For image generation modes, use the specialized method
-      const { sendImageGenerationMessage } = useChatStore.getState();
+      // Для режимов генерации изображений всегда используем специализированный метод
       sendImageGenerationMessage({ content: message, mode: imageGenerationMode });
     }
   };
@@ -39,7 +39,12 @@ const ChatInterface = () => {
             Wallet Customization Chat
           </h3>
           <p className="text-sm text-white/70 mb-3">
-            Describe what you want to change in your wallet, upload images for inspiration, or select specific elements to modify.
+            {imageGenerationMode === 'analysis' 
+              ? "Describe what you want to change in your wallet, upload images for inspiration, or select specific elements to modify."
+              : imageGenerationMode === 'dalle'
+              ? "Describe the background image you want to generate with DALL-E. Be creative and detailed!"
+              : "Describe the artistic background you want to create with Replicate. Perfect for crypto art and memes!"
+            }
           </p>
           
           {/* Image Generation Mode Selector */}
@@ -62,7 +67,7 @@ const ChatInterface = () => {
             onElementSelect={setSelectedElement}
           />
           
-          {selectedElement && (
+          {selectedElement && imageGenerationMode === 'analysis' && (
             <div className="mt-2 p-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
               <p className="text-sm text-purple-300">
                 Selected element: <span className="font-medium">{selectedElement}</span>

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
 import { useWalletCustomizationStore } from './walletCustomizationStore';
+import { WALLET_ELEMENTS_REGISTRY, getAllCategories } from '@/components/wallet/WalletElementsRegistry';
 
 export type ImageGenerationMode = 'analysis' | 'dalle' | 'replicate';
 
@@ -22,6 +23,52 @@ interface ChatState {
   clearHistory: () => void;
   applyStyleChanges: (changes: any) => void;
   applyGeneratedImage: (imageUrl: string) => void;
+}
+
+// Функция для создания расширенного контекста кошелька
+function createEnhancedWalletContext() {
+  const walletStore = useWalletCustomizationStore.getState();
+  
+  return {
+    walletType: 'Phantom Wallet (WalletAlivePlayground)',
+    activeLayer: walletStore.currentLayer || 'wallet',
+    currentStyle: {
+      backgroundColor: walletStore.walletStyle.backgroundColor,
+      primaryColor: walletStore.walletStyle.primaryColor,
+      font: walletStore.walletStyle.font,
+      textColor: walletStore.walletStyle.textColor,
+      accentColor: walletStore.walletStyle.accentColor,
+      buttonColor: walletStore.walletStyle.buttonColor,
+      borderRadius: walletStore.walletStyle.borderRadius,
+    },
+    // Передаем ПОЛНЫЙ список элементов (сотни вместо 27)
+    availableElements: WALLET_ELEMENTS_REGISTRY.map(element => ({
+      id: element.id,
+      name: element.name,
+      category: element.category,
+      description: element.description,
+      customizable: element.customizable
+    })),
+    elementCategories: getAllCategories(),
+    totalElements: WALLET_ELEMENTS_REGISTRY.length,
+    // Дополнительный контекст для ИИ
+    walletFeatures: {
+      hasAiPet: true,
+      hasBottomNavigation: true,
+      hasBalanceDisplay: true,
+      hasActionButtons: true,
+      hasTransactionHistory: true,
+      hasAssetsList: true,
+      supportsDarkMode: true,
+      supportsCustomBackgrounds: true
+    },
+    uiStructure: {
+      layout: 'mobile-first',
+      sections: ['header', 'balance', 'actions', 'content', 'navigation'],
+      interactiveElements: ['buttons', 'tabs', 'dropdowns', 'modals'],
+      customizableAreas: ['backgrounds', 'colors', 'typography', 'effects']
+    }
+  };
 }
 
 // Debug function for image generation
@@ -170,28 +217,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      console.log('🚀 Sending message to GPT API:', {
+      console.log('🚀 Sending message to GPT API (Analysis Mode):', {
         content: messageData.content,
         hasImage: !!messageData.imageUrl,
         element: messageData.walletElement
       });
 
-      // Get current wallet context from WalletCustomizationStore
-      const walletStore = useWalletCustomizationStore.getState();
-      const walletContext = {
-        walletType: 'Phantom',
-        activeLayer: walletStore.currentLayer,
-        currentStyle: {
-          backgroundColor: walletStore.walletStyle.backgroundColor,
-          primaryColor: walletStore.walletStyle.primaryColor,
-          font: walletStore.walletStyle.font,
-        },
-        availableElements: [
-          'Header Bar', 'Balance Display', 'Login Screen', 'Action Buttons',
-          'Asset List', 'Bottom Navigation', 'Background', 'Color Scheme',
-          'Typography', 'Icons'
-        ]
-      };
+      // Используем расширенный контекст кошелька с полным реестром элементов
+      const enhancedWalletContext = createEnhancedWalletContext();
+      
+      console.log('📊 Enhanced wallet context:', {
+        totalElements: enhancedWalletContext.totalElements,
+        categories: enhancedWalletContext.elementCategories.length,
+        features: Object.keys(enhancedWalletContext.walletFeatures).length
+      });
 
       // Call the Edge Function
       const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
@@ -199,7 +238,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           content: messageData.content,
           imageUrl: messageData.imageUrl,
           walletElement: messageData.walletElement,
-          walletContext,
+          walletContext: enhancedWalletContext,
           mode: 'analysis'
         }
       });
@@ -216,7 +255,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       console.log('📊 Full GPT response data:', data);
 
-      const responseContent = data.response;
+      // Убираем JSON от пользователя и показываем только дружелюбный ответ
+      const friendlyResponse = data.response || 'I\'ve analyzed your wallet and applied the requested changes.';
       
       // Enhanced style changes processing
       if (data.styleChanges) {
@@ -248,7 +288,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         type: 'assistant',
-        content: responseContent,
+        content: friendlyResponse,
         timestamp: new Date(),
       };
 
@@ -324,7 +364,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         const assistantMessage: ChatMessage = {
           id: `assistant-${Date.now()}`,
           type: 'assistant',
-          content: `Here's your generated image! It's been saved to your gallery and you can apply it as a background to your wallet.`,
+          content: `I've generated a custom background image based on your description: "${messageData.content}". The image has been created and you can apply it as a background to your wallet using the button below.`,
           timestamp: new Date(),
           imageUrl: generatedImageUrl,
           isGenerated: true,
