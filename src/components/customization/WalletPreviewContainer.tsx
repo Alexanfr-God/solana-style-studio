@@ -79,7 +79,12 @@ const WalletPreviewContainer = () => {
     <div className="relative p-6 flex flex-col" style={{
       backgroundColor: loginStyle.backgroundColor || '#181818',
       backgroundImage: loginStyle.backgroundImage,
-      background: loginStyle.gradient || loginStyle.backgroundColor || '#181818',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      background: loginStyle.backgroundImage 
+        ? `url(${loginStyle.backgroundImage.replace('url(', '').replace(')', '')}) center/cover no-repeat, ${loginStyle.gradient || loginStyle.backgroundColor || '#181818'}`
+        : loginStyle.gradient || loginStyle.backgroundColor || '#181818',
       height: '541px',
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
