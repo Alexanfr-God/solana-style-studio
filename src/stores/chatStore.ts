@@ -418,16 +418,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
   applyGeneratedImage: (imageUrl: string) => {
     const walletStore = useWalletCustomizationStore.getState();
     
-    console.log('🖼️ Applying generated image as background:', imageUrl);
+    console.log('🖼️ Applying generated image as background to BOTH screens:', imageUrl);
     
-    // Apply image as background to current wallet style
-    const updatedStyle = {
+    // Apply image as background to BOTH wallet style (Unlock screen) AND login style (Lock screen)
+    const updatedWalletStyle = {
       ...walletStore.walletStyle,
       backgroundImage: `url(${imageUrl})`,
       styleNotes: 'Generated background image applied from gallery'
     };
     
-    walletStore.setWalletStyle(updatedStyle);
+    const updatedLoginStyle = {
+      ...walletStore.loginStyle,
+      backgroundImage: `url(${imageUrl})`,
+      styleNotes: 'Generated background image applied from gallery'
+    };
+    
+    // Apply to both screens
+    walletStore.setWalletStyle(updatedWalletStyle);
+    walletStore.setLoginStyle(updatedLoginStyle);
     
     // Trigger customization animation
     walletStore.onCustomizationStart();
@@ -435,7 +443,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       walletStore.resetCustomizationState();
     }, 2000);
     
-    console.log('✅ Generated image applied as background');
+    console.log('✅ Generated image applied as background to BOTH Lock and Unlock screens');
   },
 
   applyStyleChanges: (changes) => {
