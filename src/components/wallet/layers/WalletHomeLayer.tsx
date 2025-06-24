@@ -117,6 +117,9 @@ const WalletHomeLayer = () => {
         backgroundColor: globalStyle.backgroundColor || '#181818',
         fontFamily: globalStyle.fontFamily || 'Inter',
         backgroundImage: globalStyle.backgroundImage,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         borderRadius: '1rem',
         boxShadow: globalStyle.boxShadow
       }}
