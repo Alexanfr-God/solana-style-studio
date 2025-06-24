@@ -132,4 +132,4 @@ export const WalletElementsDebugger: React.FC = () => {
   );
 };
 
-export default WalletElementsRegistry;
+export default WALLET_ELEMENTS_REGISTRY;
