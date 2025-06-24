@@ -1,3 +1,4 @@
+
 // Enhanced Image generation with DALL-E and Replicate for multi-layer wallet support
 
 // Configuration for wallet layers
@@ -35,38 +36,49 @@ export async function generateImageWithDALLE(prompt, supabase, options = {}) {
     // Enhance prompt for multi-layer generation
     const enhancedPrompt = buildEnhancedPrompt(prompt, 'dalle', options);
     
-    // Determine if we need special composition for layers
-    const compositionMode = options.multiLayer ? 'dual-layer' : 'single';
-    
+    // Direct OpenAI API call instead of supabase.functions.invoke
+    const openaiApiKey = Deno.env.get('OPENA_API_KEY');
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const requestBody = {
+      model: 'dall-e-3',
       prompt: enhancedPrompt,
-      mode: 'image_generation',
-      size: options.size || '1792x1024', // Better for wallet aspect ratio
+      size: options.size || '1024x1024',
       quality: options.quality || 'hd',
       style: options.style || 'vivid',
-      composition: compositionMode,
-      layerConfig: options.multiLayer ? {
-        layer1: WALLET_LAYERS.LAYER_1,
-        layer2: WALLET_LAYERS.LAYER_2,
-        blendMode: options.blendMode || 'normal'
-      } : null
+      n: 1
     };
 
-    console.log('📤 DALL-E request config:', {
-      composition: compositionMode,
-      hasLayerConfig: !!requestBody.layerConfig,
+    console.log('📤 DALL-E direct API request:', {
+      model: requestBody.model,
+      size: requestBody.size,
       style: requestBody.style
     });
 
-    const imageResponse = await supabase.functions.invoke('generate-style', {
-      body: requestBody
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
     });
 
-    if (imageResponse?.error) {
-      throw new Error(`DALL-E generation failed: ${imageResponse.error.message}`);
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
     }
 
-    const result = processDALLEResponse(imageResponse.data, options);
+    const data = await response.json();
+    const imageUrl = data.data?.[0]?.url;
+
+    if (!imageUrl) {
+      throw new Error('No image URL returned from OpenAI API');
+    }
+
+    const result = processDALLEResponse({ imageUrl, ...data.data[0] }, options);
     
     if (result.success) {
       console.log('✅ DALL-E generation successful:', {
@@ -96,36 +108,72 @@ export async function generateImageWithReplicate(prompt, supabase, options = {})
     // Enhance prompt for better multi-layer support
     const enhancedPrompt = buildEnhancedPrompt(prompt, 'replicate', options);
     
-    // Replicate naturally generates for two layers but needs size optimization
-    const requestBody = {
-      prompt: enhancedPrompt,
-      // Add size hints for better layer adaptation
-      width: options.width || 1920,
-      height: options.height || 1080,
-      // Ensure the image fills the wallet properly
-      guidance_scale: options.guidanceScale || 7.5,
-      num_inference_steps: options.steps || 50,
-      // Additional parameters for better layer separation
-      layer_mode: 'dual',
-      preserve_aspect_ratio: true,
-      adapt_to_wallet: true
-    };
-
-    console.log('📤 Replicate request config:', {
-      width: requestBody.width,
-      height: requestBody.height,
-      layerMode: requestBody.layer_mode
-    });
-
-    const imageResponse = await supabase.functions.invoke('generate-wallet-mask-v3', {
-      body: requestBody
-    });
-
-    if (imageResponse?.error) {
-      throw new Error(`Replicate generation failed: ${imageResponse.error.message}`);
+    // Direct Replicate API call instead of supabase.functions.invoke
+    const replicateApiKey = Deno.env.get('REPLICATE_API_KEY');
+    if (!replicateApiKey) {
+      throw new Error('Replicate API key not configured');
     }
 
-    const result = processReplicateResponse(imageResponse.data, options);
+    const requestBody = {
+      version: "black-forest-labs/flux-schnell",
+      input: {
+        prompt: enhancedPrompt,
+        width: options.width || 1024,
+        height: options.height || 1024,
+        guidance_scale: options.guidanceScale || 7.5,
+        num_inference_steps: options.steps || 4,
+        go_fast: true,
+        megapixels: "1",
+        num_outputs: 1,
+        aspect_ratio: "1:1",
+        output_format: "webp",
+        output_quality: 80
+      }
+    };
+
+    console.log('📤 Replicate direct API request:', {
+      width: requestBody.input.width,
+      height: requestBody.input.height,
+      model: requestBody.version
+    });
+
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${replicateApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Replicate API error: ${response.status} - ${errorData}`);
+    }
+
+    const prediction = await response.json();
+    
+    // Wait for completion if needed
+    let finalPrediction = prediction;
+    if (prediction.status === 'starting' || prediction.status === 'processing') {
+      // Poll for completion
+      for (let i = 0; i < 30; i++) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+          headers: { 'Authorization': `Token ${replicateApiKey}` }
+        });
+        finalPrediction = await statusResponse.json();
+        if (finalPrediction.status === 'succeeded' || finalPrediction.status === 'failed') {
+          break;
+        }
+      }
+    }
+
+    if (finalPrediction.status !== 'succeeded') {
+      throw new Error(`Replicate generation failed: ${finalPrediction.error || 'Unknown error'}`);
+    }
+
+    const result = processReplicateResponse({ output: finalPrediction.output }, options);
     
     if (result.success) {
       console.log('✅ Replicate generation successful:', {
