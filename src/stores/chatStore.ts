@@ -76,10 +76,10 @@ async function debugImageGeneration(mode: ImageGenerationMode, content: string) 
   console.log(`🔍 Debug ${mode} generation:`, { content, mode });
   
   try {
-    const response = await supabase.functions.invoke(
-      mode === 'dalle' ? 'generate-style' : 'generate-wallet-mask-v3',
-      { body: { prompt: content, mode: mode === 'dalle' ? 'image_generation' : undefined } }
-    );
+  const response = await supabase.functions.invoke(
+  'wallet-chat-gpt',  // ← Всегда вызывать wallet-chat-gpt!
+  { body: { content: content, mode: mode } }  // ← Передать режим как параметр
+);
     
     console.log(`📤 ${mode} full response structure:`, {
       data: response.data,
