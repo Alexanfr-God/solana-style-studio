@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 // Полный реестр всех элементов кошелька из WalletAlivePlayground
@@ -11,6 +10,42 @@ export interface WalletElement {
   customizable: boolean;
 }
 
+// Импортируем новый детальный реестр
+import { 
+  DETAILED_WALLET_ELEMENTS_REGISTRY, 
+  DetailedWalletElement,
+  getDetailedElementsByCategory,
+  getAllDetailedCategories,
+  searchDetailedElements 
+} from './DetailedWalletElementsRegistry';
+
+// Функция для конвертации детального элемента в старый формат
+export const convertToOldFormat = (element: DetailedWalletElement): WalletElement => ({
+  id: element.id,
+  name: element.name,
+  category: element.category,
+  description: element.description,
+  selector: element.selector,
+  customizable: element.customizable
+});
+
+// Обновленные функции используют новый детальный реестр
+export const getElementsByCategory = (category: string): WalletElement[] => {
+  return getDetailedElementsByCategory(category).map(convertToOldFormat);
+};
+
+export const getAllCategories = (): string[] => {
+  return getAllDetailedCategories();
+};
+
+export const searchElements = (query: string): WalletElement[] => {
+  return searchDetailedElements(query).map(convertToOldFormat);
+};
+
+// Экспортируем новый детальный реестр как основной
+export { DETAILED_WALLET_ELEMENTS_REGISTRY as FULL_WALLET_ELEMENTS_REGISTRY };
+
+// Полный реестр всех элементов кошелька из WalletAlivePlayground
 export const WALLET_ELEMENTS_REGISTRY: WalletElement[] = [
   // Header Elements
   { id: 'header-container', name: 'Header Container', category: 'Header', description: 'Main header section', selector: '.wallet-header', customizable: true },
@@ -91,43 +126,51 @@ export const WALLET_ELEMENTS_REGISTRY: WalletElement[] = [
 
 // Функция для получения элементов по категории
 export const getElementsByCategory = (category: string): WalletElement[] => {
-  return WALLET_ELEMENTS_REGISTRY.filter(element => element.category === category);
+  return getDetailedElementsByCategory(category).map(convertToOldFormat);
 };
 
 // Функция для получения всех категорий
 export const getAllCategories = (): string[] => {
-  return [...new Set(WALLET_ELEMENTS_REGISTRY.map(element => element.category))];
+  return getAllDetailedCategories();
 };
 
 // Функция для поиска элементов
 export const searchElements = (query: string): WalletElement[] => {
-  const lowercaseQuery = query.toLowerCase();
-  return WALLET_ELEMENTS_REGISTRY.filter(element => 
-    element.name.toLowerCase().includes(lowercaseQuery) ||
-    element.description.toLowerCase().includes(lowercaseQuery) ||
-    element.category.toLowerCase().includes(lowercaseQuery)
-  );
+  return searchDetailedElements(query).map(convertToOldFormat);
 };
 
 // Компонент для отображения реестра элементов (для отладки)
 export const WalletElementsDebugger: React.FC = () => {
-  const categories = getAllCategories();
+  const categories = getAllDetailedCategories();
   
   return (
     <div className="p-4 bg-gray-900 text-white rounded">
-      <h3 className="text-lg font-bold mb-4">Wallet Elements Registry ({WALLET_ELEMENTS_REGISTRY.length} elements)</h3>
-      {categories.map(category => (
+      <h3 className="text-lg font-bold mb-4">
+        Wallet Elements Registry ({DETAILED_WALLET_ELEMENTS_REGISTRY.length} detailed elements)
+      </h3>
+      <p className="text-sm text-yellow-400 mb-4">
+        ✅ Expanded registry with {DETAILED_WALLET_ELEMENTS_REGISTRY.length} elements (up from {WALLET_ELEMENTS_REGISTRY.length})
+      </p>
+      {categories.slice(0, 5).map(category => (
         <div key={category} className="mb-4">
-          <h4 className="font-semibold text-purple-400 mb-2">{category} ({getElementsByCategory(category).length})</h4>
+          <h4 className="font-semibold text-purple-400 mb-2">
+            {category} ({getDetailedElementsByCategory(category).length})
+          </h4>
           <ul className="text-sm text-gray-300 ml-4">
-            {getElementsByCategory(category).map(element => (
+            {getDetailedElementsByCategory(category).slice(0, 3).map(element => (
               <li key={element.id} className="mb-1">
                 <strong>{element.name}</strong>: {element.description}
               </li>
             ))}
+            {getDetailedElementsByCategory(category).length > 3 && (
+              <li className="text-gray-500">...and {getDetailedElementsByCategory(category).length - 3} more</li>
+            )}
           </ul>
         </div>
       ))}
+      <div className="mt-4 text-xs text-gray-400">
+        Categories: Structure, Login Screen, Home Screen, Navigation, Actions, Assets, Send Screen, Receive Screen, Buy Screen, Swap Screen, Apps Screen, History Screen, Search Screen, Account, AI Pet, Interactive, Loading, Error, Typography
+      </div>
     </div>
   );
 };
