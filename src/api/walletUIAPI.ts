@@ -35,6 +35,17 @@ export interface WalletAPISchema {
   };
 }
 
+// Helper interfaces for type safety
+interface DatabaseElementProperties {
+  category?: string;
+  description?: string;
+  customizable?: boolean;
+}
+
+interface DatabaseElementPosition {
+  selector?: string;
+}
+
 export class WalletUIAPI {
   private static instance: WalletUIAPI;
   
@@ -77,21 +88,27 @@ export class WalletUIAPI {
           }
         }));
       } else {
-        // Преобразуем данные из базы
-        elements = dbElements.map(element => ({
-          id: element.id,
-          name: element.element_name,
-          type: element.element_type,
-          category: element.properties?.category || 'Other',
-          description: element.properties?.description || '',
-          selector: element.position?.selector || '',
-          properties: {
-            customizable: element.properties?.customizable || false,
-            interactive: element.is_interactive,
-            safeZone: element.safe_zone,
-            position: element.position
-          }
-        }));
+        // Преобразуем данные из базы с правильной типизацией
+        elements = dbElements.map(element => {
+          // Безопасно парсим JSON поля
+          const properties = element.properties as DatabaseElementProperties || {};
+          const position = element.position as DatabaseElementPosition || {};
+          
+          return {
+            id: element.id,
+            name: element.element_name,
+            type: element.element_type,
+            category: properties.category || 'Other',
+            description: properties.description || '',
+            selector: position.selector || '',
+            properties: {
+              customizable: properties.customizable || false,
+              interactive: element.is_interactive,
+              safeZone: element.safe_zone,
+              position: element.position
+            }
+          };
+        });
       }
 
       const categories = [...new Set(elements.map(e => e.category))];
