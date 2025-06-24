@@ -1,5 +1,180 @@
+// Enhanced Image generation with DALL-E and Replicate + POSTER QUALITY SYSTEM
 
-// Enhanced Image generation with DALL-E and Replicate for multi-layer wallet support
+// ========== ЗАГРУЗКА ПРИМЕРОВ ИЗ SUPABASE ==========
+let LEARNED_STYLES = null; // Кэш загруженных примеров
+
+async function loadPosterExamples(supabase) {
+  if (LEARNED_STYLES) return LEARNED_STYLES; // Используем кэш
+  
+  try {
+    console.log('📚 Loading poster examples from Supabase...');
+    const examples = {};
+    
+    // Загружаем все примеры poster-001 до poster-010
+    for (let i = 1; i <= 10; i++) {
+      const posterId = `poster-${String(i).padStart(3, '0')}`;
+      
+      try {
+        const { data, error } = await supabase.storage
+          .from('ai-examples-json')
+          .download(`${posterId}/metadata.json`);
+        
+        if (data && !error) {
+          const metadata = JSON.parse(await data.text());
+          examples[posterId] = {
+            id: posterId,
+            prompt: metadata.description || '',
+            style: metadata.background?.style || '',
+            mood: metadata.background?.mood || '',
+            colors: metadata.background?.colors || {},
+            character: metadata.character || '',
+            composition: metadata.composition || ''
+          };
+          console.log(`✅ Loaded ${posterId}:`, metadata.character);
+        }
+      } catch (e) {
+        console.warn(`Failed to load ${posterId}`);
+      }
+    }
+    
+    LEARNED_STYLES = examples;
+    console.log(`📊 Loaded ${Object.keys(examples).length} poster examples`);
+    return examples;
+    
+  } catch (error) {
+    console.error('❌ Error loading examples:', error);
+    return {};
+  }
+}
+
+// ========== COT & RUG SYSTEM С ОБУЧЕНИЕМ ==========
+const POSTER_TEMPLATES = {
+  superhero: {
+    style: "heroic pose with chest out, slight low angle view, radiating light beams background",
+    colors: "bold primary colors, high contrast, vibrant",
+    effects: "speed lines, energy aura, dramatic lighting"
+  },
+  political: {
+    style: "dignified portrait, formal pose, flag elements in background",
+    colors: "patriotic colors (red white blue), gold accents",
+    effects: "subtle glow, sharp shadows, professional lighting"
+  },
+  sports: {
+    style: "victory pose, action moment, emotional expression, stadium atmosphere",
+    colors: "team colors, bright highlights, dynamic contrast",
+    effects: "motion blur, light rays, celebratory mood"
+  },
+  cartoon: {
+    style: "exaggerated proportions, dynamic pose, big expressions",
+    colors: "vibrant saturated colors, complementary scheme",
+    effects: "cel shading, bold outlines, comic book style"
+  }
+};
+
+// Функция улучшения промпта с COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
+async function enhancePosterPrompt(userPrompt, generator, supabase) {
+  console.log('🎨 Enhancing prompt with COT & RUG + learned examples...');
+  
+  // Загружаем примеры если еще не загружены
+  const examples = await loadPosterExamples(supabase);
+  
+  // Анализируем запрос
+  const analysis = {
+    hasCharacter: /trump|superman|messi|ronaldo|batman|spiderman/i.test(userPrompt),
+    style: detectStyle(userPrompt),
+    mood: detectMood(userPrompt),
+    matchedExample: findBestExample(userPrompt, examples)
+  };
+  
+  // Если нашли похожий пример, используем его стиль
+  if (analysis.matchedExample) {
+    console.log(`🎯 Using learned style from ${analysis.matchedExample.id}`);
+    const example = analysis.matchedExample;
+    
+    let enhanced = userPrompt;
+    enhanced += `, ${example.style}, ${example.mood} mood`;
+    
+    // Добавляем цвета из примера
+    if (example.colors) {
+      const colorDesc = Object.entries(example.colors)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ');
+      enhanced += `, color scheme: ${colorDesc}`;
+    }
+    
+    enhanced += `, professional poster illustration, vector art style with bold black outlines`;
+    return enhanced;
+  }
+  
+  // Иначе используем шаблоны
+  const template = POSTER_TEMPLATES[analysis.style] || POSTER_TEMPLATES.cartoon;
+  
+  // Строим улучшенный промпт
+  let enhanced = userPrompt;
+  enhanced += `, professional poster illustration, vector art style with bold black outlines (3px), ${template.style}, ${template.colors}, ${template.effects}`;
+  enhanced += `, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements`;
+  
+  // Специфика для генератора
+  if (generator === 'dalle') {
+    enhanced += `, in the style of modern vector posters, clean illustration, Adobe Illustrator quality`;
+  } else {
+    enhanced += `, poster art, vector style, bold design`;
+  }
+  
+  console.log('✨ Enhanced prompt:', enhanced);
+  return enhanced;
+}
+
+// Поиск наиболее подходящего примера
+function findBestExample(userPrompt, examples) {
+  const lower = userPrompt.toLowerCase();
+  let bestMatch = null;
+  let bestScore = 0;
+  
+  Object.values(examples).forEach(example => {
+    let score = 0;
+    
+    // Проверяем совпадение персонажа
+    if (example.character && lower.includes(example.character.toLowerCase())) {
+      score += 10;
+    }
+    
+    // Проверяем совпадение стиля
+    if (example.style && lower.includes(example.style.toLowerCase())) {
+      score += 5;
+    }
+    
+    // Проверяем настроение
+    if (example.mood && lower.includes(example.mood.toLowerCase())) {
+      score += 3;
+    }
+    
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = example;
+    }
+  });
+  
+  return bestScore > 0 ? bestMatch : null;
+}
+
+function detectStyle(prompt) {
+  const lower = prompt.toLowerCase();
+  if (lower.includes('superhero') || lower.includes('hero')) return 'superhero';
+  if (lower.includes('president') || lower.includes('trump')) return 'political';
+  if (lower.includes('sport') || lower.includes('champion')) return 'sports';
+  return 'cartoon';
+}
+
+function detectMood(prompt) {
+  const lower = prompt.toLowerCase();
+  if (lower.includes('power') || lower.includes('strong')) return 'powerful';
+  if (lower.includes('fun') || lower.includes('happy')) return 'playful';
+  if (lower.includes('serious')) return 'serious';
+  return 'confident';
+}
+
+// ========== ОСНОВНЫЕ ФУНКЦИИ ГЕНЕРАЦИИ ==========
 
 // Configuration for wallet layers
 const WALLET_LAYERS = {
@@ -31,64 +206,50 @@ const WOW_EFFECT_TEMPLATES = {
 
 export async function generateImageWithDALLE(prompt, supabase, options = {}) {
   try {
-    console.log('🖼️ Calling enhanced DALL-E generation...');
+    console.log('🖼️ DALL-E generation with POSTER QUALITY...');
+    console.log('Original prompt:', prompt);
     
-    // Enhance prompt for multi-layer generation
-    const enhancedPrompt = buildEnhancedPrompt(prompt, 'dalle', options);
+    // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
+    const enhancedPrompt = await enhancePosterPrompt(prompt, 'dalle', supabase);
     
-    // Direct OpenAI API call instead of supabase.functions.invoke
-    const openaiApiKey = Deno.env.get('OPENA_API_KEY');
-    if (!openaiApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
+    // Use Supabase Edge Function
     const requestBody = {
-      model: 'dall-e-3',
       prompt: enhancedPrompt,
-      size: options.size || '1024x1024',
-      quality: options.quality || 'hd',
-      style: options.style || 'vivid',
-      n: 1
+      mode: 'image_generation',
+      size: '1024x1024', // Квадрат лучше для постеров
+      quality: 'hd',
+      style: 'vivid' // Яркие цвета для постеров
     };
 
-    console.log('📤 DALL-E direct API request:', {
-      model: requestBody.model,
-      size: requestBody.size,
-      style: requestBody.style
+    console.log('📤 Sending to generate-style:', requestBody);
+
+    const imageResponse = await supabase.functions.invoke('generate-style', {
+      body: requestBody
     });
 
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+    if (imageResponse?.error) {
+      throw new Error(`DALL-E generation failed: ${imageResponse.error.message}`);
     }
 
-    const data = await response.json();
-    const imageUrl = data.data?.[0]?.url;
-
-    if (!imageUrl) {
-      throw new Error('No image URL returned from OpenAI API');
+    const generatedImageUrl = imageResponse?.data?.imageUrl;
+    
+    if (!generatedImageUrl) {
+      throw new Error('No image URL returned from DALL-E service');
     }
 
-    const result = processDALLEResponse({ imageUrl, ...data.data[0] }, options);
+    const result = processDALLEResponse({ imageUrl: generatedImageUrl }, options);
     
     if (result.success) {
-      console.log('✅ DALL-E generation successful:', {
-        hasMainImage: !!result.imageUrl,
-        hasLayers: !!result.layers,
-        layerCount: result.layers?.length || 0
-      });
-      return result;
-    } else {
-      throw new Error('Failed to process DALL-E response');
+      console.log('✅ DALL-E POSTER generated successfully!');
+      return {
+        ...result,
+        metadata: {
+          ...result.metadata,
+          originalPrompt: prompt,
+          enhancedPrompt: enhancedPrompt,
+          posterOptimized: true
+        }
+      };
     }
 
   } catch (error) {
@@ -103,86 +264,51 @@ export async function generateImageWithDALLE(prompt, supabase, options = {}) {
 
 export async function generateImageWithReplicate(prompt, supabase, options = {}) {
   try {
-    console.log('🎨 Calling enhanced Replicate generation...');
+    console.log('🎨 Replicate generation with POSTER QUALITY...');
+    console.log('Original prompt:', prompt);
     
-    // Enhance prompt for better multi-layer support
-    const enhancedPrompt = buildEnhancedPrompt(prompt, 'replicate', options);
+    // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
+    const enhancedPrompt = await enhancePosterPrompt(prompt, 'replicate', supabase);
     
-    // Direct Replicate API call instead of supabase.functions.invoke
-    const replicateApiKey = Deno.env.get('REPLICATE_API_KEY');
-    if (!replicateApiKey) {
-      throw new Error('Replicate API key not configured');
-    }
-
     const requestBody = {
-      version: "black-forest-labs/flux-schnell",
-      input: {
-        prompt: enhancedPrompt,
-        width: options.width || 1024,
-        height: options.height || 1024,
-        guidance_scale: options.guidanceScale || 7.5,
-        num_inference_steps: options.steps || 4,
-        go_fast: true,
-        megapixels: "1",
-        num_outputs: 1,
-        aspect_ratio: "1:1",
-        output_format: "webp",
-        output_quality: 80
-      }
+      prompt: enhancedPrompt,
+      // Параметры для качества
+      width: 1024,
+      height: 1024,
+      guidance_scale: 7.5,
+      num_inference_steps: 50, // Больше шагов = лучше качество
+      scheduler: "DPMSolverMultistep"
     };
 
-    console.log('📤 Replicate direct API request:', {
-      width: requestBody.input.width,
-      height: requestBody.input.height,
-      model: requestBody.version
+    console.log('📤 Sending to generate-wallet-mask-v3:', requestBody);
+
+    const imageResponse = await supabase.functions.invoke('generate-wallet-mask-v3', {
+      body: requestBody
     });
 
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${replicateApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`Replicate API error: ${response.status} - ${errorData}`);
+    if (imageResponse?.error) {
+      throw new Error(`Replicate generation failed: ${imageResponse.error.message}`);
     }
 
-    const prediction = await response.json();
+    const generatedImageUrl = imageResponse?.data?.output?.[0];
     
-    // Wait for completion if needed
-    let finalPrediction = prediction;
-    if (prediction.status === 'starting' || prediction.status === 'processing') {
-      // Poll for completion
-      for (let i = 0; i < 30; i++) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
-          headers: { 'Authorization': `Token ${replicateApiKey}` }
-        });
-        finalPrediction = await statusResponse.json();
-        if (finalPrediction.status === 'succeeded' || finalPrediction.status === 'failed') {
-          break;
-        }
-      }
+    if (!generatedImageUrl) {
+      throw new Error('No image URL returned from Replicate service');
     }
 
-    if (finalPrediction.status !== 'succeeded') {
-      throw new Error(`Replicate generation failed: ${finalPrediction.error || 'Unknown error'}`);
-    }
-
-    const result = processReplicateResponse({ output: finalPrediction.output }, options);
+    const result = processReplicateResponse({ output: [generatedImageUrl] }, options);
     
     if (result.success) {
-      console.log('✅ Replicate generation successful:', {
-        hasMainImage: !!result.imageUrl,
-        optimizedForLayers: result.layerOptimized
-      });
-      return result;
-    } else {
-      throw new Error('Failed to process Replicate response');
+      console.log('✅ Replicate POSTER generated successfully!');
+      return {
+        ...result,
+        metadata: {
+          ...result.metadata,
+          originalPrompt: prompt,
+          enhancedPrompt: enhancedPrompt,
+          posterOptimized: true
+        }
+      };
     }
 
   } catch (error) {
@@ -195,118 +321,7 @@ export async function generateImageWithReplicate(prompt, supabase, options = {})
   }
 }
 
-// New function for generating wow effect patterns
-export async function generateWowEffectPattern(effectType, supabase, options = {}) {
-  try {
-    console.log('✨ Generating wow effect pattern:', effectType);
-    
-    const template = WOW_EFFECT_TEMPLATES[effectType] || WOW_EFFECT_TEMPLATES.abstract;
-    const basePrompt = options.prompt || '';
-    
-    const enhancedPrompt = `${basePrompt} ${template}, seamless pattern, high quality, suitable for wallet interface overlay`;
-    
-    // Use DALL-E for pattern generation as it's better for abstract designs
-    const result = await generateImageWithDALLE(enhancedPrompt, supabase, {
-      ...options,
-      style: 'vivid',
-      patternMode: true
-    });
-    
-    if (result.success) {
-      result.effectType = effectType;
-      result.isPattern = true;
-    }
-    
-    return result;
-    
-  } catch (error) {
-    console.error('❌ Wow effect pattern generation error:', error);
-    return {
-      success: false,
-      error: error.message,
-      effectType: effectType
-    };
-  }
-}
-
-// New function for generating animated backgrounds
-export async function generateAnimatedBackground(prompt, supabase, options = {}) {
-  try {
-    console.log('🎬 Generating animated background assets...');
-    
-    // Generate multiple frames for animation
-    const frames = [];
-    const frameCount = options.frameCount || 3;
-    
-    for (let i = 0; i < frameCount; i++) {
-      const framePrompt = `${prompt}, animation frame ${i + 1} of ${frameCount}, smooth transition`;
-      
-      const generator = options.useReplicate ? generateImageWithReplicate : generateImageWithDALLE;
-      const result = await generator(framePrompt, supabase, {
-        ...options,
-        frameIndex: i
-      });
-      
-      if (result.success) {
-        frames.push(result);
-      }
-    }
-    
-    if (frames.length > 0) {
-      return {
-        success: true,
-        frames: frames,
-        frameCount: frames.length,
-        mode: 'animated',
-        animationData: generateAnimationData(frames, options)
-      };
-    } else {
-      throw new Error('Failed to generate animation frames');
-    }
-    
-  } catch (error) {
-    console.error('❌ Animated background generation error:', error);
-    return {
-      success: false,
-      error: error.message,
-      mode: 'animated'
-    };
-  }
-}
-
-// Helper Functions
-
-function buildEnhancedPrompt(basePrompt, generator, options) {
-  let enhancedPrompt = basePrompt;
-  
-  // Add wallet-specific context
-  enhancedPrompt += ', designed for modern crypto wallet interface';
-  
-  // Add layer-specific instructions
-  if (options.multiLayer) {
-    if (generator === 'dalle') {
-      enhancedPrompt += ', compositionally balanced for dual-layer display with clear focal points for both unlock button area and balance display area';
-    } else if (generator === 'replicate') {
-      enhancedPrompt += ', optimized for wallet dimensions with proper scaling, ensure 100% visibility when applied to wallet layers';
-    }
-  }
-  
-  // Add wow effect modifiers
-  if (options.wowEffect) {
-    const effectModifier = WOW_EFFECT_TEMPLATES[options.wowEffect] || '';
-    enhancedPrompt += `, ${effectModifier}`;
-  }
-  
-  // Add style modifiers
-  if (options.styleModifiers) {
-    enhancedPrompt += `, ${options.styleModifiers.join(', ')}`;
-  }
-  
-  // Add technical specifications
-  enhancedPrompt += ', high resolution, professional quality, seamless integration';
-  
-  return enhancedPrompt;
-}
+// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 
 function processDALLEResponse(data, options) {
   const generatedImageUrl = data?.imageUrl;
@@ -322,7 +337,7 @@ function processDALLEResponse(data, options) {
     success: true,
     imageUrl: generatedImageUrl,
     mode: 'dalle',
-    dimensions: data.dimensions || { width: 1792, height: 1024 }
+    dimensions: { width: 1024, height: 1024 }
   };
   
   // If multi-layer was requested, provide layer configuration
@@ -353,23 +368,12 @@ function processDALLEResponse(data, options) {
         opacity: 1
       }
     ];
-    
-    result.layerInstructions = {
-      implementation: 'Use CSS object-fit and object-position to properly display each layer',
-      blendMode: options.blendMode || 'normal',
-      zIndex: {
-        layer1: 1,
-        layer2: 2
-      }
-    };
   }
   
   // Add metadata
   result.metadata = {
     generatedAt: new Date().toISOString(),
-    prompt: data.prompt,
-    revisedPrompt: data.revised_prompt,
-    style: data.style || 'vivid'
+    style: 'vivid'
   };
   
   return result;
@@ -389,7 +393,7 @@ function processReplicateResponse(data, options) {
     success: true,
     imageUrl: generatedImageUrl,
     mode: 'replicate',
-    layerOptimized: true // Replicate is optimized for layers by default
+    layerOptimized: true
   };
   
   // Add optimization data for proper display
@@ -398,9 +402,7 @@ function processReplicateResponse(data, options) {
       objectFit: 'cover',
       objectPosition: 'center',
       width: '100%',
-      height: '100%',
-      transform: 'scale(1.2)', // Scale up to ensure full coverage
-      transformOrigin: 'center'
+      height: '100%'
     },
     containerSettings: {
       overflow: 'hidden',
@@ -408,64 +410,13 @@ function processReplicateResponse(data, options) {
     }
   };
   
-  // Provide viewport configuration to show 100% of image
-  result.viewportConfig = {
-    layer1: {
-      viewport: { x: 0, y: 0, width: '100%', height: '100%' },
-      scale: 1.2, // Compensate for typical 20% visibility issue
-      position: 'center top'
-    },
-    layer2: {
-      viewport: { x: 0, y: 0, width: '100%', height: '100%' },
-      scale: 1.2,
-      position: 'center bottom'
-    }
-  };
-  
   // Add metadata
   result.metadata = {
     generatedAt: new Date().toISOString(),
-    originalDimensions: data.dimensions || { width: 1920, height: 1080 },
     optimizationApplied: true
   };
   
   return result;
-}
-
-function generateAnimationData(frames, options) {
-  return {
-    keyframes: frames.map((frame, index) => ({
-      offset: index / (frames.length - 1),
-      imageUrl: frame.imageUrl
-    })),
-    duration: options.duration || '10s',
-    easing: options.easing || 'ease-in-out',
-    iterations: options.iterations || 'infinite',
-    direction: options.direction || 'alternate',
-    css: generateAnimationCSS(frames, options)
-  };
-}
-
-function generateAnimationCSS(frames, options) {
-  const animationName = `wallet-bg-animation-${Date.now()}`;
-  const duration = options.duration || '10s';
-  
-  const keyframes = frames.map((frame, index) => {
-    const percent = (index / (frames.length - 1)) * 100;
-    return `${percent}% { background-image: url('${frame.imageUrl}'); }`;
-  }).join('\n');
-  
-  return `
-    @keyframes ${animationName} {
-      ${keyframes}
-    }
-    
-    .animated-wallet-bg {
-      animation: ${animationName} ${duration} ${options.easing || 'ease-in-out'} ${options.iterations || 'infinite'};
-      background-size: cover;
-      background-position: center;
-    }
-  `;
 }
 
 // Export helper function for frontend integration
@@ -480,11 +431,10 @@ export function getLayerOptimizationCSS(generator, layerId) {
       }
       
       .wallet-layer-${layerId} img {
-        width: 120%;
-        height: 120%;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
         object-position: center;
-        transform: translate(-10%, -10%);
       }
     `;
   } else {
@@ -500,3 +450,12 @@ export function getLayerOptimizationCSS(generator, layerId) {
     `;
   }
 }
+
+// ========== ПРИМЕРЫ ПРОМПТОВ ДЛЯ ТЕСТИРОВАНИЯ ==========
+export const POSTER_PROMPT_EXAMPLES = {
+  "Trump cartoon": "Donald Trump, professional poster illustration, vector art style with bold black outlines (3px), dignified portrait, formal pose, flag elements in background, patriotic colors (red white blue), gold accents, subtle glow, sharp shadows, professional lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, Adobe Illustrator quality",
+  
+  "Superman hero": "Superman, professional poster illustration, vector art style with bold black outlines (3px), heroic pose with chest out, slight low angle view, radiating light beams background, bold primary colors, high contrast, vibrant, speed lines, energy aura, dramatic lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, Adobe Illustrator quality",
+  
+  "Messi champion": "Lionel Messi, professional poster illustration, vector art style with bold black outlines (3px), victory pose, action moment, emotional expression, stadium atmosphere, team colors, bright highlights, dynamic contrast, motion blur, light rays, celebratory mood, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, Adobe Illustrator quality"
+};
