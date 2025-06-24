@@ -27,7 +27,9 @@ const WalletPreviewContainer = () => {
     onAiPetDoubleClick,
     currentLayer,
     unlockWallet,
-    setCurrentLayer
+    setCurrentLayer,
+    loginStyle,
+    walletStyle
   } = useWalletCustomizationStore();
   
   const [showPassword, setShowPassword] = useState(false);
@@ -75,16 +77,16 @@ const WalletPreviewContainer = () => {
 
   const renderLoginScreen = () => (
     <div className="relative p-6 flex flex-col" style={{
-      backgroundColor: globalStyle.backgroundColor || '#181818',
-      backgroundImage: globalStyle.backgroundImage,
-      background: globalStyle.gradient || globalStyle.backgroundColor || '#181818',
+      backgroundColor: loginStyle.backgroundColor || '#181818',
+      backgroundImage: loginStyle.backgroundImage,
+      background: loginStyle.gradient || loginStyle.backgroundColor || '#181818',
       height: '541px',
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
     }}>
       {/* Phantom Ghost Icon - Centered in the main area */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + (globalStyle.primaryColor || '#9945FF') + '50)' }}>
+        <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + (loginStyle.primaryColor || '#9945FF') + '50)' }}>
           <img 
             src="/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png" 
             alt="Phantom Glass Logo" 
@@ -92,11 +94,11 @@ const WalletPreviewContainer = () => {
             height="120" 
             className="max-w-[120px] animate-pulse-slow"
             style={{
-              filter: globalStyle.primaryColor ? `hue-rotate(${getHueRotate(globalStyle.primaryColor)}deg) saturate(1.2)` : 'none'
+              filter: loginStyle.primaryColor ? `hue-rotate(${getHueRotate(loginStyle.primaryColor)}deg) saturate(1.2)` : 'none'
             }}
           />
           <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-            style={{ border: `2px solid ${globalStyle.primaryColor || '#9945FF'}` }}
+            style={{ border: `2px solid ${loginStyle.primaryColor || '#9945FF'}` }}
           />
         </div>
       </div>
@@ -105,8 +107,8 @@ const WalletPreviewContainer = () => {
       <div className="space-y-3 mb-6">
         {/* Password Title */}
         <h2 className="text-center font-medium text-white text-lg" style={{
-          fontFamily: globalStyle.fontFamily || 'Inter',
-          color: globalStyle.textColor || '#FFFFFF'
+          fontFamily: loginStyle.fontFamily || 'Inter',
+          color: loginStyle.textColor || '#FFFFFF'
         }}>
           Enter your password
         </h2>
@@ -124,7 +126,7 @@ const WalletPreviewContainer = () => {
             className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm"
             style={{
               backgroundColor: '#0f0f0f',
-              fontFamily: globalStyle.fontFamily || 'Inter'
+              fontFamily: loginStyle.fontFamily || 'Inter'
             }}
           />
           {password && (
@@ -145,7 +147,7 @@ const WalletPreviewContainer = () => {
         <div className="text-center">
           <button
             className="text-gray-400 hover:text-gray-300 text-sm"
-            style={{ fontFamily: globalStyle.fontFamily || 'Inter' }}
+            style={{ fontFamily: loginStyle.fontFamily || 'Inter' }}
             onClick={triggerAiPetInteraction}
           >
             Forgot password?
@@ -158,8 +160,8 @@ const WalletPreviewContainer = () => {
         <button
           className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
           style={{
-            backgroundColor: globalStyle.primaryColor || '#a390f5',
-            fontFamily: globalStyle.fontFamily || 'Inter',
+            backgroundColor: loginStyle.primaryColor || '#a390f5',
+            fontFamily: loginStyle.fontFamily || 'Inter',
             borderRadius: '12px'
           }}
           onClick={handleUnlock}
