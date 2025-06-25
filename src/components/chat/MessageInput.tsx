@@ -1,10 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Send, Loader2, Image, Brain, Sparkles } from 'lucide-react';
-import { chatWithAI } from '@/services/apiService';
-import { useCustomizationStore } from '@/stores/customizationStore';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, Loader2, Image, Brain, Sparkles, Upload, X } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { toast } from 'sonner';
 
@@ -14,6 +12,13 @@ interface MessageInputProps {
   onElementSelect: React.Dispatch<React.SetStateAction<string>>;
 }
 
+interface UploadedFile {
+  file: File;
+  preview: string;
+  name: string;
+  size: string;
+}
+
 const MessageInput: React.FC<MessageInputProps> = ({ 
   disabled, 
   selectedElement, 
@@ -21,23 +26,79 @@ const MessageInput: React.FC<MessageInputProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { uploadedImage, activeLayer, loginStyle, walletStyle } = useCustomizationStore();
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const { sendMessage, sendImageGenerationMessage, imageGenerationMode, isLoading: chatIsLoading } = useChatStore();
 
-  const handleSend = async () => {
-    if (!message.trim() || isLoading || chatIsLoading) return;
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const currentMessage = message.trim();
+    // Validate file type (images only for now)
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please select an image file (JPG, PNG, GIF, or WEBP)');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      setUploadedFile({
+        file,
+        preview,
+        name: file.name,
+        size: formatFileSize(file.size)
+      });
+    };
+    reader.readAsDataURL(file);
+
+    // Clear the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
+  };
+
+  const handleSend = async () => {
+    if ((!message.trim() && !uploadedFile) || isLoading || chatIsLoading) return;
+
+    const currentMessage = message.trim() || 'Analyze this image';
     setMessage('');
+    const fileToSend = uploadedFile;
+    setUploadedFile(null);
     setIsLoading(true);
 
     try {
-      console.log('💬 Sending message in mode:', imageGenerationMode, 'Message:', currentMessage);
+      console.log('💬 Sending message in mode:', imageGenerationMode, 'Message:', currentMessage, 'Has file:', !!fileToSend);
 
       // Направляем запрос в правильную функцию в зависимости от режима
       if (imageGenerationMode === 'analysis') {
         // Режим анализа стилей - используем обычную функцию chat
-        await sendMessage({ content: currentMessage });
+        await sendMessage({ 
+          content: currentMessage,
+          imageUrl: fileToSend?.preview || null
+        });
       } else {
         // Режимы генерации изображений - используем специальную функцию
         await sendImageGenerationMessage({ 
@@ -76,12 +137,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
       case 'replicate':
         return 'Describe the artistic background you want Replicate to create...';
       default:
-        return `Ask AI about your ${activeLayer} design${selectedElement ? ` (${selectedElement})` : ''}...`;
+        return `Ask AI about your design${selectedElement ? ` (${selectedElement})` : ''}...`;
     }
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Mode Indicator */}
       <div className="flex items-center gap-2 text-xs text-white/60">
         {getModeIcon()}
@@ -92,26 +153,77 @@ const MessageInput: React.FC<MessageInputProps> = ({
         </span>
       </div>
       
+      {/* File Preview */}
+      {uploadedFile && (
+        <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+          <div className="w-16 h-12 bg-gray-700 rounded-md overflow-hidden flex-shrink-0">
+            <img 
+              src={uploadedFile.preview} 
+              alt="Preview" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-white font-medium truncate">{uploadedFile.name}</p>
+            <p className="text-xs text-white/60">{uploadedFile.size}</p>
+          </div>
+          <Button
+            onClick={removeFile}
+            size="sm"
+            variant="ghost"
+            className="p-1 h-auto text-white/60 hover:text-red-400"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
+      {/* Input Area */}
       <div className="flex space-x-2">
-        <Input
+        <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder={getPlaceholder()}
           disabled={disabled || isLoading || chatIsLoading}
-          className="flex-1"
+          className="flex-1 min-h-[80px] max-h-[120px] resize-none"
+          rows={2}
         />
-        <Button
-          onClick={handleSend}
-          disabled={disabled || isLoading || chatIsLoading || !message.trim()}
-          size="icon"
-        >
-          {(isLoading || chatIsLoading) ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </Button>
+        
+        {/* File Upload Button */}
+        <div className="flex flex-col gap-2">
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || isLoading || chatIsLoading}
+            size="icon"
+            variant="outline"
+            className="border-white/20 text-white/80 hover:text-white hover:bg-white/10"
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+          
+          {/* Send Button */}
+          <Button
+            onClick={handleSend}
+            disabled={disabled || isLoading || chatIsLoading || (!message.trim() && !uploadedFile)}
+            size="icon"
+          >
+            {(isLoading || chatIsLoading) ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+        
+        {/* Hidden File Input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
       </div>
     </div>
   );
