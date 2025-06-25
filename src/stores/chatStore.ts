@@ -255,9 +255,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       console.log('📊 Full GPT response data:', data);
 
-      // Убираем JSON от пользователя и показываем только дружелюбный ответ
-      const friendlyResponse = data.response || 'I\'ve analyzed your wallet and applied the requested changes.';
+      // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Используем userText вместо response для чата
+      const friendlyResponse = data.userText || data.response || 'Я проанализировал ваш кошелек и применил запрошенные изменения.';
       
+      console.log('💬 Using friendly user text for chat:', friendlyResponse);
+
       // Enhanced style changes processing
       if (data.styleChanges) {
         console.log('🎨 Processing style changes from GPT:', data.styleChanges);
@@ -288,7 +290,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         type: 'assistant',
-        content: friendlyResponse,
+        content: friendlyResponse, // 🔥 Теперь показываем только дружелюбный текст
         timestamp: new Date(),
       };
 
@@ -302,14 +304,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('❌ Error sending message:', error);
       
-      let errorMessage = 'Sorry, there was an error connecting to AI. Please check API settings or try again later.';
+      let errorMessage = 'Извините, произошла ошибка при подключении к ИИ. Проверьте настройки API или попробуйте позже.';
       
       if (error.message.includes('OpenAI API key not configured')) {
-        errorMessage = 'OpenAI API key is not configured. Please set it in the project settings.';
+        errorMessage = 'OpenAI API ключ не настроен. Пожалуйста, установите его в настройках проекта.';
       } else if (error.message.includes('OpenAI API error')) {
-        errorMessage = 'OpenAI API error. Please try again later.';
+        errorMessage = 'Ошибка OpenAI API. Попробуйте позже.';
       } else if (error.message.includes('Edge function error')) {
-        errorMessage = 'Server error. Please try again later.';
+        errorMessage = 'Ошибка сервера. Попробуйте позже.';
       }
       
       set(state => ({
@@ -364,7 +366,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         const assistantMessage: ChatMessage = {
           id: `assistant-${Date.now()}`,
           type: 'assistant',
-          content: `I've generated a custom background image based on your description: "${messageData.content}". The image has been created and you can apply it as a background to your wallet using the button below.`,
+          content: `Я создал кастомное фоновое изображение на основе вашего описания: "${messageData.content}". Изображение готово и вы можете применить его как фон кошелька, используя кнопку ниже.`,
           timestamp: new Date(),
           imageUrl: generatedImageUrl,
           isGenerated: true,
@@ -392,15 +394,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('💥 Image generation error:', error);
       
-      let errorMessage = `Sorry, there was an error generating the image: ${error.message}`;
+      let errorMessage = `Извините, произошла ошибка при генерации изображения: ${error.message}`;
       
       // More specific error messages
       if (error.message.includes('403')) {
-        errorMessage = 'Image generation failed: API access denied. Please check your API key permissions.';
+        errorMessage = 'Генерация изображения не удалась: доступ запрещен. Проверьте права доступа API ключа.';
       } else if (error.message.includes('500')) {
-        errorMessage = 'Image generation failed: Server error. Please try again in a moment.';
+        errorMessage = 'Генерация изображения не удалась: ошибка сервера. Попробуйте через некоторое время.';
       } else if (error.message.includes('non-2xx status')) {
-        errorMessage = 'Image generation failed: Service temporarily unavailable. Please try again.';
+        errorMessage = 'Генерация изображения не удалась: сервис временно недоступен. Попробуйте позже.';
       }
       
       set(state => ({

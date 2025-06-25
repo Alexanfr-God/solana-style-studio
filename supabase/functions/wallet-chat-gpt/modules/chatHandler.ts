@@ -4,6 +4,59 @@ import type { GPTResponse } from '../types/responses.ts';
 import { buildAdvancedWalletSystemPrompt, buildUserMessage, buildWowEffectPrompt } from '../utils/prompt-builder.ts';
 import { analyzeStyleFromResponse, analyzeEnhancedStyleFromResponse } from './styleAnalyzer.ts';
 
+// Функция для разделения человеческого текста и технического JSON
+function parseAIResponse(aiResponse: string): { userText: string; styleChanges: any } {
+  console.log('🔍 Parsing AI response to separate user text from JSON...');
+  
+  // Попытка найти JSON блок в ответе
+  const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/);
+  
+  if (jsonMatch) {
+    // Если найден JSON блок
+    const jsonContent = jsonMatch[1];
+    let userText = aiResponse.replace(jsonMatch[0], '').trim();
+    
+    // Убираем лишние пробелы и переносы строк
+    userText = userText.replace(/\n\s*\n/g, '\n').trim();
+    
+    // Если остался только пустой текст, добавляем дружелюбный ответ
+    if (!userText || userText.length < 10) {
+      userText = "Я проанализировал ваш запрос и применил соответствующие изменения к стилю кошелька.";
+    }
+    
+    try {
+      const styleChanges = JSON.parse(jsonContent);
+      console.log('✅ Successfully separated user text from JSON');
+      return { userText, styleChanges };
+    } catch (e) {
+      console.warn('⚠️ Failed to parse JSON content, treating as regular response');
+      return { userText: aiResponse, styleChanges: null };
+    }
+  } else {
+    // Если JSON блок не найден, проверяем на наличие технических терминов
+    const hasTechnicalContent = aiResponse.includes('{') || 
+                               aiResponse.includes('backgroundColor') ||
+                               aiResponse.includes('primaryColor') ||
+                               aiResponse.includes('elements');
+    
+    if (hasTechnicalContent) {
+      // Вероятно, весь ответ - это JSON
+      try {
+        const styleChanges = JSON.parse(aiResponse);
+        const userText = "Я применил запрошенные изменения к стилю вашего кошелька.";
+        console.log('✅ Parsed full JSON response, generated friendly user text');
+        return { userText, styleChanges };
+      } catch (e) {
+        console.warn('⚠️ Response contains technical content but is not valid JSON');
+      }
+    }
+    
+    // Обычный человеческий ответ без JSON
+    console.log('ℹ️ Response contains only user text, no JSON found');
+    return { userText: aiResponse, styleChanges: null };
+  }
+}
+
 export async function processGPTChat(
   content: string,
   walletContext: WalletContext,
@@ -118,23 +171,27 @@ export async function processGPTChat(
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
 
-    console.log('✅ Enhanced GPT response received, processing with validation...');
+    console.log('✅ Enhanced GPT response received, processing with separation...');
+
+    // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Разделяем ответ на пользовательский текст и JSON
+    const { userText, styleChanges: parsedStyleChanges } = parseAIResponse(aiResponse);
+
+    console.log('📝 Separated response:', {
+      userTextLength: userText.length,
+      hasStyleChanges: !!parsedStyleChanges
+    });
 
     // Validate response if enhanced structure is available
     let validationResult = null;
-    if (structureData?.success) {
+    if (structureData?.success && parsedStyleChanges) {
       try {
-        const parsedResponse = JSON.parse(
-          aiResponse.match(/```json\s*([\s\S]*?)\s*```/)?.[1] || '{}'
-        );
-        
         const { data: validationData } = await supabaseClient.functions.invoke(
           'wallet-customization-structure',
           {
             method: 'POST',
             body: {
               action: 'validate-customization',
-              customization: parsedResponse,
+              customization: parsedStyleChanges,
               walletType: walletContext.walletType || 'phantom'
             }
           }
@@ -149,13 +206,17 @@ export async function processGPTChat(
       }
     }
 
-    // Extract and validate style changes
-    const styleChanges = analyzeEnhancedStyleFromResponse(aiResponse);
+    // Extract and validate style changes using fallback if needed
+    let finalStyleChanges = parsedStyleChanges;
+    if (!finalStyleChanges) {
+      finalStyleChanges = analyzeEnhancedStyleFromResponse(aiResponse);
+    }
     
-    if (!styleChanges) {
+    if (!finalStyleChanges) {
       console.warn('⚠️ No valid style changes found in enhanced response');
       return {
-        response: aiResponse,
+        response: userText, // 🔥 Возвращаем только пользовательский текст
+        userText: userText, // 🔥 Добавляем отдельное поле для чата
         styleChanges: null,
         success: false,
         mode: 'analysis',
@@ -167,8 +228,9 @@ export async function processGPTChat(
     console.log('🎨 Enhanced style changes extracted and validated');
 
     return {
-      response: aiResponse,
-      styleChanges,
+      response: userText, // 🔥 Возвращаем только пользовательский текст
+      userText: userText, // 🔥 Добавляем отдельное поле для чата
+      styleChanges: finalStyleChanges,
       success: true,
       mode: isWowEffectRequest ? 'wow-effect' : 'enhanced-analysis',
       enhancedContext,
@@ -185,7 +247,8 @@ export async function processGPTChat(
   } catch (error) {
     console.error('💥 Enhanced GPT chat processing error:', error);
     return {
-      response: `I encountered an error while processing your request: ${error.message}. Please try again.`,
+      response: `Извините, произошла ошибка при обработке запроса: ${error.message}. Попробуйте еще раз.`,
+      userText: `Извините, произошла ошибка при обработке запроса: ${error.message}. Попробуйте еще раз.`,
       styleChanges: null,
       success: false,
       mode: 'error',
