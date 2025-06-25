@@ -1,12 +1,17 @@
-
 import type { WalletContext } from '../types/wallet.ts';
 import type { GPTResponse } from '../types/responses.ts';
 import { buildAdvancedWalletSystemPrompt, buildUserMessage, buildWowEffectPrompt } from '../utils/prompt-builder.ts';
 import { analyzeStyleFromResponse, analyzeEnhancedStyleFromResponse } from './styleAnalyzer.ts';
 
-// Функция для разделения человеческого текста и технического JSON
-function parseAIResponse(aiResponse: string): { userText: string; styleChanges: any } {
+// Simple language detection: checks for Cyrillic characters
+function detectLanguage(text: string): 'ru' | 'en' {
+  return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'en';
+}
+
+function parseAIResponse(aiResponse: string, userMessage?: string): { userText: string; styleChanges: any } {
   console.log('🔍 Parsing AI response to separate user text from JSON...');
+  
+  const language = detectLanguage(userMessage ?? aiResponse);
   
   // Попытка найти JSON блок в ответе
   const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/);
@@ -21,7 +26,9 @@ function parseAIResponse(aiResponse: string): { userText: string; styleChanges: 
     
     // Если остался только пустой текст, добавляем дружелюбный ответ
     if (!userText || userText.length < 10) {
-      userText = "Я проанализировал ваш запрос и применил соответствующие изменения к стилю кошелька.";
+      userText = language === 'ru'
+        ? 'Я проанализировал ваш запрос и применил соответствующие изменения к стилю кошелька.'
+        : 'I analyzed your request and applied the requested changes to the wallet style.';
     }
     
     try {
@@ -43,7 +50,9 @@ function parseAIResponse(aiResponse: string): { userText: string; styleChanges: 
       // Вероятно, весь ответ - это JSON
       try {
         const styleChanges = JSON.parse(aiResponse);
-        const userText = "Я применил запрошенные изменения к стилю вашего кошелька.";
+        const userText = language === 'ru'
+          ? 'Я применил запрошенные изменения к стилю вашего кошелька.'
+          : 'I applied the requested changes to your wallet style.';
         console.log('✅ Parsed full JSON response, generated friendly user text');
         return { userText, styleChanges };
       } catch (e) {
@@ -174,7 +183,7 @@ export async function processGPTChat(
     console.log('✅ Enhanced GPT response received, processing with separation...');
 
     // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Разделяем ответ на пользовательский текст и JSON
-    const { userText, styleChanges: parsedStyleChanges } = parseAIResponse(aiResponse);
+    const { userText, styleChanges: parsedStyleChanges } = parseAIResponse(aiResponse, content);
 
     console.log('📝 Separated response:', {
       userTextLength: userText.length,
@@ -247,8 +256,8 @@ export async function processGPTChat(
   } catch (error) {
     console.error('💥 Enhanced GPT chat processing error:', error);
     return {
-      response: `Извините, произошла ошибка при обработке запроса: ${error.message}. Попробуйте еще раз.`,
-      userText: `Извините, произошла ошибка при обработке запроса: ${error.message}. Попробуйте еще раз.`,
+      response: `Sorry, an error occurred while processing the request: ${error.message}. Please try again.`,
+      userText: `Sorry, an error occurred while processing the request: ${error.message}. Please try again.`,
       styleChanges: null,
       success: false,
       mode: 'error',

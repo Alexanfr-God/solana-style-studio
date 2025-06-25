@@ -4,6 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWalletCustomizationStore } from './walletCustomizationStore';
 import { WALLET_ELEMENTS_REGISTRY, getAllCategories } from '@/components/wallet/WalletElementsRegistry';
 
+function detectLanguage(text: string): 'ru' | 'en' {
+  return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'en';
+}
+
 export type ImageGenerationMode = 'analysis' | 'dalle' | 'replicate';
 
 interface ChatState {
@@ -256,7 +260,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       console.log('📊 Full GPT response data:', data);
 
       // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Используем userText вместо response для чата
-      const friendlyResponse = data.userText || data.response || 'Я проанализировал ваш кошелек и применил запрошенные изменения.';
+      const lang = detectLanguage(messageData.content);
+      const fallback = lang === 'ru'
+        ? 'Я проанализировал ваш кошелек и применил запрошенные изменения.'
+        : 'I analyzed your wallet and applied the requested changes.';
+      const friendlyResponse = data.userText || data.response || fallback;
       
       console.log('💬 Using friendly user text for chat:', friendlyResponse);
 
@@ -304,14 +312,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('❌ Error sending message:', error);
       
-      let errorMessage = 'Извините, произошла ошибка при подключении к ИИ. Проверьте настройки API или попробуйте позже.';
+      let errorMessage = 'Sorry, there was an error connecting to AI. Please check API settings or try again later.';
       
       if (error.message.includes('OpenAI API key not configured')) {
-        errorMessage = 'OpenAI API ключ не настроен. Пожалуйста, установите его в настройках проекта.';
+        errorMessage = 'OpenAI API key is not configured. Please set it in project settings.';
       } else if (error.message.includes('OpenAI API error')) {
-        errorMessage = 'Ошибка OpenAI API. Попробуйте позже.';
+        errorMessage = 'OpenAI API error. Please try again later.';
       } else if (error.message.includes('Edge function error')) {
-        errorMessage = 'Ошибка сервера. Попробуйте позже.';
+        errorMessage = 'Server error. Please try again later.';
       }
       
       set(state => ({
@@ -394,15 +402,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (error) {
       console.error('💥 Image generation error:', error);
       
-      let errorMessage = `Извините, произошла ошибка при генерации изображения: ${error.message}`;
+      let errorMessage = `Sorry, there was an error generating the image: ${error.message}`;
       
       // More specific error messages
       if (error.message.includes('403')) {
-        errorMessage = 'Генерация изображения не удалась: доступ запрещен. Проверьте права доступа API ключа.';
+        errorMessage = 'Image generation failed: access denied. Please check API key permissions.';
       } else if (error.message.includes('500')) {
-        errorMessage = 'Генерация изображения не удалась: ошибка сервера. Попробуйте через некоторое время.';
+        errorMessage = 'Image generation failed: server error. Please try again later.';
       } else if (error.message.includes('non-2xx status')) {
-        errorMessage = 'Генерация изображения не удалась: сервис временно недоступен. Попробуйте позже.';
+        errorMessage = 'Image generation failed: service temporarily unavailable. Please try later.';
       }
       
       set(state => ({
