@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useInView } from 'react-intersection-observer';
-import { Github, Send } from 'lucide-react';
+import { Github, Send, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
@@ -67,6 +67,14 @@ const Footer = () => {
             >
               <Send className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
             </a>
+            <a 
+              href="https://twitter.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
+            >
+              <X className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+            </a>
           </div>
         </div>
         
@@ -106,6 +114,14 @@ const Footer = () => {
               className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
             >
               <Send className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+            </a>
+            <a 
+              href="https://twitter.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
+            >
+              <X className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
             </a>
           </div>
         </div>
