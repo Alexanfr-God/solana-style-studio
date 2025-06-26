@@ -37,7 +37,7 @@ const WalletPreviewContainer = () => {
   };
 
   const renderLoginScreen = () => (
-    <div className="relative p-6 flex flex-col" style={{
+    <div className="relative p-6 flex flex-col justify-end" style={{
       backgroundColor: loginStyle.backgroundColor || '#181818',
       backgroundImage: loginStyle.backgroundImage,
       backgroundSize: 'cover',
@@ -50,21 +50,10 @@ const WalletPreviewContainer = () => {
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
     }}>
-      {/* Logo Section - Top Center */}
-      <div className="flex justify-center items-center pt-4 pb-2">
-        <dotlottie-player 
-          src="https://lottie.host/d0bcee95-e9d8-48b8-a9f3-e00d7911e63a/xyHOfUIIW2.lottie" 
-          background="transparent" 
-          speed="1" 
-          style={{ width: '100px', height: '100px' }}
-          loop 
-          autoplay
-        />
-      </div>
 
-      {/* Login Form - Below Logo */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="space-y-3 w-full max-w-xs">
+      {/* Login Form - Bottom Section */}
+      <div className="w-full max-w-xs mx-auto mb-8">
+        <div className="space-y-3">
           {/* Password Title */}
           <h2 className="text-center font-medium text-white text-lg" style={{
             fontFamily: loginStyle.fontFamily || 'Inter',
