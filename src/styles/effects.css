@@ -16,7 +16,7 @@
 }
 
 .text-shadow-glow {
-  text-shadow: 0 0 8px rgba(153, 69, 255, 0.7);
+  text-shadow: 0 0 8px rgba(153, 69, 255, 0.7), 0 0 16px rgba(153, 69, 255, 0.4);
 }
 
 /* Custom Scrollbar */
@@ -43,4 +43,10 @@
 .scrollbar-custom {
   scrollbar-width: thin;
   scrollbar-color: rgba(153, 69, 255, 0.5) rgba(0, 0, 0, 0.2);
+}
+
+/* Shine animation for buttons */
+@keyframes shine {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
 }

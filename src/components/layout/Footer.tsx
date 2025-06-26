@@ -1,30 +1,21 @@
 
 import React from 'react';
 import { useInView } from 'react-intersection-observer';
-import { Twitter, Send } from 'lucide-react';
+import { Github, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
-  // Set a very low threshold to ensure it triggers on mobile
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.01,
     rootMargin: '100px 0px',
   });
 
-  // Debug the footer visibility
-  React.useEffect(() => {
-    console.log('Footer mounted');
-    console.log('Footer inView:', inView);
-  }, [inView]);
-
   return (
     <footer 
       ref={ref}
-      className="w-full bg-gradient-to-br from-black via-purple-950/90 to-black py-6 relative"
-      // Add debugging id
-      id="footer-component"
+      className="w-full bg-gradient-to-br from-black via-purple-950/90 to-black py-6 relative border-t border-white/10"
     >
       {/* Ambient glow effect */}
       <div className="absolute inset-0 bg-purple-900/10 blur-xl -top-4 opacity-30 pointer-events-none"></div>
@@ -32,7 +23,6 @@ const Footer = () => {
       <div 
         className={cn(
           "w-full max-w-screen-xl mx-auto px-3 md:px-4 transition-all duration-1000",
-          // Make sure it's always visible, even before intersection
           "opacity-100"
         )}
       >
@@ -42,36 +32,40 @@ const Footer = () => {
           <div className="flex-1">
             <Link 
               to="/documentation" 
-              className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300"
+              className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300 relative group"
             >
-              Docs
+              <span>Docs</span>
+              <span className="absolute left-0 right-0 bottom-0 h-[1px] bg-gradient-to-r from-purple-400 to-pink-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
           </div>
           
           {/* Center: Brand */}
           <div className="flex-1 text-center">
             <p className="text-white font-bold tracking-wider uppercase text-lg">
-              Wallet Coast Customs <span className="text-solana-purple">2025</span>
+              <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                Wallet Coast Customs
+              </span>
+              <span className="text-purple-400 ml-2">2025</span>
             </p>
           </div>
           
           {/* Right: Social Icons */}
           <div className="flex-1 flex justify-end gap-4">
             <a 
-              href="https://x.com/wacocuapp" 
+              href="https://github.com/wacocuapp" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300"
+              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
             >
-              <Twitter className="w-5 h-5 hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+              <Github className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
             </a>
             <a 
               href="https://telegram.org" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300"
+              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
             >
-              <Send className="w-5 h-5 hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+              <Send className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
             </a>
           </div>
         </div>
@@ -80,34 +74,38 @@ const Footer = () => {
         <div className="flex md:hidden flex-col items-center space-y-4 py-2">
           {/* Brand */}
           <p className="text-white font-bold tracking-wider uppercase text-base">
-            Wallet Coast Customs <span className="text-solana-purple">2025</span>
+            <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+              Wallet Coast Customs
+            </span>
+            <span className="text-purple-400 ml-2">2025</span>
           </p>
           
           {/* Docs */}
           <Link 
             to="/documentation" 
-            className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300 py-2"
+            className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300 py-2 relative group"
           >
-            Docs
+            <span>Docs</span>
+            <span className="absolute left-0 right-0 bottom-0 h-[1px] bg-gradient-to-r from-purple-400 to-pink-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
           </Link>
           
           {/* Social Icons */}
           <div className="flex justify-center gap-4 py-2">
             <a 
-              href="https://x.com/wacocuapp" 
+              href="https://github.com/wacocuapp" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300"
+              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
             >
-              <Twitter className="w-5 h-5 hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+              <Github className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
             </a>
             <a 
               href="https://telegram.org" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300"
+              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
             >
-              <Send className="w-5 h-5 hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+              <Send className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
             </a>
           </div>
         </div>
