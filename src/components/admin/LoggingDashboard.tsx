@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Activity, AlertTriangle, CheckCircle, Clock, Download, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 interface LogEntry {
   id: string;
@@ -16,7 +16,7 @@ interface LogEntry {
   image_url?: string;
   layer_type?: string;
   user_id?: string;
-  style_result?: Record<string, any>;
+  style_result?: Json;
 }
 
 interface AnalyticsData {

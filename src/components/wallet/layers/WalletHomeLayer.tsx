@@ -2,7 +2,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { useAiPetOrbit } from '@/hooks/useAiPetOrbit';
 import WalletAccountDropdown from '../WalletAccountDropdown';
 import WalletBottomNavigation from '../WalletBottomNavigation';
 import AccountSidebar from '../AccountSidebar';
@@ -12,7 +11,6 @@ import AppsContent from '../content/AppsContent';
 import HistoryContent from '../content/HistoryContent';
 import SearchContent from '../content/SearchContent';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import AiPet from '@/components/ui/AiPet';
 
 const WalletHomeLayer = () => {
   const {
@@ -24,66 +22,30 @@ const WalletHomeLayer = () => {
     showAccountSidebar,
     setShowAccountSidebar,
     currentLayer,
-    setCurrentLayer,
-    triggerAiPetInteraction,
-    setTemporaryEmotion,
-    containerBounds,
-    setContainerBounds,
-    aiPet
+    setCurrentLayer
   } = useWalletCustomizationStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const aiPetRef = useRef<HTMLDivElement>(null);
   
   // Get component-specific styles
   const globalStyle = getStyleForComponent('global');
   const headerStyle = getStyleForComponent('header');
   const navigationStyle = getStyleForComponent('navigation');
-  
-  // Используем хук для прямоугольной анимации AI Pet
-  useAiPetOrbit(aiPetRef.current, containerBounds, 'rectangle');
 
   const activeAccount = accounts.find(acc => acc.id === activeAccountId);
 
   const handleSearchClick = () => {
     console.log('🔍 Search clicked, setting layer to search');
     setCurrentLayer('search');
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 2000);
   };
 
   const handleAccountDropdownToggle = () => {
     setShowAccountDropdown(!showAccountDropdown);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('happy', 1500);
   };
 
   const handleAvatarClick = () => {
     setShowAccountSidebar(true);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 2000);
   };
-
-  // Обновляем границы контейнера для AI Pet
-  useEffect(() => {
-    if (containerRef.current) {
-      const bounds = containerRef.current.getBoundingClientRect();
-      setContainerBounds(bounds);
-    }
-  }, [setContainerBounds]);
-
-  // Отслеживаем изменения размера контейнера
-  useEffect(() => {
-    const handleResize = () => {
-      if (containerRef.current) {
-        const bounds = containerRef.current.getBoundingClientRect();
-        setContainerBounds(bounds);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [setContainerBounds]);
 
   // Render content based on current layer with debugging
   const renderContent = () => {
