@@ -21,7 +21,6 @@ body, html, #root {
 
 @media (min-width: 1280px) {
   #root {
-    max-width: 1280px;
     padding: 1rem;
   }
 }

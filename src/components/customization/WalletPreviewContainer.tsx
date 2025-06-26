@@ -56,7 +56,7 @@ const WalletPreviewContainer = () => {
           src="https://lottie.host/d0bcee95-e9d8-48b8-a9f3-e00d7911e63a/xyHOfUIIW2.lottie" 
           background="transparent" 
           speed="1" 
-          style={{ width: '200px', height: '200px' }}
+          style={{ width: '100px', height: '100px' }}
           loop 
           autoplay
         />
