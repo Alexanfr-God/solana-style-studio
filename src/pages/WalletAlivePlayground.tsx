@@ -21,7 +21,7 @@ const WalletAlivePlayground = () => {
         
         {/* Main Content */}
         <main className="flex-1 pt-20 pb-6 px-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-full mx-auto">
             {/* Title Section */}
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold text-white mb-2">
@@ -38,14 +38,14 @@ const WalletAlivePlayground = () => {
             </div>
 
             {/* Main Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-6">
               {/* Left Column - Chat Interface */}
-              <div className="space-y-6">
+              <div className="xl:col-span-1 lg:col-span-1 space-y-6">
                 <ChatInterface />
               </div>
               
               {/* Right Column - Wallet Preview */}
-              <div className="lg:col-span-2 space-y-4">
+              <div className="xl:col-span-3 lg:col-span-2 space-y-4">
                 <WalletPreviewContainer />
                 
                 {/* MINT Button */}

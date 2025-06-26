@@ -126,7 +126,7 @@ const WalletPreviewContainer = () => {
               onClick={() => setSelectedWallet('phantom')}
               className="text-xs"
             >
-              Phantom
+              WCC
             </Button>
             <Button
               variant={selectedWallet === 'metamask' ? 'default' : 'outline'}
