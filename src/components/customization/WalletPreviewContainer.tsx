@@ -46,7 +46,7 @@ const WalletPreviewContainer = () => {
       background: loginStyle.backgroundImage 
         ? `url(${loginStyle.backgroundImage.replace('url(', '').replace(')', '')}) center/cover no-repeat, ${loginStyle.gradient || loginStyle.backgroundColor || '#181818'}`
         : loginStyle.gradient || loginStyle.backgroundColor || '#181818',
-      height: '541px',
+      height: '650px',
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
     }}>
@@ -169,7 +169,7 @@ const WalletPreviewContainer = () => {
           {/* Wallet Container */}
           <div 
             ref={walletContainerRef}
-            className="relative w-80 h-[541px] mx-auto rounded-2xl overflow-hidden"
+            className="relative w-96 h-[650px] mx-auto rounded-2xl overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
               backdropFilter: 'blur(10px)',
