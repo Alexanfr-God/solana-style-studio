@@ -1,3 +1,4 @@
+
 /*
  * ⚠️ DEMO INDEX DONT TOUCH - THIS FILE IS FOR INDEX PAGE DEMO ONLY ⚠️
  * 
@@ -18,34 +19,6 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomizationStore } from '@/stores/customizationStore';
-
-// Helper function to calculate hue rotation based on accent color
-const getHueRotate = (color: string): number => {
-  // Extract RGB components from hex or rgb string
-  let r = 0, g = 0, b = 0;
-  
-  if (color.startsWith('#')) {
-    // Handle hex format
-    const hex = color.replace('#', '');
-    r = parseInt(hex.substring(0, 2), 16);
-    g = parseInt(hex.substring(2, 4), 16);
-    b = parseInt(hex.substring(4, 6), 16);
-  } else if (color.startsWith('rgb')) {
-    // Handle rgb format
-    const match = color.match(/\d+/g);
-    if (match && match.length >= 3) {
-      r = parseInt(match[0]);
-      g = parseInt(match[1]);
-      b = parseInt(match[2]);
-    }
-  }
-  
-  // Calculate hue (simplified)
-  const baseHue = 280; // Purple hue for #9945FF (phantom's default)
-  const targetHue = ((r * 0.3) + (g * 0.6) + (b * 0.1)) % 360;
-  
-  return targetHue - baseHue;
-};
 
 // Helper for contrast checking
 const getTextContrast = (backgroundColor: string): string => {
@@ -206,124 +179,106 @@ export const DemoIndexLoginScreenPreview = ({ style }: { style: WalletStyle }) =
         />
       </div>
       
-      {/* Main container with three zones */}
+      {/* Main container - Centered Login Form */}
       <div className="flex-1 flex flex-col relative z-10">
         
-        {/* Center Zone - Ghost Logo */}
+        {/* Center Zone - Login Form Only */}
         <div className="flex-1 flex items-center justify-center">
-          {!isGenerating && (
-            <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + style.accentColor + '50)' }}>
-              <img 
-                src="/lovable-uploads/f2da1dab-e2e7-4a42-bcb5-8a24a140d4fc.png" 
-                alt="Phantom Ghost Logo" 
-                width="120" 
-                height="120" 
-                className="max-w-[120px] animate-pulse-slow"
-                style={{
-                  filter: style.accentColor ? `hue-rotate(${getHueRotate(style.accentColor)}deg) saturate(1.2)` : 'none'
+          <div className="space-y-3 w-full max-w-sm px-4">
+            {/* Login Title */}
+            <h2 
+              className="text-lg font-medium text-center" 
+              style={{ 
+                color: style.textColor || '#FFFFFF', 
+                textShadow: getTextShadow(),
+                letterSpacing: '0.5px'
+              }}
+            >
+              Enter your password
+            </h2>
+            
+            {/* Password field */}
+            <div className="w-full">
+              <div 
+                className="h-10 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
+                style={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.07)',
+                  borderRadius: style.borderRadius || '100px',
+                  border: `1px solid ${style.accentColor}40`,
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+                  transition: 'all 0.3s ease'
                 }}
-              />
-              <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-                style={{ border: `2px solid ${style.accentColor || '#9945FF'}` }}
-              />
+              >
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-transparent border-none outline-none text-white transition-colors text-sm"
+                  placeholder="Password"
+                  style={{
+                    caretColor: style.accentColor || '#9945FF',
+                  }}
+                />
+                {password.length > 0 && (
+                  <button 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 text-gray-400 hover:text-white transition-colors flex items-center justify-center"
+                    style={{ color: style.accentColor || '#9945FF' }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                )}
+                
+                <div className="absolute bottom-0 left-0 w-full h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform"
+                  style={{ backgroundColor: style.accentColor || '#9945FF' }}
+                />
+              </div>
             </div>
-          )}
+            
+            {/* Forgot password link */}
+            <div 
+              className="w-full text-center"
+              onClick={handleForgotPassword}
+            >
+              <span 
+                className="text-gray-400 text-xs cursor-pointer hover:text-gray-300 relative group"
+                style={{ transition: 'all 0.3s ease' }}
+              >
+                Forgot password?
+                <span 
+                  className="absolute left-0 right-0 bottom-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform" 
+                  style={{ backgroundColor: style.accentColor || '#9945FF' }}
+                />
+              </span>
+            </div>
+            
+            {/* Unlock Button */}
+            <div className="w-full pt-2">
+              <button 
+                onClick={handleUnlock}
+                className="w-full h-10 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98] text-sm"
+                style={{ 
+                  backgroundColor: style.buttonColor || '#9b87f5',
+                  color: style.buttonTextColor || '#000000',
+                  borderRadius: style.borderRadius || '100px',
+                  boxShadow: `0 4px 10px ${style.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
+                }}
+              >
+                <span 
+                  className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{
+                    background: `linear-gradient(45deg, transparent 25%, ${style.accentColor || '#9b87f5'}40 50%, transparent 75%)`,
+                    backgroundSize: '200% 200%',
+                    animation: 'shine 1.5s infinite linear'
+                  }}
+                />
+                
+                <span className="relative z-10">Unlock</span>
+              </button>
+            </div>
+          </div>
         </div>
         
-        {/* Bottom Zone - Login Form */}
-        <div className="pb-6 px-4 space-y-3">
-          {/* Login Title */}
-          <h2 
-            className="text-lg font-medium text-center" 
-            style={{ 
-              color: style.textColor || '#FFFFFF', 
-              textShadow: getTextShadow(),
-              letterSpacing: '0.5px'
-            }}
-          >
-            Enter your password
-          </h2>
-          
-          {/* Password field */}
-          <div className="w-full max-w-sm mx-auto">
-            <div 
-              className="h-10 px-4 flex items-center w-full relative overflow-hidden backdrop-blur-sm group transition-all"
-              style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.07)',
-                borderRadius: style.borderRadius || '100px',
-                border: `1px solid ${style.accentColor}40`,
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-transparent border-none outline-none text-white transition-colors text-sm"
-                placeholder="Password"
-                style={{
-                  caretColor: style.accentColor || '#9945FF',
-                }}
-              />
-              {password.length > 0 && (
-                <button 
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-gray-400 hover:text-white transition-colors flex items-center justify-center"
-                  style={{ color: style.accentColor || '#9945FF' }}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              )}
-              
-              <div className="absolute bottom-0 left-0 w-full h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform"
-                style={{ backgroundColor: style.accentColor || '#9945FF' }}
-              />
-            </div>
-          </div>
-          
-          {/* Forgot password link */}
-          <div 
-            className="w-full max-w-sm mx-auto text-center"
-            onClick={handleForgotPassword}
-          >
-            <span 
-              className="text-gray-400 text-xs cursor-pointer hover:text-gray-300 relative group"
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              Forgot password?
-              <span 
-                className="absolute left-0 right-0 bottom-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform" 
-                style={{ backgroundColor: style.accentColor || '#9945FF' }}
-              />
-            </span>
-          </div>
-          
-          {/* Unlock Button */}
-          <div className="w-full max-w-sm mx-auto pt-2">
-            <button 
-              onClick={handleUnlock}
-              className="w-full h-10 font-medium text-center transition-all relative overflow-hidden group hover:shadow-lg active:scale-[0.98] text-sm"
-              style={{ 
-                backgroundColor: style.buttonColor || '#9b87f5',
-                color: style.buttonTextColor || '#000000',
-                borderRadius: style.borderRadius || '100px',
-                boxShadow: `0 4px 10px ${style.buttonColor}80 || rgba(155, 135, 245, 0.5)`,
-              }}
-            >
-              <span 
-                className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{
-                  background: `linear-gradient(45deg, transparent 25%, ${style.accentColor || '#9b87f5'}40 50%, transparent 75%)`,
-                  backgroundSize: '200% 200%',
-                  animation: 'shine 1.5s infinite linear'
-                }}
-              />
-              
-              <span className="relative z-10">Unlock</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

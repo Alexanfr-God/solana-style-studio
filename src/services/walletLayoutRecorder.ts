@@ -68,6 +68,114 @@ export interface WalletLayout {
 
 export type ScreenType = 'login' | 'wallet' | 'receive' | 'dashboard' | 'swap' | 'apps' | 'history' | 'buy';
 
+export const WALLET_STRUCTURE_ELEMENTS = [
+  // Header Elements
+  {
+    id: 'header-container',
+    name: 'Header Container',
+    type: 'container',
+    selector: '.header-container',
+    description: 'Main header section containing branding and navigation'
+  },
+  {
+    id: 'search-button',
+    name: 'Search Button',
+    type: 'button',
+    selector: '.search-button',
+    description: 'Search functionality button'
+  },
+  {
+    id: 'account-info',
+    name: 'Account Info',
+    type: 'container',
+    selector: '.account-info',
+    description: 'User account information display'
+  },
+  {
+    id: 'avatar',
+    name: 'User Avatar',
+    type: 'image',
+    selector: '.user-avatar',
+    description: 'User profile avatar image'
+  },
+  
+  // Content Elements
+  {
+    id: 'main-content',
+    name: 'Main Content Area',
+    type: 'container',
+    selector: '.main-content',
+    description: 'Primary content container'
+  },
+  {
+    id: 'balance-display',
+    name: 'Balance Display',
+    type: 'text',
+    selector: '.balance-display',
+    description: 'Wallet balance information'
+  },
+  {
+    id: 'action-buttons',
+    name: 'Action Buttons',
+    type: 'container',
+    selector: '.action-buttons',
+    description: 'Send, Receive, Buy, Swap buttons'
+  },
+  {
+    id: 'assets-list',
+    name: 'Assets List',
+    type: 'container',
+    selector: '.assets-list',
+    description: 'Cryptocurrency assets listing'
+  },
+  
+  // Navigation Elements
+  {
+    id: 'bottom-navigation',
+    name: 'Bottom Navigation',
+    type: 'container',
+    selector: '.bottom-navigation',
+    description: 'Bottom tab navigation bar'
+  },
+  {
+    id: 'nav-tabs',
+    name: 'Navigation Tabs',
+    type: 'container',
+    selector: '.nav-tabs',
+    description: 'Individual navigation tab items'
+  },
+  
+  // Form Elements (Login Screen)
+  {
+    id: 'login-form',
+    name: 'Login Form',
+    type: 'container',
+    selector: '.login-form',
+    description: 'Login form container'
+  },
+  {
+    id: 'password-input',
+    name: 'Password Input',
+    type: 'input',
+    selector: '.password-input',
+    description: 'Password input field'
+  },
+  {
+    id: 'unlock-button',
+    name: 'Unlock Button',
+    type: 'button',
+    selector: '.unlock-button',
+    description: 'Wallet unlock button'
+  },
+  {
+    id: 'forgot-password',
+    name: 'Forgot Password Link',
+    type: 'button',
+    selector: '.forgot-password',
+    description: 'Password recovery link'
+  }
+];
+
 export class WalletLayoutRecorder {
   // Enhanced layer classification for different screens
   static classifyElementIntoLayer(element: WalletElement, screenType: string = 'login'): { layerName: string; order: number; metadata?: any } {

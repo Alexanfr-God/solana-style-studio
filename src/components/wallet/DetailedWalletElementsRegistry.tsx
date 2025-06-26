@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 // Детальный реестр ВСЕХ элементов кошелька внутри белых границ
@@ -107,30 +106,6 @@ export const DETAILED_WALLET_ELEMENTS_REGISTRY: DetailedWalletElement[] = [
     subcategory: 'Content',
     description: 'Main content area of login screen (541px height)',
     selector: '.login-main-content',
-    customizable: true,
-    layer: 'login',
-    position: 'content',
-    elementType: 'container'
-  },
-  {
-    id: 'login-phantom-ghost-icon',
-    name: 'Phantom Ghost Icon',
-    category: 'Login Screen',
-    subcategory: 'Branding',
-    description: 'Large Phantom ghost logo (120x120px)',
-    selector: '.login-ghost-icon',
-    customizable: true,
-    layer: 'login',
-    position: 'content',
-    elementType: 'image'
-  },
-  {
-    id: 'login-ghost-glow-effect',
-    name: 'Ghost Glow Effect',
-    category: 'Login Screen',
-    subcategory: 'Effects',
-    description: 'Glow animation around ghost icon',
-    selector: '.login-ghost-glow',
     customizable: true,
     layer: 'login',
     position: 'content',

@@ -50,110 +50,67 @@ const WalletPreviewContainer = () => {
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
     }}>
-      {/* Phantom Ghost Icon - Centered in the main area */}
+      {/* Login Form - Centered in the main area */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="relative transition-transform hover:scale-105" style={{ filter: 'drop-shadow(0 0 8px ' + (loginStyle.primaryColor || '#9945FF') + '50)' }}>
-          <img 
-            src="/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png" 
-            alt="Phantom Glass Logo" 
-            width="120" 
-            height="120" 
-            className="max-w-[120px] animate-pulse-slow"
-            style={{
-              filter: loginStyle.primaryColor ? `hue-rotate(${getHueRotate(loginStyle.primaryColor)}deg) saturate(1.2)` : 'none'
-            }}
-          />
-          <div className="absolute inset-0 bg-transparent rounded-full animate-ping opacity-30" 
-            style={{ border: `2px solid ${loginStyle.primaryColor || '#9945FF'}` }}
-          />
-        </div>
-      </div>
-      
-      {/* Login Form - Compact and positioned at bottom */}
-      <div className="space-y-3 mb-6">
-        {/* Password Title */}
-        <h2 className="text-center font-medium text-white text-lg" style={{
-          fontFamily: loginStyle.fontFamily || 'Inter',
-          color: loginStyle.textColor || '#FFFFFF'
-        }}>
-          Enter your password
-        </h2>
-        
-        {/* Password Input */}
-        <div className="relative max-w-xs mx-auto">
-          <input
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Password"
-            className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm"
-            style={{
-              backgroundColor: '#0f0f0f',
-              fontFamily: loginStyle.fontFamily || 'Inter'
-            }}
-          />
-          {password && (
+        <div className="space-y-3 w-full max-w-xs">
+          {/* Password Title */}
+          <h2 className="text-center font-medium text-white text-lg" style={{
+            fontFamily: loginStyle.fontFamily || 'Inter',
+            color: loginStyle.textColor || '#FFFFFF'
+          }}>
+            Enter your password
+          </h2>
+          
+          {/* Password Input */}
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm"
+              style={{
+                backgroundColor: '#0f0f0f',
+                fontFamily: loginStyle.fontFamily || 'Inter'
+              }}
+            />
+            {password && (
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            )}
+          </div>
+          
+          {/* Forgot Password Link */}
+          <div className="text-center">
             <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+              className="text-gray-400 hover:text-gray-300 text-sm"
+              style={{ fontFamily: loginStyle.fontFamily || 'Inter' }}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              Forgot password?
             </button>
-          )}
-        </div>
-        
-        {/* Forgot Password Link */}
-        <div className="text-center">
+          </div>
+          
+          {/* Unlock Button */}
           <button
-            className="text-gray-400 hover:text-gray-300 text-sm"
-            style={{ fontFamily: loginStyle.fontFamily || 'Inter' }}
+            className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
+            style={{
+              backgroundColor: loginStyle.primaryColor || '#a390f5',
+              fontFamily: loginStyle.fontFamily || 'Inter',
+              borderRadius: '12px'
+            }}
+            onClick={handleUnlock}
           >
-            Forgot password?
+            Unlock
           </button>
         </div>
       </div>
-      
-      {/* Unlock Button - At the very bottom */}
-      <div className="px-0">
-        <button
-          className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: loginStyle.primaryColor || '#a390f5',
-            fontFamily: loginStyle.fontFamily || 'Inter',
-            borderRadius: '12px'
-          }}
-          onClick={handleUnlock}
-        >
-          Unlock
-        </button>
-      </div>
     </div>
   );
-
-  // Helper function for hue rotation (needed for the ghost icon styling)
-  const getHueRotate = (color: string): number => {
-    let r = 0, g = 0, b = 0;
-    
-    if (color.startsWith('#')) {
-      const hex = color.replace('#', '');
-      r = parseInt(hex.substring(0, 2), 16);
-      g = parseInt(hex.substring(2, 4), 16);
-      b = parseInt(hex.substring(4, 6), 16);
-    } else if (color.startsWith('rgb')) {
-      const match = color.match(/\d+/g);
-      if (match && match.length >= 3) {
-        r = parseInt(match[0]);
-        g = parseInt(match[1]);
-        b = parseInt(match[2]);
-      }
-    }
-    
-    const baseHue = 280; // Purple hue for #9945FF (phantom's default)
-    const targetHue = ((r * 0.3) + (g * 0.6) + (b * 0.1)) % 360;
-    
-    return targetHue - baseHue;
-  };
 
   return (
     <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
