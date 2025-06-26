@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,7 +58,6 @@ function createEnhancedWalletContext() {
     totalElements: WALLET_ELEMENTS_REGISTRY.length,
     // Дополнительный контекст для ИИ
     walletFeatures: {
-      hasAiPet: true,
       hasBottomNavigation: true,
       hasBalanceDisplay: true,
       hasActionButtons: true,

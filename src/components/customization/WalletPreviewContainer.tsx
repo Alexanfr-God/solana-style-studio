@@ -2,10 +2,9 @@
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useWalletCustomizationStore, AiPetEmotion } from '@/stores/walletCustomizationStore';
-import { Eye, EyeOff, HelpCircle, Lock, Unlock } from 'lucide-react';
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import { useState } from 'react';
-import AiPet from '@/components/ui/AiPet';
 import WalletContainer from '@/components/wallet/WalletContainer';
 
 const WalletPreviewContainer = () => {
@@ -14,17 +13,6 @@ const WalletPreviewContainer = () => {
     selectedWallet,
     setSelectedWallet,
     isCustomizing,
-    aiPet,
-    setAiPetEmotion,
-    setAiPetZone,
-    setAiPetBodyType,
-    setContainerBounds,
-    containerBounds,
-    triggerAiPetInteraction,
-    updateAiPetEnergy,
-    onAiPetHover,
-    onAiPetClick,
-    onAiPetDoubleClick,
     currentLayer,
     unlockWallet,
     setCurrentLayer,
@@ -34,38 +22,11 @@ const WalletPreviewContainer = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
-  const [debugMode, setDebugMode] = useState(false);
-  const [animationType, setAnimationType] = useState<'orbit' | 'rectangle'>('rectangle');
   const walletContainerRef = useRef<HTMLDivElement>(null);
 
   // Get unified styles for all components
   const globalStyle = getStyleForComponent('global');
   const headerStyle = getStyleForComponent('header');
-
-  // Set container bounds for AiPet floating behavior
-  useEffect(() => {
-    if (walletContainerRef.current) {
-      const bounds = walletContainerRef.current.getBoundingClientRect();
-      setContainerBounds(bounds);
-    }
-    const handleResize = () => {
-      if (walletContainerRef.current) {
-        const bounds = walletContainerRef.current.getBoundingClientRect();
-        setContainerBounds(bounds);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [setContainerBounds]);
-
-  // Update AiPet energy periodically
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateAiPetEnergy();
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [updateAiPetEnergy]);
 
   const handleUnlock = () => {
     unlockWallet();
@@ -123,10 +84,7 @@ const WalletPreviewContainer = () => {
           <input
             type={showPassword ? "text" : "password"}
             value={password}
-            onChange={e => {
-              setPassword(e.target.value);
-              triggerAiPetInteraction();
-            }}
+            onChange={e => setPassword(e.target.value)}
             placeholder="Password"
             className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm"
             style={{
@@ -137,10 +95,7 @@ const WalletPreviewContainer = () => {
           {password && (
             <button
               type="button"
-              onClick={() => {
-                setShowPassword(!showPassword);
-                triggerAiPetInteraction();
-              }}
+              onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -153,7 +108,6 @@ const WalletPreviewContainer = () => {
           <button
             className="text-gray-400 hover:text-gray-300 text-sm"
             style={{ fontFamily: loginStyle.fontFamily || 'Inter' }}
-            onClick={triggerAiPetInteraction}
           >
             Forgot password?
           </button>
@@ -228,85 +182,9 @@ const WalletPreviewContainer = () => {
             </Button>
           </div>
         </div>
-
-        {/* Body Type Selector */}
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Button
-            variant={aiPet.bodyType === 'phantom' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setAiPetBodyType('phantom')}
-            className="text-xs"
-          >
-            👻 Phantom
-          </Button>
-          <Button
-            variant={aiPet.bodyType === 'lottie' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setAiPetBodyType('lottie')}
-            className="text-xs"
-          >
-            🌊 Aiwa
-          </Button>
-        </div>
-
-        {/* Animation Type Selector */}
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Button
-            variant={animationType === 'rectangle' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setAnimationType('rectangle')}
-            className="text-xs"
-          >
-            ⏹️ Rectangle
-          </Button>
-          <Button
-            variant={animationType === 'orbit' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setAnimationType('orbit')}
-            className="text-xs"
-          >
-            ⭕ Orbit
-          </Button>
-        </div>
         
-        {/* Wallet container with AI Pet orbital zone */}
+        {/* Wallet container */}
         <div className="flex-1 flex items-center justify-center overflow-visible relative">
-          {/* AI Pet в режиме outside - позиционируется относительно этого контейнера */}
-          {aiPet.isVisible && aiPet.zone === 'outside' && containerBounds && (
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                width: `${containerBounds.width * 1.6}px`,
-                height: `${containerBounds.height * 1.6}px`,
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)'
-              }}
-            >
-              <div
-                className="absolute pointer-events-auto"
-                style={{
-                  width: '50px',
-                  height: '50px'
-                }}
-              >
-                <AiPet
-                  emotion={aiPet.emotion}
-                  zone={aiPet.zone}
-                  bodyType={aiPet.bodyType}
-                  color={globalStyle.primaryColor || '#9945FF'}
-                  size={50}
-                  onZoneChange={setAiPetZone}
-                  onEmotionChange={setAiPetEmotion}
-                  onHover={onAiPetHover}
-                  onClick={onAiPetClick}
-                  onDoubleClick={onAiPetDoubleClick}
-                  containerBounds={containerBounds}
-                />
-              </div>
-            </div>
-          )}
-          
           {/* LOCK/UNLOCK Button - External to wallet container */}
           <div className="absolute top-4 right-4 z-20">
             {currentLayer === 'login' ? (
@@ -315,80 +193,36 @@ const WalletPreviewContainer = () => {
                 onClick={handleUnlock}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
-                <Unlock className="w-4 h-4 mr-1" />
-                UNLOCK
+                <Unlock className="h-4 w-4 mr-1" />
+                Unlock
               </Button>
             ) : (
               <Button
                 size="sm"
                 onClick={handleLock}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-orange-600 hover:bg-orange-700 text-white"
               >
-                <Lock className="w-4 h-4 mr-1" />
-                LOCK
+                <Lock className="h-4 w-4 mr-1" />
+                Lock
               </Button>
             )}
           </div>
           
-          {/* Wallet container - UPDATED TO USE UNIFIED STYLES */}
-          <div
+          {/* Wallet Container */}
+          <div 
             ref={walletContainerRef}
-            className={`
-              relative rounded-2xl transition-all duration-1000 z-10
-              ${isCustomizing ? 'scale-105 animate-pulse' : 'scale-100'}
-            `}
+            className="relative w-80 h-[541px] mx-auto rounded-2xl overflow-hidden"
             style={{
-              width: '361px',
-              height: '601px',
-              backgroundColor: globalStyle.backgroundColor || '#1a1a1a',
-              backgroundImage: globalStyle.backgroundImage,
-              background: globalStyle.gradient || globalStyle.backgroundColor || '#1a1a1a',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundBlendMode: 'overlay',
-              border: '1px solid white'
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: isCustomizing 
+                ? '0 0 30px rgba(153, 69, 255, 0.4), inset 0 0 20px rgba(153, 69, 255, 0.1)' 
+                : '0 20px 40px rgba(0,0,0,0.3)'
             }}
           >
-            {currentLayer === 'login' ? (
-              <>
-                {/* Top Bar (Header) - UPDATED TO USE UNIFIED STYLES */}
-                <div className="w-full flex items-center justify-between px-4 py-3" style={{
-                  height: '58px',
-                  backgroundColor: headerStyle.backgroundColor || '#1a1a1a',
-                  background: headerStyle.gradient || headerStyle.backgroundColor || '#1a1a1a',
-                  borderTopLeftRadius: '1rem',
-                  borderTopRightRadius: '1rem'
-                }}>
-                  <div className="flex-1 flex justify-center">
-                    <span className="font-bold text-white" style={{
-                      fontFamily: headerStyle.fontFamily || 'Inter',
-                      fontSize: '16px',
-                      color: headerStyle.color || '#FFFFFF'
-                    }}>
-                      phantom
-                    </span>
-                  </div>
-                  <HelpCircle className="h-5 w-5 text-white/70" />
-                </div>
-                
-                {/* Transition Strip */}
-                <div className="w-full" style={{
-                  height: '1px',
-                  backgroundColor: '#111111'
-                }} />
-                
-                {/* Main Section */}
-                {renderLoginScreen()}
-              </>
-            ) : (
+            {currentLayer === 'login' ? renderLoginScreen() : (
               <WalletContainer />
-            )}
-            
-            {/* Customization Indicator */}
-            {isCustomizing && (
-              <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded animate-bounce">
-                Applying Style...
-              </div>
             )}
           </div>
         </div>
