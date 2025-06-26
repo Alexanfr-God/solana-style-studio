@@ -7,31 +7,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Activity, AlertTriangle, CheckCircle, Clock, Download, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/services/walletDesignerLogger';
 
 interface LogEntry {
   id: string;
-  timestamp: string;
-  level: 'debug' | 'info' | 'warn' | 'error' | 'success';
-  module: string;
-  action: string;
-  data: Record<string, any>;
+  created_at: string;
+  prompt?: string;
+  status?: string;
+  image_url?: string;
+  layer_type?: string;
   user_id?: string;
-  session_id: string;
-  performance: {
-    startTime?: number;
-    endTime?: number;
-    duration?: number;
-  };
+  style_result?: Record<string, any>;
 }
 
 interface AnalyticsData {
-  totalLogs: number;
-  errorRate: number;
+  totalRequests: number;
+  successRate: number;
   averageResponseTime: number;
   activeUsers: number;
-  topErrors: Array<{ error: string; count: number }>;
-  performanceTrend: Array<{ time: string; avgDuration: number }>;
+  topPrompts: Array<{ prompt: string; count: number }>;
+  recentActivity: Array<{ time: string; count: number }>;
 }
 
 const LoggingDashboard: React.FC = () => {
@@ -55,10 +49,11 @@ const LoggingDashboard: React.FC = () => {
 
   const loadLogs = async () => {
     try {
+      // Use ai_requests table instead of non-existent system_logs
       const { data, error } = await supabase
-        .from('system_logs')
+        .from('ai_requests')
         .select('*')
-        .order('timestamp', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) {
@@ -66,22 +61,7 @@ const LoggingDashboard: React.FC = () => {
         return;
       }
 
-      // Transform Supabase data to match our LogEntry interface
-      const transformedLogs: LogEntry[] = (data || []).map(log => ({
-        id: log.id,
-        timestamp: log.timestamp,
-        level: log.level as 'debug' | 'info' | 'warn' | 'error' | 'success',
-        module: log.module,
-        action: log.action,
-        data: typeof log.data === 'object' ? log.data as Record<string, any> : {},
-        user_id: log.user_id || undefined,
-        session_id: log.session_id,
-        performance: typeof log.performance === 'object' ? 
-          log.performance as { startTime?: number; endTime?: number; duration?: number } : 
-          {}
-      }));
-
-      setLogs(transformedLogs);
+      setLogs(data || []);
     } catch (error) {
       console.error('Failed to load logs:', error);
     } finally {
@@ -91,62 +71,48 @@ const LoggingDashboard: React.FC = () => {
 
   const loadAnalytics = async () => {
     try {
-      // Get logs from the last hour for analytics
+      // Get requests from the last hour for analytics
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       
       const { data, error } = await supabase
-        .from('system_logs')
+        .from('ai_requests')
         .select('*')
-        .gte('timestamp', oneHourAgo);
+        .gte('created_at', oneHourAgo);
 
       if (error) {
         console.error('Error loading analytics:', error);
         return;
       }
 
-      const logsData = data || [];
+      const requestsData = data || [];
       
       // Calculate analytics
-      const totalLogs = logsData.length;
-      const errorLogs = logsData.filter(log => log.level === 'error');
-      const errorRate = totalLogs > 0 ? (errorLogs.length / totalLogs) * 100 : 0;
+      const totalRequests = requestsData.length;
+      const successfulRequests = requestsData.filter(req => req.status === 'completed');
+      const successRate = totalRequests > 0 ? (successfulRequests.length / totalRequests) * 100 : 0;
       
-      const responseTimes = logsData
-        .filter(log => {
-          const perf = typeof log.performance === 'object' ? log.performance as any : null;
-          return perf && typeof perf.duration === 'number';
-        })
-        .map(log => {
-          const perf = log.performance as any;
-          return perf.duration;
-        });
-      
-      const averageResponseTime = responseTimes.length > 0
-        ? responseTimes.reduce((sum: number, time: number) => sum + time, 0) / responseTimes.length
-        : 0;
+      const averageResponseTime = 0; // We don't have performance data
+      const activeUsers = new Set(requestsData.map(req => req.user_id).filter(Boolean)).size;
 
-      const activeUsers = new Set(logsData.map(log => log.user_id).filter(Boolean)).size;
-
-      // Top errors
-      const errorCounts = errorLogs.reduce((acc, log) => {
-        const data = typeof log.data === 'object' ? log.data as any : {};
-        const error = data?.error || 'Unknown Error';
-        acc[error] = (acc[error] || 0) + 1;
+      // Top prompts
+      const promptCounts = requestsData.reduce((acc, req) => {
+        const prompt = req.prompt || 'Unknown Prompt';
+        acc[prompt] = (acc[prompt] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const topErrors = Object.entries(errorCounts)
-        .map(([error, count]) => ({ error, count }))
+      const topPrompts = Object.entries(promptCounts)
+        .map(([prompt, count]) => ({ prompt: prompt.substring(0, 50) + '...', count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
       setAnalytics({
-        totalLogs,
-        errorRate,
+        totalRequests,
+        successRate,
         averageResponseTime,
         activeUsers,
-        topErrors,
-        performanceTrend: [] // Would need more complex calculation
+        topPrompts,
+        recentActivity: [] // Would need more complex calculation
       });
     } catch (error) {
       console.error('Failed to load analytics:', error);
@@ -154,42 +120,47 @@ const LoggingDashboard: React.FC = () => {
   };
 
   const exportLogs = () => {
-    const exportData = logger.exportLogs('csv');
-    const blob = new Blob([exportData], { type: 'text/csv' });
+    const csvContent = [
+      'ID,Created At,Prompt,Status,Layer Type,User ID',
+      ...logs.map(log => 
+        `${log.id},${log.created_at},${(log.prompt || '').replace(/,/g, ';')},${log.status || ''},${log.layer_type || ''},${log.user_id || ''}`
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wallet-logs-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `ai-requests-${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'error': return 'destructive';
-      case 'warn': return 'secondary';
-      case 'success': return 'default';
-      case 'info': return 'outline';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'default';
+      case 'failed': return 'destructive';
+      case 'pending': return 'secondary';
       default: return 'outline';
     }
   };
 
-  const getLevelIcon = (level: string) => {
-    switch (level) {
-      case 'error': return <AlertTriangle className="w-4 h-4" />;
-      case 'success': return <CheckCircle className="w-4 h-4" />;
-      case 'info': return <Activity className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'failed': return <AlertTriangle className="w-4 h-4" />;
+      case 'completed': return <CheckCircle className="w-4 h-4" />;
+      case 'pending': return <Clock className="w-4 h-4" />;
+      default: return <Activity className="w-4 h-4" />;
     }
   };
 
   const filteredLogs = selectedModule === 'all' 
     ? logs 
-    : logs.filter(log => log.module === selectedModule);
+    : logs.filter(log => log.layer_type === selectedModule);
 
-  const modules = ['all', ...new Set(logs.map(log => log.module))];
+  const modules = ['all', ...new Set(logs.map(log => log.layer_type).filter(Boolean))];
 
   if (loading) {
     return (
@@ -202,7 +173,7 @@ const LoggingDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">System Monitoring Dashboard</h2>
+        <h2 className="text-2xl font-bold">AI Requests Monitoring Dashboard</h2>
         <div className="flex space-x-2">
           <Button onClick={loadLogs} variant="outline" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -219,21 +190,21 @@ const LoggingDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Logs</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{analytics.totalLogs}</div>
+              <div className="text-2xl font-bold">{analytics.totalRequests}</div>
               <p className="text-xs text-muted-foreground">Last hour</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
+              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{analytics.errorRate.toFixed(1)}%</div>
-              <p className="text-xs text-muted-foreground">Errors/Total logs</p>
+              <div className="text-2xl font-bold">{analytics.successRate.toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">Completed/Total</p>
             </CardContent>
           </Card>
           
@@ -242,8 +213,8 @@ const LoggingDashboard: React.FC = () => {
               <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{analytics.averageResponseTime.toFixed(0)}ms</div>
-              <p className="text-xs text-muted-foreground">Analysis duration</p>
+              <div className="text-2xl font-bold">N/A</div>
+              <p className="text-xs text-muted-foreground">Not tracked</p>
             </CardContent>
           </Card>
           
@@ -259,15 +230,15 @@ const LoggingDashboard: React.FC = () => {
         </div>
       )}
 
-      <Tabs defaultValue="logs" className="space-y-4">
+      <Tabs defaultValue="requests" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="logs">Recent Logs</TabsTrigger>
-          <TabsTrigger value="errors">Error Analysis</TabsTrigger>
+          <TabsTrigger value="requests">Recent Requests</TabsTrigger>
+          <TabsTrigger value="prompts">Top Prompts</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="logs" className="space-y-4">
+        <TabsContent value="requests" className="space-y-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium">Filter by module:</span>
+            <span className="text-sm font-medium">Filter by layer:</span>
             {modules.map(module => (
               <Button
                 key={module}
@@ -282,7 +253,7 @@ const LoggingDashboard: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>System Logs</CardTitle>
+              <CardTitle>AI Requests</CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-96">
@@ -290,40 +261,28 @@ const LoggingDashboard: React.FC = () => {
                   {filteredLogs.map((log) => (
                     <div key={log.id} className="flex items-start space-x-3 p-3 border rounded-lg">
                       <div className="flex items-center space-x-2">
-                        {getLevelIcon(log.level)}
-                        <Badge variant={getLevelColor(log.level) as any}>
-                          {log.level}
+                        {getStatusIcon(log.status || 'unknown')}
+                        <Badge variant={getStatusColor(log.status || 'unknown') as any}>
+                          {log.status || 'unknown'}
                         </Badge>
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium">{log.module}</span>
+                          <span className="text-sm font-medium">{log.layer_type || 'Unknown'}</span>
                           <span className="text-sm text-muted-foreground">·</span>
-                          <span className="text-sm text-muted-foreground">{log.action}</span>
-                          {log.performance?.duration && (
-                            <>
-                              <span className="text-sm text-muted-foreground">·</span>
-                              <span className="text-sm text-muted-foreground">
-                                {log.performance.duration.toFixed(0)}ms
-                              </span>
-                            </>
-                          )}
+                          <span className="text-sm text-muted-foreground">
+                            {log.prompt ? log.prompt.substring(0, 50) + '...' : 'No prompt'}
+                          </span>
                         </div>
                         
                         <div className="text-xs text-muted-foreground mt-1">
-                          {new Date(log.timestamp).toLocaleString()}
+                          {new Date(log.created_at).toLocaleString()}
                         </div>
-                        
-                        {log.data?.error && (
-                          <div className="text-sm text-red-500 mt-1">
-                            {log.data.error}
-                          </div>
-                        )}
                       </div>
                       
                       <div className="text-xs text-muted-foreground">
-                        Session: {log.session_id.split('_')[1]}
+                        ID: {log.id.split('-')[0]}
                       </div>
                     </div>
                   ))}
@@ -333,18 +292,18 @@ const LoggingDashboard: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="errors" className="space-y-4">
-          {analytics?.topErrors && analytics.topErrors.length > 0 && (
+        <TabsContent value="prompts" className="space-y-4">
+          {analytics?.topPrompts && analytics.topPrompts.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Top Errors (Last Hour)</CardTitle>
+                <CardTitle>Most Popular Prompts (Last Hour)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {analytics.topErrors.map((error, index) => (
+                  {analytics.topPrompts.map((prompt, index) => (
                     <div key={index} className="flex items-center justify-between p-2 border rounded">
-                      <span className="text-sm">{error.error}</span>
-                      <Badge variant="destructive">{error.count}</Badge>
+                      <span className="text-sm">{prompt.prompt}</span>
+                      <Badge variant="outline">{prompt.count}</Badge>
                     </div>
                   ))}
                 </div>
