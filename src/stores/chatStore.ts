@@ -122,10 +122,36 @@ function extractImageUrl(response: any, mode: ImageGenerationMode): string | nul
   return null;
 }
 
-// Convert GPT's complex JSON response to our style format
+// ИСПРАВЛЕННАЯ функция конвертации GPT ответов
 function convertGPTResponseToStyleChanges(gptResponse: any): any {
   console.log('🔄 Converting GPT response to style changes:', gptResponse);
   
+  // Прямой формат styleChanges из нового AI
+  if (gptResponse.styleChanges) {
+    const styleChanges = gptResponse.styleChanges;
+    console.log('✅ Found direct styleChanges format');
+    
+    return {
+      layer: 'wallet',
+      target: 'global',
+      changes: {
+        backgroundColor: styleChanges.backgroundColor,
+        backgroundImage: styleChanges.backgroundImage,
+        accentColor: styleChanges.accentColor,
+        textColor: styleChanges.textColor,
+        buttonColor: styleChanges.buttonColor,
+        buttonTextColor: styleChanges.buttonTextColor,
+        borderRadius: styleChanges.borderRadius,
+        fontFamily: styleChanges.fontFamily,
+        boxShadow: styleChanges.boxShadow,
+        primaryColor: styleChanges.accentColor || styleChanges.buttonColor,
+        font: styleChanges.fontFamily,
+        gradient: styleChanges.gradient
+      },
+      reasoning: styleChanges.styleNotes || gptResponse.userText || 'AI style analysis applied'
+    };
+  }
+
   // Handle new enhanced JSON format from GPT
   if (gptResponse.elements && gptResponse.elements.colors) {
     const colors = gptResponse.elements.colors;
@@ -226,16 +252,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         element: messageData.walletElement
       });
 
-      // Используем расширенный контекст кошелька с полным реестром элементов
       const enhancedWalletContext = createEnhancedWalletContext();
       
-      console.log('📊 Enhanced wallet context:', {
-        totalElements: enhancedWalletContext.totalElements,
-        categories: enhancedWalletContext.elementCategories.length,
-        features: Object.keys(enhancedWalletContext.walletFeatures).length
-      });
-
-      // Call the Edge Function
       const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
         body: {
           content: messageData.content,
@@ -258,7 +276,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       console.log('📊 Full GPT response data:', data);
 
-      // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Используем userText вместо response для чата
       const lang = detectLanguage(messageData.content);
       const fallback = lang === 'ru'
         ? 'Я проанализировал ваш кошелек и применил запрошенные изменения.'
@@ -267,28 +284,47 @@ export const useChatStore = create<ChatState>((set, get) => ({
       
       console.log('💬 Using friendly user text for chat:', friendlyResponse);
 
-      // Enhanced style changes processing
+      // КРИТИЧЕСКИ ВАЖНО: Применяем стили СРАЗУ после получения ответа
       if (data.styleChanges) {
         console.log('🎨 Processing style changes from GPT:', data.styleChanges);
         
-        // Try to parse JSON from response if it's a string
-        let parsedStyleChanges = data.styleChanges;
-        if (typeof data.styleChanges === 'string') {
-          try {
-            parsedStyleChanges = JSON.parse(data.styleChanges);
-          } catch (e) {
-            console.warn('⚠️ Failed to parse styleChanges as JSON, using as-is');
-          }
-        }
+        // Запускаем анимацию сканирования
+        const walletStore = useWalletCustomizationStore.getState();
+        walletStore.onCustomizationStart();
         
-        // Convert to our format
-        const convertedChanges = convertGPTResponseToStyleChanges(parsedStyleChanges);
+        const convertedChanges = convertGPTResponseToStyleChanges(data);
         
         if (convertedChanges) {
           console.log('✅ Successfully converted style changes:', convertedChanges);
-          get().applyStyleChanges(convertedChanges);
+          
+          // ИСПРАВЛЕНО: Применяем стили напрямую к store
+          const newWalletStyle = {
+            ...walletStore.walletStyle,
+            ...convertedChanges.changes
+          };
+          
+          const newLoginStyle = {
+            ...walletStore.loginStyle,
+            ...convertedChanges.changes
+          };
+          
+          console.log('🔧 Applying styles to wallet store:', {
+            walletStyle: newWalletStyle,
+            loginStyle: newLoginStyle
+          });
+          
+          // Применяем к обоим экранам
+          walletStore.setWalletStyle(newWalletStyle);
+          walletStore.setLoginStyle(newLoginStyle);
+          
+          // Завершаем анимацию через 2 секунды
+          setTimeout(() => {
+            walletStore.resetCustomizationState();
+          }, 2000);
+          
         } else {
           console.warn('⚠️ Could not convert style changes');
+          walletStore.resetCustomizationState();
         }
       } else {
         console.log('ℹ️ No style changes in response');
@@ -297,7 +333,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         type: 'assistant',
-        content: friendlyResponse, // 🔥 Теперь показываем только дружелюбный текст
+        content: friendlyResponse,
         timestamp: new Date(),
       };
 
@@ -456,84 +492,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   applyStyleChanges: (changes) => {
+    console.log('🎨 Legacy applyStyleChanges called - redirecting to direct store update');
+    // Эта функция теперь используется только как fallback
     const walletStore = useWalletCustomizationStore.getState();
     
-    console.log('🎨 Applying style changes:', changes);
-    
-    if (!changes || !changes.changes) {
-      console.log('⚠️ No changes object found');
-      return;
-    }
-
-    // Determine which store method to use based on target and layer
-    const { layer, target, changes: styleChanges, reasoning } = changes;
-
-    try {
-      // Get current styles to merge with new changes
-      const currentWalletStyle = walletStore.walletStyle;
-      const currentLoginStyle = walletStore.loginStyle;
-
-      console.log('🔧 Processing style changes:', {
-        layer,
-        target,
-        styleChanges,
-        reasoning
-      });
-
-      // UNIFIED STYLE APPLICATION - Apply to both walletStyle and components
-      const createUnifiedStyle = (baseStyle: any) => ({
-        ...baseStyle,
-        backgroundColor: styleChanges.backgroundColor || baseStyle.backgroundColor,
-        backgroundImage: styleChanges.backgroundImage || baseStyle.backgroundImage,
-        accentColor: styleChanges.accentColor || styleChanges.buttonColor || baseStyle.accentColor,
-        textColor: styleChanges.textColor || baseStyle.textColor,
-        buttonColor: styleChanges.buttonColor || styleChanges.accentColor || baseStyle.buttonColor,
-        buttonTextColor: styleChanges.buttonTextColor || baseStyle.buttonTextColor,
-        borderRadius: styleChanges.borderRadius || baseStyle.borderRadius,
-        fontFamily: styleChanges.fontFamily || baseStyle.fontFamily,
-        boxShadow: styleChanges.boxShadow || baseStyle.boxShadow,
-        primaryColor: styleChanges.accentColor || styleChanges.buttonColor || baseStyle.primaryColor,
-        font: styleChanges.fontFamily || baseStyle.font,
-        gradient: styleChanges.gradient || baseStyle.gradient
-      });
-
-      // Apply changes based on target and layer
-      if (target === 'header') {
-        const updatedStyle = createUnifiedStyle(currentWalletStyle);
-        walletStore.setWalletStyle(updatedStyle);
-        console.log('✅ Applied header styles');
-      } else if (target === 'navigation') {
-        const updatedStyle = createUnifiedStyle(currentWalletStyle);
-        walletStore.setWalletStyle(updatedStyle);
-        console.log('✅ Applied navigation styles');
-      } else if (target === 'background' || target === 'global') {
-        // Apply global/background styles to the appropriate layer
-        if (layer === 'login') {
-          const updatedStyle = createUnifiedStyle(currentLoginStyle);
-          walletStore.setLoginStyle(updatedStyle);
-          console.log('✅ Applied login background styles');
-        } else {
-          const updatedStyle = createUnifiedStyle(currentWalletStyle);
-          walletStore.setWalletStyle(updatedStyle);
-          console.log('✅ Applied wallet background styles');
-        }
-      } else {
-        // Default: apply to wallet style
-        const updatedStyle = createUnifiedStyle(currentWalletStyle);
-        walletStore.setWalletStyle(updatedStyle);
-        console.log('✅ Applied default wallet styles');
-      }
-
-      // Trigger customization animation using existing method
+    if (changes && changes.changes) {
+      const updatedWalletStyle = {
+        ...walletStore.walletStyle,
+        ...changes.changes
+      };
+      
+      walletStore.setWalletStyle(updatedWalletStyle);
       walletStore.onCustomizationStart();
+      
       setTimeout(() => {
         walletStore.resetCustomizationState();
       }, 2000);
-
-      console.log('🎨 Style changes applied successfully:', reasoning);
-      
-    } catch (error) {
-      console.error('❌ Error applying style changes:', error);
     }
   },
 

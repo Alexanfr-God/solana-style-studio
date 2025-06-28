@@ -1,0 +1,18 @@
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "./styles/wallet-scan-animations.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ... keep existing code (base styles) */
+
+/* Enhanced wallet transitions */
+.wallet-container * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Success feedback */
+.style-applied-success {
+  animation: style-success 0.8s ease-out;
+}
