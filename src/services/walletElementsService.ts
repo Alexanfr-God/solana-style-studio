@@ -35,6 +35,7 @@ export interface GroupedElements {
 }
 
 class WalletElementsService {
+  
   /**
    * Get all wallet elements
    */
@@ -388,6 +389,3 @@ class WalletElementsService {
 
 // Create and export service instance
 export const walletElementsService = new WalletElementsService();
-
-// Export types
-export type { WalletElement, WalletElementsResponse };
