@@ -37,7 +37,8 @@ serve(async (req) => {
       hasContent: !!content,
       hasImage: !!imageUrl,
       walletType: walletContext?.walletType,
-      activeLayer: walletContext?.activeLayer
+      activeLayer: walletContext?.activeLayer,
+      contentPreview: content?.substring(0, 50) + '...'
     });
 
     // Handle different modes
@@ -46,9 +47,11 @@ serve(async (req) => {
         return await handleStructureMode(elementsManager, walletContext?.walletType || 'phantom');
       
       case 'leonardo':
+        console.log('🎨 Handling Leonardo.ai generation request...');
         return await handleImageGeneration('leonardo', content, supabase);
       
       case 'replicate':
+        console.log('🎨 Handling Replicate generation request...');
         return await handleImageGeneration('replicate', content, supabase);
       
       case 'analysis':
@@ -65,11 +68,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('💥 Error in wallet-chat-gpt:', error);
+    console.error('💥 Error stack:', error.stack);
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
-        details: 'Internal server error in wallet-chat-gpt function'
+        details: 'Internal server error in wallet-chat-gpt function',
+        timestamp: new Date().toISOString()
       }),
       { 
         status: 500,
@@ -115,10 +120,38 @@ async function handleStructureMode(elementsManager: any, walletType: string) {
   }
 }
 
-// Handle image generation
+// Handle image generation with enhanced error handling
 async function handleImageGeneration(mode: 'leonardo' | 'replicate', prompt: string, supabase: any) {
   try {
     console.log(`🖼️ Image generation mode: ${mode}`);
+    console.log(`📝 Prompt: "${prompt}"`);
+    
+    // Validate prompt
+    if (!prompt || prompt.trim().length === 0) {
+      throw new Error('Prompt is required for image generation');
+    }
+    
+    // Check API key availability
+    const apiKeyName = mode === 'leonardo' ? 'LEONARDO_API_KEY' : 'REPLICATE_API_KEY';
+    const apiKey = Deno.env.get(apiKeyName);
+    
+    if (!apiKey) {
+      console.error(`❌ ${apiKeyName} not found in environment`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `${mode.charAt(0).toUpperCase() + mode.slice(1)} API key not configured`,
+          mode,
+          details: `Please configure ${apiKeyName} in Supabase Edge Function secrets`
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    console.log(`✅ ${apiKeyName} found, proceeding with generation...`);
     
     let result;
     if (mode === 'leonardo') {
@@ -127,17 +160,29 @@ async function handleImageGeneration(mode: 'leonardo' | 'replicate', prompt: str
       result = await generateImageWithReplicate(prompt, supabase);
     }
 
+    console.log(`🎯 ${mode} generation result:`, result.success ? 'SUCCESS' : 'FAILED');
+    
+    if (!result.success) {
+      console.error(`❌ ${mode} generation failed:`, result.error);
+    }
+
     return new Response(
       JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: result.success ? 200 : 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   } catch (error) {
-    console.error(`❌ Error in ${mode} image generation:`, error);
+    console.error(`💥 Error in ${mode} image generation:`, error);
+    console.error(`💥 Error details:`, error.stack);
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
-        mode
+        mode,
+        details: `Failed to generate image with ${mode}`,
+        timestamp: new Date().toISOString()
       }),
       { 
         status: 500,

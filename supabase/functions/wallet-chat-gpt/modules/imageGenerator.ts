@@ -81,7 +81,7 @@ async function enhancePosterPrompt(userPrompt, generator, supabase) {
   
   // Анализируем запрос
   const analysis = {
-    hasCharacter: /trump|superman|messi|ronaldo|batman|spiderman/i.test(userPrompt),
+    hasCharacter: /trump|superman|messi|ronaldo|batman|spiderman|терминатор|terminator/i.test(userPrompt),
     style: detectStyle(userPrompt),
     mood: detectMood(userPrompt),
     matchedExample: findBestExample(userPrompt, examples)
@@ -161,7 +161,7 @@ function findBestExample(userPrompt, examples) {
 
 function detectStyle(prompt) {
   const lower = prompt.toLowerCase();
-  if (lower.includes('superhero') || lower.includes('hero')) return 'superhero';
+  if (lower.includes('superhero') || lower.includes('hero') || lower.includes('терминатор') || lower.includes('terminator')) return 'superhero';
   if (lower.includes('president') || lower.includes('trump')) return 'political';
   if (lower.includes('sport') || lower.includes('champion')) return 'sports';
   return 'cartoon';
@@ -175,23 +175,46 @@ function detectMood(prompt) {
   return 'confident';
 }
 
-// ========== LEONARDO.AI INTEGRATION ==========
+// ========== LEONARDO.AI INTEGRATION (ИСПРАВЛЕННАЯ ВЕРСИЯ) ==========
 
 export async function generateImageWithLeonardo(prompt, supabase, options = {}) {
   try {
-    console.log('🎨 Leonardo.ai generation with DIRECT API CALL...');
+    console.log('🎨 Leonardo.ai generation with CORRECTED API implementation...');
     console.log('Original prompt:', prompt);
-    
-    // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
-    const enhancedPrompt = await enhancePosterPrompt(prompt, 'leonardo', supabase);
     
     // Get Leonardo API key from environment
     const leonardoApiKey = Deno.env.get('LEONARDO_API_KEY');
     if (!leonardoApiKey) {
+      console.error('❌ Leonardo API key not found in environment');
       throw new Error('Leonardo API key not configured');
     }
+    
+    console.log('🔑 API Key found, proceeding with generation...');
+    
+    // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
+    const enhancedPrompt = await enhancePosterPrompt(prompt, 'leonardo', supabase);
+    
+    console.log('📤 Calling Leonardo.ai API with corrected parameters...');
+    console.log('🎯 Enhanced prompt:', enhancedPrompt);
 
-    console.log('📤 Calling Leonardo.ai API directly...');
+    // ИСПРАВЛЕННЫЕ ПАРАМЕТРЫ API
+    const requestBody = {
+      prompt: enhancedPrompt,
+      modelId: "6ac8733c-de4d-4726-9c09-5c682cb35c44", // Leonardo Phoenix (актуальный ID)
+      width: 1024,
+      height: 1024,
+      numImages: 1, // ИСПРАВЛЕНО: было num_images
+      guidanceScale: 7, // ИСПРАВЛЕНО: было guidance_scale
+      numInferenceSteps: 15, // ИСПРАВЛЕНО: было num_inference_steps
+      presetStyle: "DYNAMIC",
+      scheduler: "LEONARDO",
+      public: false,
+      promptMagic: true,
+      promptMagicVersion: "v3",
+      promptMagicStrength: 0.5
+    };
+
+    console.log('📋 Request body:', JSON.stringify(requestBody, null, 2));
 
     // Step 1: Create generation request
     const generationResponse = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
@@ -199,55 +222,84 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
       headers: {
         'Authorization': `Bearer ${leonardoApiKey}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        prompt: enhancedPrompt,
-        modelId: "6bef9f1b-29cb-40c7-b9df-32b51c1f67d3", // Leonardo Phoenix model ID
-        width: 1024,
-        height: 1024,
-        num_images: 1,
-        guidance_scale: 7,
-        num_inference_steps: 15,
-        presetStyle: "DYNAMIC"
-      })
+      body: JSON.stringify(requestBody)
     });
 
+    console.log('📊 Generation response status:', generationResponse.status);
+    console.log('📊 Generation response headers:', Object.fromEntries(generationResponse.headers.entries()));
+
     if (!generationResponse.ok) {
-      const errorData = await generationResponse.json();
-      throw new Error(`Leonardo API error: ${errorData.error?.message || generationResponse.statusText}`);
+      const errorText = await generationResponse.text();
+      console.error('❌ Leonardo API error response:', errorText);
+      
+      // Попытка парсинга JSON ошибки
+      try {
+        const errorData = JSON.parse(errorText);
+        console.error('❌ Parsed error data:', errorData);
+        throw new Error(`Leonardo API error (${generationResponse.status}): ${errorData.error?.message || errorData.message || errorText}`);
+      } catch (parseError) {
+        throw new Error(`Leonardo API error (${generationResponse.status}): ${errorText}`);
+      }
     }
 
     const generationData = await generationResponse.json();
-    const generationId = generationData.sdGenerationJob.generationId;
+    console.log('✅ Generation started successfully:', generationData);
+    
+    const generationId = generationData.sdGenerationJob?.generationId;
+    if (!generationId) {
+      console.error('❌ No generation ID received:', generationData);
+      throw new Error('Failed to get generation ID from Leonardo API');
+    }
     
     console.log('🔄 Generation started, ID:', generationId);
 
-    // Step 2: Poll for completion
+    // Step 2: Enhanced polling for completion
     let generationComplete = false;
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max
+    const maxAttempts = 120; // 10 минут максимум (5 сек * 120)
+    const baseDelay = 5000; // 5 секунд базовая задержка
     
     while (!generationComplete && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+      // Экспоненциальный backoff для первых попыток
+      const delay = attempts < 10 ? baseDelay : Math.min(baseDelay * Math.pow(1.2, attempts - 10), 15000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      console.log(`⏳ Checking generation status... (attempt ${attempts + 1}/${maxAttempts})`);
       
       const statusResponse = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
         headers: {
           'Authorization': `Bearer ${leonardoApiKey}`,
+          'Accept': 'application/json'
         }
       });
       
       if (!statusResponse.ok) {
-        throw new Error('Failed to check generation status');
+        console.error('❌ Status check failed:', statusResponse.status, statusResponse.statusText);
+        attempts++;
+        continue;
       }
       
       const statusData = await statusResponse.json();
+      console.log('📊 Status response:', statusData);
+      
       const generation = statusData.generations_by_pk;
+      
+      if (!generation) {
+        console.error('❌ No generation data in status response');
+        attempts++;
+        continue;
+      }
+      
+      console.log(`📊 Generation status: ${generation.status}`);
       
       if (generation.status === 'COMPLETE') {
         generationComplete = true;
         
         if (generation.generated_images && generation.generated_images.length > 0) {
           const imageUrl = generation.generated_images[0].url;
+          console.log('✅ Image generated successfully:', imageUrl);
           
           const result = {
             success: true,
@@ -259,33 +311,56 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
               originalPrompt: prompt,
               enhancedPrompt: enhancedPrompt,
               posterOptimized: true,
-              generationId: generationId
+              generationId: generationId,
+              modelId: requestBody.modelId,
+              apiVersion: 'v1'
             }
           };
 
-          console.log('✅ Leonardo.ai image generated successfully!');
+          console.log('🎉 Leonardo.ai generation completed successfully!');
           return result;
         } else {
-          throw new Error('No images generated');
+          console.error('❌ No images in completed generation:', generation);
+          throw new Error('No images generated by Leonardo API');
         }
       } else if (generation.status === 'FAILED') {
-        throw new Error('Leonardo generation failed');
+        console.error('❌ Leonardo generation failed:', generation);
+        throw new Error(`Leonardo generation failed: ${generation.failureReason || 'Unknown error'}`);
+      } else if (generation.status === 'PENDING' || generation.status === 'PROCESSING') {
+        console.log(`⏳ Generation in progress (${generation.status})...`);
+      } else {
+        console.warn(`⚠️ Unknown generation status: ${generation.status}`);
       }
       
       attempts++;
-      console.log(`⏳ Waiting for generation completion... (${attempts}/${maxAttempts})`);
     }
     
     if (!generationComplete) {
-      throw new Error('Generation timeout - please try again');
+      console.error('❌ Generation timeout after', attempts, 'attempts');
+      throw new Error('Generation timeout - Leonardo API took too long to complete');
     }
 
   } catch (error) {
-    console.error('❌ Leonardo generation error:', error);
+    console.error('💥 Leonardo generation error:', error);
+    
+    // Детальное логирование ошибки
+    if (error.message.includes('Internal Server Error')) {
+      console.error('🔍 Internal Server Error detected - possible API issues or rate limiting');
+    } else if (error.message.includes('401')) {
+      console.error('🔍 Authentication error - check API key validity');
+    } else if (error.message.includes('429')) {
+      console.error('🔍 Rate limit exceeded - try again later');
+    }
+    
     return {
       success: false,
       error: error.message,
-      mode: 'leonardo'
+      mode: 'leonardo',
+      details: {
+        timestamp: new Date().toISOString(),
+        errorType: error.constructor.name,
+        originalPrompt: prompt
+      }
     };
   }
 }
@@ -422,5 +497,7 @@ export const POSTER_PROMPT_EXAMPLES = {
   
   "Superman hero": "Superman, professional poster illustration, vector art style with bold black outlines (3px), heroic pose with chest out, slight low angle view, radiating light beams background, bold primary colors, high contrast, vibrant, speed lines, energy aura, dramatic lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art",
   
-  "Messi champion": "Lionel Messi, professional poster illustration, vector art style with bold black outlines (3px), victory pose, action moment, emotional expression, stadium atmosphere, team colors, bright highlights, dynamic contrast, motion blur, light rays, celebratory mood, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art"
+  "Messi champion": "Lionel Messi, professional poster illustration, vector art style with bold black outlines (3px), victory pose, action moment, emotional expression, stadium atmosphere, team colors, bright highlights, dynamic contrast, motion blur, light rays, celebratory mood, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art",
+  
+  "Terminator poster": "Terminator, professional poster illustration, vector art style with bold black outlines (3px), heroic pose with chest out, slight low angle view, radiating light beams background, bold primary colors, high contrast, vibrant, speed lines, energy aura, dramatic lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art"
 };
