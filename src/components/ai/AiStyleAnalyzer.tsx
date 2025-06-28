@@ -14,7 +14,7 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastGeneratedStyle, setLastGeneratedStyle] = useState<any>(null);
   const [lastAnalysis, setLastAnalysis] = useState<any>(null);
-  const { setWalletStyle, setAiPetZone, triggerAiPetInteraction, walletStyle } = useWalletCustomizationStore();
+  const { setWalletStyle, walletStyle } = useWalletCustomizationStore();
 
   const handleAnalyzeAndApply = async () => {
     if (!uploadedImage) {
@@ -65,11 +65,7 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
       
       setWalletStyle(completeStyle);
       
-      // Set AI Pet in circulation mode around wallet
-      setAiPetZone('outside');
-      triggerAiPetInteraction();
-      
-      toast.success(`🎨 Style "${mockAnalysis.style}" applied! AI Pet is now circulating around the wallet`);
+      toast.success(`🎨 Style "${mockAnalysis.style}" applied successfully!`);
       
       // Notify parent component
       if (onStyleGenerated) {

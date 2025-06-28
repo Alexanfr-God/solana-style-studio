@@ -21,6 +21,7 @@ export interface WalletCustomizationState {
     address: string;
     balance: string;
     isActive: boolean;
+    network: string;
   }>;
   activeAccountId: string;
   showAccountSidebar: boolean;
@@ -33,6 +34,8 @@ export interface WalletCustomizationState {
     value: string;
     change: string;
     icon: string;
+    amount: string;
+    isPositive: boolean;
   }>;
   totalBalance: string;
   totalChange: string;
@@ -64,13 +67,10 @@ export interface WalletCustomizationState {
   setShowAccountSidebar: (show: boolean) => void;
   setShowAccountDropdown: (show: boolean) => void;
   
-  // AI Pet interactions (stub implementations)
-  setAiPetZone: (zone: string) => void;
-  triggerAiPetInteraction: () => void;
-  setTemporaryEmotion: (emotion: string) => void;
-  
   // Style helpers
   getStyleForComponent: (component: string) => any;
+  getTokenColors: () => any;
+  getStatusColors: () => any;
 }
 
 // Default styles with extended properties
@@ -107,14 +107,16 @@ const mockAccounts = [
     name: 'Main Account',
     address: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
     balance: '$1,234.56',
-    isActive: true
+    isActive: true,
+    network: 'Solana'
   },
   {
     id: 'account-2', 
     name: 'Trading Account',
     address: '9xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsV',
     balance: '$567.89',
-    isActive: false
+    isActive: false,
+    network: 'Solana'
   }
 ];
 
@@ -126,7 +128,9 @@ const mockTokens = [
     balance: '12.45',
     value: '$2,150.32',
     change: '+5.2%',
-    icon: '/placeholder.svg'
+    icon: '/placeholder.svg',
+    amount: '12.45',
+    isPositive: true
   },
   {
     id: 'usdc',
@@ -135,7 +139,9 @@ const mockTokens = [
     balance: '1,000.00',
     value: '$1,000.00',
     change: '0.0%',
-    icon: '/placeholder.svg'
+    icon: '/placeholder.svg',
+    amount: '1,000.00',
+    isPositive: true
   }
 ];
 
@@ -203,7 +209,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   
   unlockWallet: () => set({ currentLayer: 'wallet' }),
 
-  // МОДИФИЦИРОВАННЫЕ методы - теперь ВСЕГДА запускают анимацию
   setWalletStyle: (newStyle) => {
     withScanAnimation(() => {
       set((state) => ({
@@ -222,7 +227,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     }, set);
   },
 
-  // НОВЫЙ метод - применяет стиль к ОБОИМ экранам одновременно
   applyUniversalStyle: (newStyle) => {
     withScanAnimation(() => {
       set((state) => ({
@@ -233,7 +237,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     }, set);
   },
 
-  // Прямое управление анимацией (для особых случаев)
   onCustomizationStart: () => {
     console.log('🔄 Manual customization animation started');
     set({ 
@@ -286,30 +289,16 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
 
   setSelectedWallet: (wallet) => set({ selectedWallet: wallet }),
 
-  // Image management
   setUploadedImage: (imageUrl) => set({ uploadedImage: imageUrl }),
 
-  // Account management
   setActiveAccount: (accountId) => set({ activeAccountId: accountId }),
   setShowAccountSidebar: (show) => set({ showAccountSidebar: show }),
   setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
-
-  // AI Pet interactions (stub implementations for compatibility)
-  setAiPetZone: (zone) => {
-    console.log('🤖 AI Pet zone set to:', zone);
-  },
-  triggerAiPetInteraction: () => {
-    console.log('🤖 AI Pet interaction triggered');
-  },
-  setTemporaryEmotion: (emotion) => {
-    console.log('🤖 AI Pet emotion set to:', emotion);
-  },
 
   getStyleForComponent: (component: string) => {
     const state = get();
     const currentStyle = state.currentLayer === 'login' ? state.loginStyle : state.walletStyle;
     
-    // Возвращаем стиль в зависимости от компонента
     switch (component) {
       case 'global':
         return currentStyle;
@@ -322,5 +311,20 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
       default:
         return currentStyle;
     }
-  }
+  },
+
+  getTokenColors: () => ({
+    positive: '#10B981',
+    negative: '#EF4444',
+    neutral: '#6B7280',
+    warning: '#F59E0B',
+    info: '#3B82F6'
+  }),
+
+  getStatusColors: () => ({
+    success: '#10B981',
+    error: '#EF4444',
+    pending: '#F59E0B',
+    inactive: '#6B7280'
+  })
 }));

@@ -1,12 +1,11 @@
 
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { createInteractiveStyle, createTokenColorStyle, createStatusStyle } from '@/utils/styleUtils';
-import { ComponentStyle } from '@/types/walletStyleSchema';
 
 export const useWalletStyles = () => {
   const { getStyleForComponent, getTokenColors, getStatusColors } = useWalletCustomizationStore();
 
-  const getComponentStyle = (component: keyof Omit<import('@/types/walletStyleSchema').WalletStyleSet, 'aiPet' | 'tokenColors' | 'statusColors'>) => {
+  const getComponentStyle = (component: keyof Omit<import('@/types/walletStyleSchema').WalletStyleSet, 'tokenColors' | 'statusColors'>) => {
     const style = getStyleForComponent(component);
     return createInteractiveStyle(style, style.states);
   };
@@ -36,8 +35,7 @@ export const useWalletStyles = () => {
     return style;
   };
 
-  // Helper to get transition string from animation config or direct transition property
-  const getTransition = (component: keyof Omit<import('@/types/walletStyleSchema').WalletStyleSet, 'aiPet' | 'tokenColors' | 'statusColors'>) => {
+  const getTransition = (component: keyof Omit<import('@/types/walletStyleSchema').WalletStyleSet, 'tokenColors' | 'statusColors'>) => {
     const style = getStyleForComponent(component);
     return style.transition || style.animation?.transition || 'all 0.2s ease';
   };

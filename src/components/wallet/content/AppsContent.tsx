@@ -5,21 +5,15 @@ import { Image, Grid, Palette, Gamepad2 } from 'lucide-react';
 
 const AppsContent = () => {
   const {
-    walletStyle,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
+    walletStyle
   } = useWalletCustomizationStore();
 
   const handleCollectibleClick = (iconName: string) => {
     console.log(`Clicked collectible: ${iconName}`);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 2000);
   };
 
   const handleManageListClick = () => {
     console.log('Manage collectible list clicked');
-    triggerAiPetInteraction();
-    setTemporaryEmotion('happy', 1500);
   };
 
   const collectibleIcons = [

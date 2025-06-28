@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +46,7 @@ const ImageUploadSection = () => {
         .getPublicUrl(data.path);
 
       // Save URL to store
-      setUploadedImage(publicUrl, file);
+      setUploadedImage(publicUrl);
       toast.success('Image uploaded - ready for customization!');
       
     } catch (error) {
@@ -74,7 +75,7 @@ const ImageUploadSection = () => {
       }
     }
     
-    setUploadedImage(null, null);
+    setUploadedImage(null);
     toast.info('Image removed');
   };
 

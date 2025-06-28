@@ -11,9 +11,7 @@ const AccountSidebar = () => {
     setActiveAccount,
     showAccountSidebar,
     setShowAccountSidebar,
-    getStyleForComponent,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
+    getStyleForComponent
   } = useWalletCustomizationStore();
 
   // Get component-specific styles
@@ -25,19 +23,14 @@ const AccountSidebar = () => {
   const handleAccountSelect = (accountId: string) => {
     setActiveAccount(accountId);
     setShowAccountSidebar(false);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('happy', 1500);
   };
 
   const handleClose = () => {
     setShowAccountSidebar(false);
-    triggerAiPetInteraction();
   };
 
   const handleIconClick = (iconType: string) => {
     console.log(`${iconType} clicked`);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 1500);
   };
 
   if (!showAccountSidebar) return null;

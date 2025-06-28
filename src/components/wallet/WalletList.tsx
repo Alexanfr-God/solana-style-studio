@@ -22,8 +22,7 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
     accounts,
     activeAccountId,
     walletStyle,
-    setActiveAccount,
-    triggerAiPetInteraction
+    setActiveAccount
   } = useWalletCustomizationStore();
   
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
@@ -34,14 +33,12 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
     } else {
       setActiveAccount(accountId);
     }
-    triggerAiPetInteraction();
   };
 
   const handleCopyAddress = (address: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(address);
     setCopiedAddress(address);
-    triggerAiPetInteraction();
     
     setTimeout(() => {
       setCopiedAddress(null);

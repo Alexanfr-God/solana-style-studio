@@ -7,9 +7,7 @@ const WalletBottomNavigation = () => {
   const {
     currentLayer,
     getStyleForComponent,
-    setCurrentLayer,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
+    setCurrentLayer
   } = useWalletCustomizationStore();
 
   // Get navigation-specific styles
@@ -27,8 +25,6 @@ const WalletBottomNavigation = () => {
   const handleNavClick = (layerId: WalletLayer) => {
     console.log(`🔄 Navigation clicked: ${layerId}, current: ${currentLayer}`);
     setCurrentLayer(layerId);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('happy', 2000);
     console.log(`✅ Navigation set to: ${layerId}`);
   };
 

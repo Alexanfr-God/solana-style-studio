@@ -63,14 +63,4 @@ export interface WalletStyleSet {
   // Color systems
   tokenColors: TokenColors;
   statusColors: StatusColors;
-  // AI Pet configuration
-  aiPet: {
-    zone: AiPetZone;
-    bodyType: AiPetBodyType;
-    emotion: AiPetEmotion;
-  };
 }
-
-export type AiPetEmotion = 'idle' | 'happy' | 'excited' | 'sleepy' | 'suspicious' | 'sad' | 'wink';
-export type AiPetZone = 'inside' | 'outside';
-export type AiPetBodyType = 'phantom' | 'lottie';
