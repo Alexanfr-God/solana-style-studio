@@ -9,36 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      ai_pet_behaviors: {
-        Row: {
-          animation_data: Json
-          behavior_name: string
-          created_at: string
-          duration_ms: number | null
-          id: string
-          is_active: boolean | null
-          trigger_conditions: Json
-        }
-        Insert: {
-          animation_data: Json
-          behavior_name: string
-          created_at?: string
-          duration_ms?: number | null
-          id?: string
-          is_active?: boolean | null
-          trigger_conditions: Json
-        }
-        Update: {
-          animation_data?: Json
-          behavior_name?: string
-          created_at?: string
-          duration_ms?: number | null
-          id?: string
-          is_active?: boolean | null
-          trigger_conditions?: Json
-        }
-        Relationships: []
-      }
       ai_requests: {
         Row: {
           created_at: string | null
@@ -138,144 +108,47 @@ export type Database = {
         }
         Relationships: []
       }
-      style_library: {
+      wallet_elements: {
         Row: {
-          ai_analysis: Json | null
           created_at: string
-          created_by: string | null
-          description: string | null
+          custom_props: Json
+          customizable: boolean
+          description: string
           id: string
-          inspiration_image_url: string | null
-          is_featured: boolean | null
-          like_count: number | null
-          preview_image_url: string | null
-          style_data: Json
-          style_name: string
+          name: string
+          position: string | null
+          screen: string
+          selector: string | null
+          type: string
           updated_at: string
         }
         Insert: {
-          ai_analysis?: Json | null
           created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          inspiration_image_url?: string | null
-          is_featured?: boolean | null
-          like_count?: number | null
-          preview_image_url?: string | null
-          style_data: Json
-          style_name: string
+          custom_props?: Json
+          customizable?: boolean
+          description: string
+          id: string
+          name: string
+          position?: string | null
+          screen: string
+          selector?: string | null
+          type: string
           updated_at?: string
         }
         Update: {
-          ai_analysis?: Json | null
           created_at?: string
-          created_by?: string | null
-          description?: string | null
+          custom_props?: Json
+          customizable?: boolean
+          description?: string
           id?: string
-          inspiration_image_url?: string | null
-          is_featured?: boolean | null
-          like_count?: number | null
-          preview_image_url?: string | null
-          style_data?: Json
-          style_name?: string
+          name?: string
+          position?: string | null
+          screen?: string
+          selector?: string | null
+          type?: string
           updated_at?: string
         }
         Relationships: []
-      }
-      wallet_layout_layers: {
-        Row: {
-          created_at: string
-          elements: Json
-          id: string
-          layer_name: string
-          layer_order: number
-          metadata: Json | null
-          updated_at: string
-          wallet_layout_id: string
-        }
-        Insert: {
-          created_at?: string
-          elements?: Json
-          id?: string
-          layer_name: string
-          layer_order?: number
-          metadata?: Json | null
-          updated_at?: string
-          wallet_layout_id: string
-        }
-        Update: {
-          created_at?: string
-          elements?: Json
-          id?: string
-          layer_name?: string
-          layer_order?: number
-          metadata?: Json | null
-          updated_at?: string
-          wallet_layout_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wallet_layout_layers_wallet_layout_id_fkey"
-            columns: ["wallet_layout_id"]
-            isOneToOne: false
-            referencedRelation: "wallet_layouts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      wallet_layouts: {
-        Row: {
-          ai_analysis: Json | null
-          ai_style_applied: boolean | null
-          created_at: string
-          dimensions: Json
-          id: string
-          inspiration_image_url: string | null
-          layout_data: Json
-          screen: string
-          style_library_id: string | null
-          updated_at: string
-          wallet_id: string
-          wallet_type: string
-        }
-        Insert: {
-          ai_analysis?: Json | null
-          ai_style_applied?: boolean | null
-          created_at?: string
-          dimensions: Json
-          id?: string
-          inspiration_image_url?: string | null
-          layout_data: Json
-          screen: string
-          style_library_id?: string | null
-          updated_at?: string
-          wallet_id: string
-          wallet_type?: string
-        }
-        Update: {
-          ai_analysis?: Json | null
-          ai_style_applied?: boolean | null
-          created_at?: string
-          dimensions?: Json
-          id?: string
-          inspiration_image_url?: string | null
-          layout_data?: Json
-          screen?: string
-          style_library_id?: string | null
-          updated_at?: string
-          wallet_id?: string
-          wallet_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wallet_layouts_style_library_id_fkey"
-            columns: ["style_library_id"]
-            isOneToOne: false
-            referencedRelation: "style_library"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
