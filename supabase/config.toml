@@ -50,6 +50,3 @@ verify_jwt = false
 
 [functions.generate-wallet-mask-v3]
 verify_jwt = false
-
-[functions.analyze-wallet-structure]
-verify_jwt = false
