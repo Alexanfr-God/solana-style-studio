@@ -41,8 +41,8 @@ const ChatInterface = () => {
           <p className="text-sm text-white/70 mb-3">
             {imageGenerationMode === 'analysis' 
               ? "Describe what you want to change in your wallet, upload images for inspiration, or select specific elements to modify."
-              : imageGenerationMode === 'dalle'
-              ? "Describe the background image you want to generate with DALL-E. Be creative and detailed!"
+              : imageGenerationMode === 'leonardo'
+              ? "Describe the background image you want to generate with Leonardo.ai. Be creative and detailed!"
               : "Describe the artistic background you want to create with Replicate. Perfect for crypto art and memes!"
             }
           </p>

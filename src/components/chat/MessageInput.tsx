@@ -124,7 +124,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   const getModeIcon = () => {
     switch (imageGenerationMode) {
-      case 'dalle': return <Image className="h-4 w-4 text-green-500" />;
+      case 'leonardo': return <Image className="h-4 w-4 text-green-500" />;
       case 'replicate': return <Sparkles className="h-4 w-4 text-purple-500" />;
       default: return <Brain className="h-4 w-4 text-blue-500" />;
     }
@@ -132,8 +132,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   const getPlaceholder = () => {
     switch (imageGenerationMode) {
-      case 'dalle':
-        return 'Describe the background image you want DALL-E to generate...';
+      case 'leonardo':
+        return 'Describe the background image you want Leonardo.ai to generate...';
       case 'replicate':
         return 'Describe the artistic background you want Replicate to create...';
       default:
@@ -148,7 +148,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         {getModeIcon()}
         <span>
           {imageGenerationMode === 'analysis' ? 'Style Analysis Mode' : 
-           imageGenerationMode === 'dalle' ? 'DALL-E Generation Mode' : 
+           imageGenerationMode === 'leonardo' ? 'Leonardo.ai Generation Mode' : 
            'Replicate Art Mode'}
         </span>
       </div>
