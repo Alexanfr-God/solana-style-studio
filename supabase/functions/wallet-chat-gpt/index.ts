@@ -3,29 +3,15 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Import modules
-import { processGPTChat } from './modules/chatHandler.ts';
-import { generateImageWithDALLE, generateImageWithReplicate } from './modules/imageGenerator.ts';
-import { validateWalletContext, createDefaultWalletContext } from './modules/walletManager.ts';
-import { loadDesignExamples, chooseStyle } from './utils/storage-manager.ts';
-import { fixedStyleExtraction } from './utils/json-parser.ts';
+// Import our unified modules
 import { createWalletElementsManager } from './modules/walletElementsManager.ts';
-
-// Import types
-import type { WalletContext } from './types/wallet.ts';
-import type { GPTResponse } from './types/responses.ts';
+import { createWalletManager } from './modules/walletManager.ts';
+import { generateImageWithDALLE, generateImageWithReplicate } from './modules/imageGenerator.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS'
 };
-
-// Initialize Supabase
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-);
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -34,220 +20,293 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Processing enhanced wallet chat request with wallet elements integration...');
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get and validate OpenAI API key
-    const openAIApiKey = Deno.env.get('OPENA_API_KEY')?.trim();
-    if (!openAIApiKey || !openAIApiKey.startsWith('sk-')) {
-      console.error('❌ OPENA_API_KEY not configured or invalid format');
-      return new Response(JSON.stringify({ 
-        error: 'OpenAI API key not configured or invalid format - check OPENA_API_KEY secret',
-        success: false 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Initialize managers
+    const elementsManager = createWalletElementsManager(supabaseUrl, supabaseKey);
+    const walletManager = createWalletManager(supabaseUrl, supabaseKey);
 
-    console.log('✅ Using OPENA_API_KEY for OpenAI requests');
+    const body = await req.json();
+    const { content, imageUrl, walletContext, mode } = body;
 
-    // Parse request data
-    let content, imageUrl, walletElement, walletContext, sessionId, walletType, userPrompt, mode;
-    
-    const contentType = req.headers.get('content-type') || '';
-    
-    if (contentType.includes('application/json')) {
-      const requestData = await req.json();
-      content = requestData.content;
-      imageUrl = requestData.imageUrl;
-      walletElement = requestData.walletElement;
-      walletContext = requestData.walletContext;
-      mode = requestData.mode || 'analysis';
-    } else {
-      const formData = await req.formData();
-      sessionId = formData.get('sessionId') as string;
-      imageUrl = formData.get('imageUrl') as string;
-      userPrompt = formData.get('customPrompt') as string || formData.get('prompt') as string;
-      walletType = formData.get('walletType') as string;
-      mode = formData.get('mode') as string || 'analysis';
-      
-      content = userPrompt;
-      walletContext = { walletType, activeLayer: 'wallet' };
-    }
-
-    console.log('🤖 Processing request:', {
+    console.log('🚀 Wallet-chat-gpt called with:', {
+      mode,
       hasContent: !!content,
       hasImage: !!imageUrl,
-      hasWalletElement: !!walletElement,
-      hasContext: !!walletContext,
-      mode,
-      sessionId,
-      walletType
+      walletType: walletContext?.walletType,
+      activeLayer: walletContext?.activeLayer
     });
 
-    // ROUTER: Handle different modes
-    if (mode === 'dalle') {
-      const result = await generateImageWithDALLE(content, supabase);
+    // Handle different modes
+    switch (mode) {
+      case 'structure':
+        return await handleStructureMode(elementsManager, walletContext?.walletType || 'phantom');
       
-      if (result.success) {
-        return new Response(JSON.stringify({
-          success: true,
-          response: `I've generated an image based on your request: "${content}". You can apply it as a background to your wallet or download it.`,
-          imageUrl: result.imageUrl,
-          mode: 'dalle'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else {
-        return new Response(JSON.stringify(result), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
-
-    if (mode === 'replicate') {
-      const result = await generateImageWithReplicate(content, supabase);
+      case 'dalle':
+        return await handleImageGeneration('dalle', content, supabase);
       
-      if (result.success) {
-        return new Response(JSON.stringify({
-          success: true,
-          response: `I've generated an image based on your request: "${content}". You can apply it as a background to your wallet or download it.`,
-          imageUrl: result.imageUrl,
-          mode: 'replicate'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } else {
-        return new Response(JSON.stringify(result), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
-
-    // DEFAULT: Enhanced style analysis mode with wallet elements integration
-    console.log('🧠 Processing enhanced style analysis mode with wallet elements...');
-
-    // Validate wallet context
-    const validatedWalletContext = validateWalletContext(walletContext);
-    const currentWalletType = validatedWalletContext.walletType || 'phantom';
-
-    // Initialize wallet elements manager
-    const elementsManager = createWalletElementsManager(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
-
-    // Load wallet elements from database
-    console.log('📊 Loading wallet elements from database...');
-    let walletElements = [];
-    let customizableElements = [];
-    let elementsByScreen = {};
-    let elementsStatistics = {};
-
-    try {
-      // Load all elements
-      walletElements = await elementsManager.loadAllElements();
-      console.log(`✅ Loaded ${walletElements.length} wallet elements`);
-
-      // Get customizable elements
-      customizableElements = await elementsManager.getCustomizableElements();
-      console.log(`🎨 Found ${customizableElements.length} customizable elements`);
-
-      // Group elements by screen
-      elementsByScreen = elementsManager.groupElementsByScreen(walletElements);
+      case 'replicate':
+        return await handleImageGeneration('replicate', content, supabase);
       
-      // Get statistics
-      elementsStatistics = elementsManager.getElementsStatistics(walletElements);
-
-    } catch (error) {
-      console.warn('⚠️ Failed to load wallet elements from database:', error.message);
-      // Continue with empty elements - the function will still work
-      walletElements = [];
-      customizableElements = [];
-      elementsByScreen = {};
-      elementsStatistics = { total: 0, customizable: 0 };
+      case 'analysis':
+      default:
+        return await handleAnalysisMode(
+          content,
+          imageUrl,
+          walletContext,
+          supabase,
+          elementsManager,
+          walletManager
+        );
     }
-
-    // Create AI context with wallet elements
-    const aiContext = elementsManager.createAIContext(
-      walletElements, 
-      validatedWalletContext.activeLayer
-    );
-
-    // Enhance wallet context with elements data
-    const enhancedWalletContext = {
-      ...validatedWalletContext,
-      walletElements,
-      customizableElements,
-      elementsByScreen,
-      elementsStatistics,
-      aiContext,
-      capabilities: {
-        multiWalletSupport: true,
-        elementsAware: true,
-        safeZoneRespect: true,
-        collaborationReady: true,
-        databaseIntegrated: true,
-        layerBasedCustomization: true,
-        granularControl: true
-      }
-    };
-
-    // Load design examples
-    const designExamples = await loadDesignExamples(supabase);
-    
-    // Choose appropriate style
-    let chosenStyle = null;
-    if (designExamples.length > 0 && content) {
-      chosenStyle = chooseStyle(content, designExamples);
-      console.log('🎨 Chosen style:', chosenStyle?.id || 'none');
-    }
-
-    // Process GPT chat with enhanced wallet elements context
-    const result = await processGPTChat(
-      content,
-      enhancedWalletContext,
-      walletElement,
-      imageUrl,
-      designExamples,
-      chosenStyle,
-      openAIApiKey
-    );
-
-    console.log('✅ Enhanced GPT response generated with wallet elements:', result.success);
-    console.log('🎨 StyleChanges extracted:', result.styleChanges ? 'YES' : 'NO');
-    console.log(`📊 Total elements processed: ${walletElements.length}`);
-    console.log(`🛠️ Customizable elements: ${customizableElements.length}`);
-
-    // Ensure we return the correct format that frontend expects
-    return new Response(JSON.stringify({
-      response: result.response,
-      styleChanges: result.styleChanges,
-      success: result.success,
-      mode: result.mode || 'analysis',
-      metadata: {
-        walletType: currentWalletType,
-        elementsCount: walletElements.length,
-        customizableElementsCount: customizableElements.length,
-        screensAvailable: Object.keys(elementsByScreen),
-        enhancedAnalysis: true,
-        databaseIntegrated: true,
-        elementsStatistics
-      }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
 
   } catch (error) {
-    console.error('❌ Error in enhanced wallet-chat-gpt function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'An unexpected error occurred',
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('💥 Error in wallet-chat-gpt:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+        details: 'Internal server error in wallet-chat-gpt function'
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });
+
+// Handle structure mode - return wallet elements
+async function handleStructureMode(elementsManager: any, walletType: string) {
+  try {
+    console.log('🏗️ Structure mode: loading wallet elements...');
+    
+    const elements = await elementsManager.loadAllElements();
+    const statistics = elementsManager.getElementsStatistics(elements);
+    const grouped = elementsManager.groupElementsByScreen(elements);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        walletElements: elements,
+        statistics,
+        grouped,
+        walletType,
+        mode: 'structure'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('❌ Error in structure mode:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+        mode: 'structure'
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}
+
+// Handle image generation
+async function handleImageGeneration(mode: 'dalle' | 'replicate', prompt: string, supabase: any) {
+  try {
+    console.log(`🖼️ Image generation mode: ${mode}`);
+    
+    let result;
+    if (mode === 'dalle') {
+      result = await generateImageWithDALLE(prompt, supabase);
+    } else {
+      result = await generateImageWithReplicate(prompt, supabase);
+    }
+
+    return new Response(
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error(`❌ Error in ${mode} image generation:`, error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+        mode
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}
+
+// Handle analysis mode - the main AI processing
+async function handleAnalysisMode(
+  content: string,
+  imageUrl: string | undefined,
+  walletContext: any,
+  supabase: any,
+  elementsManager: any,
+  walletManager: any
+) {
+  try {
+    console.log('🤖 Analysis mode: processing with AI...');
+
+    // Get OpenAI API key
+    const openaiApiKey = Deno.env.get('OPENA_API_KEY');
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    // Create enhanced wallet context
+    const walletType = walletContext?.walletType || 'phantom';
+    const aiContext = await walletManager.createWalletAIContext(walletType, walletContext?.activeLayer);
+
+    // Build the AI prompt
+    const systemPrompt = `You are a Web3 wallet customization expert. You help users customize their ${walletType} wallet interface.
+
+WALLET CONTEXT:
+- Wallet Type: ${walletType}
+- Active Layer: ${walletContext?.activeLayer || 'wallet'}
+- Total Elements: ${aiContext.statistics.total}
+- Customizable Elements: ${aiContext.statistics.customizable}
+- Available Screens: ${aiContext.availableScreens?.join(', ') || 'main'}
+
+TASK: Analyze the user's request and provide style changes in JSON format.
+
+IMPORTANT: Always respond with JSON containing:
+{
+  "success": true,
+  "response": "Friendly response to user",
+  "userText": "User-friendly explanation",
+  "styleChanges": {
+    "backgroundColor": "#hexcolor",
+    "accentColor": "#hexcolor", 
+    "textColor": "#hexcolor",
+    "buttonColor": "#hexcolor",
+    "buttonTextColor": "#hexcolor",
+    "borderRadius": "8px",
+    "fontFamily": "Inter, sans-serif",
+    "styleNotes": "Description of applied style"
+  }
+}`;
+
+    const userMessage = imageUrl 
+      ? `${content}\n\nI've also provided an image for style inspiration.`
+      : content;
+
+    // Prepare messages for OpenAI
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ];
+
+    // Add image if provided
+    if (imageUrl) {
+      messages[1] = {
+        role: 'user',
+        content: [
+          { type: 'text', text: userMessage },
+          { type: 'image_url', image_url: { url: imageUrl } }
+        ]
+      };
+    }
+
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages,
+        max_tokens: 1000,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+    }
+
+    const aiResponse = await response.json();
+    const aiContent = aiResponse.choices[0].message.content;
+
+    console.log('🤖 AI Response:', aiContent);
+
+    // Try to parse JSON from AI response
+    let parsedResponse;
+    try {
+      // Extract JSON from the response
+      const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedResponse = JSON.parse(jsonMatch[0]);
+      } else {
+        // Fallback: create a basic response
+        parsedResponse = {
+          success: true,
+          response: aiContent,
+          userText: aiContent,
+          styleChanges: {
+            backgroundColor: '#1a1a2e',
+            accentColor: '#16213e',
+            textColor: '#ffffff',
+            buttonColor: '#0f3460',
+            buttonTextColor: '#ffffff',
+            borderRadius: '8px',
+            fontFamily: 'Inter, sans-serif',
+            styleNotes: 'AI generated style based on your request'
+          }
+        };
+      }
+    } catch (parseError) {
+      console.warn('⚠️ Failed to parse AI JSON, using fallback');
+      parsedResponse = {
+        success: true,
+        response: aiContent,
+        userText: aiContent,
+        styleChanges: {
+          backgroundColor: '#1a1a2e',
+          accentColor: '#16213e',
+          textColor: '#ffffff',
+          buttonColor: '#0f3460',
+          buttonTextColor: '#ffffff',
+          borderRadius: '8px',
+          fontFamily: 'Inter, sans-serif',
+          styleNotes: 'AI generated style based on your request'
+        }
+      };
+    }
+
+    console.log('✅ Analysis completed successfully');
+
+    return new Response(
+      JSON.stringify(parsedResponse),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('❌ Error in analysis mode:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+        mode: 'analysis'
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}

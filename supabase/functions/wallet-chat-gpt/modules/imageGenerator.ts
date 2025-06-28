@@ -1,4 +1,5 @@
-// Enhanced Image generation with DALL-E and Replicate + POSTER QUALITY SYSTEM
+
+// Enhanced Image generation with direct API calls - NO MORE EDGE FUNCTION DEPENDENCIES
 
 // ========== ЗАГРУЗКА ПРИМЕРОВ ИЗ SUPABASE ==========
 let LEARNED_STYLES = null; // Кэш загруженных примеров
@@ -174,83 +175,67 @@ function detectMood(prompt) {
   return 'confident';
 }
 
-// ========== ОСНОВНЫЕ ФУНКЦИИ ГЕНЕРАЦИИ ==========
-
-// Configuration for wallet layers
-const WALLET_LAYERS = {
-  LAYER_1: {
-    name: 'unlock-layer',
-    description: 'Layer with unlock button',
-    aspectRatio: '16:9',
-    suggestedSize: { width: 1920, height: 1080 }
-  },
-  LAYER_2: {
-    name: 'balance-layer', 
-    description: 'Layer with balance display',
-    aspectRatio: '16:9',
-    suggestedSize: { width: 1920, height: 1080 }
-  }
-};
-
-// Enhanced prompt templates for wow effects
-const WOW_EFFECT_TEMPLATES = {
-  neon: 'neon glowing effects, cyberpunk style, vibrant colors',
-  holographic: 'holographic, iridescent, prismatic light effects',
-  particle: 'particle effects, sparkles, magical dust, ethereal',
-  gradient: 'smooth gradient transitions, color flow, ambient',
-  geometric: 'geometric patterns, sacred geometry, mathematical beauty',
-  nature: 'organic patterns, natural textures, biomorphic designs',
-  tech: 'futuristic tech patterns, circuit boards, digital matrix',
-  abstract: 'abstract art, fluid dynamics, artistic expression'
-};
+// ========== DIRECT API CALLS - NO MORE EDGE FUNCTIONS ==========
 
 export async function generateImageWithDALLE(prompt, supabase, options = {}) {
   try {
-    console.log('🖼️ DALL-E generation with POSTER QUALITY...');
+    console.log('🖼️ DALL-E generation with DIRECT API CALL...');
     console.log('Original prompt:', prompt);
     
     // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
     const enhancedPrompt = await enhancePosterPrompt(prompt, 'dalle', supabase);
     
-    // Use Supabase Edge Function
-    const requestBody = {
-      prompt: enhancedPrompt,
-      mode: 'image_generation',
-      size: '1024x1024', // Квадрат лучше для постеров
-      quality: 'hd',
-      style: 'vivid' // Яркие цвета для постеров
-    };
+    // Get OpenAI API key from environment
+    const openaiApiKey = Deno.env.get('OPENA_API_KEY');
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
 
-    console.log('📤 Sending to generate-style:', requestBody);
+    console.log('📤 Calling OpenAI API directly...');
 
-    const imageResponse = await supabase.functions.invoke('generate-style', {
-      body: requestBody
+    // Direct API call to OpenAI
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt: enhancedPrompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'high',
+        output_format: 'png'
+      })
     });
 
-    if (imageResponse?.error) {
-      throw new Error(`DALL-E generation failed: ${imageResponse.error.message}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
     }
 
-    const generatedImageUrl = imageResponse?.data?.imageUrl;
+    const data = await response.json();
     
-    if (!generatedImageUrl) {
-      throw new Error('No image URL returned from DALL-E service');
-    }
+    // OpenAI returns base64 for gpt-image-1
+    const base64Image = data.data[0].b64_json;
+    const imageUrl = `data:image/png;base64,${base64Image}`;
 
-    const result = processDALLEResponse({ imageUrl: generatedImageUrl }, options);
-    
-    if (result.success) {
-      console.log('✅ DALL-E POSTER generated successfully!');
-      return {
-        ...result,
-        metadata: {
-          ...result.metadata,
-          originalPrompt: prompt,
-          enhancedPrompt: enhancedPrompt,
-          posterOptimized: true
-        }
-      };
-    }
+    const result = {
+      success: true,
+      imageUrl: imageUrl,
+      mode: 'dalle',
+      dimensions: { width: 1024, height: 1024 },
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        originalPrompt: prompt,
+        enhancedPrompt: enhancedPrompt,
+        posterOptimized: true
+      }
+    };
+
+    console.log('✅ DALL-E image generated successfully!');
+    return result;
 
   } catch (error) {
     console.error('❌ DALL-E generation error:', error);
@@ -264,52 +249,87 @@ export async function generateImageWithDALLE(prompt, supabase, options = {}) {
 
 export async function generateImageWithReplicate(prompt, supabase, options = {}) {
   try {
-    console.log('🎨 Replicate generation with POSTER QUALITY...');
+    console.log('🎨 Replicate generation with DIRECT API CALL...');
     console.log('Original prompt:', prompt);
     
     // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
     const enhancedPrompt = await enhancePosterPrompt(prompt, 'replicate', supabase);
     
-    const requestBody = {
-      prompt: enhancedPrompt,
-      // Параметры для качества
-      width: 1024,
-      height: 1024,
-      guidance_scale: 7.5,
-      num_inference_steps: 50, // Больше шагов = лучше качество
-      scheduler: "DPMSolverMultistep"
-    };
+    // Get Replicate API key from environment
+    const replicateApiKey = Deno.env.get('REPLICATE_API_KEY');
+    if (!replicateApiKey) {
+      throw new Error('Replicate API key not configured');
+    }
 
-    console.log('📤 Sending to generate-wallet-mask-v3:', requestBody);
+    console.log('📤 Calling Replicate API directly...');
 
-    const imageResponse = await supabase.functions.invoke('generate-wallet-mask-v3', {
-      body: requestBody
+    // Direct API call to Replicate
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${replicateApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: "black-forest-labs/flux-schnell",
+        input: {
+          prompt: enhancedPrompt,
+          go_fast: true,
+          megapixels: "1",
+          num_outputs: 1,
+          aspect_ratio: "1:1",
+          output_format: "webp",
+          output_quality: 80,
+          num_inference_steps: 4
+        }
+      })
     });
 
-    if (imageResponse?.error) {
-      throw new Error(`Replicate generation failed: ${imageResponse.error.message}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Replicate API error: ${errorData.detail || response.statusText}`);
     }
 
-    const generatedImageUrl = imageResponse?.data?.output?.[0];
+    const prediction = await response.json();
     
-    if (!generatedImageUrl) {
-      throw new Error('No image URL returned from Replicate service');
-    }
-
-    const result = processReplicateResponse({ output: [generatedImageUrl] }, options);
-    
-    if (result.success) {
-      console.log('✅ Replicate POSTER generated successfully!');
-      return {
-        ...result,
-        metadata: {
-          ...result.metadata,
-          originalPrompt: prompt,
-          enhancedPrompt: enhancedPrompt,
-          posterOptimized: true
+    // Wait for completion
+    let completedPrediction = prediction;
+    while (completedPrediction.status === 'starting' || completedPrediction.status === 'processing') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+        headers: {
+          'Authorization': `Token ${replicateApiKey}`,
         }
-      };
+      });
+      
+      completedPrediction = await statusResponse.json();
     }
+
+    if (completedPrediction.status === 'failed') {
+      throw new Error(`Replicate generation failed: ${completedPrediction.error}`);
+    }
+
+    const generatedImageUrl = completedPrediction.output?.[0];
+    if (!generatedImageUrl) {
+      throw new Error('No image URL returned from Replicate');
+    }
+
+    const result = {
+      success: true,
+      imageUrl: generatedImageUrl,
+      mode: 'replicate',
+      layerOptimized: true,
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        originalPrompt: prompt,
+        enhancedPrompt: enhancedPrompt,
+        posterOptimized: true
+      }
+    };
+
+    console.log('✅ Replicate image generated successfully!');
+    return result;
 
   } catch (error) {
     console.error('❌ Replicate generation error:', error);
@@ -319,104 +339,6 @@ export async function generateImageWithReplicate(prompt, supabase, options = {})
       mode: 'replicate'
     };
   }
-}
-
-// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
-
-function processDALLEResponse(data, options) {
-  const generatedImageUrl = data?.imageUrl;
-  
-  if (!generatedImageUrl) {
-    return {
-      success: false,
-      error: 'No image URL returned from DALL-E service'
-    };
-  }
-  
-  const result = {
-    success: true,
-    imageUrl: generatedImageUrl,
-    mode: 'dalle',
-    dimensions: { width: 1024, height: 1024 }
-  };
-  
-  // If multi-layer was requested, provide layer configuration
-  if (options.multiLayer) {
-    result.layers = [
-      {
-        id: 'layer1',
-        name: WALLET_LAYERS.LAYER_1.name,
-        imageUrl: generatedImageUrl,
-        cropConfig: {
-          x: 0,
-          y: 0,
-          width: '100%',
-          height: '50%'
-        },
-        opacity: 1
-      },
-      {
-        id: 'layer2',
-        name: WALLET_LAYERS.LAYER_2.name,
-        imageUrl: generatedImageUrl,
-        cropConfig: {
-          x: 0,
-          y: '50%',
-          width: '100%',
-          height: '50%'
-        },
-        opacity: 1
-      }
-    ];
-  }
-  
-  // Add metadata
-  result.metadata = {
-    generatedAt: new Date().toISOString(),
-    style: 'vivid'
-  };
-  
-  return result;
-}
-
-function processReplicateResponse(data, options) {
-  const generatedImageUrl = data?.output?.[0];
-  
-  if (!generatedImageUrl) {
-    return {
-      success: false,
-      error: 'No image URL returned from Replicate service'
-    };
-  }
-  
-  const result = {
-    success: true,
-    imageUrl: generatedImageUrl,
-    mode: 'replicate',
-    layerOptimized: true
-  };
-  
-  // Add optimization data for proper display
-  result.displayOptimization = {
-    cssRules: {
-      objectFit: 'cover',
-      objectPosition: 'center',
-      width: '100%',
-      height: '100%'
-    },
-    containerSettings: {
-      overflow: 'hidden',
-      position: 'relative'
-    }
-  };
-  
-  // Add metadata
-  result.metadata = {
-    generatedAt: new Date().toISOString(),
-    optimizationApplied: true
-  };
-  
-  return result;
 }
 
 // Export helper function for frontend integration
