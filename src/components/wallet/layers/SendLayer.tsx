@@ -67,9 +67,7 @@ const cryptoNetworks: CryptoNetwork[] = [
 const SendLayer = () => {
   const {
     getStyleForComponent,
-    setCurrentLayer,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
+    setCurrentLayer
   } = useWalletCustomizationStore();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,19 +82,14 @@ const SendLayer = () => {
 
   const handleBack = () => {
     setCurrentLayer('home');
-    triggerAiPetInteraction();
-    setTemporaryEmotion('happy', 1500);
   };
 
   const handleClose = () => {
     setCurrentLayer('home');
-    triggerAiPetInteraction();
   };
 
   const handleNetworkSelect = (networkName: string) => {
     console.log('Network selected:', networkName);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 2000);
     
     toast({
       title: "Network Selected",

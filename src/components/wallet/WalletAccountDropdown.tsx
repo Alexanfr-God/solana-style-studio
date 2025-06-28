@@ -12,8 +12,7 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
   const {
     getStyleForComponent,
     setShowAccountDropdown,
-    setActiveAccount,
-    triggerAiPetInteraction
+    setActiveAccount
   } = useWalletCustomizationStore();
   
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,7 +47,6 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
     } else {
       setShowAccountDropdown(false);
     }
-    triggerAiPetInteraction();
   };
 
   const getTitle = () => {
@@ -164,7 +162,6 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
               } else {
                 setShowAccountDropdown(false);
               }
-              triggerAiPetInteraction();
             }}
             style={{
               color: buttonStyle.backgroundColor || '#9945FF',

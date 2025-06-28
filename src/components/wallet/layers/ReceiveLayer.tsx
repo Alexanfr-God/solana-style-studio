@@ -67,9 +67,7 @@ const cryptoNetworks: CryptoNetwork[] = [
 const ReceiveLayer = () => {
   const {
     getStyleForComponent,
-    setCurrentLayer,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
+    setCurrentLayer
   } = useWalletCustomizationStore();
   
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
@@ -83,19 +81,15 @@ const ReceiveLayer = () => {
 
   const handleBack = () => {
     setCurrentLayer('home');
-    triggerAiPetInteraction();
-    setTemporaryEmotion('happy', 1500);
   };
 
   const handleClose = () => {
     setCurrentLayer('home');
-    triggerAiPetInteraction();
   };
 
   const handleCopyAddress = (address: string, networkName: string) => {
     navigator.clipboard.writeText(address);
     setCopiedAddress(address);
-    triggerAiPetInteraction();
     
     toast({
       title: "Address Copied",
@@ -109,7 +103,6 @@ const ReceiveLayer = () => {
 
   const handleQrCode = (networkName: string) => {
     console.log('QR Code clicked for:', networkName);
-    triggerAiPetInteraction();
   };
 
   return (

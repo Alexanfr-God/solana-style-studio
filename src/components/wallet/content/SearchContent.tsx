@@ -5,9 +5,7 @@ import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const SearchContent = () => {
   const {
-    getStyleForComponent,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
+    getStyleForComponent
   } = useWalletCustomizationStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,8 +33,6 @@ const SearchContent = () => {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     console.log(`Searching for: ${query}`);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 2000);
   };
 
   const handleRecentSearch = (search: string) => {

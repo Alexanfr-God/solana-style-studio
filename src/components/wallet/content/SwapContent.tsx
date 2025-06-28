@@ -5,9 +5,7 @@ import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const SwapContent = () => {
   const {
-    getStyleForComponent,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
+    getStyleForComponent
   } = useWalletCustomizationStore();
 
   const [fromAmount, setFromAmount] = useState('');
@@ -24,8 +22,6 @@ const SwapContent = () => {
 
   const handleSwap = () => {
     console.log('Swap initiated');
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 2000);
   };
 
   const handleFlipTokens = () => {
@@ -33,8 +29,6 @@ const SwapContent = () => {
     setToToken(fromToken);
     setFromAmount(toAmount);
     setToAmount(fromAmount);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('happy', 1500);
   };
 
   return (

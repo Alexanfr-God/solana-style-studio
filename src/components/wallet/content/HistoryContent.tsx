@@ -1,13 +1,10 @@
-
 import React from 'react';
 import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const HistoryContent = () => {
   const { 
-    getStyleForComponent,
-    triggerAiPetInteraction,
-    setTemporaryEmotion
+    getStyleForComponent
   } = useWalletCustomizationStore();
 
   // Get component-specific styles
@@ -18,8 +15,6 @@ const HistoryContent = () => {
 
   const handleTransactionClick = (transactionType: string) => {
     console.log(`Transaction ${transactionType} clicked`);
-    triggerAiPetInteraction();
-    setTemporaryEmotion('excited', 1500);
   };
 
   const transactions = [
