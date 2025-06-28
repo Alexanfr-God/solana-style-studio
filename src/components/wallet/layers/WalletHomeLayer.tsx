@@ -11,6 +11,7 @@ import AppsContent from '../content/AppsContent';
 import HistoryContent from '../content/HistoryContent';
 import SearchContent from '../content/SearchContent';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { formatAddress } from '@/lib/utils';
 
 const WalletHomeLayer = () => {
   const {
@@ -129,7 +130,7 @@ const WalletHomeLayer = () => {
                 {activeAccount?.name || 'Account 1'}
               </div>
               <div className="text-xs text-gray-400">
-                {activeAccount?.address || '0x123...'}
+                {formatAddress(activeAccount?.address || '0x123...')}
               </div>
             </div>
             <ChevronDown 

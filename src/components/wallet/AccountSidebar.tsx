@@ -3,6 +3,7 @@ import React from 'react';
 import { X, Plus, Pencil, Settings } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { formatAddress } from '@/lib/utils';
 
 const AccountSidebar = () => {
   const {
@@ -130,7 +131,7 @@ const AccountSidebar = () => {
                   className="text-xs text-gray-400"
                   style={{ fontFamily: globalStyle.fontFamily }}
                 >
-                  {account.address}
+                  {formatAddress(account.address)}
                 </div>
               </div>
             </button>
