@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,18 +23,22 @@ const WalletElementsViewer = () => {
     try {
       setLoading(true);
       
-      // Загружаем сгруппированные элементы
+      // Load grouped elements
       const groupedData = await walletElementsService.getAllGrouped();
-      setGroupedElements(groupedData.grouped);
-      
-      // Устанавливаем первый экран как активный
-      if (groupedData.screens.length > 0) {
-        setActiveScreen(groupedData.screens[0]);
+      if (groupedData.success) {
+        setGroupedElements(groupedData.grouped);
+        
+        // Set first screen as active
+        if (groupedData.screens.length > 0) {
+          setActiveScreen(groupedData.screens[0]);
+        }
       }
 
-      // Загружаем статистику
+      // Load statistics
       const statsData = await walletElementsService.getStatistics();
-      setStatistics(statsData.statistics);
+      if (statsData.success) {
+        setStatistics(statsData.statistics);
+      }
       
     } catch (error) {
       console.error('Error loading wallet elements data:', error);
@@ -189,7 +192,7 @@ const WalletElementsViewer = () => {
                                     <div className="flex flex-wrap gap-1 mt-1">
                                       {element.custom_props.map((prop, index) => (
                                         <Badge key={index} variant="outline" className="text-xs">
-                                          {prop}
+                                          {String(prop)}
                                         </Badge>
                                       ))}
                                     </div>

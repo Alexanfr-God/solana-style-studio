@@ -155,12 +155,19 @@ class WalletImageAnalysisService {
     try {
       console.log('💾 Saving image analysis result...');
 
+      // Convert ImageAnalysisResult to compatible JSON format
+      const jsonResult = {
+        colors: result.colors,
+        style: result.style,
+        suggestions: result.suggestions
+      };
+
       const { error } = await supabase
         .from('ai_requests')
         .insert({
           image_url: request.imageUrl,
           layer_type: 'image_analysis',
-          style_result: result,
+          style_result: jsonResult,
           status: 'completed'
         });
 
@@ -231,8 +238,4 @@ class WalletImageAnalysisService {
   }
 }
 
-// Создаем экземпляр сервиса
 export const walletImageAnalysisService = new WalletImageAnalysisService();
-
-// Экспортируем типы
-export type { ImageAnalysisRequest, ImageAnalysisResult, AnalysisResponse };

@@ -21,10 +21,6 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
   
   const { 
     setWalletStyle, 
-    setAiPetZone, 
-    setAiPetEmotion,
-    setAiPetBodyType,
-    triggerAiPetInteraction,
     walletStyle
   } = useWalletCustomizationStore();
 
@@ -68,12 +64,7 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
           complexity: 'High'
         },
         textures: ['Metal', 'Glass'],
-        patterns: [],
-        aiPetCharacteristics: {
-          recommendedZone: 'inside',
-          recommendedEmotion: 'excited',
-          recommendedBodyType: 'cyber'
-        }
+        patterns: []
       };
       
       const mockWalletStyles = {
@@ -84,14 +75,6 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
       
       setLastAnalysis(mockAnalysis);
       setLastStyles(mockWalletStyles);
-      
-      // Apply AI Pet recommendations
-      if (mockAnalysis.aiPetCharacteristics) {
-        setAiPetZone(mockAnalysis.aiPetCharacteristics.recommendedZone);
-        setAiPetEmotion(mockAnalysis.aiPetCharacteristics.recommendedEmotion as any);
-        setAiPetBodyType(mockAnalysis.aiPetCharacteristics.recommendedBodyType);
-        triggerAiPetInteraction();
-      }
       
       // Apply global wallet styles
       const backgroundColor = mockAnalysis.colors.background;
@@ -235,12 +218,6 @@ const WalletImageAnalyzer: React.FC<WalletImageAnalyzerProps> = ({
               <p><span className="text-purple-400">Lighting:</span> {lastAnalysis.lighting}</p>
               <p><span className="text-purple-400">Contrast:</span> {lastAnalysis.contrast}</p>
               {renderColorPalette(lastAnalysis.colors)}
-              
-              <div className="mt-2 pt-2 border-t border-gray-600">
-                <p><span className="text-blue-400">AI Pet Zone:</span> {lastAnalysis.aiPetCharacteristics.recommendedZone}</p>
-                <p><span className="text-blue-400">AI Pet Type:</span> {lastAnalysis.aiPetCharacteristics.recommendedBodyType}</p>
-                <p><span className="text-blue-400">AI Pet Emotion:</span> {lastAnalysis.aiPetCharacteristics.recommendedEmotion}</p>
-              </div>
             </div>
           </div>
         )}

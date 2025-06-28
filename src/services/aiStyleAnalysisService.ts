@@ -121,13 +121,26 @@ class AiStyleAnalysisService {
     try {
       console.log('💾 Saving analysis result to database...');
 
+      // Convert StyleAnalysisResult to compatible JSON format
+      const jsonResult = {
+        backgroundColor: result.backgroundColor,
+        backgroundImage: result.backgroundImage,
+        accentColor: result.accentColor,
+        textColor: result.textColor,
+        buttonColor: result.buttonColor,
+        buttonTextColor: result.buttonTextColor,
+        borderRadius: result.borderRadius,
+        fontFamily: result.fontFamily,
+        boxShadow: result.boxShadow,
+        styleNotes: result.styleNotes
+      };
+
       const { error } = await supabase
         .from('ai_requests')
         .insert({
-          prompt: request.prompt,
           image_url: request.imageUrl,
-          layer_type: request.layerType,
-          style_result: result,
+          layer_type: request.layerType || 'style_analysis',
+          style_result: jsonResult,
           status: 'completed'
         });
 
@@ -178,8 +191,4 @@ class AiStyleAnalysisService {
   }
 }
 
-// Создаем экземпляр сервиса
 export const aiStyleAnalysisService = new AiStyleAnalysisService();
-
-// Экспортируем типы
-export type { StyleAnalysisRequest, StyleAnalysisResult, AnalysisResponse };
