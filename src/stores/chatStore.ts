@@ -122,7 +122,7 @@ function extractImageUrl(response: any, mode: ImageGenerationMode): string | nul
   return null;
 }
 
-// ИСПРАВЛЕННАЯ функция конвертации GPT ответов
+// ИСПРАВЛЕННАЯ функция конвертации GPT ответов с принудительной анимацией
 function convertGPTResponseToStyleChanges(gptResponse: any): any {
   console.log('🔄 Converting GPT response to style changes:', gptResponse);
   
@@ -132,23 +132,19 @@ function convertGPTResponseToStyleChanges(gptResponse: any): any {
     console.log('✅ Found direct styleChanges format');
     
     return {
-      layer: 'wallet',
-      target: 'global',
-      changes: {
-        backgroundColor: styleChanges.backgroundColor,
-        backgroundImage: styleChanges.backgroundImage,
-        accentColor: styleChanges.accentColor,
-        textColor: styleChanges.textColor,
-        buttonColor: styleChanges.buttonColor,
-        buttonTextColor: styleChanges.buttonTextColor,
-        borderRadius: styleChanges.borderRadius,
-        fontFamily: styleChanges.fontFamily,
-        boxShadow: styleChanges.boxShadow,
-        primaryColor: styleChanges.accentColor || styleChanges.buttonColor,
-        font: styleChanges.fontFamily,
-        gradient: styleChanges.gradient
-      },
-      reasoning: styleChanges.styleNotes || gptResponse.userText || 'AI style analysis applied'
+      backgroundColor: styleChanges.backgroundColor,
+      backgroundImage: styleChanges.backgroundImage,
+      accentColor: styleChanges.accentColor,
+      textColor: styleChanges.textColor,
+      buttonColor: styleChanges.buttonColor,
+      buttonTextColor: styleChanges.buttonTextColor,
+      borderRadius: styleChanges.borderRadius,
+      fontFamily: styleChanges.fontFamily,
+      boxShadow: styleChanges.boxShadow,
+      primaryColor: styleChanges.accentColor || styleChanges.buttonColor,
+      font: styleChanges.fontFamily,
+      gradient: styleChanges.gradient,
+      styleNotes: styleChanges.styleNotes || gptResponse.userText || 'AI style analysis applied'
     };
   }
 
@@ -161,20 +157,16 @@ function convertGPTResponseToStyleChanges(gptResponse: any): any {
     console.log('✅ Found enhanced format with elements.colors');
     
     return {
-      layer: 'wallet',
-      target: 'global',
-      changes: {
-        backgroundColor: colors.background || colors.primary,
-        textColor: colors.text || colors.secondary,
-        accentColor: colors.accent || colors.primary,
-        buttonColor: colors.primary,
-        buttonTextColor: colors.secondary || colors.text,
-        borderRadius: gptResponse.elements.spacing?.borderRadius || '12px',
-        fontFamily: typography.fontFamily || 'Inter, sans-serif',
-        boxShadow: effects.boxShadow,
-        gradient: effects.gradient
-      },
-      reasoning: gptResponse.metadata?.style_reasoning || 'GPT style analysis applied'
+      backgroundColor: colors.background || colors.primary,
+      textColor: colors.text || colors.secondary,
+      accentColor: colors.accent || colors.primary,
+      buttonColor: colors.primary,
+      buttonTextColor: colors.secondary || colors.text,
+      borderRadius: gptResponse.elements.spacing?.borderRadius || '12px',
+      fontFamily: typography.fontFamily || 'Inter, sans-serif',
+      boxShadow: effects.boxShadow,
+      gradient: effects.gradient,
+      styleNotes: gptResponse.metadata?.style_reasoning || 'GPT style analysis applied'
     };
   }
   
@@ -202,18 +194,7 @@ function convertGPTResponseToStyleChanges(gptResponse: any): any {
       }
     });
     
-    return {
-      layer: 'wallet',
-      target: 'global',
-      changes: styleChanges,
-      reasoning: 'Applied from GPT actions analysis'
-    };
-  }
-  
-  // Handle legacy format (if it exists)
-  if (gptResponse.changes) {
-    console.log('✅ Found legacy styleChanges format');
-    return gptResponse;
+    return styleChanges;
   }
   
   console.warn('⚠️ Unknown GPT response format, using fallback');
@@ -284,47 +265,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
       
       console.log('💬 Using friendly user text for chat:', friendlyResponse);
 
-      // КРИТИЧЕСКИ ВАЖНО: Применяем стили СРАЗУ после получения ответа
+      // КРИТИЧЕСКИ ВАЖНО: Применяем стили С АНИМАЦИЕЙ
       if (data.styleChanges) {
-        console.log('🎨 Processing style changes from GPT:', data.styleChanges);
-        
-        // Запускаем анимацию сканирования
-        const walletStore = useWalletCustomizationStore.getState();
-        walletStore.onCustomizationStart();
+        console.log('🎨 Processing style changes from GPT with FORCED ANIMATION:', data.styleChanges);
         
         const convertedChanges = convertGPTResponseToStyleChanges(data);
         
         if (convertedChanges) {
-          console.log('✅ Successfully converted style changes:', convertedChanges);
+          console.log('✅ Successfully converted style changes, applying with animation:', convertedChanges);
           
-          // ИСПРАВЛЕНО: Применяем стили напрямую к store
-          const newWalletStyle = {
-            ...walletStore.walletStyle,
-            ...convertedChanges.changes
-          };
-          
-          const newLoginStyle = {
-            ...walletStore.loginStyle,
-            ...convertedChanges.changes
-          };
-          
-          console.log('🔧 Applying styles to wallet store:', {
-            walletStyle: newWalletStyle,
-            loginStyle: newLoginStyle
-          });
-          
-          // Применяем к обоим экранам
-          walletStore.setWalletStyle(newWalletStyle);
-          walletStore.setLoginStyle(newLoginStyle);
-          
-          // Завершаем анимацию через 2 секунды
-          setTimeout(() => {
-            walletStore.resetCustomizationState();
-          }, 2000);
+          // НОВАЯ ЛОГИКА: Используем applyUniversalStyle для применения к ОБОИМ экранам с анимацией
+          const walletStore = useWalletCustomizationStore.getState();
+          walletStore.applyUniversalStyle(convertedChanges);
           
         } else {
           console.warn('⚠️ Could not convert style changes');
-          walletStore.resetCustomizationState();
         }
       } else {
         console.log('ℹ️ No style changes in response');
@@ -342,7 +297,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isLoading: false
       }));
 
-      console.log('✅ GPT response processed and style changes applied');
+      console.log('✅ GPT response processed and style changes applied WITH ANIMATION');
 
     } catch (error) {
       console.error('❌ Error sending message:', error);
@@ -461,53 +416,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   applyGeneratedImage: (imageUrl: string) => {
+    console.log('🖼️ Applying generated image as background with ANIMATION:', imageUrl);
+    
+    // НОВАЯ ЛОГИКА: Используем applyUniversalStyle для применения к ОБОИМ экранам с анимацией
     const walletStore = useWalletCustomizationStore.getState();
-    
-    console.log('🖼️ Applying generated image as background to BOTH screens:', imageUrl);
-    
-    // Apply image as background to BOTH wallet style (Unlock screen) AND login style (Lock screen)
-    const updatedWalletStyle = {
-      ...walletStore.walletStyle,
+    walletStore.applyUniversalStyle({
       backgroundImage: `url(${imageUrl})`,
       styleNotes: 'Generated background image applied from gallery'
-    };
+    });
     
-    const updatedLoginStyle = {
-      ...walletStore.loginStyle,
-      backgroundImage: `url(${imageUrl})`,
-      styleNotes: 'Generated background image applied from gallery'
-    };
-    
-    // Apply to both screens
-    walletStore.setWalletStyle(updatedWalletStyle);
-    walletStore.setLoginStyle(updatedLoginStyle);
-    
-    // Trigger customization animation
-    walletStore.onCustomizationStart();
-    setTimeout(() => {
-      walletStore.resetCustomizationState();
-    }, 2000);
-    
-    console.log('✅ Generated image applied as background to BOTH Lock and Unlock screens');
+    console.log('✅ Generated image applied as background to BOTH screens WITH ANIMATION');
   },
 
   applyStyleChanges: (changes) => {
-    console.log('🎨 Legacy applyStyleChanges called - redirecting to direct store update');
-    // Эта функция теперь используется только как fallback
-    const walletStore = useWalletCustomizationStore.getState();
+    console.log('🎨 Legacy applyStyleChanges called - using new animation system');
     
     if (changes && changes.changes) {
-      const updatedWalletStyle = {
-        ...walletStore.walletStyle,
-        ...changes.changes
-      };
-      
-      walletStore.setWalletStyle(updatedWalletStyle);
-      walletStore.onCustomizationStart();
-      
-      setTimeout(() => {
-        walletStore.resetCustomizationState();
-      }, 2000);
+      const walletStore = useWalletCustomizationStore.getState();
+      walletStore.applyUniversalStyle(changes.changes);
     }
   },
 

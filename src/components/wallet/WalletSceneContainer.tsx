@@ -1,7 +1,7 @@
 
 import React, { ReactNode } from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
-import { WalletScanAnimation } from '@/components/animations/WalletScanAnimation';
+import { EnhancedWalletScanAnimation } from '@/components/animations/EnhancedWalletScanAnimation';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import '@/styles/wallet-scan-animations.css';
 
@@ -18,15 +18,19 @@ export const WalletSceneContainer = ({
   className = "",
   renderMode = 'scene'
 }: WalletSceneContainerProps) => {
-  const { isCustomizing } = useWalletCustomizationStore();
+  const { isCustomizing, customizationProgress, isSuccessAnimationActive } = useWalletCustomizationStore();
   
   if (renderMode === 'direct') {
     return (
-      <WalletScanAnimation isActive={isCustomizing}>
+      <EnhancedWalletScanAnimation 
+        isActive={isCustomizing} 
+        progress={customizationProgress}
+        isSuccess={isSuccessAnimationActive}
+      >
         <div className={`wallet-scene-direct wallet-style-transition ${className}`}>
           {children}
         </div>
-      </WalletScanAnimation>
+      </EnhancedWalletScanAnimation>
     );
   }
 
@@ -45,7 +49,11 @@ export const WalletSceneContainer = ({
     >
       <div className="absolute inset-0 bg-black/30 rounded-3xl overflow-hidden"></div>
       
-      <WalletScanAnimation isActive={isCustomizing}>
+      <EnhancedWalletScanAnimation 
+        isActive={isCustomizing} 
+        progress={customizationProgress}
+        isSuccess={isSuccessAnimationActive}
+      >
         <div 
           className="wallet-inner-container absolute wallet-style-transition wallet-background-transition"
           style={{
@@ -67,7 +75,7 @@ export const WalletSceneContainer = ({
         >
           {children}
         </div>
-      </WalletScanAnimation>
+      </EnhancedWalletScanAnimation>
     </div>
   );
 };
