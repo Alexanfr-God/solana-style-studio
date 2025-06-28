@@ -1,376 +1,317 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 export interface WalletElement {
   id: string;
-  screen: string;
   name: string;
   type: string;
+  screen: string;
   description: string;
   customizable: boolean;
-  custom_props: string[];
-  position: string | null;
-  selector: string | null;
+  position?: string;
+  selector?: string;
+  custom_props: Json[]; // Changed from string[] to Json[]
   created_at: string;
   updated_at: string;
 }
 
 export interface WalletElementsResponse {
   success: boolean;
-  elements: WalletElement[];
-  count: number;
-  [key: string]: any;
-}
-
-export interface GroupedElements {
-  [screen: string]: {
-    screen: string;
-    elements: WalletElement[];
-    counts: {
-      total: number;
-      customizable: number;
-      byType: { [type: string]: number };
-    };
-  };
+  elements?: WalletElement[];
+  error?: string;
+  count?: number;
 }
 
 class WalletElementsService {
   /**
-   * Получить все элементы с фильтрами
+   * Get all wallet elements
    */
-  async getElements(filters?: {
-    screen?: string;
-    type?: string;
-    customizable?: boolean;
-  }): Promise<WalletElementsResponse> {
+  async getAllElements(): Promise<WalletElementsResponse> {
     try {
-      let query = supabase
+      console.log('📊 Fetching all wallet elements...');
+
+      const { data, error } = await supabase
         .from('wallet_elements')
         .select('*')
-        .order('screen, position, name');
-
-      if (filters?.screen) {
-        query = query.eq('screen', filters.screen);
-      }
-
-      if (filters?.type) {
-        query = query.eq('type', filters.type);
-      }
-
-      if (filters?.customizable !== undefined) {
-        query = query.eq('customizable', filters.customizable);
-      }
-
-      const { data, error } = await query;
+        .order('screen', { ascending: true });
 
       if (error) {
+        console.error('❌ Error fetching wallet elements:', error);
         throw new Error(`Failed to fetch elements: ${error.message}`);
       }
 
-      // Преобразуем Json в string[] для custom_props
+      // Transform data to match WalletElement interface
       const elements: WalletElement[] = (data || []).map(item => ({
-        ...item,
-        custom_props: Array.isArray(item.custom_props) ? item.custom_props : []
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        screen: item.screen,
+        description: item.description,
+        customizable: item.customizable,
+        position: item.position || undefined,
+        selector: item.selector || undefined,
+        custom_props: item.custom_props as Json[], // Proper type casting
+        created_at: item.created_at,
+        updated_at: item.updated_at
       }));
+
+      console.log('✅ Wallet elements fetched successfully:', {
+        count: elements.length,
+        screens: [...new Set(elements.map(e => e.screen))].length
+      });
 
       return {
         success: true,
         elements,
-        count: elements.length,
-        filters
+        count: elements.length
       };
+
     } catch (error) {
-      console.error('Error fetching wallet elements:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Получить все элементы, сгруппированные по экранам
-   */
-  async getAllGrouped(): Promise<{
-    success: boolean;
-    grouped: GroupedElements;
-    screens: string[];
-    totalElements: number;
-    customizableElements: number;
-    metadata: any;
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('wallet_elements')
-        .select('*')
-        .order('screen, position, name');
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // Преобразуем данные
-      const elements: WalletElement[] = (data || []).map(item => ({
-        ...item,
-        custom_props: Array.isArray(item.custom_props) ? item.custom_props : []
-      }));
-
-      // Группируем элементы по экранам
-      const grouped = elements.reduce((acc: any, element: WalletElement) => {
-        if (!acc[element.screen]) {
-          acc[element.screen] = {
-            screen: element.screen,
-            elements: [],
-            counts: {
-              total: 0,
-              customizable: 0,
-              byType: {}
-            }
-          };
-        }
-        
-        acc[element.screen].elements.push(element);
-        acc[element.screen].counts.total++;
-        
-        if (element.customizable) {
-          acc[element.screen].counts.customizable++;
-        }
-        
-        if (!acc[element.screen].counts.byType[element.type]) {
-          acc[element.screen].counts.byType[element.type] = 0;
-        }
-        acc[element.screen].counts.byType[element.type]++;
-        
-        return acc;
-      }, {});
-
-      const screens = Object.keys(grouped);
-      const totalElements = elements.length;
-      const customizableElements = elements.filter(el => el.customizable).length;
-
+      console.error('💥 Error in getAllElements:', error);
       return {
-        success: true,
-        grouped,
-        screens,
-        totalElements,
-        customizableElements,
-        metadata: {
-          screenCount: screens.length,
-          averageElementsPerScreen: Math.round(totalElements / screens.length),
-          customizationPercentage: Math.round((customizableElements / totalElements) * 100)
-        }
+        success: false,
+        error: error.message
       };
-    } catch (error) {
-      console.error('Error fetching grouped wallet elements:', error);
-      throw error;
     }
   }
 
   /**
-   * Получить элементы конкретного экрана
+   * Get elements by screen
    */
-  async getByScreen(screen: string): Promise<{
-    success: boolean;
-    screen: string;
-    elements: WalletElement[];
-    byPosition: { [position: string]: WalletElement[] };
-    count: number;
-    customizableCount: number;
-  }> {
+  async getElementsByScreen(screen: string): Promise<WalletElementsResponse> {
     try {
+      console.log('📊 Fetching elements for screen:', screen);
+
       const { data, error } = await supabase
         .from('wallet_elements')
         .select('*')
         .eq('screen', screen)
-        .order('position, name');
+        .order('name', { ascending: true });
 
       if (error) {
-        throw new Error(`Failed to fetch elements for screen ${screen}: ${error.message}`);
+        console.error('❌ Error fetching elements by screen:', error);
+        throw new Error(`Failed to fetch elements: ${error.message}`);
       }
 
+      // Transform data to match WalletElement interface
       const elements: WalletElement[] = (data || []).map(item => ({
-        ...item,
-        custom_props: Array.isArray(item.custom_props) ? item.custom_props : []
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        screen: item.screen,
+        description: item.description,
+        customizable: item.customizable,
+        position: item.position || undefined,
+        selector: item.selector || undefined,
+        custom_props: item.custom_props as Json[], // Proper type casting
+        created_at: item.created_at,
+        updated_at: item.updated_at
       }));
 
-      // Группируем по позиции
-      const byPosition = elements.reduce((acc: any, element: WalletElement) => {
-        const pos = element.position || 'unspecified';
-        if (!acc[pos]) {
-          acc[pos] = [];
-        }
-        acc[pos].push(element);
-        return acc;
-      }, {});
+      console.log(`✅ Elements for screen "${screen}" fetched:`, elements.length);
 
       return {
         success: true,
-        screen,
         elements,
-        byPosition,
-        count: elements.length,
-        customizableCount: elements.filter(el => el.customizable).length
+        count: elements.length
       };
+
     } catch (error) {
-      console.error(`Error fetching elements for screen ${screen}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Получить только кастомизируемые элементы
-   */
-  async getCustomizable(): Promise<WalletElementsResponse> {
-    return this.getElements({ customizable: true });
-  }
-
-  /**
-   * Получить статистику элементов
-   */
-  async getStatistics(): Promise<{
-    success: boolean;
-    statistics: {
-      total: number;
-      customizable: number;
-      customizationPercentage: number;
-      screens: {
-        list: string[];
-        count: number;
-        details: { [screen: string]: any };
-      };
-      types: {
-        list: string[];
-        count: number;
-        details: { [type: string]: any };
-      };
-      positions: {
-        list: string[];
-        distribution: { [position: string]: number };
-      };
-    };
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('wallet_elements')
-        .select('*');
-
-      if (error) {
-        throw new Error(`Failed to fetch elements for statistics: ${error.message}`);
-      }
-
-      if (!data) {
-        return {
-          success: true,
-          statistics: {
-            total: 0,
-            customizable: 0,
-            customizationPercentage: 0,
-            screens: { list: [], count: 0, details: {} },
-            types: { list: [], count: 0, details: {} },
-            positions: { list: [], distribution: {} }
-          }
-        };
-      }
-
-      const elements: WalletElement[] = data.map(item => ({
-        ...item,
-        custom_props: Array.isArray(item.custom_props) ? item.custom_props : []
-      }));
-
-      // Вычисляем статистику
-      const screens = [...new Set(elements.map(el => el.screen))];
-      const types = [...new Set(elements.map(el => el.type))];
-      const customizable = elements.filter(el => el.customizable).length;
-
-      const screenStats = screens.reduce((acc: any, screen) => {
-        const screenElements = elements.filter(el => el.screen === screen);
-        acc[screen] = {
-          total: screenElements.length,
-          customizable: screenElements.filter(el => el.customizable).length,
-          types: [...new Set(screenElements.map(el => el.type))]
-        };
-        return acc;
-      }, {});
-
-      const typeStats = types.reduce((acc: any, type) => {
-        const typeElements = elements.filter(el => el.type === type);
-        acc[type] = {
-          total: typeElements.length,
-          customizable: typeElements.filter(el => el.customizable).length,
-          screens: [...new Set(typeElements.map(el => el.screen))]
-        };
-        return acc;
-      }, {});
-
+      console.error('💥 Error in getElementsByScreen:', error);
       return {
-        success: true,
-        statistics: {
-          total: elements.length,
-          customizable,
-          customizationPercentage: Math.round((customizable / elements.length) * 100),
-          screens: {
-            list: screens,
-            count: screens.length,
-            details: screenStats
-          },
-          types: {
-            list: types,
-            count: types.length,
-            details: typeStats
-          },
-          positions: {
-            list: [...new Set(elements.map(el => el.position).filter(Boolean))],
-            distribution: elements.reduce((acc: any, el) => {
-              const pos = el.position || 'unspecified';
-              acc[pos] = (acc[pos] || 0) + 1;
-              return acc;
-            }, {})
-          }
-        }
+        success: false,
+        error: error.message
       };
-    } catch (error) {
-      console.error('Error fetching wallet elements statistics:', error);
-      throw error;
     }
   }
 
   /**
-   * Получить элементы по типу
+   * Get customizable elements only
    */
-  async getByType(type: string): Promise<WalletElementsResponse> {
-    return this.getElements({ type });
-  }
-
-  /**
-   * Получить элементы конкретной позиции на экране
-   */
-  async getByPosition(screen: string, position: string): Promise<WalletElement[]> {
-    const screenData = await this.getByScreen(screen);
-    return screenData.byPosition[position] || [];
-  }
-
-  /**
-   * Поиск элементов по названию или описанию
-   */
-  async searchElements(query: string): Promise<WalletElement[]> {
+  async getCustomizableElements(): Promise<WalletElementsResponse> {
     try {
+      console.log('📊 Fetching customizable elements...');
+
       const { data, error } = await supabase
         .from('wallet_elements')
         .select('*')
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-        .order('screen, name');
+        .eq('customizable', true)
+        .order('screen', { ascending: true });
 
       if (error) {
-        throw new Error(error.message);
+        console.error('❌ Error fetching customizable elements:', error);
+        throw new Error(`Failed to fetch elements: ${error.message}`);
       }
 
-      return (data || []).map(item => ({
-        ...item,
-        custom_props: Array.isArray(item.custom_props) ? item.custom_props : []
+      // Transform data to match WalletElement interface
+      const elements: WalletElement[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        screen: item.screen,
+        description: item.description,
+        customizable: item.customizable,
+        position: item.position || undefined,
+        selector: item.selector || undefined,
+        custom_props: item.custom_props as Json[], // Proper type casting
+        created_at: item.created_at,
+        updated_at: item.updated_at
       }));
+
+      console.log('✅ Customizable elements fetched:', elements.length);
+
+      return {
+        success: true,
+        elements,
+        count: elements.length
+      };
+
     } catch (error) {
-      console.error('Error searching wallet elements:', error);
-      throw error;
+      console.error('💥 Error in getCustomizableElements:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Search elements by query
+   */
+  async searchElements(query: string): Promise<WalletElementsResponse> {
+    try {
+      console.log('🔍 Searching elements with query:', query);
+
+      const { data, error } = await supabase
+        .from('wallet_elements')
+        .select('*')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%,type.ilike.%${query}%`)
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error searching elements:', error);
+        throw new Error(`Failed to search elements: ${error.message}`);
+      }
+
+      // Transform data to match WalletElement interface
+      const elements: WalletElement[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        screen: item.screen,
+        description: item.description,
+        customizable: item.customizable,
+        position: item.position || undefined,
+        selector: item.selector || undefined,
+        custom_props: item.custom_props as Json[], // Proper type casting
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      console.log(`✅ Search completed, found ${elements.length} elements`);
+
+      return {
+        success: true,
+        elements,
+        count: elements.length
+      };
+
+    } catch (error) {
+      console.error('💥 Error in searchElements:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Get element statistics
+   */
+  async getElementStatistics(): Promise<any> {
+    try {
+      const allElements = await this.getAllElements();
+      
+      if (!allElements.success || !allElements.elements) {
+        return {
+          total: 0,
+          customizable: 0,
+          screens: 0,
+          types: 0
+        };
+      }
+
+      const elements = allElements.elements;
+      const screens = [...new Set(elements.map(e => e.screen))];
+      const types = [...new Set(elements.map(e => e.type))];
+      const customizable = elements.filter(e => e.customizable).length;
+
+      return {
+        total: elements.length,
+        customizable,
+        customizationPercentage: Math.round((customizable / elements.length) * 100),
+        screens: screens.length,
+        types: types.length,
+        screenBreakdown: screens.reduce((acc, screen) => {
+          acc[screen] = elements.filter(e => e.screen === screen).length;
+          return acc;
+        }, {} as Record<string, number>),
+        typeBreakdown: types.reduce((acc, type) => {
+          acc[type] = elements.filter(e => e.type === type).length;
+          return acc;
+        }, {} as Record<string, number>)
+      };
+    } catch (error) {
+      console.error('💥 Error getting element statistics:', error);
+      return {
+        total: 0,
+        customizable: 0,
+        screens: 0,
+        types: 0
+      };
+    }
+  }
+
+  /**
+   * Update element
+   */
+  async updateElement(id: string, updates: Partial<WalletElement>): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('📝 Updating element:', id);
+
+      const { error } = await supabase
+        .from('wallet_elements')
+        .update({
+          name: updates.name,
+          description: updates.description,
+          customizable: updates.customizable,
+          position: updates.position,
+          selector: updates.selector,
+          custom_props: updates.custom_props as Json[] // Proper type casting
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('❌ Error updating element:', error);
+        throw new Error(`Failed to update element: ${error.message}`);
+      }
+
+      console.log('✅ Element updated successfully');
+      return { success: true };
+
+    } catch (error) {
+      console.error('💥 Error in updateElement:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 }
 
-// Создаем экземпляр сервиса
+// Create and export service instance
 export const walletElementsService = new WalletElementsService();
+
+// Export types
+export type { WalletElement, WalletElementsResponse };

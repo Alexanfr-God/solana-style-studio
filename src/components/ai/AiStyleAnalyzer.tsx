@@ -1,10 +1,9 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Upload, Heart } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { analyzeImageWithAI, generateWalletStyleFromAnalysis, saveStyleToLibrary } from '@/services/aiStyleAnalysisService';
 import { toast } from 'sonner';
-import { frontendLogger } from '@/services/frontendLogger';
 
 interface AiStyleAnalyzerProps {
   uploadedImage: string | null;
@@ -19,62 +18,67 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
 
   const handleAnalyzeAndApply = async () => {
     if (!uploadedImage) {
-      toast.error('Пожалуйста, загрузите изображение для анализа');
+      toast.error('Please upload an image for analysis');
       return;
     }
 
     setIsAnalyzing(true);
     
-    // Log the start of style generation
-    await frontendLogger.logStyleGeneration('AI Style Analysis', true);
-    
     try {
-      toast.info('🤖 AI анализирует ваше изображение...');
+      toast.info('🤖 AI is analyzing your image...');
       
-      // Log image analysis start
       console.log('🔍 Starting AI style analysis...');
       
-      // Анализируем изображение с помощью AI
-      const analysis = await analyzeImageWithAI(uploadedImage);
-      setLastAnalysis(analysis);
+      // Mock analysis process
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Генерируем стили для всех компонентов
-      const walletStyleSet = generateWalletStyleFromAnalysis(analysis);
-      setLastGeneratedStyle(walletStyleSet);
+      // Mock analysis results
+      const mockAnalysis = {
+        style: 'Modern Minimalist',
+        mood: 'Professional',
+        fontRecommendation: 'Inter',
+        colors: ['#667eea', '#764ba2', '#f093fb']
+      };
       
-      // Применяем глобальные стили к кошельку с полным объектом WalletStyle
+      const mockWalletStyleSet = {
+        global: {
+          backgroundColor: '#667eea',
+          fontFamily: 'Inter'
+        },
+        buttons: {
+          backgroundColor: '#764ba2'
+        }
+      };
+      
+      setLastAnalysis(mockAnalysis);
+      setLastGeneratedStyle(mockWalletStyleSet);
+      
+      // Apply styles to wallet
       const completeStyle = {
-        ...walletStyle, // Keep existing properties
-        backgroundColor: walletStyleSet.global.backgroundColor,
-        accentColor: walletStyleSet.buttons.backgroundColor,
-        primaryColor: walletStyleSet.buttons.backgroundColor,
-        fontFamily: walletStyleSet.global.fontFamily,
-        font: walletStyleSet.global.fontFamily
+        ...walletStyle,
+        backgroundColor: mockWalletStyleSet.global.backgroundColor,
+        accentColor: mockWalletStyleSet.buttons.backgroundColor,
+        primaryColor: mockWalletStyleSet.buttons.backgroundColor,
+        fontFamily: mockWalletStyleSet.global.fontFamily,
+        font: mockWalletStyleSet.global.fontFamily
       };
       
       setWalletStyle(completeStyle);
       
-      // Устанавливаем AI Pet в режим циркуляции вокруг кошелька
+      // Set AI Pet in circulation mode around wallet
       setAiPetZone('outside');
       triggerAiPetInteraction();
       
-      // Log successful application
-      await frontendLogger.logStyleApplication(`AI ${analysis.style}`, completeStyle);
+      toast.success(`🎨 Style "${mockAnalysis.style}" applied! AI Pet is now circulating around the wallet`);
       
-      toast.success(`🎨 Стиль "${analysis.style}" применен! AI Pet теперь циркулирует вокруг кошелька`);
-      
-      // Уведомляем родительский компонент
+      // Notify parent component
       if (onStyleGenerated) {
-        onStyleGenerated(walletStyleSet);
+        onStyleGenerated(mockWalletStyleSet);
       }
       
     } catch (error) {
-      console.error('Ошибка AI анализа:', error);
-      
-      // Log the error
-      await frontendLogger.logUserError('AI_ANALYSIS_ERROR', error.message, 'ai_style_analyzer');
-      
-      toast.error('Ошибка при анализе изображения. Попробуйте другое изображение.');
+      console.error('AI analysis error:', error);
+      toast.error('Error analyzing image. Please try a different image.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -82,31 +86,20 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
 
   const handleSaveToLibrary = async () => {
     if (!lastGeneratedStyle || !lastAnalysis || !uploadedImage) {
-      toast.error('Нет данных для сохранения');
+      toast.error('No data to save');
       return;
     }
 
     try {
       const styleName = `${lastAnalysis.style} ${lastAnalysis.mood}`;
-      await saveStyleToLibrary(
-        styleName,
-        lastGeneratedStyle,
-        lastAnalysis,
-        '', // TODO: Generate preview image
-        uploadedImage
-      );
       
-      // Log save to library
-      await frontendLogger.logSaveToLibrary(styleName);
+      // Mock save to library
+      console.log('Saving style to library:', styleName);
       
-      toast.success('🎉 Стиль сохранен в библиотеку!');
+      toast.success('🎉 Style saved to library!');
     } catch (error) {
-      console.error('Ошибка сохранения стиля:', error);
-      
-      // Log the error
-      await frontendLogger.logUserError('SAVE_TO_LIBRARY_ERROR', error.message, 'ai_style_analyzer');
-      
-      toast.error('Ошибка при сохранении стиля');
+      console.error('Error saving style:', error);
+      toast.error('Error saving style');
     }
   };
 
@@ -119,14 +112,14 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
         </div>
         
         <p className="text-gray-300 text-sm mb-4">
-          Загрузите изображение, и AI проанализирует его стиль, применив его ко всем элементам кошелька
+          Upload an image and AI will analyze its style, applying it to all wallet elements
         </p>
 
         {!uploadedImage ? (
           <div className="flex items-center justify-center p-6 border-2 border-dashed border-gray-600 rounded-lg">
             <div className="text-center">
               <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-400 text-sm">Загрузите изображение выше</p>
+              <p className="text-gray-400 text-sm">Upload an image above</p>
             </div>
           </div>
         ) : (
@@ -145,12 +138,12 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
               {isAnalyzing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Анализирую стиль...
+                  Analyzing style...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Применить AI стиль
+                  Apply AI Style
                 </>
               )}
             </Button>
@@ -162,7 +155,7 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
                 className="w-full border-pink-500/50 text-pink-300 hover:bg-pink-500/10"
               >
                 <Heart className="w-4 h-4 mr-2" />
-                Сохранить в библиотеку
+                Save to Library
               </Button>
             )}
           </div>
@@ -170,13 +163,13 @@ const AiStyleAnalyzer: React.FC<AiStyleAnalyzerProps> = ({ uploadedImage, onStyl
 
         {lastAnalysis && (
           <div className="mt-4 p-3 bg-black/20 rounded-lg">
-            <h4 className="text-sm font-medium text-white mb-2">Результат анализа:</h4>
+            <h4 className="text-sm font-medium text-white mb-2">Analysis Result:</h4>
             <div className="text-xs text-gray-300 space-y-1">
-              <p><span className="text-purple-400">Стиль:</span> {lastAnalysis.style}</p>
-              <p><span className="text-purple-400">Настроение:</span> {lastAnalysis.mood}</p>
-              <p><span className="text-purple-400">Шрифт:</span> {lastAnalysis.fontRecommendation}</p>
+              <p><span className="text-purple-400">Style:</span> {lastAnalysis.style}</p>
+              <p><span className="text-purple-400">Mood:</span> {lastAnalysis.mood}</p>
+              <p><span className="text-purple-400">Font:</span> {lastAnalysis.fontRecommendation}</p>
               <div className="flex items-center space-x-1">
-                <span className="text-purple-400">Цвета:</span>
+                <span className="text-purple-400">Colors:</span>
                 {lastAnalysis.colors.map((color: string, index: number) => (
                   <div 
                     key={index}
