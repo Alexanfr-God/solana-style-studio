@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { defaultLoginStyle, defaultWalletStyle } from '../constants/defaultWalletStyles';
 
@@ -15,6 +16,10 @@ export interface WalletStyle {
   fontFamily: string;
   boxShadow?: string;
   styleNotes?: string;
+  // Add missing properties for compatibility
+  primaryColor?: string;
+  font?: string;
+  gradient?: string;
 }
 
 export interface WalletAnalysis {

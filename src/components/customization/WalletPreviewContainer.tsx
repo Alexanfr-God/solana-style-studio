@@ -44,8 +44,8 @@ const WalletPreviewContainer = () => {
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
       background: loginStyle.backgroundImage 
-        ? `url(${loginStyle.backgroundImage.replace('url(', '').replace(')', '')}) center/cover no-repeat, ${loginStyle.gradient || loginStyle.backgroundColor || '#181818'}`
-        : loginStyle.gradient || loginStyle.backgroundColor || '#181818',
+        ? `url(${loginStyle.backgroundImage.replace('url(', '').replace(')', '')}) center/cover no-repeat, ${loginStyle.backgroundColor || '#181818'}`
+        : loginStyle.backgroundColor || '#181818',
       height: '650px',
       borderBottomLeftRadius: '1rem',
       borderBottomRightRadius: '1rem'
@@ -100,7 +100,7 @@ const WalletPreviewContainer = () => {
           <button
             className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90"
             style={{
-              backgroundColor: loginStyle.primaryColor || '#a390f5',
+              backgroundColor: loginStyle.accentColor || '#a390f5',
               fontFamily: loginStyle.fontFamily || 'Inter',
               borderRadius: '12px'
             }}
