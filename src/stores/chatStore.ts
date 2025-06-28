@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,7 @@ function detectLanguage(text: string): 'ru' | 'en' {
   return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'en';
 }
 
-export type ImageGenerationMode = 'analysis' | 'dalle' | 'replicate';
+export type ImageGenerationMode = 'analysis' | 'leonardo' | 'replicate';
 
 interface ChatState {
   messages: ChatMessage[];

@@ -6,7 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // Import our unified modules
 import { createWalletElementsManager } from './modules/walletElementsManager.ts';
 import { createWalletManager } from './modules/walletManager.ts';
-import { generateImageWithDALLE, generateImageWithReplicate } from './modules/imageGenerator.ts';
+import { generateImageWithLeonardo, generateImageWithReplicate } from './modules/imageGenerator.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,8 +45,8 @@ serve(async (req) => {
       case 'structure':
         return await handleStructureMode(elementsManager, walletContext?.walletType || 'phantom');
       
-      case 'dalle':
-        return await handleImageGeneration('dalle', content, supabase);
+      case 'leonardo':
+        return await handleImageGeneration('leonardo', content, supabase);
       
       case 'replicate':
         return await handleImageGeneration('replicate', content, supabase);
@@ -116,13 +116,13 @@ async function handleStructureMode(elementsManager: any, walletType: string) {
 }
 
 // Handle image generation
-async function handleImageGeneration(mode: 'dalle' | 'replicate', prompt: string, supabase: any) {
+async function handleImageGeneration(mode: 'leonardo' | 'replicate', prompt: string, supabase: any) {
   try {
     console.log(`🖼️ Image generation mode: ${mode}`);
     
     let result;
-    if (mode === 'dalle') {
-      result = await generateImageWithDALLE(prompt, supabase);
+    if (mode === 'leonardo') {
+      result = await generateImageWithLeonardo(prompt, supabase);
     } else {
       result = await generateImageWithReplicate(prompt, supabase);
     }

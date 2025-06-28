@@ -22,10 +22,10 @@ const ImageGenerationSelector = () => {
       color: 'bg-blue-600 hover:bg-blue-700'
     },
     {
-      key: 'dalle',
-      label: 'DALL-E Images',
+      key: 'leonardo',
+      label: 'Leonardo',
       icon: <Image className="w-4 h-4" />,
-      description: 'Generate realistic backgrounds with DALL-E (describe what you want)',
+      description: 'Generate high-quality artistic images with Leonardo.ai (describe what you want)',
       color: 'bg-green-600 hover:bg-green-700'
     },
     {
@@ -59,7 +59,7 @@ const ImageGenerationSelector = () => {
           >
             {mode.icon}
             <span className="hidden sm:inline">{mode.label}</span>
-            <span className="sm:hidden">{mode.key === 'analysis' ? 'Style' : mode.key === 'dalle' ? 'DALL-E' : 'Art'}</span>
+            <span className="sm:hidden">{mode.key === 'analysis' ? 'Style' : mode.key === 'leonardo' ? 'Leo' : 'Art'}</span>
           </Button>
         ))}
       </div>
@@ -71,7 +71,7 @@ const ImageGenerationSelector = () => {
       
       {/* Mode-specific tips instead of fixed prompts */}
       <div className="text-xs text-white/40 mt-2 p-2 bg-white/5 rounded">
-        {imageGenerationMode === 'dalle' && (
+        {imageGenerationMode === 'leonardo' && (
           <p>💡 Tips: Try "cosmic nebula background", "neon cyberpunk cityscape", or "abstract crypto patterns"</p>
         )}
         

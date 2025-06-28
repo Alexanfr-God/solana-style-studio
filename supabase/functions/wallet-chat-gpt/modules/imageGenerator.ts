@@ -1,5 +1,5 @@
 
-// Enhanced Image generation with direct API calls - NO MORE EDGE FUNCTION DEPENDENCIES
+// Enhanced Image generation with direct API calls - Leonardo.ai integration
 
 // ========== ЗАГРУЗКА ПРИМЕРОВ ИЗ SUPABASE ==========
 let LEARNED_STYLES = null; // Кэш загруженных примеров
@@ -116,8 +116,8 @@ async function enhancePosterPrompt(userPrompt, generator, supabase) {
   enhanced += `, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements`;
   
   // Специфика для генератора
-  if (generator === 'dalle') {
-    enhanced += `, in the style of modern vector posters, clean illustration, Adobe Illustrator quality`;
+  if (generator === 'leonardo') {
+    enhanced += `, in the style of modern vector posters, clean illustration, high quality digital art`;
   } else {
     enhanced += `, poster art, vector style, bold design`;
   }
@@ -175,74 +175,117 @@ function detectMood(prompt) {
   return 'confident';
 }
 
-// ========== DIRECT API CALLS - NO MORE EDGE FUNCTIONS ==========
+// ========== LEONARDO.AI INTEGRATION ==========
 
-export async function generateImageWithDALLE(prompt, supabase, options = {}) {
+export async function generateImageWithLeonardo(prompt, supabase, options = {}) {
   try {
-    console.log('🖼️ DALL-E generation with DIRECT API CALL...');
+    console.log('🎨 Leonardo.ai generation with DIRECT API CALL...');
     console.log('Original prompt:', prompt);
     
     // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
-    const enhancedPrompt = await enhancePosterPrompt(prompt, 'dalle', supabase);
+    const enhancedPrompt = await enhancePosterPrompt(prompt, 'leonardo', supabase);
     
-    // Get OpenAI API key from environment
-    const openaiApiKey = Deno.env.get('OPENA_API_KEY');
-    if (!openaiApiKey) {
-      throw new Error('OpenAI API key not configured');
+    // Get Leonardo API key from environment
+    const leonardoApiKey = Deno.env.get('LEONARDO_API_KEY');
+    if (!leonardoApiKey) {
+      throw new Error('Leonardo API key not configured');
     }
 
-    console.log('📤 Calling OpenAI API directly...');
+    console.log('📤 Calling Leonardo.ai API directly...');
 
-    // Direct API call to OpenAI
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
+    // Step 1: Create generation request
+    const generationResponse = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
+        'Authorization': `Bearer ${leonardoApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-image-1',
         prompt: enhancedPrompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'high',
-        output_format: 'png'
+        modelId: "6bef9f1b-29cb-40c7-b9df-32b51c1f67d3", // Leonardo Phoenix model ID
+        width: 1024,
+        height: 1024,
+        num_images: 1,
+        guidance_scale: 7,
+        num_inference_steps: 15,
+        presetStyle: "DYNAMIC"
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+    if (!generationResponse.ok) {
+      const errorData = await generationResponse.json();
+      throw new Error(`Leonardo API error: ${errorData.error?.message || generationResponse.statusText}`);
     }
 
-    const data = await response.json();
+    const generationData = await generationResponse.json();
+    const generationId = generationData.sdGenerationJob.generationId;
     
-    // OpenAI returns base64 for gpt-image-1
-    const base64Image = data.data[0].b64_json;
-    const imageUrl = `data:image/png;base64,${base64Image}`;
+    console.log('🔄 Generation started, ID:', generationId);
 
-    const result = {
-      success: true,
-      imageUrl: imageUrl,
-      mode: 'dalle',
-      dimensions: { width: 1024, height: 1024 },
-      metadata: {
-        generatedAt: new Date().toISOString(),
-        originalPrompt: prompt,
-        enhancedPrompt: enhancedPrompt,
-        posterOptimized: true
+    // Step 2: Poll for completion
+    let generationComplete = false;
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes max
+    
+    while (!generationComplete && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+      
+      const statusResponse = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
+        headers: {
+          'Authorization': `Bearer ${leonardoApiKey}`,
+        }
+      });
+      
+      if (!statusResponse.ok) {
+        throw new Error('Failed to check generation status');
       }
-    };
+      
+      const statusData = await statusResponse.json();
+      const generation = statusData.generations_by_pk;
+      
+      if (generation.status === 'COMPLETE') {
+        generationComplete = true;
+        
+        if (generation.generated_images && generation.generated_images.length > 0) {
+          const imageUrl = generation.generated_images[0].url;
+          
+          const result = {
+            success: true,
+            imageUrl: imageUrl,
+            mode: 'leonardo',
+            dimensions: { width: 1024, height: 1024 },
+            metadata: {
+              generatedAt: new Date().toISOString(),
+              originalPrompt: prompt,
+              enhancedPrompt: enhancedPrompt,
+              posterOptimized: true,
+              generationId: generationId
+            }
+          };
 
-    console.log('✅ DALL-E image generated successfully!');
-    return result;
+          console.log('✅ Leonardo.ai image generated successfully!');
+          return result;
+        } else {
+          throw new Error('No images generated');
+        }
+      } else if (generation.status === 'FAILED') {
+        throw new Error('Leonardo generation failed');
+      }
+      
+      attempts++;
+      console.log(`⏳ Waiting for generation completion... (${attempts}/${maxAttempts})`);
+    }
+    
+    if (!generationComplete) {
+      throw new Error('Generation timeout - please try again');
+    }
 
   } catch (error) {
-    console.error('❌ DALL-E generation error:', error);
+    console.error('❌ Leonardo generation error:', error);
     return {
       success: false,
       error: error.message,
-      mode: 'dalle'
+      mode: 'leonardo'
     };
   }
 }
@@ -375,9 +418,9 @@ export function getLayerOptimizationCSS(generator, layerId) {
 
 // ========== ПРИМЕРЫ ПРОМПТОВ ДЛЯ ТЕСТИРОВАНИЯ ==========
 export const POSTER_PROMPT_EXAMPLES = {
-  "Trump cartoon": "Donald Trump, professional poster illustration, vector art style with bold black outlines (3px), dignified portrait, formal pose, flag elements in background, patriotic colors (red white blue), gold accents, subtle glow, sharp shadows, professional lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, Adobe Illustrator quality",
+  "Trump cartoon": "Donald Trump, professional poster illustration, vector art style with bold black outlines (3px), dignified portrait, formal pose, flag elements in background, patriotic colors (red white blue), gold accents, subtle glow, sharp shadows, professional lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art",
   
-  "Superman hero": "Superman, professional poster illustration, vector art style with bold black outlines (3px), heroic pose with chest out, slight low angle view, radiating light beams background, bold primary colors, high contrast, vibrant, speed lines, energy aura, dramatic lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, Adobe Illustrator quality",
+  "Superman hero": "Superman, professional poster illustration, vector art style with bold black outlines (3px), heroic pose with chest out, slight low angle view, radiating light beams background, bold primary colors, high contrast, vibrant, speed lines, energy aura, dramatic lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art",
   
-  "Messi champion": "Lionel Messi, professional poster illustration, vector art style with bold black outlines (3px), victory pose, action moment, emotional expression, stadium atmosphere, team colors, bright highlights, dynamic contrast, motion blur, light rays, celebratory mood, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, Adobe Illustrator quality"
+  "Messi champion": "Lionel Messi, professional poster illustration, vector art style with bold black outlines (3px), victory pose, action moment, emotional expression, stadium atmosphere, team colors, bright highlights, dynamic contrast, motion blur, light rays, celebratory mood, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art"
 };
