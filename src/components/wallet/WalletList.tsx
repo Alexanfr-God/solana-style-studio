@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { formatAddress } from '@/lib/utils';
 
 interface WalletListProps {
   context: 'dropdown' | 'popup';
@@ -94,7 +95,7 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
           {/* Address and Copy */}
           <div className="flex items-center space-x-2">
             <span className="text-xs text-gray-400 font-mono">
-              {account.address}
+              {formatAddress(account.address)}
             </span>
             <button
               className="p-1 rounded hover:bg-white/10 transition-colors"
