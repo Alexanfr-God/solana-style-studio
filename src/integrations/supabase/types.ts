@@ -116,11 +116,14 @@ export type Database = {
           description: string
           id: string
           name: string
+          parent_element: string | null
           position: string | null
+          responsive_settings: Json | null
           screen: string
           selector: string | null
           type: string
           updated_at: string
+          z_index: number | null
         }
         Insert: {
           created_at?: string
@@ -129,11 +132,14 @@ export type Database = {
           description: string
           id: string
           name: string
+          parent_element?: string | null
           position?: string | null
+          responsive_settings?: Json | null
           screen: string
           selector?: string | null
           type: string
           updated_at?: string
+          z_index?: number | null
         }
         Update: {
           created_at?: string
@@ -142,13 +148,24 @@ export type Database = {
           description?: string
           id?: string
           name?: string
+          parent_element?: string | null
           position?: string | null
+          responsive_settings?: Json | null
           screen?: string
           selector?: string | null
           type?: string
           updated_at?: string
+          z_index?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wallet_elements_parent_element_fkey"
+            columns: ["parent_element"]
+            isOneToOne: false
+            referencedRelation: "wallet_elements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

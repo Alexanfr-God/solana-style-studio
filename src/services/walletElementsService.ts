@@ -10,6 +10,9 @@ export interface WalletElement {
   customizable: boolean;
   position?: string;
   selector?: string;
+  parent_element?: string;
+  z_index?: number;
+  responsive_settings?: any;
   custom_props: Json[];
   created_at: string;
   updated_at: string;
@@ -31,22 +34,27 @@ export interface GroupedElements {
       customizable: number;
       byType: { [type: string]: number };
     };
+    hierarchy: {
+      [elementId: string]: WalletElement[];
+    };
   };
 }
 
 class WalletElementsService {
   
   /**
-   * Get all wallet elements
+   * Get all wallet elements with enhanced hierarchy support
    */
   async getAllElements(): Promise<WalletElementsResponse> {
     try {
-      console.log('📊 Fetching all wallet elements...');
+      console.log('📊 Fetching all wallet elements with hierarchy...');
 
       const { data, error } = await supabase
         .from('wallet_elements')
         .select('*')
-        .order('screen', { ascending: true });
+        .order('screen', { ascending: true })
+        .order('z_index', { ascending: false })
+        .order('name', { ascending: true });
 
       if (error) {
         console.error('❌ Error fetching wallet elements:', error);
@@ -62,6 +70,9 @@ class WalletElementsService {
         customizable: item.customizable,
         position: item.position || undefined,
         selector: item.selector || undefined,
+        parent_element: item.parent_element || undefined,
+        z_index: item.z_index || 0,
+        responsive_settings: item.responsive_settings || {},
         custom_props: item.custom_props as Json[],
         created_at: item.created_at,
         updated_at: item.updated_at
@@ -69,7 +80,8 @@ class WalletElementsService {
 
       console.log('✅ Wallet elements fetched successfully:', {
         count: elements.length,
-        screens: [...new Set(elements.map(e => e.screen))].length
+        screens: [...new Set(elements.map(e => e.screen))].length,
+        hierarchical: elements.filter(e => e.parent_element).length
       });
 
       return {
@@ -88,7 +100,7 @@ class WalletElementsService {
   }
 
   /**
-   * Get all elements grouped by screen
+   * Get all elements grouped by screen with hierarchy
    */
   async getAllGrouped(): Promise<{ success: boolean; grouped: GroupedElements; screens: string[]; error?: string }> {
     try {
@@ -115,7 +127,8 @@ class WalletElementsService {
               total: 0,
               customizable: 0,
               byType: {}
-            }
+            },
+            hierarchy: {}
           };
           screens.push(element.screen);
         }
@@ -131,6 +144,14 @@ class WalletElementsService {
           grouped[element.screen].counts.byType[element.type] = 0;
         }
         grouped[element.screen].counts.byType[element.type]++;
+
+        // Build hierarchy
+        if (element.parent_element) {
+          if (!grouped[element.screen].hierarchy[element.parent_element]) {
+            grouped[element.screen].hierarchy[element.parent_element] = [];
+          }
+          grouped[element.screen].hierarchy[element.parent_element].push(element);
+        }
       });
 
       return {
@@ -167,11 +188,16 @@ class WalletElementsService {
       const screens = [...new Set(elements.map(e => e.screen))];
       const types = [...new Set(elements.map(e => e.type))];
       const customizable = elements.filter(e => e.customizable).length;
+      const hierarchical = elements.filter(e => e.parent_element).length;
+      const topLevel = elements.filter(e => !e.parent_element).length;
 
       const statistics = {
         total: elements.length,
         customizable,
         customizationPercentage: Math.round((customizable / elements.length) * 100),
+        hierarchical,
+        topLevel,
+        maxZIndex: Math.max(...elements.map(e => e.z_index || 0)),
         screens: {
           count: screens.length,
           list: screens,
@@ -179,7 +205,8 @@ class WalletElementsService {
             const screenElements = elements.filter(e => e.screen === screen);
             acc[screen] = {
               total: screenElements.length,
-              customizable: screenElements.filter(e => e.customizable).length
+              customizable: screenElements.filter(e => e.customizable).length,
+              hierarchical: screenElements.filter(e => e.parent_element).length
             };
             return acc;
           }, {} as Record<string, any>)
@@ -238,6 +265,9 @@ class WalletElementsService {
         customizable: item.customizable,
         position: item.position || undefined,
         selector: item.selector || undefined,
+        parent_element: item.parent_element || undefined,
+        z_index: item.z_index || 0,
+        responsive_settings: item.responsive_settings || {},
         custom_props: item.custom_props as Json[],
         created_at: item.created_at,
         updated_at: item.updated_at
@@ -287,6 +317,9 @@ class WalletElementsService {
         customizable: item.customizable,
         position: item.position || undefined,
         selector: item.selector || undefined,
+        parent_element: item.parent_element || undefined,
+        z_index: item.z_index || 0,
+        responsive_settings: item.responsive_settings || {},
         custom_props: item.custom_props as Json[],
         created_at: item.created_at,
         updated_at: item.updated_at
@@ -336,6 +369,9 @@ class WalletElementsService {
         customizable: item.customizable,
         position: item.position || undefined,
         selector: item.selector || undefined,
+        parent_element: item.parent_element || undefined,
+        z_index: item.z_index || 0,
+        responsive_settings: item.responsive_settings || {},
         custom_props: item.custom_props as Json[],
         created_at: item.created_at,
         updated_at: item.updated_at
@@ -351,7 +387,7 @@ class WalletElementsService {
   }
 
   /**
-   * Update element
+   * Update element with new fields support
    */
   async updateElement(id: string, updates: Partial<WalletElement>): Promise<{ success: boolean; error?: string }> {
     try {
@@ -365,6 +401,9 @@ class WalletElementsService {
           customizable: updates.customizable,
           position: updates.position,
           selector: updates.selector,
+          parent_element: updates.parent_element,
+          z_index: updates.z_index,
+          responsive_settings: updates.responsive_settings,
           custom_props: updates.custom_props as Json[]
         })
         .eq('id', id);
@@ -379,6 +418,200 @@ class WalletElementsService {
 
     } catch (error) {
       console.error('💥 Error in updateElement:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Create element with hierarchy support
+   */
+  async createElement(element: Omit<WalletElement, 'created_at' | 'updated_at'>): Promise<{ success: boolean; element?: WalletElement; error?: string }> {
+    try {
+      console.log('➕ Creating new element:', element.name);
+
+      const { data, error } = await supabase
+        .from('wallet_elements')
+        .insert({
+          id: element.id,
+          name: element.name,
+          type: element.type,
+          screen: element.screen,
+          description: element.description,
+          customizable: element.customizable,
+          position: element.position,
+          selector: element.selector,
+          parent_element: element.parent_element,
+          z_index: element.z_index || 0,
+          responsive_settings: element.responsive_settings || {},
+          custom_props: element.custom_props as Json[]
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error creating element:', error);
+        throw new Error(`Failed to create element: ${error.message}`);
+      }
+
+      const newElement: WalletElement = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        screen: data.screen,
+        description: data.description,
+        customizable: data.customizable,
+        position: data.position || undefined,
+        selector: data.selector || undefined,
+        parent_element: data.parent_element || undefined,
+        z_index: data.z_index || 0,
+        responsive_settings: data.responsive_settings || {},
+        custom_props: data.custom_props as Json[],
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      console.log('✅ Element created successfully:', newElement.id);
+      return { success: true, element: newElement };
+
+    } catch (error) {
+      console.error('💥 Error in createElement:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Get hierarchy tree for elements
+   */
+  buildHierarchyTree(elements: WalletElement[]): { [elementId: string]: WalletElement[] } {
+    const hierarchy: { [elementId: string]: WalletElement[] } = {};
+    
+    elements.forEach(element => {
+      if (element.parent_element) {
+        if (!hierarchy[element.parent_element]) {
+          hierarchy[element.parent_element] = [];
+        }
+        hierarchy[element.parent_element].push(element);
+      }
+    });
+
+    // Sort children by z_index
+    Object.keys(hierarchy).forEach(parentId => {
+      hierarchy[parentId].sort((a, b) => (b.z_index || 0) - (a.z_index || 0));
+    });
+
+    return hierarchy;
+  }
+
+  /**
+   * Get elements by parent with hierarchy
+   */
+  async getElementsByParent(parentId: string): Promise<WalletElementsResponse> {
+    try {
+      console.log('👨‍👧‍👦 Fetching child elements for parent:', parentId);
+
+      const { data, error } = await supabase
+        .from('wallet_elements')
+        .select('*')
+        .eq('parent_element', parentId)
+        .order('z_index', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error fetching child elements:', error);
+        throw new Error(`Failed to fetch child elements: ${error.message}`);
+      }
+
+      const elements: WalletElement[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        screen: item.screen,
+        description: item.description,
+        customizable: item.customizable,
+        position: item.position || undefined,
+        selector: item.selector || undefined,
+        parent_element: item.parent_element || undefined,
+        z_index: item.z_index || 0,
+        responsive_settings: item.responsive_settings || {},
+        custom_props: item.custom_props as Json[],
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      console.log(`✅ Child elements for parent "${parentId}" fetched:`, elements.length);
+
+      return {
+        success: true,
+        elements,
+        count: elements.length
+      };
+
+    } catch (error) {
+      console.error('💥 Error in getElementsByParent:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Get elements sorted by z-index
+   */
+  async getElementsByZIndex(screen?: string): Promise<WalletElementsResponse> {
+    try {
+      console.log('🔢 Fetching elements sorted by z-index...');
+
+      let query = supabase
+        .from('wallet_elements')
+        .select('*')
+        .order('z_index', { ascending: false })
+        .order('name', { ascending: true });
+
+      if (screen) {
+        query = query.eq('screen', screen);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ Error fetching elements by z-index:', error);
+        throw new Error(`Failed to fetch elements: ${error.message}`);
+      }
+
+      const elements: WalletElement[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        screen: item.screen,
+        description: item.description,
+        customizable: item.customizable,
+        position: item.position || undefined,
+        selector: item.selector || undefined,
+        parent_element: item.parent_element || undefined,
+        z_index: item.z_index || 0,
+        responsive_settings: item.responsive_settings || {},
+        custom_props: item.custom_props as Json[],
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      console.log(`✅ Elements sorted by z-index fetched:`, elements.length);
+
+      return {
+        success: true,
+        elements,
+        count: elements.length
+      };
+
+    } catch (error) {
+      console.error('💥 Error in getElementsByZIndex:', error);
       return {
         success: false,
         error: error.message
