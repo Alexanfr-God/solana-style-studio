@@ -60,9 +60,9 @@ const ModeSelector = () => {
     },
     {
       key: 'style-analysis',
-      label: 'Style Analysis',
+      label: 'Deep Style Inspector',
       icon: <Palette className="w-4 h-4" />,
-      description: 'Deep style analysis with comprehensive recommendations',
+      description: 'Advanced style analysis with comprehensive design recommendations',
       color: 'bg-pink-600 hover:bg-pink-700'
     },
     {
@@ -136,7 +136,7 @@ const ModeSelector = () => {
         )}
         
         {chatMode === 'style-analysis' && (
-          <p>💡 Tips: Deep dive into design analysis. Upload images for comprehensive style breakdowns</p>
+          <p>💡 Tips: Deep dive into design analysis. Upload images for comprehensive style breakdowns and advanced recommendations</p>
         )}
         
         {chatMode === 'save' && (

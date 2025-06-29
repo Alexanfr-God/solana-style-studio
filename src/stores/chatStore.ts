@@ -121,27 +121,61 @@ function createEnhancedWalletContext() {
   };
 }
 
-// Enhanced image URL extraction with better JSON parsing
+// Enhanced image URL extraction with better JSON parsing for Leonardo and Replicate
 function extractImageUrl(response: any, mode: string): string | null {
-  console.log('🔍 Extracting image URL from response:', response);
+  console.log('🔍 Extracting image URL from response for mode:', mode);
+  console.log('🔍 Full response structure:', JSON.stringify(response, null, 2));
+  
+  // Leonardo specific formats
+  if (mode === 'leonardo') {
+    // Leonardo nested data structure
+    if (response?.data?.data?.imageUrl) {
+      console.log('✅ Found Leonardo imageUrl in data.data:', response.data.data.imageUrl);
+      return response.data.data.imageUrl;
+    }
+    
+    // Leonardo success response
+    if (response?.data?.success && response?.data?.imageUrl) {
+      console.log('✅ Found Leonardo imageUrl in success response:', response.data.imageUrl);
+      return response.data.imageUrl;
+    }
+    
+    // Leonardo direct data format
+    if (response?.data?.imageUrl) {
+      console.log('✅ Found Leonardo imageUrl in data:', response.data.imageUrl);
+      return response.data.imageUrl;
+    }
+  }
+  
+  // Replicate specific formats
+  if (mode === 'replicate') {
+    // Replicate output array format
+    if (response?.data?.output && Array.isArray(response.data.output) && response.data.output.length > 0) {
+      const imageUrl = response.data.output[0];
+      console.log('✅ Found Replicate imageUrl in output array:', imageUrl);
+      return imageUrl;
+    }
+    
+    // Replicate direct output
+    if (response?.data?.output && typeof response.data.output === 'string') {
+      console.log('✅ Found Replicate direct output:', response.data.output);
+      return response.data.output;
+    }
+    
+    // Replicate nested structure
+    if (response?.output && Array.isArray(response.output) && response.output.length > 0) {
+      const imageUrl = response.output[0];
+      console.log('✅ Found Replicate imageUrl in nested output:', imageUrl);
+      return imageUrl;
+    }
+  }
+  
+  // Generic fallback formats (for both services)
   
   // Direct imageUrl in data
   if (response?.data?.imageUrl) {
-    console.log('✅ Found imageUrl in data:', response.data.imageUrl);
+    console.log('✅ Found generic imageUrl in data:', response.data.imageUrl);
     return response.data.imageUrl;
-  }
-  
-  // Output array format (Replicate)
-  if (response?.data?.output && Array.isArray(response.data.output)) {
-    const imageUrl = response.data.output[0];
-    console.log('✅ Found imageUrl in output array:', imageUrl);
-    return imageUrl;
-  }
-  
-  // Direct output (Leonardo/Replicate variants)
-  if (response?.data?.output && typeof response.data.output === 'string') {
-    console.log('✅ Found direct output string:', response.data.output);
-    return response.data.output;
   }
   
   // Base64 image format
@@ -156,14 +190,17 @@ function extractImageUrl(response: any, mode: string): string | null {
     return response;
   }
   
-  // Nested response formats
-  if (response?.output && Array.isArray(response.output)) {
-    const imageUrl = response.output[0];
-    console.log('✅ Found imageUrl in nested output:', imageUrl);
-    return imageUrl;
+  // URL in top-level response
+  if (response?.imageUrl) {
+    console.log('✅ Found top-level imageUrl:', response.imageUrl);
+    return response.imageUrl;
   }
   
-  console.warn('⚠️ No image URL found in response structure');
+  console.warn('⚠️ No image URL found in response structure for mode:', mode);
+  console.warn('⚠️ Available keys in response:', Object.keys(response || {}));
+  if (response?.data) {
+    console.warn('⚠️ Available keys in response.data:', Object.keys(response.data || {}));
+  }
   return null;
 }
 
@@ -362,6 +399,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     try {
       console.log('🖼️ Starting image generation with mode:', messageData.mode);
+      console.log('🖼️ Prompt:', messageData.content);
 
       const response = await supabase.functions.invoke('wallet-chat-gpt', {
         body: { 
@@ -371,15 +409,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
       });
 
+      console.log('🖼️ Raw Edge Function response:', response);
+
       if (response?.error) {
         console.error('❌ Edge Function error:', response.error);
         throw new Error(`Image generation error: ${response.error.message}`);
       }
 
+      console.log('🖼️ Attempting to extract image URL from response...');
       const generatedImageUrl = extractImageUrl(response, messageData.mode);
       
       if (generatedImageUrl) {
-        console.log('✅ Successfully generated image:', generatedImageUrl);
+        console.log('✅ Successfully extracted image URL:', generatedImageUrl);
         
         // 🔥 АВТОМАТИЧЕСКИ ПРИМЕНЯЕМ ИЗОБРАЖЕНИЕ КАК ФОН
         console.log('🎨 Auto-applying generated image as wallet background');
@@ -399,15 +440,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
           timestamp: new Date(),
           imageUrl: generatedImageUrl,
           isGenerated: true,
-          autoApplied: true, // Новое поле для отметки автоматического применения
+          autoApplied: true,
         };
 
         set(state => ({
           messages: [...state.messages, assistantMessage],
           isLoading: false
         }));
+        
+        console.log('✅ Image generation and auto-application completed successfully');
       } else {
-        throw new Error('No image returned from generation service');
+        console.error('❌ Failed to extract image URL from response');
+        throw new Error('No image returned from generation service - check Edge Function logs');
       }
 
     } catch (error) {
@@ -417,7 +461,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         messages: [...state.messages, {
           id: `error-${Date.now()}`,
           type: 'assistant',
-          content: `Sorry, there was an error generating the image: ${error.message}`,
+          content: `Sorry, there was an error generating the image: ${error.message}. Please check the console logs for more details.`,
           timestamp: new Date(),
         }],
         isLoading: false
