@@ -194,18 +194,18 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
     // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
     const enhancedPrompt = await enhancePosterPrompt(prompt, 'leonardo', supabase);
     
-    console.log('📤 Calling Leonardo.ai API with corrected parameters...');
+    console.log('📤 Calling Leonardo.ai API with CORRECTED parameters...');
     console.log('🎯 Enhanced prompt:', enhancedPrompt);
 
-    // ИСПРАВЛЕННЫЕ ПАРАМЕТРЫ API
+    // ИСПРАВЛЕННЫЕ ПАРАМЕТРЫ API - snake_case согласно документации Leonardo.ai
     const requestBody = {
       prompt: enhancedPrompt,
-      modelId: "6ac8733c-de4d-4726-9c09-5c682cb35c44", // Leonardo Phoenix (актуальный ID)
+      model_id: "6ac8733c-de4d-4726-9c09-5c682cb35c44", // Leonardo Phoenix (актуальный ID)
       width: 1024,
       height: 1024,
-      numImages: 1, // ИСПРАВЛЕНО: было num_images
-      guidanceScale: 7, // ИСПРАВЛЕНО: было guidance_scale
-      numInferenceSteps: 15, // ИСПРАВЛЕНО: было num_inference_steps
+      num_images: 1, // ИСПРАВЛЕНО: snake_case
+      guidance_scale: 7, // ИСПРАВЛЕНО: snake_case
+      num_inference_steps: 15, // ИСПРАВЛЕНО: snake_case
       presetStyle: "DYNAMIC",
       scheduler: "LEONARDO",
       public: false,
@@ -214,7 +214,7 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
       promptMagicStrength: 0.5
     };
 
-    console.log('📋 Request body:', JSON.stringify(requestBody, null, 2));
+    console.log('📋 Request body with corrected parameters:', JSON.stringify(requestBody, null, 2));
 
     // Step 1: Create generation request
     const generationResponse = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
@@ -312,7 +312,7 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
               enhancedPrompt: enhancedPrompt,
               posterOptimized: true,
               generationId: generationId,
-              modelId: requestBody.modelId,
+              modelId: requestBody.model_id,
               apiVersion: 'v1'
             }
           };
