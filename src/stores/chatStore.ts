@@ -1,35 +1,79 @@
+
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
 import { useWalletCustomizationStore } from './walletCustomizationStore';
 import { WALLET_ELEMENTS_REGISTRY, getAllCategories } from '@/components/wallet/WalletElementsRegistry';
+import { walletStructureService } from '@/services/walletStructureService';
 
 function detectLanguage(text: string): 'ru' | 'en' {
   return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'en';
 }
 
-export type ImageGenerationMode = 'analysis' | 'leonardo' | 'replicate';
+export type ChatMode = 'analysis' | 'leonardo' | 'replicate' | 'structure' | 'chat' | 'style-analysis' | 'save' | 'load';
 
 interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
-  imageGenerationMode: ImageGenerationMode;
-  setImageGenerationMode: (mode: ImageGenerationMode) => void;
+  chatMode: ChatMode;
+  sessionId: string;
+  userId: string | null;
+  chatHistory: Record<string, ChatMessage[]>;
+  
+  // Mode setters
+  setChatMode: (mode: ChatMode) => void;
+  setSessionId: (sessionId: string) => void;
+  setUserId: (userId: string | null) => void;
+  
+  // Message sending methods for different modes
   sendMessage: (message: {
     content: string;
     imageUrl?: string | null;
     walletElement?: string;
   }) => Promise<void>;
+  
   sendImageGenerationMessage: (message: {
     content: string;
-    mode: ImageGenerationMode;
+    mode: 'leonardo' | 'replicate';
   }) => Promise<void>;
+  
+  sendStructureRequest: (message: {
+    content: string;
+    analysisType?: 'basic' | 'detailed';
+  }) => Promise<void>;
+  
+  sendChatMessage: (message: {
+    content: string;
+    contextual?: boolean;
+  }) => Promise<void>;
+  
+  sendStyleAnalysis: (message: {
+    content: string;
+    imageUrl?: string;
+    analysisDepth?: 'basic' | 'detailed' | 'comprehensive';
+  }) => Promise<void>;
+  
+  saveCommunityCustomization: (customization: {
+    name: string;
+    description: string;
+    styles: any;
+    tags?: string[];
+  }) => Promise<void>;
+  
+  loadCustomization: (customizationId: string) => Promise<void>;
+  
+  // Utility methods
   clearHistory: () => void;
   applyStyleChanges: (changes: any) => void;
   applyGeneratedImage: (imageUrl: string) => void;
+  
+  // Chat history management
+  saveChatHistory: () => void;
+  loadChatHistory: (sessionId: string) => void;
+  clearChatHistory: (sessionId: string) => void;
 }
 
-// Функция для создания расширенного контекста кошелька
+// Function to create enhanced wallet context
 function createEnhancedWalletContext() {
   const walletStore = useWalletCustomizationStore.getState();
   
@@ -45,7 +89,6 @@ function createEnhancedWalletContext() {
       buttonColor: walletStore.walletStyle.buttonColor,
       borderRadius: walletStore.walletStyle.borderRadius,
     },
-    // Передаем ПОЛНЫЙ список элементов (сотни вместо 27)
     availableElements: WALLET_ELEMENTS_REGISTRY.map(element => ({
       id: element.id,
       name: element.name,
@@ -55,7 +98,6 @@ function createEnhancedWalletContext() {
     })),
     elementCategories: getAllCategories(),
     totalElements: WALLET_ELEMENTS_REGISTRY.length,
-    // Дополнительный контекст для ИИ
     walletFeatures: {
       hasBottomNavigation: true,
       hasBalanceDisplay: true,
@@ -74,45 +116,21 @@ function createEnhancedWalletContext() {
   };
 }
 
-// Debug function for image generation
-async function debugImageGeneration(mode: ImageGenerationMode, content: string) {
-  console.log(`🔍 Debug ${mode} generation:`, { content, mode });
-  
-  try {
-  const response = await supabase.functions.invoke(
-  'wallet-chat-gpt',  // ← Всегда вызывать wallet-chat-gpt!
-  { body: { content: content, mode: mode } }  // ← Передать режим как параметр
-);
-    
-    console.log(`📤 ${mode} full response structure:`, {
-      data: response.data,
-      error: response.error
-    });
-    return response;
-  } catch (error) {
-    console.error(`❌ ${mode} error:`, error);
-    throw error;
-  }
-}
-
 // Extract image URL from different response formats
-function extractImageUrl(response: any, mode: ImageGenerationMode): string | null {
+function extractImageUrl(response: any, mode: string): string | null {
   console.log('🔍 Extracting image URL from response:', response);
   
-  // Strategy 1: Direct imageUrl in data
   if (response?.data?.imageUrl) {
     console.log('✅ Found imageUrl in data:', response.data.imageUrl);
     return response.data.imageUrl;
   }
   
-  // Strategy 2: Replicate format - output array
   if (response?.data?.output && Array.isArray(response.data.output)) {
     const imageUrl = response.data.output[0];
     console.log('✅ Found imageUrl in output array:', imageUrl);
     return imageUrl;
   }
   
-  // Strategy 3: Direct in response
   if (typeof response === 'string' && response.startsWith('http')) {
     console.log('✅ Found direct URL:', response);
     return response;
@@ -122,11 +140,10 @@ function extractImageUrl(response: any, mode: ImageGenerationMode): string | nul
   return null;
 }
 
-// ИСПРАВЛЕННАЯ функция конвертации GPT ответов с принудительной анимацией
+// Convert GPT responses to style changes
 function convertGPTResponseToStyleChanges(gptResponse: any): any {
   console.log('🔄 Converting GPT response to style changes:', gptResponse);
   
-  // Прямой формат styleChanges из нового AI
   if (gptResponse.styleChanges) {
     const styleChanges = gptResponse.styleChanges;
     console.log('✅ Found direct styleChanges format');
@@ -148,7 +165,6 @@ function convertGPTResponseToStyleChanges(gptResponse: any): any {
     };
   }
 
-  // Handle new enhanced JSON format from GPT
   if (gptResponse.elements && gptResponse.elements.colors) {
     const colors = gptResponse.elements.colors;
     const typography = gptResponse.elements.typography || {};
@@ -170,33 +186,6 @@ function convertGPTResponseToStyleChanges(gptResponse: any): any {
     };
   }
   
-  // Handle actions format
-  if (gptResponse.actions && Array.isArray(gptResponse.actions)) {
-    console.log('✅ Found actions format, extracting styles');
-    
-    const styleChanges: any = {};
-    
-    gptResponse.actions.forEach((action: any) => {
-      if (action.type === 'style_change') {
-        switch (action.property) {
-          case 'backgroundColor':
-            if (action.elementId?.includes('header') || action.elementId?.includes('main')) {
-              styleChanges.backgroundColor = action.value;
-            }
-            break;
-          case 'gradient':
-            styleChanges.gradient = action.value;
-            break;
-          default:
-            // Map other properties as needed
-            break;
-        }
-      }
-    });
-    
-    return styleChanges;
-  }
-  
   console.warn('⚠️ Unknown GPT response format, using fallback');
   return null;
 }
@@ -204,14 +193,29 @@ function convertGPTResponseToStyleChanges(gptResponse: any): any {
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isLoading: false,
-  imageGenerationMode: 'analysis',
+  chatMode: 'analysis',
+  sessionId: `session_${Date.now()}`,
+  userId: null,
+  chatHistory: {},
 
-  setImageGenerationMode: (mode) => set({ imageGenerationMode: mode }),
+  setChatMode: (mode) => {
+    console.log('🔄 Switching chat mode to:', mode);
+    set({ chatMode: mode });
+  },
+
+  setSessionId: (sessionId) => {
+    console.log('🆔 Setting session ID:', sessionId);
+    set({ sessionId });
+  },
+
+  setUserId: (userId) => {
+    console.log('👤 Setting user ID:', userId);
+    set({ userId });
+  },
 
   sendMessage: async (messageData) => {
-    const { messages } = get();
+    const { messages, sessionId } = get();
     
-    // Add user message
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       type: 'user',
@@ -227,10 +231,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      console.log('🚀 Sending message to GPT API (Analysis Mode):', {
+      console.log('🚀 Sending analysis message to Edge Function:', {
         content: messageData.content,
         hasImage: !!messageData.imageUrl,
-        element: messageData.walletElement
+        element: messageData.walletElement,
+        sessionId
       });
 
       const enhancedWalletContext = createEnhancedWalletContext();
@@ -241,7 +246,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           imageUrl: messageData.imageUrl,
           walletElement: messageData.walletElement,
           walletContext: enhancedWalletContext,
-          mode: 'analysis'
+          mode: 'analysis',
+          sessionId
         }
       });
 
@@ -263,26 +269,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         : 'I analyzed your wallet and applied the requested changes.';
       const friendlyResponse = data.userText || data.response || fallback;
       
-      console.log('💬 Using friendly user text for chat:', friendlyResponse);
-
-      // КРИТИЧЕСКИ ВАЖНО: Применяем стили С АНИМАЦИЕЙ
       if (data.styleChanges) {
-        console.log('🎨 Processing style changes from GPT with FORCED ANIMATION:', data.styleChanges);
+        console.log('🎨 Processing style changes from GPT with ANIMATION:', data.styleChanges);
         
         const convertedChanges = convertGPTResponseToStyleChanges(data);
         
         if (convertedChanges) {
           console.log('✅ Successfully converted style changes, applying with animation:', convertedChanges);
           
-          // НОВАЯ ЛОГИКА: Используем applyUniversalStyle для применения к ОБОИМ экранам с анимацией
           const walletStore = useWalletCustomizationStore.getState();
           walletStore.applyUniversalStyle(convertedChanges);
-          
-        } else {
-          console.warn('⚠️ Could not convert style changes');
         }
-      } else {
-        console.log('ℹ️ No style changes in response');
       }
 
       const assistantMessage: ChatMessage = {
@@ -297,26 +294,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isLoading: false
       }));
 
-      console.log('✅ GPT response processed and style changes applied WITH ANIMATION');
+      console.log('✅ Analysis response processed successfully');
 
     } catch (error) {
-      console.error('❌ Error sending message:', error);
-      
-      let errorMessage = 'Sorry, there was an error connecting to AI. Please check API settings or try again later.';
-      
-      if (error.message.includes('OpenAI API key not configured')) {
-        errorMessage = 'OpenAI API key is not configured. Please set it in project settings.';
-      } else if (error.message.includes('OpenAI API error')) {
-        errorMessage = 'OpenAI API error. Please try again later.';
-      } else if (error.message.includes('Edge function error')) {
-        errorMessage = 'Server error. Please try again later.';
-      }
+      console.error('❌ Error sending analysis message:', error);
       
       set(state => ({
         messages: [...state.messages, {
           id: `error-${Date.now()}`,
           type: 'assistant',
-          content: errorMessage,
+          content: 'Sorry, there was an error connecting to AI. Please try again later.',
           timestamp: new Date(),
         }],
         isLoading: false
@@ -325,9 +312,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   sendImageGenerationMessage: async (messageData) => {
-    const { messages } = get();
+    const { messages, sessionId } = get();
     
-    // Add user message
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       type: 'user',
@@ -343,28 +329,28 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       console.log('🖼️ Starting image generation with mode:', messageData.mode);
 
-      // Use debug function for detailed logging
-      const response = await debugImageGeneration(messageData.mode, messageData.content);
+      const response = await supabase.functions.invoke('wallet-chat-gpt', {
+        body: { 
+          content: messageData.content, 
+          mode: messageData.mode,
+          sessionId
+        }
+      });
 
-      // Check for Edge Function errors first
       if (response?.error) {
         console.error('❌ Edge Function error:', response.error);
-        throw new Error(`Image generation error: ${response.error.message || JSON.stringify(response.error)}`);
+        throw new Error(`Image generation error: ${response.error.message}`);
       }
 
-      // Log the full response structure for debugging
-      console.log('📋 Full response structure:', JSON.stringify(response, null, 2));
-
-      // Extract image URL using improved logic
       const generatedImageUrl = extractImageUrl(response, messageData.mode);
       
       if (generatedImageUrl) {
-        console.log('✅ Successfully extracted image URL:', generatedImageUrl);
+        console.log('✅ Successfully generated image:', generatedImageUrl);
         
         const assistantMessage: ChatMessage = {
           id: `assistant-${Date.now()}`,
           type: 'assistant',
-          content: `Я создал кастомное фоновое изображение на основе вашего описания: "${messageData.content}". Изображение готово и вы можете применить его как фон кошелька, используя кнопку ниже.`,
+          content: `Я создал кастомное фоновое изображение на основе вашего описания: "${messageData.content}". Изображение готово для применения.`,
           timestamp: new Date(),
           imageUrl: generatedImageUrl,
           isGenerated: true,
@@ -374,40 +360,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
           messages: [...state.messages, assistantMessage],
           isLoading: false
         }));
-
-        console.log('🎉 Image generation completed successfully');
       } else {
-        // More detailed error for debugging
-        const errorDetails = {
-          mode: messageData.mode,
-          hasData: !!response?.data,
-          dataKeys: response?.data ? Object.keys(response.data) : [],
-          responseStructure: JSON.stringify(response, null, 2).substring(0, 500) + '...'
-        };
-        
-        console.error('❌ Failed to extract image URL:', errorDetails);
-        throw new Error(`No image returned from generation service. Response structure: ${JSON.stringify(errorDetails)}`);
+        throw new Error('No image returned from generation service');
       }
 
     } catch (error) {
       console.error('💥 Image generation error:', error);
       
-      let errorMessage = `Sorry, there was an error generating the image: ${error.message}`;
-      
-      // More specific error messages
-      if (error.message.includes('403')) {
-        errorMessage = 'Image generation failed: access denied. Please check API key permissions.';
-      } else if (error.message.includes('500')) {
-        errorMessage = 'Image generation failed: server error. Please try again later.';
-      } else if (error.message.includes('non-2xx status')) {
-        errorMessage = 'Image generation failed: service temporarily unavailable. Please try later.';
-      }
-      
       set(state => ({
         messages: [...state.messages, {
           id: `error-${Date.now()}`,
           type: 'assistant',
-          content: errorMessage,
+          content: `Sorry, there was an error generating the image: ${error.message}`,
           timestamp: new Date(),
         }],
         isLoading: false
@@ -415,21 +379,286 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  applyGeneratedImage: (imageUrl: string) => {
-    console.log('🖼️ Applying generated image as background with ANIMATION:', imageUrl);
+  sendStructureRequest: async (messageData) => {
+    const { messages, sessionId } = get();
     
-    // НОВАЯ ЛОГИКА: Используем applyUniversalStyle для применения к ОБОИМ экранам с анимацией
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: messageData.content,
+      timestamp: new Date(),
+    };
+
+    set({ 
+      messages: [...messages, userMessage],
+      isLoading: true 
+    });
+
+    try {
+      console.log('🏗️ Sending structure request to Edge Function');
+
+      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+        body: {
+          content: messageData.content,
+          mode: 'structure',
+          sessionId,
+          analysisType: messageData.analysisType || 'basic'
+        }
+      });
+
+      if (error) {
+        throw new Error(`Structure request failed: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to analyze structure');
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: data.analysis || 'Structure analysis completed',
+        timestamp: new Date(),
+      };
+
+      set(state => ({
+        messages: [...state.messages, assistantMessage],
+        isLoading: false
+      }));
+
+      console.log('✅ Structure request completed');
+
+    } catch (error) {
+      console.error('❌ Structure request error:', error);
+      
+      set(state => ({
+        messages: [...state.messages, {
+          id: `error-${Date.now()}`,
+          type: 'assistant',
+          content: `Structure analysis failed: ${error.message}`,
+          timestamp: new Date(),
+        }],
+        isLoading: false
+      }));
+    }
+  },
+
+  sendChatMessage: async (messageData) => {
+    const { messages, sessionId, chatHistory } = get();
+    
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: messageData.content,
+      timestamp: new Date(),
+    };
+
+    set({ 
+      messages: [...messages, userMessage],
+      isLoading: true 
+    });
+
+    try {
+      console.log('💬 Sending chat message to Edge Function');
+
+      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+        body: {
+          content: messageData.content,
+          mode: 'chat',
+          sessionId,
+          chatHistory: chatHistory[sessionId] || [],
+          contextual: messageData.contextual || false
+        }
+      });
+
+      if (error) {
+        throw new Error(`Chat message failed: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to send chat message');
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: data.response || 'Message received',
+        timestamp: new Date(),
+      };
+
+      set(state => ({
+        messages: [...state.messages, assistantMessage],
+        isLoading: false
+      }));
+
+      console.log('✅ Chat message sent successfully');
+
+    } catch (error) {
+      console.error('❌ Chat message error:', error);
+      
+      set(state => ({
+        messages: [...state.messages, {
+          id: `error-${Date.now()}`,
+          type: 'assistant',
+          content: `Chat failed: ${error.message}`,
+          timestamp: new Date(),
+        }],
+        isLoading: false
+      }));
+    }
+  },
+
+  sendStyleAnalysis: async (messageData) => {
+    const { messages, sessionId } = get();
+    
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: messageData.content,
+      timestamp: new Date(),
+      imageUrl: messageData.imageUrl,
+    };
+
+    set({ 
+      messages: [...messages, userMessage],
+      isLoading: true 
+    });
+
+    try {
+      console.log('🎨 Sending style analysis to Edge Function');
+
+      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+        body: {
+          content: messageData.content,
+          mode: 'style-analysis',
+          sessionId,
+          imageUrl: messageData.imageUrl,
+          analysisDepth: messageData.analysisDepth || 'detailed'
+        }
+      });
+
+      if (error) {
+        throw new Error(`Style analysis failed: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to analyze style');
+      }
+
+      if (data.styleChanges) {
+        const convertedChanges = convertGPTResponseToStyleChanges(data);
+        if (convertedChanges) {
+          const walletStore = useWalletCustomizationStore.getState();
+          walletStore.applyUniversalStyle(convertedChanges);
+        }
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: data.analysis || 'Style analysis completed',
+        timestamp: new Date(),
+      };
+
+      set(state => ({
+        messages: [...state.messages, assistantMessage],
+        isLoading: false
+      }));
+
+      console.log('✅ Style analysis completed');
+
+    } catch (error) {
+      console.error('❌ Style analysis error:', error);
+      
+      set(state => ({
+        messages: [...state.messages, {
+          id: `error-${Date.now()}`,
+          type: 'assistant',
+          content: `Style analysis failed: ${error.message}`,
+          timestamp: new Date(),
+        }],
+        isLoading: false
+      }));
+    }
+  },
+
+  saveCommunityCustomization: async (customization) => {
+    const { sessionId } = get();
+
+    try {
+      console.log('💾 Saving community customization');
+
+      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+        body: {
+          mode: 'save',
+          sessionId,
+          customization
+        }
+      });
+
+      if (error) {
+        throw new Error(`Save failed: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to save customization');
+      }
+
+      console.log('✅ Customization saved successfully');
+
+    } catch (error) {
+      console.error('❌ Save customization error:', error);
+      throw error;
+    }
+  },
+
+  loadCustomization: async (customizationId) => {
+    const { sessionId } = get();
+
+    try {
+      console.log('📥 Loading customization:', customizationId);
+
+      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+        body: {
+          mode: 'load',
+          sessionId,
+          customizationId
+        }
+      });
+
+      if (error) {
+        throw new Error(`Load failed: ${error.message}`);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to load customization');
+      }
+
+      if (data.styles) {
+        const walletStore = useWalletCustomizationStore.getState();
+        walletStore.applyUniversalStyle(data.styles);
+      }
+
+      console.log('✅ Customization loaded successfully');
+
+    } catch (error) {
+      console.error('❌ Load customization error:', error);
+      throw error;
+    }
+  },
+
+  applyGeneratedImage: (imageUrl: string) => {
+    console.log('🖼️ Applying generated image as background:', imageUrl);
+    
     const walletStore = useWalletCustomizationStore.getState();
     walletStore.applyUniversalStyle({
       backgroundImage: `url(${imageUrl})`,
-      styleNotes: 'Generated background image applied from gallery'
+      styleNotes: 'Generated background image applied'
     });
-    
-    console.log('✅ Generated image applied as background to BOTH screens WITH ANIMATION');
   },
 
   applyStyleChanges: (changes) => {
-    console.log('🎨 Legacy applyStyleChanges called - using new animation system');
+    console.log('🎨 Applying style changes');
     
     if (changes && changes.changes) {
       const walletStore = useWalletCustomizationStore.getState();
@@ -437,5 +666,43 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  clearHistory: () => set({ messages: [] }),
+  saveChatHistory: () => {
+    const { sessionId, messages, chatHistory } = get();
+    
+    set({
+      chatHistory: {
+        ...chatHistory,
+        [sessionId]: [...messages]
+      }
+    });
+    
+    console.log('💾 Chat history saved for session:', sessionId);
+  },
+
+  loadChatHistory: (sessionId) => {
+    const { chatHistory } = get();
+    
+    const history = chatHistory[sessionId] || [];
+    set({ 
+      messages: history,
+      sessionId 
+    });
+    
+    console.log('📥 Chat history loaded for session:', sessionId);
+  },
+
+  clearChatHistory: (sessionId) => {
+    const { chatHistory } = get();
+    
+    const newHistory = { ...chatHistory };
+    delete newHistory[sessionId];
+    
+    set({ chatHistory: newHistory });
+    console.log('🗑️ Chat history cleared for session:', sessionId);
+  },
+
+  clearHistory: () => {
+    set({ messages: [] });
+    console.log('🗑️ Current chat messages cleared');
+  },
 }));
