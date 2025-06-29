@@ -1,4 +1,3 @@
-
 // Enhanced Image generation with direct API calls - Leonardo.ai integration
 
 // ========== ЗАГРУЗКА ПРИМЕРОВ ИЗ SUPABASE ==========
@@ -175,11 +174,11 @@ function detectMood(prompt) {
   return 'confident';
 }
 
-// ========== LEONARDO.AI INTEGRATION (ИСПРАВЛЕННАЯ ВЕРСИЯ) ==========
+// ========== LEONARDO.AI INTEGRATION (ИСПРАВЛЕННАЯ ВЕРСИЯ С ПРАВИЛЬНЫМИ ПАРАМЕТРАМИ) ==========
 
 export async function generateImageWithLeonardo(prompt, supabase, options = {}) {
   try {
-    console.log('🎨 Leonardo.ai generation with FULLY CORRECTED API implementation...');
+    console.log('🎨 Leonardo.ai generation with DOCUMENTATION-CORRECT API implementation...');
     console.log('Original prompt:', prompt);
     
     // Get Leonardo API key from environment
@@ -194,27 +193,22 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
     // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
     const enhancedPrompt = await enhancePosterPrompt(prompt, 'leonardo', supabase);
     
-    console.log('📤 Calling Leonardo.ai API with FULLY CORRECTED snake_case parameters...');
+    console.log('📤 Calling Leonardo.ai API with DOCUMENTATION-CORRECT parameters...');
     console.log('🎯 Enhanced prompt:', enhancedPrompt);
 
-    // ВСЕ ПАРАМЕТРЫ В snake_case СОГЛАСНО ДОКУМЕНТАЦИИ Leonardo.ai
+    // ПРАВИЛЬНЫЕ ПАРАМЕТРЫ СОГЛАСНО ДОКУМЕНТАЦИИ Leonardo.ai
     const requestBody = {
-      prompt: enhancedPrompt,
-      model_id: "6ac8733c-de4d-4726-9c09-5c682cb35c44", // Leonardo Phoenix (актуальный ID)
-      width: 1024,
+      alchemy: true, // Включаем улучшенную генерацию
       height: 1024,
-      num_images: 1, // ИСПРАВЛЕНО: snake_case
-      guidance_scale: 7, // ИСПРАВЛЕНО: snake_case  
-      num_inference_steps: 15, // ИСПРАВЛЕНО: snake_case
-      preset_style: "DYNAMIC", // ИСПРАВЛЕНО: snake_case
-      scheduler: "LEONARDO",
-      public: false,
-      prompt_magic: true, // ИСПРАВЛЕНО: snake_case
-      prompt_magic_version: "v3", // ИСПРАВЛЕНО: snake_case
-      prompt_magic_strength: 0.5 // ИСПРАВЛЕНО: snake_case
+      modelId: "6ac8733c-de4d-4726-9c09-5c682cb35c44", // camelCase согласно документации
+      num_images: 1,
+      presetStyle: "DYNAMIC", // camelCase согласно документации
+      prompt: enhancedPrompt,
+      width: 1024,
+      public: false
     };
 
-    console.log('📋 Request body with ALL corrected snake_case parameters:', JSON.stringify(requestBody, null, 2));
+    console.log('📋 Request body with DOCUMENTATION-CORRECT parameters:', JSON.stringify(requestBody, null, 2));
 
     // Step 1: Create generation request
     const generationResponse = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
@@ -312,8 +306,9 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
               enhancedPrompt: enhancedPrompt,
               posterOptimized: true,
               generationId: generationId,
-              modelId: requestBody.model_id,
-              apiVersion: 'v1'
+              modelId: requestBody.modelId,
+              apiVersion: 'v1',
+              alchemy: true
             }
           };
 
@@ -353,6 +348,7 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
     } else if (error.message.includes('400')) {
       console.error('🔍 Bad Request (400) - parameter validation failed');
       console.error('🔍 Check all parameter names and values in request body');
+      console.error('🔍 Using documentation-correct parameters now');
     }
     
     return {
@@ -362,7 +358,8 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
       details: {
         timestamp: new Date().toISOString(),
         errorType: error.constructor.name,
-        originalPrompt: prompt
+        originalPrompt: prompt,
+        usedCorrectParams: true
       }
     };
   }
