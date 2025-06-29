@@ -78,9 +78,9 @@ export class FrontendLogger {
     console.log(`💾 [Save] Style saved to library: ${styleName}`);
   }
 
-  // User Interaction Logging (missing method)
+  // User Interaction Logging with expanded action types
   async logUserInteraction(
-    action: 'upload' | 'generate' | 'like' | 'dislike' | 'mint' | 'share' | 'apply_style' | 'save_style',
+    action: 'upload' | 'generate' | 'like' | 'dislike' | 'mint' | 'share' | 'apply_style' | 'save_style' | 'structure',
     elementId: string,
     details: string
   ): Promise<void> {

@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,7 @@ function detectLanguage(text: string): 'ru' | 'en' {
 }
 
 export type ChatMode = 'analysis' | 'leonardo' | 'replicate' | 'structure' | 'chat' | 'style-analysis' | 'save' | 'load';
+export type ImageGenerationMode = 'analysis' | 'leonardo' | 'replicate';
 
 interface ChatState {
   messages: ChatMessage[];
@@ -19,6 +19,10 @@ interface ChatState {
   sessionId: string;
   userId: string | null;
   chatHistory: Record<string, ChatMessage[]>;
+  
+  // Image generation mode
+  imageGenerationMode: ImageGenerationMode;
+  setImageGenerationMode: (mode: ImageGenerationMode) => void;
   
   // Mode setters
   setChatMode: (mode: ChatMode) => void;
@@ -197,6 +201,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sessionId: `session_${Date.now()}`,
   userId: null,
   chatHistory: {},
+  
+  // Image generation mode
+  imageGenerationMode: 'analysis',
+  setImageGenerationMode: (mode) => {
+    console.log('🔄 Switching image generation mode to:', mode);
+    set({ imageGenerationMode: mode });
+  },
 
   setChatMode: (mode) => {
     console.log('🔄 Switching chat mode to:', mode);

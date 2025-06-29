@@ -4,13 +4,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatInterface';
 import ChatStarters from './ChatStarters';
-import { useChatStore } from '@/stores/chatStore';
+import { useChatStore, ChatMode } from '@/stores/chatStore';
 import { Download, Palette } from 'lucide-react';
 
 interface MessageHistoryProps {
   messages: ChatMessage[];
   isLoading: boolean;
   onStarterClick: (message: string) => void;
+  currentMode?: ChatMode;
 }
 
 const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryProps) => {

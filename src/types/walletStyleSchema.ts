@@ -63,4 +63,11 @@ export interface WalletStyleSet {
   // Color systems
   tokenColors: TokenColors;
   statusColors: StatusColors;
+  // Theme and animations support
+  theme?: string;
+  animations?: {
+    enabled: boolean;
+    duration?: string;
+    easing?: string;
+  };
 }

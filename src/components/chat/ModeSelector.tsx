@@ -6,7 +6,7 @@ import {
   Brain, 
   Image, 
   Sparkles, 
-  Structure, 
+  Building2, 
   MessageCircle, 
   Palette, 
   Save, 
@@ -47,7 +47,7 @@ const ModeSelector = () => {
     {
       key: 'structure',
       label: 'Structure',
-      icon: <Structure className="w-4 h-4" />,
+      icon: <Building2 className="w-4 h-4" />,
       description: 'Analyze wallet structure and element hierarchy',
       color: 'bg-orange-600 hover:bg-orange-700'
     },

@@ -3,13 +3,14 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Loader2, Image, Brain, Sparkles, Upload, X } from 'lucide-react';
-import { useChatStore } from '@/stores/chatStore';
+import { useChatStore, ChatMode } from '@/stores/chatStore';
 import { toast } from 'sonner';
 
 interface MessageInputProps {
   disabled?: boolean;
   selectedElement: string;
   onElementSelect: React.Dispatch<React.SetStateAction<string>>;
+  currentMode?: ChatMode;
 }
 
 interface UploadedFile {
@@ -22,7 +23,8 @@ interface UploadedFile {
 const MessageInput: React.FC<MessageInputProps> = ({ 
   disabled, 
   selectedElement, 
-  onElementSelect 
+  onElementSelect,
+  currentMode 
 }) => {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
