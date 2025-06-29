@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWalletCustomizationStore } from './walletCustomizationStore';
 import { WALLET_ELEMENTS_REGISTRY, getAllCategories } from '@/components/wallet/WalletElementsRegistry';
 import { walletStructureService } from '@/services/walletStructureService';
+import { toast } from 'sonner';
 
 function detectLanguage(text: string): 'ru' | 'en' {
   return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'en';
@@ -120,24 +121,46 @@ function createEnhancedWalletContext() {
   };
 }
 
-// Extract image URL from different response formats
+// Enhanced image URL extraction with better JSON parsing
 function extractImageUrl(response: any, mode: string): string | null {
   console.log('🔍 Extracting image URL from response:', response);
   
+  // Direct imageUrl in data
   if (response?.data?.imageUrl) {
     console.log('✅ Found imageUrl in data:', response.data.imageUrl);
     return response.data.imageUrl;
   }
   
+  // Output array format (Replicate)
   if (response?.data?.output && Array.isArray(response.data.output)) {
     const imageUrl = response.data.output[0];
     console.log('✅ Found imageUrl in output array:', imageUrl);
     return imageUrl;
   }
   
+  // Direct output (Leonardo/Replicate variants)
+  if (response?.data?.output && typeof response.data.output === 'string') {
+    console.log('✅ Found direct output string:', response.data.output);
+    return response.data.output;
+  }
+  
+  // Base64 image format
+  if (response?.data?.image && response.data.image.startsWith('data:image')) {
+    console.log('✅ Found base64 image:', response.data.image.substring(0, 50) + '...');
+    return response.data.image;
+  }
+  
+  // Direct URL response
   if (typeof response === 'string' && response.startsWith('http')) {
     console.log('✅ Found direct URL:', response);
     return response;
+  }
+  
+  // Nested response formats
+  if (response?.output && Array.isArray(response.output)) {
+    const imageUrl = response.output[0];
+    console.log('✅ Found imageUrl in nested output:', imageUrl);
+    return imageUrl;
   }
   
   console.warn('⚠️ No image URL found in response structure');
@@ -358,13 +381,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (generatedImageUrl) {
         console.log('✅ Successfully generated image:', generatedImageUrl);
         
+        // 🔥 АВТОМАТИЧЕСКИ ПРИМЕНЯЕМ ИЗОБРАЖЕНИЕ КАК ФОН
+        console.log('🎨 Auto-applying generated image as wallet background');
+        const walletStore = useWalletCustomizationStore.getState();
+        walletStore.applyUniversalStyle({
+          backgroundImage: `url(${generatedImageUrl})`,
+          styleNotes: `Auto-applied ${messageData.mode} generated background`
+        });
+        
+        // Показываем уведомление об успешном применении
+        toast.success(`🎨 Generated image automatically applied as wallet background!`);
+        
         const assistantMessage: ChatMessage = {
           id: `assistant-${Date.now()}`,
           type: 'assistant',
-          content: `Я создал кастомное фоновое изображение на основе вашего описания: "${messageData.content}". Изображение готово для применения.`,
+          content: `✨ I've generated and automatically applied a custom background image based on your description: "${messageData.content}". The new background is now active on your wallet!`,
           timestamp: new Date(),
           imageUrl: generatedImageUrl,
           isGenerated: true,
+          autoApplied: true, // Новое поле для отметки автоматического применения
         };
 
         set(state => ({

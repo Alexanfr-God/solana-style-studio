@@ -14,6 +14,7 @@ export interface ChatMessage {
   imageUrl?: string;
   walletElement?: string;
   isGenerated?: boolean;
+  autoApplied?: boolean; // New field for auto-applied images
 }
 
 const ChatInterface = () => {

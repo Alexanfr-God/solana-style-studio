@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatInterface';
 import ChatStarters from './ChatStarters';
 import { useChatStore, ChatMode } from '@/stores/chatStore';
-import { Download, Palette } from 'lucide-react';
+import { Download, Palette, CheckCircle } from 'lucide-react';
 
 interface MessageHistoryProps {
   messages: ChatMessage[];
@@ -68,7 +68,7 @@ const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryP
                 </div>
               )}
               
-              {/* Generated image with action buttons */}
+              {/* Generated image with conditional action buttons */}
               {message.imageUrl && message.isGenerated && (
                 <div className="mt-3 space-y-2">
                   <img
@@ -78,16 +78,31 @@ const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryP
                     style={{ maxHeight: '200px' }}
                   />
                   
-                  {/* Action buttons for generated images */}
+                  {/* Status indicator for auto-applied images */}
+                  {message.autoApplied && (
+                    <div className="flex items-center gap-2 p-2 bg-green-500/20 rounded border border-green-500/30">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-xs text-green-300">
+                        ✨ Automatically applied as wallet background
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Action buttons */}
                   <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleApplyImage(message.imageUrl!)}
-                      className="bg-green-600 hover:bg-green-700 text-white text-xs flex items-center gap-1"
-                    >
-                      <Palette className="w-3 h-3" />
-                      Apply as Background
-                    </Button>
+                    {/* Show Apply button only for non-auto-applied images */}
+                    {!message.autoApplied && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleApplyImage(message.imageUrl!)}
+                        className="bg-green-600 hover:bg-green-700 text-white text-xs flex items-center gap-1"
+                      >
+                        <Palette className="w-3 h-3" />
+                        Apply as Background
+                      </Button>
+                    )}
+                    
+                    {/* Always show Download button */}
                     <Button
                       size="sm"
                       variant="outline"
