@@ -174,7 +174,7 @@ function detectMood(prompt) {
   return 'confident';
 }
 
-// ========== LEONARDO.AI INTEGRATION (ИСПРАВЛЕННАЯ ВЕРСИЯ С ПРАВИЛЬНЫМИ ПАРАМЕТРАМИ) ==========
+// ========== LEONARDO.AI INTEGRATION (ИСПРАВЛЕННАЯ ВЕРСИЯ СОГЛАСНО ДОКУМЕНТАЦИИ) ==========
 
 export async function generateImageWithLeonardo(prompt, supabase, options = {}) {
   try {
