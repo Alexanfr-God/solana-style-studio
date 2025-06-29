@@ -1,503 +1,1297 @@
-// Enhanced Image generation with direct API calls - Leonardo.ai integration
+// ====== Enhanced modules/imageGenerator.ts ======
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createPromptBuilder } from '../utils/prompt-builder.ts';
+import { createStorageManager } from '../utils/storage-manager.ts';
 
-// ========== ЗАГРУЗКА ПРИМЕРОВ ИЗ SUPABASE ==========
-let LEARNED_STYLES = null; // Кэш загруженных примеров
+export interface ImageGenerationRequest {
+  prompt: string;
+  style?: 'vector' | 'realistic' | 'cartoon' | 'poster' | 'nft' | 'cyberpunk' | 'minimal';
+  type?: 'background' | 'avatar' | 'banner' | 'nft' | 'icon' | 'wallpaper';
+  dimensions?: { width: number; height: number };
+  generator: 'leonardo' | 'replicate';
+  options?: {
+    enhancePrompt?: boolean;
+    learnFromExamples?: boolean;
+    optimizeForWallet?: boolean;
+    highQuality?: boolean;
+    aspectRatio?: '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
+  };
+}
 
-async function loadPosterExamples(supabase) {
-  if (LEARNED_STYLES) return LEARNED_STYLES; // Используем кэш
-  
-  try {
-    console.log('📚 Loading poster examples from Supabase...');
-    const examples = {};
+export interface ImageGenerationResult {
+  success: boolean;
+  imageUrl?: string;
+  generationId?: string;
+  error?: string;
+  metadata: {
+    generatedAt: string;
+    originalPrompt: string;
+    enhancedPrompt?: string;
+    generator: string;
+    style: string;
+    type: string;
+    dimensions: { width: number; height: number };
+    optimizations: string[];
+    processingTime?: number;
+    quality: 'standard' | 'high' | 'premium';
+  };
+}
+
+export interface LearnedStyle {
+  id: string;
+  prompt: string;
+  style: string;
+  mood: string;
+  colors: any;
+  character: string;
+  composition: string;
+  score: number;
+}
+
+// ========== LEARNED STYLES SYSTEM ==========
+export class StyleLearningSystem {
+  private supabase: any;
+  private learnedStyles: Map<string, LearnedStyle> = new Map();
+  private cacheTimeout: number = 30 * 60 * 1000; // 30 minutes
+  private lastCacheUpdate: number = 0;
+
+  constructor(supabaseUrl: string, supabaseKey: string) {
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+  }
+
+  /**
+   * Загрузка примеров из Supabase с улучшенным кешированием
+   */
+  async loadLearnedStyles(): Promise<Map<string, LearnedStyle>> {
+    const now = Date.now();
     
-    // Загружаем все примеры poster-001 до poster-010
-    for (let i = 1; i <= 10; i++) {
-      const posterId = `poster-${String(i).padStart(3, '0')}`;
-      
-      try {
-        const { data, error } = await supabase.storage
-          .from('ai-examples-json')
-          .download(`${posterId}/metadata.json`);
-        
-        if (data && !error) {
-          const metadata = JSON.parse(await data.text());
-          examples[posterId] = {
-            id: posterId,
-            prompt: metadata.description || '',
-            style: metadata.background?.style || '',
-            mood: metadata.background?.mood || '',
-            colors: metadata.background?.colors || {},
-            character: metadata.character || '',
-            composition: metadata.composition || ''
-          };
-          console.log(`✅ Loaded ${posterId}:`, metadata.character);
-        }
-      } catch (e) {
-        console.warn(`Failed to load ${posterId}`);
-      }
+    if (this.learnedStyles.size > 0 && (now - this.lastCacheUpdate) < this.cacheTimeout) {
+      console.log('📊 Using cached learned styles');
+      return this.learnedStyles;
     }
-    
-    LEARNED_STYLES = examples;
-    console.log(`📊 Loaded ${Object.keys(examples).length} poster examples`);
-    return examples;
-    
-  } catch (error) {
-    console.error('❌ Error loading examples:', error);
-    return {};
+
+    try {
+      console.log('📚 Loading learned styles from Supabase...');
+      
+      // Загружаем из базы данных
+      const { data: stylesData, error } = await this.supabase
+        .from('learned_styles')
+        .select('*')
+        .order('score', { ascending: false })
+        .limit(50);
+
+      if (stylesData && !error) {
+        stylesData.forEach((style: any) => {
+          this.learnedStyles.set(style.id, style);
+        });
+        console.log(`✅ Loaded ${stylesData.length} styles from database`);
+      }
+
+      // Дополнительно загружаем из storage (примеры poster-001 до poster-020)
+      await this.loadStorageExamples();
+      
+      this.lastCacheUpdate = now;
+      console.log(`📊 Total learned styles: ${this.learnedStyles.size}`);
+      
+      return this.learnedStyles;
+      
+    } catch (error) {
+      console.error('❌ Error loading learned styles:', error);
+      return this.learnedStyles;
+    }
+  }
+
+  /**
+   * Загрузка примеров из storage
+   */
+  private async loadStorageExamples(): Promise<void> {
+    try {
+      for (let i = 1; i <= 20; i++) {
+        const posterId = `poster-${String(i).padStart(3, '0')}`;
+        
+        try {
+          const { data, error } = await this.supabase.storage
+            .from('ai-examples-json')
+            .download(`${posterId}/metadata.json`);
+          
+          if (data && !error) {
+            const metadata = JSON.parse(await data.text());
+            const style: LearnedStyle = {
+              id: posterId,
+              prompt: metadata.description || '',
+              style: metadata.background?.style || '',
+              mood: metadata.background?.mood || '',
+              colors: metadata.background?.colors || {},
+              character: metadata.character || '',
+              composition: metadata.composition || '',
+              score: metadata.score || 8.0
+            };
+            
+            this.learnedStyles.set(posterId, style);
+          }
+        } catch (e) {
+          console.warn(`⚠️ Failed to load ${posterId}:`, e.message);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Error loading storage examples:', error);
+    }
+  }
+
+  /**
+   * Поиск наиболее подходящего стиля
+   */
+  findBestMatchingStyle(prompt: string, type: string = 'poster'): LearnedStyle | null {
+    const styles = Array.from(this.learnedStyles.values());
+    if (styles.length === 0) return null;
+
+    const lowerPrompt = prompt.toLowerCase();
+    let bestMatch: LearnedStyle | null = null;
+    let bestScore = 0;
+
+    styles.forEach(style => {
+      let score = 0;
+
+      // Проверяем совпадение персонажа (высокий приоритет)
+      if (style.character && lowerPrompt.includes(style.character.toLowerCase())) {
+        score += 15;
+      }
+
+      // Проверяем совпадение стиля
+      if (style.style) {
+        const styleWords = style.style.toLowerCase().split(' ');
+        styleWords.forEach(word => {
+          if (word.length > 3 && lowerPrompt.includes(word)) {
+            score += 3;
+          }
+        });
+      }
+
+      // Проверяем настроение
+      if (style.mood && lowerPrompt.includes(style.mood.toLowerCase())) {
+        score += 5;
+      }
+
+      // Проверяем тип контента
+      if (type === 'poster' && style.id.includes('poster')) {
+        score += 2;
+      }
+
+      // Учитываем общий рейтинг стиля
+      score += style.score * 0.5;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = style;
+      }
+    });
+
+    console.log(`🎯 Best matching style: ${bestMatch?.id} (score: ${bestScore})`);
+    return bestScore > 5 ? bestMatch : null;
+  }
+
+  /**
+   * Сохранение нового изученного стиля
+   */
+  async saveLearnedStyle(style: Omit<LearnedStyle, 'id'>): Promise<string> {
+    try {
+      const id = `learned_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const fullStyle: LearnedStyle = { ...style, id };
+
+      const { error } = await this.supabase
+        .from('learned_styles')
+        .insert(fullStyle);
+
+      if (!error) {
+        this.learnedStyles.set(id, fullStyle);
+        console.log(`✅ Saved new learned style: ${id}`);
+      }
+
+      return id;
+    } catch (error) {
+      console.error('❌ Error saving learned style:', error);
+      throw error;
+    }
   }
 }
 
-// ========== COT & RUG SYSTEM С ОБУЧЕНИЕМ ==========
-const POSTER_TEMPLATES = {
-  superhero: {
-    style: "heroic pose with chest out, slight low angle view, radiating light beams background",
-    colors: "bold primary colors, high contrast, vibrant",
-    effects: "speed lines, energy aura, dramatic lighting"
-  },
-  political: {
-    style: "dignified portrait, formal pose, flag elements in background",
-    colors: "patriotic colors (red white blue), gold accents",
-    effects: "subtle glow, sharp shadows, professional lighting"
-  },
-  sports: {
-    style: "victory pose, action moment, emotional expression, stadium atmosphere",
-    colors: "team colors, bright highlights, dynamic contrast",
-    effects: "motion blur, light rays, celebratory mood"
-  },
-  cartoon: {
-    style: "exaggerated proportions, dynamic pose, big expressions",
-    colors: "vibrant saturated colors, complementary scheme",
-    effects: "cel shading, bold outlines, comic book style"
-  }
-};
+// ========== ADVANCED PROMPT ENHANCEMENT ==========
+export class AdvancedPromptEnhancer {
+  private promptBuilder: any;
+  private styleLearning: StyleLearningSystem;
 
-// Функция улучшения промпта с COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
-async function enhancePosterPrompt(userPrompt, generator, supabase) {
-  console.log('🎨 Enhancing prompt with COT & RUG + learned examples...');
-  
-  // Загружаем примеры если еще не загружены
-  const examples = await loadPosterExamples(supabase);
-  
-  // Анализируем запрос
-  const analysis = {
-    hasCharacter: /trump|superman|messi|ronaldo|batman|spiderman|терминатор|terminator/i.test(userPrompt),
-    style: detectStyle(userPrompt),
-    mood: detectMood(userPrompt),
-    matchedExample: findBestExample(userPrompt, examples)
-  };
-  
-  // Если нашли похожий пример, используем его стиль
-  if (analysis.matchedExample) {
-    console.log(`🎯 Using learned style from ${analysis.matchedExample.id}`);
-    const example = analysis.matchedExample;
+  constructor(supabaseUrl: string, supabaseKey: string) {
+    this.promptBuilder = createPromptBuilder();
+    this.styleLearning = new StyleLearningSystem(supabaseUrl, supabaseKey);
+  }
+
+  /**
+   * Улучшение промпта с использованием изученных стилей
+   */
+  async enhancePrompt(
+    request: ImageGenerationRequest
+  ): Promise<{ enhanced: string; optimizations: string[] }> {
+    console.log('🎨 Enhancing prompt with advanced techniques...');
     
-    let enhanced = userPrompt;
-    enhanced += `, ${example.style}, ${example.mood} mood`;
-    
-    // Добавляем цвета из примера
-    if (example.colors) {
-      const colorDesc = Object.entries(example.colors)
+    const optimizations: string[] = [];
+    let enhanced = request.prompt;
+
+    // 1. Применяем изученные стили
+    if (request.options?.learnFromExamples) {
+      await this.styleLearning.loadLearnedStyles();
+      const matchedStyle = this.styleLearning.findBestMatchingStyle(request.prompt, request.type);
+      
+      if (matchedStyle) {
+        enhanced = this.applyLearnedStyle(enhanced, matchedStyle);
+        optimizations.push(`Applied learned style: ${matchedStyle.id}`);
+      }
+    }
+
+    // 2. Оптимизация под тип изображения
+    enhanced = this.optimizeForImageType(enhanced, request.type || 'background');
+    optimizations.push(`Optimized for type: ${request.type}`);
+
+    // 3. Стилистические улучшения
+    enhanced = this.applyStyleEnhancements(enhanced, request.style || 'vector');
+    optimizations.push(`Applied style: ${request.style}`);
+
+    // 4. Оптимизация под генератор
+    enhanced = this.optimizeForGenerator(enhanced, request.generator);
+    optimizations.push(`Optimized for: ${request.generator}`);
+
+    // 5. Качественные модификаторы
+    if (request.options?.highQuality) {
+      enhanced = this.addQualityModifiers(enhanced, request.generator);
+      optimizations.push('Added quality modifiers');
+    }
+
+    // 6. Оптимизация под кошелек
+    if (request.options?.optimizeForWallet) {
+      enhanced = this.optimizeForWallet(enhanced);
+      optimizations.push('Optimized for wallet interface');
+    }
+
+    console.log('✨ Enhanced prompt:', enhanced);
+    console.log('🔧 Applied optimizations:', optimizations);
+
+    return { enhanced, optimizations };
+  }
+
+  private applyLearnedStyle(prompt: string, style: LearnedStyle): string {
+    let enhanced = prompt;
+
+    if (style.style) {
+      enhanced += `, ${style.style}`;
+    }
+
+    if (style.mood) {
+      enhanced += `, ${style.mood} mood`;
+    }
+
+    if (style.colors && typeof style.colors === 'object') {
+      const colorDesc = Object.entries(style.colors)
         .map(([k, v]) => `${k}: ${v}`)
         .join(', ');
       enhanced += `, color scheme: ${colorDesc}`;
     }
-    
-    enhanced += `, professional poster illustration, vector art style with bold black outlines`;
+
+    if (style.composition) {
+      enhanced += `, ${style.composition}`;
+    }
+
     return enhanced;
   }
-  
-  // Иначе используем шаблоны
-  const template = POSTER_TEMPLATES[analysis.style] || POSTER_TEMPLATES.cartoon;
-  
-  // Строим улучшенный промпт
-  let enhanced = userPrompt;
-  enhanced += `, professional poster illustration, vector art style with bold black outlines (3px), ${template.style}, ${template.colors}, ${template.effects}`;
-  enhanced += `, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements`;
-  
-  // Специфика для генератора
-  if (generator === 'leonardo') {
-    enhanced += `, in the style of modern vector posters, clean illustration, high quality digital art`;
-  } else {
-    enhanced += `, poster art, vector style, bold design`;
+
+  private optimizeForImageType(prompt: string, type: string): string {
+    const typeOptimizations = {
+      'background': 'seamless background pattern, tileable design, suitable for UI background',
+      'avatar': 'profile picture style, centered composition, clear subject focus, portrait orientation',
+      'banner': 'wide banner format, horizontal composition, eye-catching design, marketing style',
+      'nft': 'NFT artwork style, unique collectible design, high artistic value, premium quality',
+      'icon': 'simple icon design, minimalist style, clear symbols, scalable vector graphics',
+      'wallpaper': 'desktop wallpaper style, high resolution, immersive design, panoramic view'
+    };
+
+    return `${prompt}, ${typeOptimizations[type] || typeOptimizations.background}`;
   }
-  
-  console.log('✨ Enhanced prompt:', enhanced);
-  return enhanced;
+
+  private applyStyleEnhancements(prompt: string, style: string): string {
+    const styleEnhancements = {
+      'vector': 'vector art style, clean lines, bold colors, geometric shapes, scalable design',
+      'realistic': 'photorealistic style, detailed textures, natural lighting, high definition',
+      'cartoon': 'cartoon illustration style, exaggerated features, vibrant colors, playful design',
+      'poster': 'poster art style, bold typography, striking composition, commercial design',
+      'cyberpunk': 'cyberpunk aesthetic, neon colors, futuristic elements, high-tech design',
+      'minimal': 'minimalist design, clean composition, subtle colors, elegant simplicity'
+    };
+
+    return `${prompt}, ${styleEnhancements[style] || styleEnhancements.vector}`;
+  }
+
+  private optimizeForGenerator(prompt: string, generator: 'leonardo' | 'replicate'): string {
+    if (generator === 'leonardo') {
+      return `${prompt}, professional digital art, high quality rendering, detailed illustration, masterpiece quality`;
+    } else {
+      return `${prompt}, flux model optimized, high fidelity generation, detailed artwork`;
+    }
+  }
+
+  private addQualityModifiers(prompt: string, generator: string): string {
+    const qualityModifiers = generator === 'leonardo' 
+      ? '8k resolution, ultra detailed, professional quality, trending on artstation, award winning'
+      : 'high quality, detailed, professional artwork, sharp focus, vibrant colors';
+    
+    return `${prompt}, ${qualityModifiers}`;
+  }
+
+  private optimizeForWallet(prompt: string): string {
+    return `${prompt}, suitable for wallet interface, UI/UX optimized, clean design, user-friendly, professional appearance`;
+  }
 }
 
-// Поиск наиболее подходящего примера
-function findBestExample(userPrompt, examples) {
-  const lower = userPrompt.toLowerCase();
-  let bestMatch = null;
-  let bestScore = 0;
-  
-  Object.values(examples).forEach(example => {
-    let score = 0;
-    
-    // Проверяем совпадение персонажа
-    if (example.character && lower.includes(example.character.toLowerCase())) {
-      score += 10;
-    }
-    
-    // Проверяем совпадение стиля
-    if (example.style && lower.includes(example.style.toLowerCase())) {
-      score += 5;
-    }
-    
-    // Проверяем настроение
-    if (example.mood && lower.includes(example.mood.toLowerCase())) {
-      score += 3;
-    }
-    
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = example;
-    }
-  });
-  
-  return bestScore > 0 ? bestMatch : null;
-}
+// ========== LEONARDO.AI ENHANCED INTEGRATION ==========
+export class LeonardoGenerator {
+  private supabase: any;
+  private storageManager: any;
 
-function detectStyle(prompt) {
-  const lower = prompt.toLowerCase();
-  if (lower.includes('superhero') || lower.includes('hero') || lower.includes('терминатор') || lower.includes('terminator')) return 'superhero';
-  if (lower.includes('president') || lower.includes('trump')) return 'political';
-  if (lower.includes('sport') || lower.includes('champion')) return 'sports';
-  return 'cartoon';
-}
+  constructor(supabaseUrl: string, supabaseKey: string) {
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.storageManager = createStorageManager(supabaseUrl, supabaseKey);
+  }
 
-function detectMood(prompt) {
-  const lower = prompt.toLowerCase();
-  if (lower.includes('power') || lower.includes('strong')) return 'powerful';
-  if (lower.includes('fun') || lower.includes('happy')) return 'playful';
-  if (lower.includes('serious')) return 'serious';
-  return 'confident';
-}
+  async generate(request: ImageGenerationRequest): Promise<ImageGenerationResult> {
+    const startTime = Date.now();
+    console.log('🎨 Leonardo.ai generation with enhanced features...');
 
-// ========== LEONARDO.AI INTEGRATION (ИСПРАВЛЕННАЯ ВЕРСИЯ СОГЛАСНО ДОКУМЕНТАЦИИ) ==========
+    try {
+      const leonardoApiKey = Deno.env.get('LEONARDO_API_KEY');
+      if (!leonardoApiKey) {
+        throw new Error('Leonardo API key not configured');
+      }
 
-export async function generateImageWithLeonardo(prompt, supabase, options = {}) {
-  try {
-    console.log('🎨 Leonardo.ai generation with DOCUMENTATION-CORRECT API implementation...');
-    console.log('Original prompt:', prompt);
-    
-    // Get Leonardo API key from environment
-    const leonardoApiKey = Deno.env.get('LEONARDO_API_KEY');
-    if (!leonardoApiKey) {
-      console.error('❌ Leonardo API key not found in environment');
-      throw new Error('Leonardo API key not configured');
+      // Enhance prompt if requested
+      const enhancer = new AdvancedPromptEnhancer('', '');
+      const { enhanced: enhancedPrompt, optimizations } = request.options?.enhancePrompt 
+        ? await enhancer.enhancePrompt(request)
+        : { enhanced: request.prompt, optimizations: [] };
+
+      // Prepare generation request with correct parameters
+      const requestBody = this.buildLeonardoRequest(request, enhancedPrompt);
+      
+      console.log('📤 Calling Leonardo.ai API with optimized parameters...');
+      console.log('🎯 Enhanced prompt:', enhancedPrompt);
+
+      // Step 1: Create generation
+      const generationResponse = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${leonardoApiKey}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!generationResponse.ok) {
+        const errorText = await generationResponse.text();
+        console.error('❌ Leonardo API error:', errorText);
+        throw new Error(`Leonardo API error (${generationResponse.status}): ${errorText}`);
+      }
+
+      const generationData = await generationResponse.json();
+      const generationId = generationData.sdGenerationJob?.generationId;
+      
+      if (!generationId) {
+        throw new Error('Failed to get generation ID from Leonardo API');
+      }
+
+      console.log('🔄 Generation started, ID:', generationId);
+
+      // Step 2: Enhanced polling with exponential backoff
+      const imageUrl = await this.pollForCompletion(generationId, leonardoApiKey);
+      
+      const processingTime = Date.now() - startTime;
+
+      // Step 3: Save to database if successful
+      await this.storageManager.saveGeneratedImage(
+        imageUrl,
+        enhancedPrompt,
+        'leonardo',
+        {
+          originalPrompt: request.prompt,
+          style: request.style,
+          type: request.type,
+          dimensions: request.dimensions,
+          optimizations,
+          processingTime,
+          generationId
+        }
+      );
+
+      const result: ImageGenerationResult = {
+        success: true,
+        imageUrl,
+        generationId,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          originalPrompt: request.prompt,
+          enhancedPrompt,
+          generator: 'leonardo',
+          style: request.style || 'vector',
+          type: request.type || 'background',
+          dimensions: request.dimensions || { width: 1024, height: 1024 },
+          optimizations,
+          processingTime,
+          quality: request.options?.highQuality ? 'premium' : 'high'
+        }
+      };
+
+      console.log('🎉 Leonardo.ai generation completed successfully!');
+      return result;
+
+    } catch (error) {
+      console.error('💥 Leonardo generation error:', error);
+      
+      return {
+        success: false,
+        error: error.message,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          originalPrompt: request.prompt,
+          generator: 'leonardo',
+          style: request.style || 'vector',
+          type: request.type || 'background',
+          dimensions: request.dimensions || { width: 1024, height: 1024 },
+          optimizations: [],
+          quality: 'standard'
+        }
+      };
     }
-    
-    console.log('🔑 API Key found, proceeding with generation...');
-    
-    // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
-    const enhancedPrompt = await enhancePosterPrompt(prompt, 'leonardo', supabase);
-    
-    console.log('📤 Calling Leonardo.ai API with DOCUMENTATION-CORRECT parameters...');
-    console.log('🎯 Enhanced prompt:', enhancedPrompt);
+  }
 
-    // ПРАВИЛЬНЫЕ ПАРАМЕТРЫ СОГЛАСНО ДОКУМЕНТАЦИИ Leonardo.ai
-    const requestBody = {
-      alchemy: true, // Включаем улучшенную генерацию
-      height: 1024,
-      modelId: "6ac8733c-de4d-4726-9c09-5c682cb35c44", // camelCase согласно документации
+  private buildLeonardoRequest(request: ImageGenerationRequest, enhancedPrompt: string): any {
+    const dimensions = request.dimensions || { width: 1024, height: 1024 };
+    
+    const requestBody: any = {
+      alchemy: true,
+      height: dimensions.height,
+      modelId: this.selectOptimalModel(request),
       num_images: 1,
-      presetStyle: "DYNAMIC", // camelCase согласно документации
+      presetStyle: this.selectPresetStyle(request.style),
       prompt: enhancedPrompt,
-      width: 1024,
+      width: dimensions.width,
       public: false
     };
 
-    console.log('📋 Request body with DOCUMENTATION-CORRECT parameters:', JSON.stringify(requestBody, null, 2));
-
-    // Step 1: Create generation request
-    const generationResponse = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${leonardoApiKey}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    console.log('📊 Generation response status:', generationResponse.status);
-    console.log('📊 Generation response headers:', Object.fromEntries(generationResponse.headers.entries()));
-
-    if (!generationResponse.ok) {
-      const errorText = await generationResponse.text();
-      console.error('❌ Leonardo API error response:', errorText);
-      
-      // Попытка парсинга JSON ошибки
-      try {
-        const errorData = JSON.parse(errorText);
-        console.error('❌ Parsed error data:', errorData);
-        throw new Error(`Leonardo API error (${generationResponse.status}): ${errorData.error?.message || errorData.message || errorText}`);
-      } catch (parseError) {
-        throw new Error(`Leonardo API error (${generationResponse.status}): ${errorText}`);
-      }
+    // Add optional parameters based on request
+    if (request.options?.highQuality) {
+      requestBody.photoReal = true;
+      requestBody.photoRealVersion = "v2";
     }
 
-    const generationData = await generationResponse.json();
-    console.log('✅ Generation started successfully:', generationData);
-    
-    const generationId = generationData.sdGenerationJob?.generationId;
-    if (!generationId) {
-      console.error('❌ No generation ID received:', generationData);
-      throw new Error('Failed to get generation ID from Leonardo API');
+    if (request.style === 'realistic') {
+      requestBody.modelId = "1e60896f-3c26-4296-8ecc-53e2afecc132"; // Leonardo Diffusion XL
     }
-    
-    console.log('🔄 Generation started, ID:', generationId);
 
-    // Step 2: Enhanced polling for completion
-    let generationComplete = false;
+    return requestBody;
+  }
+
+  private selectOptimalModel(request: ImageGenerationRequest): string {
+    const models = {
+      'vector': "6ac8733c-de4d-4726-9c09-5c682cb35c44", // Leonardo Creative
+      'realistic': "1e60896f-3c26-4296-8ecc-53e2afecc132", // Leonardo Diffusion XL
+      'cartoon': "6bef9f1b-29cb-40c7-b9df-32b51c1f67d3", // Leonardo Kino XL
+      'poster': "6ac8733c-de4d-4726-9c09-5c682cb35c44", // Leonardo Creative
+      'cyberpunk': "291be633-cb24-434f-898f-e662799936ad", // Leonardo Select
+      'minimal': "6ac8733c-de4d-4726-9c09-5c682cb35c44"  // Leonardo Creative
+    };
+
+    return models[request.style || 'vector'] || models.vector;
+  }
+
+  private selectPresetStyle(style?: string): string {
+    const presets = {
+      'vector': 'ILLUSTRATION',
+      'realistic': 'CINEMATIC',
+      'cartoon': 'ANIME',
+      'poster': 'DYNAMIC',
+      'cyberpunk': 'FUTURISTIC',
+      'minimal': 'MINIMALISTIC'
+    };
+
+    return presets[style || 'vector'] || 'DYNAMIC';
+  }
+
+  private async pollForCompletion(generationId: string, apiKey: string): Promise<string> {
     let attempts = 0;
-    const maxAttempts = 120; // 10 минут максимум (5 сек * 120)
-    const baseDelay = 5000; // 5 секунд базовая задержка
+    const maxAttempts = 120; // 10 minutes max
     
-    while (!generationComplete && attempts < maxAttempts) {
-      // Экспоненциальный backoff для первых попыток
-      const delay = attempts < 10 ? baseDelay : Math.min(baseDelay * Math.pow(1.2, attempts - 10), 15000);
+    while (attempts < maxAttempts) {
+      const delay = this.calculateDelay(attempts);
       await new Promise(resolve => setTimeout(resolve, delay));
       
-      console.log(`⏳ Checking generation status... (attempt ${attempts + 1}/${maxAttempts})`);
+      console.log(`⏳ Checking status... (${attempts + 1}/${maxAttempts})`);
       
       const statusResponse = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
         headers: {
-          'Authorization': `Bearer ${leonardoApiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Accept': 'application/json'
         }
       });
       
       if (!statusResponse.ok) {
-        console.error('❌ Status check failed:', statusResponse.status, statusResponse.statusText);
+        console.warn('⚠️ Status check failed, retrying...');
         attempts++;
         continue;
       }
       
       const statusData = await statusResponse.json();
-      console.log('📊 Status response:', statusData);
-      
       const generation = statusData.generations_by_pk;
       
       if (!generation) {
-        console.error('❌ No generation data in status response');
         attempts++;
         continue;
       }
       
-      console.log(`📊 Generation status: ${generation.status}`);
+      console.log(`📊 Status: ${generation.status}`);
       
       if (generation.status === 'COMPLETE') {
-        generationComplete = true;
-        
-        if (generation.generated_images && generation.generated_images.length > 0) {
-          const imageUrl = generation.generated_images[0].url;
-          console.log('✅ Image generated successfully:', imageUrl);
-          
-          const result = {
-            success: true,
-            imageUrl: imageUrl,
-            mode: 'leonardo',
-            dimensions: { width: 1024, height: 1024 },
-            metadata: {
-              generatedAt: new Date().toISOString(),
-              originalPrompt: prompt,
-              enhancedPrompt: enhancedPrompt,
-              posterOptimized: true,
-              generationId: generationId,
-              modelId: requestBody.modelId,
-              apiVersion: 'v1',
-              alchemy: true
-            }
-          };
-
-          console.log('🎉 Leonardo.ai generation completed successfully!');
-          return result;
+        if (generation.generated_images?.[0]?.url) {
+          return generation.generated_images[0].url;
         } else {
-          console.error('❌ No images in completed generation:', generation);
-          throw new Error('No images generated by Leonardo API');
+          throw new Error('No images in completed generation');
         }
       } else if (generation.status === 'FAILED') {
-        console.error('❌ Leonardo generation failed:', generation);
-        throw new Error(`Leonardo generation failed: ${generation.failureReason || 'Unknown error'}`);
-      } else if (generation.status === 'PENDING' || generation.status === 'PROCESSING') {
-        console.log(`⏳ Generation in progress (${generation.status})...`);
-      } else {
-        console.warn(`⚠️ Unknown generation status: ${generation.status}`);
+        throw new Error(`Generation failed: ${generation.failureReason || 'Unknown error'}`);
       }
       
       attempts++;
     }
     
-    if (!generationComplete) {
-      console.error('❌ Generation timeout after', attempts, 'attempts');
-      throw new Error('Generation timeout - Leonardo API took too long to complete');
-    }
+    throw new Error('Generation timeout - took too long to complete');
+  }
 
-  } catch (error) {
-    console.error('💥 Leonardo generation error:', error);
-    
-    // Детальное логирование ошибки
-    if (error.message.includes('Internal Server Error')) {
-      console.error('🔍 Internal Server Error detected - possible API issues or rate limiting');
-    } else if (error.message.includes('401')) {
-      console.error('🔍 Authentication error - check API key validity');
-    } else if (error.message.includes('429')) {
-      console.error('🔍 Rate limit exceeded - try again later');
-    } else if (error.message.includes('400')) {
-      console.error('🔍 Bad Request (400) - parameter validation failed');
-      console.error('🔍 Check all parameter names and values in request body');
-      console.error('🔍 Using documentation-correct parameters now');
-    }
-    
-    return {
-      success: false,
-      error: error.message,
-      mode: 'leonardo',
-      details: {
-        timestamp: new Date().toISOString(),
-        errorType: error.constructor.name,
-        originalPrompt: prompt,
-        usedCorrectParams: true
-      }
-    };
+  private calculateDelay(attempt: number): number {
+    // Exponential backoff with jitter
+    const baseDelay = 3000; // 3 seconds
+    const maxDelay = 15000; // 15 seconds max
+    const exponential = Math.min(baseDelay * Math.pow(1.5, attempt), maxDelay);
+    const jitter = Math.random() * 1000; // Add up to 1 second jitter
+    return exponential + jitter;
   }
 }
 
-export async function generateImageWithReplicate(prompt, supabase, options = {}) {
-  try {
-    console.log('🎨 Replicate generation with DIRECT API CALL...');
-    console.log('Original prompt:', prompt);
-    
-    // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
-    const enhancedPrompt = await enhancePosterPrompt(prompt, 'replicate', supabase);
-    
-    // Get Replicate API key from environment
-    const replicateApiKey = Deno.env.get('REPLICATE_API_KEY');
-    if (!replicateApiKey) {
-      throw new Error('Replicate API key not configured');
-    }
+// ========== REPLICATE ENHANCED INTEGRATION ==========
+export class ReplicateGenerator {
+  private supabase: any;
+  private storageManager: any;
 
-    console.log('📤 Calling Replicate API directly...');
+  constructor(supabaseUrl: string, supabaseKey: string) {
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.storageManager = createStorageManager(supabaseUrl, supabaseKey);
+  }
 
-    // Direct API call to Replicate
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${replicateApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        version: "black-forest-labs/flux-schnell",
-        input: {
-          prompt: enhancedPrompt,
-          go_fast: true,
-          megapixels: "1",
-          num_outputs: 1,
-          aspect_ratio: "1:1",
-          output_format: "webp",
-          output_quality: 80,
-          num_inference_steps: 4
-        }
-      })
-    });
+  async generate(request: ImageGenerationRequest): Promise<ImageGenerationResult> {
+    const startTime = Date.now();
+    console.log('🎨 Replicate generation with enhanced features...');
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Replicate API error: ${errorData.detail || response.statusText}`);
-    }
+    try {
+      const replicateApiKey = Deno.env.get('REPLICATE_API_KEY');
+      if (!replicateApiKey) {
+        throw new Error('Replicate API key not configured');
+      }
 
-    const prediction = await response.json();
-    
-    // Wait for completion
-    let completedPrediction = prediction;
-    while (completedPrediction.status === 'starting' || completedPrediction.status === 'processing') {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Enhance prompt if requested
+      const enhancer = new AdvancedPromptEnhancer('', '');
+      const { enhanced: enhancedPrompt, optimizations } = request.options?.enhancePrompt 
+        ? await enhancer.enhancePrompt(request)
+        : { enhanced: request.prompt, optimizations: [] };
+
+      console.log('📤 Calling Replicate API with optimized parameters...');
+      console.log('🎯 Enhanced prompt:', enhancedPrompt);
+
+      const input = this.buildReplicateInput(request, enhancedPrompt);
       
-      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+      // Create prediction
+      const response = await fetch('https://api.replicate.com/v1/predictions', {
+        method: 'POST',
         headers: {
           'Authorization': `Token ${replicateApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          version: this.selectOptimalModel(request),
+          input
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Replicate API error: ${errorData.detail || response.statusText}`);
+      }
+
+      const prediction = await response.json();
+      console.log('🔄 Prediction started, ID:', prediction.id);
+
+      // Wait for completion with enhanced polling
+      const imageUrl = await this.pollForCompletion(prediction.id, replicateApiKey);
+      
+      const processingTime = Date.now() - startTime;
+
+      // Save to database
+      await this.storageManager.saveGeneratedImage(
+        imageUrl,
+        enhancedPrompt,
+        'replicate',
+        {
+          originalPrompt: request.prompt,
+          style: request.style,
+          type: request.type,
+          dimensions: request.dimensions,
+          optimizations,
+          processingTime,
+          predictionId: prediction.id
+        }
+      );
+
+      const result: ImageGenerationResult = {
+        success: true,
+        imageUrl,
+        generationId: prediction.id,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          originalPrompt: request.prompt,
+          enhancedPrompt,
+          generator: 'replicate',
+          style: request.style || 'vector',
+          type: request.type || 'background',
+          dimensions: request.dimensions || { width: 1024, height: 1024 },
+          optimizations,
+          processingTime,
+          quality: request.options?.highQuality ? 'premium' : 'high'
+        }
+      };
+
+      console.log('🎉 Replicate generation completed successfully!');
+      return result;
+
+    } catch (error) {
+      console.error('💥 Replicate generation error:', error);
+      
+      return {
+        success: false,
+        error: error.message,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          originalPrompt: request.prompt,
+          generator: 'replicate',
+          style: request.style || 'vector',
+          type: request.type || 'background',
+          dimensions: request.dimensions || { width: 1024, height: 1024 },
+          optimizations: [],
+          quality: 'standard'
+        }
+      };
+    }
+  }
+
+  private buildReplicateInput(request: ImageGenerationRequest, enhancedPrompt: string): any {
+    const dimensions = request.dimensions || { width: 1024, height: 1024 };
+    
+    const input: any = {
+      prompt: enhancedPrompt,
+      width: dimensions.width,
+      height: dimensions.height,
+      num_outputs: 1,
+      aspect_ratio: request.options?.aspectRatio || "1:1",
+      output_format: "webp",
+      output_quality: request.options?.highQuality ? 95 : 80
+    };
+
+    // Model-specific parameters
+    const model = this.selectOptimalModel(request);
+    
+    if (model.includes('flux')) {
+      input.go_fast = !request.options?.highQuality;
+      input.megapixels = request.options?.highQuality ? "2" : "1";
+      input.num_inference_steps = request.options?.highQuality ? 8 : 4;
+    } else if (model.includes('sdxl')) {
+      input.guidance_scale = 7.5;
+      input.num_inference_steps = request.options?.highQuality ? 50 : 30;
+      input.scheduler = "K_EULER";
+    }
+
+    return input;
+  }
+
+  private selectOptimalModel(request: ImageGenerationRequest): string {
+    const models = {
+      'vector': "black-forest-labs/flux-schnell",
+      'realistic': "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+      'cartoon': "black-forest-labs/flux-schnell",
+      'poster': "black-forest-labs/flux-dev",
+      'cyberpunk': "black-forest-labs/flux-dev",
+      'minimal': "black-forest-labs/flux-schnell"
+    };
+
+    return models[request.style || 'vector'] || models.vector;
+  }
+
+  private async pollForCompletion(predictionId: string, apiKey: string): Promise<string> {
+    let attempts = 0;
+    const maxAttempts = 120;
+    
+    while (attempts < maxAttempts) {
+      const delay = Math.min(2000 + (attempts * 1000), 10000); // 2-10 seconds
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      console.log(`⏳ Checking status... (${attempts + 1}/${maxAttempts})`);
+      
+      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+        headers: {
+          'Authorization': `Token ${apiKey}`,
         }
       });
       
-      completedPrediction = await statusResponse.json();
-    }
-
-    if (completedPrediction.status === 'failed') {
-      throw new Error(`Replicate generation failed: ${completedPrediction.error}`);
-    }
-
-    const generatedImageUrl = completedPrediction.output?.[0];
-    if (!generatedImageUrl) {
-      throw new Error('No image URL returned from Replicate');
-    }
-
-    const result = {
-      success: true,
-      imageUrl: generatedImageUrl,
-      mode: 'replicate',
-      layerOptimized: true,
-      metadata: {
-        generatedAt: new Date().toISOString(),
-        originalPrompt: prompt,
-        enhancedPrompt: enhancedPrompt,
-        posterOptimized: true
+      if (!statusResponse.ok) {
+        console.warn('⚠️ Status check failed, retrying...');
+        attempts++;
+        continue;
       }
-    };
-
-    console.log('✅ Replicate image generated successfully!');
-    return result;
-
-  } catch (error) {
-    console.error('❌ Replicate generation error:', error);
-    return {
-      success: false,
-      error: error.message,
-      mode: 'replicate'
-    };
+      
+      const prediction = await statusResponse.json();
+      console.log(`📊 Status: ${prediction.status}`);
+      
+      if (prediction.status === 'succeeded') {
+        const imageUrl = prediction.output?.[0];
+        if (!imageUrl) {
+          throw new Error('No image URL in prediction output');
+        }
+        return imageUrl;
+      } else if (prediction.status === 'failed') {
+        throw new Error(`Prediction failed: ${prediction.error || 'Unknown error'}`);
+      } else if (prediction.status === 'canceled') {
+        throw new Error('Prediction was canceled');
+      }
+      
+      attempts++;
+    }
+    
+    throw new Error('Prediction timeout - took too long to complete');
   }
 }
 
-// Export helper function for frontend integration
-export function getLayerOptimizationCSS(generator, layerId) {
-  if (generator === 'replicate') {
-    return `
-      .wallet-layer-${layerId} {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
+// ========== MAIN GENERATOR FUNCTIONS ==========
+
+export async function generateImageWithLeonardo(
+  prompt: string, 
+  supabase: any, 
+  options: Partial<ImageGenerationRequest> = {}
+): Promise<ImageGenerationResult> {
+  const generator = new LeonardoGenerator('', '');
+  
+  const request: ImageGenerationRequest = {
+    prompt,
+    generator: 'leonardo',
+    style: options.style || 'vector',
+    type: options.type || 'background',
+    dimensions: options.dimensions || { width: 1024, height: 1024 },
+    options: {
+      enhancePrompt: true,
+      learnFromExamples: true,
+      optimizeForWallet: true,
+      highQuality: false,
+      ...options.options
+    }
+  };
+
+  return await generator.generate(request);
+}
+
+export async function generateImageWithReplicate(
+  prompt: string, 
+  supabase: any, 
+  options: Partial<ImageGenerationRequest> = {}
+): Promise<ImageGenerationResult> {
+  const generator = new ReplicateGenerator('', '');
+  
+  const request: ImageGenerationRequest = {
+    prompt,
+    generator: 'replicate',
+    style: options.style || 'vector',
+    type: options.type || 'background',
+    dimensions: options.dimensions || { width: 1024, height: 1024 },
+    options: {
+      enhancePrompt: true,
+      learnFromExamples: true,
+      optimizeForWallet: true,
+      highQuality: false,
+      ...options.options
+    }
+  };
+
+  return await generator.generate(request);
+}
+
+// ========== UNIFIED IMAGE GENERATION MANAGER ==========
+export class ImageGenerationManager {
+  private leonardoGenerator: LeonardoGenerator;
+  private replicateGenerator: ReplicateGenerator;
+  private styleLearning: StyleLearningSystem;
+  private supabase: any;
+
+  constructor(supabaseUrl: string, supabaseKey: string) {
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.leonardoGenerator = new LeonardoGenerator(supabaseUrl, supabaseKey);
+    this.replicateGenerator = new ReplicateGenerator(supabaseUrl, supabaseKey);
+    this.styleLearning = new StyleLearningSystem(supabaseUrl, supabaseKey);
+  }
+
+  /**
+   * Генерация изображения с автоматическим выбором лучшего генератора
+   */
+  async generateImage(request: ImageGenerationRequest): Promise<ImageGenerationResult> {
+    console.log('🎨 Starting unified image generation...');
+    
+    try {
+      // Выбираем оптимальный генератор для запроса
+      const optimalGenerator = this.selectOptimalGenerator(request);
+      console.log(`🎯 Selected generator: ${optimalGenerator}`);
+      
+      // Обновляем запрос с выбранным генератором
+      const updatedRequest = { ...request, generator: optimalGenerator };
+      
+      // Генерируем изображение
+      let result: ImageGenerationResult;
+      
+      if (optimalGenerator === 'leonardo') {
+        result = await this.leonardoGenerator.generate(updatedRequest);
+      } else {
+        result = await this.replicateGenerator.generate(updatedRequest);
       }
       
+      // Если основной генератор не сработал, пробуем альтернативный
+      if (!result.success && request.generator !== optimalGenerator) {
+        console.log('⚠️ Primary generator failed, trying fallback...');
+        
+        const fallbackGenerator = optimalGenerator === 'leonardo' ? 'replicate' : 'leonardo';
+        const fallbackRequest = { ...request, generator: fallbackGenerator };
+        
+        if (fallbackGenerator === 'leonardo') {
+          result = await this.leonardoGenerator.generate(fallbackRequest);
+        } else {
+          result = await this.replicateGenerator.generate(fallbackRequest);
+        }
+        
+        if (result.success) {
+          result.metadata.optimizations.push('Used fallback generator');
+        }
+      }
+      
+      // Сохраняем результат для обучения системы
+      if (result.success) {
+        await this.saveGenerationForLearning(request, result);
+      }
+      
+      return result;
+      
+    } catch (error) {
+      console.error('💥 Image generation manager error:', error);
+      
+      return {
+        success: false,
+        error: error.message,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          originalPrompt: request.prompt,
+          generator: request.generator,
+          style: request.style || 'vector',
+          type: request.type || 'background',
+          dimensions: request.dimensions || { width: 1024, height: 1024 },
+          optimizations: [],
+          quality: 'standard'
+        }
+      };
+    }
+  }
+
+  /**
+   * Массовая генерация изображений
+   */
+  async generateBatch(
+    requests: ImageGenerationRequest[]
+  ): Promise<ImageGenerationResult[]> {
+    console.log(`🔄 Starting batch generation of ${requests.length} images...`);
+    
+    const results: ImageGenerationResult[] = [];
+    
+    // Генерируем по одному для контроля ресурсов
+    for (let i = 0; i < requests.length; i++) {
+      const request = requests[i];
+      console.log(`📸 Generating image ${i + 1}/${requests.length}...`);
+      
+      try {
+        const result = await this.generateImage(request);
+        results.push(result);
+        
+        // Небольшая пауза между генерациями
+        if (i < requests.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+      } catch (error) {
+        console.error(`❌ Failed to generate image ${i + 1}:`, error);
+        results.push({
+          success: false,
+          error: error.message,
+          metadata: {
+            generatedAt: new Date().toISOString(),
+            originalPrompt: request.prompt,
+            generator: request.generator,
+            style: request.style || 'vector',
+            type: request.type || 'background',
+            dimensions: request.dimensions || { width: 1024, height: 1024 },
+            optimizations: [],
+            quality: 'standard'
+          }
+        });
+      }
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    console.log(`✅ Batch completed: ${successCount}/${requests.length} successful`);
+    
+    return results;
+  }
+
+  /**
+   * Выбор оптимального генератора для запроса
+   */
+  private selectOptimalGenerator(request: ImageGenerationRequest): 'leonardo' | 'replicate' {
+    // Если генератор явно указан, используем его
+    if (request.generator) {
+      return request.generator;
+    }
+    
+    // Логика выбора на основе типа и стиля
+    const preferences = {
+      // Leonardo лучше для детализированных изображений
+      leonardo: ['realistic', 'poster', 'nft'],
+      // Replicate быстрее для простых стилей
+      replicate: ['vector', 'cartoon', 'minimal', 'cyberpunk']
+    };
+    
+    if (preferences.leonardo.includes(request.style || '')) {
+      return 'leonardo';
+    }
+    
+    if (preferences.replicate.includes(request.style || '')) {
+      return 'replicate';
+    }
+    
+    // По умолчанию Leonardo для высокого качества
+    return request.options?.highQuality ? 'leonardo' : 'replicate';
+  }
+
+  /**
+   * Сохранение результата для обучения системы
+   */
+  private async saveGenerationForLearning(
+    request: ImageGenerationRequest,
+    result: ImageGenerationResult
+  ): Promise<void> {
+    try {
+      if (!result.success || !result.imageUrl) return;
+      
+      // Создаем запись для обучения
+      const learnedStyle = {
+        prompt: result.metadata.enhancedPrompt || request.prompt,
+        style: request.style || 'vector',
+        mood: this.extractMoodFromPrompt(request.prompt),
+        colors: this.extractColorsFromPrompt(request.prompt),
+        character: this.extractCharacterFromPrompt(request.prompt),
+        composition: this.extractCompositionFromPrompt(request.prompt),
+        score: this.calculateQualityScore(result)
+      };
+      
+      await this.styleLearning.saveLearnedStyle(learnedStyle);
+      
+    } catch (error) {
+      console.warn('⚠️ Failed to save for learning:', error);
+    }
+  }
+
+  private extractMoodFromPrompt(prompt: string): string {
+    const moodKeywords = {
+      'heroic': ['hero', 'powerful', 'strong', 'mighty'],
+      'elegant': ['elegant', 'sophisticated', 'refined'],
+      'playful': ['fun', 'playful', 'colorful', 'bright'],
+      'serious': ['serious', 'formal', 'professional'],
+      'mysterious': ['dark', 'mysterious', 'shadow']
+    };
+    
+    const lowerPrompt = prompt.toLowerCase();
+    
+    for (const [mood, keywords] of Object.entries(moodKeywords)) {
+      if (keywords.some(keyword => lowerPrompt.includes(keyword))) {
+        return mood;
+      }
+    }
+    
+    return 'neutral';
+  }
+
+  private extractColorsFromPrompt(prompt: string): any {
+    const colorMatches = prompt.match(/#[0-9a-fA-F]{6}|red|blue|green|yellow|purple|orange|pink|black|white|gold|silver/gi);
+    
+    if (colorMatches) {
+      return {
+        primary: colorMatches[0],
+        secondary: colorMatches[1] || colorMatches[0],
+        accent: colorMatches[2] || colorMatches[0]
+      };
+    }
+    
+    return {};
+  }
+
+  private extractCharacterFromPrompt(prompt: string): string {
+    const characters = ['trump', 'superman', 'batman', 'messi', 'terminator', 'spiderman'];
+    const lowerPrompt = prompt.toLowerCase();
+    
+    for (const character of characters) {
+      if (lowerPrompt.includes(character)) {
+        return character;
+      }
+    }
+    
+    return '';
+  }
+
+  private extractCompositionFromPrompt(prompt: string): string {
+    const compositions = {
+      'centered': ['center', 'centered', 'middle'],
+      'dynamic': ['dynamic', 'action', 'movement'],
+      'portrait': ['portrait', 'face', 'headshot'],
+      'landscape': ['landscape', 'wide', 'panoramic']
+    };
+    
+    const lowerPrompt = prompt.toLowerCase();
+    
+    for (const [comp, keywords] of Object.entries(compositions)) {
+      if (keywords.some(keyword => lowerPrompt.includes(keyword))) {
+        return comp;
+      }
+    }
+    
+    return 'balanced';
+  }
+
+  private calculateQualityScore(result: ImageGenerationResult): number {
+    let score = 7.0; // Base score
+    
+    // Добавляем баллы за успешную генерацию
+    if (result.success) score += 1.0;
+    
+    // Учитываем время обработки
+    if (result.metadata.processingTime && result.metadata.processingTime < 60000) {
+      score += 0.5; // Быстрая генерация
+    }
+    
+    // Учитываем качество
+    if (result.metadata.quality === 'premium') score += 1.0;
+    else if (result.metadata.quality === 'high') score += 0.5;
+    
+    // Учитываем количество оптимизаций
+    if (result.metadata.optimizations.length > 3) score += 0.5;
+    
+    return Math.min(score, 10.0);
+  }
+
+  /**
+   * Получение статистики генераций
+   */
+  async getGenerationStats(): Promise<any> {
+    try {
+      const { data, error } = await this.supabase
+        .from('generated_images')
+        .select('model, created_at')
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+      if (error) throw error;
+
+      const stats = {
+        total: data?.length || 0,
+        leonardo: data?.filter(item => item.model === 'leonardo').length || 0,
+        replicate: data?.filter(item => item.model === 'replicate').length || 0,
+        lastWeek: data?.length || 0
+      };
+
+      return stats;
+    } catch (error) {
+      console.error('❌ Error getting generation stats:', error);
+      return { total: 0, leonardo: 0, replicate: 0, lastWeek: 0 };
+    }
+  }
+}
+
+// ========== UTILITY FUNCTIONS ==========
+
+/**
+ * Создание CSS для оптимизации слоев
+ */
+export function getLayerOptimizationCSS(generator: string, layerId: string): string {
+  const baseCSS = `
+    .wallet-layer-${layerId} {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+  `;
+
+  if (generator === 'replicate') {
+    return baseCSS + `
       .wallet-layer-${layerId} img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         object-position: center;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
       }
     `;
   } else {
-    return `
+    return baseCSS + `
       .wallet-layer-${layerId} {
-        position: absolute;
-        width: 100%;
-        height: 100%;
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
+        background-attachment: local;
       }
     `;
   }
 }
 
-// ========== ПРИМЕРЫ ПРОМПТОВ ДЛЯ ТЕСТИРОВАНИЯ ==========
-export const POSTER_PROMPT_EXAMPLES = {
-  "Trump cartoon": "Donald Trump, professional poster illustration, vector art style with bold black outlines (3px), dignified portrait, formal pose, flag elements in background, patriotic colors (red white blue), gold accents, subtle glow, sharp shadows, professional lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art",
+/**
+ * Валидация запроса на генерацию
+ */
+export function validateGenerationRequest(request: ImageGenerationRequest): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  if (!request.prompt || request.prompt.trim().length === 0) {
+    errors.push('Prompt is required and cannot be empty');
+  }
+
+  if (request.prompt && request.prompt.length > 2000) {
+    errors.push('Prompt is too long (max 2000 characters)');
+  }
+
+  if (request.dimensions) {
+    if (request.dimensions.width < 256 || request.dimensions.width > 2048) {
+      errors.push('Width must be between 256 and 2048 pixels');
+    }
+    if (request.dimensions.height < 256 || request.dimensions.height > 2048) {
+      errors.push('Height must be between 256 and 2048 pixels');
+    }
+  }
+
+  const validStyles = ['vector', 'realistic', 'cartoon', 'poster', 'nft', 'cyberpunk', 'minimal'];
+  if (request.style && !validStyles.includes(request.style)) {
+    errors.push(`Invalid style. Must be one of: ${validStyles.join(', ')}`);
+  }
+
+  const validTypes = ['background', 'avatar', 'banner', 'nft', 'icon', 'wallpaper'];
+  if (request.type && !validTypes.includes(request.type)) {
+    errors.push(`Invalid type. Must be one of: ${validTypes.join(', ')}`);
+  }
+
+  const validGenerators = ['leonardo', 'replicate'];
+  if (!validGenerators.includes(request.generator)) {
+    errors.push(`Invalid generator. Must be one of: ${validGenerators.join(', ')}`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Создание предустановленных запросов для тестирования
+ */
+export const PRESET_GENERATION_REQUESTS: { [key: string]: ImageGenerationRequest } = {
+  'crypto_hero': {
+    prompt: 'Cryptocurrency superhero with bitcoin logo, powerful pose, digital art style',
+    style: 'poster',
+    type: 'avatar',
+    generator: 'leonardo',
+    dimensions: { width: 1024, height: 1024 },
+    options: {
+      enhancePrompt: true,
+      learnFromExamples: true,
+      optimizeForWallet: true,
+      highQuality: true
+    }
+  },
   
-  "Superman hero": "Superman, professional poster illustration, vector art style with bold black outlines (3px), heroic pose with chest out, slight low angle view, radiating light beams background, bold primary colors, high contrast, vibrant, speed lines, energy aura, dramatic lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art",
+  'neon_background': {
+    prompt: 'Futuristic neon grid background, cyberpunk aesthetic, dark theme',
+    style: 'cyberpunk',
+    type: 'background',
+    generator: 'replicate',
+    dimensions: { width: 1920, height: 1080 },
+    options: {
+      enhancePrompt: true,
+      optimizeForWallet: true,
+      aspectRatio: '16:9'
+    }
+  },
   
-  "Messi champion": "Lionel Messi, professional poster illustration, vector art style with bold black outlines (3px), victory pose, action moment, emotional expression, stadium atmosphere, team colors, bright highlights, dynamic contrast, motion blur, light rays, celebratory mood, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art",
+  'minimal_icon': {
+    prompt: 'Clean geometric wallet icon, minimalist design, professional',
+    style: 'minimal',
+    type: 'icon',
+    generator: 'leonardo',
+    dimensions: { width: 512, height: 512 },
+    options: {
+      enhancePrompt: true,
+      optimizeForWallet: true
+    }
+  },
   
-  "Terminator poster": "Terminator, professional poster illustration, vector art style with bold black outlines (3px), heroic pose with chest out, slight low angle view, radiating light beams background, bold primary colors, high contrast, vibrant, speed lines, energy aura, dramatic lighting, digital illustration, high contrast, professional quality, suitable for wallet background, centered composition with dynamic elements, in the style of modern vector posters, clean illustration, high quality digital art"
+  'nft_artwork': {
+    prompt: 'Unique digital collectible art piece, abstract composition, vibrant colors',
+    style: 'nft',
+    type: 'nft',
+    generator: 'leonardo',
+    dimensions: { width: 1080, height: 1080 },
+    options: {
+      enhancePrompt: true,
+      learnFromExamples: true,
+      highQuality: true
+    }
+  }
 };
+
+// ========== FACTORY FUNCTIONS ==========
+
+export function createImageGenerationManager(supabaseUrl: string, supabaseKey: string) {
+  return new ImageGenerationManager(supabaseUrl, supabaseKey);
+}
+
+export function createLeonardoGenerator(supabaseUrl: string, supabaseKey: string) {
+  return new LeonardoGenerator(supabaseUrl, supabaseKey);
+}
+
+export function createReplicateGenerator(supabaseUrl: string, supabaseKey: string) {
+  return new ReplicateGenerator(supabaseUrl, supabaseKey);
+}
+
+export function createStyleLearningSystem(supabaseUrl: string, supabaseKey: string) {
+  return new StyleLearningSystem(supabaseUrl, supabaseKey);
+}
