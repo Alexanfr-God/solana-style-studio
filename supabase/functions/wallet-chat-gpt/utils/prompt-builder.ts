@@ -1,178 +1,160 @@
+// ====== Enhanced utils/prompt-builder.ts ======
+import type { WalletContext, WalletElement } from '../types/wallet.ts';
+import type { StyleAnalysisResponse } from '../types/responses.ts';
 
-// Fixed prompt building utilities with working system prompt
-export function buildAdvancedWalletSystemPrompt(walletContext: any, designExamples: any[], chosenStyle: any): string {
-  const FIXED_SYSTEM_PROMPT = `
-You are an ELITE Web3 Wallet Design AI.
-
-CRITICAL: Always return this EXACT JSON format:
-
-\`\`\`json
-{
-  "styleChanges": {
-    "layer": "wallet",
-    "target": "global",
-    "changes": {
-      "backgroundColor": "#hex_color",
-      "accentColor": "#hex_color", 
-      "textColor": "#hex_color",
-      "buttonColor": "#hex_color"
-    },
-    "reasoning": "explanation of changes"
-  }
-}
-\`\`\`
-
-NEVER use other formats like "elements" or "analysis" - ONLY styleChanges!
-
-Examples:
-- User: "make it red" → backgroundColor: "#ff0000"
-- User: "dark theme" → backgroundColor: "#1a1a1a", textColor: "#ffffff"
-- User: "bitcoin style" → backgroundColor: "#f7931a", accentColor: "#000000"
-
-Always include the JSON block in your response!
-`;
-
-  return `${FIXED_SYSTEM_PROMPT}
-
-CURRENT WALLET CONTEXT:
-- Wallet type: ${walletContext?.walletType || 'Phantom'}
-- Active layer: ${walletContext?.activeLayer || 'wallet'}
-- Current styles: ${JSON.stringify(walletContext?.currentStyle || {})}
-
-${chosenStyle ? `CHOSEN STYLE: ${chosenStyle.id}` : ''}
-
-DESIGN EXAMPLES AVAILABLE: ${designExamples.length} premium styles loaded
-CRITICAL: ALWAYS respond with the JSON structure above for proper frontend integration!`;
+export interface PromptConfig {
+  type: 'customization' | 'analysis' | 'generation' | 'chat' | 'tutorial';
+  context: WalletContext;
+  userRequest: string;
+  imageUrl?: string;
+  targetElement?: string;
+  stylePreferences?: any;
+  complexity: 'beginner' | 'intermediate' | 'advanced';
 }
 
-export function buildUserMessage(content: string, walletElement?: string, imageUrl?: string): string {
-  let message = content;
-  
-  if (walletElement) {
-    message = `I want to customize element "${walletElement}". ${content}`;
-  }
-
-  if (imageUrl) {
-    message += '\n\nI uploaded an image for inspiration. Please analyze it and suggest how to apply similar styling to my wallet.';
-  }
-  
-  return message;
+export interface WowEffectConfig {
+  effectType: 'cyberpunk' | 'luxury' | 'neon' | 'cosmic' | 'minimal' | 'retro' | 'gaming' | 'professional';
+  intensity: 'subtle' | 'medium' | 'dramatic' | 'extreme';
+  targetElements: string[];
+  preserveUsability: boolean;
+  nftReady: boolean;
 }
 
-export function buildWowEffectPrompt(
-  effectType: string,
-  walletContext: any,
-  intensity: 'subtle' | 'medium' | 'dramatic' = 'medium'
-): string {
-  const effectDefinitions = {
+/**
+ * Advanced Prompt Builder with context awareness and optimization
+ */
+export class AdvancedPromptBuilder {
+  private static effectDefinitions = {
     cyberpunk: {
-      colors: ['#00ff41', '#ff0080', '#0080ff', '#ffff00'],
-      description: 'futuristic neon cyberpunk aesthetic with glowing elements',
-      effects: 'neon glows, electric gradients, matrix-style animations'
+      colors: ['#00ff41', '#ff0080', '#0080ff', '#ffff00', '#00ffff'],
+      description: 'futuristic cyberpunk aesthetic with matrix-style elements',
+      effects: 'neon glows, digital grid overlays, holographic effects, electric animations',
+      mood: 'futuristic, high-tech, mysterious, edgy',
+      typography: 'monospace, tech-inspired fonts',
+      patterns: 'circuit boards, binary code, digital noise'
     },
     luxury: {
-      colors: ['#ffd700', '#c9b037', '#000000', '#ffffff'],
-      description: 'premium luxury design with gold accents and elegant typography',
-      effects: 'metallic gradients, subtle shadows, refined animations'
+      colors: ['#ffd700', '#c9b037', '#000000', '#ffffff', '#8b4513'],
+      description: 'premium luxury design with sophisticated elegance',
+      effects: 'metallic gradients, subtle shadows, refined animations, premium textures',
+      mood: 'sophisticated, exclusive, elegant, premium',
+      typography: 'serif fonts, elegant script, refined sans-serif',
+      patterns: 'marble textures, gold leaf, premium materials'
     },
     neon: {
-      colors: ['#ff006e', '#00f5ff', '#39ff14', '#ff073a'],
-      description: 'vibrant neon aesthetic with electric colors',
-      effects: 'bright neon glows, electric animations, pulsing effects'
+      colors: ['#ff006e', '#00f5ff', '#39ff14', '#ff073a', '#bf00ff'],
+      description: 'vibrant neon aesthetic with electric energy',
+      effects: 'bright neon glows, electric animations, pulsing effects, color cycling',
+      mood: 'energetic, vibrant, electric, bold',
+      typography: 'bold sans-serif, impact fonts, glowing text',
+      patterns: 'neon tube lighting, electric patterns, grid systems'
     },
     cosmic: {
-      colors: ['#4c1d95', '#7c3aed', '#a855f7', '#c084fc'],
-      description: 'cosmic space theme with stellar gradients',
-      effects: 'stellar gradients, particle effects, cosmic animations'
+      colors: ['#4c1d95', '#7c3aed', '#a855f7', '#c084fc', '#1e1b4b'],
+      description: 'cosmic space theme with stellar grandeur',
+      effects: 'stellar gradients, particle effects, cosmic animations, nebula patterns',
+      mood: 'mysterious, vast, inspirational, cosmic',
+      typography: 'futuristic fonts, space-age design',
+      patterns: 'star fields, nebulae, galaxy spirals, cosmic dust'
     },
     minimal: {
-      colors: ['#f8fafc', '#64748b', '#1e293b', '#0f172a'],
-      description: 'clean minimal design with perfect spacing',
-      effects: 'subtle shadows, smooth transitions, clean lines'
+      colors: ['#f8fafc', '#64748b', '#1e293b', '#0f172a', '#374151'],
+      description: 'ultra-clean minimal design with perfect balance',
+      effects: 'subtle shadows, smooth transitions, clean lines, micro-interactions',
+      mood: 'clean, focused, sophisticated, modern',
+      typography: 'clean sans-serif, geometric fonts, perfect hierarchy',
+      patterns: 'geometric shapes, clean grids, negative space'
     },
     retro: {
-      colors: ['#ff6b35', '#f7931e', '#ffcd3c', '#c5d86d'],
-      description: 'retro 80s aesthetic with vintage colors',
-      effects: 'retro gradients, vintage animations, nostalgic feel'
+      colors: ['#ff6b35', '#f7931e', '#ffcd3c', '#c5d86d', '#8b5a3c'],
+      description: 'nostalgic 80s aesthetic with vintage charm',
+      effects: 'retro gradients, vintage animations, nostalgic feel, chromatic aberration',
+      mood: 'nostalgic, warm, playful, vintage',
+      typography: 'retro fonts, 80s-style typography, bold headers',
+      patterns: 'retro patterns, vintage textures, 80s graphics'
+    },
+    gaming: {
+      colors: ['#00ff00', '#ff0000', '#0000ff', '#ffff00', '#ff00ff'],
+      description: 'high-energy gaming aesthetic with competitive edge',
+      effects: 'RGB lighting, gaming animations, competitive feel, action elements',
+      mood: 'competitive, energetic, dynamic, intense',
+      typography: 'gaming fonts, bold typography, action-oriented',
+      patterns: 'gaming patterns, tech elements, competitive styling'
+    },
+    professional: {
+      colors: ['#1e40af', '#374151', '#f3f4f6', '#111827', '#6b7280'],
+      description: 'professional business aesthetic with trustworthy appeal',
+      effects: 'corporate gradients, professional animations, trust-building elements',
+      mood: 'trustworthy, professional, reliable, corporate',
+      typography: 'corporate fonts, professional hierarchy',
+      patterns: 'business patterns, corporate elements, professional styling'
     }
   };
 
-  const effect = effectDefinitions[effectType] || effectDefinitions.neon;
-  
-  const intensityModifiers = {
-    subtle: 'gentle and refined',
-    medium: 'noticeable and appealing',
-    dramatic: 'bold and striking'
-  };
+  /**
+   * Build advanced wallet system prompt with full context
+   */
+  static buildAdvancedWalletSystemPrompt(
+    config: PromptConfig,
+    designExamples: any[] = [],
+    chosenStyle?: any
+  ): string {
+    const basePrompt = this.getBaseSystemPrompt(config.complexity);
+    const contextPrompt = this.buildContextPrompt(config);
+    const examplesPrompt = this.buildExamplesPrompt(designExamples, chosenStyle);
+    const constraintsPrompt = this.buildConstraintsPrompt(config);
 
-  const intensityDescription = intensityModifiers[intensity];
+    return `${basePrompt}
 
-  return `
-Create a WOW-EFFECT ${effect.description} for ${walletContext?.walletType || 'Phantom'} wallet.
+${contextPrompt}
 
-EFFECT SPECIFICATIONS:
-- Style: ${effectType.toUpperCase()}
-- Intensity: ${intensity.toUpperCase()} (${intensityDescription})
-- Target: ${walletContext?.activeLayer || 'wallet'} layer
-- Colors: ${effect.colors.join(', ')}
-- Effects: ${effect.effects}
+${examplesPrompt}
 
-DESIGN REQUIREMENTS:
-1. Make it NFT-ready and Web3 premium looking
-2. Ensure excellent contrast and readability
-3. Apply ${intensityDescription} visual impact
-4. Maintain wallet functionality and usability
-5. Create cohesive color harmony
-6. Add appropriate visual effects: ${effect.effects}
+${constraintsPrompt}
 
-CURRENT WALLET STATE:
-- Background: ${walletContext?.currentStyle?.backgroundColor || '#1a1a1a'}
-- Primary: ${walletContext?.currentStyle?.primaryColor || '#9945ff'}
-- Accent: ${walletContext?.currentStyle?.accentColor || '#00d4ff'}
+CRITICAL INSTRUCTIONS:
+- Always respond with the enhanced JSON format shown above
+- Include detailed reasoning in the analysis section
+- Ensure all colors have proper contrast ratios (WCAG AA minimum)
+- Consider the wallet type capabilities and limitations
+- Provide actionable style changes that improve user experience
+- Include accessibility considerations in your recommendations`;
+  }
 
-Transform this wallet into a ${intensityDescription} ${effectType} masterpiece that will make users say WOW!
+  /**
+   * Build wow effect prompt with advanced specifications
+   */
+  static buildWowEffectPrompt(config: WowEffectConfig, walletContext: WalletContext): string {
+    const effect = this.effectDefinitions[config.effectType];
+    const intensityModifiers = {
+      subtle: 'gentle and refined with understated elegance',
+      medium: 'noticeable and appealing with balanced impact',
+      dramatic: 'bold and striking with high visual impact',
+      extreme: 'maximum impact with cutting-edge visual effects'
+    };
 
-CRITICAL: Return the exact JSON format specified in the system prompt with the wow-effect styling applied.
-`;
-}
+    const intensitySpecs = {
+      subtle: { opacity: '0.3-0.6', glow: '2-5px', animation: 'slow', contrast: 'low' },
+      medium: { opacity: '0.6-0.8', glow: '5-10px', animation: 'medium', contrast: 'medium' },
+      dramatic: { opacity: '0.8-0.95', glow: '10-20px', animation: 'fast', contrast: 'high' },
+      extreme: { opacity: '0.95-1.0', glow: '20-40px', animation: 'very fast', contrast: 'maximum' }
+    };
 
-export function getAvailableWowEffects(): Array<{id: string, name: string, description: string, preview: string[]}> {
-  return [
-    {
-      id: 'cyberpunk',
-      name: 'Cyberpunk Matrix',
-      description: 'Futuristic neon with matrix-style glows',
-      preview: ['#00ff41', '#ff0080', '#0080ff']
-    },
-    {
-      id: 'luxury',
-      name: 'Premium Gold',
-      description: 'Elegant luxury with gold accents',
-      preview: ['#ffd700', '#c9b037', '#000000']
-    },
-    {
-      id: 'neon',
-      name: 'Electric Neon',
-      description: 'Vibrant electric colors with glow effects',
-      preview: ['#ff006e', '#00f5ff', '#39ff14']
-    },
-    {
-      id: 'cosmic',
-      name: 'Cosmic Space',
-      description: 'Deep space with stellar gradients',
-      preview: ['#4c1d95', '#7c3aed', '#a855f7']
-    },
-    {
-      id: 'minimal',
-      name: 'Ultra Minimal',
-      description: 'Clean and sophisticated simplicity',
-      preview: ['#f8fafc', '#64748b', '#1e293b']
-    },
-    {
-      id: 'retro',
-      name: 'Retro 80s',
-      description: 'Nostalgic 80s with vintage colors',
-      preview: ['#ff6b35', '#f7931e', '#ffcd3c']
-    }
-  ];
-}
+    const specs = intensitySpecs[config.intensity];
+    const intensityDescription = intensityModifiers[config.intensity];
+
+    return `Create a WOW-EFFECT ${effect.description} for ${walletContext.walletType} wallet that will make users absolutely amazed.
+
+🎨 EFFECT SPECIFICATIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Style: ${config.effectType.toUpperCase()}
+Intensity: ${config.intensity.toUpperCase()} (${intensityDescription})
+Target: ${config.targetElements.join(', ')}
+Colors: ${effect.colors.join(' • ')}
+Effects: ${effect.effects}
+Mood: ${effect.mood}
+Typography: ${effect.typography}
+Patterns: ${effect.patterns}
+
+🔧 TECHNICAL SPECIFICATIONS:
+━━━━━━━━━━━━━━━━━━
