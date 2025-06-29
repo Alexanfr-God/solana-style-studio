@@ -179,7 +179,7 @@ function detectMood(prompt) {
 
 export async function generateImageWithLeonardo(prompt, supabase, options = {}) {
   try {
-    console.log('🎨 Leonardo.ai generation with CORRECTED API implementation...');
+    console.log('🎨 Leonardo.ai generation with FULLY CORRECTED API implementation...');
     console.log('Original prompt:', prompt);
     
     // Get Leonardo API key from environment
@@ -194,27 +194,27 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
     // ПРИМЕНЯЕМ COT & RUG + ОБУЧЕНИЕ НА ПРИМЕРАХ
     const enhancedPrompt = await enhancePosterPrompt(prompt, 'leonardo', supabase);
     
-    console.log('📤 Calling Leonardo.ai API with CORRECTED parameters...');
+    console.log('📤 Calling Leonardo.ai API with FULLY CORRECTED snake_case parameters...');
     console.log('🎯 Enhanced prompt:', enhancedPrompt);
 
-    // ИСПРАВЛЕННЫЕ ПАРАМЕТРЫ API - snake_case согласно документации Leonardo.ai
+    // ВСЕ ПАРАМЕТРЫ В snake_case СОГЛАСНО ДОКУМЕНТАЦИИ Leonardo.ai
     const requestBody = {
       prompt: enhancedPrompt,
       model_id: "6ac8733c-de4d-4726-9c09-5c682cb35c44", // Leonardo Phoenix (актуальный ID)
       width: 1024,
       height: 1024,
       num_images: 1, // ИСПРАВЛЕНО: snake_case
-      guidance_scale: 7, // ИСПРАВЛЕНО: snake_case
+      guidance_scale: 7, // ИСПРАВЛЕНО: snake_case  
       num_inference_steps: 15, // ИСПРАВЛЕНО: snake_case
-      presetStyle: "DYNAMIC",
+      preset_style: "DYNAMIC", // ИСПРАВЛЕНО: snake_case
       scheduler: "LEONARDO",
       public: false,
-      promptMagic: true,
-      promptMagicVersion: "v3",
-      promptMagicStrength: 0.5
+      prompt_magic: true, // ИСПРАВЛЕНО: snake_case
+      prompt_magic_version: "v3", // ИСПРАВЛЕНО: snake_case
+      prompt_magic_strength: 0.5 // ИСПРАВЛЕНО: snake_case
     };
 
-    console.log('📋 Request body with corrected parameters:', JSON.stringify(requestBody, null, 2));
+    console.log('📋 Request body with ALL corrected snake_case parameters:', JSON.stringify(requestBody, null, 2));
 
     // Step 1: Create generation request
     const generationResponse = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
@@ -350,6 +350,9 @@ export async function generateImageWithLeonardo(prompt, supabase, options = {}) 
       console.error('🔍 Authentication error - check API key validity');
     } else if (error.message.includes('429')) {
       console.error('🔍 Rate limit exceeded - try again later');
+    } else if (error.message.includes('400')) {
+      console.error('🔍 Bad Request (400) - parameter validation failed');
+      console.error('🔍 Check all parameter names and values in request body');
     }
     
     return {
