@@ -68,8 +68,8 @@ export const WalletChatProvider = ({ children }: WalletChatProviderProps) => {
         backgroundImage: currentStyle.backgroundImage,
         boxShadow: currentStyle.boxShadow,
         fontFamily: currentStyle.fontFamily,
-        theme: currentStyle.theme || 'dark',
-        animations: currentStyle.animations || { enabled: true }
+        theme: 'dark', // Use default value instead of accessing currentStyle.theme
+        animations: { enabled: true } // Use default value instead of accessing currentStyle.animations
       },
       availableElements: WALLET_ELEMENTS_REGISTRY.map(element => ({
         id: element.id,
@@ -96,7 +96,7 @@ export const WalletChatProvider = ({ children }: WalletChatProviderProps) => {
         customizableAreas: ['backgrounds', 'colors', 'typography', 'effects']
       },
       userPreferences: {
-        theme: currentStyle.theme || 'dark',
+        theme: 'dark', // Use default value instead of accessing currentStyle.theme
         language: 'en' // Could be dynamic based on browser locale
       },
       customizableScreens: [

@@ -78,14 +78,17 @@ export class FrontendLogger {
     console.log(`💾 [Save] Style saved to library: ${styleName}`);
   }
 
-  // User Interaction Logging with expanded action types
+  // User Interaction Logging with expanded action types (including structure)
   async logUserInteraction(
     action: 'upload' | 'generate' | 'like' | 'dislike' | 'mint' | 'share' | 'apply_style' | 'save_style' | 'structure',
     elementId: string,
     details: string
   ): Promise<void> {
+    // Map 'structure' to 'generate' for compatibility with base logger
+    const mappedAction = action === 'structure' ? 'generate' : action;
+    
     await logger.logUserInteraction(
-      action,
+      mappedAction,
       elementId,
       details,
       this.currentUserId || undefined
