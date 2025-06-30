@@ -311,19 +311,14 @@ async function handleImageGeneration(
     
     console.log(`✅ ${apiKeyName} found, proceeding with generation...`);
     
-    // Enhance prompt using prompt builder
-    const enhancedPrompt = promptBuilder.buildImagePrompt(
-      prompt,
-      'modern',
-      [],
-      { quality: 'high', dimensions: '1:1' }
-    );
+    // Simple prompt enhancement for wallet context (instead of buildImagePrompt)
+    const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, high quality, detailed, artistic, vibrant colors, 4k resolution`;
     
     let result;
     if (mode === 'leonardo') {
-      result = await generateImageWithLeonardo(enhancedPrompt.prompt, supabase);
+      result = await generateImageWithLeonardo(enhancedPrompt, supabase);
     } else {
-      result = await generateImageWithReplicate(enhancedPrompt.prompt, supabase);
+      result = await generateImageWithReplicate(enhancedPrompt, supabase);
     }
 
     console.log(`🎯 ${mode} generation result:`, result.success ? 'SUCCESS' : 'FAILED');
@@ -338,10 +333,10 @@ async function handleImageGeneration(
       status: result.success ? 'completed' : 'failed',
       error: result.error,
       data: {
-        imageUrl: result.imageUrl // 🔥 ДОБАВЛЯЕМ data.imageUrl для правильного парсинга
+        imageUrl: result.imageUrl // Убедимся что imageUrl находится в data
       },
       metadata: {
-        prompt: enhancedPrompt.prompt,
+        prompt: enhancedPrompt,
         model: mode,
         dimensions: { width: 1024, height: 1024 }
       }
