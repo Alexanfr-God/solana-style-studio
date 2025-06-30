@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 const ModeSelector = () => {
+  // ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Используем унифицированный chatMode
   const { chatMode, setChatMode } = useChatStore();
 
   const modes: Array<{

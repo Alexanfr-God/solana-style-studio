@@ -31,7 +31,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { sendMessage, sendImageGenerationMessage, imageGenerationMode, isLoading: chatIsLoading } = useChatStore();
+  // ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Используем только chatMode
+  const { sendMessage, sendImageGenerationMessage, chatMode, isLoading: chatIsLoading } = useChatStore();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -93,18 +94,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     try {
       console.log('💬 [ИСПРАВЛЕНИЕ] MessageInput отправка:');
-      console.log('💬 [ИСПРАВЛЕНИЕ] Режим imageGenerationMode:', imageGenerationMode);
+      console.log('💬 [ИСПРАВЛЕНИЕ] Режим chatMode:', chatMode);
       console.log('💬 [ИСПРАВЛЕНИЕ] Сообщение:', currentMessage);
       console.log('💬 [ИСПРАВЛЕНИЕ] Есть файл:', !!fileToSend);
 
-      // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Четкая логика выбора обработчика
-      if (imageGenerationMode === 'leonardo') {
+      // ✅ ИСПРАВЛЕНИЕ ЭТАП 3: Четкая логика на основе единого chatMode
+      if (chatMode === 'leonardo') {
         console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Leonardo генерацию через sendImageGenerationMessage');
         await sendImageGenerationMessage({ 
           content: currentMessage, 
           mode: 'leonardo' 
         });
-      } else if (imageGenerationMode === 'replicate') {
+      } else if (chatMode === 'replicate') {
         console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Replicate генерацию через sendImageGenerationMessage');
         await sendImageGenerationMessage({ 
           content: currentMessage, 
@@ -133,8 +134,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
+  // ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Иконки и плейсхолдеры на основе chatMode
   const getModeIcon = () => {
-    switch (imageGenerationMode) {
+    switch (chatMode) {
       case 'leonardo': return <Image className="h-4 w-4 text-green-500" />;
       case 'replicate': return <Sparkles className="h-4 w-4 text-purple-500" />;
       default: return <Brain className="h-4 w-4 text-blue-500" />;
@@ -142,7 +144,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   const getPlaceholder = () => {
-    switch (imageGenerationMode) {
+    switch (chatMode) {
       case 'leonardo':
         return 'Describe the background image you want Leonardo.ai to generate...';
       case 'replicate':
@@ -152,17 +154,23 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
+  const getModeDisplayName = () => {
+    switch (chatMode) {
+      case 'leonardo': return '🎨 Leonardo.ai Generation Mode';
+      case 'replicate': return '🎨 Replicate Art Mode';
+      default: return '🧠 Style Analysis Mode';
+    }
+  };
+
   return (
     <div className="space-y-3">
-      {/* ✅ ИСПРАВЛЕНИЕ: Четкий индикатор режима */}
+      {/* ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Четкий индикатор режима на основе chatMode */}
       <div className="flex items-center gap-2 text-xs text-white/60 bg-white/5 px-3 py-2 rounded-lg">
         {getModeIcon()}
         <span className="font-medium">
-          {imageGenerationMode === 'analysis' ? '🧠 Style Analysis Mode' : 
-           imageGenerationMode === 'leonardo' ? '🎨 Leonardo.ai Generation Mode' : 
-           '🎨 Replicate Art Mode'}
+          {getModeDisplayName()}
         </span>
-        {imageGenerationMode !== 'analysis' && (
+        {chatMode !== 'analysis' && (
           <span className="text-green-400 text-xs">→ Will generate image</span>
         )}
       </div>

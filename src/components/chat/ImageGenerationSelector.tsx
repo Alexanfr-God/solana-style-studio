@@ -1,14 +1,15 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useChatStore, ImageGenerationMode } from '@/stores/chatStore';
+import { useChatStore, ChatMode } from '@/stores/chatStore';
 import { Brain, Image, Sparkles } from 'lucide-react';
 
 const ImageGenerationSelector = () => {
-  const { imageGenerationMode, setImageGenerationMode } = useChatStore();
+  // ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Используем только chatMode
+  const { chatMode, setChatMode } = useChatStore();
 
   const modes: Array<{
-    key: ImageGenerationMode;
+    key: ChatMode;
     label: string;
     icon: React.ReactNode;
     description: string;
@@ -37,9 +38,9 @@ const ImageGenerationSelector = () => {
     }
   ];
 
-  const handleModeChange = (mode: ImageGenerationMode) => {
+  const handleModeChange = (mode: ChatMode) => {
     console.log('🔄 [ИСПРАВЛЕНИЕ] Изменение режима на:', mode);
-    setImageGenerationMode(mode);
+    setChatMode(mode);
   };
 
   return (
@@ -51,12 +52,12 @@ const ImageGenerationSelector = () => {
         {modes.map((mode) => (
           <Button
             key={mode.key}
-            variant={imageGenerationMode === mode.key ? 'default' : 'outline'}
+            variant={chatMode === mode.key ? 'default' : 'outline'}
             size="sm"
             onClick={() => handleModeChange(mode.key)}
             className={`
               flex items-center gap-2 text-xs transition-all
-              ${imageGenerationMode === mode.key 
+              ${chatMode === mode.key 
                 ? `${mode.color} text-white` 
                 : 'border-white/20 text-white/80 hover:text-white hover:bg-white/10'
               }
@@ -69,13 +70,13 @@ const ImageGenerationSelector = () => {
         ))}
       </div>
       
-      {/* ✅ ИСПРАВЛЕНИЕ: Четкий индикатор активного режима */}
+      {/* ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Четкий индикатор активного режима */}
       <div className="text-xs text-white/50 mt-2">
-        <span className="font-medium">Active:</span> {modes.find(m => m.key === imageGenerationMode)?.description}
+        <span className="font-medium">Active:</span> {modes.find(m => m.key === chatMode)?.description}
       </div>
       
-      {/* ✅ ИСПРАВЛЕНИЕ: Четкое предупреждение о генерации */}
-      {imageGenerationMode !== 'analysis' && (
+      {/* ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Четкое предупреждение о генерации */}
+      {chatMode !== 'analysis' && (
         <div className="text-xs text-green-400 mt-2 p-2 bg-green-500/10 rounded border border-green-500/20">
           🎨 <strong>Image Generation Mode Active:</strong> Your prompt will create a new background image
         </div>
@@ -83,15 +84,15 @@ const ImageGenerationSelector = () => {
       
       {/* Mode-specific tips */}
       <div className="text-xs text-white/40 mt-2 p-2 bg-white/5 rounded">
-        {imageGenerationMode === 'leonardo' && (
+        {chatMode === 'leonardo' && (
           <p>💡 Tips: Try "cosmic nebula background", "neon cyberpunk cityscape", or "abstract crypto patterns"</p>
         )}
         
-        {imageGenerationMode === 'replicate' && (
+        {chatMode === 'replicate' && (
           <p>💡 Tips: Try "abstract crypto art", "pepe meme style", or "digital art with crypto symbols"</p>
         )}
         
-        {imageGenerationMode === 'analysis' && (
+        {chatMode === 'analysis' && (
           <p>💡 Tips: Try "make it dark mode with neon accents", "apply luxury gold theme", or upload an inspiration image</p>
         )}
       </div>
