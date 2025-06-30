@@ -27,6 +27,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ✅ ЭТАП 1: Функция валидации режима
+function validateMode(mode: any): { isValid: boolean; mode: string; error?: string } {
+  console.log('🔍 [ВАЛИДАЦИЯ] Входящий режим:', {
+    value: mode,
+    type: typeof mode,
+    length: mode?.length,
+    stringified: JSON.stringify(mode),
+    bytes: mode ? Array.from(mode).map((c: string) => c.charCodeAt(0)) : []
+  });
+  
+  if (!mode) {
+    return { isValid: false, mode: 'unknown', error: 'Mode is null or undefined' };
+  }
+  
+  const cleanMode = String(mode).trim().toLowerCase();
+  const validModes = ['analysis', 'leonardo', 'replicate', 'structure', 'chat', 'style-analysis'];
+  
+  if (!validModes.includes(cleanMode)) {
+    return { 
+      isValid: false, 
+      mode: cleanMode, 
+      error: `Invalid mode: "${cleanMode}". Valid modes: ${validModes.join(', ')}` 
+    };
+  }
+  
+  return { isValid: true, mode: cleanMode };
+}
+
+// ✅ ЭТАП 2: Функция проверки генерации изображений
+function isImageGenerationMode(mode: string): boolean {
+  return mode === 'leonardo' || mode === 'replicate';
+}
+
 // Main serve function
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -62,44 +95,45 @@ serve(async (req) => {
       debugMode
     } = body;
 
-    console.log('🚀 [ИСПРАВЛЕНИЕ] Enhanced wallet-chat-gpt called with:', {
+    // ✅ ЭТАП 1: ДЕТАЛЬНАЯ ДИАГНОСТИКА ВХОДЯЩИХ ДАННЫХ
+    console.log('🚀 [ДИАГНОСТИКА] Enhanced wallet-chat-gpt запрос:');
+    console.log('📋 [ДИАГНОСТИКА] Полное тело запроса:', JSON.stringify({
+      content: content?.substring(0, 50) + '...',
       mode,
-      hasContent: !!content,
-      hasImage: !!imageUrl,
-      walletType: walletContext?.walletType,
-      activeLayer: walletContext?.activeLayer,
-      sessionId,
-      userId,
       isImageGeneration,
       debugMode,
-      contentPreview: content?.substring(0, 50) + '...'
-    });
+      walletType: walletContext?.walletType,
+      sessionId
+    }, null, 2));
 
-    // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Проверка корректности режима
-    if (debugMode) {
-      console.log('🔍 [ОТЛАДКА] Детальная проверка режима:');
-      console.log('🔍 [ОТЛАДКА] body.mode:', mode);
-      console.log('🔍 [ОТЛАДКА] typeof mode:', typeof mode);
-      console.log('🔍 [ОТЛАДКА] isImageGeneration:', isImageGeneration);
+    // ✅ ВАЛИДАЦИЯ РЕЖИМА С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ
+    const validation = validateMode(mode);
+    if (!validation.isValid) {
+      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Неверный режим:', validation.error);
+      return createErrorResponse(`Invalid mode: ${validation.error}`, 400);
+    }
+    
+    const validatedMode = validation.mode;
+    console.log('✅ [ВАЛИДАЦИЯ] Режим валиден:', validatedMode);
+
+    // ✅ ЭТАП 2: ПРОВЕРКА НА ГЕНЕРАЦИЮ ИЗОБРАЖЕНИЙ
+    const isGeneration = isImageGenerationMode(validatedMode);
+    console.log('🎨 [МАРШРУТИЗАЦИЯ] Это генерация изображения?', isGeneration);
+    
+    if (isGeneration) {
+      console.log('🎨 [МАРШРУТИЗАЦИЯ] НАПРАВЛЯЕМ В ГЕНЕРАЦИЮ БЕЗ JSON ПАРСИНГА');
+    } else {
+      console.log('🧠 [МАРШРУТИЗАЦИЯ] НАПРАВЛЯЕМ В АНАЛИЗ С JSON ПАРСИНГОМ');
     }
 
-    // ✅ ЗАЩИТА: Предотвращаем неправильную маршрутизацию
-    if (isImageGeneration && mode === 'analysis') {
-      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Запрос генерации изображения попал в режим analysis!');
-      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Это указывает на проблему маршрутизации');
-      return createErrorResponse('Critical routing error: Image generation request incorrectly routed to analysis mode', 400);
-    }
-
-    if ((mode === 'leonardo' || mode === 'replicate') && !isImageGeneration) {
-      console.warn('⚠️ [ПРЕДУПРЕЖДЕНИЕ] Режим генерации без флага isImageGeneration');
-    }
-
-    // ✅ МАРШРУТИЗАЦИЯ: Четкое разделение по режимам
-    switch (mode) {
+    // ✅ ЭТАП 3: СТРОГАЯ МАРШРУТИЗАЦИЯ БЕЗ DEFAULT FALLBACK
+    switch (validatedMode) {
       case 'structure':
+        console.log('🏗️ [РОУТИНГ] Обработка структуры');
         return await handleStructureMode(elementsManager, walletContext?.walletType || 'phantom');
       
       case 'chat':
+        console.log('💬 [РОУТИНГ] Обработка чата');
         return await handleChatMode(
           chatHandler, 
           content, 
@@ -111,6 +145,7 @@ serve(async (req) => {
         );
       
       case 'style-analysis':
+        console.log('🎨 [РОУТИНГ] Обработка анализа стилей');
         return await handleStyleAnalysisMode(
           styleAnalyzer, 
           content, 
@@ -119,14 +154,15 @@ serve(async (req) => {
         );
       
       case 'leonardo':
-        console.log('🎨 [ИСПРАВЛЕНИЕ] Обработка Leonardo - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
+        console.log('🎨 [РОУТИНГ] LEONARDO - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
         return await handleImageGeneration('leonardo', content, supabase, promptBuilder);
       
       case 'replicate':
-        console.log('🎨 [ИСПРАВЛЕНИЕ] Обработка Replicate - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
+        console.log('🎨 [РОУТИНГ] REPLICATE - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
         return await handleImageGeneration('replicate', content, supabase, promptBuilder);
       
       case 'poster-generation':
+        console.log('🎨 [РОУТИНГ] Обработка генерации постеров');
         return await handlePosterGeneration(
           posterGenerator, 
           content, 
@@ -135,6 +171,7 @@ serve(async (req) => {
         );
       
       case 'save-customization':
+        console.log('💾 [РОУТИНГ] Сохранение кастомизации');
         return await handleSaveCustomization(
           storageManager,
           walletContext,
@@ -143,6 +180,7 @@ serve(async (req) => {
         );
       
       case 'load-customization':
+        console.log('📂 [РОУТИНГ] Загрузка кастомизации');
         return await handleLoadCustomization(
           storageManager,
           walletContext?.walletType,
@@ -150,26 +188,25 @@ serve(async (req) => {
         );
       
       case 'analysis':
-      default:
-        // ✅ ЗАЩИТА: Предупреждение если команда генерации попала в анализ
+        console.log('🧠 [РОУТИНГ] ANALYSIS - ТОЛЬКО С JSON ПАРСИНГОМ');
+        
+        // ✅ ЭТАП 3: ЗАЩИТА - убедимся что команды генерации не попали сюда
         if (content && (
           content.toLowerCase().includes('generate') || 
           content.toLowerCase().includes('create image') ||
           content.toLowerCase().includes('генерировать') ||
           content.toLowerCase().includes('создать изображение')
         )) {
-          console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Команда генерации попала в режим analysis!');
-          console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Контент:', content);
-          console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Это указывает на проблему UI - пользователь выбрал неправильный режим');
+          console.error('❌ [ЗАЩИТА] Команда генерации попала в режим analysis!');
+          console.error('❌ [ЗАЩИТА] Контент:', content);
+          console.error('❌ [ЗАЩИТА] Режим:', validatedMode);
           
-          // Возвращаем ошибку вместо обработки как анализ
           return createErrorResponse(
             'Image generation command detected in analysis mode. Please select Leonardo or Replicate mode for image generation.',
             400
           );
         }
         
-        console.log('🧠 [ИСПРАВЛЕНИЕ] Обработка Analysis - ТОЛЬКО С JSON парсингом');
         return await handleAnalysisMode(
           content,
           imageUrl,
@@ -179,11 +216,19 @@ serve(async (req) => {
           walletManager,
           promptBuilder
         );
+      
+      default:
+        // ✅ ЭТАП 2: НЕТ FALLBACK НА ANALYSIS - ТОЛЬКО ОШИБКА
+        console.error('❌ [МАРШРУТИЗАЦИЯ] Неизвестный режим попал в default:', validatedMode);
+        return createErrorResponse(
+          `Unsupported mode: "${validatedMode}". This is a routing error.`,
+          400
+        );
     }
 
   } catch (error) {
-    console.error('💥 [ИСПРАВЛЕНИЕ] Error in enhanced wallet-chat-gpt:', error);
-    console.error('💥 [ИСПРАВЛЕНИЕ] Error stack:', error.stack);
+    console.error('💥 [ОШИБКА] Error in enhanced wallet-chat-gpt:', error);
+    console.error('💥 [ОШИБКА] Error stack:', error.stack);
     return createErrorResponse(error.message, 500);
   }
 });
@@ -315,7 +360,7 @@ async function handleStyleAnalysisMode(
 }
 
 /**
- * Handle image generation with enhanced error handling - БЕЗ JSON ПАРСИНГА
+ * ✅ ЭТАП 3: ЧИСТАЯ ГЕНЕРАЦИЯ ИЗОБРАЖЕНИЙ БЕЗ JSON ПАРСИНГА
  */
 async function handleImageGeneration(
   mode: 'leonardo' | 'replicate', 
@@ -324,8 +369,14 @@ async function handleImageGeneration(
   promptBuilder: any
 ) {
   try {
-    console.log(`🖼️ [ИСПРАВЛЕНИЕ] ЧИСТАЯ генерация изображения: ${mode}`);
-    console.log(`📝 [ИСПРАВЛЕНИЕ] Промпт: "${prompt}"`);
+    console.log(`🖼️ [ГЕНЕРАЦИЯ] СТАРТ ${mode.toUpperCase()} - БЕЗ JSON ПАРСИНГА`);
+    console.log(`📝 [ГЕНЕРАЦИЯ] Промпт: "${prompt}"`);
+    
+    // ✅ ЗАЩИТА: Убедимся что это не попало сюда случайно
+    if (mode !== 'leonardo' && mode !== 'replicate') {
+      console.error('❌ [ЗАЩИТА] Неверный режим в handleImageGeneration:', mode);
+      throw new Error(`Invalid image generation mode: ${mode}`);
+    }
     
     // Validate prompt
     if (!prompt || prompt.trim().length === 0) {
@@ -337,31 +388,31 @@ async function handleImageGeneration(
     const apiKey = Deno.env.get(apiKeyName);
     
     if (!apiKey) {
-      console.error(`❌ [ИСПРАВЛЕНИЕ] ${apiKeyName} not found in environment`);
+      console.error(`❌ [ГЕНЕРАЦИЯ] ${apiKeyName} not found in environment`);
       throw new Error(`${mode.charAt(0).toUpperCase() + mode.slice(1)} API key not configured`);
     }
     
-    console.log(`✅ [ИСПРАВЛЕНИЕ] ${apiKeyName} found, proceeding with generation...`);
+    console.log(`✅ [ГЕНЕРАЦИЯ] ${apiKeyName} найден, начинаем генерацию...`);
     
     // ✅ Простое улучшение промпта для wallet контекста
     const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, high quality, detailed, artistic, vibrant colors, 4k resolution`;
     
-    console.log(`🎯 [ИСПРАВЛЕНИЕ] Enhanced prompt: ${enhancedPrompt}`);
+    console.log(`🎯 [ГЕНЕРАЦИЯ] Enhanced prompt: ${enhancedPrompt}`);
     
     let result;
     if (mode === 'leonardo') {
-      console.log(`🎨 [ИСПРАВЛЕНИЕ] Calling generateImageWithLeonardo...`);
+      console.log(`🎨 [ГЕНЕРАЦИЯ] Вызываем generateImageWithLeonardo...`);
       result = await generateImageWithLeonardo(enhancedPrompt, supabase);
     } else {
-      console.log(`🎨 [ИСПРАВЛЕНИЕ] Calling generateImageWithReplicate...`);
+      console.log(`🎨 [ГЕНЕРАЦИЯ] Вызываем generateImageWithReplicate...`);
       result = await generateImageWithReplicate(enhancedPrompt, supabase);
     }
 
-    console.log(`🎯 [ИСПРАВЛЕНИЕ] ${mode} generation result:`, result.success ? 'SUCCESS' : 'FAILED');
-    console.log(`🔍 [ИСПРАВЛЕНИЕ] Result imageUrl:`, result.imageUrl);
+    console.log(`🎯 [ГЕНЕРАЦИЯ] ${mode} результат:`, result.success ? 'SUCCESS' : 'FAILED');
+    console.log(`🔍 [ГЕНЕРАЦИЯ] Result imageUrl:`, result.imageUrl);
     
     if (!result.success) {
-      console.error(`❌ [ИСПРАВЛЕНИЕ] ${mode} generation failed:`, result.error);
+      console.error(`❌ [ГЕНЕРАЦИЯ] ${mode} generation failed:`, result.error);
       throw new Error(result.error || 'Image generation failed');
     }
 
@@ -380,7 +431,7 @@ async function handleImageGeneration(
       }
     };
 
-    console.log(`✅ [ИСПРАВЛЕНИЕ] Final clean response:`, {
+    console.log(`✅ [ГЕНЕРАЦИЯ] Финальный ответ БЕЗ JSON:`, {
       success: response.success,
       imageUrl: response.imageUrl,
       'data.imageUrl': response.data?.imageUrl
@@ -388,7 +439,7 @@ async function handleImageGeneration(
 
     return createSuccessResponse(response);
   } catch (error) {
-    console.error(`💥 [ИСПРАВЛЕНИЕ] Error in ${mode} image generation:`, error);
+    console.error(`💥 [ГЕНЕРАЦИЯ] Ошибка в ${mode} image generation:`, error);
     
     const response: ImageGenerationResponse = {
       success: false,
@@ -504,7 +555,7 @@ async function handleLoadCustomization(
 }
 
 /**
- * Handle analysis mode - ТОЛЬКО ДЛЯ АНАЛИЗА С JSON ПАРСИНГОМ
+ * ✅ ЭТАП 3: АНАЛИЗ - ТОЛЬКО ДЛЯ analysis С JSON ПАРСИНГОМ
  */
 async function handleAnalysisMode(
   content: string,
@@ -516,7 +567,7 @@ async function handleAnalysisMode(
   promptBuilder: any
 ) {
   try {
-    console.log('🧠 [ИСПРАВЛЕНИЕ] Analysis mode: processing with AI и JSON парсингом...');
+    console.log('🧠 [АНАЛИЗ] Analysis mode: ТОЛЬКО JSON парсинг для стилей...');
 
     // Get OpenAI API key
     const openaiApiKey = Deno.env.get('OPENA_API_KEY');
@@ -526,7 +577,7 @@ async function handleAnalysisMode(
 
     // Detect user language
     const userLanguage = detectUserLanguage(content);
-    console.log(`🌐 [ИСПРАВЛЕНИЕ] Detected user language: ${userLanguage}`);
+    console.log(`🌐 [АНАЛИЗ] Detected user language: ${userLanguage}`);
 
     // Create enhanced wallet context
     const walletType = walletContext?.walletType || 'phantom';
@@ -615,13 +666,13 @@ The userText field should contain a friendly, conversational explanation in the 
     const aiResponse = await response.json();
     const aiContent = aiResponse.choices[0].message.content;
 
-    console.log('🧠 [ИСПРАВЛЕНИЕ] AI Response для парсинга:', aiContent);
+    console.log('🧠 [АНАЛИЗ] AI Response для JSON парсинга:', aiContent);
 
     // ✅ ЭТАП 3: Parse JSON ТОЛЬКО для analysis режима
     let parsedResponse = AdvancedJSONParser.parseAIResponse(aiContent);
     
     if (!parsedResponse || !AdvancedJSONParser.validateStyleStructure(parsedResponse.styleChanges || {})) {
-      console.warn('⚠️ [ИСПРАВЛЕНИЕ] Failed to parse AI JSON or invalid structure, using fallback');
+      console.warn('⚠️ [АНАЛИЗ] Failed to parse AI JSON, using fallback');
       const fallbackMessage = getLocalizedExample(userLanguage);
       parsedResponse = {
         success: true,
@@ -636,7 +687,7 @@ The userText field should contain a friendly, conversational explanation in the 
       parsedResponse.styleChanges = AdvancedJSONParser.normalizeColors(parsedResponse.styleChanges);
     }
 
-    console.log('✅ [ИСПРАВЛЕНИЕ] Analysis completed successfully with JSON parsing');
+    console.log('✅ [АНАЛИЗ] Analysis completed successfully with JSON parsing');
 
     const finalResponse: StyleChangeResponse = {
       success: parsedResponse.success,
@@ -650,7 +701,7 @@ The userText field should contain a friendly, conversational explanation in the 
     return createSuccessResponse(finalResponse);
 
   } catch (error) {
-    console.error('❌ [ИСПРАВЛЕНИЕ] Error in analysis mode:', error);
+    console.error('❌ [АНАЛИЗ] Error in analysis mode:', error);
     return createErrorResponse(`Analysis error: ${error.message}`, 500);
   }
 }
@@ -716,30 +767,6 @@ function generateHumanFriendlyMessage(parsedResponse: any, userLanguage: string 
   return userLanguage === 'ru' 
     ? "Изменения применены! Посмотрите на обновленный дизайн кошелька."
     : "Changes applied! Check out the updated wallet design.";
-}
-
-/**
- * Extract human message from various response formats
- */
-function extractHumanMessage(content: any, userLanguage: string = 'en'): string {
-  if (typeof content === 'string') {
-    // Check if it's JSON
-    try {
-      const parsed = JSON.parse(content);
-      return generateHumanFriendlyMessage(parsed, userLanguage);
-    } catch {
-      // It's already a human message
-      return content;
-    }
-  }
-  
-  if (typeof content === 'object' && content !== null) {
-    return generateHumanFriendlyMessage(content, userLanguage);
-  }
-  
-  return userLanguage === 'ru' 
-    ? "Понял вас! Работаю над улучшением дизайна."
-    : "Got it! Working on improving the design.";
 }
 
 /**
