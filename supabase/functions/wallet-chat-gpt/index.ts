@@ -1,3 +1,4 @@
+
 // ====== Enhanced index.ts ======
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -10,7 +11,7 @@ import { createChatHandler, type ChatContext } from './modules/chatHandler.ts';
 import { createStyleAnalyzer } from './modules/styleAnalyzer.ts';
 import { createPosterGenerator } from './modules/posterGeneration.ts';
 import { createStorageManager } from './utils/storage-manager.ts';
-import { createAdvancedPromptBuilder } from './utils/prompt-builder.ts';
+import { createAdvancedPromptBuilder, AdvancedPromptBuilder } from './utils/prompt-builder.ts';
 import { AdvancedJSONParser } from './utils/json-parser.ts';
 import { generateImageWithLeonardo, generateImageWithReplicate } from './modules/imageGenerator.ts';
 
@@ -491,7 +492,7 @@ async function handleAnalysisMode(
     const aiContext = await walletManager.createWalletAIContext(walletType, walletContext?.activeLayer);
 
     // Build the AI prompt using prompt builder
-    const customizationPrompt = promptBuilder.buildCustomizationPrompt(
+    const customizationPrompt = AdvancedPromptBuilder.buildCustomizationPrompt(
       content,
       aiContext.customizableElements || [],
       walletContext?.currentStyles || {}
