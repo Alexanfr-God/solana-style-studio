@@ -686,11 +686,14 @@ export function chooseStyle(userRequest: string, examples: any[]): any {
   return scores.length > 0 && scores[0].score > 0 ? scores[0].example : examples[0] || null;
 }
 
-// Factory function
-export function createEnhancedStorageManager(
-  supabaseUrl: string, 
-  supabaseKey: string, 
+// Factory function for backward compatibility
+export function createStorageManager(
+  supabaseUrl: string,
+  supabaseKey: string,
   config?: Partial<StorageConfig>
 ) {
   return new EnhancedStorageManager(supabaseUrl, supabaseKey, config);
 }
+
+// Backward compatibility alias
+export const createEnhancedStorageManager = createStorageManager;
