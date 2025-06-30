@@ -21,6 +21,64 @@ export interface WowEffectConfig {
 }
 
 /**
+ * Detect user's language from their input
+ */
+export function detectUserLanguage(userInput: string): string {
+  if (!userInput || userInput.trim().length === 0) {
+    return 'en'; // Default to English
+  }
+
+  // Simple language detection based on common words and patterns
+  const russianPatterns = [
+    /[а-яё]/i, // Cyrillic characters
+    /\b(привет|здравствуй|спасибо|пожалуйста|да|нет|как|что|где|когда|почему|создай|сделай|измени|добавь|удали)\b/i
+  ];
+
+  const englishPatterns = [
+    /\b(hello|hi|thanks|thank you|please|yes|no|how|what|where|when|why|create|make|change|add|remove|delete|set|update)\b/i
+  ];
+
+  const hasRussian = russianPatterns.some(pattern => pattern.test(userInput));
+  const hasEnglish = englishPatterns.some(pattern => pattern.test(userInput));
+
+  if (hasRussian && !hasEnglish) {
+    return 'ru';
+  } else if (hasEnglish && !hasRussian) {
+    return 'en';
+  } else if (hasRussian && hasEnglish) {
+    // Mixed language, prioritize based on script
+    return /[а-яё]/i.test(userInput) ? 'ru' : 'en';
+  }
+
+  return 'en'; // Default to English
+}
+
+/**
+ * Get localized response instruction based on detected language
+ */
+export function getLanguageInstruction(userLanguage: string): string {
+  const instructions = {
+    en: 'Respond in English with friendly, conversational explanations.',
+    ru: 'Отвечай на русском языке дружелюбными, разговорными объяснениями.',
+    // Add more languages as needed
+  };
+
+  return instructions[userLanguage as keyof typeof instructions] || instructions.en;
+}
+
+/**
+ * Get localized example message
+ */
+export function getLocalizedExample(userLanguage: string): string {
+  const examples = {
+    en: 'Done! I created a beautiful design with blue background. How do you like it?',
+    ru: 'Готово! Я создал красивый дизайн с синим фоном. Как вам?',
+  };
+
+  return examples[userLanguage as keyof typeof examples] || examples.en;
+}
+
+/**
  * Advanced Prompt Builder with context awareness and optimization
  */
 export class AdvancedPromptBuilder {
@@ -99,7 +157,11 @@ export class AdvancedPromptBuilder {
     designExamples: any[] = [],
     chosenStyle?: any
   ): string {
-    const basePrompt = this.getBaseSystemPrompt(config.complexity);
+    const userLanguage = detectUserLanguage(config.userRequest);
+    const languageInstruction = getLanguageInstruction(userLanguage);
+    const exampleMessage = getLocalizedExample(userLanguage);
+    
+    const basePrompt = this.getBaseSystemPrompt(config.complexity, userLanguage);
     const contextPrompt = this.buildContextPrompt(config);
     const examplesPrompt = this.buildExamplesPrompt(designExamples, chosenStyle);
     const constraintsPrompt = this.buildConstraintsPrompt(config);
@@ -112,13 +174,17 @@ ${examplesPrompt}
 
 ${constraintsPrompt}
 
+LANGUAGE INSTRUCTION: ${languageInstruction}
+
 CRITICAL INSTRUCTIONS:
 - Always respond with the enhanced JSON format shown above
 - Include detailed reasoning in the analysis section
 - Ensure all colors have proper contrast ratios (WCAG AA minimum)
 - Consider the wallet type capabilities and limitations
 - Provide actionable style changes that improve user experience
-- Include accessibility considerations in your recommendations`;
+- Include accessibility considerations in your recommendations
+- IMPORTANT: The userText field must be a friendly, conversational explanation in the same language as the user's input
+- Example userText: "${exampleMessage}"`;
   }
 
   /**
@@ -129,6 +195,9 @@ CRITICAL INSTRUCTIONS:
     customizableElements: any[],
     currentStyles: any
   ): string {
+    const userLanguage = detectUserLanguage(userRequest);
+    const languageInstruction = getLanguageInstruction(userLanguage);
+    
     return `
 CUSTOMIZATION REQUEST: ${userRequest}
 
@@ -138,12 +207,15 @@ ${customizableElements.map(el => `- ${el.name}: ${el.description}`).join('\n')}
 CURRENT STYLES:
 ${JSON.stringify(currentStyles, null, 2)}
 
+LANGUAGE INSTRUCTION: ${languageInstruction}
+
 INSTRUCTIONS:
 - Focus on the specific elements mentioned in the request
 - Maintain wallet functionality and usability
 - Ensure cross-platform compatibility
 - Provide specific CSS/styling recommendations
 - Consider accessibility and performance impact
+- Respond in the same language as the user's input
     `;
   }
 
@@ -212,7 +284,10 @@ Generate CSS variables and styling that will create this amazing ${config.effect
   /**
    * Get base system prompt based on complexity level
    */
-  private static getBaseSystemPrompt(complexity: 'beginner' | 'intermediate' | 'advanced'): string {
+  private static getBaseSystemPrompt(complexity: 'beginner' | 'intermediate' | 'advanced', userLanguage: string = 'en'): string {
+    const languageInstruction = getLanguageInstruction(userLanguage);
+    const exampleMessage = getLocalizedExample(userLanguage);
+    
     const prompts = {
       beginner: `You are a friendly wallet design assistant. Provide simple, clear guidance.
 
@@ -220,11 +295,12 @@ RESPONSE FORMAT: Always respond with valid JSON:
 {
   "success": true,
   "response": "Technical response for system processing", 
-  "userText": "Human-friendly explanation in Russian for the user",
+  "userText": "Human-friendly explanation for the user",
   "styleChanges": { ... }
 }
 
-The userText field must contain a conversational explanation in Russian like "Готово! Я создал красивый дизайн с синим фоном. Как вам?"`,
+${languageInstruction}
+The userText field must contain a conversational explanation like "${exampleMessage}"`,
 
       intermediate: `You are an experienced wallet design expert. Provide balanced technical insights.
 
@@ -232,11 +308,12 @@ RESPONSE FORMAT: Always respond with valid JSON:
 {
   "success": true,
   "response": "Technical response for system processing",
-  "userText": "Human-friendly explanation in Russian for the user", 
+  "userText": "Human-friendly explanation for the user", 
   "styleChanges": { ... }
 }
 
-The userText field must contain a detailed but friendly explanation in Russian of what was changed and why.`,
+${languageInstruction}
+The userText field must contain a detailed but friendly explanation of what was changed and why.`,
 
       advanced: `You are a senior wallet design architect. Provide sophisticated, technical recommendations.
 
@@ -244,11 +321,12 @@ RESPONSE FORMAT: Always respond with valid JSON:
 {
   "success": true,
   "response": "Technical response for system processing",
-  "userText": "Human-friendly explanation in Russian for the user",
+  "userText": "Human-friendly explanation for the user",
   "styleChanges": { ... }
 }
 
-The userText field must contain an expert-level but accessible explanation in Russian of the design decisions made.`
+${languageInstruction}
+The userText field must contain an expert-level but accessible explanation of the design decisions made.`
     };
     return prompts[complexity];
   }

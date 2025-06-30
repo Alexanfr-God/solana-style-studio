@@ -10,7 +10,7 @@ import { createChatHandler, type ChatContext } from './modules/chatHandler.ts';
 import { createStyleAnalyzer } from './modules/styleAnalyzer.ts';
 import { createPosterGenerator } from './modules/posterGeneration.ts';
 import { createStorageManager } from './utils/storage-manager.ts';
-import { createAdvancedPromptBuilder, AdvancedPromptBuilder } from './utils/prompt-builder.ts';
+import { createAdvancedPromptBuilder, AdvancedPromptBuilder, detectUserLanguage, getLocalizedExample } from './utils/prompt-builder.ts';
 import { AdvancedJSONParser } from './utils/json-parser.ts';
 import { generateImageWithLeonardo, generateImageWithReplicate } from './modules/imageGenerator.ts';
 
@@ -486,6 +486,10 @@ async function handleAnalysisMode(
       throw new Error('OpenAI API key not configured');
     }
 
+    // Detect user language
+    const userLanguage = detectUserLanguage(content);
+    console.log(`🌐 Detected user language: ${userLanguage}`);
+
     // Create enhanced wallet context
     const walletType = walletContext?.walletType || 'phantom';
     const aiContext = await walletManager.createWalletAIContext(walletType, walletContext?.activeLayer);
@@ -512,7 +516,7 @@ IMPORTANT: Always respond with valid JSON containing:
 {
   "success": true,
   "response": "Technical response for system processing",
-  "userText": "Human-friendly explanation for the user in Russian",
+  "userText": "Human-friendly explanation for the user in the same language as their input",
   "styleChanges": {
     "backgroundColor": "#hexcolor",
     "accentColor": "#hexcolor", 
@@ -525,7 +529,9 @@ IMPORTANT: Always respond with valid JSON containing:
   }
 }
 
-The userText field should contain a friendly, conversational explanation in Russian of what changes were made, like "Готово! Я добавил красивый градиент и изменил цвета кнопок. Как вам результат?"`;
+LANGUAGE INSTRUCTION: Respond in the same language as the user's input. User language detected: ${userLanguage}
+
+The userText field should contain a friendly, conversational explanation in the user's language of what changes were made. English example: "Done! I added a beautiful gradient and changed the button colors. How do you like the result?" Russian example: "Готово! Я добавил красивый градиент и изменил цвета кнопок. Как вам результат?"`;
 
     const userMessage = imageUrl 
       ? `${content}\n\nI've also provided an image for style inspiration.`
@@ -578,10 +584,11 @@ The userText field should contain a friendly, conversational explanation in Russ
     
     if (!parsedResponse || !AdvancedJSONParser.validateStyleStructure(parsedResponse.styleChanges || {})) {
       console.warn('⚠️ Failed to parse AI JSON or invalid structure, using fallback');
+      const fallbackMessage = getLocalizedExample(userLanguage);
       parsedResponse = {
         success: true,
         response: aiContent,
-        userText: "Понял! Работаю над улучшением дизайна вашего кошелька.",
+        userText: fallbackMessage,
         styleChanges: AdvancedJSONParser.createFallbackStyles('dark')
       };
     }
@@ -595,7 +602,7 @@ The userText field should contain a friendly, conversational explanation in Russ
 
     const finalResponse: StyleChangeResponse = {
       success: parsedResponse.success,
-      response: generateHumanFriendlyMessage(parsedResponse),
+      response: generateHumanFriendlyMessage(parsedResponse, userLanguage),
       userText: parsedResponse.userText,
       styleChanges: parsedResponse.styleChanges,
       affectedElements: parsedResponse.affectedElements,
@@ -615,7 +622,7 @@ The userText field should contain a friendly, conversational explanation in Russ
 /**
  * Generate human-friendly message from AI response
  */
-function generateHumanFriendlyMessage(parsedResponse: any): string {
+function generateHumanFriendlyMessage(parsedResponse: any, userLanguage: string = 'en'): string {
   // First, try to get human text from response fields
   if (parsedResponse.userText && typeof parsedResponse.userText === 'string') {
     return parsedResponse.userText;
@@ -629,36 +636,59 @@ function generateHumanFriendlyMessage(parsedResponse: any): string {
   // If we have styleChanges, generate a friendly message
   if (parsedResponse.styleChanges) {
     const changes = parsedResponse.styleChanges;
-    let message = "Готово! Я обновил дизайн вашего кошелька. ";
     
-    if (changes.backgroundColor) {
-      message += `Установил новый фон (${changes.backgroundColor}). `;
-    }
-    if (changes.accentColor) {
-      message += `Добавил акцентный цвет (${changes.accentColor}). `;
-    }
-    if (changes.styleNotes) {
-      message += changes.styleNotes;
+    // Generate message based on detected language
+    if (userLanguage === 'ru') {
+      let message = "Готово! Я обновил дизайн вашего кошелька. ";
+      
+      if (changes.backgroundColor) {
+        message += `Установил новый фон (${changes.backgroundColor}). `;
+      }
+      if (changes.accentColor) {
+        message += `Добавил акцентный цвет (${changes.accentColor}). `;
+      }
+      if (changes.styleNotes) {
+        message += changes.styleNotes;
+      } else {
+        message += "Как вам новый стиль?";
+      }
+      
+      return message;
     } else {
-      message += "Как вам новый стиль?";
+      // Default to English
+      let message = "Done! I updated your wallet design. ";
+      
+      if (changes.backgroundColor) {
+        message += `Set new background (${changes.backgroundColor}). `;
+      }
+      if (changes.accentColor) {
+        message += `Added accent color (${changes.accentColor}). `;
+      }
+      if (changes.styleNotes) {
+        message += changes.styleNotes;
+      } else {
+        message += "How do you like the new style?";
+      }
+      
+      return message;
     }
-    
-    return message;
   }
 
-  // Fallback message
-  return "Изменения применены! Посмотрите на обновленный дизайн кошелька.";
+  // Fallback message based on language
+  return userLanguage === 'ru' 
+    ? "Изменения применены! Посмотрите на обновленный дизайн кошелька."
+    : "Changes applied! Check out the updated wallet design.";
 }
 
 /**
  * Extract human message from various response formats
  */
-function extractHumanMessage(content: any): string {
+function extractHumanMessage(content: any, userLanguage: string = 'en'): string {
   if (typeof content === 'string') {
     // Check if it's JSON
     try {
       const parsed = JSON.parse(content);
-      return generateHumanFriendlyMessage(parsed);
+      return generateHumanFriendlyMessage(parsed, userLanguage);
     } catch {
       // It's already a human message
       return content;
@@ -666,10 +696,12 @@ function extractHumanMessage(content: any): string {
   }
   
   if (typeof content === 'object' && content !== null) {
-    return generateHumanFriendlyMessage(content);
+    return generateHumanFriendlyMessage(content, userLanguage);
   }
   
-  return "Понял вас! Работаю над улучшением дизайна.";
+  return userLanguage === 'ru' 
+    ? "Понял вас! Работаю над улучшением дизайна."
+    : "Got it! Working on improving the design.";
 }
 
 /**

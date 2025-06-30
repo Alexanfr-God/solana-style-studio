@@ -83,16 +83,16 @@ const ChatInterface = () => {
 
   const getModeDescription = () => {
     const descriptions = {
-      'analysis': "Describe what you want to change in your wallet, upload images for inspiration, or select specific elements to modify.",
-      'leonardo': "Describe the background image you want to generate with Leonardo.ai. Be creative and detailed!",
-      'replicate': "Describe the artistic background you want to create with Replicate. Perfect for crypto art and memes!",
-      'structure': "Analyze your wallet's structure, element hierarchy, and layout relationships.",
-      'chat': "Have conversations with AI that remembers context. Ask follow-up questions and build on ideas.",
-      'style-analysis': "Deep dive into style analysis with comprehensive design recommendations and insights.",
+      'analysis': "Describe what you want to change in your wallet, upload images for inspiration, or select specific elements to modify. The system will automatically detect your language and respond accordingly.",
+      'leonardo': "Describe the background image you want to generate with Leonardo.ai. Be creative and detailed! You can write in any language.",
+      'replicate': "Describe the artistic background you want to create with Replicate. Perfect for crypto art and memes! Supports multiple languages.",
+      'structure': "Analyze your wallet's structure, element hierarchy, and layout relationships. Communication in your preferred language.",
+      'chat': "Have conversations with AI that remembers context. Ask follow-up questions and build on ideas in any language.",
+      'style-analysis': "Deep dive into style analysis with comprehensive design recommendations and insights. Multilingual support included.",
       'save': "Save your current wallet customization to the community library for others to discover.",
       'load': "Browse and load customizations from the community library created by other users."
     };
-    return descriptions[chatMode] || "AI-powered wallet customization assistant";
+    return descriptions[chatMode] || "AI-powered wallet customization assistant with automatic language detection";
   };
 
   return (
@@ -109,7 +109,7 @@ const ChatInterface = () => {
           
           {/* Session Info */}
           <div className="text-xs text-white/40 mb-3">
-            Session: {sessionId.split('_')[1]} | Mode: {chatMode}
+            Session: {sessionId.split('_')[1]} | Mode: {chatMode} | Language: Auto-detect
           </div>
           
           {/* Mode Selector */}
