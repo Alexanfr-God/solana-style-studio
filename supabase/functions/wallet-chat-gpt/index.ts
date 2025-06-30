@@ -1,4 +1,3 @@
-
 // ====== Enhanced index.ts ======
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -512,8 +511,8 @@ ${customizationPrompt}
 IMPORTANT: Always respond with valid JSON containing:
 {
   "success": true,
-  "response": "Friendly response to user",
-  "userText": "User-friendly explanation",
+  "response": "Technical response for system processing",
+  "userText": "Human-friendly explanation for the user in Russian",
   "styleChanges": {
     "backgroundColor": "#hexcolor",
     "accentColor": "#hexcolor", 
@@ -524,7 +523,9 @@ IMPORTANT: Always respond with valid JSON containing:
     "fontFamily": "Inter, sans-serif",
     "styleNotes": "Description of applied style"
   }
-}`;
+}
+
+The userText field should contain a friendly, conversational explanation in Russian of what changes were made, like "Готово! Я добавил красивый градиент и изменил цвета кнопок. Как вам результат?"`;
 
     const userMessage = imageUrl 
       ? `${content}\n\nI've also provided an image for style inspiration.`
@@ -580,7 +581,7 @@ IMPORTANT: Always respond with valid JSON containing:
       parsedResponse = {
         success: true,
         response: aiContent,
-        userText: aiContent,
+        userText: "Понял! Работаю над улучшением дизайна вашего кошелька.",
         styleChanges: AdvancedJSONParser.createFallbackStyles('dark')
       };
     }
@@ -594,7 +595,7 @@ IMPORTANT: Always respond with valid JSON containing:
 
     const finalResponse: StyleChangeResponse = {
       success: parsedResponse.success,
-      response: parsedResponse.response,
+      response: generateHumanFriendlyMessage(parsedResponse),
       userText: parsedResponse.userText,
       styleChanges: parsedResponse.styleChanges,
       affectedElements: parsedResponse.affectedElements,
@@ -610,6 +611,66 @@ IMPORTANT: Always respond with valid JSON containing:
 }
 
 // ====== Helper Functions ======
+
+/**
+ * Generate human-friendly message from AI response
+ */
+function generateHumanFriendlyMessage(parsedResponse: any): string {
+  // First, try to get human text from response fields
+  if (parsedResponse.userText && typeof parsedResponse.userText === 'string') {
+    return parsedResponse.userText;
+  }
+  
+  if (parsedResponse.response && typeof parsedResponse.response === 'string' && 
+      !parsedResponse.response.startsWith('{') && !parsedResponse.response.startsWith('[')) {
+    return parsedResponse.response;
+  }
+
+  // If we have styleChanges, generate a friendly message
+  if (parsedResponse.styleChanges) {
+    const changes = parsedResponse.styleChanges;
+    let message = "Готово! Я обновил дизайн вашего кошелька. ";
+    
+    if (changes.backgroundColor) {
+      message += `Установил новый фон (${changes.backgroundColor}). `;
+    }
+    if (changes.accentColor) {
+      message += `Добавил акцентный цвет (${changes.accentColor}). `;
+    }
+    if (changes.styleNotes) {
+      message += changes.styleNotes;
+    } else {
+      message += "Как вам новый стиль?";
+    }
+    
+    return message;
+  }
+
+  // Fallback message
+  return "Изменения применены! Посмотрите на обновленный дизайн кошелька.";
+}
+
+/**
+ * Extract human message from various response formats
+ */
+function extractHumanMessage(content: any): string {
+  if (typeof content === 'string') {
+    // Check if it's JSON
+    try {
+      const parsed = JSON.parse(content);
+      return generateHumanFriendlyMessage(parsed);
+    } catch {
+      // It's already a human message
+      return content;
+    }
+  }
+  
+  if (typeof content === 'object' && content !== null) {
+    return generateHumanFriendlyMessage(content);
+  }
+  
+  return "Понял вас! Работаю над улучшением дизайна.";
+}
 
 /**
  * Create success response
