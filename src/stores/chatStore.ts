@@ -21,6 +21,13 @@ interface ChatState {
   userId: string | null;
   chatHistory: Record<string, ChatMessage[]>;
   
+  // ✅ ЭТАП 4: История изменений для накопительного сохранения
+  styleHistory: Array<{
+    timestamp: string;
+    changes: any;
+    description: string;
+  }>;
+  
   // Image generation mode
   imageGenerationMode: ImageGenerationMode;
   setImageGenerationMode: (mode: ImageGenerationMode) => void;
@@ -53,6 +60,10 @@ interface ChatState {
   applyStyleChanges: (changes: any) => void;
   applyGeneratedImage: (imageUrl: string) => void;
   preserveAndMergeStyles: (newChanges: any) => any;
+  
+  // ✅ ЭТАП 4: Новые методы для истории
+  addToStyleHistory: (changes: any, description: string) => void;
+  getStyleHistory: () => Array<{timestamp: string; changes: any; description: string;}>;
   
   // Chat history management
   saveChatHistory: () => void;
@@ -104,7 +115,7 @@ function createEnhancedWalletContext() {
   };
 }
 
-// Enhanced image URL extraction for Leonardo and Replicate - ИСПРАВЛЕНО
+// ✅ ЭТАП 2: Улучшенная функция извлечения imageUrl
 function extractImageUrl(response: any, mode: string): string | null {
   console.log('🔍 [ЭТАП 2] Извлечение imageUrl для режима:', mode);
   console.log('🔍 [ЭТАП 2] Структура ответа:', JSON.stringify(response, null, 2));
@@ -199,6 +210,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   userId: null,
   chatHistory: {},
   
+  // ✅ ЭТАП 4: Инициализация истории стилей
+  styleHistory: [],
+  
   // Image generation mode
   imageGenerationMode: 'analysis',
   setImageGenerationMode: (mode) => {
@@ -221,18 +235,53 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ userId });
   },
 
+  // ✅ ЭТАП 4: Накопительное сохранение - НЕ СТИРАЕТ предыдущие стили
   preserveAndMergeStyles: (newChanges) => {
     const walletStore = useWalletCustomizationStore.getState();
     const currentStyle = walletStore.walletStyle;
     
-    // Preserve existing backgroundImage unless explicitly changing it
+    console.log('🔄 [ЭТАП 4] Текущий стиль перед слиянием:', currentStyle);
+    console.log('🔄 [ЭТАП 4] Новые изменения:', newChanges);
+    
+    // ✅ Сохраняем ВСЕ существующие стили + добавляем новые
     const mergedChanges = {
-      ...newChanges,
-      backgroundImage: newChanges.backgroundImage || currentStyle.backgroundImage,
+      // Сначала берем все текущие стили
+      backgroundColor: currentStyle.backgroundColor,
+      primaryColor: currentStyle.primaryColor,
+      font: currentStyle.font,
+      textColor: currentStyle.textColor,
+      accentColor: currentStyle.accentColor,
+      buttonColor: currentStyle.buttonColor,
+      borderRadius: currentStyle.borderRadius,
+      backgroundImage: currentStyle.backgroundImage,
+      boxShadow: currentStyle.boxShadow,
+      fontFamily: currentStyle.fontFamily,
+      
+      // Затем применяем новые изменения (перезаписывают только те поля, которые указаны)
+      ...newChanges
     };
     
-    console.log('🔄 Preserving and merging styles:', { current: currentStyle, new: newChanges, merged: mergedChanges });
+    console.log('✅ [ЭТАП 4] Накопительный результат слияния:', mergedChanges);
     return mergedChanges;
+  },
+
+  // ✅ ЭТАП 4: Новые методы для истории изменений
+  addToStyleHistory: (changes, description) => {
+    const historyEntry = {
+      timestamp: new Date().toISOString(),
+      changes,
+      description
+    };
+    
+    console.log('📝 [ЭТАП 4] Добавляем в историю стилей:', historyEntry);
+    
+    set(state => ({
+      styleHistory: [...state.styleHistory, historyEntry].slice(-50) // Сохраняем последние 50 изменений
+    }));
+  },
+
+  getStyleHistory: () => {
+    return get().styleHistory;
   },
 
   sendMessage: async (messageData) => {
@@ -350,8 +399,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      console.log('🖼️ [ЭТАП 2] Начинаем генерацию изображения, режим:', messageData.mode);
-      console.log('🖼️ [ЭТАП 2] Промпт:', messageData.content);
+      console.log('🖼️ [ЭТАП 5] Начинаем генерацию изображения с улучшенным логированием, режим:', messageData.mode);
+      console.log('🖼️ [ЭТАП 5] Промпт:', messageData.content);
 
       const response = await supabase.functions.invoke('wallet-chat-gpt', {
         body: { 
@@ -361,26 +410,30 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
       });
 
-      console.log('🖼️ [ЭТАП 2] Сырой ответ Edge Function:', response);
+      console.log('🖼️ [ЭТАП 5] Полный ответ Edge Function:', JSON.stringify(response, null, 2));
 
       if (response?.error) {
-        console.error('❌ [ЭТАП 2] Ошибка Edge Function:', response.error);
+        console.error('❌ [ЭТАП 5] Ошибка Edge Function:', response.error);
         throw new Error(`Image generation error: ${response.error.message}`);
       }
 
-      console.log('🖼️ [ЭТАП 2] Попытка извлечения imageUrl из ответа...');
+      console.log('🖼️ [ЭТАП 5] Попытка извлечения imageUrl из ответа...');
       const generatedImageUrl = extractImageUrl(response, messageData.mode);
       
       if (generatedImageUrl) {
-        console.log('✅ [ЭТАП 2] Успешно извлечен imageUrl:', generatedImageUrl);
+        console.log('✅ [ЭТАП 5] Успешно извлечен imageUrl:', generatedImageUrl);
         
         if (generatedImageUrl.startsWith('http') || generatedImageUrl.startsWith('data:image')) {
-          console.log('🎨 [ЭТАП 2] Применяем сгенерированное изображение как фон кошелька');
+          console.log('🎨 [ЭТАП 5] Применяем сгенерированное изображение как фон кошелька');
           
-          // ✅ ЭТАП 4: Накопительное сохранение - НЕ СТИРАЕМ предыдущие стили
+          // ✅ ЭТАП 4: Накопительное применение с историей
           get().applyGeneratedImage(generatedImageUrl);
           
-          toast.success(`🎨 Generated image automatically applied as wallet background!`);
+          // ✅ ЭТАП 5: Визуальная обратная связь
+          toast.success(`🎨 Generated image automatically applied as wallet background!`, {
+            description: `Mode: ${messageData.mode} | Time: ${new Date().toLocaleTimeString()}`,
+            duration: 4000
+          });
           
           const assistantMessage: ChatMessage = {
             id: `assistant-${Date.now()}`,
@@ -397,19 +450,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
             isLoading: false
           }));
           
-          console.log('✅ [ЭТАП 2] Генерация изображения и авто-применение завершены успешно');
+          console.log('✅ [ЭТАП 5] Генерация изображения и авто-применение завершены успешно');
         } else {
-          console.error('❌ [ЭТАП 2] Неверный формат imageUrl:', generatedImageUrl);
+          console.error('❌ [ЭТАП 5] Неверный формат imageUrl:', generatedImageUrl);
           throw new Error(`Invalid image URL format: ${generatedImageUrl}`);
         }
       } else {
-        console.error('❌ [ЭТАП 2] Не удалось извлечь imageUrl из ответа');
-        console.error('❌ [ЭТАП 2] Структура ответа для отладки:', JSON.stringify(response, null, 2));
+        console.error('❌ [ЭТАП 5] Не удалось извлечь imageUrl из ответа');
+        console.error('❌ [ЭТАП 5] Структура ответа для отладки:', JSON.stringify(response, null, 2));
         throw new Error('No image returned from generation service - check Edge Function logs');
       }
 
     } catch (error) {
-      console.error('💥 [ЭТАП 2] Ошибка генерации изображения:', error);
+      console.error('💥 [ЭТАП 5] Ошибка генерации изображения:', error);
+      
+      // ✅ ЭТАП 5: Улучшенная визуальная обратная связь об ошибке
+      toast.error(`❌ Image generation failed: ${error.message}`, {
+        description: `Mode: ${messageData.mode} | Check console for details`,
+        duration: 6000
+      });
       
       set(state => ({
         messages: [...state.messages, {
@@ -506,19 +565,28 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
+  // ✅ ЭТАП 4: Обновленный applyGeneratedImage с накопительным сохранением
   applyGeneratedImage: (imageUrl: string) => {
-    console.log('🖼️ [ЭТАП 4] Применяем сгенерированное изображение с сохранением стилей:', imageUrl);
+    console.log('🖼️ [ЭТАП 4] Применяем сгенерированное изображение с накопительным сохранением:', imageUrl);
     
     const walletStore = useWalletCustomizationStore.getState();
     
-    // ✅ Сохраняем ВСЕ текущие стили + добавляем backgroundImage
+    // ✅ ЭТАП 4: Накопительное слияние - сохраняем ВСЕ текущие стили
     const preservedChanges = get().preserveAndMergeStyles({
       backgroundImage: `url(${imageUrl})`,
-      styleNotes: `Generated background image applied at ${new Date().toLocaleTimeString()}`
     });
     
     console.log('🎨 [ЭТАП 4] Накопительное применение стилей:', preservedChanges);
+    
+    // ✅ ЭТАП 4: Сохраняем в историю изменений
+    get().addToStyleHistory(
+      { backgroundImage: `url(${imageUrl})` },
+      `Generated background image applied at ${new Date().toLocaleTimeString()}`
+    );
+    
     walletStore.applyUniversalStyle(preservedChanges);
+    
+    console.log('✅ [ЭТАП 4] Изображение применено с сохранением всех предыдущих стилей');
   },
 
   applyStyleChanges: (changes) => {
@@ -528,6 +596,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const preservedChanges = get().preserveAndMergeStyles(changes.changes);
       const walletStore = useWalletCustomizationStore.getState();
       walletStore.applyUniversalStyle(preservedChanges);
+      
+      // ✅ ЭТАП 4: Добавляем в историю
+      get().addToStyleHistory(changes.changes, 'Style changes applied via chat');
     }
   },
 
