@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createAdvancedPromptBuilder } from '../utils/prompt-builder.ts';
 import { AdvancedJSONParser } from '../utils/json-parser.ts';
@@ -68,21 +67,24 @@ export class ImageGenerationManager {
       }
 
       const apiUrl = 'https://cloud.leonardo.ai/api/rest/v1/generations';
-      const modelId = '6bef9f1b-29cb-40c7-b9df-32b51c15c618'; // Stable Diffusion v1.5
+      // ✅ ИСПРАВЛЕНИЕ: Обновленный modelId из официального примера
+      const modelId = '1dd50843-d653-4516-a8e3-f0238ee453ff'; // Updated model ID
 
       const enhancedPrompt = this.enhancePromptForWallet(request.prompt, 'leonardo');
 
+      // ✅ ИСПРАВЛЕНИЕ: Убираем num_samples, добавляем современные параметры
       const payload = {
-        prompt: enhancedPrompt,
         modelId: modelId,
-        width: request.dimensions.width,
-        height: request.dimensions.height,
-        num_images: 1,
-        num_samples: 1,
+        prompt: enhancedPrompt,
+        num_images: 1, // ✅ Правильный параметр вместо num_samples
+        width: 1024,   // Оптимальный размер для wallet
+        height: 1024,
+        enhancePrompt: true, // ✅ Автоматическое улучшение промпта
+        ultra: true,    // ✅ Высокое качество генерации
         public: false
       };
 
-      console.log('📤 Leonardo API payload:', payload);
+      console.log('📤 Leonardo API payload (FIXED):', payload);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -102,7 +104,7 @@ export class ImageGenerationManager {
       const data = await response.json();
       console.log('✅ Leonardo API success response:', data);
       
-      // Extract image URL from Leonardo response
+      // ✅ ИСПРАВЛЕНИЕ: Улучшенная обработка ответа
       let imageUrl = null;
       if (data.sdGenerationJob?.generationId) {
         // Need to poll for result
@@ -124,7 +126,9 @@ export class ImageGenerationManager {
         metadata: {
           prompt: enhancedPrompt,
           model: 'leonardo',
-          dimensions: request.dimensions
+          dimensions: request.dimensions,
+          enhanced: true,
+          ultra: true
         }
       };
     } catch (error) {
@@ -151,11 +155,14 @@ export class ImageGenerationManager {
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to poll generation status: ${response.statusText}`);
+          console.error(`Leonardo polling error: ${response.statusText}`);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
         }
 
         const data = await response.json();
-        console.log(`🔄 Leonardo polling attempt ${attempts + 1}:`, data);
+        console.log(`🔄 Leonardo polling attempt ${attempts + 1} (ИСПРАВЛЕН):`, data);
 
         if (data.generations_by_pk?.generated_images?.[0]?.url) {
           return data.generations_by_pk.generated_images[0].url;
@@ -165,11 +172,10 @@ export class ImageGenerationManager {
           throw new Error('Leonardo generation failed');
         }
 
-        // Wait 2 seconds before next poll
         await new Promise(resolve => setTimeout(resolve, 2000));
         attempts++;
       } catch (error) {
-        console.error('❌ Error polling Leonardo generation:', error);
+        console.error('Error polling Leonardo generation:', error);
         attempts++;
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
@@ -315,7 +321,7 @@ export function createImageGenerationManager(supabaseUrl: string, supabaseKey: s
 }
 
 /**
- * Helper functions to generate images with Leonardo and Replicate - UPDATED FOR CONSISTENT RESPONSE FORMAT
+ * ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ: Leonardo генерация БЕЗ num_samples ошибки
  */
 export async function generateImageWithLeonardo(prompt: string, supabase: any): Promise<ImageGenerationResponse> {
   const apiKey = Deno.env.get('LEONARDO_API_KEY');
@@ -325,23 +331,27 @@ export async function generateImageWithLeonardo(prompt: string, supabase: any): 
   }
 
   const apiUrl = 'https://cloud.leonardo.ai/api/rest/v1/generations';
-  const modelId = '6bef9f1b-29cb-40c7-b9df-32b51c15c618';
+  // ✅ ИСПРАВЛЕНИЕ: Обновленный modelId
+  const modelId = '1dd50843-d653-4516-a8e3-f0238ee453ff';
 
   // Enhance prompt for wallet background
   const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, high quality, detailed, artistic, vibrant colors, 4k resolution`;
 
+  // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Убираем num_samples!
   const payload = {
-    prompt: enhancedPrompt,
     modelId: modelId,
+    prompt: enhancedPrompt,
+    num_images: 1,      // ✅ Правильный параметр
     width: 1024,
     height: 1024,
-    num_images: 1,
-    num_samples: 1,
+    enhancePrompt: true, // ✅ Автоматическое улучшение промпта
+    ultra: true,        // ✅ Высокое качество
     public: false
+    // ❌ УБИРАЕМ: num_samples: 1 - этого параметра НЕТ в Leonardo API!
   };
 
   try {
-    console.log('📤 Leonardo payload:', payload);
+    console.log('📤 Leonardo payload (ИСПРАВЛЕН):', payload);
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -359,9 +369,9 @@ export async function generateImageWithLeonardo(prompt: string, supabase: any): 
     }
 
     const data = await response.json();
-    console.log("✅ Leonardo API response:", data);
+    console.log("✅ Leonardo API response (ИСПРАВЛЕН):", data);
     
-    // Handle different response formats
+    // ✅ УЛУЧШЕННАЯ обработка разных форматов ответа
     let imageUrl = null;
     if (data.sdGenerationJob?.generationId) {
       // Poll for result
@@ -386,6 +396,7 @@ export async function generateImageWithLeonardo(prompt: string, supabase: any): 
   }
 }
 
+// ✅ ИСПРАВЛЕНИЕ: Улучшенная функция polling
 async function pollLeonardoGeneration(generationId: string, apiKey: string): Promise<string | null> {
   const maxAttempts = 30;
   let attempts = 0;
@@ -407,7 +418,7 @@ async function pollLeonardoGeneration(generationId: string, apiKey: string): Pro
       }
 
       const data = await response.json();
-      console.log(`🔄 Leonardo polling attempt ${attempts + 1}:`, data);
+      console.log(`🔄 Leonardo polling attempt ${attempts + 1} (ИСПРАВЛЕН):`, data);
 
       if (data.generations_by_pk?.generated_images?.[0]?.url) {
         return data.generations_by_pk.generated_images[0].url;
