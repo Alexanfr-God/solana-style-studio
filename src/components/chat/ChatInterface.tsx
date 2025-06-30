@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import MessageHistory from './MessageHistory';
 import MessageInput from './MessageInput';
-import ModeSelector from './ModeSelector';
+import ModeSelectionModal from './ModeSelectionModal';
 import { useChatStore } from '@/stores/chatStore';
 
 export interface ChatMessage {
@@ -69,26 +69,28 @@ const ChatInterface = () => {
   return (
     <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[835px] flex flex-col">
       <CardContent className="p-4 h-full flex flex-col">
-        {/* Fixed Header */}
+        {/* Compact Header */}
         <div className="flex-shrink-0 mb-4">
-          <h3 className="text-lg font-semibold text-white mb-2">
-            {getModeTitle()}
-          </h3>
-          <p className="text-sm text-white/70 mb-3">
-            {getModeDescription()}
-          </p>
-          
-          {/* Session Info */}
-          <div className="text-xs text-white/40 mb-3">
-            Session: {sessionId.split('_')[1]} | Mode: {chatMode} | Language: Auto-detect
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                {getModeTitle()}
+              </h3>
+              <p className="text-sm text-white/70">
+                {getModeDescription()}
+              </p>
+            </div>
+            <ModeSelectionModal />
           </div>
           
-          {/* Mode Selector */}
-          <ModeSelector />
+          {/* Session Info */}
+          <div className="text-xs text-white/40 mb-2">
+            Session: {sessionId.split('_')[1]} | Mode: {chatMode} | Language: Auto-detect
+          </div>
         </div>
         
-        {/* Fixed Height Message Area */}
-        <div className="flex-1 min-h-0 mb-4 h-[565px]">
+        {/* Expanded Message Area */}
+        <div className="flex-1 min-h-0 mb-4 h-[650px]">
           <MessageHistory 
             messages={messages} 
             isLoading={isLoading}
