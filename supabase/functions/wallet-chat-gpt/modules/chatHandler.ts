@@ -1,98 +1,3 @@
-// ... Продолжение в следующей части
-
-  /**
-   * Обновление памяти контекста
-   */
-  private updateContextMemory(context: ChatContext, message: string): void {
-    // Обновляем поток разговора
-    context.contextMemory.conversationFlow.push(message.slice(0, 30));
-    if (context.contextMemory.conversationFlow.length > 10) {
-      context.contextMemory.conversationFlow = context.contextMemory.conversationFlow.slice(-10);
-    }
-
-    // Извлекаем упоминания элементов
-    const elements = this.extractElementsFromMessage(message.toLowerCase());
-    elements.forEach(el => context.contextMemory.mentionedElements.add(el));
-
-    // Ограничиваем размер множества
-    if (context.contextMemory.mentionedElements.size > 20) {
-      const elementsArray = Array.from(context.contextMemory.mentionedElements);
-      context.contextMemory.mentionedElements = new Set(elementsArray.slice(-20));
-    }
-
-    // Очищаем старые намерения (старше 1 часа)
-    const oneHourAgo = Date.now() - 60 * 60 * 1000;
-    context.contextMemory.recentIntents = context.contextMemory.recentIntents.filter(
-      intent => new Date(intent.timestamp).getTime() > oneHourAgo
-    );
-  }
-
-  /**
-   * Анализ совместимости стиля с кошельком
-   */
-  private analyzeStyleCompatibility(analysis: StyleAnalysis, walletContext: WalletAIContext): any {
-    let score = 7; // Базовый балл
-    
-    // Проверяем поддержку темной/светлой темы
-    if (analysis.theme === 'dark' && walletContext.walletConfiguration.capabilities.darkMode) {
-      score += 1;
-    }
-    
-    // Проверяем поддержку кастомных цветов
-    if (walletContext.walletConfiguration.capabilities.customColors) {
-      score += 1;
-    }
-    
-    // Проверяем поддержку анимаций
-    if (analysis.complexity === 'complex' && walletContext.walletConfiguration.capabilities.animations) {
-      score += 1;
-    }
-    
-    // Ограничиваем максимальным баллом
-    score = Math.min(score, 10);
-    
-    return {
-      score,
-      supported: score >= 7,
-      recommendations: score < 7 ? [
-        'Некоторые элементы стиля могут быть упрощены для лучшей совместимости',
-        'Рассмотрите альтернативные цветовые схемы'
-      ] : [
-        'Отличная совместимость!',
-        'Все элементы стиля поддерживаются'
-      ]
-    };
-  }
-
-  /**
-   * Генерация рекомендаций по стилю
-   */
-  private generateStyleRecommendations(analysis: StyleAnalysis, userProfile?: UserProfile): string[] {
-    const recommendations = [];
-    
-    // На основе анализа стиля
-    if (analysis.theme === 'dark') {
-      recommendations.push('Темная тема отлично подходит для длительного использования');
-    }
-    
-    if (analysis.mood === 'professional') {
-      recommendations.push('Профессиональный стиль подчеркнет серьезность ваших криптоопераций');
-    }
-    
-    // На основе профиля пользователя
-    if (userProfile?.preferences.complexity === 'beginner') {
-      recommendations.push('Начните с изменения основных цветов, затем переходите к деталям');
-    }
-    
-    if (userProfile?.history.favoriteColors?.includes(analysis.colorPalette.primary)) {
-      recommendations.push('Этот цвет отлично сочетается с вашими предпочтениями!');
-    }
-    
-    return recommendations.slice(0, 3);
-  }
-
-  /**
-   * Генерация умных// ====== Enhanced modules/chatHandler.ts ======
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createWalletManager, type WalletAIContext } from './walletManager.ts';
 import { createStyleAnalyzer, type StyleAnalysis } from './styleAnalyzer.ts';
@@ -207,6 +112,265 @@ export class ChatHandler {
     this.walletManager = createWalletManager(supabaseUrl, supabaseKey);
     this.styleAnalyzer = createStyleAnalyzer(supabaseUrl, supabaseKey);
     this.promptBuilder = createPromptBuilder();
+  }
+
+  /**
+   * Обновление памяти контекста
+   */
+  private updateContextMemory(context: ChatContext, message: string): void {
+    // Обновляем поток разговора
+    context.contextMemory.conversationFlow.push(message.slice(0, 30));
+    if (context.contextMemory.conversationFlow.length > 10) {
+      context.contextMemory.conversationFlow = context.contextMemory.conversationFlow.slice(-10);
+    }
+
+    // Извлекаем упоминания элементов
+    const elements = this.extractElementsFromMessage(message.toLowerCase());
+    elements.forEach(el => context.contextMemory.mentionedElements.add(el));
+
+    // Ограничиваем размер множества
+    if (context.contextMemory.mentionedElements.size > 20) {
+      const elementsArray = Array.from(context.contextMemory.mentionedElements);
+      context.contextMemory.mentionedElements = new Set(elementsArray.slice(-20));
+    }
+
+    // Очищаем старые намерения (старше 1 часа)
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    context.contextMemory.recentIntents = context.contextMemory.recentIntents.filter(
+      intent => new Date(intent.timestamp).getTime() > oneHourAgo
+    );
+  }
+
+  /**
+   * Анализ совместимости стиля с кошельком
+   */
+  private analyzeStyleCompatibility(analysis: StyleAnalysis, walletContext: WalletAIContext): any {
+    let score = 7; // Базовый балл
+    
+    // Проверяем поддержку темной/светлой темы
+    if (analysis.theme === 'dark' && walletContext.walletConfiguration.capabilities.darkMode) {
+      score += 1;
+    }
+    
+    // Проверяем поддержку кастомных цветов
+    if (walletContext.walletConfiguration.capabilities.customColors) {
+      score += 1;
+    }
+    
+    // Проверяем поддержку анимаций
+    if (analysis.complexity === 'complex' && walletContext.walletConfiguration.capabilities.animations) {
+      score += 1;
+    }
+    
+    // Ограничиваем максимальным баллом
+    score = Math.min(score, 10);
+    
+    return {
+      score,
+      supported: score >= 7,
+      recommendations: score < 7 ? [
+        'Некоторые элементы стиля могут быть упрощены для лучшей совместимости',
+        'Рассмотрите альтернативные цветовые схемы'
+      ] : [
+        'Отличная совместимость!',
+        'Все элементы стиля поддерживаются'
+      ]
+    };
+  }
+
+  /**
+   * Генерация рекомендаций по стилю
+   */
+  private generateStyleRecommendations(analysis: StyleAnalysis, userProfile?: UserProfile): string[] {
+    const recommendations = [];
+    
+    // На основе анализа стиля
+    if (analysis.theme === 'dark') {
+      recommendations.push('Темная тема отлично подходит для длительного использования');
+    }
+    
+    if (analysis.mood === 'professional') {
+      recommendations.push('Профессиональный стиль подчеркнет серьезность ваших криптоопераций');
+    }
+    
+    // На основе профиля пользователя
+    if (userProfile?.preferences.complexity === 'beginner') {
+      recommendations.push('Начните с изменения основных цветов, затем переходите к деталям');
+    }
+    
+    if (userProfile?.history.favoriteColors?.includes(analysis.colorPalette.primary)) {
+      recommendations.push('Этот цвет отлично сочетается с вашими предпочтениями!');
+    }
+    
+    return recommendations.slice(0, 3);
+  }
+
+  /**
+   * Генерация умных стилей на основе запроса и контекста
+   */
+  private async generateSmartStyleChanges(
+    message: string,
+    context: ChatContext,
+    aiContext: WalletAIContext,
+    intent: IntentDetectionResult
+  ): Promise<any> {
+    // Пример генерации изменений стиля на основе AI
+    // Здесь можно использовать OpenAI или другую ML модель для генерации изменений
+    // Для упрощения возвращаем фиктивный объект
+
+    return {
+      styleNotes: 'Изменены цвета кнопок и фона согласно запросу',
+      changes: {
+        buttonColor: '#FF5733',
+        backgroundColor: '#1A1A1A'
+      }
+    };
+  }
+
+  /**
+   * Генерация следующих предложений для пользователя
+   */
+  private generateNextStepSuggestions(styleChanges: any, aiContext: WalletAIContext): string[] {
+    return [
+      'Попробовать другой цвет кнопок',
+      'Настроить анимации элементов',
+      'Сохранить текущие настройки',
+      'Вернуться к предыдущему стилю'
+    ];
+  }
+
+  /**
+   * Анализ запроса на генерацию изображения
+   */
+  private analyzeImageGenerationRequest(message: string, context: ChatContext): any {
+    // Пример анализа запроса
+    return {
+      type: 'фон',
+      description: message,
+      style: context.stylePreferences?.theme || 'light'
+    };
+  }
+
+  /**
+   * Генерация шагов обучения
+   */
+  private generateTutorialSteps(message: string, context: ChatContext): { goal: string; steps: string[] } {
+    return {
+      goal: 'настроить цвета и элементы вашего кошелька',
+      steps: [
+        'Откройте настройки кошелька',
+        'Выберите раздел "Внешний вид"',
+        'Настройте основные цвета',
+        'Сохраните изменения и проверьте результат'
+      ]
+    };
+  }
+
+  /**
+   * Идентификация проблемы для устранения неполадок
+   */
+  private identifyIssue(message: string): string {
+    // Пример простой идентификации
+    if (message.toLowerCase().includes('не работает')) {
+      return 'Функция не работает';
+    }
+    return 'Неизвестная проблема';
+  }
+
+  /**
+   * Генерация решений для устранения неполадок
+   */
+  private async generateSolutions(issue: string, context: ChatContext): Promise<string[]> {
+    // Пример генерации решений
+    if (issue === 'Функция не работает') {
+      return [
+        'Перезапустите приложение',
+        'Проверьте подключение к интернету',
+        'Обновите кошелек до последней версии'
+      ];
+    }
+    return ['Свяжитесь с поддержкой для дополнительной помощи'];
+  }
+
+  /**
+   * Извлечение типов кошельков из сообщения для сравнения
+   */
+  private extractWalletTypesFromMessage(message: string): string[] {
+    const wallets = [];
+    const knownWallets = ['MetaMask', 'Trust Wallet', 'Coinbase Wallet', 'Rainbow', 'Phantom'];
+    knownWallets.forEach(wallet => {
+      if (message.toLowerCase().includes(wallet.toLowerCase())) {
+        wallets.push(wallet);
+      }
+    });
+    return wallets;
+  }
+
+  /**
+   * Генерация проактивных предложений
+   */
+  private async generateProactiveSuggestions(context: ChatContext, intent: IntentDetectionResult): Promise<string[]> {
+    if (!context.settings.enableProactiveHelp) return [];
+    // Пример генерации предложений
+    return [
+      'Хотите посмотреть примеры стилей?',
+      'Могу помочь с настройкой анимаций',
+      'Нужна помощь с экспортом настроек?'
+    ];
+  }
+
+  /**
+   * Генерация follow-up вопросов
+   */
+  private generateFollowUpQuestions(intent: IntentDetectionResult, data: any): string[] {
+    if (intent.type === 'style_analysis') {
+      return ['Хотите применить этот стиль?', 'Нужно ли настроить цвета вручную?'];
+    }
+    if (intent.type === 'element_customization') {
+      return ['Хотите изменить другие элементы?', 'Нужно ли сохранить изменения?'];
+    }
+    return [];
+  }
+
+  /**
+   * Получение fallback ответа для общего чата
+   */
+  private getFallbackChatResponse(message: string, context: ChatContext): ChatResponse {
+    return {
+      success: true,
+      message: 'Извините, я пока не могу обработать этот запрос. Могу помочь с настройками кошелька или анализом стиля.',
+      action: 'general_chat',
+      data: {},
+      context,
+      metadata: {
+        intent: { type: 'general_chat', confidence: 0, priority: 'low' },
+        processingTime: 0,
+        confidence: 0
+      }
+    };
+  }
+
+  /**
+   * Получение релевантной информации о кошельке
+   */
+  private async getRelevantWalletInfo(walletType: string): Promise<any> {
+    // Пример получения информации
+    return {
+      name: walletType,
+      version: '1.2.3',
+      features: ['darkMode', 'customColors', 'animations']
+    };
+  }
+
+  /**
+   * Генерация контекстных предложений
+   */
+  private async generateContextualSuggestions(context: ChatContext): Promise<string[]> {
+    return [
+      'Попробуйте изменить цвет кнопок',
+      'Добавьте анимацию для улучшения UX',
+      'Сравните ваш кошелек с другими популярными'
+    ];
   }
 
   /**
@@ -816,5 +980,4 @@ ${userLevel === 'advanced' ? 'Можешь использовать технич
 
 Всегда предлагай конкретные действия и будь готов к follow-up вопросам.`;
   }
-
-  // ... Продолжение в следующей части
+}
