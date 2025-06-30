@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatInterface';
 import ChatStarters from './ChatStarters';
 import { useChatStore, ChatMode } from '@/stores/chatStore';
-import { Download, Palette, CheckCircle } from 'lucide-react';
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { Download, Lock, Unlock, Sparkles, CheckCircle } from 'lucide-react';
 
 interface MessageHistoryProps {
   messages: ChatMessage[];
@@ -16,10 +17,11 @@ interface MessageHistoryProps {
 
 const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryProps) => {
   const { applyGeneratedImage } = useChatStore();
-
-  const handleApplyImage = (imageUrl: string) => {
-    applyGeneratedImage(imageUrl);
-  };
+  const { 
+    applyBackgroundToLoginLayer, 
+    applyBackgroundToWalletLayer, 
+    applyBackgroundToBothLayers 
+  } = useWalletCustomizationStore();
 
   const handleDownloadImage = (imageUrl: string) => {
     const link = document.createElement('a');
@@ -68,7 +70,7 @@ const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryP
                 </div>
               )}
               
-              {/* Generated image with conditional action buttons */}
+              {/* Generated image with new layer-specific action buttons */}
               {message.imageUrl && message.isGenerated && (
                 <div className="mt-3 space-y-2">
                   <img
@@ -88,18 +90,45 @@ const MessageHistory = ({ messages, isLoading, onStarterClick }: MessageHistoryP
                     </div>
                   )}
                   
-                  {/* Action buttons */}
-                  <div className="flex gap-2">
-                    {/* Show Apply button only for non-auto-applied images */}
+                  {/* NEW: Layer-specific action buttons */}
+                  <div className="flex flex-col gap-2">
+                    {/* Show layer-specific buttons only for non-auto-applied images */}
                     {!message.autoApplied && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleApplyImage(message.imageUrl!)}
-                        className="bg-green-600 hover:bg-green-700 text-white text-xs flex items-center gap-1"
-                      >
-                        <Palette className="w-3 h-3" />
-                        Apply as Background
-                      </Button>
+                      <>
+                        {/* First row - Layer specific buttons */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => applyBackgroundToLoginLayer(message.imageUrl!)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs flex items-center gap-1"
+                            title="Apply to Login Screen"
+                          >
+                            <Lock className="w-3 h-3" />
+                            Apply Lock 🔒
+                          </Button>
+                          
+                          <Button
+                            size="sm"
+                            onClick={() => applyBackgroundToWalletLayer(message.imageUrl!)}
+                            className="bg-green-600 hover:bg-green-700 text-white text-xs flex items-center gap-1"
+                            title="Apply to Wallet Screen"
+                          >
+                            <Unlock className="w-3 h-3" />
+                            Apply Unlock 🔓
+                          </Button>
+                        </div>
+
+                        {/* Second row - Apply Both button */}
+                        <Button
+                          size="sm"
+                          onClick={() => applyBackgroundToBothLayers(message.imageUrl!)}
+                          className="bg-purple-600 hover:bg-purple-700 text-white text-xs flex items-center gap-1 w-full"
+                          title="Apply to Both Screens"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          Apply Both 🔒✨
+                        </Button>
+                      </>
                     )}
                     
                     {/* Always show Download button */}

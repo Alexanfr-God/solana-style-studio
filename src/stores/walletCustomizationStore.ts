@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { WalletStyle } from './customizationStore';
 
@@ -49,6 +48,11 @@ export interface WalletCustomizationState {
   setWalletStyle: (style: Partial<WalletStyle>) => void;
   setLoginStyle: (style: Partial<WalletStyle>) => void;
   applyUniversalStyle: (style: Partial<WalletStyle>) => void;
+  
+  // NEW: Layer-specific background application methods
+  applyBackgroundToLoginLayer: (imageUrl: string) => void;
+  applyBackgroundToWalletLayer: (imageUrl: string) => void;
+  applyBackgroundToBothLayers: (imageUrl: string) => void;
   
   // Animation control
   onCustomizationStart: () => void;
@@ -234,6 +238,35 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
         loginStyle: { ...state.loginStyle, ...newStyle }
       }));
       console.log('✅ Universal style applied to BOTH screens with animation:', newStyle);
+    }, set);
+  },
+
+  // NEW: Layer-specific background application methods
+  applyBackgroundToLoginLayer: (imageUrl: string) => {
+    withScanAnimation(() => {
+      set((state) => ({
+        loginStyle: { ...state.loginStyle, backgroundImage: `url(${imageUrl})` }
+      }));
+      console.log('🔒 Background applied to LOGIN layer only:', imageUrl);
+    }, set);
+  },
+
+  applyBackgroundToWalletLayer: (imageUrl: string) => {
+    withScanAnimation(() => {
+      set((state) => ({
+        walletStyle: { ...state.walletStyle, backgroundImage: `url(${imageUrl})` }
+      }));
+      console.log('🔓 Background applied to WALLET layer only:', imageUrl);
+    }, set);
+  },
+
+  applyBackgroundToBothLayers: (imageUrl: string) => {
+    withScanAnimation(() => {
+      set((state) => ({
+        walletStyle: { ...state.walletStyle, backgroundImage: `url(${imageUrl})` },
+        loginStyle: { ...state.loginStyle, backgroundImage: `url(${imageUrl})` }
+      }));
+      console.log('🔒✨ Background applied to BOTH layers:', imageUrl);
     }, set);
   },
 
