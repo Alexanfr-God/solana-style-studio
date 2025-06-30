@@ -1,3 +1,4 @@
+
 // ====== Enhanced index.ts ======
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -11,7 +12,7 @@ import { createStyleAnalyzer } from './modules/styleAnalyzer.ts';
 import { createPosterGenerator } from './modules/posterGeneration.ts';
 import { createStorageManager } from './utils/storage-manager.ts';
 import { createPromptBuilder } from './utils/prompt-builder.ts';
-import { JSONParser } from './utils/json-parser.ts';
+import { AdvancedJSONParser } from './utils/json-parser.ts';
 import { generateImageWithLeonardo, generateImageWithReplicate } from './modules/imageGenerator.ts';
 
 // Types
@@ -571,22 +572,22 @@ IMPORTANT: Always respond with valid JSON containing:
 
     console.log('🤖 AI Response:', aiContent);
 
-    // Parse JSON from AI response using JSONParser
-    let parsedResponse = JSONParser.parseAIResponse(aiContent);
+    // Parse JSON from AI response using AdvancedJSONParser
+    let parsedResponse = AdvancedJSONParser.parseAIResponse(aiContent);
     
-    if (!parsedResponse || !JSONParser.validateStyleStructure(parsedResponse.styleChanges || {})) {
+    if (!parsedResponse || !AdvancedJSONParser.validateStyleStructure(parsedResponse.styleChanges || {})) {
       console.warn('⚠️ Failed to parse AI JSON or invalid structure, using fallback');
       parsedResponse = {
         success: true,
         response: aiContent,
         userText: aiContent,
-        styleChanges: JSONParser.createFallbackStyles('dark')
+        styleChanges: AdvancedJSONParser.createFallbackStyles('dark')
       };
     }
 
     // Normalize colors
     if (parsedResponse.styleChanges) {
-      parsedResponse.styleChanges = JSONParser.normalizeColors(parsedResponse.styleChanges);
+      parsedResponse.styleChanges = AdvancedJSONParser.normalizeColors(parsedResponse.styleChanges);
     }
 
     console.log('✅ Analysis completed successfully');
