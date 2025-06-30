@@ -2,11 +2,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
 // Import unified modules
 import { createWalletElementsManager } from './modules/walletElementsManager.ts';
 import { createWalletManager } from './modules/walletManager.ts';
-import { createChatHandler, type ChatContext } from './modules/chatHandler.ts';
+import { createChatHandler } from './modules/chatHandler.ts';
 import { createStyleAnalyzer } from './modules/styleAnalyzer.ts';
 import { createPosterGenerator } from './modules/posterGeneration.ts';
 import { createStorageManager } from './utils/storage-manager.ts';
@@ -14,65 +13,73 @@ import { createAdvancedPromptBuilder, AdvancedPromptBuilder, detectUserLanguage,
 import { AdvancedJSONParser } from './utils/json-parser.ts';
 import { generateImageWithLeonardo, generateImageWithReplicate } from './modules/imageGenerator.ts';
 
-// Types
-import type { 
-  APIResponse, 
-  StyleChangeResponse, 
-  ImageGenerationResponse,
-  ChatResponse 
-} from './types/responses.ts';
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
 // ✅ ЭТАП 1: Функция валидации режима
-function validateMode(mode: any): { isValid: boolean; mode: string; error?: string } {
+function validateMode(mode) {
   console.log('🔍 [ВАЛИДАЦИЯ] Входящий режим:', {
     value: mode,
     type: typeof mode,
     length: mode?.length,
     stringified: JSON.stringify(mode),
-    bytes: mode ? Array.from(mode).map((c: string) => c.charCodeAt(0)) : []
+    bytes: mode ? Array.from(mode).map((c)=>c.charCodeAt(0)) : []
   });
   
   if (!mode) {
-    return { isValid: false, mode: 'unknown', error: 'Mode is null or undefined' };
-  }
-  
-  const cleanMode = String(mode).trim().toLowerCase();
-  const validModes = ['analysis', 'leonardo', 'replicate', 'structure', 'chat', 'style-analysis'];
-  
-  if (!validModes.includes(cleanMode)) {
-    return { 
-      isValid: false, 
-      mode: cleanMode, 
-      error: `Invalid mode: "${cleanMode}". Valid modes: ${validModes.join(', ')}` 
+    return {
+      isValid: false,
+      mode: 'unknown',
+      error: 'Mode is null or undefined'
     };
   }
   
-  return { isValid: true, mode: cleanMode };
+  const cleanMode = String(mode).trim().toLowerCase();
+  const validModes = [
+    'analysis',
+    'leonardo',
+    'replicate',
+    'structure',
+    'chat',
+    'style-analysis'
+  ];
+  
+  if (!validModes.includes(cleanMode)) {
+    return {
+      isValid: false,
+      mode: cleanMode,
+      error: `Invalid mode: "${cleanMode}". Valid modes: ${validModes.join(', ')}`
+    };
+  }
+  
+  return {
+    isValid: true,
+    mode: cleanMode
+  };
 }
 
 // ✅ ЭТАП 2: Функция проверки генерации изображений
-function isImageGenerationMode(mode: string): boolean {
+function isImageGenerationMode(mode) {
   return mode === 'leonardo' || mode === 'replicate';
 }
 
 // Main serve function
-serve(async (req) => {
+serve(async (req)=>{
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders
+    });
   }
-
+  
   try {
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl, supabaseKey);
-
+    
     // Initialize managers
     const elementsManager = createWalletElementsManager(supabaseUrl, supabaseKey);
     const walletManager = createWalletManager(supabaseUrl, supabaseKey);
@@ -81,113 +88,238 @@ serve(async (req) => {
     const posterGenerator = createPosterGenerator(supabaseUrl, supabaseKey);
     const storageManager = createStorageManager(supabaseUrl, supabaseKey);
     const promptBuilder = createAdvancedPromptBuilder();
-
-    // ========================================
-// МЕСТО 1: ЗАМЕНА В ОСНОВНОЙ ФУНКЦИИ serve()
-// ========================================
-
-// НАЙТИ ЭТИ СТРОКИ (примерно строка 85-95):
-const body = await req.json();
-const { content, imageUrl, walletContext, mode, sessionId, userId, chatHistory, isImageGeneration, debugMode } = body;
-
-// ✅ ЭТАП 1: ДЕТАЛЬНАЯ ДИАГНОСТИКА ВХОДЯЩИХ ДАННЫХ
-console.log('🚀 [ДИАГНОСТИКА] Enhanced wallet-chat-gpt запрос:');
-console.log('📋 [ДИАГНОСТИКА] Полное тело запроса:', JSON.stringify({
-  content: content?.substring(0, 50) + '...',
-  mode,
-  isImageGeneration,
-  debugMode,
-  walletType: walletContext?.walletType,
-  sessionId
-}, null, 2));
-
-// ✅ ВАЛИДАЦИЯ РЕЖИМА С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ
-const validation = validateMode(mode);
-
-// ПОСЛЕ ЭТИХ СТРОК ДОБАВИТЬ:
-// ========================================
-// 🚨 НОВЫЙ КОД ВСТАВИТЬ ЗДЕСЬ 🚨
-// ========================================
-
-// ✅ КРИТИЧЕСКИ ВАЖНО: ДОБАВИТЬ ПРОВЕРКУ КОНТЕНТА НА КОМАНДЫ ГЕНЕРАЦИИ
-const hasGenerationKeywords = content && (
-  content.toLowerCase().includes('generate') || 
-  content.toLowerCase().includes('create image') || 
-  content.toLowerCase().includes('генерировать') || 
-  content.toLowerCase().includes('создать изображение') ||
-  content.toLowerCase().includes('сгенерируй') ||
-  content.toLowerCase().includes('создай картинку')
-);
-
-console.log('🔍 [ДЕТЕКЦИЯ] Обнаружены ключевые слова генерации:', hasGenerationKeywords);
-
-// ✅ ЭТАП 3: УМНАЯ МАРШРУТИЗАЦИЯ С АВТООПРЕДЕЛЕНИЕМ
-let finalMode = validatedMode;
-
-// ⚡ АВТОМАТИЧЕСКОЕ ПЕРЕОПРЕДЕЛЕНИЕ РЕЖИМА ДЛЯ ГЕНЕРАЦИИ
-if (hasGenerationKeywords && (validatedMode === 'analysis' || validatedMode === 'chat')) {
-  console.log('🎯 [АВТООПРЕДЕЛЕНИЕ] Команда генерации обнаружена, переключаем на leonardo');
-  finalMode = 'leonardo'; // или 'replicate' по умолчанию
-}
-
-// ========================================
-// 🚨 КОНЕЦ НОВОГО КОДА 🚨
-// ========================================
-
-// ПРОДОЛЖИТЬ СО СТРОКИ (найти в вашем коде):
-// ✅ ЭТАП 3: СТРОГАЯ МАРШРУТИЗАЦИЯ БЕЗ DEFAULT FALLBACK
-switch(validatedMode){ // 🚨 ЗАМЕНИТЬ НА: switch(finalMode){
-
-// ========================================
-// МЕСТО 2: ИЗМЕНЕНИЕ В SWITCH CASE
-// ========================================
-
-// НАЙТИ ЭТУ СТРОКУ (примерно строка 120):
-switch(validatedMode){
-
-// 🚨 ЗАМЕНИТЬ НА:
-switch(finalMode){
-
-// ========================================
-// МЕСТО 3: ДОБАВИТЬ ЗАЩИТУ В CASE 'analysis'
-// ========================================
-
-// НАЙТИ ЭТОТ CASE (примерно строка 150):
-case 'analysis':
-  console.log('🧠 [РОУТИНГ] ANALYSIS - ТОЛЬКО С JSON ПАРСИНГОМ');
-  // ✅ ЭТАП 3: ЗАЩИТА - убедимся что команды генерации не попали сюда
-  if (content && (content.toLowerCase().includes('generate') || content.toLowerCase().includes('create image') || content.toLowerCase().includes('генерировать') || content.toLowerCase().includes('создать изображение'))) {
-    console.error('❌ [ЗАЩИТА] Команда генерации попала в режим analysis!');
-    console.error('❌ [ЗАЩИТА] Контент:', content);
-    console.error('❌ [ЗАЩИТА] Режим:', validatedMode);
-    return createErrorResponse('Image generation command detected in analysis mode. Please select Leonardo or Replicate mode for image generation.', 400);
-  }
-
-// 🚨 ЗАМЕНИТЬ ВСЮ ЗАЩИТУ НА:
-case 'analysis':
-  console.log('🧠 [РОУТИНГ] ANALYSIS - ТОЛЬКО С JSON ПАРСИНГОМ');
-  
-  // ✅ ДВОЙНАЯ ЗАЩИТА - убедимся что команды генерации не попали сюда
-  if (hasGenerationKeywords) {
-    console.error('❌ [ЗАЩИТА] Команда генерации попала в режим analysis! Блокируем.');
-    return createErrorResponse('Обнаружена команда генерации изображения. Пожалуйста, выберите режим Leonardo или Replicate для создания изображений.', 400);
-  }
-
-// ========================================
-// МЕСТО 4: ПОЛНАЯ ЗАМЕНА handleImageGeneration
-// ========================================
-
-// НАЙТИ ФУНКЦИЮ (примерно строка 300-400):
-async function handleImageGeneration(mode, prompt, supabase, promptBuilder) {
-  try {
-    console.log(`🖼️ [ГЕНЕРАЦИЯ] СТАРТ ${mode.toUpperCase()} - БЕЗ JSON ПАРСИНГА`);
-    // ... весь существующий код ...
+    
+    const body = await req.json();
+    const { content, imageUrl, walletContext, mode, sessionId, userId, chatHistory, isImageGeneration, debugMode } = body;
+    
+    // ✅ ЭТАП 1: ДЕТАЛЬНАЯ ДИАГНОСТИКА ВХОДЯЩИХ ДАННЫХ
+    console.log('🚀 [ДИАГНОСТИКА] Enhanced wallet-chat-gpt запрос:');
+    console.log('📋 [ДИАГНОСТИКА] Полное тело запроса:', JSON.stringify({
+      content: content?.substring(0, 50) + '...',
+      mode,
+      isImageGeneration,
+      debugMode,
+      walletType: walletContext?.walletType,
+      sessionId
+    }, null, 2));
+    
+    // ✅ ВАЛИДАЦИЯ РЕЖИМА С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ
+    const validation = validateMode(mode);
+    if (!validation.isValid) {
+      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Неверный режим:', validation.error);
+      return createErrorResponse(`Invalid mode: ${validation.error}`, 400);
+    }
+    
+    const validatedMode = validation.mode;
+    console.log('✅ [ВАЛИДАЦИЯ] Режим валиден:', validatedMode);
+    
+    // ✅ ЭТАП 2: ПРОВЕРКА НА ГЕНЕРАЦИЮ ИЗОБРАЖЕНИЙ
+    const isGeneration = isImageGenerationMode(validatedMode);
+    console.log('🎨 [МАРШРУТИЗАЦИЯ] Это генерация изображения?', isGeneration);
+    
+    // ✅ КРИТИЧЕСКИ ВАЖНО: ДОБАВИТЬ ПРОВЕРКУ КОНТЕНТА НА КОМАНДЫ ГЕНЕРАЦИИ
+    const hasGenerationKeywords = content && (
+      content.toLowerCase().includes('generate') || 
+      content.toLowerCase().includes('create image') || 
+      content.toLowerCase().includes('генерировать') || 
+      content.toLowerCase().includes('создать изображение') ||
+      content.toLowerCase().includes('сгенерируй') ||
+      content.toLowerCase().includes('создай картинку')
+    );
+    
+    console.log('🔍 [ДЕТЕКЦИЯ] Обнаружены ключевые слова генерации:', hasGenerationKeywords);
+    
+    // ✅ ЭТАП 3: УМНАЯ МАРШРУТИЗАЦИЯ С АВТООПРЕДЕЛЕНИЕМ
+    let finalMode = validatedMode;
+    
+    // ⚡ АВТОМАТИЧЕСКОЕ ПЕРЕОПРЕДЕЛЕНИЕ РЕЖИМА ДЛЯ ГЕНЕРАЦИИ
+    if (hasGenerationKeywords && (validatedMode === 'analysis' || validatedMode === 'chat')) {
+      console.log('🎯 [АВТООПРЕДЕЛЕНИЕ] Команда генерации обнаружена, переключаем на leonardo');
+      finalMode = 'leonardo'; // или 'replicate' по умолчанию
+    }
+    
+    if (isGeneration) {
+      console.log('🎨 [МАРШРУТИЗАЦИЯ] НАПРАВЛЯЕМ В ГЕНЕРАЦИЮ БЕЗ JSON ПАРСИНГА');
+    } else {
+      console.log('🧠 [МАРШРУТИЗАЦИЯ] НАПРАВЛЯЕМ В АНАЛИЗ С JSON ПАРСИНГОМ');
+    }
+    
+    // ✅ ЭТАП 3: СТРОГАЯ МАРШРУТИЗАЦИЯ БЕЗ DEFAULT FALLBACK
+    switch(finalMode){
+      case 'structure':
+        console.log('🏗️ [РОУТИНГ] Обработка структуры');
+        return await handleStructureMode(elementsManager, walletContext?.walletType || 'phantom');
+        
+      case 'chat':
+        console.log('💬 [РОУТИНГ] Обработка чата - БЕЗ АВТОПЕРЕОПРЕДЕЛЕНИЯ НА ГЕНЕРАЦИЮ');
+        // ✅ ВАЖНО: передаем флаг что это НЕ генерация
+        return await handleChatMode(chatHandler, content, imageUrl, walletContext, sessionId, chatHistory, storageManager, false);
+        
+      case 'style-analysis':
+        console.log('🎨 [РОУТИНГ] Обработка анализа стилей');
+        return await handleStyleAnalysisMode(styleAnalyzer, content, imageUrl, walletContext);
+        
+      case 'leonardo':
+        console.log('🎨 [РОУТИНГ] LEONARDO - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
+        return await handleImageGeneration('leonardo', content, supabase, promptBuilder);
+        
+      case 'replicate':
+        console.log('🎨 [РОУТИНГ] REPLICATE - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
+        return await handleImageGeneration('replicate', content, supabase, promptBuilder);
+        
+      case 'poster-generation':
+        console.log('🎨 [РОУТИНГ] Обработка генерации постеров');
+        return await handlePosterGeneration(posterGenerator, content, walletContext, body.posterConfig);
+        
+      case 'save-customization':
+        console.log('💾 [РОУТИНГ] Сохранение кастомизации');
+        return await handleSaveCustomization(storageManager, walletContext, body.customizations, userId);
+        
+      case 'load-customization':
+        console.log('📂 [РОУТИНГ] Загрузка кастомизации');
+        return await handleLoadCustomization(storageManager, walletContext?.walletType, userId);
+        
+      case 'analysis':
+        console.log('🧠 [РОУТИНГ] ANALYSIS - ТОЛЬКО С JSON ПАРСИНГОМ');
+        
+        // ✅ ДВОЙНАЯ ЗАЩИТА - убедимся что команды генерации не попали сюда
+        if (hasGenerationKeywords) {
+          console.error('❌ [ЗАЩИТА] Команда генерации попала в режим analysis! Блокируем.');
+          return createErrorResponse('Обнаружена команда генерации изображения. Пожалуйста, выберите режим Leonardo или Replicate для создания изображений.', 400);
+        }
+        
+        return await handleAnalysisMode(content, imageUrl, walletContext, supabase, elementsManager, walletManager, promptBuilder);
+        
+      default:
+        // ✅ ЭТАП 2: НЕТ FALLBACK НА ANALYSIS - ТОЛЬКО ОШИБКА
+        console.error('❌ [МАРШРУТИЗАЦИЯ] Неизвестный режим попал в default:', finalMode);
+        return createErrorResponse(`Unsupported mode: "${finalMode}". This is a routing error.`, 400);
+    }
   } catch (error) {
-    // ... обработка ошибок ...
+    console.error('💥 [ОШИБКА] Error in enhanced wallet-chat-gpt:', error);
+    console.error('💥 [ОШИБКА] Error stack:', error.stack);
+    return createErrorResponse(error.message, 500);
+  }
+});
+
+// ====== Mode Handlers ======
+
+/**
+ * Handle structure mode - return wallet elements
+ */
+async function handleStructureMode(elementsManager, walletType) {
+  try {
+    console.log('🏗️ Structure mode: loading wallet elements...');
+    const elements = await elementsManager.loadAllElements();
+    const statistics = elementsManager.getElementsStatistics(elements);
+    const grouped = elementsManager.groupElementsByScreen(elements);
+    
+    const response = {
+      success: true,
+      data: {
+        walletElements: elements,
+        statistics,
+        grouped,
+        walletType,
+        mode: 'structure'
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    return createSuccessResponse(response);
+  } catch (error) {
+    console.error('❌ Error in structure mode:', error);
+    return createErrorResponse(`Structure mode error: ${error.message}`, 500);
   }
 }
 
-// 🚨 ЗАМЕНИТЬ ВСЕЙ ФУНКЦИЕЙ:
+/**
+ * Handle chat mode with enhanced conversation management
+ */
+async function handleChatMode(chatHandler, content, imageUrl, walletContext, sessionId, chatHistory, storageManager, allowImageGeneration = false) {
+  try {
+    console.log('💬 Chat mode: processing conversation...');
+    console.log('🚫 [CHAT] Image generation allowed:', allowImageGeneration);
+    
+    // Load existing chat history if sessionId provided
+    let conversationHistory = chatHistory || [];
+    if (sessionId && !chatHistory?.length) {
+      conversationHistory = await storageManager.loadChatHistory(sessionId);
+    }
+    
+    // Create chat context with generation flag
+    const context = {
+      walletType: walletContext?.walletType || 'phantom',
+      activeScreen: walletContext?.activeLayer,
+      conversationHistory,
+      currentTask: undefined,
+      settings: {
+        allowImageGeneration, // ✅ ВАЖНЫЙ ФЛАГ!
+        maxHistoryLength: 50,
+        enableProactiveHelp: true,
+        responseStyle: 'casual'
+      }
+    };
+    
+    // Process chat message
+    const result = await chatHandler.handleChat(content, context, imageUrl);
+    
+    // Save updated chat history
+    if (sessionId) {
+      await storageManager.saveChatHistory(sessionId, result.context?.conversationHistory || conversationHistory, context.walletType);
+    }
+    
+    const response = {
+      success: result.success,
+      response: result.response,
+      action: result.action,
+      data: result.data,
+      suggestions: result.data?.suggestions
+    };
+    
+    return createSuccessResponse(response);
+  } catch (error) {
+    console.error('❌ Error in chat mode:', error);
+    return createErrorResponse(`Chat error: ${error.message}`, 500);
+  }
+}
+
+/**
+ * Handle style analysis mode
+ */
+async function handleStyleAnalysisMode(styleAnalyzer, content, imageUrl, walletContext) {
+  try {
+    console.log('🎨 Style analysis mode...');
+    
+    let analysis;
+    if (imageUrl) {
+      analysis = await styleAnalyzer.analyzeImageStyle(imageUrl);
+    } else if (content) {
+      analysis = await styleAnalyzer.analyzeTextStyle(content);
+    } else {
+      throw new Error('Either content or imageUrl is required for style analysis');
+    }
+    
+    const response = {
+      success: true,
+      data: {
+        styleAnalysis: analysis,
+        walletType: walletContext?.walletType,
+        mode: 'style-analysis'
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    return createSuccessResponse(response);
+  } catch (error) {
+    console.error('❌ Error in style analysis mode:', error);
+    return createErrorResponse(`Style analysis error: ${error.message}`, 500);
+  }
+}
+
+/**
+ * ✅ ЭТАП 3: ЧИСТАЯ ГЕНЕРАЦИЯ ИЗОБРАЖЕНИЙ БЕЗ JSON ПАРСИНГА
+ */
 async function handleImageGeneration(mode, prompt, supabase, promptBuilder) {
   try {
     console.log(`🖼️ [ГЕНЕРАЦИЯ] СТАРТ ${mode.toUpperCase()} - НИКАКОГО JSON ПАРСИНГА!`);
@@ -295,259 +427,29 @@ async function handleImageGeneration(mode, prompt, supabase, promptBuilder) {
     return createErrorResponse(error.message, 500, response);
   }
 }
-// ====== Mode Handlers ======
-
-/**
- * Handle structure mode - return wallet elements
- */
-async function handleStructureMode(elementsManager: any, walletType: string) {
-  try {
-    console.log('🏗️ Structure mode: loading wallet elements...');
-    
-    const elements = await elementsManager.loadAllElements();
-    const statistics = elementsManager.getElementsStatistics(elements);
-    const grouped = elementsManager.groupElementsByScreen(elements);
-
-    const response: APIResponse = {
-      success: true,
-      data: {
-        walletElements: elements,
-        statistics,
-        grouped,
-        walletType,
-        mode: 'structure'
-      },
-      timestamp: new Date().toISOString()
-    };
-
-    return createSuccessResponse(response);
-  } catch (error) {
-    console.error('❌ Error in structure mode:', error);
-    return createErrorResponse(`Structure mode error: ${error.message}`, 500);
-  }
-}
-
-/**
- * Handle chat mode with enhanced conversation management
- */
-async function handleChatMode(
-  chatHandler: any,
-  content: string,
-  imageUrl: string | undefined,
-  walletContext: any,
-  sessionId: string,
-  chatHistory: any[],
-  storageManager: any
-) {
-  try {
-    console.log('💬 Chat mode: processing conversation...');
-
-    // Load existing chat history if sessionId provided
-    let conversationHistory = chatHistory || [];
-    if (sessionId && !chatHistory?.length) {
-      conversationHistory = await storageManager.loadChatHistory(sessionId);
-    }
-
-    // Create chat context
-    const context: ChatContext = {
-      walletType: walletContext?.walletType || 'phantom',
-      activeScreen: walletContext?.activeLayer,
-      conversationHistory,
-      currentTask: undefined
-    };
-
-    // Process chat message
-    const result = await chatHandler.handleChat(content, context, imageUrl);
-
-    // Save updated chat history
-    if (sessionId) {
-      await storageManager.saveChatHistory(
-        sessionId,
-        result.context?.conversationHistory || conversationHistory,
-        context.walletType
-      );
-    }
-
-    const response: ChatResponse = {
-      success: result.success,
-      response: result.response,
-      action: result.action,
-      data: result.data,
-      suggestions: result.data?.suggestions
-    };
-
-    return createSuccessResponse(response);
-  } catch (error) {
-    console.error('❌ Error in chat mode:', error);
-    return createErrorResponse(`Chat error: ${error.message}`, 500);
-  }
-}
-
-/**
- * Handle style analysis mode
- */
-async function handleStyleAnalysisMode(
-  styleAnalyzer: any,
-  content: string,
-  imageUrl: string | undefined,
-  walletContext: any
-) {
-  try {
-    console.log('🎨 Style analysis mode...');
-
-    let analysis;
-    if (imageUrl) {
-      analysis = await styleAnalyzer.analyzeImageStyle(imageUrl);
-    } else if (content) {
-      analysis = await styleAnalyzer.analyzeTextStyle(content);
-    } else {
-      throw new Error('Either content or imageUrl is required for style analysis');
-    }
-
-    const response: APIResponse = {
-      success: true,
-      data: {
-        styleAnalysis: analysis,
-        walletType: walletContext?.walletType,
-        mode: 'style-analysis'
-      },
-      timestamp: new Date().toISOString()
-    };
-
-    return createSuccessResponse(response);
-  } catch (error) {
-    console.error('❌ Error in style analysis mode:', error);
-    return createErrorResponse(`Style analysis error: ${error.message}`, 500);
-  }
-}
-
-/**
- * ✅ ЭТАП 3: ЧИСТАЯ ГЕНЕРАЦИЯ ИЗОБРАЖЕНИЙ БЕЗ JSON ПАРСИНГА
- */
-async function handleImageGeneration(
-  mode: 'leonardo' | 'replicate', 
-  prompt: string, 
-  supabase: any,
-  promptBuilder: any
-) {
-  try {
-    console.log(`🖼️ [ГЕНЕРАЦИЯ] СТАРТ ${mode.toUpperCase()} - БЕЗ JSON ПАРСИНГА`);
-    console.log(`📝 [ГЕНЕРАЦИЯ] Промпт: "${prompt}"`);
-    
-    // ✅ ЗАЩИТА: Убедимся что это не попало сюда случайно
-    if (mode !== 'leonardo' && mode !== 'replicate') {
-      console.error('❌ [ЗАЩИТА] Неверный режим в handleImageGeneration:', mode);
-      throw new Error(`Invalid image generation mode: ${mode}`);
-    }
-    
-    // Validate prompt
-    if (!prompt || prompt.trim().length === 0) {
-      throw new Error('Prompt is required for image generation');
-    }
-    
-    // Check API key availability
-    const apiKeyName = mode === 'leonardo' ? 'LEONARDO_API_KEY' : 'REPLICATE_API_KEY';
-    const apiKey = Deno.env.get(apiKeyName);
-    
-    if (!apiKey) {
-      console.error(`❌ [ГЕНЕРАЦИЯ] ${apiKeyName} not found in environment`);
-      throw new Error(`${mode.charAt(0).toUpperCase() + mode.slice(1)} API key not configured`);
-    }
-    
-    console.log(`✅ [ГЕНЕРАЦИЯ] ${apiKeyName} найден, начинаем генерацию...`);
-    
-    // ✅ Простое улучшение промпта для wallet контекста
-    const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, high quality, detailed, artistic, vibrant colors, 4k resolution`;
-    
-    console.log(`🎯 [ГЕНЕРАЦИЯ] Enhanced prompt: ${enhancedPrompt}`);
-    
-    let result;
-    if (mode === 'leonardo') {
-      console.log(`🎨 [ГЕНЕРАЦИЯ] Вызываем generateImageWithLeonardo...`);
-      result = await generateImageWithLeonardo(enhancedPrompt, supabase);
-    } else {
-      console.log(`🎨 [ГЕНЕРАЦИЯ] Вызываем generateImageWithReplicate...`);
-      result = await generateImageWithReplicate(enhancedPrompt, supabase);
-    }
-
-    console.log(`🎯 [ГЕНЕРАЦИЯ] ${mode} результат:`, result.success ? 'SUCCESS' : 'FAILED');
-    console.log(`🔍 [ГЕНЕРАЦИЯ] Result imageUrl:`, result.imageUrl);
-    
-    if (!result.success) {
-      console.error(`❌ [ГЕНЕРАЦИЯ] ${mode} generation failed:`, result.error);
-      throw new Error(result.error || 'Image generation failed');
-    }
-
-    // ✅ ЧЕТКАЯ структура ответа БЕЗ JSON парсинга
-    const response: ImageGenerationResponse = {
-      success: true,
-      imageUrl: result.imageUrl,
-      status: 'completed',
-      data: {
-        imageUrl: result.imageUrl // ✅ Дублируем для надежности
-      },
-      metadata: {
-        prompt: enhancedPrompt,
-        model: mode,
-        dimensions: { width: 1024, height: 1024 }
-      }
-    };
-
-    console.log(`✅ [ГЕНЕРАЦИЯ] Финальный ответ БЕЗ JSON:`, {
-      success: response.success,
-      imageUrl: response.imageUrl,
-      'data.imageUrl': response.data?.imageUrl
-    });
-
-    return createSuccessResponse(response);
-  } catch (error) {
-    console.error(`💥 [ГЕНЕРАЦИЯ] Ошибка в ${mode} image generation:`, error);
-    
-    const response: ImageGenerationResponse = {
-      success: false,
-      error: error.message,
-      status: 'failed',
-      data: {
-        imageUrl: null
-      },
-      metadata: {
-        prompt,
-        model: mode,
-        dimensions: { width: 1024, height: 1024 }
-      }
-    };
-    
-    return createErrorResponse(error.message, 500, response);
-  }
-}
 
 /**
  * Handle poster generation
  */
-async function handlePosterGeneration(
-  posterGenerator: any,
-  content: string,
-  walletContext: any,
-  posterConfig: any
-) {
+async function handlePosterGeneration(posterGenerator, content, walletContext, posterConfig) {
   try {
     console.log('🎨 Poster generation mode...');
-
+    
     if (!posterConfig) {
       throw new Error('Poster configuration is required');
     }
-
+    
     const result = await posterGenerator.generatePoster(posterConfig, {
       walletType: walletContext?.walletType,
       content
     });
-
-    const response: APIResponse = {
+    
+    const response = {
       success: result.success,
       data: result,
       timestamp: new Date().toISOString()
     };
-
+    
     return createSuccessResponse(response);
   } catch (error) {
     console.error('❌ Error in poster generation:', error);
@@ -558,28 +460,23 @@ async function handlePosterGeneration(
 /**
  * Handle saving customization
  */
-async function handleSaveCustomization(
-  storageManager: any,
-  walletContext: any,
-  customizations: any,
-  userId?: string
-) {
+async function handleSaveCustomization(storageManager, walletContext, customizations, userId) {
   try {
     console.log('💾 Saving wallet customization...');
-
+    
     const saved = await storageManager.saveWalletCustomization(
       walletContext?.walletType || 'phantom',
       customizations,
       userId
     );
-
-    const response: APIResponse = {
+    
+    const response = {
       success: true,
       data: { saved },
       message: 'Customization saved successfully',
       timestamp: new Date().toISOString()
     };
-
+    
     return createSuccessResponse(response);
   } catch (error) {
     console.error('❌ Error saving customization:', error);
@@ -590,25 +487,21 @@ async function handleSaveCustomization(
 /**
  * Handle loading customization
  */
-async function handleLoadCustomization(
-  storageManager: any,
-  walletType: string,
-  userId?: string
-) {
+async function handleLoadCustomization(storageManager, walletType, userId) {
   try {
     console.log('📂 Loading wallet customization...');
-
+    
     const customization = await storageManager.loadWalletCustomization(
       walletType || 'phantom',
       userId
     );
-
-    const response: APIResponse = {
+    
+    const response = {
       success: true,
       data: { customization },
       timestamp: new Date().toISOString()
     };
-
+    
     return createSuccessResponse(response);
   } catch (error) {
     console.error('❌ Error loading customization:', error);
@@ -619,39 +512,31 @@ async function handleLoadCustomization(
 /**
  * ✅ ЭТАП 3: АНАЛИЗ - ТОЛЬКО ДЛЯ analysis С JSON ПАРСИНГОМ
  */
-async function handleAnalysisMode(
-  content: string,
-  imageUrl: string | undefined,
-  walletContext: any,
-  supabase: any,
-  elementsManager: any,
-  walletManager: any,
-  promptBuilder: any
-) {
+async function handleAnalysisMode(content, imageUrl, walletContext, supabase, elementsManager, walletManager, promptBuilder) {
   try {
     console.log('🧠 [АНАЛИЗ] Analysis mode: ТОЛЬКО JSON парсинг для стилей...');
-
+    
     // Get OpenAI API key
     const openaiApiKey = Deno.env.get('OPENA_API_KEY');
     if (!openaiApiKey) {
       throw new Error('OpenAI API key not configured');
     }
-
+    
     // Detect user language
     const userLanguage = detectUserLanguage(content);
     console.log(`🌐 [АНАЛИЗ] Detected user language: ${userLanguage}`);
-
+    
     // Create enhanced wallet context
     const walletType = walletContext?.walletType || 'phantom';
     const aiContext = await walletManager.createWalletAIContext(walletType, walletContext?.activeLayer);
-
+    
     // Build the AI prompt using prompt builder
     const customizationPrompt = AdvancedPromptBuilder.buildCustomizationPrompt(
       content,
       aiContext.customizableElements || [],
       walletContext?.currentStyles || {}
     );
-
+    
     const systemPrompt = `You are a Web3 wallet customization expert. You help users customize their ${walletType} wallet interface.
 
 WALLET CONTEXT:
@@ -689,19 +574,25 @@ The userText field should contain a friendly, conversational explanation in the 
       : content;
 
     // Prepare messages for OpenAI
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage }
-    ];
+    const messages = [{
+      role: 'system',
+      content: systemPrompt
+    }, {
+      role: 'user',
+      content: userMessage
+    }];
 
     // Add image if provided
     if (imageUrl) {
       messages[1] = {
         role: 'user',
-        content: [
-          { type: 'text', text: userMessage },
-          { type: 'image_url', image_url: { url: imageUrl } }
-        ]
+        content: [{
+          type: 'text',
+          text: userMessage
+        }, {
+          type: 'image_url',
+          image_url: { url: imageUrl }
+        }]
       };
     }
 
@@ -710,7 +601,7 @@ The userText field should contain a friendly, conversational explanation in the 
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'gpt-4o',
@@ -727,7 +618,7 @@ The userText field should contain a friendly, conversational explanation in the 
 
     const aiResponse = await response.json();
     const aiContent = aiResponse.choices[0].message.content;
-
+    
     console.log('🧠 [АНАЛИЗ] AI Response для JSON парсинга:', aiContent);
 
     // ✅ ЭТАП 3: Parse JSON ТОЛЬКО для analysis режима
@@ -751,7 +642,7 @@ The userText field should contain a friendly, conversational explanation in the 
 
     console.log('✅ [АНАЛИЗ] Analysis completed successfully with JSON parsing');
 
-    const finalResponse: StyleChangeResponse = {
+    const finalResponse = {
       success: parsedResponse.success,
       response: generateHumanFriendlyMessage(parsedResponse, userLanguage),
       userText: parsedResponse.userText,
@@ -761,7 +652,6 @@ The userText field should contain a friendly, conversational explanation in the 
     };
 
     return createSuccessResponse(finalResponse);
-
   } catch (error) {
     console.error('❌ [АНАЛИЗ] Error in analysis mode:', error);
     return createErrorResponse(`Analysis error: ${error.message}`, 500);
@@ -773,7 +663,7 @@ The userText field should contain a friendly, conversational explanation in the 
 /**
  * Generate human-friendly message from AI response
  */
-function generateHumanFriendlyMessage(parsedResponse: any, userLanguage: string = 'en'): string {
+function generateHumanFriendlyMessage(parsedResponse, userLanguage = 'en') {
   // First, try to get human text from response fields
   if (parsedResponse.userText && typeof parsedResponse.userText === 'string') {
     return parsedResponse.userText;
@@ -791,7 +681,6 @@ function generateHumanFriendlyMessage(parsedResponse: any, userLanguage: string 
     // Generate message based on detected language
     if (userLanguage === 'ru') {
       let message = "Готово! Я обновил дизайн вашего кошелька. ";
-      
       if (changes.backgroundColor) {
         message += `Установил новый фон (${changes.backgroundColor}). `;
       }
@@ -803,12 +692,10 @@ function generateHumanFriendlyMessage(parsedResponse: any, userLanguage: string 
       } else {
         message += "Как вам новый стиль?";
       }
-      
       return message;
     } else {
       // Default to English
       let message = "Done! I updated your wallet design. ";
-      
       if (changes.backgroundColor) {
         message += `Set new background (${changes.backgroundColor}). `;
       }
@@ -820,7 +707,6 @@ function generateHumanFriendlyMessage(parsedResponse: any, userLanguage: string 
       } else {
         message += "How do you like the new style?";
       }
-      
       return message;
     }
   }
@@ -834,38 +720,34 @@ function generateHumanFriendlyMessage(parsedResponse: any, userLanguage: string 
 /**
  * Create success response
  */
-function createSuccessResponse(data: any, status: number = 200): Response {
-  return new Response(
-    JSON.stringify(data),
-    { 
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+function createSuccessResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json'
     }
-  );
+  });
 }
 
 /**
  * Create error response
  */
-function createErrorResponse(
-  error: string, 
-  status: number = 500, 
-  additionalData: any = {}
-): Response {
-  const errorResponse: APIResponse = {
+function createErrorResponse(error, status = 500, additionalData = {}) {
+  const errorResponse = {
     success: false,
     error,
     timestamp: new Date().toISOString(),
     ...additionalData
   };
-
-  return new Response(
-    JSON.stringify(errorResponse),
-    { 
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  
+  return new Response(JSON.stringify(errorResponse), {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json'
     }
-  );
+  });
 }
 
 // ====== System Prompts Library ======
@@ -917,25 +799,29 @@ Focus on modern, professional, and visually striking designs.`
 
 // ====== Enhanced Error Handling ======
 class WalletCustomizerError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public details?: any
-  ) {
+  code;
+  details;
+  
+  constructor(message, code, details) {
     super(message);
+    this.code = code;
+    this.details = details;
     this.name = 'WalletCustomizerError';
   }
 }
 
 // ====== Rate Limiting (Optional) ======
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const rateLimitMap = new Map();
 
-function checkRateLimit(identifier: string, limit: number = 60, windowMs: number = 60000): boolean {
+function checkRateLimit(identifier, limit = 60, windowMs = 60000) {
   const now = Date.now();
   const record = rateLimitMap.get(identifier);
   
   if (!record || now > record.resetTime) {
-    rateLimitMap.set(identifier, { count: 1, resetTime: now + windowMs });
+    rateLimitMap.set(identifier, {
+      count: 1,
+      resetTime: now + windowMs
+    });
     return true;
   }
   
@@ -948,7 +834,7 @@ function checkRateLimit(identifier: string, limit: number = 60, windowMs: number
 }
 
 // ====== Health Check Endpoint ======
-export async function handleHealthCheck(): Promise<Response> {
+export async function handleHealthCheck() {
   const health = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -960,6 +846,6 @@ export async function handleHealthCheck(): Promise<Response> {
       replicate: !!Deno.env.get('REPLICATE_API_KEY')
     }
   };
-
+  
   return createSuccessResponse(health);
 }
