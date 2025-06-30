@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createWalletManager, type WalletAIContext } from './walletManager.ts';
 import { createStyleAnalyzer, type StyleAnalysis } from './styleAnalyzer.ts';
@@ -117,7 +118,7 @@ export class ChatHandler {
   /**
    * Обновление памяти контекста
    */
-  private updateContextMemory(context: ChatContext, message: string): void {
+  updateContextMemory(context: ChatContext, message: string): void {
     // Обновляем поток разговора
     context.contextMemory.conversationFlow.push(message.slice(0, 30));
     if (context.contextMemory.conversationFlow.length > 10) {
@@ -144,7 +145,7 @@ export class ChatHandler {
   /**
    * Анализ совместимости стиля с кошельком
    */
-  private analyzeStyleCompatibility(analysis: StyleAnalysis, walletContext: WalletAIContext): any {
+  analyzeStyleCompatibility(analysis: StyleAnalysis, walletContext: WalletAIContext): any {
     let score = 7; // Базовый балл
     
     // Проверяем поддержку темной/светлой темы
@@ -181,7 +182,7 @@ export class ChatHandler {
   /**
    * Генерация рекомендаций по стилю
    */
-  private generateStyleRecommendations(analysis: StyleAnalysis, userProfile?: UserProfile): string[] {
+  generateStyleRecommendations(analysis: StyleAnalysis, userProfile?: UserProfile): string[] {
     const recommendations = [];
     
     // На основе анализа стиля
@@ -656,7 +657,7 @@ export class ChatHandler {
   /**
    * Извлечение упоминаний элементов из сообщения
    */
-  private extractElementsFromMessage(message: string): string[] {
+  extractElementsFromMessage(message: string): string[] {
     const elements = [];
     const elementKeywords = {
       'кнопк': 'button',
