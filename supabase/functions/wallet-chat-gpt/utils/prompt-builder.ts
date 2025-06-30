@@ -158,3 +158,96 @@ Patterns: ${effect.patterns}
 
 🔧 TECHNICAL SPECIFICATIONS:
 ━━━━━━━━━━━━━━━━━━
+
+Opacity: ${specs.opacity}
+Glow Radius: ${specs.glow}
+Animation Speed: ${specs.animation}
+Contrast Level: ${specs.contrast}
+
+💎 WALLET COMPATIBILITY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Wallet Type: ${walletContext.walletType}
+Screen Elements: ${walletContext.elements?.join(', ') || 'standard elements'}
+Safe Zones: ${config.preserveUsability ? 'MUST preserve all interactive areas' : 'Can overlay interface'}
+NFT Ready: ${config.nftReady ? 'YES - prepare for NFT minting' : 'NO - display only'}
+
+🎯 GENERATION REQUIREMENTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Create ${intensityDescription} visual impact
+2. Apply ${config.effectType} aesthetic throughout
+3. Target elements: ${config.targetElements.join(', ')}
+4. Maintain wallet functionality and usability
+5. Use specified color palette and effects
+6. Ensure accessibility compliance (WCAG AA)
+7. Optimize for ${walletContext.walletType} interface patterns
+
+Generate CSS variables and styling that will create this amazing ${config.effectType} effect!`;
+  }
+
+  /**
+   * Get base system prompt based on complexity level
+   */
+  private static getBaseSystemPrompt(complexity: 'beginner' | 'intermediate' | 'advanced'): string {
+    const prompts = {
+      beginner: 'You are a friendly wallet design assistant. Provide simple, clear guidance.',
+      intermediate: 'You are an experienced wallet design expert. Provide balanced technical insights.',
+      advanced: 'You are a senior wallet design architect. Provide sophisticated, technical recommendations.'
+    };
+    return prompts[complexity];
+  }
+
+  /**
+   * Build context-aware prompt section
+   */
+  private static buildContextPrompt(config: PromptConfig): string {
+    return `
+WALLET CONTEXT:
+- Type: ${config.context.walletType}
+- Elements: ${config.context.elements?.join(', ') || 'standard'}
+- User Request: ${config.userRequest}
+- Target Element: ${config.targetElement || 'general'}
+${config.imageUrl ? `- Reference Image: ${config.imageUrl}` : ''}`;
+  }
+
+  /**
+   * Build examples prompt section
+   */
+  private static buildExamplesPrompt(designExamples: any[], chosenStyle?: any): string {
+    if (designExamples.length === 0) return '';
+    
+    return `
+DESIGN EXAMPLES:
+${designExamples.map((example, index) => `
+Example ${index + 1}:
+- Style: ${example.style || 'undefined'}
+- Colors: ${example.colors?.join(', ') || 'undefined'}
+- Description: ${example.description || 'undefined'}
+`).join('')}
+
+${chosenStyle ? `CHOSEN STYLE REFERENCE:
+- Primary: ${chosenStyle.primary || '#000000'}
+- Secondary: ${chosenStyle.secondary || '#ffffff'}
+- Accent: ${chosenStyle.accent || '#0066cc'}` : ''}`;
+  }
+
+  /**
+   * Build constraints prompt section
+   */
+  private static buildConstraintsPrompt(config: PromptConfig): string {
+    return `
+CONSTRAINTS:
+- Complexity Level: ${config.complexity}
+- Request Type: ${config.type}
+- Style Preferences: ${config.stylePreferences ? 'Applied' : 'Default'}
+- Accessibility: WCAG AA compliance required
+- Performance: Optimize for mobile and desktop
+- Compatibility: Cross-wallet implementation`;
+  }
+}
+
+/**
+ * Factory function to create AdvancedPromptBuilder instance
+ */
+export function createAdvancedPromptBuilder() {
+  return AdvancedPromptBuilder;
+}
