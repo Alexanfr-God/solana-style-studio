@@ -275,5 +275,5 @@ CONSTRAINTS:
  * Factory function for creating AdvancedPromptBuilder instance
  */
 export function createAdvancedPromptBuilder() {
-  return AdvancedPromptBuilder;
+  return new AdvancedPromptBuilder();
 }
