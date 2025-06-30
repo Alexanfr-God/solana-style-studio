@@ -183,8 +183,7 @@ Typography: ${effect.typography}
 Patterns: ${effect.patterns}
 
 🔧 TECHNICAL SPECIFICATIONS:
-━━━━━━━━━━━━━━━━━━
-
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Opacity: ${specs.opacity}
 Glow Radius: ${specs.glow}
 Animation Speed: ${specs.animation}
