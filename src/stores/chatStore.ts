@@ -10,7 +10,7 @@ function detectLanguage(text: string): 'ru' | 'en' {
   return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'en';
 }
 
-export type ChatMode = 'analysis' | 'leonardo' | 'replicate' | 'structure' | 'chat' | 'style-analysis' | 'save' | 'load';
+export type ChatMode = 'analysis' | 'leonardo' | 'replicate';
 export type ImageGenerationMode = 'analysis' | 'leonardo' | 'replicate';
 
 interface ChatState {
@@ -30,7 +30,7 @@ interface ChatState {
   setSessionId: (sessionId: string) => void;
   setUserId: (userId: string | null) => void;
   
-  // Message sending methods for different modes
+  // Core message sending methods
   sendMessage: (message: {
     content: string;
     imageUrl?: string | null;
@@ -42,35 +42,17 @@ interface ChatState {
     mode: 'leonardo' | 'replicate';
   }) => Promise<void>;
   
-  sendStructureRequest: (message: {
-    content: string;
-    analysisType?: 'basic' | 'detailed';
-  }) => Promise<void>;
-  
-  sendChatMessage: (message: {
-    content: string;
-    contextual?: boolean;
-  }) => Promise<void>;
-  
   sendStyleAnalysis: (message: {
     content: string;
     imageUrl?: string;
     analysisDepth?: 'basic' | 'detailed' | 'comprehensive';
   }) => Promise<void>;
   
-  saveCommunityCustomization: (customization: {
-    name: string;
-    description: string;
-    styles: any;
-    tags?: string[];
-  }) => Promise<void>;
-  
-  loadCustomization: (customizationId: string) => Promise<void>;
-  
   // Utility methods
   clearHistory: () => void;
   applyStyleChanges: (changes: any) => void;
   applyGeneratedImage: (imageUrl: string) => void;
+  preserveAndMergeStyles: (newChanges: any) => any;
   
   // Chat history management
   saveChatHistory: () => void;
@@ -78,7 +60,7 @@ interface ChatState {
   clearChatHistory: (sessionId: string) => void;
 }
 
-// Function to create enhanced wallet context
+// Function to create enhanced wallet context with current state analysis
 function createEnhancedWalletContext() {
   const walletStore = useWalletCustomizationStore.getState();
   
@@ -93,6 +75,7 @@ function createEnhancedWalletContext() {
       accentColor: walletStore.walletStyle.accentColor,
       buttonColor: walletStore.walletStyle.buttonColor,
       borderRadius: walletStore.walletStyle.borderRadius,
+      backgroundImage: walletStore.walletStyle.backgroundImage,
     },
     availableElements: WALLET_ELEMENTS_REGISTRY.map(element => ({
       id: element.id,
@@ -121,12 +104,12 @@ function createEnhancedWalletContext() {
   };
 }
 
-// Enhanced image URL extraction with better JSON parsing for Leonardo and Replicate
+// Enhanced image URL extraction for Leonardo and Replicate
 function extractImageUrl(response: any, mode: string): string | null {
   console.log('🔍 Extracting image URL from response for mode:', mode);
   console.log('🔍 Full response structure:', JSON.stringify(response, null, 2));
   
-  // 🔥 ИСПРАВЛЯЕМ: Проверяем data.imageUrl первым (новый формат из Edge Function)
+  // Check for direct imageUrl in data
   if (response?.data?.imageUrl) {
     console.log('✅ Found imageUrl in data:', response.data.imageUrl);
     return response.data.imageUrl;
@@ -146,7 +129,7 @@ function extractImageUrl(response: any, mode: string): string | null {
       return response.data.imageUrl;
     }
     
-    // Leonardo generations format (реальный API ответ)
+    // Leonardo generations format (real API response)
     if (response?.data?.generations_by_pk?.generated_images?.[0]?.url) {
       console.log('✅ Found Leonardo real API format:', response.data.generations_by_pk.generated_images[0].url);
       return response.data.generations_by_pk.generated_images[0].url;
@@ -155,7 +138,7 @@ function extractImageUrl(response: any, mode: string): string | null {
   
   // Replicate specific formats
   if (mode === 'replicate') {
-    // Replicate output array format (реальный API ответ)
+    // Replicate output array format (real API response)
     if (response?.data?.output && Array.isArray(response.data.output) && response.data.output.length > 0) {
       const imageUrl = response.data.output[0];
       console.log('✅ Found Replicate imageUrl in output array:', imageUrl);
@@ -176,21 +159,17 @@ function extractImageUrl(response: any, mode: string): string | null {
     }
   }
   
-  // Generic fallback formats (for both services)
-  
-  // Base64 image format
+  // Generic fallback formats
   if (response?.data?.image && response.data.image.startsWith('data:image')) {
     console.log('✅ Found base64 image:', response.data.image.substring(0, 50) + '...');
     return response.data.image;
   }
   
-  // Direct URL response
   if (typeof response === 'string' && response.startsWith('http')) {
     console.log('✅ Found direct URL:', response);
     return response;
   }
   
-  // URL in top-level response
   if (response?.imageUrl) {
     console.log('✅ Found top-level imageUrl:', response.imageUrl);
     return response.imageUrl;
@@ -284,6 +263,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ userId });
   },
 
+  preserveAndMergeStyles: (newChanges) => {
+    const walletStore = useWalletCustomizationStore.getState();
+    const currentStyle = walletStore.walletStyle;
+    
+    // Preserve existing backgroundImage unless explicitly changing it
+    const mergedChanges = {
+      ...newChanges,
+      backgroundImage: newChanges.backgroundImage || currentStyle.backgroundImage,
+    };
+    
+    console.log('🔄 Preserving and merging styles:', { current: currentStyle, new: newChanges, merged: mergedChanges });
+    return mergedChanges;
+  },
+
   sendMessage: async (messageData) => {
     const { messages, sessionId } = get();
     
@@ -341,15 +334,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const friendlyResponse = data.userText || data.response || fallback;
       
       if (data.styleChanges) {
-        console.log('🎨 Processing style changes from GPT with ANIMATION:', data.styleChanges);
+        console.log('🎨 Processing style changes from GPT with PRESERVATION:', data.styleChanges);
         
         const convertedChanges = convertGPTResponseToStyleChanges(data);
         
         if (convertedChanges) {
-          console.log('✅ Successfully converted style changes, applying with animation:', convertedChanges);
+          const preservedChanges = get().preserveAndMergeStyles(convertedChanges);
+          console.log('✅ Successfully converted and preserved style changes:', preservedChanges);
           
           const walletStore = useWalletCustomizationStore.getState();
-          walletStore.applyUniversalStyle(convertedChanges);
+          walletStore.applyUniversalStyle(preservedChanges);
         }
       }
 
@@ -422,22 +416,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (generatedImageUrl) {
         console.log('✅ Successfully extracted image URL:', generatedImageUrl);
         
-        // 🔥 ПРОВЕРЯЕМ что URL валидный перед применением
         if (generatedImageUrl.startsWith('http') || generatedImageUrl.startsWith('data:image')) {
           console.log('🎨 Auto-applying generated image as wallet background');
           const walletStore = useWalletCustomizationStore.getState();
-          walletStore.applyUniversalStyle({
-            backgroundImage: `url(${generatedImageUrl})`,
-            styleNotes: `Auto-applied ${messageData.mode} generated background`
-          });
           
-          // Показываем уведомление об успешном применении
+          // Preserve existing styles when applying new background
+          const currentStyle = walletStore.walletStyle;
+          const preservedStyle = {
+            ...currentStyle,
+            backgroundImage: `url(${generatedImageUrl})`,
+            styleNotes: `Auto-applied ${messageData.mode} generated background: "${messageData.content}"`
+          };
+          
+          walletStore.applyUniversalStyle(preservedStyle);
+          
           toast.success(`🎨 Generated image automatically applied as wallet background!`);
           
           const assistantMessage: ChatMessage = {
             id: `assistant-${Date.now()}`,
             type: 'assistant',
-            content: `✨ I've generated and automatically applied a custom background image based on your description: "${messageData.content}". The new background is now active on your wallet!`,
+            content: `✨ I've generated and automatically applied a custom background image based on your description: "${messageData.content}". The new background is now active on both your lock and unlock screens while preserving your existing styling!`,
             timestamp: new Date(),
             imageUrl: generatedImageUrl,
             isGenerated: true,
@@ -475,135 +473,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  sendStructureRequest: async (messageData) => {
-    const { messages, sessionId } = get();
-    
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: messageData.content,
-      timestamp: new Date(),
-    };
-
-    set({ 
-      messages: [...messages, userMessage],
-      isLoading: true 
-    });
-
-    try {
-      console.log('🏗️ Sending structure request to Edge Function');
-
-      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
-        body: {
-          content: messageData.content,
-          mode: 'structure',
-          sessionId,
-          analysisType: messageData.analysisType || 'basic'
-        }
-      });
-
-      if (error) {
-        throw new Error(`Structure request failed: ${error.message}`);
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to analyze structure');
-      }
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        type: 'assistant',
-        content: data.analysis || 'Structure analysis completed',
-        timestamp: new Date(),
-      };
-
-      set(state => ({
-        messages: [...state.messages, assistantMessage],
-        isLoading: false
-      }));
-
-      console.log('✅ Structure request completed');
-
-    } catch (error) {
-      console.error('❌ Structure request error:', error);
-      
-      set(state => ({
-        messages: [...state.messages, {
-          id: `error-${Date.now()}`,
-          type: 'assistant',
-          content: `Structure analysis failed: ${error.message}`,
-          timestamp: new Date(),
-        }],
-        isLoading: false
-      }));
-    }
-  },
-
-  sendChatMessage: async (messageData) => {
-    const { messages, sessionId, chatHistory } = get();
-    
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: messageData.content,
-      timestamp: new Date(),
-    };
-
-    set({ 
-      messages: [...messages, userMessage],
-      isLoading: true 
-    });
-
-    try {
-      console.log('💬 Sending chat message to Edge Function');
-
-      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
-        body: {
-          content: messageData.content,
-          mode: 'chat',
-          sessionId,
-          chatHistory: chatHistory[sessionId] || [],
-          contextual: messageData.contextual || false
-        }
-      });
-
-      if (error) {
-        throw new Error(`Chat message failed: ${error.message}`);
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to send chat message');
-      }
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        type: 'assistant',
-        content: data.response || 'Message received',
-        timestamp: new Date(),
-      };
-
-      set(state => ({
-        messages: [...state.messages, assistantMessage],
-        isLoading: false
-      }));
-
-      console.log('✅ Chat message sent successfully');
-
-    } catch (error) {
-      console.error('❌ Chat message error:', error);
-      
-      set(state => ({
-        messages: [...state.messages, {
-          id: `error-${Date.now()}`,
-          type: 'assistant',
-          content: `Chat failed: ${error.message}`,
-          timestamp: new Date(),
-        }],
-        isLoading: false
-      }));
-    }
-  },
-
   sendStyleAnalysis: async (messageData) => {
     const { messages, sessionId } = get();
     
@@ -623,13 +492,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       console.log('🎨 Sending style analysis to Edge Function');
 
+      const enhancedWalletContext = createEnhancedWalletContext();
+
       const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
         body: {
           content: messageData.content,
-          mode: 'style-analysis',
+          mode: 'analysis',
           sessionId,
           imageUrl: messageData.imageUrl,
-          analysisDepth: messageData.analysisDepth || 'detailed'
+          analysisDepth: messageData.analysisDepth || 'detailed',
+          walletContext: enhancedWalletContext
         }
       });
 
@@ -644,15 +516,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (data.styleChanges) {
         const convertedChanges = convertGPTResponseToStyleChanges(data);
         if (convertedChanges) {
+          const preservedChanges = get().preserveAndMergeStyles(convertedChanges);
           const walletStore = useWalletCustomizationStore.getState();
-          walletStore.applyUniversalStyle(convertedChanges);
+          walletStore.applyUniversalStyle(preservedChanges);
         }
       }
+
+      const lang = detectLanguage(messageData.content);
+      const fallback = lang === 'ru'
+        ? 'Я проанализировал стиль вашего кошелька и применил улучшения.'
+        : 'I analyzed your wallet style and applied improvements.';
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         type: 'assistant',
-        content: data.analysis || 'Style analysis completed',
+        content: data.userText || data.analysis || fallback,
         timestamp: new Date(),
       };
 
@@ -678,87 +556,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  saveCommunityCustomization: async (customization) => {
-    const { sessionId } = get();
-
-    try {
-      console.log('💾 Saving community customization');
-
-      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
-        body: {
-          mode: 'save',
-          sessionId,
-          customization
-        }
-      });
-
-      if (error) {
-        throw new Error(`Save failed: ${error.message}`);
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to save customization');
-      }
-
-      console.log('✅ Customization saved successfully');
-
-    } catch (error) {
-      console.error('❌ Save customization error:', error);
-      throw error;
-    }
-  },
-
-  loadCustomization: async (customizationId) => {
-    const { sessionId } = get();
-
-    try {
-      console.log('📥 Loading customization:', customizationId);
-
-      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
-        body: {
-          mode: 'load',
-          sessionId,
-          customizationId
-        }
-      });
-
-      if (error) {
-        throw new Error(`Load failed: ${error.message}`);
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to load customization');
-      }
-
-      if (data.styles) {
-        const walletStore = useWalletCustomizationStore.getState();
-        walletStore.applyUniversalStyle(data.styles);
-      }
-
-      console.log('✅ Customization loaded successfully');
-
-    } catch (error) {
-      console.error('❌ Load customization error:', error);
-      throw error;
-    }
-  },
-
   applyGeneratedImage: (imageUrl: string) => {
     console.log('🖼️ Applying generated image as background:', imageUrl);
     
     const walletStore = useWalletCustomizationStore.getState();
-    walletStore.applyUniversalStyle({
+    const preservedChanges = get().preserveAndMergeStyles({
       backgroundImage: `url(${imageUrl})`,
       styleNotes: 'Generated background image applied'
     });
+    walletStore.applyUniversalStyle(preservedChanges);
   },
 
   applyStyleChanges: (changes) => {
-    console.log('🎨 Applying style changes');
+    console.log('🎨 Applying style changes with preservation');
     
     if (changes && changes.changes) {
+      const preservedChanges = get().preserveAndMergeStyles(changes.changes);
       const walletStore = useWalletCustomizationStore.getState();
-      walletStore.applyUniversalStyle(changes.changes);
+      walletStore.applyUniversalStyle(preservedChanges);
     }
   },
 

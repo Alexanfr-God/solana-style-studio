@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createAdvancedPromptBuilder } from '../utils/prompt-builder.ts';
 import { AdvancedJSONParser } from '../utils/json-parser.ts';
@@ -69,12 +70,10 @@ export class ImageGenerationManager {
       const apiUrl = 'https://cloud.leonardo.ai/api/rest/v1/generations';
       const modelId = '6bef9f1b-29cb-40c7-b9df-32b51c15c618'; // Stable Diffusion v1.5
 
-      const enhancedPrompt = request.options?.enhancePrompt
-        ? this.buildEnhancedPrompt(request.prompt, request.style, [], {})
-        : { prompt: request.prompt };
+      const enhancedPrompt = this.enhancePromptForWallet(request.prompt, 'leonardo');
 
       const payload = {
-        prompt: enhancedPrompt.prompt,
+        prompt: enhancedPrompt,
         modelId: modelId,
         width: request.dimensions.width,
         height: request.dimensions.height,
@@ -82,6 +81,8 @@ export class ImageGenerationManager {
         num_samples: 1,
         public: false
       };
+
+      console.log('📤 Leonardo API payload:', payload);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -94,20 +95,34 @@ export class ImageGenerationManager {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Leonardo API error: ${errorData.error}`);
+        console.error('❌ Leonardo API error response:', errorData);
+        throw new Error(`Leonardo API error: ${errorData.error || 'Unknown error'}`);
       }
 
       const data = await response.json();
-      const imageUrl = data.generations_by_id[0].generated_images[0].url;
+      console.log('✅ Leonardo API success response:', data);
+      
+      // Extract image URL from Leonardo response
+      let imageUrl = null;
+      if (data.sdGenerationJob?.generationId) {
+        // Need to poll for result
+        const generationId = data.sdGenerationJob.generationId;
+        imageUrl = await this.pollLeonardoGeneration(generationId, apiKey);
+      } else if (data.generations_by_pk?.generated_images?.[0]?.url) {
+        imageUrl = data.generations_by_pk.generated_images[0].url;
+      }
 
-      console.log('✅ Leonardo.ai generation successful');
+      if (!imageUrl) {
+        throw new Error('No image URL found in Leonardo response');
+      }
 
       return {
         success: true,
         imageUrl: imageUrl,
         status: 'completed',
+        data: { imageUrl }, // Ensure imageUrl is in data for extraction
         metadata: {
-          prompt: enhancedPrompt.prompt,
+          prompt: enhancedPrompt,
           model: 'leonardo',
           dimensions: request.dimensions
         }
@@ -122,6 +137,47 @@ export class ImageGenerationManager {
     }
   }
 
+  private async pollLeonardoGeneration(generationId: string, apiKey: string): Promise<string | null> {
+    const maxAttempts = 30;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const response = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to poll generation status: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`🔄 Leonardo polling attempt ${attempts + 1}:`, data);
+
+        if (data.generations_by_pk?.generated_images?.[0]?.url) {
+          return data.generations_by_pk.generated_images[0].url;
+        }
+
+        if (data.generations_by_pk?.status === 'FAILED') {
+          throw new Error('Leonardo generation failed');
+        }
+
+        // Wait 2 seconds before next poll
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        attempts++;
+      } catch (error) {
+        console.error('❌ Error polling Leonardo generation:', error);
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    
+    throw new Error('Leonardo generation timed out');
+  }
+
   private async generateWithReplicate(request: ImageGenerationRequest): Promise<ImageGenerationResponse> {
     try {
       console.log('⚛️ Generating with Replicate...');
@@ -132,24 +188,25 @@ export class ImageGenerationManager {
       }
 
       const apiUrl = 'https://api.replicate.com/v1/predictions';
-      const modelVersion = 'stability-ai/sdxl:39fa3c9c749c1d315e59ca36a9110754f8b32eecff50713ef061c352a3894a2d';
+      const modelVersion = 'black-forest-labs/flux-schnell';
 
-      const enhancedPrompt = request.options?.enhancePrompt
-        ? this.buildEnhancedPrompt(request.prompt, request.style, [], {})
-        : { prompt: request.prompt };
+      const enhancedPrompt = this.enhancePromptForWallet(request.prompt, 'replicate');
 
       const payload = {
         version: modelVersion,
         input: {
-          prompt: enhancedPrompt.prompt,
-          width: request.dimensions.width,
-          height: request.dimensions.height,
+          prompt: enhancedPrompt,
+          go_fast: true,
+          megapixels: "1",
           num_outputs: 1,
-          guidance_scale: 7.5,
-          scheduler: "K_EULER_ANCESTRAL",
-          num_inference_steps: 30
+          aspect_ratio: "1:1",
+          output_format: "webp",
+          output_quality: 80,
+          num_inference_steps: 4
         }
       };
+
+      console.log('📤 Replicate API payload:', payload);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -162,46 +219,23 @@ export class ImageGenerationManager {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Replicate API error: ${errorData.detail}`);
+        console.error('❌ Replicate API error response:', errorData);
+        throw new Error(`Replicate API error: ${errorData.detail || 'Unknown error'}`);
       }
 
       const data = await response.json();
-      const predictionUrl = data.urls.get;
-
-      // Poll the prediction status until completed
-      let imageUrl = null;
-      while (!imageUrl) {
-        const predictionResponse = await fetch(predictionUrl, {
-          headers: {
-            'Authorization': `Token ${apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!predictionResponse.ok) {
-          const errorData = await predictionResponse.json();
-          throw new Error(`Replicate prediction error: ${errorData.detail}`);
-        }
-
-        const predictionData = await predictionResponse.json();
-        if (predictionData.status === 'succeeded') {
-          imageUrl = predictionData.output[0];
-        } else if (predictionData.status === 'failed') {
-          throw new Error(`Replicate prediction failed: ${predictionData.error}`);
-        } else {
-          // Wait for 2 seconds before polling again
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      }
-
-      console.log('✅ Replicate generation successful');
+      console.log('✅ Replicate API initial response:', data);
+      
+      // Poll for completion
+      const imageUrl = await this.pollReplicateGeneration(data.urls.get, apiKey);
 
       return {
         success: true,
         imageUrl: imageUrl,
         status: 'completed',
+        data: { imageUrl }, // Ensure imageUrl is in data for extraction
         metadata: {
-          prompt: enhancedPrompt.prompt,
+          prompt: enhancedPrompt,
           model: 'replicate',
           dimensions: request.dimensions
         }
@@ -216,25 +250,60 @@ export class ImageGenerationManager {
     }
   }
 
-  /**
-   * Enhanced prompt building with style integration
-   */
-  private buildEnhancedPrompt(
-    basePrompt: string,
-    style: string,
-    examples: any[],
-    chosenStyle?: any
-  ): any {
-    return this.promptBuilder.buildImagePrompt(
-      basePrompt,
-      style,
-      examples,
-      { 
-        quality: 'high',
-        dimensions: '1:1',
-        chosenStyle
+  private async pollReplicateGeneration(getUrl: string, apiKey: string): Promise<string> {
+    const maxAttempts = 30;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const response = await fetch(getUrl, {
+          headers: {
+            'Authorization': `Token ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to poll prediction status: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`🔄 Replicate polling attempt ${attempts + 1}:`, data);
+
+        if (data.status === 'succeeded' && data.output && data.output.length > 0) {
+          return data.output[0];
+        }
+
+        if (data.status === 'failed') {
+          throw new Error(`Replicate generation failed: ${data.error}`);
+        }
+
+        // Wait 2 seconds before next poll
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        attempts++;
+      } catch (error) {
+        console.error('❌ Error polling Replicate generation:', error);
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
-    );
+    }
+    
+    throw new Error('Replicate generation timed out');
+  }
+
+  /**
+   * Enhanced prompt building with wallet-specific context
+   */
+  private enhancePromptForWallet(basePrompt: string, generator: string): string {
+    const walletContext = "digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, professional quality";
+    
+    if (generator === 'leonardo') {
+      return `${basePrompt}, ${walletContext}, high quality, detailed, artistic, vibrant colors, 4k resolution`;
+    } else if (generator === 'replicate') {
+      return `${basePrompt}, ${walletContext}, modern digital art style, clean composition, suitable for mobile interface`;
+    }
+    
+    return `${basePrompt}, ${walletContext}`;
   }
 }
 
@@ -246,7 +315,7 @@ export function createImageGenerationManager(supabaseUrl: string, supabaseKey: s
 }
 
 /**
- * Helper functions to generate images with Leonardo and Replicate
+ * Helper functions to generate images with Leonardo and Replicate - UPDATED FOR CONSISTENT RESPONSE FORMAT
  */
 export async function generateImageWithLeonardo(prompt: string, supabase: any): Promise<ImageGenerationResponse> {
   const apiKey = Deno.env.get('LEONARDO_API_KEY');
@@ -256,10 +325,13 @@ export async function generateImageWithLeonardo(prompt: string, supabase: any): 
   }
 
   const apiUrl = 'https://cloud.leonardo.ai/api/rest/v1/generations';
-  const modelId = '6bef9f1b-29cb-40c7-b9df-32b51c15c618'; // Stable Diffusion v1.5
+  const modelId = '6bef9f1b-29cb-40c7-b9df-32b51c15c618';
+
+  // Enhance prompt for wallet background
+  const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, high quality, detailed, artistic, vibrant colors, 4k resolution`;
 
   const payload = {
-    prompt: prompt,
+    prompt: enhancedPrompt,
     modelId: modelId,
     width: 1024,
     height: 1024,
@@ -269,6 +341,8 @@ export async function generateImageWithLeonardo(prompt: string, supabase: any): 
   };
 
   try {
+    console.log('📤 Leonardo payload:', payload);
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -285,14 +359,74 @@ export async function generateImageWithLeonardo(prompt: string, supabase: any): 
     }
 
     const data = await response.json();
-	  console.log("Leonardo API response:", data);
-    const imageUrl = data.generations_by_id[0].generated_images[0].url;
+    console.log("✅ Leonardo API response:", data);
+    
+    // Handle different response formats
+    let imageUrl = null;
+    if (data.sdGenerationJob?.generationId) {
+      // Poll for result
+      imageUrl = await pollLeonardoGeneration(data.sdGenerationJob.generationId, apiKey);
+    } else if (data.generations_by_pk?.generated_images?.[0]?.url) {
+      imageUrl = data.generations_by_pk.generated_images[0].url;
+    }
 
-    return { success: true, imageUrl: imageUrl, status: 'completed' };
+    if (!imageUrl) {
+      return { success: false, error: 'No image URL found in Leonardo response', status: 'failed' };
+    }
+
+    return { 
+      success: true, 
+      imageUrl: imageUrl, 
+      status: 'completed',
+      data: { imageUrl } // ВАЖНО: добавляем imageUrl в data для правильного извлечения
+    };
   } catch (error) {
     console.error('Error generating image with Leonardo:', error);
     return { success: false, error: error.message, status: 'failed' };
   }
+}
+
+async function pollLeonardoGeneration(generationId: string, apiKey: string): Promise<string | null> {
+  const maxAttempts = 30;
+  let attempts = 0;
+  
+  while (attempts < maxAttempts) {
+    try {
+      const response = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`Leonardo polling error: ${response.statusText}`);
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        continue;
+      }
+
+      const data = await response.json();
+      console.log(`🔄 Leonardo polling attempt ${attempts + 1}:`, data);
+
+      if (data.generations_by_pk?.generated_images?.[0]?.url) {
+        return data.generations_by_pk.generated_images[0].url;
+      }
+
+      if (data.generations_by_pk?.status === 'FAILED') {
+        throw new Error('Leonardo generation failed');
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      attempts++;
+    } catch (error) {
+      console.error('Error polling Leonardo generation:', error);
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+  
+  throw new Error('Leonardo generation timed out');
 }
 
 export async function generateImageWithReplicate(prompt: string, supabase: any): Promise<ImageGenerationResponse> {
@@ -303,22 +437,28 @@ export async function generateImageWithReplicate(prompt: string, supabase: any):
   }
 
   const apiUrl = 'https://api.replicate.com/v1/predictions';
-  const modelVersion = 'stability-ai/sdxl:39fa3c9c749c1d315e59ca36a9110754f8b32eecff50713ef061c352a3894a2d';
+  const modelVersion = 'black-forest-labs/flux-schnell';
+
+  // Enhance prompt for wallet background
+  const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, modern digital art style, clean composition, suitable for mobile interface`;
 
   const payload = {
     version: modelVersion,
     input: {
-      prompt: prompt,
-      width: 1024,
-      height: 1024,
+      prompt: enhancedPrompt,
+      go_fast: true,
+      megapixels: "1",
       num_outputs: 1,
-      guidance_scale: 7.5,
-      scheduler: "K_EULER_ANCESTRAL",
-      num_inference_steps: 30
+      aspect_ratio: "1:1",
+      output_format: "webp",
+      output_quality: 80,
+      num_inference_steps: 4
     }
   };
 
   try {
+    console.log('📤 Replicate payload:', payload);
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -335,11 +475,16 @@ export async function generateImageWithReplicate(prompt: string, supabase: any):
     }
 
     const data = await response.json();
+    console.log("✅ Replicate API response:", data);
+    
     const predictionUrl = data.urls.get;
 
     // Poll the prediction status until completed
     let imageUrl = null;
-    while (!imageUrl) {
+    const maxAttempts = 30;
+    let attempts = 0;
+    
+    while (!imageUrl && attempts < maxAttempts) {
       const predictionResponse = await fetch(predictionUrl, {
         headers: {
           'Authorization': `Token ${apiKey}`,
@@ -354,6 +499,8 @@ export async function generateImageWithReplicate(prompt: string, supabase: any):
       }
 
       const predictionData = await predictionResponse.json();
+      console.log(`🔄 Replicate polling attempt ${attempts + 1}:`, predictionData);
+      
       if (predictionData.status === 'succeeded') {
         imageUrl = predictionData.output[0];
       } else if (predictionData.status === 'failed') {
@@ -362,10 +509,20 @@ export async function generateImageWithReplicate(prompt: string, supabase: any):
       } else {
         // Wait for 2 seconds before polling again
         await new Promise(resolve => setTimeout(resolve, 2000));
+        attempts++;
       }
     }
 
-    return { success: true, imageUrl: imageUrl, status: 'completed' };
+    if (!imageUrl) {
+      return { success: false, error: 'Replicate generation timed out', status: 'failed' };
+    }
+
+    return { 
+      success: true, 
+      imageUrl: imageUrl, 
+      status: 'completed',
+      data: { imageUrl } // ВАЖНО: добавляем imageUrl в data для правильного извлечения
+    };
   } catch (error) {
     console.error('Error generating image with Replicate:', error);
     return { success: false, error: error.message, status: 'failed' };

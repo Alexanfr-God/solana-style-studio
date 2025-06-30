@@ -14,7 +14,7 @@ export interface ChatMessage {
   imageUrl?: string;
   walletElement?: string;
   isGenerated?: boolean;
-  autoApplied?: boolean; // New field for auto-applied images
+  autoApplied?: boolean;
 }
 
 const ChatInterface = () => {
@@ -25,11 +25,7 @@ const ChatInterface = () => {
     sessionId,
     sendMessage, 
     sendImageGenerationMessage,
-    sendStructureRequest,
-    sendChatMessage,
-    sendStyleAnalysis,
-    saveCommunityCustomization,
-    loadCustomization
+    sendStyleAnalysis
   } = useChatStore();
   
   const [selectedElement, setSelectedElement] = useState<string>('');
@@ -39,28 +35,13 @@ const ChatInterface = () => {
     
     switch (chatMode) {
       case 'analysis':
-        sendMessage({ content: message });
-        break;
-      case 'leonardo':
-      case 'replicate':
-        sendImageGenerationMessage({ content: message, mode: chatMode });
-        break;
-      case 'structure':
-        sendStructureRequest({ content: message, analysisType: 'detailed' });
-        break;
-      case 'chat':
-        sendChatMessage({ content: message, contextual: true });
-        break;
-      case 'style-analysis':
         sendStyleAnalysis({ content: message, analysisDepth: 'comprehensive' });
         break;
-      case 'save':
-        // Handle save mode - would typically open a save dialog
-        console.log('💾 Save mode activated');
+      case 'leonardo':
+        sendImageGenerationMessage({ content: message, mode: 'leonardo' });
         break;
-      case 'load':
-        // Handle load mode - would typically open a load dialog
-        console.log('📥 Load mode activated');
+      case 'replicate':
+        sendImageGenerationMessage({ content: message, mode: 'replicate' });
         break;
       default:
         sendMessage({ content: message });
@@ -69,30 +50,20 @@ const ChatInterface = () => {
 
   const getModeTitle = () => {
     const titles = {
-      'analysis': 'Style Analysis Chat',
-      'leonardo': 'Leonardo AI Image Generation',
-      'replicate': 'Replicate Art Generation',
-      'structure': 'Wallet Structure Analysis',
-      'chat': 'Conversational AI Chat',
-      'style-analysis': 'Deep Style Analysis',
-      'save': 'Save to Community',
-      'load': 'Load from Community'
+      'analysis': 'Smart Style Analysis',
+      'leonardo': 'Leonardo AI Background Generator',
+      'replicate': 'Replicate Art Background Generator'
     };
     return titles[chatMode] || 'AI Assistant';
   };
 
   const getModeDescription = () => {
     const descriptions = {
-      'analysis': "Describe what you want to change in your wallet, upload images for inspiration, or select specific elements to modify. The system will automatically detect your language and respond accordingly.",
-      'leonardo': "Describe the background image you want to generate with Leonardo.ai. Be creative and detailed! You can write in any language.",
-      'replicate': "Describe the artistic background you want to create with Replicate. Perfect for crypto art and memes! Supports multiple languages.",
-      'structure': "Analyze your wallet's structure, element hierarchy, and layout relationships. Communication in your preferred language.",
-      'chat': "Have conversations with AI that remembers context. Ask follow-up questions and build on ideas in any language.",
-      'style-analysis': "Deep dive into style analysis with comprehensive design recommendations and insights. Multilingual support included.",
-      'save': "Save your current wallet customization to the community library for others to discover.",
-      'load': "Browse and load customizations from the community library created by other users."
+      'analysis': "Analyze your current wallet style and apply smart improvements. I'll preserve your background while enhancing colors, typography, and effects.",
+      'leonardo': "Generate stunning artistic backgrounds with Leonardo.ai. Your new background will be automatically applied to both lock and unlock screens.",
+      'replicate': "Create unique art backgrounds with Replicate. Perfect for creative and meme-style designs that will transform your wallet's appearance."
     };
-    return descriptions[chatMode] || "AI-powered wallet customization assistant with automatic language detection";
+    return descriptions[chatMode] || "AI-powered wallet customization assistant";
   };
 
   return (
@@ -134,7 +105,7 @@ const ChatInterface = () => {
             currentMode={chatMode}
           />
           
-          {selectedElement && (chatMode === 'analysis' || chatMode === 'style-analysis') && (
+          {selectedElement && chatMode === 'analysis' && (
             <div className="mt-2 p-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
               <p className="text-sm text-purple-300">
                 Selected element: <span className="font-medium">{selectedElement}</span>
