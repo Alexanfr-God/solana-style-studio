@@ -1,4 +1,3 @@
-
 // ====== Enhanced index.ts ======
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -11,7 +10,7 @@ import { createChatHandler, type ChatContext } from './modules/chatHandler.ts';
 import { createStyleAnalyzer } from './modules/styleAnalyzer.ts';
 import { createPosterGenerator } from './modules/posterGeneration.ts';
 import { createStorageManager } from './utils/storage-manager.ts';
-import { createPromptBuilder } from './utils/prompt-builder.ts';
+import { createAdvancedPromptBuilder } from './utils/prompt-builder.ts';
 import { AdvancedJSONParser } from './utils/json-parser.ts';
 import { generateImageWithLeonardo, generateImageWithReplicate } from './modules/imageGenerator.ts';
 
@@ -48,7 +47,7 @@ serve(async (req) => {
     const styleAnalyzer = createStyleAnalyzer(supabaseUrl, supabaseKey);
     const posterGenerator = createPosterGenerator(supabaseUrl, supabaseKey);
     const storageManager = createStorageManager(supabaseUrl, supabaseKey);
-    const promptBuilder = createPromptBuilder();
+    const promptBuilder = createAdvancedPromptBuilder();
 
     const body = await req.json();
     const { 

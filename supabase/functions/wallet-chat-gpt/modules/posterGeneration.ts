@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createImageGenerationManager, type ImageGenerationRequest } from './imageGenerator.ts';
 import { createStyleAnalyzer, type StyleAnalysis } from './styleAnalyzer.ts';
 import { createStorageManager } from '../utils/storage-manager.ts';
-import { createPromptBuilder } from '../utils/prompt-builder.ts';
+import { createAdvancedPromptBuilder } from '../utils/prompt-builder.ts';
 import { AdvancedJSONParser } from '../utils/json-parser.ts';
 
 export interface PosterConfig {
@@ -498,7 +498,7 @@ export class PosterPromptBuilder {
   constructor() {
     this.cotEngine = new COTReasoningEngine();
     this.rugSystem = new RUGDesignSystem();
-    this.promptBuilder = createPromptBuilder();
+    this.promptBuilder = createAdvancedPromptBuilder();
   }
 
   /**
