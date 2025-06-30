@@ -104,82 +104,40 @@ function createEnhancedWalletContext() {
   };
 }
 
-// Enhanced image URL extraction for Leonardo and Replicate
+// Enhanced image URL extraction for Leonardo and Replicate - ИСПРАВЛЕНО
 function extractImageUrl(response: any, mode: string): string | null {
-  console.log('🔍 Extracting image URL from response for mode:', mode);
-  console.log('🔍 Full response structure:', JSON.stringify(response, null, 2));
+  console.log('🔍 [ЭТАП 2] Извлечение imageUrl для режима:', mode);
+  console.log('🔍 [ЭТАП 2] Структура ответа:', JSON.stringify(response, null, 2));
   
-  // Check for direct imageUrl in data
+  // ✅ Проверяем data.imageUrl (основной путь после исправления Edge Function)
   if (response?.data?.imageUrl) {
-    console.log('✅ Found imageUrl in data:', response.data.imageUrl);
+    console.log('✅ [ЭТАП 2] Найден imageUrl в data:', response.data.imageUrl);
     return response.data.imageUrl;
   }
   
-  // Leonardo specific formats
-  if (mode === 'leonardo') {
-    // Leonardo nested data structure
-    if (response?.data?.data?.imageUrl) {
-      console.log('✅ Found Leonardo imageUrl in data.data:', response.data.data.imageUrl);
-      return response.data.data.imageUrl;
-    }
-    
-    // Leonardo success response
-    if (response?.data?.success && response?.data?.imageUrl) {
-      console.log('✅ Found Leonardo imageUrl in success response:', response.data.imageUrl);
-      return response.data.imageUrl;
-    }
-    
-    // Leonardo generations format (real API response)
-    if (response?.data?.generations_by_pk?.generated_images?.[0]?.url) {
-      console.log('✅ Found Leonardo real API format:', response.data.generations_by_pk.generated_images[0].url);
-      return response.data.generations_by_pk.generated_images[0].url;
-    }
-  }
-  
-  // Replicate specific formats
-  if (mode === 'replicate') {
-    // Replicate output array format (real API response)
-    if (response?.data?.output && Array.isArray(response.data.output) && response.data.output.length > 0) {
-      const imageUrl = response.data.output[0];
-      console.log('✅ Found Replicate imageUrl in output array:', imageUrl);
-      return imageUrl;
-    }
-    
-    // Replicate direct output
-    if (response?.data?.output && typeof response.data.output === 'string') {
-      console.log('✅ Found Replicate direct output:', response.data.output);
-      return response.data.output;
-    }
-    
-    // Replicate nested structure
-    if (response?.output && Array.isArray(response.output) && response.output.length > 0) {
-      const imageUrl = response.output[0];
-      console.log('✅ Found Replicate imageUrl in nested output:', imageUrl);
-      return imageUrl;
-    }
-  }
-  
-  // Generic fallback formats
-  if (response?.data?.image && response.data.image.startsWith('data:image')) {
-    console.log('✅ Found base64 image:', response.data.image.substring(0, 50) + '...');
-    return response.data.image;
-  }
-  
-  if (typeof response === 'string' && response.startsWith('http')) {
-    console.log('✅ Found direct URL:', response);
-    return response;
-  }
-  
+  // ✅ Проверяем прямой imageUrl на верхнем уровне
   if (response?.imageUrl) {
-    console.log('✅ Found top-level imageUrl:', response.imageUrl);
+    console.log('✅ [ЭТАП 2] Найден imageUrl на верхнем уровне:', response.imageUrl);
     return response.imageUrl;
   }
   
-  console.warn('⚠️ No image URL found in response structure for mode:', mode);
-  console.warn('⚠️ Available keys in response:', Object.keys(response || {}));
-  if (response?.data) {
-    console.warn('⚠️ Available keys in response.data:', Object.keys(response.data || {}));
+  // Дополнительные пути для надежности
+  if (mode === 'leonardo') {
+    if (response?.data?.data?.imageUrl) {
+      console.log('✅ [ЭТАП 2] Leonardo nested format:', response.data.data.imageUrl);
+      return response.data.data.imageUrl;
+    }
   }
+  
+  if (mode === 'replicate') {
+    if (response?.data?.output && Array.isArray(response.data.output) && response.data.output.length > 0) {
+      console.log('✅ [ЭТАП 2] Replicate output array:', response.data.output[0]);
+      return response.data.output[0];
+    }
+  }
+  
+  console.warn('⚠️ [ЭТАП 2] imageUrl НЕ НАЙДЕН в ответе для режима:', mode);
+  console.warn('⚠️ [ЭТАП 2] Доступные ключи:', Object.keys(response || {}));
   return null;
 }
 
@@ -392,8 +350,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      console.log('🖼️ Starting image generation with mode:', messageData.mode);
-      console.log('🖼️ Prompt:', messageData.content);
+      console.log('🖼️ [ЭТАП 2] Начинаем генерацию изображения, режим:', messageData.mode);
+      console.log('🖼️ [ЭТАП 2] Промпт:', messageData.content);
 
       const response = await supabase.functions.invoke('wallet-chat-gpt', {
         body: { 
@@ -403,32 +361,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
       });
 
-      console.log('🖼️ Raw Edge Function response:', response);
+      console.log('🖼️ [ЭТАП 2] Сырой ответ Edge Function:', response);
 
       if (response?.error) {
-        console.error('❌ Edge Function error:', response.error);
+        console.error('❌ [ЭТАП 2] Ошибка Edge Function:', response.error);
         throw new Error(`Image generation error: ${response.error.message}`);
       }
 
-      console.log('🖼️ Attempting to extract image URL from response...');
+      console.log('🖼️ [ЭТАП 2] Попытка извлечения imageUrl из ответа...');
       const generatedImageUrl = extractImageUrl(response, messageData.mode);
       
       if (generatedImageUrl) {
-        console.log('✅ Successfully extracted image URL:', generatedImageUrl);
+        console.log('✅ [ЭТАП 2] Успешно извлечен imageUrl:', generatedImageUrl);
         
         if (generatedImageUrl.startsWith('http') || generatedImageUrl.startsWith('data:image')) {
-          console.log('🎨 Auto-applying generated image as wallet background');
-          const walletStore = useWalletCustomizationStore.getState();
+          console.log('🎨 [ЭТАП 2] Применяем сгенерированное изображение как фон кошелька');
           
-          // Preserve existing styles when applying new background
-          const currentStyle = walletStore.walletStyle;
-          const preservedStyle = {
-            ...currentStyle,
-            backgroundImage: `url(${generatedImageUrl})`,
-            styleNotes: `Auto-applied ${messageData.mode} generated background: "${messageData.content}"`
-          };
-          
-          walletStore.applyUniversalStyle(preservedStyle);
+          // ✅ ЭТАП 4: Накопительное сохранение - НЕ СТИРАЕМ предыдущие стили
+          get().applyGeneratedImage(generatedImageUrl);
           
           toast.success(`🎨 Generated image automatically applied as wallet background!`);
           
@@ -447,19 +397,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
             isLoading: false
           }));
           
-          console.log('✅ Image generation and auto-application completed successfully');
+          console.log('✅ [ЭТАП 2] Генерация изображения и авто-применение завершены успешно');
         } else {
-          console.error('❌ Invalid image URL format:', generatedImageUrl);
+          console.error('❌ [ЭТАП 2] Неверный формат imageUrl:', generatedImageUrl);
           throw new Error(`Invalid image URL format: ${generatedImageUrl}`);
         }
       } else {
-        console.error('❌ Failed to extract image URL from response');
-        console.error('❌ Response structure debug:', JSON.stringify(response, null, 2));
+        console.error('❌ [ЭТАП 2] Не удалось извлечь imageUrl из ответа');
+        console.error('❌ [ЭТАП 2] Структура ответа для отладки:', JSON.stringify(response, null, 2));
         throw new Error('No image returned from generation service - check Edge Function logs');
       }
 
     } catch (error) {
-      console.error('💥 Image generation error:', error);
+      console.error('💥 [ЭТАП 2] Ошибка генерации изображения:', error);
       
       set(state => ({
         messages: [...state.messages, {
@@ -557,13 +507,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   applyGeneratedImage: (imageUrl: string) => {
-    console.log('🖼️ Applying generated image as background:', imageUrl);
+    console.log('🖼️ [ЭТАП 4] Применяем сгенерированное изображение с сохранением стилей:', imageUrl);
     
     const walletStore = useWalletCustomizationStore.getState();
+    
+    // ✅ Сохраняем ВСЕ текущие стили + добавляем backgroundImage
     const preservedChanges = get().preserveAndMergeStyles({
       backgroundImage: `url(${imageUrl})`,
-      styleNotes: 'Generated background image applied'
+      styleNotes: `Generated background image applied at ${new Date().toLocaleTimeString()}`
     });
+    
+    console.log('🎨 [ЭТАП 4] Накопительное применение стилей:', preservedChanges);
     walletStore.applyUniversalStyle(preservedChanges);
   },
 
