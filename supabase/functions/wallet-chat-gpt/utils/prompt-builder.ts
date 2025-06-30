@@ -122,6 +122,32 @@ CRITICAL INSTRUCTIONS:
   }
 
   /**
+   * Build customization prompt for wallet styling
+   */
+  static buildCustomizationPrompt(
+    userRequest: string,
+    customizableElements: any[],
+    currentStyles: any
+  ): string {
+    return `
+CUSTOMIZATION REQUEST: ${userRequest}
+
+AVAILABLE ELEMENTS:
+${customizableElements.map(el => `- ${el.name}: ${el.description}`).join('\n')}
+
+CURRENT STYLES:
+${JSON.stringify(currentStyles, null, 2)}
+
+INSTRUCTIONS:
+- Focus on the specific elements mentioned in the request
+- Maintain wallet functionality and usability
+- Ensure cross-platform compatibility
+- Provide specific CSS/styling recommendations
+- Consider accessibility and performance impact
+    `;
+  }
+
+  /**
    * Build wow effect prompt with advanced specifications
    */
   static buildWowEffectPrompt(config: WowEffectConfig, walletContext: WalletContext): string {
@@ -246,7 +272,7 @@ CONSTRAINTS:
 }
 
 /**
- * Factory function to create AdvancedPromptBuilder instance
+ * Factory function for creating AdvancedPromptBuilder instance
  */
 export function createAdvancedPromptBuilder() {
   return AdvancedPromptBuilder;
