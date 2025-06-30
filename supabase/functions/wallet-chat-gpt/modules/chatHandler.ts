@@ -981,3 +981,8 @@ ${userLevel === 'advanced' ? 'Можешь использовать технич
 Всегда предлагай конкретные действия и будь готов к follow-up вопросам.`;
   }
 }
+
+// Factory function for creating ChatHandler instance
+export function createChatHandler(supabaseUrl: string, supabaseKey: string) {
+  return new ChatHandler(supabaseUrl, supabaseKey);
+}
