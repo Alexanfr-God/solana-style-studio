@@ -337,6 +337,9 @@ async function handleImageGeneration(
       imageUrl: result.imageUrl,
       status: result.success ? 'completed' : 'failed',
       error: result.error,
+      data: {
+        imageUrl: result.imageUrl // 🔥 ДОБАВЛЯЕМ data.imageUrl для правильного парсинга
+      },
       metadata: {
         prompt: enhancedPrompt.prompt,
         model: mode,
@@ -353,6 +356,9 @@ async function handleImageGeneration(
       success: false,
       error: error.message,
       status: 'failed',
+      data: {
+        imageUrl: null
+      },
       metadata: {
         prompt,
         model: mode,

@@ -126,6 +126,12 @@ function extractImageUrl(response: any, mode: string): string | null {
   console.log('🔍 Extracting image URL from response for mode:', mode);
   console.log('🔍 Full response structure:', JSON.stringify(response, null, 2));
   
+  // 🔥 ИСПРАВЛЯЕМ: Проверяем data.imageUrl первым (новый формат из Edge Function)
+  if (response?.data?.imageUrl) {
+    console.log('✅ Found imageUrl in data:', response.data.imageUrl);
+    return response.data.imageUrl;
+  }
+  
   // Leonardo specific formats
   if (mode === 'leonardo') {
     // Leonardo nested data structure
@@ -140,16 +146,16 @@ function extractImageUrl(response: any, mode: string): string | null {
       return response.data.imageUrl;
     }
     
-    // Leonardo direct data format
-    if (response?.data?.imageUrl) {
-      console.log('✅ Found Leonardo imageUrl in data:', response.data.imageUrl);
-      return response.data.imageUrl;
+    // Leonardo generations format (реальный API ответ)
+    if (response?.data?.generations_by_pk?.generated_images?.[0]?.url) {
+      console.log('✅ Found Leonardo real API format:', response.data.generations_by_pk.generated_images[0].url);
+      return response.data.generations_by_pk.generated_images[0].url;
     }
   }
   
   // Replicate specific formats
   if (mode === 'replicate') {
-    // Replicate output array format
+    // Replicate output array format (реальный API ответ)
     if (response?.data?.output && Array.isArray(response.data.output) && response.data.output.length > 0) {
       const imageUrl = response.data.output[0];
       console.log('✅ Found Replicate imageUrl in output array:', imageUrl);
@@ -171,12 +177,6 @@ function extractImageUrl(response: any, mode: string): string | null {
   }
   
   // Generic fallback formats (for both services)
-  
-  // Direct imageUrl in data
-  if (response?.data?.imageUrl) {
-    console.log('✅ Found generic imageUrl in data:', response.data.imageUrl);
-    return response.data.imageUrl;
-  }
   
   // Base64 image format
   if (response?.data?.image && response.data.image.startsWith('data:image')) {
@@ -422,35 +422,41 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (generatedImageUrl) {
         console.log('✅ Successfully extracted image URL:', generatedImageUrl);
         
-        // 🔥 АВТОМАТИЧЕСКИ ПРИМЕНЯЕМ ИЗОБРАЖЕНИЕ КАК ФОН
-        console.log('🎨 Auto-applying generated image as wallet background');
-        const walletStore = useWalletCustomizationStore.getState();
-        walletStore.applyUniversalStyle({
-          backgroundImage: `url(${generatedImageUrl})`,
-          styleNotes: `Auto-applied ${messageData.mode} generated background`
-        });
-        
-        // Показываем уведомление об успешном применении
-        toast.success(`🎨 Generated image automatically applied as wallet background!`);
-        
-        const assistantMessage: ChatMessage = {
-          id: `assistant-${Date.now()}`,
-          type: 'assistant',
-          content: `✨ I've generated and automatically applied a custom background image based on your description: "${messageData.content}". The new background is now active on your wallet!`,
-          timestamp: new Date(),
-          imageUrl: generatedImageUrl,
-          isGenerated: true,
-          autoApplied: true,
-        };
+        // 🔥 ПРОВЕРЯЕМ что URL валидный перед применением
+        if (generatedImageUrl.startsWith('http') || generatedImageUrl.startsWith('data:image')) {
+          console.log('🎨 Auto-applying generated image as wallet background');
+          const walletStore = useWalletCustomizationStore.getState();
+          walletStore.applyUniversalStyle({
+            backgroundImage: `url(${generatedImageUrl})`,
+            styleNotes: `Auto-applied ${messageData.mode} generated background`
+          });
+          
+          // Показываем уведомление об успешном применении
+          toast.success(`🎨 Generated image automatically applied as wallet background!`);
+          
+          const assistantMessage: ChatMessage = {
+            id: `assistant-${Date.now()}`,
+            type: 'assistant',
+            content: `✨ I've generated and automatically applied a custom background image based on your description: "${messageData.content}". The new background is now active on your wallet!`,
+            timestamp: new Date(),
+            imageUrl: generatedImageUrl,
+            isGenerated: true,
+            autoApplied: true,
+          };
 
-        set(state => ({
-          messages: [...state.messages, assistantMessage],
-          isLoading: false
-        }));
-        
-        console.log('✅ Image generation and auto-application completed successfully');
+          set(state => ({
+            messages: [...state.messages, assistantMessage],
+            isLoading: false
+          }));
+          
+          console.log('✅ Image generation and auto-application completed successfully');
+        } else {
+          console.error('❌ Invalid image URL format:', generatedImageUrl);
+          throw new Error(`Invalid image URL format: ${generatedImageUrl}`);
+        }
       } else {
         console.error('❌ Failed to extract image URL from response');
+        console.error('❌ Response structure debug:', JSON.stringify(response, null, 2));
         throw new Error('No image returned from generation service - check Edge Function logs');
       }
 
