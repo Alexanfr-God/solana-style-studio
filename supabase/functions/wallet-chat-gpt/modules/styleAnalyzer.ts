@@ -1,4 +1,100 @@
-const recommendations = this.generateComparisonRecommendations(style1, style2);
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+export interface ColorPalette {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  textSecondary: string;
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
+  gradient?: {
+    start: string;
+    end: string;
+    direction: string;
+  };
+}
+
+export interface StyleAnalysis {
+  colorPalette: ColorPalette;
+  theme: 'light' | 'dark' | 'neon' | 'minimal' | 'gradient' | 'retro' | 'cyberpunk';
+  fontFamily: string;
+  fontWeight: 'light' | 'normal' | 'medium' | 'semibold' | 'bold';
+  mood: 'professional' | 'playful' | 'elegant' | 'modern' | 'retro' | 'aggressive' | 'calming';
+  borderRadius: string;
+  spacing: 'tight' | 'normal' | 'loose' | 'custom';
+  complexity: 'minimal' | 'moderate' | 'complex' | 'maximalist';
+  contrast: 'low' | 'medium' | 'high';
+  accessibility: {
+    score: number;
+    issues: string[];
+    suggestions: string[];
+  };
+  emotions: string[];
+  keywords: string[];
+  confidence: number;
+  metadata: {
+    dominantColors: string[];
+    colorHarmony: 'monochromatic' | 'analogous' | 'complementary' | 'triadic' | 'split-complementary';
+    temperature: 'warm' | 'cool' | 'neutral';
+    saturation: 'low' | 'medium' | 'high';
+    brightness: 'dark' | 'medium' | 'bright';
+  };
+}
+
+export interface AdvancedColorAnalysis {
+  dominantColors: Array<{
+    color: string;
+    percentage: number;
+    name: string;
+    rgb: { r: number; g: number; b: number };
+    hsl: { h: number; s: number; l: number };
+  }>;
+  colorHarmony: string;
+  emotionalImpact: string[];
+  brandPersonality: string[];
+  recommendedPalettes: ColorPalette[];
+}
+
+export interface StyleTrend {
+  name: string;
+  popularity: number;
+  characteristics: string[];
+  suitableFor: string[];
+  examples: ColorPalette[];
+}
+
+export class StyleAnalyzer {
+  private supabase: any;
+  private analysisCache: Map<string, StyleAnalysis> = new Map();
+  private colorCache: Map<string, AdvancedColorAnalysis> = new Map();
+  private cacheTimeout: number = 30 * 60 * 1000; // 30 minutes
+
+  constructor(supabaseUrl: string, supabaseKey: string) {
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+  }
+
+  /**
+   * Сравнение стилей и рекомендации
+   */
+  async compareStyles(
+    style1: StyleAnalysis,
+    style2: StyleAnalysis
+  ): Promise<{
+    similarity: number;
+    differences: string[];
+    recommendations: string[];
+    betterFor: { [key: string]: string };
+  }> {
+    console.log('⚖️ Comparing styles...');
+
+    const similarity = this.calculateStyleSimilarity(style1, style2);
+    const differences = this.identifyStyleDifferences(style1, style2);
+    const recommendations = this.generateComparisonRecommendations(style1, style2);
     const betterFor = this.determineBetterUseCase(style1, style2);
 
     return {
@@ -496,8 +592,8 @@ Return the same detailed JSON structure as image analysis.`;
       textSecondary: '#4a5568',
       success: '#38a169',
       warning: '#ed8936',
-      error: '#e53e3e',
-      info: '#3182ce'
+      error: '#ef4444',
+      info: '#3b82f6'
     };
   }
 
@@ -1286,292 +1382,4 @@ module.exports = {
 
 export function createStyleAnalyzer(supabaseUrl: string, supabaseKey: string) {
   return new StyleAnalyzer(supabaseUrl, supabaseKey);
-}// ====== Enhanced modules/styleAnalyzer.ts ======
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-export interface ColorPalette {
-  primary: string;
-  secondary: string;
-  accent: string;
-  background: string;
-  surface: string;
-  text: string;
-  textSecondary: string;
-  success: string;
-  warning: string;
-  error: string;
-  info: string;
-  gradient?: {
-    start: string;
-    end: string;
-    direction: string;
-  };
 }
-
-export interface StyleAnalysis {
-  colorPalette: ColorPalette;
-  theme: 'light' | 'dark' | 'neon' | 'minimal' | 'gradient' | 'retro' | 'cyberpunk';
-  fontFamily: string;
-  fontWeight: 'light' | 'normal' | 'medium' | 'semibold' | 'bold';
-  mood: 'professional' | 'playful' | 'elegant' | 'modern' | 'retro' | 'aggressive' | 'calming';
-  borderRadius: string;
-  spacing: 'tight' | 'normal' | 'loose' | 'custom';
-  complexity: 'minimal' | 'moderate' | 'complex' | 'maximalist';
-  contrast: 'low' | 'medium' | 'high';
-  accessibility: {
-    score: number;
-    issues: string[];
-    suggestions: string[];
-  };
-  emotions: string[];
-  keywords: string[];
-  confidence: number;
-  metadata: {
-    dominantColors: string[];
-    colorHarmony: 'monochromatic' | 'analogous' | 'complementary' | 'triadic' | 'split-complementary';
-    temperature: 'warm' | 'cool' | 'neutral';
-    saturation: 'low' | 'medium' | 'high';
-    brightness: 'dark' | 'medium' | 'bright';
-  };
-}
-
-export interface AdvancedColorAnalysis {
-  dominantColors: Array<{
-    color: string;
-    percentage: number;
-    name: string;
-    rgb: { r: number; g: number; b: number };
-    hsl: { h: number; s: number; l: number };
-  }>;
-  colorHarmony: string;
-  emotionalImpact: string[];
-  brandPersonality: string[];
-  recommendedPalettes: ColorPalette[];
-}
-
-export interface StyleTrend {
-  name: string;
-  popularity: number;
-  characteristics: string[];
-  suitableFor: string[];
-  examples: ColorPalette[];
-}
-
-export class StyleAnalyzer {
-  private supabase: any;
-  private analysisCache: Map<string, StyleAnalysis> = new Map();
-  private colorCache: Map<string, AdvancedColorAnalysis> = new Map();
-  private cacheTimeout: number = 30 * 60 * 1000; // 30 minutes
-
-  constructor(supabaseUrl: string, supabaseKey: string) {
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-  }
-
-  /**
-   * Расширенный анализ стилей из изображения с AI vision
-   */
-  async analyzeImageStyle(imageUrl: string, options: {
-    includeAdvancedAnalysis?: boolean;
-    contextHint?: string;
-    targetAudience?: string;
-  } = {}): Promise<StyleAnalysis> {
-    console.log('🎨 Analyzing image style with advanced AI...');
-    
-    const cacheKey = `image_${this.hashUrl(imageUrl)}_${JSON.stringify(options)}`;
-    
-    if (this.analysisCache.has(cacheKey)) {
-      const cached = this.analysisCache.get(cacheKey)!;
-      console.log('📊 Using cached image analysis');
-      return cached;
-    }
-
-    try {
-      const openaiApiKey = Deno.env.get('OPENA_API_KEY');
-      if (!openaiApiKey) {
-        throw new Error('OpenAI API key not configured');
-      }
-
-      // Создаем расширенный промпт для анализа
-      const analysisPrompt = this.buildAdvancedImageAnalysisPrompt(options);
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [{
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: analysisPrompt
-              },
-              {
-                type: 'image_url',
-                image_url: { 
-                  url: imageUrl,
-                  detail: 'high'
-                }
-              }
-            ]
-          }],
-          max_tokens: 800,
-          temperature: 0.4
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.statusText}`);
-      }
-
-      const aiResponse = await response.json();
-      const content = aiResponse.choices[0].message.content;
-      
-      // Парсим и обогащаем результат
-      let analysis = this.parseAnalysisResponse(content);
-      
-      if (options.includeAdvancedAnalysis) {
-        analysis = await this.enrichWithAdvancedAnalysis(analysis, imageUrl);
-      }
-
-      // Добавляем проверку доступности
-      analysis.accessibility = this.analyzeAccessibility(analysis.colorPalette);
-
-      // Кешируем результат
-      this.analysisCache.set(cacheKey, analysis);
-      
-      console.log('✅ Advanced image style analysis completed');
-      return analysis;
-      
-    } catch (error) {
-      console.error('❌ Error analyzing image style:', error);
-      return this.getEnhancedDefaultAnalysis('image_fallback');
-    }
-  }
-
-  /**
-   * Интеллектуальный анализ стилей по текстовому описанию
-   */
-  async analyzeTextStyle(
-    description: string, 
-    options: {
-      includeEmotionalAnalysis?: boolean;
-      brandContext?: string;
-      industryContext?: string;
-      targetDemographic?: string;
-    } = {}
-  ): Promise<StyleAnalysis> {
-    console.log('📝 Analyzing text style with emotional intelligence...');
-    
-    const cacheKey = `text_${this.hashString(description)}_${JSON.stringify(options)}`;
-    
-    if (this.analysisCache.has(cacheKey)) {
-      return this.analysisCache.get(cacheKey)!;
-    }
-
-    try {
-      const openaiApiKey = Deno.env.get('OPENA_API_KEY');
-      if (!openaiApiKey) {
-        throw new Error('OpenAI API key not configured');
-      }
-
-      // Создаем контекстуальный промпт
-      const contextualPrompt = this.buildContextualTextPrompt(description, options);
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [{
-            role: 'system',
-            content: 'You are an expert color psychologist and UI/UX designer specializing in Web3 and cryptocurrency interfaces. You understand color theory, emotional impact, and accessibility requirements.'
-          }, {
-            role: 'user',
-            content: contextualPrompt
-          }],
-          max_tokens: 700,
-          temperature: 0.5
-        })
-      });
-
-      const aiResponse = await response.json();
-      const content = aiResponse.choices[0].message.content;
-      
-      let analysis = this.parseAnalysisResponse(content);
-      
-      // Добавляем эмоциональный анализ
-      if (options.includeEmotionalAnalysis) {
-        analysis.emotions = await this.analyzeEmotionalImpact(description);
-      }
-
-      // Добавляем анализ доступности
-      analysis.accessibility = this.analyzeAccessibility(analysis.colorPalette);
-
-      // Добавляем ключевые слова из описания
-      analysis.keywords = this.extractKeywords(description);
-
-      this.analysisCache.set(cacheKey, analysis);
-      
-      console.log('✅ Text style analysis completed with emotional intelligence');
-      return analysis;
-      
-    } catch (error) {
-      console.error('❌ Error analyzing text style:', error);
-      return this.getEnhancedDefaultAnalysis('text_fallback');
-    }
-  }
-
-  /**
-   * Анализ трендов и рекомендации стилей
-   */
-  async analyzeTrends(
-    currentStyle?: StyleAnalysis,
-    industry: string = 'crypto'
-  ): Promise<StyleTrend[]> {
-    console.log('📈 Analyzing current style trends...');
-
-    try {
-      // Получаем текущие тренды из базы данных
-      const { data: trendsData } = await this.supabase
-        .from('style_trends')
-        .select('*')
-        .eq('industry', industry)
-        .order('popularity', { ascending: false })
-        .limit(10);
-
-      if (trendsData && trendsData.length > 0) {
-        return trendsData;
-      }
-
-      // Fallback: создаем актуальные тренды
-      return this.getCurrentStyleTrends(industry);
-    } catch (error) {
-      console.error('❌ Error analyzing trends:', error);
-      return this.getCurrentStyleTrends(industry);
-    }
-  }
-
-  /**
-   * Сравнение стилей и рекомендации
-   */
-  async compareStyles(
-    style1: StyleAnalysis,
-    style2: StyleAnalysis
-  ): Promise<{
-    similarity: number;
-    differences: string[];
-    recommendations: string[];
-    betterFor: { [key: string]: string };
-  }> {
-    console.log('⚖️ Comparing styles...');
-
-    const similarity = this.calculateStyleSimilarity(style1, style2);
-    const differences = this.identifyStyleDifferences(style1, style2);
-    const recommendations = this.generateComparisonRecommendations(style1, style
