@@ -386,9 +386,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendImageGenerationMessage: async (messageData) => {
     const { messages, sessionId } = get();
     
-    // ✅ ИСПРАВЛЕНИЕ: Добавляем четкое логирование режима
-    console.log('🖼️ [ИСПРАВЛЕНИЕ] sendImageGenerationMessage вызван с режимом:', messageData.mode);
-    console.log('🖼️ [ИСПРАВЛЕНИЕ] Промпт:', messageData.content);
+    // ✅ ИСПРАВЛЕНИЕ: Детальное логирование режима на входе
+    console.log('🖼️ [ОТЛАДКА] sendImageGenerationMessage вызван:');
+    console.log('🔍 [ОТЛАДКА] Входной режим:', messageData.mode);
+    console.log('🔍 [ОТЛАДКА] Текущий imageGenerationMode:', get().imageGenerationMode);
+    console.log('🔍 [ОТЛАДКА] Промпт:', messageData.content);
+    
+    // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Убедимся что режим точно соответствует выбранному
+    const actualMode = get().imageGenerationMode;
+    if (actualMode === 'analysis') {
+      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Попытка генерации в режиме analysis!');
+      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Это недопустимо - перенаправляем в Leonardo');
+      // Принудительно переключаем на Leonardo если находимся в analysis
+      set({ imageGenerationMode: 'leonardo' });
+      messageData.mode = 'leonardo';
+    } else {
+      messageData.mode = actualMode as 'leonardo' | 'replicate';
+    }
+    
+    console.log('✅ [ИСПРАВЛЕНИЕ] Финальный режим для отправки:', messageData.mode);
     
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -403,75 +419,80 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      console.log('🖼️ [ИСПРАВЛЕНИЕ] Начинаем генерацию изображения, режим:', messageData.mode);
-      console.log('🖼️ [ИСПРАВЛЕНИЕ] Промпт для генерации:', messageData.content);
+      console.log('🚀 [ИСПРАВЛЕНИЕ] Отправляем запрос генерации изображения');
+      console.log('📋 [ИСПРАВЛЕНИЕ] Параметры запроса:', {
+        content: messageData.content,
+        mode: messageData.mode,
+        sessionId,
+        isImageGeneration: true
+      });
 
       // ✅ ИСПРАВЛЕНИЕ: Убедимся что режим точно передается в Edge Function
       const response = await supabase.functions.invoke('wallet-chat-gpt', {
         body: { 
           content: messageData.content, 
-          mode: messageData.mode, // ✅ Четко передаем режим
+          mode: messageData.mode, // ✅ Четко передаем проверенный режим
           sessionId,
-          // ✅ ИСПРАВЛЕНИЕ: Добавляем флаг что это генерация изображения
-          isImageGeneration: true
+          isImageGeneration: true, // ✅ Явный флаг генерации
+          debugMode: true // ✅ Включаем отладку
         }
       });
 
-      console.log('🖼️ [ИСПРАВЛЕНИЕ] Полный ответ Edge Function:', JSON.stringify(response, null, 2));
+      console.log('📥 [ИСПРАВЛЕНИЕ] Полный ответ Edge Function:', JSON.stringify(response, null, 2));
 
       if (response?.error) {
         console.error('❌ [ИСПРАВЛЕНИЕ] Ошибка Edge Function:', response.error);
         throw new Error(`Image generation error: ${response.error.message}`);
       }
 
-      console.log('🖼️ [ИСПРАВЛЕНИЕ] Попытка извлечения imageUrl из ответа...');
-      const generatedImageUrl = extractImageUrl(response, messageData.mode);
+      // ✅ ИСПРАВЛЕНИЕ: Упрощенное извлечение imageUrl
+      let generatedImageUrl = null;
       
-      if (generatedImageUrl) {
-        console.log('✅ [ИСПРАВЛЕНИЕ] Успешно извлечен imageUrl:', generatedImageUrl);
+      if (response?.data?.imageUrl) {
+        generatedImageUrl = response.data.imageUrl;
+        console.log('✅ [ИСПРАВЛЕНИЕ] Найден imageUrl в data:', generatedImageUrl);
+      } else if (response?.data?.data?.imageUrl) {
+        generatedImageUrl = response.data.data.imageUrl;
+        console.log('✅ [ИСПРАВЛЕНИЕ] Найден imageUrl в data.data:', generatedImageUrl);
+      } else if (response?.data?.output && Array.isArray(response.data.output)) {
+        generatedImageUrl = response.data.output[0];
+        console.log('✅ [ИСПРАВЛЕНИЕ] Найден imageUrl в output:', generatedImageUrl);
+      }
+      
+      if (generatedImageUrl && (generatedImageUrl.startsWith('http') || generatedImageUrl.startsWith('data:image'))) {
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Применяем сгенерированное изображение:', generatedImageUrl);
         
-        if (generatedImageUrl.startsWith('http') || generatedImageUrl.startsWith('data:image')) {
-          console.log('🎨 [ИСПРАВЛЕНИЕ] Применяем сгенерированное изображение как фон кошелька');
-          
-          // ✅ ЭТАП 4: Накопительное применение с историей
-          get().applyGeneratedImage(generatedImageUrl);
-          
-          // ✅ ЭТАП 5: Визуальная обратная связь
-          toast.success(`🎨 Generated image automatically applied as wallet background!`, {
-            description: `Mode: ${messageData.mode} | Time: ${new Date().toLocaleTimeString()}`,
-            duration: 4000
-          });
-          
-          const assistantMessage: ChatMessage = {
-            id: `assistant-${Date.now()}`,
-            type: 'assistant',
-            content: `✨ I've generated and automatically applied a custom background image based on your description: "${messageData.content}". The new background is now active on both your lock and unlock screens while preserving your existing styling!`,
-            timestamp: new Date(),
-            imageUrl: generatedImageUrl,
-            isGenerated: true,
-            autoApplied: true,
-          };
+        get().applyGeneratedImage(generatedImageUrl);
+        
+        toast.success(`🎨 Generated image automatically applied as wallet background!`, {
+          description: `Mode: ${messageData.mode} | Time: ${new Date().toLocaleTimeString()}`,
+          duration: 4000
+        });
+        
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          type: 'assistant',
+          content: `✨ I've generated and automatically applied a custom background image based on your description: "${messageData.content}". The new background is now active on your wallet while preserving your existing styling!`,
+          timestamp: new Date(),
+          imageUrl: generatedImageUrl,
+          isGenerated: true,
+          autoApplied: true,
+        };
 
-          set(state => ({
-            messages: [...state.messages, assistantMessage],
-            isLoading: false
-          }));
-          
-          console.log('✅ [ИСПРАВЛЕНИЕ] Генерация изображения и авто-применение завершены успешно');
-        } else {
-          console.error('❌ [ИСПРАВЛЕНИЕ] Неверный формат imageUrl:', generatedImageUrl);
-          throw new Error(`Invalid image URL format: ${generatedImageUrl}`);
-        }
+        set(state => ({
+          messages: [...state.messages, assistantMessage],
+          isLoading: false
+        }));
+        
+        console.log('✅ [ИСПРАВЛЕНИЕ] Генерация изображения и авто-применение завершены успешно');
       } else {
-        console.error('❌ [ИСПРАВЛЕНИЕ] Не удалось извлечь imageUrl из ответа');
-        console.error('❌ [ИСПРАВЛЕНИЕ] Структура ответа для отладки:', JSON.stringify(response, null, 2));
-        throw new Error('No image returned from generation service - check Edge Function logs');
+        console.error('❌ [ИСПРАВЛЕНИЕ] Не удалось извлечь действительный imageUrl');
+        throw new Error('No valid image returned from generation service');
       }
 
     } catch (error) {
       console.error('💥 [ИСПРАВЛЕНИЕ] Ошибка генерации изображения:', error);
       
-      // ✅ ЭТАП 5: Улучшенная визуальная обратная связь об ошибке
       toast.error(`❌ Image generation failed: ${error.message}`, {
         description: `Mode: ${messageData.mode} | Check console for details`,
         duration: 6000

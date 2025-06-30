@@ -25,17 +25,22 @@ const ImageGenerationSelector = () => {
       key: 'leonardo',
       label: 'Leonardo',
       icon: <Image className="w-4 h-4" />,
-      description: 'Generate high-quality artistic images with Leonardo.ai (describe what you want)',
+      description: 'Generate high-quality artistic images with Leonardo.ai',
       color: 'bg-green-600 hover:bg-green-700'
     },
     {
       key: 'replicate',
       label: 'Replicate Art',
       icon: <Sparkles className="w-4 h-4" />,
-      description: 'Create artistic images with Replicate (describe your vision)',
+      description: 'Create artistic images with Replicate',
       color: 'bg-purple-600 hover:bg-purple-700'
     }
   ];
+
+  const handleModeChange = (mode: ImageGenerationMode) => {
+    console.log('🔄 [ИСПРАВЛЕНИЕ] Изменение режима на:', mode);
+    setImageGenerationMode(mode);
+  };
 
   return (
     <div className="space-y-2">
@@ -48,7 +53,7 @@ const ImageGenerationSelector = () => {
             key={mode.key}
             variant={imageGenerationMode === mode.key ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setImageGenerationMode(mode.key)}
+            onClick={() => handleModeChange(mode.key)}
             className={`
               flex items-center gap-2 text-xs transition-all
               ${imageGenerationMode === mode.key 
@@ -69,7 +74,7 @@ const ImageGenerationSelector = () => {
         <span className="font-medium">Active:</span> {modes.find(m => m.key === imageGenerationMode)?.description}
       </div>
       
-      {/* ✅ ИСПРАВЛЕНИЕ: Предупреждение о правильном использовании */}
+      {/* ✅ ИСПРАВЛЕНИЕ: Четкое предупреждение о генерации */}
       {imageGenerationMode !== 'analysis' && (
         <div className="text-xs text-green-400 mt-2 p-2 bg-green-500/10 rounded border border-green-500/20">
           🎨 <strong>Image Generation Mode Active:</strong> Your prompt will create a new background image

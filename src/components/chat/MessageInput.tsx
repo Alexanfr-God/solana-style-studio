@@ -92,25 +92,26 @@ const MessageInput: React.FC<MessageInputProps> = ({
     setIsLoading(true);
 
     try {
-      console.log('💬 [ИСПРАВЛЕНИЕ] Отправка сообщения в режиме:', imageGenerationMode);
+      console.log('💬 [ИСПРАВЛЕНИЕ] MessageInput отправка:');
+      console.log('💬 [ИСПРАВЛЕНИЕ] Режим imageGenerationMode:', imageGenerationMode);
       console.log('💬 [ИСПРАВЛЕНИЕ] Сообщение:', currentMessage);
       console.log('💬 [ИСПРАВЛЕНИЕ] Есть файл:', !!fileToSend);
 
-      // ✅ ИСПРАВЛЕНИЕ: Четкое разделение логики по режимам
+      // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Четкая логика выбора обработчика
       if (imageGenerationMode === 'leonardo') {
-        console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Leonardo генерацию');
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Leonardo генерацию через sendImageGenerationMessage');
         await sendImageGenerationMessage({ 
           content: currentMessage, 
           mode: 'leonardo' 
         });
       } else if (imageGenerationMode === 'replicate') {
-        console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Replicate генерацию');
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Replicate генерацию через sendImageGenerationMessage');
         await sendImageGenerationMessage({ 
           content: currentMessage, 
           mode: 'replicate' 
         });
       } else {
-        console.log('🧠 [ИСПРАВЛЕНИЕ] Вызываем анализ стилей');
+        console.log('🧠 [ИСПРАВЛЕНИЕ] Вызываем анализ стилей через sendMessage');
         await sendMessage({ 
           content: currentMessage,
           imageUrl: fileToSend?.preview || null
@@ -153,7 +154,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* ✅ ИСПРАВЛЕНИЕ: Улучшенный индикатор режима */}
+      {/* ✅ ИСПРАВЛЕНИЕ: Четкий индикатор режима */}
       <div className="flex items-center gap-2 text-xs text-white/60 bg-white/5 px-3 py-2 rounded-lg">
         {getModeIcon()}
         <span className="font-medium">

@@ -58,7 +58,8 @@ serve(async (req) => {
       sessionId,
       userId,
       chatHistory,
-      isImageGeneration // ✅ ИСПРАВЛЕНИЕ: Новый флаг
+      isImageGeneration,
+      debugMode
     } = body;
 
     console.log('🚀 [ИСПРАВЛЕНИЕ] Enhanced wallet-chat-gpt called with:', {
@@ -69,18 +70,31 @@ serve(async (req) => {
       activeLayer: walletContext?.activeLayer,
       sessionId,
       userId,
-      isImageGeneration, // ✅ Логируем флаг генерации
+      isImageGeneration,
+      debugMode,
       contentPreview: content?.substring(0, 50) + '...'
     });
 
-    // ✅ ИСПРАВЛЕНИЕ: Защита от неправильной маршрутизации
-    if (isImageGeneration && mode === 'analysis') {
-      console.error('❌ [ИСПРАВЛЕНИЕ] ОШИБКА МАРШРУТИЗАЦИИ: Запрос генерации изображения попал в режим analysis!');
-      console.error('❌ [ИСПРАВЛЕНИЕ] Это указывает на проблему на фронтенде - нужно исправить');
-      return createErrorResponse('Routing error: Image generation request incorrectly routed to analysis mode', 400);
+    // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Проверка корректности режима
+    if (debugMode) {
+      console.log('🔍 [ОТЛАДКА] Детальная проверка режима:');
+      console.log('🔍 [ОТЛАДКА] body.mode:', mode);
+      console.log('🔍 [ОТЛАДКА] typeof mode:', typeof mode);
+      console.log('🔍 [ОТЛАДКА] isImageGeneration:', isImageGeneration);
     }
 
-    // Route to appropriate handler based on mode
+    // ✅ ЗАЩИТА: Предотвращаем неправильную маршрутизацию
+    if (isImageGeneration && mode === 'analysis') {
+      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Запрос генерации изображения попал в режим analysis!');
+      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Это указывает на проблему маршрутизации');
+      return createErrorResponse('Critical routing error: Image generation request incorrectly routed to analysis mode', 400);
+    }
+
+    if ((mode === 'leonardo' || mode === 'replicate') && !isImageGeneration) {
+      console.warn('⚠️ [ПРЕДУПРЕЖДЕНИЕ] Режим генерации без флага isImageGeneration');
+    }
+
+    // ✅ МАРШРУТИЗАЦИЯ: Четкое разделение по режимам
     switch (mode) {
       case 'structure':
         return await handleStructureMode(elementsManager, walletContext?.walletType || 'phantom');
@@ -105,13 +119,11 @@ serve(async (req) => {
         );
       
       case 'leonardo':
-        console.log('🎨 [ИСПРАВЛЕНИЕ] Обработка Leonardo - БЕЗ JSON парсинга');
-        console.log('🎨 [ИСПРАВЛЕНИЕ] isImageGeneration:', isImageGeneration);
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Обработка Leonardo - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
         return await handleImageGeneration('leonardo', content, supabase, promptBuilder);
       
       case 'replicate':
-        console.log('🎨 [ИСПРАВЛЕНИЕ] Обработка Replicate - БЕЗ JSON парсинга');
-        console.log('🎨 [ИСПРАВЛЕНИЕ] isImageGeneration:', isImageGeneration);
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Обработка Replicate - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
         return await handleImageGeneration('replicate', content, supabase, promptBuilder);
       
       case 'poster-generation':
@@ -139,14 +151,25 @@ serve(async (req) => {
       
       case 'analysis':
       default:
-        // ✅ ИСПРАВЛЕНИЕ: Предупреждение если команда генерации попала в анализ
-        if (content && (content.toLowerCase().includes('generate') || content.toLowerCase().includes('create image'))) {
-          console.warn('⚠️ [ИСПРАВЛЕНИЕ] ПРЕДУПРЕЖДЕНИЕ: Команда генерации попала в режим analysis!');
-          console.warn('⚠️ [ИСПРАВЛЕНИЕ] Контент:', content);
-          console.warn('⚠️ [ИСПРАВЛЕНИЕ] Возможно пользователь выбрал неправильный режим');
+        // ✅ ЗАЩИТА: Предупреждение если команда генерации попала в анализ
+        if (content && (
+          content.toLowerCase().includes('generate') || 
+          content.toLowerCase().includes('create image') ||
+          content.toLowerCase().includes('генерировать') ||
+          content.toLowerCase().includes('создать изображение')
+        )) {
+          console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Команда генерации попала в режим analysis!');
+          console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Контент:', content);
+          console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Это указывает на проблему UI - пользователь выбрал неправильный режим');
+          
+          // Возвращаем ошибку вместо обработки как анализ
+          return createErrorResponse(
+            'Image generation command detected in analysis mode. Please select Leonardo or Replicate mode for image generation.',
+            400
+          );
         }
         
-        console.log('🧠 [ИСПРАВЛЕНИЕ] Обработка Analysis - С JSON парсингом');
+        console.log('🧠 [ИСПРАВЛЕНИЕ] Обработка Analysis - ТОЛЬКО С JSON парсингом');
         return await handleAnalysisMode(
           content,
           imageUrl,
@@ -301,8 +324,8 @@ async function handleImageGeneration(
   promptBuilder: any
 ) {
   try {
-    console.log(`🖼️ [ИСПРАВЛЕНИЕ] Image generation mode: ${mode} - Без JSON парсинга`);
-    console.log(`📝 [ИСПРАВЛЕНИЕ] Prompt: "${prompt}"`);
+    console.log(`🖼️ [ИСПРАВЛЕНИЕ] ЧИСТАЯ генерация изображения: ${mode}`);
+    console.log(`📝 [ИСПРАВЛЕНИЕ] Промпт: "${prompt}"`);
     
     // Validate prompt
     if (!prompt || prompt.trim().length === 0) {
@@ -315,22 +338,12 @@ async function handleImageGeneration(
     
     if (!apiKey) {
       console.error(`❌ [ИСПРАВЛЕНИЕ] ${apiKeyName} not found in environment`);
-      const response: ImageGenerationResponse = {
-        success: false,
-        error: `${mode.charAt(0).toUpperCase() + mode.slice(1)} API key not configured`,
-        status: 'failed',
-        metadata: {
-          prompt,
-          model: mode,
-          dimensions: { width: 1024, height: 1024 }
-        }
-      };
-      return createErrorResponse(response.error!, 400, response);
+      throw new Error(`${mode.charAt(0).toUpperCase() + mode.slice(1)} API key not configured`);
     }
     
     console.log(`✅ [ИСПРАВЛЕНИЕ] ${apiKeyName} found, proceeding with generation...`);
     
-    // ✅ ЭТАП 3: Простое улучшение промпта для wallet контекста (БЕЗ buildImagePrompt)
+    // ✅ Простое улучшение промпта для wallet контекста
     const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, high quality, detailed, artistic, vibrant colors, 4k resolution`;
     
     console.log(`🎯 [ИСПРАВЛЕНИЕ] Enhanced prompt: ${enhancedPrompt}`);
@@ -349,16 +362,16 @@ async function handleImageGeneration(
     
     if (!result.success) {
       console.error(`❌ [ИСПРАВЛЕНИЕ] ${mode} generation failed:`, result.error);
+      throw new Error(result.error || 'Image generation failed');
     }
 
-    // ✅ ЭТАП 3: Четкая структура ответа с data.imageUrl
+    // ✅ ЧЕТКАЯ структура ответа БЕЗ JSON парсинга
     const response: ImageGenerationResponse = {
-      success: result.success,
+      success: true,
       imageUrl: result.imageUrl,
-      status: result.success ? 'completed' : 'failed',
-      error: result.error,
+      status: 'completed',
       data: {
-        imageUrl: result.imageUrl // ✅ Убедимся что imageUrl находится в data
+        imageUrl: result.imageUrl // ✅ Дублируем для надежности
       },
       metadata: {
         prompt: enhancedPrompt,
@@ -367,17 +380,15 @@ async function handleImageGeneration(
       }
     };
 
-    console.log(`✅ [ИСПРАВЛЕНИЕ] Final response structure:`, {
+    console.log(`✅ [ИСПРАВЛЕНИЕ] Final clean response:`, {
       success: response.success,
       imageUrl: response.imageUrl,
-      'data.imageUrl': response.data?.imageUrl,
-      hasError: !!response.error
+      'data.imageUrl': response.data?.imageUrl
     });
 
     return createSuccessResponse(response);
   } catch (error) {
     console.error(`💥 [ИСПРАВЛЕНИЕ] Error in ${mode} image generation:`, error);
-    console.error(`💥 [ИСПРАВЛЕНИЕ] Error details:`, error.stack);
     
     const response: ImageGenerationResponse = {
       success: false,
