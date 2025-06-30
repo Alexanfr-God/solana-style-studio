@@ -57,10 +57,11 @@ serve(async (req) => {
       mode, 
       sessionId,
       userId,
-      chatHistory 
+      chatHistory,
+      isImageGeneration // ✅ ИСПРАВЛЕНИЕ: Новый флаг
     } = body;
 
-    console.log('🚀 Enhanced wallet-chat-gpt called with:', {
+    console.log('🚀 [ИСПРАВЛЕНИЕ] Enhanced wallet-chat-gpt called with:', {
       mode,
       hasContent: !!content,
       hasImage: !!imageUrl,
@@ -68,8 +69,16 @@ serve(async (req) => {
       activeLayer: walletContext?.activeLayer,
       sessionId,
       userId,
+      isImageGeneration, // ✅ Логируем флаг генерации
       contentPreview: content?.substring(0, 50) + '...'
     });
+
+    // ✅ ИСПРАВЛЕНИЕ: Защита от неправильной маршрутизации
+    if (isImageGeneration && mode === 'analysis') {
+      console.error('❌ [ИСПРАВЛЕНИЕ] ОШИБКА МАРШРУТИЗАЦИИ: Запрос генерации изображения попал в режим analysis!');
+      console.error('❌ [ИСПРАВЛЕНИЕ] Это указывает на проблему на фронтенде - нужно исправить');
+      return createErrorResponse('Routing error: Image generation request incorrectly routed to analysis mode', 400);
+    }
 
     // Route to appropriate handler based on mode
     switch (mode) {
@@ -96,11 +105,13 @@ serve(async (req) => {
         );
       
       case 'leonardo':
-        console.log('🎨 [ЭТАП 3] Обработка Leonardo - БЕЗ JSON парсинга');
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Обработка Leonardo - БЕЗ JSON парсинга');
+        console.log('🎨 [ИСПРАВЛЕНИЕ] isImageGeneration:', isImageGeneration);
         return await handleImageGeneration('leonardo', content, supabase, promptBuilder);
       
       case 'replicate':
-        console.log('🎨 [ЭТАП 3] Обработка Replicate - БЕЗ JSON парсинга');
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Обработка Replicate - БЕЗ JSON парсинга');
+        console.log('🎨 [ИСПРАВЛЕНИЕ] isImageGeneration:', isImageGeneration);
         return await handleImageGeneration('replicate', content, supabase, promptBuilder);
       
       case 'poster-generation':
@@ -128,7 +139,14 @@ serve(async (req) => {
       
       case 'analysis':
       default:
-        console.log('🧠 [ЭТАП 3] Обработка Analysis - С JSON парсингом');
+        // ✅ ИСПРАВЛЕНИЕ: Предупреждение если команда генерации попала в анализ
+        if (content && (content.toLowerCase().includes('generate') || content.toLowerCase().includes('create image'))) {
+          console.warn('⚠️ [ИСПРАВЛЕНИЕ] ПРЕДУПРЕЖДЕНИЕ: Команда генерации попала в режим analysis!');
+          console.warn('⚠️ [ИСПРАВЛЕНИЕ] Контент:', content);
+          console.warn('⚠️ [ИСПРАВЛЕНИЕ] Возможно пользователь выбрал неправильный режим');
+        }
+        
+        console.log('🧠 [ИСПРАВЛЕНИЕ] Обработка Analysis - С JSON парсингом');
         return await handleAnalysisMode(
           content,
           imageUrl,
@@ -141,8 +159,8 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('💥 Error in enhanced wallet-chat-gpt:', error);
-    console.error('💥 Error stack:', error.stack);
+    console.error('💥 [ИСПРАВЛЕНИЕ] Error in enhanced wallet-chat-gpt:', error);
+    console.error('💥 [ИСПРАВЛЕНИЕ] Error stack:', error.stack);
     return createErrorResponse(error.message, 500);
   }
 });
@@ -283,8 +301,8 @@ async function handleImageGeneration(
   promptBuilder: any
 ) {
   try {
-    console.log(`🖼️ [ЭТАП 3] Image generation mode: ${mode} - Без JSON парсинга`);
-    console.log(`📝 [ЭТАП 3] Prompt: "${prompt}"`);
+    console.log(`🖼️ [ИСПРАВЛЕНИЕ] Image generation mode: ${mode} - Без JSON парсинга`);
+    console.log(`📝 [ИСПРАВЛЕНИЕ] Prompt: "${prompt}"`);
     
     // Validate prompt
     if (!prompt || prompt.trim().length === 0) {
@@ -296,7 +314,7 @@ async function handleImageGeneration(
     const apiKey = Deno.env.get(apiKeyName);
     
     if (!apiKey) {
-      console.error(`❌ [ЭТАП 3] ${apiKeyName} not found in environment`);
+      console.error(`❌ [ИСПРАВЛЕНИЕ] ${apiKeyName} not found in environment`);
       const response: ImageGenerationResponse = {
         success: false,
         error: `${mode.charAt(0).toUpperCase() + mode.slice(1)} API key not configured`,
@@ -310,27 +328,27 @@ async function handleImageGeneration(
       return createErrorResponse(response.error!, 400, response);
     }
     
-    console.log(`✅ [ЭТАП 3] ${apiKeyName} found, proceeding with generation...`);
+    console.log(`✅ [ИСПРАВЛЕНИЕ] ${apiKeyName} found, proceeding with generation...`);
     
     // ✅ ЭТАП 3: Простое улучшение промпта для wallet контекста (БЕЗ buildImagePrompt)
     const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, high quality, detailed, artistic, vibrant colors, 4k resolution`;
     
-    console.log(`🎯 [ЭТАП 3] Enhanced prompt: ${enhancedPrompt}`);
+    console.log(`🎯 [ИСПРАВЛЕНИЕ] Enhanced prompt: ${enhancedPrompt}`);
     
     let result;
     if (mode === 'leonardo') {
-      console.log(`🎨 [ЭТАП 3] Calling generateImageWithLeonardo...`);
+      console.log(`🎨 [ИСПРАВЛЕНИЕ] Calling generateImageWithLeonardo...`);
       result = await generateImageWithLeonardo(enhancedPrompt, supabase);
     } else {
-      console.log(`🎨 [ЭТАП 3] Calling generateImageWithReplicate...`);
+      console.log(`🎨 [ИСПРАВЛЕНИЕ] Calling generateImageWithReplicate...`);
       result = await generateImageWithReplicate(enhancedPrompt, supabase);
     }
 
-    console.log(`🎯 [ЭТАП 3] ${mode} generation result:`, result.success ? 'SUCCESS' : 'FAILED');
-    console.log(`🔍 [ЭТАП 3] Result imageUrl:`, result.imageUrl);
+    console.log(`🎯 [ИСПРАВЛЕНИЕ] ${mode} generation result:`, result.success ? 'SUCCESS' : 'FAILED');
+    console.log(`🔍 [ИСПРАВЛЕНИЕ] Result imageUrl:`, result.imageUrl);
     
     if (!result.success) {
-      console.error(`❌ [ЭТАП 3] ${mode} generation failed:`, result.error);
+      console.error(`❌ [ИСПРАВЛЕНИЕ] ${mode} generation failed:`, result.error);
     }
 
     // ✅ ЭТАП 3: Четкая структура ответа с data.imageUrl
@@ -349,7 +367,7 @@ async function handleImageGeneration(
       }
     };
 
-    console.log(`✅ [ЭТАП 3] Final response structure:`, {
+    console.log(`✅ [ИСПРАВЛЕНИЕ] Final response structure:`, {
       success: response.success,
       imageUrl: response.imageUrl,
       'data.imageUrl': response.data?.imageUrl,
@@ -358,8 +376,8 @@ async function handleImageGeneration(
 
     return createSuccessResponse(response);
   } catch (error) {
-    console.error(`💥 [ЭТАП 3] Error in ${mode} image generation:`, error);
-    console.error(`💥 [ЭТАП 3] Error details:`, error.stack);
+    console.error(`💥 [ИСПРАВЛЕНИЕ] Error in ${mode} image generation:`, error);
+    console.error(`💥 [ИСПРАВЛЕНИЕ] Error details:`, error.stack);
     
     const response: ImageGenerationResponse = {
       success: false,
@@ -487,7 +505,7 @@ async function handleAnalysisMode(
   promptBuilder: any
 ) {
   try {
-    console.log('🧠 [ЭТАП 3] Analysis mode: processing with AI и JSON парсингом...');
+    console.log('🧠 [ИСПРАВЛЕНИЕ] Analysis mode: processing with AI и JSON парсингом...');
 
     // Get OpenAI API key
     const openaiApiKey = Deno.env.get('OPENA_API_KEY');
@@ -497,7 +515,7 @@ async function handleAnalysisMode(
 
     // Detect user language
     const userLanguage = detectUserLanguage(content);
-    console.log(`🌐 [ЭТАП 3] Detected user language: ${userLanguage}`);
+    console.log(`🌐 [ИСПРАВЛЕНИЕ] Detected user language: ${userLanguage}`);
 
     // Create enhanced wallet context
     const walletType = walletContext?.walletType || 'phantom';
@@ -586,13 +604,13 @@ The userText field should contain a friendly, conversational explanation in the 
     const aiResponse = await response.json();
     const aiContent = aiResponse.choices[0].message.content;
 
-    console.log('🧠 [ЭТАП 3] AI Response для парсинга:', aiContent);
+    console.log('🧠 [ИСПРАВЛЕНИЕ] AI Response для парсинга:', aiContent);
 
     // ✅ ЭТАП 3: Parse JSON ТОЛЬКО для analysis режима
     let parsedResponse = AdvancedJSONParser.parseAIResponse(aiContent);
     
     if (!parsedResponse || !AdvancedJSONParser.validateStyleStructure(parsedResponse.styleChanges || {})) {
-      console.warn('⚠️ [ЭТАП 3] Failed to parse AI JSON or invalid structure, using fallback');
+      console.warn('⚠️ [ИСПРАВЛЕНИЕ] Failed to parse AI JSON or invalid structure, using fallback');
       const fallbackMessage = getLocalizedExample(userLanguage);
       parsedResponse = {
         success: true,
@@ -607,7 +625,7 @@ The userText field should contain a friendly, conversational explanation in the 
       parsedResponse.styleChanges = AdvancedJSONParser.normalizeColors(parsedResponse.styleChanges);
     }
 
-    console.log('✅ [ЭТАП 3] Analysis completed successfully with JSON parsing');
+    console.log('✅ [ИСПРАВЛЕНИЕ] Analysis completed successfully with JSON parsing');
 
     const finalResponse: StyleChangeResponse = {
       success: parsedResponse.success,
@@ -621,7 +639,7 @@ The userText field should contain a friendly, conversational explanation in the 
     return createSuccessResponse(finalResponse);
 
   } catch (error) {
-    console.error('❌ [ЭТАП 3] Error in analysis mode:', error);
+    console.error('❌ [ИСПРАВЛЕНИЕ] Error in analysis mode:', error);
     return createErrorResponse(`Analysis error: ${error.message}`, 500);
   }
 }

@@ -386,6 +386,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendImageGenerationMessage: async (messageData) => {
     const { messages, sessionId } = get();
     
+    // ✅ ИСПРАВЛЕНИЕ: Добавляем четкое логирование режима
+    console.log('🖼️ [ИСПРАВЛЕНИЕ] sendImageGenerationMessage вызван с режимом:', messageData.mode);
+    console.log('🖼️ [ИСПРАВЛЕНИЕ] Промпт:', messageData.content);
+    
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       type: 'user',
@@ -399,32 +403,35 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      console.log('🖼️ [ЭТАП 5] Начинаем генерацию изображения с улучшенным логированием, режим:', messageData.mode);
-      console.log('🖼️ [ЭТАП 5] Промпт:', messageData.content);
+      console.log('🖼️ [ИСПРАВЛЕНИЕ] Начинаем генерацию изображения, режим:', messageData.mode);
+      console.log('🖼️ [ИСПРАВЛЕНИЕ] Промпт для генерации:', messageData.content);
 
+      // ✅ ИСПРАВЛЕНИЕ: Убедимся что режим точно передается в Edge Function
       const response = await supabase.functions.invoke('wallet-chat-gpt', {
         body: { 
           content: messageData.content, 
-          mode: messageData.mode,
-          sessionId
+          mode: messageData.mode, // ✅ Четко передаем режим
+          sessionId,
+          // ✅ ИСПРАВЛЕНИЕ: Добавляем флаг что это генерация изображения
+          isImageGeneration: true
         }
       });
 
-      console.log('🖼️ [ЭТАП 5] Полный ответ Edge Function:', JSON.stringify(response, null, 2));
+      console.log('🖼️ [ИСПРАВЛЕНИЕ] Полный ответ Edge Function:', JSON.stringify(response, null, 2));
 
       if (response?.error) {
-        console.error('❌ [ЭТАП 5] Ошибка Edge Function:', response.error);
+        console.error('❌ [ИСПРАВЛЕНИЕ] Ошибка Edge Function:', response.error);
         throw new Error(`Image generation error: ${response.error.message}`);
       }
 
-      console.log('🖼️ [ЭТАП 5] Попытка извлечения imageUrl из ответа...');
+      console.log('🖼️ [ИСПРАВЛЕНИЕ] Попытка извлечения imageUrl из ответа...');
       const generatedImageUrl = extractImageUrl(response, messageData.mode);
       
       if (generatedImageUrl) {
-        console.log('✅ [ЭТАП 5] Успешно извлечен imageUrl:', generatedImageUrl);
+        console.log('✅ [ИСПРАВЛЕНИЕ] Успешно извлечен imageUrl:', generatedImageUrl);
         
         if (generatedImageUrl.startsWith('http') || generatedImageUrl.startsWith('data:image')) {
-          console.log('🎨 [ЭТАП 5] Применяем сгенерированное изображение как фон кошелька');
+          console.log('🎨 [ИСПРАВЛЕНИЕ] Применяем сгенерированное изображение как фон кошелька');
           
           // ✅ ЭТАП 4: Накопительное применение с историей
           get().applyGeneratedImage(generatedImageUrl);
@@ -450,19 +457,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
             isLoading: false
           }));
           
-          console.log('✅ [ЭТАП 5] Генерация изображения и авто-применение завершены успешно');
+          console.log('✅ [ИСПРАВЛЕНИЕ] Генерация изображения и авто-применение завершены успешно');
         } else {
-          console.error('❌ [ЭТАП 5] Неверный формат imageUrl:', generatedImageUrl);
+          console.error('❌ [ИСПРАВЛЕНИЕ] Неверный формат imageUrl:', generatedImageUrl);
           throw new Error(`Invalid image URL format: ${generatedImageUrl}`);
         }
       } else {
-        console.error('❌ [ЭТАП 5] Не удалось извлечь imageUrl из ответа');
-        console.error('❌ [ЭТАП 5] Структура ответа для отладки:', JSON.stringify(response, null, 2));
+        console.error('❌ [ИСПРАВЛЕНИЕ] Не удалось извлечь imageUrl из ответа');
+        console.error('❌ [ИСПРАВЛЕНИЕ] Структура ответа для отладки:', JSON.stringify(response, null, 2));
         throw new Error('No image returned from generation service - check Edge Function logs');
       }
 
     } catch (error) {
-      console.error('💥 [ЭТАП 5] Ошибка генерации изображения:', error);
+      console.error('💥 [ИСПРАВЛЕНИЕ] Ошибка генерации изображения:', error);
       
       // ✅ ЭТАП 5: Улучшенная визуальная обратная связь об ошибке
       toast.error(`❌ Image generation failed: ${error.message}`, {

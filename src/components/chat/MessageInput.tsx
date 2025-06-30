@@ -92,25 +92,33 @@ const MessageInput: React.FC<MessageInputProps> = ({
     setIsLoading(true);
 
     try {
-      console.log('💬 Sending message in mode:', imageGenerationMode, 'Message:', currentMessage, 'Has file:', !!fileToSend);
+      console.log('💬 [ИСПРАВЛЕНИЕ] Отправка сообщения в режиме:', imageGenerationMode);
+      console.log('💬 [ИСПРАВЛЕНИЕ] Сообщение:', currentMessage);
+      console.log('💬 [ИСПРАВЛЕНИЕ] Есть файл:', !!fileToSend);
 
-      // Направляем запрос в правильную функцию в зависимости от режима
-      if (imageGenerationMode === 'analysis') {
-        // Режим анализа стилей - используем обычную функцию chat
+      // ✅ ИСПРАВЛЕНИЕ: Четкое разделение логики по режимам
+      if (imageGenerationMode === 'leonardo') {
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Leonardo генерацию');
+        await sendImageGenerationMessage({ 
+          content: currentMessage, 
+          mode: 'leonardo' 
+        });
+      } else if (imageGenerationMode === 'replicate') {
+        console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Replicate генерацию');
+        await sendImageGenerationMessage({ 
+          content: currentMessage, 
+          mode: 'replicate' 
+        });
+      } else {
+        console.log('🧠 [ИСПРАВЛЕНИЕ] Вызываем анализ стилей');
         await sendMessage({ 
           content: currentMessage,
           imageUrl: fileToSend?.preview || null
         });
-      } else {
-        // Режимы генерации изображений - используем специальную функцию
-        await sendImageGenerationMessage({ 
-          content: currentMessage, 
-          mode: imageGenerationMode 
-        });
       }
       
     } catch (error) {
-      console.error('💥 Message send error:', error);
+      console.error('💥 [ИСПРАВЛЕНИЕ] Ошибка отправки:', error);
       toast.error('Sorry, there was an error sending your message. Please try again.');
     } finally {
       setIsLoading(false);
@@ -145,14 +153,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Mode Indicator */}
-      <div className="flex items-center gap-2 text-xs text-white/60">
+      {/* ✅ ИСПРАВЛЕНИЕ: Улучшенный индикатор режима */}
+      <div className="flex items-center gap-2 text-xs text-white/60 bg-white/5 px-3 py-2 rounded-lg">
         {getModeIcon()}
-        <span>
-          {imageGenerationMode === 'analysis' ? 'Style Analysis Mode' : 
-           imageGenerationMode === 'leonardo' ? 'Leonardo.ai Generation Mode' : 
-           'Replicate Art Mode'}
+        <span className="font-medium">
+          {imageGenerationMode === 'analysis' ? '🧠 Style Analysis Mode' : 
+           imageGenerationMode === 'leonardo' ? '🎨 Leonardo.ai Generation Mode' : 
+           '🎨 Replicate Art Mode'}
         </span>
+        {imageGenerationMode !== 'analysis' && (
+          <span className="text-green-400 text-xs">→ Will generate image</span>
+        )}
       </div>
       
       {/* File Preview */}

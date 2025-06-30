@@ -64,12 +64,19 @@ const ImageGenerationSelector = () => {
         ))}
       </div>
       
-      {/* Mode Description */}
+      {/* ✅ ИСПРАВЛЕНИЕ: Четкий индикатор активного режима */}
       <div className="text-xs text-white/50 mt-2">
-        {modes.find(m => m.key === imageGenerationMode)?.description}
+        <span className="font-medium">Active:</span> {modes.find(m => m.key === imageGenerationMode)?.description}
       </div>
       
-      {/* Mode-specific tips instead of fixed prompts */}
+      {/* ✅ ИСПРАВЛЕНИЕ: Предупреждение о правильном использовании */}
+      {imageGenerationMode !== 'analysis' && (
+        <div className="text-xs text-green-400 mt-2 p-2 bg-green-500/10 rounded border border-green-500/20">
+          🎨 <strong>Image Generation Mode Active:</strong> Your prompt will create a new background image
+        </div>
+      )}
+      
+      {/* Mode-specific tips */}
       <div className="text-xs text-white/40 mt-2 p-2 bg-white/5 rounded">
         {imageGenerationMode === 'leonardo' && (
           <p>💡 Tips: Try "cosmic nebula background", "neon cyberpunk cityscape", or "abstract crypto patterns"</p>
