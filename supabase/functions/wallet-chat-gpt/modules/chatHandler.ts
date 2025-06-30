@@ -2,7 +2,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createWalletManager, type WalletAIContext } from './walletManager.ts';
 import { createStyleAnalyzer, type StyleAnalysis } from './styleAnalyzer.ts';
-import { JSONParser } from '../utils/json-parser.ts';
+import { AdvancedJSONParser } from '../utils/json-parser.ts';
 import { createPromptBuilder } from '../utils/prompt-builder.ts';
 
 export interface ChatContext {
@@ -579,7 +579,7 @@ export class ChatHandler {
         const aiResponse = await response.json();
         const content = aiResponse.choices[0].message.content;
         
-        const intent = JSONParser.parseAIResponse(content);
+        const intent = AdvancedJSONParser.parseAIResponse(content);
         if (intent && intent.type) {
           // Кешируем результат
           this.intentCache.set(cacheKey, intent);

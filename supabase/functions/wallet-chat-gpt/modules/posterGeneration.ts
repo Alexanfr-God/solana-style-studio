@@ -4,7 +4,7 @@ import { createImageGenerationManager, type ImageGenerationRequest } from './ima
 import { createStyleAnalyzer, type StyleAnalysis } from './styleAnalyzer.ts';
 import { createStorageManager } from '../utils/storage-manager.ts';
 import { createPromptBuilder } from '../utils/prompt-builder.ts';
-import { JSONParser } from '../utils/json-parser.ts';
+import { AdvancedJSONParser } from '../utils/json-parser.ts';
 
 export interface PosterConfig {
   type: 'nft' | 'social' | 'banner' | 'avatar' | 'wallpaper' | 'trading_card' | 'profile_header';
