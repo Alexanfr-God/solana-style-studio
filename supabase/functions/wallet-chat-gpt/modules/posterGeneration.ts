@@ -868,4 +868,88 @@ export class PosterGenerator {
     const mapping = {
       'nft': 'nft',
       'social': 'banner',
-      'banner':
+      'banner': 'banner',
+      'avatar': 'avatar',
+      'wallpaper': 'wallpaper',
+      'trading_card': 'poster',
+      'profile_header': 'banner'
+    };
+
+    return mapping[posterType] || 'poster';
+  }
+
+  private generateAlternativeColors(baseColors: string[]): string[] {
+    // Generate complementary or analogous color variations
+    return baseColors.map(color => {
+      // Simple color variation logic
+      return color.replace('#', '#ff');
+    });
+  }
+
+  private getAlternativeMood(baseMood: string): any {
+    const moodAlternatives = {
+      'powerful': 'epic',
+      'playful': 'fun',
+      'serious': 'professional',
+      'epic': 'powerful',
+      'elegant': 'sophisticated',
+      'aggressive': 'intense',
+      'calming': 'peaceful'
+    };
+
+    return moodAlternatives[baseMood] || 'confident';
+  }
+
+  private getAlternativeComposition(baseComposition: string): any {
+    const compositionAlternatives = {
+      'centered': 'rule_of_thirds',
+      'rule_of_thirds': 'dynamic',
+      'dynamic': 'portrait',
+      'portrait': 'landscape',
+      'landscape': 'centered'
+    };
+
+    return compositionAlternatives[baseComposition] || 'centered';
+  }
+
+  private calculateAspectRatio(dimensions: { width: number; height: number }): string {
+    const ratio = dimensions.width / dimensions.height;
+    
+    if (Math.abs(ratio - 1) < 0.1) return '1:1';
+    if (Math.abs(ratio - 16/9) < 0.1) return '16:9';
+    if (Math.abs(ratio - 4/3) < 0.1) return '4:3';
+    if (Math.abs(ratio - 3/2) < 0.1) return '3:2';
+    
+    return `${dimensions.width}:${dimensions.height}`;
+  }
+
+  private async savePosterToDatabase(
+    config: PosterConfig,
+    imageResult: any,
+    promptResult: any,
+    userRequest: string
+  ): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('generated_posters')
+        .insert({
+          config: JSON.stringify(config),
+          image_url: imageResult.imageUrl,
+          prompt: promptResult.prompt,
+          user_request: userRequest,
+          metadata: JSON.stringify(promptResult.metadata)
+        });
+
+      if (error) {
+        console.error('Failed to save poster to database:', error);
+      }
+    } catch (error) {
+      console.error('Database save error:', error);
+    }
+  }
+}
+
+// Factory function to create poster generator
+export function createPosterGenerator(supabaseUrl: string, supabaseKey: string): PosterGenerator {
+  return new PosterGenerator(supabaseUrl, supabaseKey);
+}
