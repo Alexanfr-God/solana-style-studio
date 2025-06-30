@@ -1,9 +1,8 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createWalletManager, type WalletAIContext } from './walletManager.ts';
 import { createStyleAnalyzer, type StyleAnalysis } from './styleAnalyzer.ts';
 import { AdvancedJSONParser } from '../utils/json-parser.ts';
-import { createPromptBuilder } from '../utils/prompt-builder.ts';
+import { createAdvancedPromptBuilder } from '../utils/prompt-builder.ts';
 
 export interface ChatContext {
   userId?: string;
@@ -112,7 +111,7 @@ export class ChatHandler {
     this.supabase = createClient(supabaseUrl, supabaseKey);
     this.walletManager = createWalletManager(supabaseUrl, supabaseKey);
     this.styleAnalyzer = createStyleAnalyzer(supabaseUrl, supabaseKey);
-    this.promptBuilder = createPromptBuilder();
+    this.promptBuilder = createAdvancedPromptBuilder();
   }
 
   /**
