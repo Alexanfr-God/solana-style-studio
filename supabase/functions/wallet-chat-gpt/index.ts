@@ -82,157 +82,219 @@ serve(async (req) => {
     const storageManager = createStorageManager(supabaseUrl, supabaseKey);
     const promptBuilder = createAdvancedPromptBuilder();
 
-    const body = await req.json();
-    const { 
-      content, 
-      imageUrl, 
-      walletContext, 
-      mode, 
-      sessionId,
-      userId,
-      chatHistory,
-      isImageGeneration,
-      debugMode
-    } = body;
+    // ========================================
+// МЕСТО 1: ЗАМЕНА В ОСНОВНОЙ ФУНКЦИИ serve()
+// ========================================
 
-    // ✅ ЭТАП 1: ДЕТАЛЬНАЯ ДИАГНОСТИКА ВХОДЯЩИХ ДАННЫХ
-    console.log('🚀 [ДИАГНОСТИКА] Enhanced wallet-chat-gpt запрос:');
-    console.log('📋 [ДИАГНОСТИКА] Полное тело запроса:', JSON.stringify({
-      content: content?.substring(0, 50) + '...',
-      mode,
-      isImageGeneration,
-      debugMode,
-      walletType: walletContext?.walletType,
-      sessionId
-    }, null, 2));
+// НАЙТИ ЭТИ СТРОКИ (примерно строка 85-95):
+const body = await req.json();
+const { content, imageUrl, walletContext, mode, sessionId, userId, chatHistory, isImageGeneration, debugMode } = body;
 
-    // ✅ ВАЛИДАЦИЯ РЕЖИМА С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ
-    const validation = validateMode(mode);
-    if (!validation.isValid) {
-      console.error('❌ [КРИТИЧЕСКАЯ ОШИБКА] Неверный режим:', validation.error);
-      return createErrorResponse(`Invalid mode: ${validation.error}`, 400);
+// ✅ ЭТАП 1: ДЕТАЛЬНАЯ ДИАГНОСТИКА ВХОДЯЩИХ ДАННЫХ
+console.log('🚀 [ДИАГНОСТИКА] Enhanced wallet-chat-gpt запрос:');
+console.log('📋 [ДИАГНОСТИКА] Полное тело запроса:', JSON.stringify({
+  content: content?.substring(0, 50) + '...',
+  mode,
+  isImageGeneration,
+  debugMode,
+  walletType: walletContext?.walletType,
+  sessionId
+}, null, 2));
+
+// ✅ ВАЛИДАЦИЯ РЕЖИМА С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ
+const validation = validateMode(mode);
+
+// ПОСЛЕ ЭТИХ СТРОК ДОБАВИТЬ:
+// ========================================
+// 🚨 НОВЫЙ КОД ВСТАВИТЬ ЗДЕСЬ 🚨
+// ========================================
+
+// ✅ КРИТИЧЕСКИ ВАЖНО: ДОБАВИТЬ ПРОВЕРКУ КОНТЕНТА НА КОМАНДЫ ГЕНЕРАЦИИ
+const hasGenerationKeywords = content && (
+  content.toLowerCase().includes('generate') || 
+  content.toLowerCase().includes('create image') || 
+  content.toLowerCase().includes('генерировать') || 
+  content.toLowerCase().includes('создать изображение') ||
+  content.toLowerCase().includes('сгенерируй') ||
+  content.toLowerCase().includes('создай картинку')
+);
+
+console.log('🔍 [ДЕТЕКЦИЯ] Обнаружены ключевые слова генерации:', hasGenerationKeywords);
+
+// ✅ ЭТАП 3: УМНАЯ МАРШРУТИЗАЦИЯ С АВТООПРЕДЕЛЕНИЕМ
+let finalMode = validatedMode;
+
+// ⚡ АВТОМАТИЧЕСКОЕ ПЕРЕОПРЕДЕЛЕНИЕ РЕЖИМА ДЛЯ ГЕНЕРАЦИИ
+if (hasGenerationKeywords && (validatedMode === 'analysis' || validatedMode === 'chat')) {
+  console.log('🎯 [АВТООПРЕДЕЛЕНИЕ] Команда генерации обнаружена, переключаем на leonardo');
+  finalMode = 'leonardo'; // или 'replicate' по умолчанию
+}
+
+// ========================================
+// 🚨 КОНЕЦ НОВОГО КОДА 🚨
+// ========================================
+
+// ПРОДОЛЖИТЬ СО СТРОКИ (найти в вашем коде):
+// ✅ ЭТАП 3: СТРОГАЯ МАРШРУТИЗАЦИЯ БЕЗ DEFAULT FALLBACK
+switch(validatedMode){ // 🚨 ЗАМЕНИТЬ НА: switch(finalMode){
+
+// ========================================
+// МЕСТО 2: ИЗМЕНЕНИЕ В SWITCH CASE
+// ========================================
+
+// НАЙТИ ЭТУ СТРОКУ (примерно строка 120):
+switch(validatedMode){
+
+// 🚨 ЗАМЕНИТЬ НА:
+switch(finalMode){
+
+// ========================================
+// МЕСТО 3: ДОБАВИТЬ ЗАЩИТУ В CASE 'analysis'
+// ========================================
+
+// НАЙТИ ЭТОТ CASE (примерно строка 150):
+case 'analysis':
+  console.log('🧠 [РОУТИНГ] ANALYSIS - ТОЛЬКО С JSON ПАРСИНГОМ');
+  // ✅ ЭТАП 3: ЗАЩИТА - убедимся что команды генерации не попали сюда
+  if (content && (content.toLowerCase().includes('generate') || content.toLowerCase().includes('create image') || content.toLowerCase().includes('генерировать') || content.toLowerCase().includes('создать изображение'))) {
+    console.error('❌ [ЗАЩИТА] Команда генерации попала в режим analysis!');
+    console.error('❌ [ЗАЩИТА] Контент:', content);
+    console.error('❌ [ЗАЩИТА] Режим:', validatedMode);
+    return createErrorResponse('Image generation command detected in analysis mode. Please select Leonardo or Replicate mode for image generation.', 400);
+  }
+
+// 🚨 ЗАМЕНИТЬ ВСЮ ЗАЩИТУ НА:
+case 'analysis':
+  console.log('🧠 [РОУТИНГ] ANALYSIS - ТОЛЬКО С JSON ПАРСИНГОМ');
+  
+  // ✅ ДВОЙНАЯ ЗАЩИТА - убедимся что команды генерации не попали сюда
+  if (hasGenerationKeywords) {
+    console.error('❌ [ЗАЩИТА] Команда генерации попала в режим analysis! Блокируем.');
+    return createErrorResponse('Обнаружена команда генерации изображения. Пожалуйста, выберите режим Leonardo или Replicate для создания изображений.', 400);
+  }
+
+// ========================================
+// МЕСТО 4: ПОЛНАЯ ЗАМЕНА handleImageGeneration
+// ========================================
+
+// НАЙТИ ФУНКЦИЮ (примерно строка 300-400):
+async function handleImageGeneration(mode, prompt, supabase, promptBuilder) {
+  try {
+    console.log(`🖼️ [ГЕНЕРАЦИЯ] СТАРТ ${mode.toUpperCase()} - БЕЗ JSON ПАРСИНГА`);
+    // ... весь существующий код ...
+  } catch (error) {
+    // ... обработка ошибок ...
+  }
+}
+
+// 🚨 ЗАМЕНИТЬ ВСЕЙ ФУНКЦИЕЙ:
+async function handleImageGeneration(mode, prompt, supabase, promptBuilder) {
+  try {
+    console.log(`🖼️ [ГЕНЕРАЦИЯ] СТАРТ ${mode.toUpperCase()} - НИКАКОГО JSON ПАРСИНГА!`);
+    console.log(`📝 [ГЕНЕРАЦИЯ] Промпт: "${prompt}"`);
+    
+    // ✅ ЗАЩИТА: Убедимся что это не попало сюда случайно
+    if (mode !== 'leonardo' && mode !== 'replicate') {
+      console.error('❌ [ЗАЩИТА] Неверный режим в handleImageGeneration:', mode);
+      throw new Error(`Invalid image generation mode: ${mode}`);
     }
-    
-    const validatedMode = validation.mode;
-    console.log('✅ [ВАЛИДАЦИЯ] Режим валиден:', validatedMode);
 
-    // ✅ ЭТАП 2: ПРОВЕРКА НА ГЕНЕРАЦИЮ ИЗОБРАЖЕНИЙ
-    const isGeneration = isImageGenerationMode(validatedMode);
-    console.log('🎨 [МАРШРУТИЗАЦИЯ] Это генерация изображения?', isGeneration);
+    // Validate prompt
+    if (!prompt || prompt.trim().length === 0) {
+      throw new Error('Prompt is required for image generation');
+    }
+
+    // Check API key availability
+    const apiKeyName = mode === 'leonardo' ? 'LEONARDO_API_KEY' : 'REPLICATE_API_KEY';
+    const apiKey = Deno.env.get(apiKeyName);
     
-    if (isGeneration) {
-      console.log('🎨 [МАРШРУТИЗАЦИЯ] НАПРАВЛЯЕМ В ГЕНЕРАЦИЮ БЕЗ JSON ПАРСИНГА');
+    if (!apiKey) {
+      console.error(`❌ [ГЕНЕРАЦИЯ] ${apiKeyName} not found in environment`);
+      throw new Error(`${mode.charAt(0).toUpperCase() + mode.slice(1)} API key not configured`);
+    }
+
+    console.log(`✅ [ГЕНЕРАЦИЯ] ${apiKeyName} найден, начинаем генерацию...`);
+
+    // ✅ Простое улучшение промпта для wallet контекста
+    const enhancedPrompt = `${prompt}, digital wallet interface background, mobile app design, clean and modern, suitable for cryptocurrency wallet, high quality, detailed, artistic, vibrant colors, 4k resolution`;
+    
+    console.log(`🎯 [ГЕНЕРАЦИЯ] Enhanced prompt: ${enhancedPrompt}`);
+
+    let result;
+    if (mode === 'leonardo') {
+      console.log(`🎨 [ГЕНЕРАЦИЯ] Вызываем generateImageWithLeonardo...`);
+      result = await generateImageWithLeonardo(enhancedPrompt, supabase);
     } else {
-      console.log('🧠 [МАРШРУТИЗАЦИЯ] НАПРАВЛЯЕМ В АНАЛИЗ С JSON ПАРСИНГОМ');
+      console.log(`🎨 [ГЕНЕРАЦИЯ] Вызываем generateImageWithReplicate...`);
+      result = await generateImageWithReplicate(enhancedPrompt, supabase);
     }
 
-    // ✅ ЭТАП 3: СТРОГАЯ МАРШРУТИЗАЦИЯ БЕЗ DEFAULT FALLBACK
-    switch (validatedMode) {
-      case 'structure':
-        console.log('🏗️ [РОУТИНГ] Обработка структуры');
-        return await handleStructureMode(elementsManager, walletContext?.walletType || 'phantom');
-      
-      case 'chat':
-        console.log('💬 [РОУТИНГ] Обработка чата');
-        return await handleChatMode(
-          chatHandler, 
-          content, 
-          imageUrl, 
-          walletContext, 
-          sessionId, 
-          chatHistory,
-          storageManager
-        );
-      
-      case 'style-analysis':
-        console.log('🎨 [РОУТИНГ] Обработка анализа стилей');
-        return await handleStyleAnalysisMode(
-          styleAnalyzer, 
-          content, 
-          imageUrl, 
-          walletContext
-        );
-      
-      case 'leonardo':
-        console.log('🎨 [РОУТИНГ] LEONARDO - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
-        return await handleImageGeneration('leonardo', content, supabase, promptBuilder);
-      
-      case 'replicate':
-        console.log('🎨 [РОУТИНГ] REPLICATE - ЧИСТАЯ ГЕНЕРАЦИЯ БЕЗ JSON');
-        return await handleImageGeneration('replicate', content, supabase, promptBuilder);
-      
-      case 'poster-generation':
-        console.log('🎨 [РОУТИНГ] Обработка генерации постеров');
-        return await handlePosterGeneration(
-          posterGenerator, 
-          content, 
-          walletContext,
-          body.posterConfig
-        );
-      
-      case 'save-customization':
-        console.log('💾 [РОУТИНГ] Сохранение кастомизации');
-        return await handleSaveCustomization(
-          storageManager,
-          walletContext,
-          body.customizations,
-          userId
-        );
-      
-      case 'load-customization':
-        console.log('📂 [РОУТИНГ] Загрузка кастомизации');
-        return await handleLoadCustomization(
-          storageManager,
-          walletContext?.walletType,
-          userId
-        );
-      
-      case 'analysis':
-        console.log('🧠 [РОУТИНГ] ANALYSIS - ТОЛЬКО С JSON ПАРСИНГОМ');
-        
-        // ✅ ЭТАП 3: ЗАЩИТА - убедимся что команды генерации не попали сюда
-        if (content && (
-          content.toLowerCase().includes('generate') || 
-          content.toLowerCase().includes('create image') ||
-          content.toLowerCase().includes('генерировать') ||
-          content.toLowerCase().includes('создать изображение')
-        )) {
-          console.error('❌ [ЗАЩИТА] Команда генерации попала в режим analysis!');
-          console.error('❌ [ЗАЩИТА] Контент:', content);
-          console.error('❌ [ЗАЩИТА] Режим:', validatedMode);
-          
-          return createErrorResponse(
-            'Image generation command detected in analysis mode. Please select Leonardo or Replicate mode for image generation.',
-            400
-          );
-        }
-        
-        return await handleAnalysisMode(
-          content,
-          imageUrl,
-          walletContext,
-          supabase,
-          elementsManager,
-          walletManager,
-          promptBuilder
-        );
-      
-      default:
-        // ✅ ЭТАП 2: НЕТ FALLBACK НА ANALYSIS - ТОЛЬКО ОШИБКА
-        console.error('❌ [МАРШРУТИЗАЦИЯ] Неизвестный режим попал в default:', validatedMode);
-        return createErrorResponse(
-          `Unsupported mode: "${validatedMode}". This is a routing error.`,
-          400
-        );
+    console.log(`🎯 [ГЕНЕРАЦИЯ] ${mode} результат:`, result.success ? 'SUCCESS' : 'FAILED');
+    console.log(`🔍 [ГЕНЕРАЦИЯ] Result imageUrl:`, result.imageUrl);
+
+    if (!result.success) {
+      console.error(`❌ [ГЕНЕРАЦИЯ] ${mode} generation failed:`, result.error);
+      throw new Error(result.error || 'Image generation failed');
     }
+
+    // ✅ ЧЕТКАЯ структура ответа БЕЗ JSON парсинга
+    const response = {
+      success: true,
+      imageUrl: result.imageUrl,
+      status: 'completed',
+      data: {
+        imageUrl: result.imageUrl, // ✅ Дублируем для надежности
+        promptUsed: enhancedPrompt,
+        generationTime: new Date().toISOString()
+      },
+      metadata: {
+        prompt: enhancedPrompt,
+        model: mode,
+        dimensions: {
+          width: 1024,
+          height: 1024
+        },
+        // ✅ НИКАКОГО JSON ПАРСИНГА!
+        processingMode: 'direct_generation',
+        jsonParsing: false
+      }
+    };
+
+    console.log(`✅ [ГЕНЕРАЦИЯ] Финальный ответ БЕЗ JSON:`, {
+      success: response.success,
+      imageUrl: response.imageUrl,
+      'data.imageUrl': response.data?.imageUrl,
+      processingMode: response.metadata.processingMode
+    });
+
+    return createSuccessResponse(response);
 
   } catch (error) {
-    console.error('💥 [ОШИБКА] Error in enhanced wallet-chat-gpt:', error);
-    console.error('💥 [ОШИБКА] Error stack:', error.stack);
-    return createErrorResponse(error.message, 500);
-  }
-});
+    console.error(`💥 [ГЕНЕРАЦИЯ] Ошибка в ${mode} image generation:`, error);
+    
+    const response = {
+      success: false,
+      error: error.message,
+      status: 'failed',
+      data: {
+        imageUrl: null,
+        promptUsed: prompt
+      },
+      metadata: {
+        prompt,
+        model: mode,
+        processingMode: 'direct_generation_failed',
+        jsonParsing: false,
+        dimensions: {
+          width: 1024,
+          height: 1024
+        }
+      }
+    };
 
+    return createErrorResponse(error.message, 500, response);
+  }
+}
 // ====== Mode Handlers ======
 
 /**
