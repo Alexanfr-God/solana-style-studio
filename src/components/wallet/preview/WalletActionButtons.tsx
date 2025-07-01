@@ -51,18 +51,22 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
         return (
           <div key={action.id} className="flex flex-col items-center">
             <button 
+              className={`home-${action.id}-button`}
+              data-element-id={`home-${action.id}-button`}
               style={actionButtonStyle}
               onClick={() => onAction(action.label)}
               onMouseEnter={() => setHoveredAction(action.id)}
               onMouseLeave={() => setHoveredAction(null)}
             >
               <action.icon 
-                className="h-5 w-5" 
+                className={`h-5 w-5 home-${action.id}-icon`}
+                data-element-id={`home-${action.id}-icon`}
                 style={{ color: style.accentColor || '#9b87f5' }} 
               />
             </button>
             <span 
-              className="text-xs mt-2"
+              className={`text-xs mt-2 home-${action.id}-label`}
+              data-element-id={`home-${action.id}-label`}
               style={{ 
                 color: containerStyle.color || '#FFFFFF',
                 fontFamily: containerStyle.fontFamily 

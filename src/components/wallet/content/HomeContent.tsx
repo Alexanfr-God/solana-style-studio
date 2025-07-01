@@ -49,15 +49,17 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
   return (
     <div className="relative flex-1 overflow-y-auto px-4 pb-4 z-[1]">
       {/* Balance Section */}
-      <div className="pt-4 pb-6 text-center">
+      <div className="pt-4 pb-6 text-center home-balance-section" data-element-id="home-balance-section">
         <div 
-          className="text-sm opacity-70 mb-1"
+          className="text-sm opacity-70 mb-1 home-balance-label"
+          data-element-id="home-balance-label"
           style={{ color: balanceStyle.color }}
         >
           Total Balance
         </div>
         <div 
-          className="text-3xl font-bold mb-1"
+          className="text-3xl font-bold mb-1 home-sol-amount"
+          data-element-id="home-sol-amount"
           style={{ 
             color: balanceStyle.color,
             fontFamily: balanceStyle.fontFamily 
@@ -66,7 +68,8 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
           {totalBalance}
         </div>
         <div 
-          className="text-sm font-medium"
+          className="text-sm font-medium home-usd-value"
+          data-element-id="home-usd-value"
           style={changeStyle}
         >
           {totalChange}
@@ -74,7 +77,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
       </div>
 
       {/* Action Buttons with proper z-index isolation */}
-      <div className="relative z-[2]">
+      <div className="relative z-[2] home-actions-row" data-element-id="home-actions-row">
         <WalletActionButtons 
           onAction={handleAction} 
           style={{ 
@@ -86,14 +89,16 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
       </div>
 
       {/* Assets Section */}
-      <div className="mt-6">
+      <div className="mt-6 home-assets-section" data-element-id="home-assets-section">
         <div 
-          className="flex justify-between items-center mb-4"
+          className="flex justify-between items-center mb-4 home-assets-header"
+          data-element-id="home-assets-header"
           style={{ color: balanceStyle.color }}
         >
-          <span className="font-medium">Assets</span>
+          <span className="font-medium home-assets-title" data-element-id="home-assets-title">Assets</span>
           <span 
-            className="text-sm opacity-70 cursor-pointer hover:opacity-100"
+            className="text-sm opacity-70 cursor-pointer hover:opacity-100 home-see-all"
+            data-element-id="home-see-all"
             style={{ 
               color: tokenColors.info,
               transition: getTransition('global')
@@ -103,7 +108,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
           </span>
         </div>
         
-        <div className="space-y-3">
+        <div className="space-y-3 home-assets-list" data-element-id="home-assets-list">
           {tokens.map(token => (
             <WalletAssetItem
               key={token.id}

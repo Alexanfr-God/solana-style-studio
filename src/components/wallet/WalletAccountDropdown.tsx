@@ -75,7 +75,8 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
     <>
       {/* Backdrop with rounded corners */}
       <div 
-        className="fixed w-80 backdrop-blur-sm z-[9997] rounded-xl"
+        className="fixed w-80 backdrop-blur-sm z-[9997] rounded-xl account-dropdown-overlay"
+        data-element-id="account-dropdown-overlay"
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.2)',
           borderRadius: overlayStyle.borderRadius || '16px',
@@ -97,7 +98,8 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
       {/* Dropdown */}
       <div 
         ref={dropdownRef}
-        className="fixed w-80 rounded-xl border shadow-2xl overflow-hidden animate-fade-in z-[9999]"
+        className="fixed w-80 rounded-xl border shadow-2xl overflow-hidden animate-fade-in z-[9999] account-dropdown-menu"
+        data-element-id="account-dropdown-menu"
         style={{
           backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
           backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',

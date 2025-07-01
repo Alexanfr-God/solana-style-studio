@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useWalletStyles } from '@/hooks/useWalletStyles';
 
@@ -49,14 +48,15 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
 
   return (
     <div 
-      className="mb-3 p-4 rounded-xl flex justify-between items-center"
+      className="mb-3 p-4 rounded-xl flex justify-between items-center home-asset-item"
+      data-element-id="home-asset-item"
       style={interactiveStyle}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-center">
-        <div className="mr-3 relative">
+        <div className="mr-3 relative home-asset-icon" data-element-id="home-asset-icon">
           <div 
             className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white"
             style={{ backgroundColor: style.accentColor || '#9945FF' }}
@@ -80,7 +80,8 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
         </div>
         <div>
           <div 
-            className="font-medium"
+            className="font-medium home-asset-name"
+            data-element-id="home-asset-name"
             style={{ 
               color: textColor,
               fontFamily: cardStyle.fontFamily 
@@ -89,7 +90,8 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
             {name}
           </div>
           <div 
-            className="text-xs opacity-70"
+            className="text-xs opacity-70 home-asset-symbol"
+            data-element-id="home-asset-symbol"
             style={{ color: textColor }}
           >
             {amount} {ticker}
@@ -98,7 +100,8 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
       </div>
       <div className="text-right">
         <div 
-          className="font-medium"
+          className="font-medium home-asset-value"
+          data-element-id="home-asset-value"
           style={{ 
             color: textColor,
             fontFamily: cardStyle.fontFamily 
@@ -108,7 +111,8 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
         </div>
         {change && (
           <div 
-            className="text-xs"
+            className="text-xs home-asset-balance"
+            data-element-id="home-asset-balance"
             style={{ color: color || textColor }}
           >
             {change}
