@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ArrowUpDown, Settings, Info } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -64,7 +65,7 @@ const SwapContent = () => {
               borderRadius: buttonStyle.borderRadius || '8px'
             }}
           >
-            <Settings className="w-5 h-5 text-gray-400" />
+            <Settings className="w-5 h-5 text-gray-400 swap-settings-icon" data-element-id="swap-settings-icon" />
           </button>
         </div>
 
@@ -81,13 +82,15 @@ const SwapContent = () => {
         >
           <div className="flex justify-between items-center mb-2">
             <span 
-              className="text-sm text-gray-400"
+              className="text-sm text-gray-400 swap-from-label"
+              data-element-id="swap-from-label"
               style={{ fontFamily: globalStyle.fontFamily }}
             >
               From
             </span>
             <span 
-              className="text-sm text-gray-400"
+              className="text-sm text-gray-400 swap-from-balance"
+              data-element-id="swap-from-balance"
               style={{ fontFamily: globalStyle.fontFamily }}
             >
               Balance: 5.03737 SOL
@@ -99,25 +102,28 @@ const SwapContent = () => {
               placeholder="0.0"
               value={fromAmount}
               onChange={(e) => setFromAmount(e.target.value)}
-              className="flex-1 bg-transparent text-2xl font-medium text-white placeholder-gray-500 focus:outline-none"
+              className="flex-1 bg-transparent text-2xl font-medium text-white placeholder-gray-500 focus:outline-none swap-from-input"
+              data-element-id="swap-from-input"
               style={{
                 fontFamily: globalStyle.fontFamily,
                 color: globalStyle.textColor
               }}
             />
             <button 
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors swap-from-token-button"
+              data-element-id="swap-from-token-button"
               style={{
                 backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
                 borderRadius: buttonStyle.borderRadius || '8px',
                 transition: buttonStyle.transition
               }}
             >
-              <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold">◎</span>
+              <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center swap-from-token-icon" data-element-id="swap-from-token-icon">
+                <span className="text-xs font-bold swap-from-token-symbol" data-element-id="swap-from-token-symbol">◎</span>
               </div>
               <span 
-                className="font-medium"
+                className="font-medium swap-from-token-name"
+                data-element-id="swap-from-token-name"
                 style={{
                   color: buttonStyle.textColor || '#FFFFFF',
                   fontFamily: globalStyle.fontFamily
@@ -141,7 +147,7 @@ const SwapContent = () => {
               transition: buttonStyle.transition
             }}
           >
-            <ArrowUpDown className="w-5 h-5 text-gray-400" />
+            <ArrowUpDown className="w-5 h-5 text-gray-400 swap-flip-icon" data-element-id="swap-flip-icon" />
           </button>
         </div>
 
@@ -158,13 +164,15 @@ const SwapContent = () => {
         >
           <div className="flex justify-between items-center mb-2">
             <span 
-              className="text-sm text-gray-400"
+              className="text-sm text-gray-400 swap-to-label"
+              data-element-id="swap-to-label"
               style={{ fontFamily: globalStyle.fontFamily }}
             >
               To
             </span>
             <span 
-              className="text-sm text-gray-400"
+              className="text-sm text-gray-400 swap-to-balance"
+              data-element-id="swap-to-balance"
               style={{ fontFamily: globalStyle.fontFamily }}
             >
               Balance: 0 USDC
@@ -176,25 +184,28 @@ const SwapContent = () => {
               placeholder="0.0"
               value={toAmount}
               onChange={(e) => setToAmount(e.target.value)}
-              className="flex-1 bg-transparent text-2xl font-medium text-white placeholder-gray-500 focus:outline-none"
+              className="flex-1 bg-transparent text-2xl font-medium text-white placeholder-gray-500 focus:outline-none swap-to-input"
+              data-element-id="swap-to-input"
               style={{
                 fontFamily: globalStyle.fontFamily,
                 color: globalStyle.textColor
               }}
             />
             <button 
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors swap-to-token-button"
+              data-element-id="swap-to-token-button"
               style={{
                 backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
                 borderRadius: buttonStyle.borderRadius || '8px',
                 transition: buttonStyle.transition
               }}
             >
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold">$</span>
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center swap-to-token-icon" data-element-id="swap-to-token-icon">
+                <span className="text-xs font-bold swap-to-token-symbol" data-element-id="swap-to-token-symbol">$</span>
               </div>
               <span 
-                className="font-medium"
+                className="font-medium swap-to-token-name"
+                data-element-id="swap-to-token-name"
                 style={{
                   color: buttonStyle.textColor || '#FFFFFF',
                   fontFamily: globalStyle.fontFamily
@@ -217,16 +228,18 @@ const SwapContent = () => {
         >
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center space-x-2">
-              <Info className="w-4 h-4 text-gray-400" />
+              <Info className="w-4 h-4 text-gray-400 swap-info-icon" data-element-id="swap-info-icon" />
               <span 
-                className="text-gray-400"
+                className="text-gray-400 swap-rate-label"
+                data-element-id="swap-rate-label"
                 style={{ fontFamily: globalStyle.fontFamily }}
               >
                 Rate
               </span>
             </div>
             <span 
-              className="text-white"
+              className="text-white swap-rate-value"
+              data-element-id="swap-rate-value"
               style={{
                 color: globalStyle.textColor,
                 fontFamily: globalStyle.fontFamily

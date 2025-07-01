@@ -84,18 +84,18 @@ const HistoryContent = () => {
             transition: buttonStyle.transition
           }}
         >
-          <MoreVertical className="w-5 h-5 text-gray-400" />
+          <MoreVertical className="w-5 h-5 text-gray-400 history-menu-icon" data-element-id="history-menu-icon" />
         </button>
       </div>
 
       {/* Transaction Groups by Date */}
       <div className="space-y-4 history-transactions" data-element-id="history-transactions">
         {transactions.map((group, groupIndex) => (
-          <div key={groupIndex}>
+          <div key={groupIndex} className="history-transaction-group" data-element-id={`history-transaction-group-${groupIndex}`}>
             {/* Date Header */}
             <div 
               className="text-xs text-gray-400 mb-3 font-medium history-date"
-              data-element-id="history-date"
+              data-element-id={`history-date-${groupIndex}`}
               style={{ fontFamily: globalStyle.fontFamily }}
             >
               {group.date}
@@ -107,7 +107,7 @@ const HistoryContent = () => {
                 <div
                   key={itemIndex}
                   className="p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer history-transaction-item"
-                  data-element-id="history-transaction-item"
+                  data-element-id={`history-transaction-item-${groupIndex}-${itemIndex}`}
                   onClick={() => handleTransactionClick(transaction.type)}
                   style={{
                     backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.03)',
@@ -121,7 +121,7 @@ const HistoryContent = () => {
                     {/* Transaction Icon/Avatar */}
                     <div className="relative">
                       {transaction.avatar ? (
-                        <div className="w-10 h-10 rounded-full overflow-hidden">
+                        <div className="w-10 h-10 rounded-full overflow-hidden history-transaction-avatar" data-element-id={`history-transaction-avatar-${groupIndex}-${itemIndex}`}>
                           <img
                             src={transaction.avatar}
                             alt="Avatar"
@@ -130,32 +130,35 @@ const HistoryContent = () => {
                         </div>
                       ) : (
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          className={`w-10 h-10 rounded-full flex items-center justify-center history-transaction-icon-container ${
                             transaction.isFailed
                               ? 'bg-red-500/20 border border-red-500/30'
                               : 'bg-gray-600/50'
                           }`}
+                          data-element-id={`history-transaction-icon-container-${groupIndex}-${itemIndex}`}
                           style={{
                             borderRadius: '50%'
                           }}
                         >
                           <transaction.icon
-                            className={`w-5 h-5 ${
+                            className={`w-5 h-5 history-transaction-icon ${
                               transaction.isFailed ? 'text-red-400' : 'text-gray-300'
                             }`}
+                            data-element-id={`history-transaction-icon-${groupIndex}-${itemIndex}`}
                           />
                         </div>
                       )}
                       
                       {/* Status Icon Overlay */}
                       <div
-                        className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${
+                        className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center history-transaction-status ${
                           transaction.type === 'sent'
                             ? 'bg-blue-500'
                             : transaction.type === 'swapped'
                             ? 'bg-green-500'
                             : 'bg-red-500'
                         }`}
+                        data-element-id={`history-transaction-status-${groupIndex}-${itemIndex}`}
                         style={{
                           borderRadius: '50%',
                           background: transaction.type === 'sent' 
@@ -165,14 +168,15 @@ const HistoryContent = () => {
                             : '#EF4444'
                         }}
                       >
-                        <transaction.icon className="w-3 h-3 text-white" />
+                        <transaction.icon className="w-3 h-3 text-white history-transaction-status-icon" data-element-id={`history-transaction-status-icon-${groupIndex}-${itemIndex}`} />
                       </div>
                     </div>
 
                     {/* Transaction Details */}
                     <div className="flex-1">
                       <div 
-                        className="text-white text-sm font-medium"
+                        className="text-white text-sm font-medium history-transaction-title"
+                        data-element-id={`history-transaction-title-${groupIndex}-${itemIndex}`}
                         style={{
                           color: globalStyle.textColor || '#FFFFFF',
                           fontFamily: globalStyle.fontFamily
@@ -182,7 +186,8 @@ const HistoryContent = () => {
                       </div>
                       {transaction.subtitle && (
                         <div 
-                          className="text-gray-400 text-xs"
+                          className="text-gray-400 text-xs history-transaction-subtitle"
+                          data-element-id={`history-transaction-subtitle-${groupIndex}-${itemIndex}`}
                           style={{ fontFamily: globalStyle.fontFamily }}
                         >
                           {transaction.subtitle}
@@ -193,13 +198,14 @@ const HistoryContent = () => {
                     {/* Amount */}
                     <div className="text-right">
                       <div
-                        className={`text-sm font-medium ${
+                        className={`text-sm font-medium history-transaction-amount ${
                           transaction.isFailed
                             ? 'text-red-400'
                             : transaction.isNegative
                             ? 'text-white'
                             : 'text-green-400'
                         }`}
+                        data-element-id={`history-transaction-amount-${groupIndex}-${itemIndex}`}
                         style={{
                           fontFamily: globalStyle.fontFamily,
                           color: transaction.isFailed
@@ -213,7 +219,8 @@ const HistoryContent = () => {
                       </div>
                       {transaction.subtitle && transaction.type === 'swapped' && (
                         <div 
-                          className="text-gray-400 text-xs"
+                          className="text-gray-400 text-xs history-transaction-amount-subtitle"
+                          data-element-id={`history-transaction-amount-subtitle-${groupIndex}-${itemIndex}`}
                           style={{ fontFamily: globalStyle.fontFamily }}
                         >
                           {transaction.subtitle}
@@ -240,7 +247,9 @@ const HistoryContent = () => {
             transition: buttonStyle.transition
           }}
         >
-          Load more transactions
+          <span className="history-load-more-text" data-element-id="history-load-more-text">
+            Load more transactions
+          </span>
         </button>
       </div>
     </div>

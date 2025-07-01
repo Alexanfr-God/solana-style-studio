@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, X, TrendingUp, Clock } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -48,7 +49,7 @@ const SearchContent = () => {
       {/* Search Input */}
       <div className="mb-6 pt-4">
         <div className="relative search-input-container" data-element-id="search-input-container">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 search-input-icon" data-element-id="search-input-icon" />
           <input
             type="text"
             value={searchQuery}
@@ -74,7 +75,7 @@ const SearchContent = () => {
               data-element-id="search-clear"
               style={{ transition: buttonStyle.transition }}
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 search-clear-icon" data-element-id="search-clear-icon" />
             </button>
           )}
         </div>
@@ -85,7 +86,7 @@ const SearchContent = () => {
           {/* Recent Searches */}
           <div className="mb-6 search-recent-section" data-element-id="search-recent-section">
             <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-gray-400" />
+              <Clock className="w-4 h-4 text-gray-400 search-recent-icon" data-element-id="search-recent-icon" />
               <h3 
                 className="text-sm font-medium text-gray-300 search-recent-title"
                 data-element-id="search-recent-title"
@@ -102,7 +103,8 @@ const SearchContent = () => {
                 <button
                   key={index}
                   onClick={() => handleRecentSearch(search)}
-                  className="px-3 py-2 text-sm transition-colors hover:scale-105"
+                  className="px-3 py-2 text-sm transition-colors hover:scale-105 search-recent-item"
+                  data-element-id={`search-recent-item-${index}`}
                   style={{
                     backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
                     borderRadius: panelStyle.borderRadius || '8px',
@@ -111,7 +113,9 @@ const SearchContent = () => {
                     transition: panelStyle.transition
                   }}
                 >
-                  {search}
+                  <span className="search-recent-item-text" data-element-id={`search-recent-item-text-${index}`}>
+                    {search}
+                  </span>
                 </button>
               ))}
             </div>
@@ -120,7 +124,7 @@ const SearchContent = () => {
           {/* Trending Tokens */}
           <div className="search-trending-section" data-element-id="search-trending-section">
             <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4 text-gray-400" />
+              <TrendingUp className="w-4 h-4 text-gray-400 search-trending-icon" data-element-id="search-trending-icon" />
               <h3 
                 className="text-sm font-medium text-gray-300 search-trending-title"
                 data-element-id="search-trending-title"
@@ -137,7 +141,8 @@ const SearchContent = () => {
                 <button
                   key={index}
                   onClick={() => handleRecentSearch(token.name)}
-                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-white/10 transition-colors"
+                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-white/10 transition-colors search-trending-item"
+                  data-element-id={`search-trending-item-${index}`}
                   style={{
                     backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
                     borderRadius: containerStyle.borderRadius || '12px',
@@ -148,17 +153,21 @@ const SearchContent = () => {
                 >
                   <div className="flex items-center gap-3">
                     <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center"
+                      className="w-10 h-10 rounded-full flex items-center justify-center search-trending-token-icon-container"
+                      data-element-id={`search-trending-token-icon-container-${index}`}
                       style={{
                         backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
                         borderRadius: '50%'
                       }}
                     >
-                      <span className="text-lg">{token.icon}</span>
+                      <span className="text-lg search-trending-token-icon" data-element-id={`search-trending-token-icon-${index}`}>
+                        {token.icon}
+                      </span>
                     </div>
                     <div className="text-left">
                       <div 
-                        className="text-white font-medium"
+                        className="text-white font-medium search-trending-token-name"
+                        data-element-id={`search-trending-token-name-${index}`}
                         style={{
                           color: globalStyle.textColor || '#FFFFFF',
                           fontFamily: globalStyle.fontFamily
@@ -167,7 +176,8 @@ const SearchContent = () => {
                         {token.name}
                       </div>
                       <div 
-                        className="text-gray-400 text-sm"
+                        className="text-gray-400 text-sm search-trending-token-symbol"
+                        data-element-id={`search-trending-token-symbol-${index}`}
                         style={{ fontFamily: globalStyle.fontFamily }}
                       >
                         {token.symbol}
@@ -176,7 +186,8 @@ const SearchContent = () => {
                   </div>
                   <div className="text-right">
                     <div 
-                      className="text-white font-medium"
+                      className="text-white font-medium search-trending-token-price"
+                      data-element-id={`search-trending-token-price-${index}`}
                       style={{
                         color: globalStyle.textColor || '#FFFFFF',
                         fontFamily: globalStyle.fontFamily
@@ -185,7 +196,8 @@ const SearchContent = () => {
                       {token.price}
                     </div>
                     <div 
-                      className={`text-sm ${token.change.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}
+                      className={`text-sm search-trending-token-change ${token.change.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}
+                      data-element-id={`search-trending-token-change-${index}`}
                       style={{ fontFamily: globalStyle.fontFamily }}
                     >
                       {token.change}
@@ -199,13 +211,15 @@ const SearchContent = () => {
       ) : (
         <div className="text-center py-8 search-results" data-element-id="search-results">
           <div 
-            className="text-gray-400 mb-4"
+            className="text-gray-400 mb-4 search-results-query"
+            data-element-id="search-results-query"
             style={{ fontFamily: globalStyle.fontFamily }}
           >
             Searching for "{searchQuery}"...
           </div>
           <div 
-            className="text-sm text-gray-500"
+            className="text-sm text-gray-500 search-results-message"
+            data-element-id="search-results-message"
             style={{ fontFamily: globalStyle.fontFamily }}
           >
             Search functionality coming soon
