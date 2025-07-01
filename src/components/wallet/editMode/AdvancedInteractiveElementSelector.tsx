@@ -57,6 +57,7 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
         if (elementInfo) {
           setHoveredElement(elementInfo, elementAtPoint);
           setHoveredPosition(getElementPosition(elementAtPoint));
+          console.log(`🎯 Hovering over: ${elementInfo.name} (${elementInfo.selector})`);
         }
       } else {
         setHoveredElement(null, null);
@@ -71,8 +72,10 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
       if (!elementAtPoint || !container.contains(elementAtPoint)) return;
 
       if (walletElementsMapper.isElementCustomizable(elementAtPoint)) {
+        // Prevent default behavior and stop propagation to block normal wallet actions
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         
         const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
         if (elementInfo) {
@@ -94,13 +97,16 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
+    // Add event listeners with capture flag to intercept events early
+    document.addEventListener('mousemove', handleMouseMove, true);
     document.addEventListener('click', handleClick, true);
+    document.addEventListener('mousedown', handleClick, true); // Also block mousedown
     window.addEventListener('resize', handleResize);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mousemove', handleMouseMove, true);
       document.removeEventListener('click', handleClick, true);
+      document.removeEventListener('mousedown', handleClick, true);
       window.removeEventListener('resize', handleResize);
     };
   }, [isActive, containerRef, onElementSelect, selectElement, setHoveredElement, state.hoveredDomElement, state.selectedDomElement]);
@@ -110,6 +116,14 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
     if (!isActive) {
       setHoveredPosition(null);
       setSelectedPosition(null);
+    }
+  }, [isActive]);
+
+  // Debug: Log available selectors when edit mode is activated
+  useEffect(() => {
+    if (isActive) {
+      console.log('🔍 Debug: Advanced Edit Mode activated, checking available selectors...');
+      walletElementsMapper.debugLogAvailableSelectors();
     }
   }, [isActive]);
 

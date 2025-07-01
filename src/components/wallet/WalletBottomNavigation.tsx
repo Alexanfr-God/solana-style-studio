@@ -15,11 +15,11 @@ const WalletBottomNavigation = () => {
   const buttonStyle = getStyleForComponent('buttons');
 
   const navItems = [
-    { id: 'home' as WalletLayer, icon: Home, label: 'Home' },
-    { id: 'apps' as WalletLayer, icon: LayoutGrid, label: 'Apps' },
-    { id: 'swap' as WalletLayer, icon: ArrowRightLeft, label: 'Swap' },
-    { id: 'history' as WalletLayer, icon: Clock, label: 'History' },
-    { id: 'search' as WalletLayer, icon: Search, label: 'Search' }
+    { id: 'home' as WalletLayer, icon: Home, label: 'Home', className: 'nav-home-icon' },
+    { id: 'apps' as WalletLayer, icon: LayoutGrid, label: 'Apps', className: 'nav-apps-icon' },
+    { id: 'swap' as WalletLayer, icon: ArrowRightLeft, label: 'Swap', className: 'nav-swap-icon' },
+    { id: 'history' as WalletLayer, icon: Clock, label: 'History', className: 'nav-history-icon' },
+    { id: 'search' as WalletLayer, icon: Search, label: 'Search', className: 'nav-search-icon' }
   ];
 
   const handleNavClick = (layerId: WalletLayer) => {
@@ -32,7 +32,8 @@ const WalletBottomNavigation = () => {
 
   return (
     <div 
-      className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 z-[5]"
+      className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 z-[5] bottom-navigation"
+      data-element-id="bottom-navigation"
       style={{
         backgroundColor: navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
         background: navigationStyle.gradient || navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
@@ -47,9 +48,10 @@ const WalletBottomNavigation = () => {
         {navItems.map(item => (
           <button 
             key={item.id}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 ${
+            className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 ${item.className} ${
               currentLayer === item.id ? 'opacity-100' : 'opacity-50'
             }`}
+            data-element-id={item.className}
             onClick={() => handleNavClick(item.id)}
             style={{
               borderRadius: navigationStyle.borderRadius || '8px'

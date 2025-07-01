@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { Eye, EyeOff, Lock, Unlock, Edit3 } from 'lucide-react';
+import { Eye, EyeOff, Lock, Unlock, Edit3, Bug } from 'lucide-react';
 import WalletContainer from '@/components/wallet/WalletContainer';
 import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
 import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
 import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
+import { EditModeDebugPanel } from '@/components/wallet/editMode/EditModeDebugPanel';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -32,9 +33,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   const [password, setPassword] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const walletContainerRef = useRef<HTMLDivElement>(null);
 
-  // Загружаем элементы из Supabase
+  // Load elements from Supabase
   const { elements, loading, error } = useWalletElements();
 
   useEffect(() => {
@@ -203,6 +205,19 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               <Edit3 className="h-4 w-4 mr-1" />
               {isEditMode ? 'Exit Advanced Edit' : 'ADVANCED EDIT'}
             </Button>
+
+            {/* Debug Toggle Button */}
+            {isEditMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDebugPanel(!showDebugPanel)}
+                className="border-orange-500 text-orange-400 hover:bg-orange-500/10"
+              >
+                <Bug className="h-4 w-4 mr-1" />
+                Debug
+              </Button>
+            )}
           </div>
           
           {/* Wallet Selector */}
@@ -308,6 +323,13 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             )}
           </div>
         )}
+
+        {/* Debug Panel */}
+        <EditModeDebugPanel
+          isVisible={showDebugPanel}
+          elements={elements}
+          onToggle={() => setShowDebugPanel(!showDebugPanel)}
+        />
       </CardContent>
     </Card>
   );
