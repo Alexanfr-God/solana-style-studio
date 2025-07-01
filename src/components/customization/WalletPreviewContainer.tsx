@@ -117,8 +117,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
         >
           {/* Password Title */}
           <h2 
-            className="text-center font-medium text-white text-lg unlock-password-title" 
-            data-element-id="unlock-password-title"
+            className="text-center font-medium text-white text-lg login-password-title" 
+            data-element-id="login-password-title"
             style={{
               fontFamily: loginStyle.fontFamily || 'Inter',
               color: loginStyle.textColor || '#FFFFFF'
@@ -142,8 +142,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm unlock-password-input"
-              data-element-id="unlock-password-input"
+              className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
+              data-element-id="login-password-input"
               style={{
                 backgroundColor: '#0f0f0f',
                 fontFamily: loginStyle.fontFamily || 'Inter'
@@ -153,8 +153,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white unlock-password-toggle-button"
-                data-element-id="unlock-password-toggle-button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white login-show-password"
+                data-element-id="login-show-password"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 unlock-password-toggle-icon" data-element-id="unlock-password-toggle-icon" />
@@ -171,8 +171,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             data-element-id="unlock-forgot-container"
           >
             <button
-              className="text-gray-400 hover:text-gray-300 text-sm unlock-forgot-link"
-              data-element-id="unlock-forgot-link"
+              className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
+              data-element-id="login-forgot-password"
               style={{ fontFamily: loginStyle.fontFamily || 'Inter' }}
             >
               <span 
@@ -186,8 +186,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           
           {/* Unlock Button */}
           <button
-            className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 unlock-button"
-            data-element-id="unlock-button"
+            className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
+            data-element-id="login-unlock-button"
             style={{
               backgroundColor: loginStyle.accentColor || '#a390f5',
               fontFamily: loginStyle.fontFamily || 'Inter',
