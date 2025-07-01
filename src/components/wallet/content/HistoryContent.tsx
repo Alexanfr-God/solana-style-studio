@@ -1,107 +1,256 @@
 
 import React from 'react';
+import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const HistoryContent = () => {
-  const { walletStyle } = useWalletCustomizationStore();
+  const { 
+    getStyleForComponent
+  } = useWalletCustomizationStore();
+
+  // Get component-specific styles
+  const panelStyle = getStyleForComponent('panels');
+  const containerStyle = getStyleForComponent('containers');
+  const buttonStyle = getStyleForComponent('buttons');
+  const globalStyle = getStyleForComponent('global');
+
+  const handleTransactionClick = (transactionType: string) => {
+    console.log(`Transaction ${transactionType} clicked`);
+  };
 
   const transactions = [
     {
-      id: 1,
-      to: '3QLo...yJd2',
-      service: 'pump.fun',
-      amount: '-1.01117',
-      token: 'SOL',
-      status: 'Unknown',
-      error: 'Insufficient funds',
-      timestamp: '2 hours ago'
+      date: 'Apr 11, 2025',
+      items: [
+        {
+          type: 'sent',
+          icon: ArrowRight,
+          title: 'To 3QLo...yJd2',
+          amount: '-5.34M THECOIN',
+          avatar: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
+          isNegative: true
+        }
+      ]
     },
     {
-      id: 2,
-      to: '7xKL...mN9p',
-      service: 'Uniswap',
-      amount: '+2.5',
-      token: 'ETH',
-      status: 'Completed',
-      error: null,
-      timestamp: '1 day ago'
+      date: 'Mar 20, 2025',
+      items: [
+        {
+          type: 'swapped',
+          icon: ArrowLeftRight,
+          title: 'pump.fun',
+          amount: '+5.34M THECOIN',
+          subtitle: '-1.01117 SOL',
+          avatar: '/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png',
+          isNegative: false
+        }
+      ]
+    },
+    {
+      date: 'Mar 19, 2025',
+      items: [
+        {
+          type: 'failed',
+          icon: X,
+          title: 'Unknown',
+          amount: 'Transaction failed',
+          subtitle: 'Insufficient funds',
+          isNegative: false,
+          isFailed: true
+        }
+      ]
     }
   ];
 
   return (
-    <div 
-      className="h-full bg-gradient-to-b from-gray-900 to-gray-800 p-6 history-container"
-      data-element-id="history-container"
-      style={{ backgroundColor: walletStyle.backgroundColor || '#1a1a1a' }}
-    >
-      <h2 className="text-xl font-bold text-white mb-6">Transaction History</h2>
-      
-      <div className="space-y-4">
-        {transactions.map((transaction) => (
-          <div
-            key={transaction.id}
-            className="bg-gray-800 rounded-lg p-4 border border-gray-700 history-transaction-item"
-            data-element-id="history-transaction-item"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex-1">
-                <div 
-                  className="font-medium text-white mb-1 history-transaction-to"
-                  data-element-id="history-transaction-to"
-                >
-                  To {transaction.to}
-                </div>
-                <div 
-                  className="text-sm text-gray-400 history-transaction-service"
-                  data-element-id="history-transaction-service"
-                >
-                  {transaction.service}
-                </div>
-              </div>
-              <div className="text-right">
-                <div 
-                  className={`font-semibold ${
-                    transaction.amount.startsWith('-') ? 'text-red-400' : 'text-green-400'
-                  } history-transaction-amount`}
-                  data-element-id="history-transaction-amount"
-                >
-                  {transaction.amount}
-                </div>
-                <div 
-                  className="text-sm text-gray-400 history-transaction-token"
-                  data-element-id="history-transaction-token"
-                >
-                  {transaction.token}
-                </div>
-              </div>
+    <div className="flex-1 flex flex-col px-4 py-3 overflow-y-auto history-content" data-element-id="history-content">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 history-header" data-element-id="history-header">
+        <h2 
+          className="text-lg font-semibold text-white history-title"
+          data-element-id="history-title"
+          style={{
+            color: globalStyle.textColor || '#FFFFFF',
+            fontFamily: globalStyle.fontFamily
+          }}
+        >
+          Recent Activity
+        </h2>
+        <button 
+          className="p-2 rounded-full hover:bg-white/10 transition-colors history-menu"
+          data-element-id="history-menu"
+          style={{
+            borderRadius: '50%',
+            transition: buttonStyle.transition
+          }}
+        >
+          <MoreVertical className="w-5 h-5 text-gray-400 history-menu-icon" data-element-id="history-menu-icon" />
+        </button>
+      </div>
+
+      {/* Transaction Groups by Date */}
+      <div className="space-y-4 history-transactions" data-element-id="history-transactions">
+        {transactions.map((group, groupIndex) => (
+          <div key={groupIndex} className="history-transaction-group" data-element-id={`history-transaction-group-${groupIndex}`}>
+            {/* Date Header */}
+            <div 
+              className="text-xs text-gray-400 mb-3 font-medium history-date"
+              data-element-id={`history-date-${groupIndex}`}
+              style={{ fontFamily: globalStyle.fontFamily }}
+            >
+              {group.date}
             </div>
             
-            <div className="flex justify-between items-center pt-2 border-t border-gray-700">
-              <div 
-                className={`text-sm px-2 py-1 rounded ${
-                  transaction.status === 'Completed' 
-                    ? 'bg-green-900 text-green-300' 
-                    : transaction.status === 'Unknown'
-                    ? 'bg-yellow-900 text-yellow-300'
-                    : 'bg-red-900 text-red-300'
-                } history-transaction-status`}
-                data-element-id="history-transaction-status"
-              >
-                {transaction.status}
-              </div>
-              <div className="text-sm text-gray-500">{transaction.timestamp}</div>
+            {/* Transactions for this date */}
+            <div className="space-y-3">
+              {group.items.map((transaction, itemIndex) => (
+                <div
+                  key={itemIndex}
+                  className="p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer history-transaction-item"
+                  data-element-id={`history-transaction-item-${groupIndex}-${itemIndex}`}
+                  onClick={() => handleTransactionClick(transaction.type)}
+                  style={{
+                    backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: panelStyle.borderRadius || '12px',
+                    border: panelStyle.border,
+                    backdropFilter: panelStyle.backdropFilter,
+                    transition: panelStyle.transition
+                  }}
+                >
+                  <div className="flex items-center space-x-3">
+                    {/* Transaction Icon/Avatar */}
+                    <div className="relative">
+                      {transaction.avatar ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden history-transaction-avatar" data-element-id={`history-transaction-avatar-${groupIndex}-${itemIndex}`}>
+                          <img
+                            src={transaction.avatar}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center history-transaction-icon-container ${
+                            transaction.isFailed
+                              ? 'bg-red-500/20 border border-red-500/30'
+                              : 'bg-gray-600/50'
+                          }`}
+                          data-element-id={`history-transaction-icon-container-${groupIndex}-${itemIndex}`}
+                          style={{
+                            borderRadius: '50%'
+                          }}
+                        >
+                          <transaction.icon
+                            className={`w-5 h-5 history-transaction-icon ${
+                              transaction.isFailed ? 'text-red-400' : 'text-gray-300'
+                            }`}
+                            data-element-id={`history-transaction-icon-${groupIndex}-${itemIndex}`}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Status Icon Overlay */}
+                      <div
+                        className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center history-transaction-status ${
+                          transaction.type === 'sent'
+                            ? 'bg-blue-500'
+                            : transaction.type === 'swapped'
+                            ? 'bg-green-500'
+                            : 'bg-red-500'
+                        }`}
+                        data-element-id={`history-transaction-status-${groupIndex}-${itemIndex}`}
+                        style={{
+                          borderRadius: '50%',
+                          background: transaction.type === 'sent' 
+                            ? buttonStyle.backgroundColor || '#3B82F6'
+                            : transaction.type === 'swapped'
+                            ? '#10B981'
+                            : '#EF4444'
+                        }}
+                      >
+                        <transaction.icon className="w-3 h-3 text-white history-transaction-status-icon" data-element-id={`history-transaction-status-icon-${groupIndex}-${itemIndex}`} />
+                      </div>
+                    </div>
+
+                    {/* Transaction Details */}
+                    <div className="flex-1">
+                      <div 
+                        className="text-white text-sm font-medium history-transaction-title"
+                        data-element-id={`history-transaction-title-${groupIndex}-${itemIndex}`}
+                        style={{
+                          color: globalStyle.textColor || '#FFFFFF',
+                          fontFamily: globalStyle.fontFamily
+                        }}
+                      >
+                        {transaction.title}
+                      </div>
+                      {transaction.subtitle && (
+                        <div 
+                          className="text-gray-400 text-xs history-transaction-subtitle"
+                          data-element-id={`history-transaction-subtitle-${groupIndex}-${itemIndex}`}
+                          style={{ fontFamily: globalStyle.fontFamily }}
+                        >
+                          {transaction.subtitle}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Amount */}
+                    <div className="text-right">
+                      <div
+                        className={`text-sm font-medium history-transaction-amount ${
+                          transaction.isFailed
+                            ? 'text-red-400'
+                            : transaction.isNegative
+                            ? 'text-white'
+                            : 'text-green-400'
+                        }`}
+                        data-element-id={`history-transaction-amount-${groupIndex}-${itemIndex}`}
+                        style={{
+                          fontFamily: globalStyle.fontFamily,
+                          color: transaction.isFailed
+                            ? '#F87171'
+                            : transaction.isNegative
+                            ? globalStyle.textColor
+                            : '#34D399'
+                        }}
+                      >
+                        {transaction.amount}
+                      </div>
+                      {transaction.subtitle && transaction.type === 'swapped' && (
+                        <div 
+                          className="text-gray-400 text-xs history-transaction-amount-subtitle"
+                          data-element-id={`history-transaction-amount-subtitle-${groupIndex}-${itemIndex}`}
+                          style={{ fontFamily: globalStyle.fontFamily }}
+                        >
+                          {transaction.subtitle}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            
-            {transaction.error && (
-              <div 
-                className="mt-2 text-sm text-red-400 history-transaction-error"
-                data-element-id="history-transaction-error"
-              >
-                {transaction.error}
-              </div>
-            )}
           </div>
         ))}
+      </div>
+
+      {/* Load More Button */}
+      <div className="mt-6 flex justify-center">
+        <button
+          className="px-4 py-2 text-sm transition-colors hover:scale-105 history-load-more"
+          data-element-id="history-load-more"
+          onClick={() => handleTransactionClick('load-more')}
+          style={{
+            color: buttonStyle.backgroundColor || '#9945FF',
+            fontFamily: globalStyle.fontFamily,
+            transition: buttonStyle.transition
+          }}
+        >
+          <span className="history-load-more-text" data-element-id="history-load-more-text">
+            Load more transactions
+          </span>
+        </button>
       </div>
     </div>
   );

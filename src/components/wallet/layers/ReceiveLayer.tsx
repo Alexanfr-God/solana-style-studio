@@ -1,155 +1,309 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Copy, Check, X } from 'lucide-react';
+import { ArrowLeft, Copy, Check, QrCode, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useToast } from '@/hooks/use-toast';
 
-interface ReceiveLayerProps {
-  onBack: () => void;
+interface CryptoNetwork {
+  id: string;
+  name: string;
+  symbol: string;
+  address: string;
+  icon: string;
+  color: string;
 }
 
-const ReceiveLayer = ({ onBack }: ReceiveLayerProps) => {
-  const { walletStyle } = useWalletCustomizationStore();
-  const [selectedNetwork, setSelectedNetwork] = useState<'solana' | 'ethereum'>('solana');
-  const [copied, setCopied] = useState(false);
+const cryptoNetworks: CryptoNetwork[] = [
+  {
+    id: 'solana',
+    name: 'Solana',
+    symbol: 'SOL',
+    address: '52Tm...mBCN',
+    icon: '/lovable-uploads/72224164-59bd-4fc3-abf5-d57bbdbee278.png',
+    color: '#9945FF'
+  },
+  {
+    id: 'ethereum',
+    name: 'Ethereum',
+    symbol: 'ETH',
+    address: '0xa30b...4Ff4',
+    icon: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
+    color: '#627EEA'
+  },
+  {
+    id: 'base',
+    name: 'Base',
+    symbol: 'BASE',
+    address: '0xa30b...4Ff4',
+    icon: '/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png',
+    color: '#0052FF'
+  },
+  {
+    id: 'sui',
+    name: 'Sui',
+    symbol: 'SUI',
+    address: '0xd1d1...c8f9',
+    icon: '/lovable-uploads/9dd9ce9c-2158-40cf-98ee-2e189bd56595.png',
+    color: '#4CA2FF'
+  },
+  {
+    id: 'polygon',
+    name: 'Polygon',
+    symbol: 'MATIC',
+    address: '0xa30b...4Ff4',
+    icon: '/lovable-uploads/a5f8972f-b18d-4f17-8799-eeb025813f3b.png',
+    color: '#8247E5'
+  },
+  {
+    id: 'bitcoin',
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    address: 'bc1q...x7h2',
+    icon: '/lovable-uploads/cd33fecf-bff4-4243-bd9d-3f3062e0ba37.png',
+    color: '#F7931A'
+  }
+];
 
-  const walletAddresses = {
-    solana: '3QLojKGjuW7hKXJGJKxFdGKqJKx2KxJGJKxFdGKqJKx2',
-    ethereum: '0x742d35Cc6534C0532925a3b8D0521Cc7537648a9'
+const ReceiveLayer = () => {
+  const {
+    getStyleForComponent,
+    setCurrentLayer
+  } = useWalletCustomizationStore();
+  
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Get component-specific styles
+  const overlayStyle = getStyleForComponent('overlays');
+  const containerStyle = getStyleForComponent('containers');
+  const buttonStyle = getStyleForComponent('buttons');
+  const globalStyle = getStyleForComponent('global');
+
+  const handleBack = () => {
+    setCurrentLayer('home');
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(walletAddresses[selectedNetwork]);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleClose = () => {
+    setCurrentLayer('home');
+  };
+
+  const handleCopyAddress = (address: string, networkName: string) => {
+    navigator.clipboard.writeText(address);
+    setCopiedAddress(address);
+    
+    toast({
+      title: "Address Copied",
+      description: `${networkName} address copied to clipboard`,
+    });
+    
+    setTimeout(() => {
+      setCopiedAddress(null);
+    }, 2000);
+  };
+
+  const handleQrCode = (networkName: string) => {
+    console.log('QR Code clicked for:', networkName);
   };
 
   return (
     <div 
-      className="h-full bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col receive-header"
-      data-element-id="receive-header"
-      style={{ 
-        backgroundColor: walletStyle.backgroundColor || '#1a1a1a',
-        fontFamily: walletStyle.fontFamily || 'Inter'
+      className="absolute inset-0 animate-slide-in-bottom receive-layer"
+      data-element-id="receive-layer"
+      style={{
+        backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
+        backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
+        fontFamily: globalStyle.fontFamily || 'Inter'
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700">
-        <button 
-          onClick={onBack}
-          className="p-2 hover:bg-gray-700 rounded-lg transition-colors receive-back-button"
+      <div 
+        className="flex items-center justify-between px-4 py-3 border-b receive-header"
+        data-element-id="receive-header"
+        style={{
+          borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+        }}
+      >
+        <button
+          onClick={handleBack}
+          className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors receive-back-button"
           data-element-id="receive-back-button"
+          style={{
+            borderRadius: buttonStyle.borderRadius || '8px',
+            transition: buttonStyle.transition
+          }}
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5 text-white receive-back-icon" data-element-id="receive-back-icon" />
+          <span 
+            className="text-white font-medium receive-back-text"
+            data-element-id="receive-back-text"
+            style={{
+              color: globalStyle.textColor,
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Back
+          </span>
         </button>
+        
         <h1 
-          className="text-lg font-semibold receive-title"
+          className="text-lg font-semibold text-white receive-title"
           data-element-id="receive-title"
+          style={{
+            color: globalStyle.textColor,
+            fontFamily: globalStyle.fontFamily
+          }}
         >
-          Receive
+          Receive Crypto
         </h1>
-        <button 
-          onClick={onBack}
-          className="p-2 hover:bg-gray-700 rounded-lg transition-colors receive-close-button"
-          data-element-id="receive-close-button"
+        
+        <button
+          className="p-2 rounded-lg hover:bg-white/10 transition-colors receive-qr-button"
+          data-element-id="receive-qr-button"
+          onClick={() => handleQrCode('All')}
+          style={{
+            borderRadius: buttonStyle.borderRadius || '8px',
+            transition: buttonStyle.transition
+          }}
         >
-          <X className="w-5 h-5" />
+          <QrCode className="w-5 h-5 text-white receive-qr-icon" data-element-id="receive-qr-icon" />
         </button>
       </div>
 
-      {/* Network Selection Tabs */}
-      <div 
-        className="flex border-b border-gray-700 receive-network-tabs"
-        data-element-id="receive-network-tabs"
-      >
-        <button
-          onClick={() => setSelectedNetwork('solana')}
-          className={`flex-1 py-3 px-4 text-center font-medium transition-colors receive-solana-tab ${
-            selectedNetwork === 'solana'
-              ? 'text-purple-400 border-b-2 border-purple-400'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-          data-element-id="receive-solana-tab"
-        >
-          Solana
-        </button>
-        <button
-          onClick={() => setSelectedNetwork('ethereum')}
-          className={`flex-1 py-3 px-4 text-center font-medium transition-colors receive-ethereum-tab ${
-            selectedNetwork === 'ethereum'
-              ? 'text-purple-400 border-b-2 border-purple-400'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-          data-element-id="receive-ethereum-tab"
-        >
-          Ethereum
-        </button>
-      </div>
+      {/* Content */}
+      <div className="flex-1 px-4 py-6 overflow-y-auto receive-content" data-element-id="receive-content">
+        <div className="mb-6 receive-instructions" data-element-id="receive-instructions">
+          <h2 
+            className="text-sm font-medium text-white mb-2 receive-instructions-title"
+            data-element-id="receive-instructions-title"
+            style={{
+              color: globalStyle.textColor,
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Select Network
+          </h2>
+          <p 
+            className="text-xs text-gray-400 receive-instructions-description"
+            data-element-id="receive-instructions-description"
+            style={{ fontFamily: globalStyle.fontFamily }}
+          >
+            Choose which network you want to receive crypto on
+          </p>
+        </div>
 
-      {/* Address Display */}
-      <div 
-        className="flex-1 flex flex-col items-center justify-center p-6 space-y-6 receive-address-container"
-        data-element-id="receive-address-container"
-      >
-        {/* QR Code Placeholder */}
+        {/* Crypto Networks List */}
         <div 
-          className="w-48 h-48 bg-white rounded-lg flex items-center justify-center receive-qr-code"
-          data-element-id="receive-qr-code"
+          className="rounded-xl border overflow-hidden mb-6 receive-networks-container"
+          data-element-id="receive-networks-container"
+          style={{
+            backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            borderRadius: containerStyle.borderRadius || '16px',
+            border: containerStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: containerStyle.backdropFilter
+          }}
         >
-          <div className="text-gray-800 text-center">
-            <div className="text-sm font-medium">QR Code</div>
-            <div className="text-xs mt-1">
-              {selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1)} Address
+          {cryptoNetworks.map((network, index) => (
+            <div
+              key={network.id}
+              className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 receive-network-item"
+              data-element-id={`receive-network-item-${index}`}
+              style={{ transition: containerStyle.transition }}
+            >
+              <div className="flex items-center space-x-3">
+                {/* Network Icon */}
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex items-center justify-center receive-network-icon-container" data-element-id={`receive-network-icon-container-${index}`}>
+                  <img
+                    src={network.icon}
+                    alt={network.name}
+                    className="w-8 h-8 object-cover rounded receive-network-icon"
+                    data-element-id={`receive-network-icon-${index}`}
+                  />
+                </div>
+                
+                {/* Network Info */}
+                <div className="receive-network-info" data-element-id={`receive-network-info-${index}`}>
+                  <div 
+                    className="font-medium text-white text-sm receive-network-name"
+                    data-element-id={`receive-network-name-${index}`}
+                    style={{
+                      color: globalStyle.textColor,
+                      fontFamily: globalStyle.fontFamily
+                    }}
+                  >
+                    {network.name}
+                  </div>
+                  <div 
+                    className="text-xs text-gray-400 receive-network-symbol"
+                    data-element-id={`receive-network-symbol-${index}`}
+                    style={{ fontFamily: globalStyle.fontFamily }}
+                  >
+                    {network.symbol}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Address and Actions */}
+              <div className="flex items-center space-x-3 receive-network-actions" data-element-id={`receive-network-actions-${index}`}>
+                <span 
+                  className="text-xs text-gray-300 font-mono receive-network-address"
+                  data-element-id={`receive-network-address-${index}`}
+                  style={{ fontFamily: 'monospace' }}
+                >
+                  {network.address}
+                </span>
+                
+                <div className="flex items-center space-x-2 receive-network-buttons" data-element-id={`receive-network-buttons-${index}`}>
+                  <button
+                    className="p-1.5 rounded hover:bg-white/10 transition-colors receive-network-qr-button"
+                    data-element-id={`receive-network-qr-button-${index}`}
+                    onClick={() => handleQrCode(network.name)}
+                    style={{
+                      borderRadius: buttonStyle.borderRadius || '4px',
+                      transition: buttonStyle.transition
+                    }}
+                  >
+                    <QrCode className="w-4 h-4 text-gray-400 hover:text-white receive-network-qr-icon" data-element-id={`receive-network-qr-icon-${index}`} />
+                  </button>
+                  
+                  <button
+                    className="p-1.5 rounded hover:bg-white/10 transition-colors receive-network-copy-button"
+                    data-element-id={`receive-network-copy-button-${index}`}
+                    onClick={() => handleCopyAddress(network.address, network.name)}
+                    style={{
+                      borderRadius: buttonStyle.borderRadius || '4px',
+                      transition: buttonStyle.transition
+                    }}
+                  >
+                    {copiedAddress === network.address ? (
+                      <Check className="w-4 h-4 text-green-400 receive-network-copy-success-icon" data-element-id={`receive-network-copy-success-icon-${index}`} />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-400 hover:text-white receive-network-copy-icon" data-element-id={`receive-network-copy-icon-${index}`} />
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Address Text */}
-        <div className="w-full max-w-sm space-y-3">
-          <div 
-            className="bg-gray-800 rounded-lg p-4 text-center receive-address-text"
-            data-element-id="receive-address-text"
-          >
-            <div className="text-sm text-gray-400 mb-2">
-              {selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1)} Address
-            </div>
-            <div className="font-mono text-sm break-all text-gray-200">
-              {walletAddresses[selectedNetwork]}
-            </div>
-          </div>
-
-          {/* Copy Button */}
-          <button
-            onClick={handleCopy}
-            className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 receive-copy-button"
-            data-element-id="receive-copy-button"
-            style={{ backgroundColor: walletStyle.primaryColor || '#9945FF' }}
-          >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4" />
-                <span>Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4" />
-                <span>Copy Address</span>
-              </>
-            )}
-          </button>
+          ))}
         </div>
       </div>
 
-      {/* Instructions */}
-      <div 
-        className="p-4 border-t border-gray-700 receive-instructions"
-        data-element-id="receive-instructions"
-      >
-        <p 
-          className="text-sm text-gray-400 text-center receive-warning-text"
-          data-element-id="receive-warning-text"
+      {/* Close Button */}
+      <div className="p-4 border-t receive-footer" data-element-id="receive-footer" style={{ borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)' }}>
+        <button
+          onClick={handleClose}
+          className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 receive-close-button"
+          data-element-id="receive-close-button"
+          style={{
+            backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
+            borderRadius: buttonStyle.borderRadius || '12px',
+            transition: buttonStyle.transition,
+            color: buttonStyle.textColor || '#FFFFFF',
+            fontFamily: globalStyle.fontFamily
+          }}
         >
-          Only send {selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1)} and {selectedNetwork === 'solana' ? 'SPL' : 'ERC-20'} tokens to this address.
-        </p>
+          <X className="w-5 h-5 receive-close-icon" data-element-id="receive-close-icon" />
+          <span className="font-medium receive-close-text" data-element-id="receive-close-text">Close</span>
+        </button>
       </div>
     </div>
   );
