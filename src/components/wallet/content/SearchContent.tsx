@@ -1,231 +1,242 @@
 
 import React, { useState } from 'react';
-import { Search, X, TrendingUp, Clock } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const SearchContent = () => {
-  const {
-    getStyleForComponent
-  } = useWalletCustomizationStore();
-
+  const { walletStyle } = useWalletCustomizationStore();
   const [searchQuery, setSearchQuery] = useState('');
-  const [recentSearches] = useState([
-    'Bitcoin',
-    'Ethereum',
-    'Solana',
-    'USDC'
-  ]);
 
-  const [trendingTokens] = useState([
-    { name: 'Bitcoin', symbol: 'BTC', price: '$67,234', change: '+2.4%', icon: '₿' },
-    { name: 'Ethereum', symbol: 'ETH', price: '$3,456', change: '+1.8%', icon: 'Ξ' },
-    { name: 'Solana', symbol: 'SOL', price: '$184', change: '+5.2%', icon: '◎' },
-    { name: 'Cardano', symbol: 'ADA', price: '$0.67', change: '-0.5%', icon: '₳' }
-  ]);
-
-  // Get component-specific styles
-  const searchInputStyle = getStyleForComponent('searchInputs');
-  const panelStyle = getStyleForComponent('panels');
-  const containerStyle = getStyleForComponent('containers');
-  const buttonStyle = getStyleForComponent('buttons');
-  const globalStyle = getStyleForComponent('global');
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    console.log(`Searching for: ${query}`);
-  };
-
-  const handleRecentSearch = (search: string) => {
-    setSearchQuery(search);
-    handleSearch(search);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery('');
-  };
+  const recentSearches = ['Bitcoin', 'Ethereum', 'Solana', 'USDC'];
+  
+  const trendingTokens = [
+    {
+      symbol: 'BTC',
+      name: 'Bitcoin',
+      price: '$67,234',
+      change: '+2.4%',
+      icon: '₿',
+      changePositive: true
+    },
+    {
+      symbol: 'ETH',
+      name: 'Ethereum',
+      price: '$3,456',
+      change: '+1.8%',
+      icon: 'Ξ',
+      changePositive: true
+    },
+    {
+      symbol: 'SOL',
+      name: 'Solana',
+      price: '$184',
+      change: '+5.2%',
+      icon: '◎',
+      changePositive: true
+    },
+    {
+      symbol: 'ADA',
+      name: 'Cardano',
+      price: '$0.67',
+      change: '',
+      icon: '₳',
+      changePositive: null
+    }
+  ];
 
   return (
-    <div className="flex-1 px-4 pb-20 overflow-auto search-content" data-element-id="search-content">
+    <div 
+      className="h-full bg-gradient-to-b from-gray-900 to-gray-800 p-6 search-container"
+      data-element-id="search-container"
+      style={{ backgroundColor: walletStyle.backgroundColor || '#1a1a1a' }}
+    >
       {/* Search Input */}
-      <div className="mb-6 pt-4">
-        <div className="relative search-input-container" data-element-id="search-input-container">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 search-input-icon" data-element-id="search-input-icon" />
+      <div 
+        className="mb-6 search-input-container"
+        data-element-id="search-input-container"
+      >
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
+            placeholder="Search cryptocurrencies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-            placeholder="Search tokens, NFTs, transactions..."
-            className="w-full pl-10 pr-10 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors search-input"
+            className="w-full pl-12 pr-4 py-4 bg-gray-800 rounded-xl text-white placeholder-gray-400 border border-gray-700 focus:border-purple-500 focus:outline-none search-input"
             data-element-id="search-input"
-            style={{
-              backgroundColor: searchInputStyle.backgroundColor || 'rgba(255, 255, 255, 0.08)',
-              border: searchInputStyle.border || '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: searchInputStyle.borderRadius || '12px',
-              fontFamily: globalStyle.fontFamily,
-              color: searchInputStyle.textColor,
-              backdropFilter: searchInputStyle.backdropFilter,
-              transition: searchInputStyle.transition
-            }}
           />
-          {searchQuery && (
-            <button
-              onClick={clearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-white transition-colors search-clear"
-              data-element-id="search-clear"
-              style={{ transition: buttonStyle.transition }}
-            >
-              <X className="w-5 h-5 search-clear-icon" data-element-id="search-clear-icon" />
-            </button>
-          )}
         </div>
       </div>
 
-      {!searchQuery ? (
-        <>
-          {/* Recent Searches */}
-          <div className="mb-6 search-recent-section" data-element-id="search-recent-section">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-gray-400 search-recent-icon" data-element-id="search-recent-icon" />
-              <h3 
-                className="text-sm font-medium text-gray-300 search-recent-title"
-                data-element-id="search-recent-title"
-                style={{
-                  color: globalStyle.textColor || '#D1D5DB',
-                  fontFamily: globalStyle.fontFamily
-                }}
-              >
-                Recent Searches
-              </h3>
-            </div>
-            <div className="flex flex-wrap gap-2 search-recent-items" data-element-id="search-recent-items">
-              {recentSearches.map((search, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleRecentSearch(search)}
-                  className="px-3 py-2 text-sm transition-colors hover:scale-105 search-recent-item"
-                  data-element-id={`search-recent-item-${index}`}
-                  style={{
-                    backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: panelStyle.borderRadius || '8px',
-                    color: globalStyle.textColor || '#D1D5DB',
-                    fontFamily: globalStyle.fontFamily,
-                    transition: panelStyle.transition
-                  }}
-                >
-                  <span className="search-recent-item-text" data-element-id={`search-recent-item-text-${index}`}>
-                    {search}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Trending Tokens */}
-          <div className="search-trending-section" data-element-id="search-trending-section">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4 text-gray-400 search-trending-icon" data-element-id="search-trending-icon" />
-              <h3 
-                className="text-sm font-medium text-gray-300 search-trending-title"
-                data-element-id="search-trending-title"
-                style={{
-                  color: globalStyle.textColor || '#D1D5DB',
-                  fontFamily: globalStyle.fontFamily
-                }}
-              >
-                Trending
-              </h3>
-            </div>
-            <div className="space-y-2 search-trending-items" data-element-id="search-trending-items">
-              {trendingTokens.map((token, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleRecentSearch(token.name)}
-                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-white/10 transition-colors search-trending-item"
-                  data-element-id={`search-trending-item-${index}`}
-                  style={{
-                    backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: containerStyle.borderRadius || '12px',
-                    border: containerStyle.border,
-                    backdropFilter: containerStyle.backdropFilter,
-                    transition: containerStyle.transition
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center search-trending-token-icon-container"
-                      data-element-id={`search-trending-token-icon-container-${index}`}
-                      style={{
-                        backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
-                        borderRadius: '50%'
-                      }}
-                    >
-                      <span className="text-lg search-trending-token-icon" data-element-id={`search-trending-token-icon-${index}`}>
-                        {token.icon}
-                      </span>
-                    </div>
-                    <div className="text-left">
-                      <div 
-                        className="text-white font-medium search-trending-token-name"
-                        data-element-id={`search-trending-token-name-${index}`}
-                        style={{
-                          color: globalStyle.textColor || '#FFFFFF',
-                          fontFamily: globalStyle.fontFamily
-                        }}
-                      >
-                        {token.name}
-                      </div>
-                      <div 
-                        className="text-gray-400 text-sm search-trending-token-symbol"
-                        data-element-id={`search-trending-token-symbol-${index}`}
-                        style={{ fontFamily: globalStyle.fontFamily }}
-                      >
-                        {token.symbol}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div 
-                      className="text-white font-medium search-trending-token-price"
-                      data-element-id={`search-trending-token-price-${index}`}
-                      style={{
-                        color: globalStyle.textColor || '#FFFFFF',
-                        fontFamily: globalStyle.fontFamily
-                      }}
-                    >
-                      {token.price}
-                    </div>
-                    <div 
-                      className={`text-sm search-trending-token-change ${token.change.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}
-                      data-element-id={`search-trending-token-change-${index}`}
-                      style={{ fontFamily: globalStyle.fontFamily }}
-                    >
-                      {token.change}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="text-center py-8 search-results" data-element-id="search-results">
-          <div 
-            className="text-gray-400 mb-4 search-results-query"
-            data-element-id="search-results-query"
-            style={{ fontFamily: globalStyle.fontFamily }}
-          >
-            Searching for "{searchQuery}"...
-          </div>
-          <div 
-            className="text-sm text-gray-500 search-results-message"
-            data-element-id="search-results-message"
-            style={{ fontFamily: globalStyle.fontFamily }}
-          >
-            Search functionality coming soon
-          </div>
+      {/* Recent Searches */}
+      <div 
+        className="mb-6 search-recent-container"
+        data-element-id="search-recent-container"
+      >
+        <h3 
+          className="text-lg font-semibold text-white mb-3 search-recent-title"
+          data-element-id="search-recent-title"
+        >
+          Recent
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {recentSearches.map((search, index) => (
+            <button
+              key={search}
+              className={`px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors ${
+                search === 'Bitcoin' ? 'search-recent-bitcoin' :
+                search === 'Ethereum' ? 'search-recent-ethereum' :
+                search === 'Solana' ? 'search-recent-solana' :
+                search === 'USDC' ? 'search-recent-usdc' :
+                'search-recent-item'
+              }`}
+              data-element-id={
+                search === 'Bitcoin' ? 'search-recent-bitcoin' :
+                search === 'Ethereum' ? 'search-recent-ethereum' :
+                search === 'Solana' ? 'search-recent-solana' :
+                search === 'USDC' ? 'search-recent-usdc' :
+                `search-recent-item-${index}`
+              }
+            >
+              {search}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
+
+      {/* Trending */}
+      <div 
+        className="search-trending-container"
+        data-element-id="search-trending-container"
+      >
+        <h3 
+          className="text-lg font-semibold text-white mb-4 search-trending-title"
+          data-element-id="search-trending-title"
+        >
+          Trending
+        </h3>
+        <div className="space-y-3">
+          {trendingTokens.map((token, index) => (
+            <div
+              key={token.symbol}
+              className={`flex items-center justify-between p-4 bg-gray-800 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors ${
+                token.symbol === 'BTC' ? 'search-bitcoin-item' :
+                token.symbol === 'ETH' ? 'search-ethereum-item' :
+                token.symbol === 'SOL' ? 'search-solana-item' :
+                token.symbol === 'ADA' ? 'search-cardano-item' :
+                'search-token-item'
+              }`}
+              data-element-id={
+                token.symbol === 'BTC' ? 'search-bitcoin-item' :
+                token.symbol === 'ETH' ? 'search-ethereum-item' :
+                token.symbol === 'SOL' ? 'search-solana-item' :
+                token.symbol === 'ADA' ? 'search-cardano-item' :
+                `search-token-item-${index}`
+              }
+            >
+              <div className="flex items-center space-x-3">
+                <div 
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+                    token.symbol === 'BTC' ? 'search-bitcoin-icon' :
+                    token.symbol === 'ETH' ? 'search-ethereum-icon' :
+                    token.symbol === 'SOL' ? 'search-solana-icon' :
+                    token.symbol === 'ADA' ? 'search-cardano-icon' :
+                    'search-token-icon'
+                  }`}
+                  data-element-id={
+                    token.symbol === 'BTC' ? 'search-bitcoin-icon' :
+                    token.symbol === 'ETH' ? 'search-ethereum-icon' :
+                    token.symbol === 'SOL' ? 'search-solana-icon' :
+                    token.symbol === 'ADA' ? 'search-cardano-icon' :
+                    `search-token-icon-${index}`
+                  }
+                  style={{ backgroundColor: walletStyle.accentColor || '#9945FF' }}
+                >
+                  {token.icon}
+                </div>
+                <div>
+                  <div 
+                    className={`font-medium text-white ${
+                      token.symbol === 'BTC' ? 'search-bitcoin-name' :
+                      token.symbol === 'ETH' ? 'search-ethereum-name' :
+                      token.symbol === 'SOL' ? 'search-solana-name' :
+                      token.symbol === 'ADA' ? 'search-cardano-name' :
+                      'search-token-name'
+                    }`}
+                    data-element-id={
+                      token.symbol === 'BTC' ? 'search-bitcoin-name' :
+                      token.symbol === 'ETH' ? 'search-ethereum-name' :
+                      token.symbol === 'SOL' ? 'search-solana-name' :
+                      token.symbol === 'ADA' ? 'search-cardano-name' :
+                      `search-token-name-${index}`
+                    }
+                  >
+                    {token.name}
+                  </div>
+                  <div 
+                    className={`text-sm text-gray-400 ${
+                      token.symbol === 'BTC' ? 'search-bitcoin-symbol' :
+                      token.symbol === 'ETH' ? 'search-ethereum-symbol' :
+                      token.symbol === 'SOL' ? 'search-solana-symbol' :
+                      token.symbol === 'ADA' ? 'search-cardano-symbol' :
+                      'search-token-symbol'
+                    }`}
+                    data-element-id={
+                      token.symbol === 'BTC' ? 'search-bitcoin-symbol' :
+                      token.symbol === 'ETH' ? 'search-ethereum-symbol' :
+                      token.symbol === 'SOL' ? 'search-solana-symbol' :
+                      token.symbol === 'ADA' ? 'search-cardano-symbol' :
+                      `search-token-symbol-${index}`
+                    }
+                  >
+                    {token.symbol}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div 
+                  className={`font-semibold text-white ${
+                    token.symbol === 'BTC' ? 'search-bitcoin-price' :
+                    token.symbol === 'ETH' ? 'search-ethereum-price' :
+                    token.symbol === 'SOL' ? 'search-solana-price' :
+                    token.symbol === 'ADA' ? 'search-cardano-price' :
+                    'search-token-price'
+                  }`}
+                  data-element-id={
+                    token.symbol === 'BTC' ? 'search-bitcoin-price' :
+                    token.symbol === 'ETH' ? 'search-ethereum-price' :
+                    token.symbol === 'SOL' ? 'search-solana-price' :
+                    token.symbol === 'ADA' ? 'search-cardano-price' :
+                    `search-token-price-${index}`
+                  }
+                >
+                  {token.price}
+                </div>
+                {token.change && (
+                  <div 
+                    className={`text-sm ${
+                      token.changePositive ? 'text-green-400' : 'text-red-400'
+                    } ${
+                      token.symbol === 'BTC' ? 'search-bitcoin-change' :
+                      token.symbol === 'ETH' ? 'search-ethereum-change' :
+                      token.symbol === 'SOL' ? 'search-solana-change' :
+                      'search-token-change'
+                    }`}
+                    data-element-id={
+                      token.symbol === 'BTC' ? 'search-bitcoin-change' :
+                      token.symbol === 'ETH' ? 'search-ethereum-change' :
+                      token.symbol === 'SOL' ? 'search-solana-change' :
+                      `search-token-change-${index}`
+                    }
+                  >
+                    {token.change}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
