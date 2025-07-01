@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   // Загружаем элементы из Supabase
   const { elements, loading, error } = useWalletElements();
 
-  // Обновляем маппер элементов при загрузке
   useEffect(() => {
     if (elements.length > 0) {
       walletElementsMapper.updateElements(elements);
@@ -76,7 +74,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     console.log('🚪 Edit Mode exited');
   };
 
-  // Get unified styles for all components
   const globalStyle = getStyleForComponent('global');
   const headerStyle = getStyleForComponent('header');
 
