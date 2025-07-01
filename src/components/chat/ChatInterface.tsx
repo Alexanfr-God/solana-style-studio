@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import MessageHistory from './MessageHistory';
 import MessageInput from './MessageInput';
 import ModeSelectionModal from './ModeSelectionModal';
-import { SmartEditAssistant } from './SmartEditAssistant';
+import { EnhancedSmartEditAssistant } from './EnhancedSmartEditAssistant';
 import { ElementContextDisplay } from './ElementContextDisplay';
 import { useChatStore } from '@/stores/chatStore';
 import { useSmartEditContext } from '@/hooks/useSmartEditContext';
@@ -49,7 +49,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     updateSelectedElement,
     setIsEditMode,
     getSmartSuggestions,
-    contextualPrompt
+    contextualPrompt,
+    elementHistory
   } = useSmartEditContext();
 
   // Update selectedElement when element is selected from preview
@@ -83,7 +84,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const handleSmartSuggestionClick = (suggestion: string) => {
-    console.log('🤖 Smart suggestion clicked:', suggestion);
+    console.log('🤖 Enhanced Smart suggestion clicked:', suggestion);
     
     // Create enhanced prompt with element context
     const enhancedPrompt = smartEditElement 
@@ -172,11 +173,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <ModeSelectionModal />
           </div>
           
-          {/* Session Info */}
+          {/* Enhanced Session Info */}
           <div className="text-xs text-white/40 mb-2">
             Session: {sessionId.split('_')[1]} | Mode: {chatMode} | Language: Auto-detect
             {smartEditElement && (
-              <span className="text-purple-400 ml-2">| Smart Edit: Active</span>
+              <span className="text-purple-400 ml-2">
+                | Smart Edit: Active ({elementHistory.length} history)
+              </span>
             )}
           </div>
         </div>
@@ -189,12 +192,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           />
         </div>
 
-        {/* Smart Edit Assistant */}
+        {/* Enhanced Smart Edit Assistant */}
         <div className="flex-shrink-0 mb-3">
-          <SmartEditAssistant
+          <EnhancedSmartEditAssistant
             selectedElement={smartEditElement}
             isEditMode={isEditMode && chatMode === 'analysis'}
             onSuggestionClick={handleSmartSuggestionClick}
+            elementHistory={elementHistory}
           />
         </div>
         
@@ -222,7 +226,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 Selected element: <span className="font-medium">{selectedElement}</span>
                 {smartEditElement && (
                   <span className="text-green-400 ml-2">
-                    ✨ Smart Edit Active
+                    ✨ Smart Edit Active | Use ↑↓ for history
                   </span>
                 )}
               </p>

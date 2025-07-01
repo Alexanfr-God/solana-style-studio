@@ -6,7 +6,8 @@ import { Eye, EyeOff, Lock, Unlock, Edit3 } from 'lucide-react';
 import WalletContainer from '@/components/wallet/WalletContainer';
 import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
-import { InteractiveElementSelector } from '@/components/wallet/editMode/InteractiveElementSelector';
+import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
+import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -46,20 +47,19 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   const handleEditModeToggle = () => {
     setIsEditMode(!isEditMode);
     if (!isEditMode) {
-      console.log('🎯 Edit Mode activated');
+      console.log('🎯 Advanced Edit Mode activated');
     } else {
-      console.log('🎯 Edit Mode deactivated');
+      console.log('🎯 Advanced Edit Mode deactivated');
       setSelectedElementId(null);
     }
   };
 
   const handleElementSelect = (element: WalletElement) => {
     setSelectedElementId(element.id);
-    console.log('✅ Element selected in preview:', element.name, element.selector);
+    console.log('✅ Advanced Element selected in preview:', element.name, element.selector);
     
     // Auto-populate chat with element selector
     if (onElementSelect && element.selector) {
-      // Remove leading dot if present for cleaner display
       const cleanSelector = element.selector.startsWith('.') 
         ? element.selector.substring(1) 
         : element.selector;
@@ -71,7 +71,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   const handleEditModeExit = () => {
     setIsEditMode(false);
     setSelectedElementId(null);
-    console.log('🚪 Edit Mode exited');
+    console.log('🚪 Advanced Edit Mode exited');
   };
 
   const globalStyle = getStyleForComponent('global');
@@ -189,7 +189,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
             
-            {/* EDIT Button */}
+            {/* Enhanced EDIT Button */}
             <Button
               variant={isEditMode ? "default" : "outline"}
               size="sm"
@@ -201,7 +201,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               } transition-colors`}
             >
               <Edit3 className="h-4 w-4 mr-1" />
-              {isEditMode ? 'Exit Edit' : 'EDIT'}
+              {isEditMode ? 'Exit Advanced Edit' : 'ADVANCED EDIT'}
             </Button>
           </div>
           
@@ -252,6 +252,14 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             )}
           </div>
           
+          {/* Enhanced Edit Mode Indicator */}
+          <EditModeIndicator
+            isActive={isEditMode}
+            selectedElementName={elements.find(e => e.id === selectedElementId)?.name}
+            elementsCount={elements.length}
+            onExit={handleEditModeExit}
+          />
+          
           {/* Wallet Container */}
           <div 
             ref={walletContainerRef}
@@ -270,8 +278,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             )}
           </div>
 
-          {/* Interactive Element Selector */}
-          <InteractiveElementSelector
+          {/* Advanced Interactive Element Selector */}
+          <AdvancedInteractiveElementSelector
             isActive={isEditMode}
             onElementSelect={handleElementSelect}
             onExit={handleEditModeExit}
@@ -279,23 +287,23 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           />
         </div>
 
-        {/* Edit Mode Info */}
+        {/* Enhanced Edit Mode Info */}
         {isEditMode && (
-          <div className="mt-4 p-3 bg-purple-500/20 border border-purple-500/30 rounded-lg">
+          <div className="mt-4 p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
                 <span className="text-sm text-purple-300">
-                  Edit Mode: Hover and click wallet elements to customize
+                  Advanced Edit Mode: Hover elements, use keyboard shortcuts
                 </span>
               </div>
               <span className="text-xs text-purple-400">
-                {elements.length} elements loaded
+                {elements.length} elements | ESC to exit | ↑↓ for history
               </span>
             </div>
             {selectedElementId && (
               <div className="mt-2 text-xs text-green-400">
-                Selected: {elements.find(e => e.id === selectedElementId)?.name}
+                ✨ Selected: {elements.find(e => e.id === selectedElementId)?.name}
               </div>
             )}
           </div>
