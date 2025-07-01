@@ -25,12 +25,43 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
 
   const getElementPosition = (element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
-    return {
+    const container = containerRef.current;
+    
+    console.log('🔍 Debug positioning:');
+    console.log('  Element rect:', rect);
+    console.log('  Container:', container);
+    
+    if (container) {
+      const containerRect = container.getBoundingClientRect();
+      console.log('  Container rect:', containerRect);
+      
+      // Учитываем прокрутку контейнера
+      const scrollTop = container.scrollTop || 0;
+      const scrollLeft = container.scrollLeft || 0;
+      console.log('  Container scroll:', { scrollTop, scrollLeft });
+      
+      // Вычисляем позицию относительно контейнера
+      const relativePosition = {
+        x: rect.left - containerRect.left + scrollLeft,
+        y: rect.top - containerRect.top + scrollTop,
+        width: rect.width,
+        height: rect.height
+      };
+      
+      console.log('  Relative position:', relativePosition);
+      return relativePosition;
+    }
+    
+    // Fallback к абсолютным координатам
+    const absolutePosition = {
       x: rect.left,
       y: rect.top,
       width: rect.width,
       height: rect.height
     };
+    
+    console.log('  Absolute position (fallback):', absolutePosition);
+    return absolutePosition;
   };
 
   useEffect(() => {
@@ -56,8 +87,10 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
         const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
         if (elementInfo) {
           setHoveredElement(elementInfo, elementAtPoint);
-          setHoveredPosition(getElementPosition(elementAtPoint));
+          const position = getElementPosition(elementAtPoint);
+          setHoveredPosition(position);
           console.log(`🎯 Hovering over: ${elementInfo.name} (${elementInfo.selector})`);
+          console.log('  Position set to:', position);
         }
       } else {
         setHoveredElement(null, null);
@@ -80,20 +113,39 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
         const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
         if (elementInfo) {
           selectElement(elementInfo, elementAtPoint);
-          setSelectedPosition(getElementPosition(elementAtPoint));
+          const position = getElementPosition(elementAtPoint);
+          setSelectedPosition(position);
           onElementSelect(elementInfo);
           console.log('✅ Advanced Element selected:', elementInfo.name, elementInfo.selector);
+          console.log('  Selected position set to:', position);
         }
       }
     };
 
-    // Handle window resize to update positions
+    // Handle window resize and scroll to update positions
     const handleResize = () => {
       if (state.hoveredDomElement) {
-        setHoveredPosition(getElementPosition(state.hoveredDomElement));
+        const newPosition = getElementPosition(state.hoveredDomElement);
+        setHoveredPosition(newPosition);
+        console.log('🔄 Hovered position updated on resize:', newPosition);
       }
       if (state.selectedDomElement) {
-        setSelectedPosition(getElementPosition(state.selectedDomElement));
+        const newPosition = getElementPosition(state.selectedDomElement);
+        setSelectedPosition(newPosition);
+        console.log('🔄 Selected position updated on resize:', newPosition);
+      }
+    };
+
+    const handleScroll = () => {
+      if (state.hoveredDomElement) {
+        const newPosition = getElementPosition(state.hoveredDomElement);
+        setHoveredPosition(newPosition);
+        console.log('📜 Hovered position updated on scroll:', newPosition);
+      }
+      if (state.selectedDomElement) {
+        const newPosition = getElementPosition(state.selectedDomElement);
+        setSelectedPosition(newPosition);
+        console.log('📜 Selected position updated on scroll:', newPosition);
       }
     };
 
@@ -102,12 +154,14 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
     document.addEventListener('click', handleClick, true);
     document.addEventListener('mousedown', handleClick, true); // Also block mousedown
     window.addEventListener('resize', handleResize);
+    container.addEventListener('scroll', handleScroll, true);
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove, true);
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('mousedown', handleClick, true);
       window.removeEventListener('resize', handleResize);
+      container.removeEventListener('scroll', handleScroll, true);
     };
   }, [isActive, containerRef, onElementSelect, selectElement, setHoveredElement, state.hoveredDomElement, state.selectedDomElement]);
 
@@ -138,6 +192,7 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
         isSelected={false}
         isHovered={true}
         position={hoveredPosition}
+        containerRef={containerRef}
       />
 
       {/* Selection overlay */}
@@ -147,6 +202,7 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
         isSelected={true}
         isHovered={false}
         position={selectedPosition}
+        containerRef={containerRef}
       />
     </>
   );

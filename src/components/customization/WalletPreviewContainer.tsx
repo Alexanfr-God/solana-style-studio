@@ -47,9 +47,11 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   }, [elements]);
 
   const handleEditModeToggle = () => {
-    setIsEditMode(!isEditMode);
-    if (!isEditMode) {
+    const newEditMode = !isEditMode;
+    setIsEditMode(newEditMode);
+    if (newEditMode) {
       console.log('🎯 Advanced Edit Mode activated');
+      console.log('🎯 Wallet container ref:', walletContainerRef.current);
     } else {
       console.log('🎯 Advanced Edit Mode deactivated');
       setSelectedElementId(null);
@@ -318,7 +320,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             onExit={handleEditModeExit}
           />
           
-          {/* Wallet Container */}
+          {/* Wallet Container - ИСПРАВЛЕНО для правильного позиционирования overlay */}
           <div 
             ref={walletContainerRef}
             className="relative w-96 h-[650px] mx-auto rounded-2xl overflow-hidden"
@@ -331,18 +333,34 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
                 : '0 20px 40px rgba(0,0,0,0.3)'
             }}
           >
-            {currentLayer === 'login' ? renderLoginScreen() : (
+            {/* Overlay контейнер - позиционируем relative чтобы absolute overlay работал правильно */}
+            {isEditMode && (
+              <div 
+                className="absolute inset-0 pointer-events-none z-50"
+                style={{ 
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 9998
+                }}
+              >
+                <AdvancedInteractiveElementSelector
+                  isActive={isEditMode}
+                  onElementSelect={handleElementSelect}
+                  onExit={handleEditModeExit}
+                  containerRef={walletContainerRef}
+                />
+              </div>
+            )}
+
+            {currentLayer === 'login' ? (
+              renderLoginScreen()
+            ) : (
               <WalletContainer />
             )}
           </div>
-
-          {/* Advanced Interactive Element Selector */}
-          <AdvancedInteractiveElementSelector
-            isActive={isEditMode}
-            onElementSelect={handleElementSelect}
-            onExit={handleEditModeExit}
-            containerRef={walletContainerRef}
-          />
         </div>
 
         {/* Enhanced Edit Mode Info */}
