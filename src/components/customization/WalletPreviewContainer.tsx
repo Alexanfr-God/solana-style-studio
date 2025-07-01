@@ -9,7 +9,13 @@ import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
 import { InteractiveElementSelector } from '@/components/wallet/editMode/InteractiveElementSelector';
 
-const WalletPreviewContainer = () => {
+interface WalletPreviewContainerProps {
+  onElementSelect?: (elementSelector: string) => void;
+}
+
+const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
+  onElementSelect
+}) => {
   const {
     getStyleForComponent,
     selectedWallet,
@@ -53,9 +59,15 @@ const WalletPreviewContainer = () => {
     setSelectedElementId(element.id);
     console.log('✅ Element selected in preview:', element.name, element.selector);
     
-    // TODO: Здесь будет интеграция с чатом для автозаполнения
-    // Пока просто логируем
-    console.log('📝 Should auto-populate chat with:', element.selector);
+    // Auto-populate chat with element selector
+    if (onElementSelect && element.selector) {
+      // Remove leading dot if present for cleaner display
+      const cleanSelector = element.selector.startsWith('.') 
+        ? element.selector.substring(1) 
+        : element.selector;
+      onElementSelect(cleanSelector);
+      console.log('📝 Auto-populated chat with selector:', cleanSelector);
+    }
   };
 
   const handleEditModeExit = () => {

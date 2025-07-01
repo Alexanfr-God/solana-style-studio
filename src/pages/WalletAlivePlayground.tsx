@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 import ChatInterface from '@/components/chat/ChatInterface';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,21 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 
 const WalletAlivePlayground = () => {
+  const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
+
   const handleMintClick = () => {
     console.log('MINT clicked');
     // TODO: Implement mint functionality
+  };
+
+  const handleElementSelectFromPreview = (elementSelector: string) => {
+    setSelectedElementFromPreview(elementSelector);
+    console.log('🎯 Element selected from preview:', elementSelector);
+  };
+
+  const handleElementChangeFromChat = (element: string) => {
+    // This handles changes from chat interface if needed
+    console.log('🎯 Element changed from chat:', element);
   };
 
   return (
@@ -41,12 +53,17 @@ const WalletAlivePlayground = () => {
             <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-6">
               {/* Left Column - Chat Interface */}
               <div className="xl:col-span-1 lg:col-span-1 space-y-6">
-                <ChatInterface />
+                <ChatInterface 
+                  selectedElementFromPreview={selectedElementFromPreview}
+                  onElementChange={handleElementChangeFromChat}
+                />
               </div>
               
               {/* Right Column - Wallet Preview */}
               <div className="xl:col-span-3 lg:col-span-2 space-y-4">
-                <WalletPreviewContainer />
+                <WalletPreviewContainer 
+                  onElementSelect={handleElementSelectFromPreview}
+                />
                 
                 {/* MINT Button */}
                 <div className="flex justify-center">

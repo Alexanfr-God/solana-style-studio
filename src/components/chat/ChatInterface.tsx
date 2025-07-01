@@ -17,7 +17,15 @@ export interface ChatMessage {
   autoApplied?: boolean;
 }
 
-const ChatInterface = () => {
+interface ChatInterfaceProps {
+  selectedElementFromPreview?: string;
+  onElementChange?: (element: string) => void;
+}
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  selectedElementFromPreview,
+  onElementChange
+}) => {
   const { 
     messages, 
     isLoading, 
@@ -29,6 +37,22 @@ const ChatInterface = () => {
   } = useChatStore();
   
   const [selectedElement, setSelectedElement] = useState<string>('');
+
+  // Update selectedElement when element is selected from preview
+  React.useEffect(() => {
+    if (selectedElementFromPreview) {
+      setSelectedElement(selectedElementFromPreview);
+      console.log('🎯 Element auto-populated from preview:', selectedElementFromPreview);
+    }
+  }, [selectedElementFromPreview]);
+
+  // Notify parent when element changes
+  const handleElementSelect = (element: string) => {
+    setSelectedElement(element);
+    if (onElementChange) {
+      onElementChange(element);
+    }
+  };
 
   const handleStarterClick = (message: string) => {
     console.log('🎯 Handling starter click for mode:', chatMode);
@@ -103,7 +127,7 @@ const ChatInterface = () => {
         <div className="flex-shrink-0">
           <MessageInput 
             selectedElement={selectedElement}
-            onElementSelect={setSelectedElement}
+            onElementSelect={handleElementSelect}
             currentMode={chatMode}
           />
           
