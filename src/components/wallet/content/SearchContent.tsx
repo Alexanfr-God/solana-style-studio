@@ -103,7 +103,7 @@ const SearchContent = () => {
                 <button
                   key={index}
                   onClick={() => handleRecentSearch(search)}
-                  className="px-3 py-2 text-sm transition-colors hover:scale-105 search-recent-item"
+                  className={`px-3 py-2 text-sm transition-colors hover:scale-105 search-recent-item-${index}`}
                   data-element-id={`search-recent-item-${index}`}
                   style={{
                     backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
@@ -113,7 +113,7 @@ const SearchContent = () => {
                     transition: panelStyle.transition
                   }}
                 >
-                  <span className="search-recent-item-text" data-element-id={`search-recent-item-text-${index}`}>
+                  <span className={`search-recent-item-text-${index}`} data-element-id={`search-recent-item-text-${index}`}>
                     {search}
                   </span>
                 </button>
@@ -141,7 +141,7 @@ const SearchContent = () => {
                 <button
                   key={index}
                   onClick={() => handleRecentSearch(token.name)}
-                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-white/10 transition-colors search-trending-item"
+                  className={`w-full flex items-center justify-between p-3 rounded-lg hover:bg-white/10 transition-colors search-trending-item-${index}`}
                   data-element-id={`search-trending-item-${index}`}
                   style={{
                     backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
@@ -153,20 +153,20 @@ const SearchContent = () => {
                 >
                   <div className="flex items-center gap-3">
                     <div 
-                      className="w-10 h-10 rounded-full flex items-center justify-center search-trending-token-icon-container"
+                      className={`w-10 h-10 rounded-full flex items-center justify-center search-trending-token-icon-container-${index}`}
                       data-element-id={`search-trending-token-icon-container-${index}`}
                       style={{
                         backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
                         borderRadius: '50%'
                       }}
                     >
-                      <span className="text-lg search-trending-token-icon" data-element-id={`search-trending-token-icon-${index}`}>
+                      <span className={`text-lg search-trending-token-icon-${index}`} data-element-id={`search-trending-token-icon-${index}`}>
                         {token.icon}
                       </span>
                     </div>
                     <div className="text-left">
                       <div 
-                        className="text-white font-medium search-trending-token-name"
+                        className={`text-white font-medium search-trending-token-name-${index}`}
                         data-element-id={`search-trending-token-name-${index}`}
                         style={{
                           color: globalStyle.textColor || '#FFFFFF',
@@ -176,7 +176,7 @@ const SearchContent = () => {
                         {token.name}
                       </div>
                       <div 
-                        className="text-gray-400 text-sm search-trending-token-symbol"
+                        className={`text-gray-400 text-sm search-trending-token-symbol-${index}`}
                         data-element-id={`search-trending-token-symbol-${index}`}
                         style={{ fontFamily: globalStyle.fontFamily }}
                       >
@@ -186,7 +186,7 @@ const SearchContent = () => {
                   </div>
                   <div className="text-right">
                     <div 
-                      className="text-white font-medium search-trending-token-price"
+                      className={`text-white font-medium search-trending-token-price-${index}`}
                       data-element-id={`search-trending-token-price-${index}`}
                       style={{
                         color: globalStyle.textColor || '#FFFFFF',
@@ -196,7 +196,7 @@ const SearchContent = () => {
                       {token.price}
                     </div>
                     <div 
-                      className={`text-sm search-trending-token-change ${token.change.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}
+                      className={`text-sm search-trending-token-change-${index} ${token.change.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}
                       data-element-id={`search-trending-token-change-${index}`}
                       style={{ fontFamily: globalStyle.fontFamily }}
                     >
