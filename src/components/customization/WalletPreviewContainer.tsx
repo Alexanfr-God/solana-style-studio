@@ -1,11 +1,13 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
-import { useState } from 'react';
+import { Eye, EyeOff, Lock, Unlock, Edit3 } from 'lucide-react';
 import WalletContainer from '@/components/wallet/WalletContainer';
+import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
+import { walletElementsMapper } from '@/services/walletElementsMappingService';
+import { InteractiveElementSelector } from '@/components/wallet/editMode/InteractiveElementSelector';
 
 const WalletPreviewContainer = () => {
   const {
@@ -22,7 +24,45 @@ const WalletPreviewContainer = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const walletContainerRef = useRef<HTMLDivElement>(null);
+
+  // Загружаем элементы из Supabase
+  const { elements, loading, error } = useWalletElements();
+
+  // Обновляем маппер элементов при загрузке
+  useEffect(() => {
+    if (elements.length > 0) {
+      walletElementsMapper.updateElements(elements);
+      console.log('🔄 Updated wallet elements mapper with', elements.length, 'elements');
+    }
+  }, [elements]);
+
+  const handleEditModeToggle = () => {
+    setIsEditMode(!isEditMode);
+    if (!isEditMode) {
+      console.log('🎯 Edit Mode activated');
+    } else {
+      console.log('🎯 Edit Mode deactivated');
+      setSelectedElementId(null);
+    }
+  };
+
+  const handleElementSelect = (element: WalletElement) => {
+    setSelectedElementId(element.id);
+    console.log('✅ Element selected in preview:', element.name, element.selector);
+    
+    // TODO: Здесь будет интеграция с чатом для автозаполнения
+    // Пока просто логируем
+    console.log('📝 Should auto-populate chat with:', element.selector);
+  };
+
+  const handleEditModeExit = () => {
+    setIsEditMode(false);
+    setSelectedElementId(null);
+    console.log('🚪 Edit Mode exited');
+  };
 
   // Get unified styles for all components
   const globalStyle = getStyleForComponent('global');
@@ -113,11 +153,48 @@ const WalletPreviewContainer = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
+        <CardContent className="p-6 h-full flex items-center justify-center">
+          <div className="text-white">Loading wallet elements...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
+        <CardContent className="p-6 h-full flex items-center justify-center">
+          <div className="text-red-400">Error loading wallet elements: {error}</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
       <CardContent className="p-6 h-full flex flex-col">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
+            
+            {/* EDIT Button */}
+            <Button
+              variant={isEditMode ? "default" : "outline"}
+              size="sm"
+              onClick={handleEditModeToggle}
+              className={`${
+                isEditMode 
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                  : 'border-purple-500 text-purple-400 hover:bg-purple-500/10'
+              } transition-colors`}
+            >
+              <Edit3 className="h-4 w-4 mr-1" />
+              {isEditMode ? 'Exit Edit' : 'EDIT'}
+            </Button>
+          </div>
           
           {/* Wallet Selector */}
           <div className="flex items-center gap-2">
@@ -183,7 +260,37 @@ const WalletPreviewContainer = () => {
               <WalletContainer />
             )}
           </div>
+
+          {/* Interactive Element Selector */}
+          <InteractiveElementSelector
+            isActive={isEditMode}
+            onElementSelect={handleElementSelect}
+            onExit={handleEditModeExit}
+            containerRef={walletContainerRef}
+          />
         </div>
+
+        {/* Edit Mode Info */}
+        {isEditMode && (
+          <div className="mt-4 p-3 bg-purple-500/20 border border-purple-500/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-purple-300">
+                  Edit Mode: Hover and click wallet elements to customize
+                </span>
+              </div>
+              <span className="text-xs text-purple-400">
+                {elements.length} elements loaded
+              </span>
+            </div>
+            {selectedElementId && (
+              <div className="mt-2 text-xs text-green-400">
+                Selected: {elements.find(e => e.id === selectedElementId)?.name}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
