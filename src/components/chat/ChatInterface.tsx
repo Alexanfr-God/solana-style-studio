@@ -4,7 +4,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import MessageHistory from './MessageHistory';
 import MessageInput from './MessageInput';
 import ModeSelectionModal from './ModeSelectionModal';
+import { SmartEditAssistant } from './SmartEditAssistant';
+import { ElementContextDisplay } from './ElementContextDisplay';
 import { useChatStore } from '@/stores/chatStore';
+import { useSmartEditContext } from '@/hooks/useSmartEditContext';
+import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
 
 export interface ChatMessage {
   id: string;
@@ -37,14 +41,38 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   } = useChatStore();
   
   const [selectedElement, setSelectedElement] = useState<string>('');
+  const { elements } = useWalletElements();
+  
+  const {
+    selectedElement: smartEditElement,
+    isEditMode,
+    updateSelectedElement,
+    setIsEditMode,
+    getSmartSuggestions,
+    contextualPrompt
+  } = useSmartEditContext();
 
   // Update selectedElement when element is selected from preview
   React.useEffect(() => {
     if (selectedElementFromPreview) {
       setSelectedElement(selectedElementFromPreview);
+      
+      // Find the corresponding WalletElement for smart edit context
+      const foundElement = elements.find(el => 
+        el.selector === `.${selectedElementFromPreview}` || 
+        el.selector === selectedElementFromPreview ||
+        el.id === selectedElementFromPreview
+      );
+      
+      if (foundElement) {
+        updateSelectedElement(foundElement);
+        setIsEditMode(true);
+        console.log('🎯 Smart Edit context activated for:', foundElement.name);
+      }
+      
       console.log('🎯 Element auto-populated from preview:', selectedElementFromPreview);
     }
-  }, [selectedElementFromPreview]);
+  }, [selectedElementFromPreview, elements, updateSelectedElement, setIsEditMode]);
 
   // Notify parent when element changes
   const handleElementSelect = (element: string) => {
@@ -54,12 +82,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleSmartSuggestionClick = (suggestion: string) => {
+    console.log('🤖 Smart suggestion clicked:', suggestion);
+    
+    // Create enhanced prompt with element context
+    const enhancedPrompt = smartEditElement 
+      ? `${suggestion}\n\nElement Context:\n${contextualPrompt}`
+      : suggestion;
+
+    // Send message based on current mode
+    switch (chatMode) {
+      case 'analysis':
+        sendStyleAnalysis({ 
+          content: enhancedPrompt, 
+          analysisDepth: 'comprehensive' 
+        });
+        break;
+      case 'leonardo':
+        sendImageGenerationMessage({ content: suggestion, mode: 'leonardo' });
+        break;
+      case 'replicate':
+        sendImageGenerationMessage({ content: suggestion, mode: 'replicate' });
+        break;
+      default:
+        sendMessage({ 
+          content: enhancedPrompt,
+          walletElement: smartEditElement?.selector || selectedElement
+        });
+    }
+  };
+
   const handleStarterClick = (message: string) => {
     console.log('🎯 Handling starter click for mode:', chatMode);
     
+    // Enhanced message with element context if available
+    const enhancedMessage = smartEditElement && chatMode === 'analysis'
+      ? `${message}\n\nSelected Element: ${smartEditElement.name} (${smartEditElement.type})\n${contextualPrompt}`
+      : message;
+    
     switch (chatMode) {
       case 'analysis':
-        sendStyleAnalysis({ content: message, analysisDepth: 'comprehensive' });
+        sendStyleAnalysis({ content: enhancedMessage, analysisDepth: 'comprehensive' });
         break;
       case 'leonardo':
         sendImageGenerationMessage({ content: message, mode: 'leonardo' });
@@ -68,7 +131,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         sendImageGenerationMessage({ content: message, mode: 'replicate' });
         break;
       default:
-        sendMessage({ content: message });
+        sendMessage({ content: enhancedMessage });
     }
   };
 
@@ -83,7 +146,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const getModeDescription = () => {
     const descriptions = {
-      'analysis': "Analyze your current wallet style and apply smart improvements. I'll preserve your background while enhancing colors, typography, and effects.",
+      'analysis': smartEditElement 
+        ? `Analyzing "${smartEditElement.name}" element. I'll provide contextual styling suggestions while preserving your design.`
+        : "Analyze your current wallet style and apply smart improvements. I'll preserve your background while enhancing colors, typography, and effects.",
       'leonardo': "Generate stunning artistic backgrounds with Leonardo.ai. Your new background will be automatically applied to both lock and unlock screens.",
       'replicate': "Create unique art backgrounds with Replicate. Perfect for creative and meme-style designs that will transform your wallet's appearance."
     };
@@ -110,11 +175,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {/* Session Info */}
           <div className="text-xs text-white/40 mb-2">
             Session: {sessionId.split('_')[1]} | Mode: {chatMode} | Language: Auto-detect
+            {smartEditElement && (
+              <span className="text-purple-400 ml-2">| Smart Edit: Active</span>
+            )}
           </div>
+        </div>
+
+        {/* Element Context Display */}
+        <div className="flex-shrink-0 mb-3">
+          <ElementContextDisplay 
+            element={smartEditElement} 
+            isVisible={isEditMode && !!smartEditElement} 
+          />
+        </div>
+
+        {/* Smart Edit Assistant */}
+        <div className="flex-shrink-0 mb-3">
+          <SmartEditAssistant
+            selectedElement={smartEditElement}
+            isEditMode={isEditMode && chatMode === 'analysis'}
+            onSuggestionClick={handleSmartSuggestionClick}
+          />
         </div>
         
         {/* Expanded Message Area */}
-        <div className="flex-1 min-h-0 mb-4 h-[650px]">
+        <div className="flex-1 min-h-0 mb-4">
           <MessageHistory 
             messages={messages} 
             isLoading={isLoading}
@@ -135,6 +220,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div className="mt-2 p-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
               <p className="text-sm text-purple-300">
                 Selected element: <span className="font-medium">{selectedElement}</span>
+                {smartEditElement && (
+                  <span className="text-green-400 ml-2">
+                    ✨ Smart Edit Active
+                  </span>
+                )}
               </p>
             </div>
           )}
