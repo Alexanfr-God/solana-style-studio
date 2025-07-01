@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowUpDown, Settings, Info } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -32,10 +31,11 @@ const SwapContent = () => {
   };
 
   return (
-    <div className="flex-1 px-4 pb-20 overflow-auto">
+    <div className="flex-1 px-4 pb-20 overflow-auto swap-content" data-element-id="swap-content">
       {/* Swap Container */}
       <div 
-        className="mt-6 p-6 rounded-xl border hover:scale-[1.01] transition-transform duration-200"
+        className="mt-6 p-6 rounded-xl border hover:scale-[1.01] transition-transform duration-200 swap-container"
+        data-element-id="swap-container"
         style={{
           backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
           borderRadius: containerStyle.borderRadius || '16px',
@@ -46,9 +46,10 @@ const SwapContent = () => {
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 swap-header" data-element-id="swap-header">
           <h2 
-            className="text-xl font-semibold"
+            className="text-xl font-semibold swap-title"
+            data-element-id="swap-title"
             style={{
               color: globalStyle.textColor || '#FFFFFF',
               fontFamily: globalStyle.fontFamily
@@ -57,7 +58,8 @@ const SwapContent = () => {
             Swap
           </h2>
           <button 
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors swap-settings"
+            data-element-id="swap-settings"
             style={{
               borderRadius: buttonStyle.borderRadius || '8px'
             }}
@@ -68,7 +70,8 @@ const SwapContent = () => {
 
         {/* From Token Input */}
         <div 
-          className="p-4 rounded-xl mb-2"
+          className="p-4 rounded-xl mb-2 swap-from-container"
+          data-element-id="swap-from-container"
           style={{
             backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
             borderRadius: panelStyle.borderRadius || '12px',
@@ -130,7 +133,8 @@ const SwapContent = () => {
         <div className="flex justify-center my-4">
           <button
             onClick={handleFlipTokens}
-            className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110"
+            className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110 swap-flip-button"
+            data-element-id="swap-flip-button"
             style={{
               backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
               borderRadius: '50%',
@@ -143,7 +147,8 @@ const SwapContent = () => {
 
         {/* To Token Input */}
         <div 
-          className="p-4 rounded-xl mb-6"
+          className="p-4 rounded-xl mb-6 swap-to-container"
+          data-element-id="swap-to-container"
           style={{
             backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
             borderRadius: panelStyle.borderRadius || '12px',
@@ -203,7 +208,8 @@ const SwapContent = () => {
 
         {/* Swap Info */}
         <div 
-          className="p-3 rounded-lg mb-6"
+          className="p-3 rounded-lg mb-6 swap-info"
+          data-element-id="swap-info"
           style={{
             backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.03)',
             borderRadius: panelStyle.borderRadius || '8px'
@@ -234,7 +240,8 @@ const SwapContent = () => {
         {/* Swap Button */}
         <button
           onClick={handleSwap}
-          className="w-full py-4 rounded-xl font-medium transition-all duration-200 hover:scale-105"
+          className="w-full py-4 rounded-xl font-medium transition-all duration-200 hover:scale-105 swap-button"
+          data-element-id="swap-button"
           style={{
             backgroundColor: buttonStyle.backgroundColor || '#9945FF',
             background: buttonStyle.gradient || buttonStyle.backgroundColor,

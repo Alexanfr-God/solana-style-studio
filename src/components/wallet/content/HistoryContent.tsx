@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -62,11 +63,12 @@ const HistoryContent = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col px-4 py-3 overflow-y-auto">
+    <div className="flex-1 flex flex-col px-4 py-3 overflow-y-auto history-content" data-element-id="history-content">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 history-header" data-element-id="history-header">
         <h2 
-          className="text-lg font-semibold text-white"
+          className="text-lg font-semibold text-white history-title"
+          data-element-id="history-title"
           style={{
             color: globalStyle.textColor || '#FFFFFF',
             fontFamily: globalStyle.fontFamily
@@ -75,7 +77,8 @@ const HistoryContent = () => {
           Recent Activity
         </h2>
         <button 
-          className="p-2 rounded-full hover:bg-white/10 transition-colors"
+          className="p-2 rounded-full hover:bg-white/10 transition-colors history-menu"
+          data-element-id="history-menu"
           style={{
             borderRadius: '50%',
             transition: buttonStyle.transition
@@ -86,12 +89,13 @@ const HistoryContent = () => {
       </div>
 
       {/* Transaction Groups by Date */}
-      <div className="space-y-4">
+      <div className="space-y-4 history-transactions" data-element-id="history-transactions">
         {transactions.map((group, groupIndex) => (
           <div key={groupIndex}>
             {/* Date Header */}
             <div 
-              className="text-xs text-gray-400 mb-3 font-medium"
+              className="text-xs text-gray-400 mb-3 font-medium history-date"
+              data-element-id="history-date"
               style={{ fontFamily: globalStyle.fontFamily }}
             >
               {group.date}
@@ -102,7 +106,8 @@ const HistoryContent = () => {
               {group.items.map((transaction, itemIndex) => (
                 <div
                   key={itemIndex}
-                  className="p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                  className="p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer history-transaction-item"
+                  data-element-id="history-transaction-item"
                   onClick={() => handleTransactionClick(transaction.type)}
                   style={{
                     backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.03)',
@@ -226,7 +231,8 @@ const HistoryContent = () => {
       {/* Load More Button */}
       <div className="mt-6 flex justify-center">
         <button
-          className="px-4 py-2 text-sm transition-colors hover:scale-105"
+          className="px-4 py-2 text-sm transition-colors hover:scale-105 history-load-more"
+          data-element-id="history-load-more"
           onClick={() => handleTransactionClick('load-more')}
           style={{
             color: buttonStyle.backgroundColor || '#9945FF',
