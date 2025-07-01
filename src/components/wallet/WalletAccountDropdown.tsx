@@ -114,13 +114,15 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
       >
         {/* Header */}
         <div 
-          className="px-4 py-3 border-b"
+          className="px-4 py-3 border-b account-dropdown-header"
+          data-element-id="account-dropdown-header"
           style={{
             borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
           }}
         >
           <h3 
-            className="text-sm font-medium text-white"
+            className="text-sm font-medium text-white account-dropdown-title"
+            data-element-id="account-dropdown-title"
             style={{
               color: globalStyle.textColor || '#FFFFFF',
               fontFamily: globalStyle.fontFamily
@@ -129,7 +131,8 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
             {getTitle()}
           </h3>
           <p 
-            className="text-xs text-gray-400 mt-1"
+            className="text-xs text-gray-400 mt-1 account-dropdown-description"
+            data-element-id="account-dropdown-description"
             style={{ fontFamily: globalStyle.fontFamily }}
           >
             {getDescription()}
@@ -149,14 +152,16 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
         
         {/* Footer */}
         <div 
-          className="px-4 py-3 border-t"
+          className="px-4 py-3 border-t account-dropdown-footer"
+          data-element-id="account-dropdown-footer"
           style={{
             backgroundColor: overlayStyle.backgroundColor?.replace('E6', 'CC') || 'rgba(255, 255, 255, 0.05)',
             borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
           }}
         >
           <button 
-            className="w-full text-sm transition-colors hover:scale-105"
+            className="w-full text-sm transition-colors hover:scale-105 account-dropdown-add-button"
+            data-element-id="account-dropdown-add-button"
             onClick={() => {
               console.log('Add new account');
               if (onClose) {
@@ -171,7 +176,9 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
               transition: buttonStyle.transition
             }}
           >
-            + Add New Account
+            <span className="account-dropdown-add-text" data-element-id="account-dropdown-add-text">
+              + Add New Account
+            </span>
           </button>
         </div>
       </div>
