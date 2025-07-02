@@ -1,31 +1,42 @@
 
 import React from 'react';
-import { Home, Zap, Search, Clock, Grid } from 'lucide-react';
-import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { Home, LayoutGrid, ArrowRightLeft, Clock, Search } from 'lucide-react';
+import { useWalletCustomizationStore, WalletLayer } from '@/stores/walletCustomizationStore';
 
 const WalletBottomNavigation = () => {
-  const { 
-    currentLayer, 
-    setCurrentLayer,
-    getStyleForComponent 
+  const {
+    currentLayer,
+    getStyleForComponent,
+    setCurrentLayer
   } = useWalletCustomizationStore();
 
+  // Get navigation-specific styles
   const navigationStyle = getStyleForComponent('navigation');
+  const buttonStyle = getStyleForComponent('buttons');
 
-  const tabs = [
-    { id: 'home', label: 'Home', icon: Home, selector: 'nav-home' },
-    { id: 'apps', label: 'Apps', icon: Grid, selector: 'nav-apps' },
-    { id: 'swap', label: 'Swap', icon: Zap, selector: 'nav-swap' },
-    { id: 'history', label: 'History', icon: Clock, selector: 'nav-history' },
-    { id: 'search', label: 'Search', icon: Search, selector: 'nav-search' }
+  const navItems = [
+    { id: 'home' as WalletLayer, icon: Home, label: 'Home', className: 'nav-home-icon' },
+    { id: 'apps' as WalletLayer, icon: LayoutGrid, label: 'Apps', className: 'nav-apps-icon' },
+    { id: 'swap' as WalletLayer, icon: ArrowRightLeft, label: 'Swap', className: 'nav-swap-icon' },
+    { id: 'history' as WalletLayer, icon: Clock, label: 'History', className: 'nav-history-icon' },
+    { id: 'search' as WalletLayer, icon: Search, label: 'Search', className: 'nav-search-icon' }
   ];
+
+  const handleNavClick = (layerId: WalletLayer) => {
+    console.log(`🔄 Navigation clicked: ${layerId}, current: ${currentLayer}`);
+    setCurrentLayer(layerId);
+    console.log(`✅ Navigation set to: ${layerId}`);
+  };
+
+  console.log(`🎯 Current layer in navigation: ${currentLayer}`);
 
   return (
     <div 
-      className="flex items-center justify-around px-4 py-3 border-t border-white/10 bg-black/20 backdrop-blur-md z-[10] bottom-navigation"
+      className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 z-[5] bottom-navigation"
       data-element-id="bottom-navigation"
       style={{
-        backgroundColor: navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.2)',
+        backgroundColor: navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+        background: navigationStyle.gradient || navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
         backdropFilter: navigationStyle.backdropFilter || 'blur(10px)',
         borderBottomLeftRadius: '1rem',
         borderBottomRightRadius: '1rem',
@@ -33,35 +44,49 @@ const WalletBottomNavigation = () => {
         boxShadow: navigationStyle.boxShadow
       }}
     >
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        const isActive = currentLayer === tab.id;
-        
-        return (
-          <button
-            key={tab.id}
-            onClick={() => setCurrentLayer(tab.id as any)}
-            className={`flex flex-col items-center space-y-1 px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105 ${tab.selector}`}
-            data-element-id={tab.selector}
+      <div className="grid grid-cols-5 items-center">
+        {navItems.map(item => (
+          <button 
+            key={item.id}
+            className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 ${item.className} ${
+              currentLayer === item.id ? 'opacity-100' : 'opacity-50'
+            }`}
+            data-element-id={item.className}
+            onClick={() => handleNavClick(item.id)}
             style={{
-              color: isActive 
-                ? navigationStyle.activeColor || '#A855F7'
-                : navigationStyle.inactiveColor || '#9CA3AF'
+              borderRadius: navigationStyle.borderRadius || '8px'
             }}
           >
-            <Icon 
-              className={`w-5 h-5 ${tab.selector}-icon`}
-              data-element-id={`${tab.selector}-icon`}
+            <item.icon 
+              className={`w-6 h-6 transition-colors ${
+                currentLayer === item.id 
+                  ? 'text-white' 
+                  : 'text-gray-400 hover:text-white'
+              }`} 
+              style={{
+                color: currentLayer === item.id 
+                  ? buttonStyle.backgroundColor || '#9945FF'
+                  : undefined
+              }}
             />
             <span 
-              className={`text-xs font-medium ${tab.selector}-label`}
-              data-element-id={`${tab.selector}-label`}
+              className={`text-xs mt-1 transition-colors ${
+                currentLayer === item.id 
+                  ? 'text-white' 
+                  : 'text-gray-400'
+              }`}
+              style={{
+                color: currentLayer === item.id 
+                  ? buttonStyle.textColor || '#FFFFFF'
+                  : undefined,
+                fontFamily: navigationStyle.fontFamily
+              }}
             >
-              {tab.label}
+              {item.label}
             </span>
           </button>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 };

@@ -1,182 +1,196 @@
 
 import React from 'react';
-import { X, Plus, Edit, Settings } from 'lucide-react';
+import { X, Plus, Pencil, Settings } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatAddress } from '@/lib/utils';
 
 const AccountSidebar = () => {
   const {
-    showAccountSidebar,
-    setShowAccountSidebar,
     accounts,
     activeAccountId,
     setActiveAccount,
+    showAccountSidebar,
+    setShowAccountSidebar,
     getStyleForComponent
   } = useWalletCustomizationStore();
 
+  // Get component-specific styles
+  const overlayStyle = getStyleForComponent('overlays');
+  const containerStyle = getStyleForComponent('containers');
+  const buttonStyle = getStyleForComponent('buttons');
   const globalStyle = getStyleForComponent('global');
-  const activeAccount = accounts.find(acc => acc.id === activeAccountId);
+
+  const handleAccountSelect = (accountId: string) => {
+    setActiveAccount(accountId);
+    setShowAccountSidebar(false);
+  };
+
+  const handleClose = () => {
+    setShowAccountSidebar(false);
+  };
+
+  const handleIconClick = (iconType: string) => {
+    console.log(`${iconType} clicked`);
+  };
 
   if (!showAccountSidebar) return null;
 
   return (
     <>
-      {/* Background Overlay */}
+      {/* Overlay with rounded corners */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[50] account-sidebar-overlay"
+        className="fixed top-4 left-4 bottom-4 right-4 z-40 account-sidebar-overlay"
         data-element-id="account-sidebar-overlay"
-        onClick={() => setShowAccountSidebar(false)}
+        onClick={handleClose}
+        style={{
+          backgroundColor: overlayStyle.backgroundColor?.replace('E6', '80') || 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: overlayStyle.backdropFilter || 'blur(8px)',
+          borderRadius: overlayStyle.borderRadius || '16px'
+        }}
       />
       
-      {/* Sidebar Panel */}
+      {/* Sidebar with rounded corners */}
       <div 
-        className="fixed top-0 right-0 h-full w-80 bg-gray-900 z-[51] transform transition-transform duration-300 ease-in-out account-sidebar-panel"
-        data-element-id="account-sidebar-panel"
+        className="fixed top-4 left-4 bottom-4 w-80 z-50 flex flex-col animate-slide-in-right account-sidebar-container"
+        data-element-id="account-sidebar-container"
         style={{
-          backgroundColor: globalStyle.backgroundColor || '#111827',
-          borderLeft: '1px solid rgba(255, 255, 255, 0.1)'
+          backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
+          backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
+          fontFamily: globalStyle.fontFamily || 'Inter',
+          border: overlayStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: overlayStyle.borderRadius || '16px',
+          overflow: 'hidden'
         }}
       >
-        {/* Header */}
+        {/* Header with close button */}
         <div 
-          className="flex items-center justify-between p-4 border-b border-white/10 account-sidebar-header"
+          className="flex items-center justify-between p-4 border-b account-sidebar-header"
           data-element-id="account-sidebar-header"
+          style={{
+            borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+          }}
         >
-          <h2 className="text-lg font-semibold text-white">Accounts</h2>
+          <h2 
+            className="text-lg font-medium text-white account-sidebar-title"
+            data-element-id="account-sidebar-title"
+            style={{
+              color: globalStyle.textColor || '#FFFFFF',
+              fontFamily: globalStyle.fontFamily
+            }}
+          >
+            Accounts
+          </h2>
           <button
-            onClick={() => setShowAccountSidebar(false)}
+            onClick={handleClose}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors account-sidebar-close"
             data-element-id="account-sidebar-close"
+            style={{
+              borderRadius: buttonStyle.borderRadius || '8px',
+              transition: buttonStyle.transition
+            }}
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-gray-400 account-sidebar-close-icon" data-element-id="account-sidebar-close-icon" />
           </button>
         </div>
 
-        {/* Content */}
-        <div 
-          className="flex-1 p-4 space-y-4 account-sidebar-content"
-          data-element-id="account-sidebar-content"
-        >
-          {/* Main Account */}
-          <div 
-            className="p-4 rounded-lg bg-white/5 border border-white/10 sidebar-main-account"
-            data-element-id="sidebar-main-account"
-          >
-            <div className="flex items-center space-x-3 mb-3">
-              <Avatar className="w-12 h-12">
-                <AvatarImage src="" alt={activeAccount?.name} />
-                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
-                  {activeAccount?.name.charAt(0) || 'M'}
+        {/* Accounts List */}
+        <div className="flex-1 p-4 space-y-3 overflow-auto account-sidebar-list" data-element-id="account-sidebar-list">
+          {accounts.map((account, index) => (
+            <button
+              key={account.id}
+              onClick={() => handleAccountSelect(account.id)}
+              className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 hover:bg-white/10 account-sidebar-item ${
+                activeAccountId === account.id ? 'ring-1 ring-purple-500' : ''
+              }`}
+              data-element-id={`account-sidebar-item-${index}`}
+              style={{
+                backgroundColor: activeAccountId === account.id 
+                  ? containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)' 
+                  : 'transparent',
+                borderRadius: containerStyle.borderRadius || '12px',
+                transition: containerStyle.transition
+              }}
+            >
+              <Avatar className="w-10 h-10 account-sidebar-avatar" data-element-id={`account-sidebar-avatar-${index}`}>
+                <AvatarImage src="" alt={account.name} />
+                <AvatarFallback 
+                  className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium account-sidebar-avatar-fallback"
+                  data-element-id={`account-sidebar-avatar-fallback-${index}`}
+                  style={{
+                    background: buttonStyle.gradient || 'linear-gradient(135deg, #9945FF, #14F195)'
+                  }}
+                >
+                  {account.name.charAt(account.name.length - 1)}
                 </AvatarFallback>
               </Avatar>
-              <div>
+              <div className="text-left account-sidebar-account-info" data-element-id={`account-sidebar-account-info-${index}`}>
                 <div 
-                  className="text-white font-medium sidebar-main-account-name"
-                  data-element-id="sidebar-main-account-name"
+                  className="text-sm font-medium text-white account-sidebar-account-name"
+                  data-element-id={`account-sidebar-account-name-${index}`}
+                  style={{
+                    color: globalStyle.textColor || '#FFFFFF',
+                    fontFamily: globalStyle.fontFamily
+                  }}
                 >
-                  {activeAccount?.name || 'Main Account'}
+                  {account.name}
                 </div>
                 <div 
-                  className="text-gray-400 text-sm sidebar-main-account-address"
-                  data-element-id="sidebar-main-account-address"
+                  className="text-xs text-gray-400 account-sidebar-account-address"
+                  data-element-id={`account-sidebar-account-address-${index}`}
+                  style={{ fontFamily: globalStyle.fontFamily }}
                 >
-                  {formatAddress(activeAccount?.address || '0x123...')}
+                  {formatAddress(account.address)}
                 </div>
               </div>
-            </div>
-            <div className="text-xs text-purple-400 bg-purple-500/20 px-2 py-1 rounded-full inline-block">
-              Active
-            </div>
-          </div>
-
-          {/* Trading Account */}
-          <div 
-            className="p-4 rounded-lg bg-white/5 border border-white/10 sidebar-trading-account"
-            data-element-id="sidebar-trading-account"
-          >
-            <div className="flex items-center space-x-3 mb-3">
-              <Avatar className="w-12 h-12">
-                <AvatarImage src="" alt="Trading Account" />
-                <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-medium">
-                  T
-                </AvatarFallable>
-              </Avatar>
-              <div>
-                <div 
-                  className="text-white font-medium sidebar-trading-account-name"
-                  data-element-id="sidebar-trading-account-name"
-                >
-                  Trading Account
-                </div>
-                <div 
-                  className="text-gray-400 text-sm sidebar-trading-account-address"
-                  data-element-id="sidebar-trading-account-address"
-                >
-                  {formatAddress('0x456...')}
-                </div>
-              </div>
-            </div>
-            <div className="text-xs text-gray-400 bg-gray-500/20 px-2 py-1 rounded-full inline-block">
-              Inactive
-            </div>
-          </div>
-
-          {/* Account List */}
-          <div className="space-y-2">
-            {accounts.map((account) => (
-              <button
-                key={account.id}
-                onClick={() => {
-                  setActiveAccount(account.id);
-                  setShowAccountSidebar(false);
-                }}
-                className={`w-full p-3 rounded-lg text-left transition-colors ${
-                  account.id === activeAccountId
-                    ? 'bg-purple-500/20 border border-purple-500/50'
-                    : 'bg-white/5 hover:bg-white/10 border border-white/10'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src="" alt={account.name} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm">
-                      {account.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="text-white text-sm font-medium">{account.name}</div>
-                    <div className="text-gray-400 text-xs">{formatAddress(account.address)}</div>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+            </button>
+          ))}
         </div>
 
-        {/* Footer */}
+        {/* Bottom Actions */}
         <div 
-          className="p-4 border-t border-white/10 sidebar-footer"
-          data-element-id="sidebar-footer"
+          className="p-4 border-t account-sidebar-actions"
+          data-element-id="account-sidebar-actions"
+          style={{
+            borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+          }}
         >
-          <div className="flex space-x-2">
-            <button 
-              className="flex-1 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/10 sidebar-plus-button"
-              data-element-id="sidebar-plus-button"
+          <div className="flex items-center justify-center space-x-6 account-sidebar-action-buttons" data-element-id="account-sidebar-action-buttons">
+            <button
+              onClick={() => handleIconClick('add')}
+              className="p-3 rounded-lg hover:bg-white/10 transition-colors account-sidebar-add-button"
+              data-element-id="account-sidebar-add-button"
+              title="Add Account"
+              style={{
+                borderRadius: buttonStyle.borderRadius || '12px',
+                transition: buttonStyle.transition
+              }}
             >
-              <Plus className="w-5 h-5 text-white mx-auto" />
+              <Plus className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-add-icon" data-element-id="account-sidebar-add-icon" />
             </button>
-            <button 
-              className="flex-1 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/10 sidebar-pencil-button"
-              data-element-id="sidebar-pencil-button"
+            <button
+              onClick={() => handleIconClick('edit')}
+              className="p-3 rounded-lg hover:bg-white/10 transition-colors account-sidebar-edit-button"
+              data-element-id="account-sidebar-edit-button"
+              title="Edit Account"
+              style={{
+                borderRadius: buttonStyle.borderRadius || '12px',
+                transition: buttonStyle.transition
+              }}
             >
-              <Edit className="w-5 h-5 text-white mx-auto" />
+              <Pencil className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-edit-icon" data-element-id="account-sidebar-edit-icon" />
             </button>
-            <button 
-              className="flex-1 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/10 sidebar-settings-button"
-              data-element-id="sidebar-settings-button"
+            <button
+              onClick={() => handleIconClick('settings')}
+              className="p-3 rounded-lg hover:bg-white/10 transition-colors account-sidebar-settings-button"
+              data-element-id="account-sidebar-settings-button"
+              title="Settings"
+              style={{
+                borderRadius: buttonStyle.borderRadius || '12px',
+                transition: buttonStyle.transition
+              }}
             >
-              <Settings className="w-5 h-5 text-white mx-auto" />
+              <Settings className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-settings-icon" data-element-id="account-sidebar-settings-icon" />
             </button>
           </div>
         </div>
