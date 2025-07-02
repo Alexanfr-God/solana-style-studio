@@ -12,6 +12,14 @@ interface EditModeDebugPanelProps {
   onToggle: () => void;
 }
 
+// Helper-функция для работы с customization_types
+const parseCustomizationTypes = (types: any): string[] => {
+  if (Array.isArray(types)) {
+    return types as string[];
+  }
+  return [];
+};
+
 export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
   isVisible,
   elements,
@@ -188,6 +196,12 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
                   {element.asset_library_path && (
                     <div className="text-xs text-blue-400 mt-1">
                       Asset Path: {element.asset_library_path}
+                    </div>
+                  )}
+                  
+                  {category && (
+                    <div className="text-xs text-purple-400 mt-1">
+                      Types: {parseCustomizationTypes(category.customization_types).join(', ')}
                     </div>
                   )}
                   

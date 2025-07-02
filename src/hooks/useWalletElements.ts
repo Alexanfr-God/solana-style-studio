@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface WalletElement {
   id: string;
@@ -20,12 +21,20 @@ export interface ElementCategory {
   id: string;
   name: string;
   description: string;
-  customization_types: string[];
+  customization_types: Json | null;
   default_library_path: string;
   icon_color: string;
   sort_order: number;
   is_active: boolean;
 }
+
+// Helper-функция для безопасного преобразования Json в string[]
+const parseCustomizationTypes = (types: Json | null): string[] => {
+  if (Array.isArray(types)) {
+    return types as string[];
+  }
+  return [];
+};
 
 export const useWalletElements = () => {
   const [elements, setElements] = useState<WalletElement[]>([]);
@@ -88,12 +97,19 @@ export const useWalletElements = () => {
     return categories.find(category => category.id === categoryId);
   };
 
+  const getCategoryCustomizationTypes = (categoryId: string): string[] => {
+    const category = getCategoryById(categoryId);
+    return category ? parseCustomizationTypes(category.customization_types) : [];
+  };
+
   return { 
     elements, 
     categories, 
     loading, 
     error, 
     getElementsByCategory, 
-    getCategoryById 
+    getCategoryById,
+    getCategoryCustomizationTypes,
+    parseCustomizationTypes
   };
 };
