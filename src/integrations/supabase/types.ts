@@ -114,6 +114,36 @@ export type Database = {
         }
         Relationships: []
       }
+      icon_variants: {
+        Row: {
+          created_at: string | null
+          element_ids: string[]
+          group_name: string
+          id: string
+          storage_file_name: string
+          storage_path: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          element_ids: string[]
+          group_name: string
+          id?: string
+          storage_file_name: string
+          storage_path: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          element_ids?: string[]
+          group_name?: string
+          id?: string
+          storage_file_name?: string
+          storage_path?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       image_feedback: {
         Row: {
           created_at: string | null
@@ -147,6 +177,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_custom_icons: {
+        Row: {
+          custom_storage_path: string
+          element_id: string
+          id: string
+          is_active: boolean | null
+          original_storage_path: string
+          upload_timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          custom_storage_path: string
+          element_id: string
+          id?: string
+          is_active?: boolean | null
+          original_storage_path: string
+          upload_timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          custom_storage_path?: string
+          element_id?: string
+          id?: string
+          is_active?: boolean | null
+          original_storage_path?: string
+          upload_timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       wallet_elements: {
         Row: {
           asset_library_path: string | null
@@ -155,13 +215,16 @@ export type Database = {
           custom_props: Json
           customizable: boolean
           description: string
+          icon_group: string | null
           id: string
+          is_customizable_icon: boolean | null
           name: string
           parent_element: string | null
           position: string | null
           responsive_settings: Json | null
           screen: string
           selector: string | null
+          storage_file_name: string | null
           type: string
           updated_at: string
           z_index: number | null
@@ -173,13 +236,16 @@ export type Database = {
           custom_props?: Json
           customizable?: boolean
           description: string
+          icon_group?: string | null
           id: string
+          is_customizable_icon?: boolean | null
           name: string
           parent_element?: string | null
           position?: string | null
           responsive_settings?: Json | null
           screen: string
           selector?: string | null
+          storage_file_name?: string | null
           type: string
           updated_at?: string
           z_index?: number | null
@@ -191,13 +257,16 @@ export type Database = {
           custom_props?: Json
           customizable?: boolean
           description?: string
+          icon_group?: string | null
           id?: string
+          is_customizable_icon?: boolean | null
           name?: string
           parent_element?: string | null
           position?: string | null
           responsive_settings?: Json | null
           screen?: string
           selector?: string | null
+          storage_file_name?: string | null
           type?: string
           updated_at?: string
           z_index?: number | null
@@ -225,6 +294,10 @@ export type Database = {
       }
     }
     Functions: {
+      get_final_icon_path: {
+        Args: { p_element_id: string; p_user_id?: string }
+        Returns: string
+      }
       refresh_feedback_analytics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
