@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, Zap, Search, Clock, Grid3X3 } from 'lucide-react';
+import { Home, Zap, Search, Clock, Grid } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 const WalletBottomNavigation = () => {
@@ -14,7 +14,7 @@ const WalletBottomNavigation = () => {
 
   const tabs = [
     { id: 'home', label: 'Home', icon: Home, selector: 'nav-home' },
-    { id: 'apps', label: 'Apps', icon: Grid3X3, selector: 'nav-apps' },
+    { id: 'apps', label: 'Apps', icon: Grid, selector: 'nav-apps' },
     { id: 'swap', label: 'Swap', icon: Zap, selector: 'nav-swap' },
     { id: 'history', label: 'History', icon: Clock, selector: 'nav-history' },
     { id: 'search', label: 'Search', icon: Search, selector: 'nav-search' }

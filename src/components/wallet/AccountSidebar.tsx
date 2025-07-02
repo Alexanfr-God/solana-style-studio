@@ -11,7 +11,7 @@ const AccountSidebar = () => {
     setShowAccountSidebar,
     accounts,
     activeAccountId,
-    switchAccount,
+    setActiveAccount,
     getStyleForComponent
   } = useWalletCustomizationStore();
 
@@ -100,7 +100,7 @@ const AccountSidebar = () => {
                 <AvatarImage src="" alt="Trading Account" />
                 <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-medium">
                   T
-                </AvatarFallback>
+                </AvatarFallable>
               </Avatar>
               <div>
                 <div 
@@ -128,7 +128,7 @@ const AccountSidebar = () => {
               <button
                 key={account.id}
                 onClick={() => {
-                  switchAccount(account.id);
+                  setActiveAccount(account.id);
                   setShowAccountSidebar(false);
                 }}
                 className={`w-full p-3 rounded-lg text-left transition-colors ${
