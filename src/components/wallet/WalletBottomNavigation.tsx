@@ -10,7 +10,6 @@ const WalletBottomNavigation = () => {
     setCurrentLayer
   } = useWalletCustomizationStore();
 
-  // Get navigation-specific styles
   const navigationStyle = getStyleForComponent('navigation');
   const buttonStyle = getStyleForComponent('buttons');
 

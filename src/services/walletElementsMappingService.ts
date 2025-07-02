@@ -16,19 +16,24 @@ export class WalletElementsMappingService {
     this.elementMap.clear();
     elements.forEach(element => {
       if (element.selector) {
-        // Теперь селекторы в БД уже без точек, сохраняем как есть
-        const cleanSelector = element.selector;
-        this.elementMap.set(cleanSelector, element);
-        console.log(`📝 Mapped element: ${cleanSelector} -> ${element.name}`);
+        // Сохраняем основной селектор
+        this.elementMap.set(element.selector, element);
+        
+        // Добавляем альтернативные селекторы для совместимости
+        const alternativeSelectors = this.getAlternativeSelectors(element.selector);
+        alternativeSelectors.forEach(altSelector => {
+          this.elementMap.set(altSelector, element);
+        });
+        
+        console.log(`📝 Mapped element: ${element.selector} -> ${element.name} (+ ${alternativeSelectors.length} alternatives)`);
       }
     });
+    
     console.log(`🔄 Total elements mapped: ${this.elementMap.size}`);
+    console.log(`🎯 Unique elements: ${elements.length}`);
     
-    // Логируем количество иконок для проверки
+    // Логируем иконки по категориям
     const iconElements = elements.filter(el => el.category === 'icon');
-    console.log(`🎯 Total icons in category 'icon': ${iconElements.length}`);
-    
-    // Группируем иконки по экранам для лучшего понимания
     const iconsByScreen = iconElements.reduce((acc, icon) => {
       acc[icon.screen] = (acc[icon.screen] || 0) + 1;
       return acc;
@@ -37,52 +42,71 @@ export class WalletElementsMappingService {
     console.log('📊 Icons by screen:', iconsByScreen);
   }
 
+  private getAlternativeSelectors(selector: string): string[] {
+    const alternatives: string[] = [];
+    
+    // Маппинг селекторов к реальным классам в DOM
+    const selectorMappings: Record<string, string[]> = {
+      // Навигационные иконки
+      'nav-home-icon': ['nav-home-icon'],
+      'nav-apps-icon': ['nav-apps-icon'],
+      'nav-swap-icon': ['nav-swap-icon'],
+      'nav-history-icon': ['nav-history-icon'],
+      'nav-search-icon': ['nav-search-icon'],
+      
+      // Иконки действий
+      'action-send-icon': ['action-send-icon'],
+      'action-receive-icon': ['action-receive-icon'],
+      'action-buy-icon': ['action-buy-icon'],
+      'action-swap-main': ['action-swap-icon'],
+      
+      // Системные иконки
+      'header-search-icon': ['header-search-icon'],
+      'header-menu-icon': ['header-menu-icon'],
+      'swap-settings-icon': ['swap-settings-icon'],
+      'swap-arrow-main': ['swap-arrow-container', 'swap-arrow-icon'],
+      'receive-qr-main': ['receive-qr-code', 'receive-qr-icon'],
+      'receive-copy-icon': ['receive-copy-icon'],
+      
+      // Поисковые иконки
+      'search-magnify-icon': ['search-input-icon', 'search-magnify-icon'],
+      'search-recent-icon': ['search-recent-icon'],
+      'search-trending-icon': ['search-trending-icon']
+    };
+    
+    if (selectorMappings[selector]) {
+      alternatives.push(...selectorMappings[selector]);
+    }
+    
+    return alternatives;
+  }
+
   getElementBySelector(selector: string): WalletElement | undefined {
     return this.elementMap.get(selector);
   }
 
   isElementCustomizable(domElement: HTMLElement): boolean {
-    // Strategy 1: Check CSS classes (убираем точки из классов для сравнения)
-    for (const className of domElement.classList) {
-      if (this.elementMap.has(className)) {
-        console.log(`✅ Found customizable element by class: ${className}`);
+    // Проверяем все возможные селекторы
+    const selectors = this.extractSelectorsFromElement(domElement);
+    
+    for (const selector of selectors) {
+      if (this.elementMap.has(selector)) {
+        console.log(`✅ Found customizable element: ${selector}`);
         return true;
       }
     }
-    
-    // Strategy 2: Check data-element-id attribute
-    const dataElementId = domElement.getAttribute('data-element-id');
-    if (dataElementId && this.elementMap.has(dataElementId)) {
-      console.log(`✅ Found customizable element by data-element-id: ${dataElementId}`);
-      return true;
-    }
 
-    // Strategy 3: Check ID attribute
-    const elementId = domElement.id;
-    if (elementId && this.elementMap.has(elementId)) {
-      console.log(`✅ Found customizable element by ID: ${elementId}`);
-      return true;
-    }
-
-    // Strategy 4: Check parent elements (up to 3 levels)
+    // Проверяем родительские элементы
     let parent = domElement.parentElement;
     let level = 0;
     while (parent && level < 3) {
-      // Check parent classes
-      for (const className of parent.classList) {
-        if (this.elementMap.has(className)) {
-          console.log(`✅ Found customizable element by parent class: ${className} (level ${level + 1})`);
+      const parentSelectors = this.extractSelectorsFromElement(parent);
+      for (const selector of parentSelectors) {
+        if (this.elementMap.has(selector)) {
+          console.log(`✅ Found customizable parent element: ${selector} (level ${level + 1})`);
           return true;
         }
       }
-      
-      // Check parent data-element-id
-      const parentDataId = parent.getAttribute('data-element-id');
-      if (parentDataId && this.elementMap.has(parentDataId)) {
-        console.log(`✅ Found customizable element by parent data-element-id: ${parentDataId} (level ${level + 1})`);
-        return true;
-      }
-
       parent = parent.parentElement;
       level++;
     }
@@ -91,58 +115,29 @@ export class WalletElementsMappingService {
   }
 
   getElementInfo(domElement: HTMLElement): WalletElement | null {
-    // Strategy 1: Check CSS classes
-    for (const className of domElement.classList) {
-      const element = this.elementMap.get(className);
-      if (element) {
-        console.log(`🎯 Retrieved element info by class: ${className} -> ${element.name}`);
-        return element;
-      }
-    }
+    // Проверяем все возможные селекторы
+    const selectors = this.extractSelectorsFromElement(domElement);
     
-    // Strategy 2: Check data-element-id attribute
-    const dataElementId = domElement.getAttribute('data-element-id');
-    if (dataElementId) {
-      const element = this.elementMap.get(dataElementId);
+    for (const selector of selectors) {
+      const element = this.elementMap.get(selector);
       if (element) {
-        console.log(`🎯 Retrieved element info by data-element-id: ${dataElementId} -> ${element.name}`);
+        console.log(`🎯 Retrieved element info: ${selector} -> ${element.name}`);
         return element;
       }
     }
 
-    // Strategy 3: Check ID attribute
-    const elementId = domElement.id;
-    if (elementId) {
-      const element = this.elementMap.get(elementId);
-      if (element) {
-        console.log(`🎯 Retrieved element info by ID: ${elementId} -> ${element.name}`);
-        return element;
-      }
-    }
-
-    // Strategy 4: Check parent elements
+    // Проверяем родительские элементы
     let parent = domElement.parentElement;
     let level = 0;
     while (parent && level < 3) {
-      // Check parent classes
-      for (const className of parent.classList) {
-        const element = this.elementMap.get(className);
+      const parentSelectors = this.extractSelectorsFromElement(parent);
+      for (const selector of parentSelectors) {
+        const element = this.elementMap.get(selector);
         if (element) {
-          console.log(`🎯 Retrieved element info by parent class: ${className} -> ${element.name} (level ${level + 1})`);
+          console.log(`🎯 Retrieved parent element info: ${selector} -> ${element.name} (level ${level + 1})`);
           return element;
         }
       }
-      
-      // Check parent data-element-id
-      const parentDataId = parent.getAttribute('data-element-id');
-      if (parentDataId) {
-        const element = this.elementMap.get(parentDataId);
-        if (element) {
-          console.log(`🎯 Retrieved element info by parent data-element-id: ${parentDataId} -> ${element.name} (level ${level + 1})`);
-          return element;
-        }
-      }
-
       parent = parent.parentElement;
       level++;
     }
@@ -151,22 +146,45 @@ export class WalletElementsMappingService {
     return null;
   }
 
-  getAllElements(): WalletElement[] {
-    return Array.from(this.elementMap.values());
+  private extractSelectorsFromElement(element: HTMLElement): string[] {
+    const selectors: string[] = [];
+    
+    // CSS классы
+    element.classList.forEach(className => {
+      selectors.push(className);
+    });
+    
+    // data-element-id
+    const dataElementId = element.getAttribute('data-element-id');
+    if (dataElementId) {
+      selectors.push(dataElementId);
+    }
+    
+    // ID
+    if (element.id) {
+      selectors.push(element.id);
+    }
+    
+    return selectors;
   }
 
-  // Новый метод для получения иконок по категориям
+  getAllElements(): WalletElement[] {
+    const uniqueElements = new Map<string, WalletElement>();
+    
+    this.elementMap.forEach((element, selector) => {
+      uniqueElements.set(element.id, element);
+    });
+    
+    return Array.from(uniqueElements.values());
+  }
+
   getIconsByCategory(): { [category: string]: WalletElement[] } {
     const iconElements = this.getAllElements().filter(el => el.category === 'icon');
     const categories: { [category: string]: WalletElement[] } = {
       'navigation': [],
       'actions': [],
+      'system': [],
       'search': [],
-      'header': [],
-      'sidebar': [],
-      'swap': [],
-      'receive': [],
-      'history': [],
       'other': []
     };
 
@@ -175,18 +193,10 @@ export class WalletElementsMappingService {
         categories.navigation.push(icon);
       } else if (icon.name.includes('Action') || icon.asset_library_path?.includes('actions')) {
         categories.actions.push(icon);
+      } else if (icon.name.includes('Header') || icon.name.includes('Swap') || icon.name.includes('QR') || icon.name.includes('Copy')) {
+        categories.system.push(icon);
       } else if (icon.screen === 'search') {
         categories.search.push(icon);
-      } else if (icon.name.includes('Header')) {
-        categories.header.push(icon);
-      } else if (icon.name.includes('Sidebar')) {
-        categories.sidebar.push(icon);
-      } else if (icon.screen === 'swap') {
-        categories.swap.push(icon);
-      } else if (icon.screen === 'receive') {
-        categories.receive.push(icon);
-      } else if (icon.screen === 'history') {
-        categories.history.push(icon);
       } else {
         categories.other.push(icon);
       }
@@ -195,10 +205,10 @@ export class WalletElementsMappingService {
     return categories;
   }
 
-  // Debug method to log all available selectors
   debugLogAvailableSelectors(): void {
     console.log('🔍 Available selectors in mapping service:');
-    console.log(`📊 Total mapped elements: ${this.elementMap.size}`);
+    console.log(`📊 Total mapped selectors: ${this.elementMap.size}`);
+    console.log(`🎯 Unique elements: ${this.getAllElements().length}`);
     
     const iconsByCategory = this.getIconsByCategory();
     console.log('🎯 Icons by functional category:');
@@ -208,12 +218,6 @@ export class WalletElementsMappingService {
         icons.forEach(icon => {
           console.log(`    - ${icon.selector} -> ${icon.name} (customizable: ${icon.customizable})`);
         });
-      }
-    });
-    
-    this.elementMap.forEach((element, selector) => {
-      if (element.category === 'icon') {
-        console.log(`  🎯 ${selector} -> ${element.name} (${element.type}) [${element.screen}] ${element.customizable ? '✏️' : '🔒'}`);
       }
     });
   }
