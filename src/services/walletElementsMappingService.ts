@@ -23,6 +23,18 @@ export class WalletElementsMappingService {
       }
     });
     console.log(`🔄 Total elements mapped: ${this.elementMap.size}`);
+    
+    // Логируем количество иконок для проверки
+    const iconElements = elements.filter(el => el.category === 'icon');
+    console.log(`🎯 Total icons in category 'icon': ${iconElements.length}`);
+    
+    // Группируем иконки по экранам для лучшего понимания
+    const iconsByScreen = iconElements.reduce((acc, icon) => {
+      acc[icon.screen] = (acc[icon.screen] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    console.log('📊 Icons by screen:', iconsByScreen);
   }
 
   getElementBySelector(selector: string): WalletElement | undefined {
@@ -143,12 +155,66 @@ export class WalletElementsMappingService {
     return Array.from(this.elementMap.values());
   }
 
+  // Новый метод для получения иконок по категориям
+  getIconsByCategory(): { [category: string]: WalletElement[] } {
+    const iconElements = this.getAllElements().filter(el => el.category === 'icon');
+    const categories: { [category: string]: WalletElement[] } = {
+      'navigation': [],
+      'actions': [],
+      'search': [],
+      'header': [],
+      'sidebar': [],
+      'swap': [],
+      'receive': [],
+      'history': [],
+      'other': []
+    };
+
+    iconElements.forEach(icon => {
+      if (icon.screen === 'navigation') {
+        categories.navigation.push(icon);
+      } else if (icon.name.includes('Action') || icon.asset_library_path?.includes('actions')) {
+        categories.actions.push(icon);
+      } else if (icon.screen === 'search') {
+        categories.search.push(icon);
+      } else if (icon.name.includes('Header')) {
+        categories.header.push(icon);
+      } else if (icon.name.includes('Sidebar')) {
+        categories.sidebar.push(icon);
+      } else if (icon.screen === 'swap') {
+        categories.swap.push(icon);
+      } else if (icon.screen === 'receive') {
+        categories.receive.push(icon);
+      } else if (icon.screen === 'history') {
+        categories.history.push(icon);
+      } else {
+        categories.other.push(icon);
+      }
+    });
+
+    return categories;
+  }
+
   // Debug method to log all available selectors
   debugLogAvailableSelectors(): void {
     console.log('🔍 Available selectors in mapping service:');
     console.log(`📊 Total mapped elements: ${this.elementMap.size}`);
+    
+    const iconsByCategory = this.getIconsByCategory();
+    console.log('🎯 Icons by functional category:');
+    Object.entries(iconsByCategory).forEach(([category, icons]) => {
+      if (icons.length > 0) {
+        console.log(`  📁 ${category}: ${icons.length} icons`);
+        icons.forEach(icon => {
+          console.log(`    - ${icon.selector} -> ${icon.name} (customizable: ${icon.customizable})`);
+        });
+      }
+    });
+    
     this.elementMap.forEach((element, selector) => {
-      console.log(`  - ${selector} -> ${element.name} (${element.type}) [${element.screen}]`);
+      if (element.category === 'icon') {
+        console.log(`  🎯 ${selector} -> ${element.name} (${element.type}) [${element.screen}] ${element.customizable ? '✏️' : '🔒'}`);
+      }
     });
   }
 }

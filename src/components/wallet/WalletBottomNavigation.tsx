@@ -15,11 +15,41 @@ const WalletBottomNavigation = () => {
   const buttonStyle = getStyleForComponent('buttons');
 
   const navItems = [
-    { id: 'home' as WalletLayer, icon: Home, label: 'Home', className: 'nav-home-icon' },
-    { id: 'apps' as WalletLayer, icon: LayoutGrid, label: 'Apps', className: 'nav-apps-icon' },
-    { id: 'swap' as WalletLayer, icon: ArrowRightLeft, label: 'Swap', className: 'nav-swap-icon' },
-    { id: 'history' as WalletLayer, icon: Clock, label: 'History', className: 'nav-history-icon' },
-    { id: 'search' as WalletLayer, icon: Search, label: 'Search', className: 'nav-search-icon' }
+    { 
+      id: 'home' as WalletLayer, 
+      icon: Home, 
+      label: 'Home', 
+      className: 'nav-home-icon',
+      dataElementId: 'nav-home-icon'
+    },
+    { 
+      id: 'apps' as WalletLayer, 
+      icon: LayoutGrid, 
+      label: 'Apps', 
+      className: 'nav-apps-icon',
+      dataElementId: 'nav-apps-icon'
+    },
+    { 
+      id: 'swap' as WalletLayer, 
+      icon: ArrowRightLeft, 
+      label: 'Swap', 
+      className: 'nav-swap-icon',
+      dataElementId: 'nav-swap-icon'
+    },
+    { 
+      id: 'history' as WalletLayer, 
+      icon: Clock, 
+      label: 'History', 
+      className: 'nav-history-icon',
+      dataElementId: 'nav-history-icon'
+    },
+    { 
+      id: 'search' as WalletLayer, 
+      icon: Search, 
+      label: 'Search', 
+      className: 'nav-search-icon',
+      dataElementId: 'nav-search-icon'
+    }
   ];
 
   const handleNavClick = (layerId: WalletLayer) => {
@@ -51,18 +81,19 @@ const WalletBottomNavigation = () => {
             className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 ${item.className} ${
               currentLayer === item.id ? 'opacity-100' : 'opacity-50'
             }`}
-            data-element-id={item.className}
+            data-element-id={item.dataElementId}
             onClick={() => handleNavClick(item.id)}
             style={{
               borderRadius: navigationStyle.borderRadius || '8px'
             }}
           >
             <item.icon 
-              className={`w-6 h-6 transition-colors ${
+              className={`w-6 h-6 transition-colors ${item.className} ${
                 currentLayer === item.id 
                   ? 'text-white' 
                   : 'text-gray-400 hover:text-white'
               }`} 
+              data-element-id={item.dataElementId}
               style={{
                 color: currentLayer === item.id 
                   ? buttonStyle.backgroundColor || '#9945FF'
