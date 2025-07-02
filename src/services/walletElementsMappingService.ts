@@ -16,14 +16,13 @@ export class WalletElementsMappingService {
     this.elementMap.clear();
     elements.forEach(element => {
       if (element.selector) {
-        // Clean selector (remove dots if present)
-        const cleanSelector = element.selector.startsWith('.') 
-          ? element.selector.substring(1) 
-          : element.selector;
+        // Теперь селекторы в БД уже без точек, сохраняем как есть
+        const cleanSelector = element.selector;
         this.elementMap.set(cleanSelector, element);
         console.log(`📝 Mapped element: ${cleanSelector} -> ${element.name}`);
       }
     });
+    console.log(`🔄 Total elements mapped: ${this.elementMap.size}`);
   }
 
   getElementBySelector(selector: string): WalletElement | undefined {
@@ -31,7 +30,7 @@ export class WalletElementsMappingService {
   }
 
   isElementCustomizable(domElement: HTMLElement): boolean {
-    // Strategy 1: Check CSS classes
+    // Strategy 1: Check CSS classes (убираем точки из классов для сравнения)
     for (const className of domElement.classList) {
       if (this.elementMap.has(className)) {
         console.log(`✅ Found customizable element by class: ${className}`);
@@ -147,8 +146,9 @@ export class WalletElementsMappingService {
   // Debug method to log all available selectors
   debugLogAvailableSelectors(): void {
     console.log('🔍 Available selectors in mapping service:');
+    console.log(`📊 Total mapped elements: ${this.elementMap.size}`);
     this.elementMap.forEach((element, selector) => {
-      console.log(`  - ${selector} -> ${element.name} (${element.type})`);
+      console.log(`  - ${selector} -> ${element.name} (${element.type}) [${element.screen}]`);
     });
   }
 }

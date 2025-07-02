@@ -3,7 +3,7 @@ import React from 'react';
 import { WalletElement } from '@/hooks/useWalletElements';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Bug } from 'lucide-react';
+import { Eye, Bug, Search } from 'lucide-react';
 
 interface EditModeDebugPanelProps {
   isVisible: boolean;
@@ -31,14 +31,12 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
   }
 
   const checkElementInDOM = (selector: string) => {
-    const cleanSelector = selector.startsWith('.') ? selector.substring(1) : selector;
+    if (!selector) return { found: false, methods: {} };
     
-    // Check by class
-    const byClass = document.querySelector(`.${cleanSelector}`);
-    // Check by data-element-id
-    const byDataId = document.querySelector(`[data-element-id="${cleanSelector}"]`);
-    // Check by ID
-    const byId = document.querySelector(`#${cleanSelector}`);
+    // Селекторы теперь без точек, проверяем все варианты
+    const byClass = document.querySelector(`.${selector}`);
+    const byDataId = document.querySelector(`[data-element-id="${selector}"]`);
+    const byId = document.querySelector(`#${selector}`);
     
     return {
       found: !!(byClass || byDataId || byId),
@@ -46,12 +44,20 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
         byClass: !!byClass,
         byDataId: !!byDataId,
         byId: !!byId
+      },
+      elements: {
+        byClass: byClass?.tagName,
+        byDataId: byDataId?.tagName,
+        byId: byId?.tagName
       }
     };
   };
 
+  const foundElements = elements.filter(el => checkElementInDOM(el.selector || '').found);
+  const missingElements = elements.filter(el => !checkElementInDOM(el.selector || '').found);
+
   return (
-    <div className="fixed bottom-4 right-4 z-[60] w-80">
+    <div className="fixed bottom-4 right-4 z-[60] w-96">
       <Card className="bg-black/90 backdrop-blur-md border-purple-500/30">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-4">
@@ -67,11 +73,23 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
             </button>
           </div>
           
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            <div className="text-xs text-purple-300 mb-2">
-              Elements in Database: {elements.length}
+          {/* Статистика */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="bg-green-500/20 p-2 rounded text-center">
+              <div className="text-lg font-bold text-green-400">{foundElements.length}</div>
+              <div className="text-xs text-green-300">Found</div>
             </div>
-            
+            <div className="bg-red-500/20 p-2 rounded text-center">
+              <div className="text-lg font-bold text-red-400">{missingElements.length}</div>
+              <div className="text-xs text-red-300">Missing</div>
+            </div>
+          </div>
+
+          <div className="text-xs text-purple-300 mb-2">
+            Database Elements: {elements.length}
+          </div>
+          
+          <div className="space-y-2 max-h-64 overflow-y-auto">
             {elements.map((element) => {
               const domCheck = checkElementInDOM(element.selector || '');
               
@@ -88,23 +106,31 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
                     <span className="text-xs text-white font-medium">
                       {element.name}
                     </span>
-                    <Badge 
-                      variant={domCheck.found ? "default" : "destructive"}
-                      className="text-xs"
-                    >
-                      {domCheck.found ? 'Found' : 'Missing'}
-                    </Badge>
+                    <div className="flex gap-1">
+                      <Badge 
+                        variant={domCheck.found ? "default" : "destructive"}
+                        className="text-xs"
+                      >
+                        {domCheck.found ? 'Found' : 'Missing'}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {element.screen}
+                      </Badge>
+                    </div>
                   </div>
                   
                   <div className="text-xs text-gray-400 mt-1">
-                    Selector: {element.selector}
+                    Selector: {element.selector || 'None'}
                   </div>
                   
                   {domCheck.found && (
                     <div className="text-xs text-green-400 mt-1">
                       Found by: {Object.entries(domCheck.methods)
                         .filter(([_, found]) => found)
-                        .map(([method]) => method)
+                        .map(([method, _]) => {
+                          const elementType = domCheck.elements[method as keyof typeof domCheck.elements];
+                          return `${method}${elementType ? `(${elementType})` : ''}`;
+                        })
                         .join(', ')}
                     </div>
                   )}
