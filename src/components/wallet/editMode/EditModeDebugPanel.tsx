@@ -1,19 +1,21 @@
 
 import React from 'react';
-import { WalletElement } from '@/hooks/useWalletElements';
+import { WalletElement, ElementCategory } from '@/hooks/useWalletElements';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Bug, Search } from 'lucide-react';
+import { Eye, Bug, Search, Grid } from 'lucide-react';
 
 interface EditModeDebugPanelProps {
   isVisible: boolean;
   elements: WalletElement[];
+  categories?: ElementCategory[];
   onToggle: () => void;
 }
 
 export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
   isVisible,
   elements,
+  categories = [],
   onToggle
 }) => {
   if (!isVisible) {
@@ -56,6 +58,30 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
   const foundElements = elements.filter(el => checkElementInDOM(el.selector || '').found);
   const missingElements = elements.filter(el => !checkElementInDOM(el.selector || '').found);
 
+  const getCategoryStats = () => {
+    const stats: Record<string, { total: number; found: number; category?: ElementCategory }> = {};
+    
+    categories.forEach(category => {
+      stats[category.id] = { total: 0, found: 0, category };
+    });
+    
+    elements.forEach(element => {
+      const category = element.category || 'uncategorized';
+      if (!stats[category]) {
+        stats[category] = { total: 0, found: 0 };
+      }
+      stats[category].total++;
+      
+      if (checkElementInDOM(element.selector || '').found) {
+        stats[category].found++;
+      }
+    });
+    
+    return stats;
+  };
+
+  const categoryStats = getCategoryStats();
+
   return (
     <div className="fixed bottom-4 right-4 z-[60] w-96">
       <Card className="bg-black/90 backdrop-blur-md border-purple-500/30">
@@ -73,7 +99,7 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
             </button>
           </div>
           
-          {/* Статистика */}
+          {/* Общая статистика */}
           <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="bg-green-500/20 p-2 rounded text-center">
               <div className="text-lg font-bold text-green-400">{foundElements.length}</div>
@@ -85,6 +111,32 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
             </div>
           </div>
 
+          {/* Статистика по категориям */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Grid className="h-3 w-3 text-purple-400" />
+              <span className="text-xs text-purple-300">Categories ({categories.length})</span>
+            </div>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {Object.entries(categoryStats).map(([categoryId, stats]) => (
+                <div
+                  key={categoryId}
+                  className="flex items-center justify-between text-xs"
+                >
+                  <span 
+                    className="text-white truncate"
+                    style={{ color: stats.category?.icon_color }}
+                  >
+                    {stats.category?.name || categoryId}
+                  </span>
+                  <span className="text-gray-400">
+                    {stats.found}/{stats.total}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="text-xs text-purple-300 mb-2">
             Database Elements: {elements.length}
           </div>
@@ -92,6 +144,7 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {elements.map((element) => {
               const domCheck = checkElementInDOM(element.selector || '');
+              const category = categories.find(cat => cat.id === element.category);
               
               return (
                 <div
@@ -107,6 +160,15 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
                       {element.name}
                     </span>
                     <div className="flex gap-1">
+                      {element.category && (
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs"
+                          style={{ borderColor: category?.icon_color }}
+                        >
+                          {element.category}
+                        </Badge>
+                      )}
                       <Badge 
                         variant={domCheck.found ? "default" : "destructive"}
                         className="text-xs"
@@ -122,6 +184,12 @@ export const EditModeDebugPanel: React.FC<EditModeDebugPanelProps> = ({
                   <div className="text-xs text-gray-400 mt-1">
                     Selector: {element.selector || 'None'}
                   </div>
+                  
+                  {element.asset_library_path && (
+                    <div className="text-xs text-blue-400 mt-1">
+                      Asset Path: {element.asset_library_path}
+                    </div>
+                  )}
                   
                   {domCheck.found && (
                     <div className="text-xs text-green-400 mt-1">

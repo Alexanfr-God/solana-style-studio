@@ -42,6 +42,45 @@ export type Database = {
         }
         Relationships: []
       }
+      element_categories: {
+        Row: {
+          created_at: string | null
+          customization_types: Json | null
+          default_library_path: string | null
+          description: string | null
+          icon_color: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customization_types?: Json | null
+          default_library_path?: string | null
+          description?: string | null
+          icon_color?: string | null
+          id: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customization_types?: Json | null
+          default_library_path?: string | null
+          description?: string | null
+          icon_color?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       generated_images: {
         Row: {
           created_at: string | null
@@ -110,6 +149,8 @@ export type Database = {
       }
       wallet_elements: {
         Row: {
+          asset_library_path: string | null
+          category: string | null
           created_at: string
           custom_props: Json
           customizable: boolean
@@ -126,6 +167,8 @@ export type Database = {
           z_index: number | null
         }
         Insert: {
+          asset_library_path?: string | null
+          category?: string | null
           created_at?: string
           custom_props?: Json
           customizable?: boolean
@@ -142,6 +185,8 @@ export type Database = {
           z_index?: number | null
         }
         Update: {
+          asset_library_path?: string | null
+          category?: string | null
           created_at?: string
           custom_props?: Json
           customizable?: boolean

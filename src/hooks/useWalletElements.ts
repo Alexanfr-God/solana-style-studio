@@ -12,35 +12,66 @@ export interface WalletElement {
   customizable: boolean;
   position?: string;
   parent_element?: string;
+  category?: string;
+  asset_library_path?: string;
+}
+
+export interface ElementCategory {
+  id: string;
+  name: string;
+  description: string;
+  customization_types: string[];
+  default_library_path: string;
+  icon_color: string;
+  sort_order: number;
+  is_active: boolean;
 }
 
 export const useWalletElements = () => {
   const [elements, setElements] = useState<WalletElement[]>([]);
+  const [categories, setCategories] = useState<ElementCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadWalletElements = async () => {
       try {
-        console.log('🔄 Loading wallet elements from Supabase...');
+        console.log('🔄 Loading wallet elements and categories from Supabase...');
         
-        const { data, error } = await supabase
+        // Загружаем элементы с новыми полями
+        const { data: elementsData, error: elementsError } = await supabase
           .from('wallet_elements')
           .select('*')
           .eq('customizable', true)
           .order('screen', { ascending: true });
 
-        if (error) {
-          console.error('❌ Error loading wallet elements:', error);
-          setError(error.message);
+        if (elementsError) {
+          console.error('❌ Error loading wallet elements:', elementsError);
+          setError(elementsError.message);
           return;
         }
 
-        console.log('✅ Loaded wallet elements:', data);
-        setElements(data || []);
+        // Загружаем категории
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('element_categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
+        if (categoriesError) {
+          console.error('❌ Error loading element categories:', categoriesError);
+          setError(categoriesError.message);
+          return;
+        }
+
+        console.log('✅ Loaded wallet elements:', elementsData);
+        console.log('✅ Loaded element categories:', categoriesData);
+        
+        setElements(elementsData || []);
+        setCategories(categoriesData || []);
       } catch (err) {
-        console.error('❌ Exception loading wallet elements:', err);
-        setError('Failed to load wallet elements');
+        console.error('❌ Exception loading wallet data:', err);
+        setError('Failed to load wallet elements and categories');
       } finally {
         setLoading(false);
       }
@@ -49,5 +80,20 @@ export const useWalletElements = () => {
     loadWalletElements();
   }, []);
 
-  return { elements, loading, error };
+  const getElementsByCategory = (categoryId: string) => {
+    return elements.filter(element => element.category === categoryId);
+  };
+
+  const getCategoryById = (categoryId: string) => {
+    return categories.find(category => category.id === categoryId);
+  };
+
+  return { 
+    elements, 
+    categories, 
+    loading, 
+    error, 
+    getElementsByCategory, 
+    getCategoryById 
+  };
 };
