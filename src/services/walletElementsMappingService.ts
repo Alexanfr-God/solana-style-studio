@@ -45,7 +45,7 @@ export class WalletElementsMappingService {
   private getAlternativeSelectors(selector: string): string[] {
     const alternatives: string[] = [];
     
-    // Маппинг селекторов к реальным классам в DOM
+    // Расширенный маппинг селекторов к реальным классам в DOM
     const selectorMappings: Record<string, string[]> = {
       // Навигационные иконки
       'nav-home-icon': ['nav-home-icon'],
@@ -71,7 +71,34 @@ export class WalletElementsMappingService {
       // Поисковые иконки
       'search-magnify-icon': ['search-input-icon', 'search-magnify-icon'],
       'search-recent-icon': ['search-recent-icon'],
-      'search-trending-icon': ['search-trending-icon']
+      'search-trending-icon': ['search-trending-icon'],
+      'search-input-icon': ['search-input-icon'],
+      
+      // НОВЫЕ: Sidebar иконки
+      'account-sidebar-close-icon': ['account-sidebar-close-icon', 'sidebar-close-icon'],
+      'account-sidebar-add-icon': ['account-sidebar-add-icon', 'sidebar-add-icon'],
+      'account-sidebar-edit-icon': ['account-sidebar-edit-icon', 'sidebar-edit-icon'],
+      'account-sidebar-settings-icon': ['account-sidebar-settings-icon', 'sidebar-settings-icon'],
+      
+      // НОВЫЕ: QR Code иконки для каждой сети
+      'receive-network-qr-icon-sol': ['receive-network-qr-icon-sol', 'qr-icon-sol'],
+      'receive-network-qr-icon-usdc': ['receive-network-qr-icon-usdc', 'qr-icon-usdc'],
+      'receive-network-qr-icon-usdt': ['receive-network-qr-icon-usdt', 'qr-icon-usdt'],
+      'receive-network-qr-icon-ray': ['receive-network-qr-icon-ray', 'qr-icon-ray'],
+      'receive-network-qr-icon-jupiter': ['receive-network-qr-icon-jupiter', 'qr-icon-jupiter'],
+      'receive-network-qr-icon-orca': ['receive-network-qr-icon-orca', 'qr-icon-orca'],
+      
+      // НОВЫЕ: Copy Address иконки для каждой сети
+      'receive-network-copy-icon-sol': ['receive-network-copy-icon-sol', 'copy-icon-sol'],
+      'receive-network-copy-icon-usdc': ['receive-network-copy-icon-usdc', 'copy-icon-usdc'],
+      'receive-network-copy-icon-usdt': ['receive-network-copy-icon-usdt', 'copy-icon-usdt'],
+      'receive-network-copy-icon-ray': ['receive-network-copy-icon-ray', 'copy-icon-ray'],
+      'receive-network-copy-icon-jupiter': ['receive-network-copy-icon-jupiter', 'copy-icon-jupiter'],
+      'receive-network-copy-icon-orca': ['receive-network-copy-icon-orca', 'copy-icon-orca'],
+      
+      // НОВЫЕ: Dropdown Copy иконки
+      'dropdown-copy-icon-1': ['dropdown-copy-icon-1', 'dropdown-copy-1'],
+      'dropdown-copy-icon-2': ['dropdown-copy-icon-2', 'dropdown-copy-2']
     };
     
     if (selectorMappings[selector]) {
@@ -79,10 +106,6 @@ export class WalletElementsMappingService {
     }
     
     return alternatives;
-  }
-
-  getElementBySelector(selector: string): WalletElement | undefined {
-    return this.elementMap.get(selector);
   }
 
   isElementCustomizable(domElement: HTMLElement): boolean {
@@ -183,20 +206,26 @@ export class WalletElementsMappingService {
     const categories: { [category: string]: WalletElement[] } = {
       'navigation': [],
       'actions': [],
-      'system': [],
+      'sidebar': [],
       'search': [],
+      'receive': [],
+      'system': [],
       'other': []
     };
 
     iconElements.forEach(icon => {
       if (icon.screen === 'navigation') {
         categories.navigation.push(icon);
-      } else if (icon.name.includes('Action') || icon.asset_library_path?.includes('actions')) {
-        categories.actions.push(icon);
-      } else if (icon.name.includes('Header') || icon.name.includes('Swap') || icon.name.includes('QR') || icon.name.includes('Copy')) {
-        categories.system.push(icon);
+      } else if (icon.screen === 'sidebar') {
+        categories.sidebar.push(icon);
       } else if (icon.screen === 'search') {
         categories.search.push(icon);
+      } else if (icon.screen === 'receive') {
+        categories.receive.push(icon);
+      } else if (icon.name.includes('Action') || icon.asset_library_path?.includes('actions')) {
+        categories.actions.push(icon);
+      } else if (icon.name.includes('Header') || icon.name.includes('Swap')) {
+        categories.system.push(icon);
       } else {
         categories.other.push(icon);
       }
@@ -220,6 +249,21 @@ export class WalletElementsMappingService {
         });
       }
     });
+
+    // Логируем новые иконки отдельно
+    const newIcons = this.getAllElements().filter(el => 
+      el.id.includes('sidebar') || 
+      el.id.includes('network-') || 
+      el.id.includes('dropdown-') ||
+      el.id === 'search-input-icon'
+    );
+    
+    if (newIcons.length > 0) {
+      console.log('🆕 Newly added icons:');
+      newIcons.forEach(icon => {
+        console.log(`  ✨ ${icon.selector} -> ${icon.name} (${icon.screen})`);
+      });
+    }
   }
 }
 
