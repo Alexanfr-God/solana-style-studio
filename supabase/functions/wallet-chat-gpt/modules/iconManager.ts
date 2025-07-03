@@ -1,4 +1,3 @@
-import { supabase } from '../../../client.ts';
 
 export interface IconElement {
   id: string;
