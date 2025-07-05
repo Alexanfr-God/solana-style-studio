@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletStyles } from '@/hooks/useWalletStyles';
-import WalletAssetItem from '../preview/WalletAssetItem';
-import WalletActionButtons from '../preview/WalletActionButtons';
+import WalletAssetItem from '../WalletAssetItem';
+import WalletActionButtons from '../WalletActionButtons';
 
 interface HomeContentProps {
   showAccountDropdown?: boolean;
