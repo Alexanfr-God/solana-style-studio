@@ -23,7 +23,7 @@ const DualWalletPreview = () => {
               <h3 className="text-lg font-medium text-white/90">Login View</h3>
             </div>
             <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center">
-              <LoginScreen style={loginStyle} isIndexPage={true} />
+              <LoginScreen style={loginStyle} />
             </div>
           </div>
           
@@ -41,7 +41,7 @@ const DualWalletPreview = () => {
               <h3 className="text-lg font-medium text-white/90">Wallet View</h3>
             </div>
             <div className="flex-1 rounded-lg bg-black/10 backdrop-blur-sm p-4 flex items-center justify-center">
-              <WalletScreen style={walletStyle} isIndexPage={true} />
+              <WalletScreen style={walletStyle} />
             </div>
           </div>
         </div>

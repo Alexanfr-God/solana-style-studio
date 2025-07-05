@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
-import { DemoIndexLoginScreenPreview } from './preview/DemoIndexLoginScreenPreview';
-import { DemoIndexWalletScreenPreview } from './preview/DemoIndexWalletScreenPreview';
+import { UnifiedWalletRenderer } from './UnifiedWalletRenderer';
 
 interface WalletScreenProps {
   style: WalletStyle;
@@ -10,9 +9,9 @@ interface WalletScreenProps {
 }
 
 export const LoginScreen = ({ style }: WalletScreenProps) => {
-  return <DemoIndexLoginScreenPreview style={style} />;
+  return <UnifiedWalletRenderer style={style} type="login" renderMode="preview" />;
 };
 
 export const WalletScreen = ({ style, isIndexPage = false }: WalletScreenProps) => {
-  return <DemoIndexWalletScreenPreview style={style} isIndexPage={isIndexPage} />;
+  return <UnifiedWalletRenderer style={style} type="wallet" renderMode="preview" />;
 };
