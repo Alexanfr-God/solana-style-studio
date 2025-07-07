@@ -2,7 +2,7 @@
   "name": "Default Wallet Theme",
   "version": "1.0.0",
   "colors": {
-    "primary": "#a390f5",
+    "primary": "#FFD700",
     "primaryForeground": "#FFFFFF",
     "secondary": "#282828",
     "secondaryForeground": "#FFFFFF",
