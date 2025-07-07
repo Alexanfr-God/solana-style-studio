@@ -59,7 +59,7 @@
     },
     "containers": {
       "backgroundColor": "rgba(40, 40, 40, 0.8)",
-      "textColor": "#FFFFFF",
+      "textColor": "#FFD700",
       "borderRadius": "16px",
       "fontFamily": "Inter, sans-serif"
     }
