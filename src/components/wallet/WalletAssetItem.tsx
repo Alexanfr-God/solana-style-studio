@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useWalletStyles } from '@/hooks/useWalletStyles';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 interface WalletAssetItemProps {
   image: string;
@@ -32,7 +32,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
   style
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const { getComponentStyle, getTransition } = useWalletStyles();
+  const { getComponentStyle, getTransition, tokenColors } = useWalletTheme();
 
   const cardStyle = getComponentStyle('cards');
   const textColor = style.textColor || cardStyle.color || '#FFFFFF';
@@ -43,7 +43,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
     color: textColor,
     cursor: 'pointer',
     transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-    transition: getTransition('cards')
+    transition: getTransition('hover')
   };
 
   return (
@@ -59,7 +59,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
         <div className="mr-3 relative home-asset-icon" data-element-id="home-asset-icon">
           <div 
             className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white"
-            style={{ backgroundColor: style.accentColor || '#9945FF' }}
+            style={{ backgroundColor: style.accentColor || tokenColors.info }}
           >
             {name[0]}
           </div>

@@ -2,16 +2,17 @@
 import React from 'react';
 import { Home, LayoutGrid, ArrowRightLeft, Clock, Search } from 'lucide-react';
 import { useWalletCustomizationStore, WalletLayer } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const WalletBottomNavigation = () => {
   const {
     currentLayer,
-    getStyleForComponent,
     setCurrentLayer
   } = useWalletCustomizationStore();
-
-  const navigationStyle = getStyleForComponent('navigation');
-  const buttonStyle = getStyleForComponent('buttons');
+  
+  const { getComponentStyle, tokenColors } = useWalletTheme();
+  const navigationStyle = getComponentStyle('navigation');
+  const buttonStyle = getComponentStyle('buttons');
 
   const navItems = [
     { 
@@ -95,7 +96,7 @@ const WalletBottomNavigation = () => {
               data-element-id={item.dataElementId}
               style={{
                 color: currentLayer === item.id 
-                  ? buttonStyle.backgroundColor || '#9945FF'
+                  ? tokenColors.info
                   : undefined
               }}
             />
@@ -107,7 +108,7 @@ const WalletBottomNavigation = () => {
               }`}
               style={{
                 color: currentLayer === item.id 
-                  ? buttonStyle.textColor || '#FFFFFF'
+                  ? navigationStyle.textColor || '#FFFFFF'
                   : undefined,
                 fontFamily: navigationStyle.fontFamily
               }}

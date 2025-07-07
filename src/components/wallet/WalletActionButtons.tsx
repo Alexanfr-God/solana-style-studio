@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Download, Send, ArrowRightLeft, DollarSign } from 'lucide-react';
-import { useWalletStyles } from '@/hooks/useWalletStyles';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 interface WalletActionButtonsProps {
   onAction: (action: string) => void;
@@ -18,7 +18,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
   showAccountDropdown = false 
 }) => {
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
-  const { getComponentStyle, getTransition } = useWalletStyles();
+  const { getComponentStyle, getTransition, tokenColors } = useWalletTheme();
 
   const actions = [
     { id: 'receive', icon: Download, label: 'Receive' },
@@ -43,7 +43,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          transition: getTransition('buttons'),
+          transition: getTransition('default'),
           transform: isHovered ? 'scale(1.05)' : 'scale(1)',
           boxShadow: isHovered ? `0 4px 12px ${style.accentColor}40` : 'none'
         };
@@ -61,7 +61,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
               <action.icon 
                 className={`h-5 w-5 home-${action.id}-icon`}
                 data-element-id={`home-${action.id}-icon`}
-                style={{ color: style.accentColor || '#9b87f5' }} 
+                style={{ color: style.accentColor || tokenColors.info }} 
               />
             </button>
             <span 

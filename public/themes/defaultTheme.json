@@ -1,0 +1,79 @@
+{
+  "name": "Default Wallet Theme",
+  "version": "1.0.0",
+  "colors": {
+    "primary": "#a390f5",
+    "primaryForeground": "#FFFFFF",
+    "secondary": "#282828",
+    "secondaryForeground": "#FFFFFF",
+    "background": "#181818",
+    "foreground": "#FFFFFF",
+    "muted": "#2D2D3F",
+    "mutedForeground": "#9CA3AF",
+    "accent": "#9945FF",
+    "accentForeground": "#FFFFFF",
+    "border": "rgba(255, 255, 255, 0.1)",
+    "success": "#10B981",
+    "error": "#EF4444",
+    "warning": "#F59E0B",
+    "info": "#3B82F6"
+  },
+  "components": {
+    "global": {
+      "backgroundColor": "#181818",
+      "textColor": "#FFFFFF",
+      "fontFamily": "Inter, sans-serif",
+      "borderRadius": "12px",
+      "boxShadow": "0px 4px 20px rgba(0, 0, 0, 0.5)"
+    },
+    "header": {
+      "backgroundColor": "rgba(255, 255, 255, 0.05)",
+      "textColor": "#FFFFFF",
+      "borderRadius": "8px",
+      "backdropFilter": "blur(10px)",
+      "border": "1px solid rgba(255, 255, 255, 0.1)",
+      "fontFamily": "Inter, sans-serif"
+    },
+    "buttons": {
+      "backgroundColor": "#a390f5",
+      "textColor": "#FFFFFF",
+      "borderRadius": "12px",
+      "fontSize": "14px",
+      "fontWeight": "500",
+      "transition": "all 0.2s ease"
+    },
+    "cards": {
+      "backgroundColor": "rgba(40, 40, 40, 0.8)",
+      "textColor": "#FFFFFF",
+      "borderRadius": "16px",
+      "border": "1px solid rgba(255, 255, 255, 0.1)",
+      "fontFamily": "Inter, sans-serif"
+    },
+    "navigation": {
+      "backgroundColor": "rgba(0, 0, 0, 0.5)",
+      "textColor": "#FFFFFF",
+      "borderRadius": "8px",
+      "backdropFilter": "blur(10px)",
+      "border": "1px solid rgba(255, 255, 255, 0.1)",
+      "fontFamily": "Inter, sans-serif"
+    },
+    "containers": {
+      "backgroundColor": "rgba(40, 40, 40, 0.8)",
+      "textColor": "#FFFFFF",
+      "borderRadius": "16px",
+      "fontFamily": "Inter, sans-serif"
+    }
+  },
+  "tokenColors": {
+    "positive": "#10B981",
+    "negative": "#EF4444", 
+    "neutral": "#6B7280",
+    "warning": "#F59E0B",
+    "info": "#3B82F6"
+  },
+  "transitions": {
+    "default": "all 0.2s ease",
+    "hover": "all 0.3s ease",
+    "focus": "all 0.15s ease"
+  }
+}

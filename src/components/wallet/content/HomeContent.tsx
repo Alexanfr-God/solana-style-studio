@@ -1,6 +1,6 @@
 import React from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { useWalletStyles } from '@/hooks/useWalletStyles';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import WalletAssetItem from '../WalletAssetItem';
 import WalletActionButtons from '../WalletActionButtons';
 
@@ -16,7 +16,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
     isBalancePositive,
     setCurrentLayer 
   } = useWalletCustomizationStore();
-  const { getComponentStyle, getTokenColorStyle, tokenColors, getTransition } = useWalletStyles();
+  const { getComponentStyle, getUnifiedTokenColor, tokenColors, getTransition } = useWalletTheme();
 
   const handleAssetClick = (tokenName: string) => {
     console.log(`Clicked on ${tokenName}`);
@@ -43,7 +43,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
   };
 
   const balanceStyle = getComponentStyle('global');
-  const changeStyle = getTokenColorStyle(totalChange);
+  const changeStyle = getUnifiedTokenColor(totalChange);
 
   return (
     <div className="relative flex-1 overflow-y-auto px-4 pb-4 z-[1]">
@@ -100,7 +100,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
             data-element-id="home-see-all"
             style={{ 
               color: tokenColors.info,
-              transition: getTransition('global')
+              transition: getTransition('default')
             }}
           >
             See all

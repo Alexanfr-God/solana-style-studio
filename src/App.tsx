@@ -8,24 +8,27 @@ import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
 import WalletAlivePlayground from "./pages/WalletAlivePlayground";
 import { WalletContextProvider } from "./context/WalletContextProvider";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <WalletContextProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<WalletAlivePlayground />} />
-            <Route path="/documentation" element={<Documentation />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </WalletContextProvider>
+      <ThemeProvider>
+        <WalletContextProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<WalletAlivePlayground />} />
+              <Route path="/documentation" element={<Documentation />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </WalletContextProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

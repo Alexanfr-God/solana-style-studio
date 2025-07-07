@@ -2,6 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import WalletAccountDropdown from '../WalletAccountDropdown';
 import WalletBottomNavigation from '../WalletBottomNavigation';
 import AccountSidebar from '../AccountSidebar';
@@ -15,7 +16,6 @@ import { formatAddress } from '@/lib/utils';
 
 const WalletHomeLayer = () => {
   const {
-    getStyleForComponent,
     accounts,
     activeAccountId,
     showAccountDropdown,
@@ -26,12 +26,13 @@ const WalletHomeLayer = () => {
     setCurrentLayer
   } = useWalletCustomizationStore();
 
+  const { getComponentStyle } = useWalletTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Get component-specific styles
-  const globalStyle = getStyleForComponent('global');
-  const headerStyle = getStyleForComponent('header');
-  const navigationStyle = getStyleForComponent('navigation');
+  // Get component-specific styles from theme
+  const globalStyle = getComponentStyle('global');
+  const headerStyle = getComponentStyle('header');
+  const navigationStyle = getComponentStyle('navigation');
 
   const activeAccount = accounts.find(acc => acc.id === activeAccountId);
 
