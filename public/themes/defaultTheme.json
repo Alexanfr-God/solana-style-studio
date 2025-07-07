@@ -6,7 +6,7 @@
     "primaryForeground": "#FFFFFF",
     "secondary": "#282828",
     "secondaryForeground": "#FFFFFF",
-    "background": "#FFD700",
+    "background": "#181818",
     "foreground": "#FFFFFF",
     "muted": "#2D2D3F",
     "mutedForeground": "#9CA3AF",
@@ -35,7 +35,7 @@
       "fontFamily": "Inter, sans-serif"
     },
     "buttons": {
-      "backgroundColor": "#a390f5",
+      "backgroundColor": "#FFD700",
       "textColor": "#FFFFFF",
       "borderRadius": "12px",
       "fontSize": "14px",

@@ -1,21 +1,13 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 
 export const useWalletTheme = () => {
   const { theme, getComponentStyle, getTokenColor, getTransition } = useTheme();
-  const { getTokenColors, getStatusColors } = useWalletCustomizationStore();
 
-  // Create a unified interface that works with both old and new systems
+  // FIXED: Only use theme system - no more fallback to old store
   const getUnifiedComponentStyle = (component: string) => {
-    // First try new theme system
     const themeStyle = getComponentStyle(component as any);
-    if (themeStyle && Object.keys(themeStyle).length > 0) {
-      return themeStyle;
-    }
-
-    // Fallback to old system for backward compatibility
-    const store = useWalletCustomizationStore.getState();
-    return store.getStyleForComponent(component);
+    console.log(`🎨 Theme style for ${component}:`, themeStyle);
+    return themeStyle;
   };
 
   const getUnifiedTokenColor = (change: string) => {

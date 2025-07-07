@@ -45,6 +45,7 @@ export interface WalletTheme {
 export interface ComponentStyle {
   backgroundColor?: string;
   textColor?: string;
+  color?: string;
   fontFamily?: string;
   borderRadius?: string;
   boxShadow?: string;
@@ -53,6 +54,8 @@ export interface ComponentStyle {
   fontSize?: string;
   fontWeight?: string;
   transition?: string;
+  gradient?: string;
+  backgroundImage?: string;
 }
 
 interface ThemeContextType {
@@ -84,8 +87,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       }
 
       try {
+        console.log('🔄 Loading theme from /themes/defaultTheme.json...');
         const response = await fetch('/themes/defaultTheme.json');
         const defaultTheme = await response.json();
+        console.log('✅ Theme loaded successfully:', defaultTheme);
         setTheme(defaultTheme);
       } catch (error) {
         console.error('Failed to load default theme:', error);

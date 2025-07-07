@@ -68,7 +68,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
               className={`text-xs mt-2 home-${action.id}-label`}
               data-element-id={`home-${action.id}-label`}
               style={{ 
-                color: containerStyle.color || '#FFFFFF',
+                color: containerStyle.textColor || '#FFFFFF',
                 fontFamily: containerStyle.fontFamily 
               }}
             >

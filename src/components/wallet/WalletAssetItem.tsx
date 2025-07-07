@@ -35,7 +35,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
   const { getComponentStyle, getTransition, tokenColors } = useWalletTheme();
 
   const cardStyle = getComponentStyle('cards');
-  const textColor = style.textColor || cardStyle.color || '#FFFFFF';
+  const textColor = style.textColor || cardStyle.textColor || '#FFFFFF';
   
   const interactiveStyle: React.CSSProperties = {
     backgroundColor: style.backgroundColor || cardStyle.backgroundColor,

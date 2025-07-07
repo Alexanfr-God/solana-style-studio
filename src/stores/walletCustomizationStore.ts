@@ -329,21 +329,9 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
 
   getStyleForComponent: (component: string) => {
-    const state = get();
-    const currentStyle = state.currentLayer === 'login' ? state.loginStyle : state.walletStyle;
-    
-    switch (component) {
-      case 'global':
-        return currentStyle;
-      case 'header':
-        return {
-          backgroundColor: currentStyle.backgroundColor,
-          color: currentStyle.textColor,
-          fontFamily: currentStyle.fontFamily
-        };
-      default:
-        return currentStyle;
-    }
+    // DEPRECATED: This method is disabled to prevent conflicts with new theme system
+    console.warn(`⚠️ getStyleForComponent(${component}) is deprecated - use ThemeProvider instead`);
+    return {};
   },
 
   getTokenColors: () => ({

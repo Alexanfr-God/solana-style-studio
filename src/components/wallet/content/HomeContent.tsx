@@ -52,7 +52,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
         <div 
           className="text-sm opacity-70 mb-1 home-balance-label"
           data-element-id="home-balance-label"
-          style={{ color: balanceStyle.color }}
+          style={{ color: balanceStyle.textColor }}
         >
           Total Balance
         </div>
@@ -60,7 +60,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
           className="text-3xl font-bold mb-1 home-sol-amount"
           data-element-id="home-sol-amount"
           style={{ 
-            color: balanceStyle.color,
+            color: balanceStyle.textColor,
             fontFamily: balanceStyle.fontFamily 
           }}
         >
@@ -92,7 +92,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
         <div 
           className="flex justify-between items-center mb-4 home-assets-header"
           data-element-id="home-assets-header"
-          style={{ color: balanceStyle.color }}
+          style={{ color: balanceStyle.textColor }}
         >
           <span className="font-medium home-assets-title" data-element-id="home-assets-title">Assets</span>
           <span 
@@ -123,7 +123,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
                 backgroundColor: getComponentStyle('cards').backgroundColor,
                 borderRadius: String(getComponentStyle('cards').borderRadius || '16px'),
                 accentColor: tokenColors.info,
-                textColor: balanceStyle.color
+                textColor: balanceStyle.textColor
               }}
             />
           ))}
