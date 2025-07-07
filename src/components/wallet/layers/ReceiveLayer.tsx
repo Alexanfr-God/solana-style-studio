@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Copy, Check, QrCode, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { useToast } from '@/hooks/use-toast';
 
 interface CryptoNetwork {
@@ -65,19 +66,17 @@ const cryptoNetworks: CryptoNetwork[] = [
 ];
 
 const ReceiveLayer = () => {
-  const {
-    getStyleForComponent,
-    setCurrentLayer
-  } = useWalletCustomizationStore();
+  const { setCurrentLayer } = useWalletCustomizationStore();
+  const { getComponentStyle, getTransition } = useWalletTheme();
   
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Get component-specific styles
-  const overlayStyle = getStyleForComponent('overlays');
-  const containerStyle = getStyleForComponent('containers');
-  const buttonStyle = getStyleForComponent('buttons');
-  const globalStyle = getStyleForComponent('global');
+  // Get component-specific styles from theme
+  const overlayStyle = getComponentStyle('overlays');
+  const containerStyle = getComponentStyle('networkItems');
+  const buttonStyle = getComponentStyle('buttons');
+  const globalStyle = getComponentStyle('global');
 
   const handleBack = () => {
     setCurrentLayer('home');
@@ -129,7 +128,7 @@ const ReceiveLayer = () => {
           data-element-id="receive-back-button"
           style={{
             borderRadius: buttonStyle.borderRadius || '8px',
-            transition: buttonStyle.transition
+            transition: getTransition('default')
           }}
         >
           <ArrowLeft className="w-5 h-5 text-white receive-back-icon" data-element-id="receive-back-icon" />
@@ -162,7 +161,7 @@ const ReceiveLayer = () => {
           onClick={() => handleQrCode('All')}
           style={{
             borderRadius: buttonStyle.borderRadius || '8px',
-            transition: buttonStyle.transition
+            transition: getTransition('default')
           }}
         >
           <QrCode className="w-5 h-5 text-white receive-qr-icon" data-element-id="receive-qr-icon" />
@@ -207,7 +206,7 @@ const ReceiveLayer = () => {
               key={network.id}
               className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 receive-network-item"
               data-element-id={`receive-network-item-${index}`}
-              style={{ transition: containerStyle.transition }}
+              style={{ transition: getTransition('default') }}
             >
               <div className="flex items-center space-x-3">
                 {/* Network Icon */}
@@ -259,7 +258,7 @@ const ReceiveLayer = () => {
                     onClick={() => handleQrCode(network.name)}
                     style={{
                       borderRadius: buttonStyle.borderRadius || '4px',
-                      transition: buttonStyle.transition
+                      transition: getTransition('default')
                     }}
                   >
                     <QrCode className="w-4 h-4 text-gray-400 hover:text-white receive-network-qr-icon" data-element-id={`receive-network-qr-icon-${index}`} />
@@ -271,7 +270,7 @@ const ReceiveLayer = () => {
                     onClick={() => handleCopyAddress(network.address, network.name)}
                     style={{
                       borderRadius: buttonStyle.borderRadius || '4px',
-                      transition: buttonStyle.transition
+                      transition: getTransition('default')
                     }}
                   >
                     {copiedAddress === network.address ? (
@@ -296,7 +295,7 @@ const ReceiveLayer = () => {
           style={{
             backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
             borderRadius: buttonStyle.borderRadius || '12px',
-            transition: buttonStyle.transition,
+            transition: getTransition('default'),
             color: buttonStyle.textColor || '#FFFFFF',
             fontFamily: globalStyle.fontFamily
           }}

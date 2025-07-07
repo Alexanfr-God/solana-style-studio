@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import WalletList from './WalletList';
 
 interface WalletAccountDropdownProps {
@@ -10,17 +11,17 @@ interface WalletAccountDropdownProps {
 
 const WalletAccountDropdown = ({ context = 'account-selector', onClose }: WalletAccountDropdownProps) => {
   const {
-    getStyleForComponent,
     setShowAccountDropdown,
     setActiveAccount
   } = useWalletCustomizationStore();
   
+  const { getComponentStyle, getTransition } = useWalletTheme();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Get component-specific styles
-  const overlayStyle = getStyleForComponent('overlays');
-  const globalStyle = getStyleForComponent('global');
-  const buttonStyle = getStyleForComponent('buttons');
+  // Get component-specific styles from theme
+  const overlayStyle = getComponentStyle('overlays');
+  const globalStyle = getComponentStyle('global');
+  const buttonStyle = getComponentStyle('buttons');
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -171,9 +172,9 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
               }
             }}
             style={{
-              color: buttonStyle.backgroundColor || '#9945FF',
+              color: buttonStyle.backgroundColor || '#FFD700',
               fontFamily: globalStyle.fontFamily,
-              transition: buttonStyle.transition
+              transition: getTransition('default')
             }}
           >
             <span className="account-dropdown-add-text" data-element-id="account-dropdown-add-text">

@@ -2,6 +2,7 @@
 import React from 'react';
 import { X, Plus, Pencil, Settings } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatAddress } from '@/lib/utils';
 
@@ -11,15 +12,16 @@ const AccountSidebar = () => {
     activeAccountId,
     setActiveAccount,
     showAccountSidebar,
-    setShowAccountSidebar,
-    getStyleForComponent
+    setShowAccountSidebar
   } = useWalletCustomizationStore();
 
-  // Get component-specific styles
-  const overlayStyle = getStyleForComponent('overlays');
-  const containerStyle = getStyleForComponent('containers');
-  const buttonStyle = getStyleForComponent('buttons');
-  const globalStyle = getStyleForComponent('global');
+  const { getComponentStyle, getTransition } = useWalletTheme();
+
+  // Get component-specific styles from theme
+  const overlayStyle = getComponentStyle('overlays');
+  const containerStyle = getComponentStyle('containers');
+  const buttonStyle = getComponentStyle('buttons');
+  const globalStyle = getComponentStyle('global');
 
   const handleAccountSelect = (accountId: string) => {
     setActiveAccount(accountId);
@@ -87,7 +89,7 @@ const AccountSidebar = () => {
             data-element-id="account-sidebar-close"
             style={{
               borderRadius: buttonStyle.borderRadius || '8px',
-              transition: buttonStyle.transition
+              transition: getTransition('default')
             }}
           >
             <X className="w-5 h-5 text-gray-400 account-sidebar-close-icon" data-element-id="account-sidebar-close-icon" />
@@ -109,7 +111,7 @@ const AccountSidebar = () => {
                   ? containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)' 
                   : 'transparent',
                 borderRadius: containerStyle.borderRadius || '12px',
-                transition: containerStyle.transition
+                transition: getTransition('default')
               }}
             >
               <Avatar className="w-10 h-10 account-sidebar-avatar" data-element-id={`account-sidebar-avatar-${index}`}>
@@ -163,7 +165,7 @@ const AccountSidebar = () => {
               title="Add Account"
               style={{
                 borderRadius: buttonStyle.borderRadius || '12px',
-                transition: buttonStyle.transition
+                transition: getTransition('default')
               }}
             >
               <Plus className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-add-icon" data-element-id="account-sidebar-add-icon" />
@@ -175,7 +177,7 @@ const AccountSidebar = () => {
               title="Edit Account"
               style={{
                 borderRadius: buttonStyle.borderRadius || '12px',
-                transition: buttonStyle.transition
+                transition: getTransition('default')
               }}
             >
               <Pencil className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-edit-icon" data-element-id="account-sidebar-edit-icon" />
@@ -187,7 +189,7 @@ const AccountSidebar = () => {
               title="Settings"
               style={{
                 borderRadius: buttonStyle.borderRadius || '12px',
-                transition: buttonStyle.transition
+                transition: getTransition('default')
               }}
             >
               <Settings className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-settings-icon" data-element-id="account-sidebar-settings-icon" />

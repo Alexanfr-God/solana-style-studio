@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { useToast } from '@/hooks/use-toast';
 
 interface CryptoNetwork {
@@ -65,20 +66,18 @@ const cryptoNetworks: CryptoNetwork[] = [
 ];
 
 const SendLayer = () => {
-  const {
-    getStyleForComponent,
-    setCurrentLayer
-  } = useWalletCustomizationStore();
+  const { setCurrentLayer } = useWalletCustomizationStore();
+  const { getComponentStyle, getTransition } = useWalletTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  // Get component-specific styles
-  const overlayStyle = getStyleForComponent('overlays');
-  const searchInputStyle = getStyleForComponent('searchInputs');
-  const containerStyle = getStyleForComponent('containers');
-  const buttonStyle = getStyleForComponent('buttons');
-  const globalStyle = getStyleForComponent('global');
+  // Get component-specific styles from theme
+  const overlayStyle = getComponentStyle('overlays');
+  const searchInputStyle = getComponentStyle('searchInputs');
+  const containerStyle = getComponentStyle('networkItems');
+  const buttonStyle = getComponentStyle('buttons');
+  const globalStyle = getComponentStyle('global');
 
   const handleBack = () => {
     setCurrentLayer('home');
@@ -126,7 +125,7 @@ const SendLayer = () => {
           data-element-id="send-back-button"
           style={{
             borderRadius: buttonStyle.borderRadius || '8px',
-            transition: buttonStyle.transition
+            transition: getTransition('default')
           }}
         >
           <ArrowLeft className="w-5 h-5 text-white send-back-icon" data-element-id="send-back-icon" />
@@ -174,7 +173,7 @@ const SendLayer = () => {
               fontFamily: globalStyle.fontFamily,
               color: searchInputStyle.textColor,
               backdropFilter: searchInputStyle.backdropFilter,
-              transition: searchInputStyle.transition
+              transition: getTransition('default')
             }}
           />
         </div>
@@ -219,7 +218,7 @@ const SendLayer = () => {
               className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 cursor-pointer send-network-item"
               data-element-id={`send-network-item-${index}`}
               onClick={() => handleNetworkSelect(network.name)}
-              style={{ transition: containerStyle.transition }}
+              style={{ transition: getTransition('default') }}
             >
               <div className="flex items-center space-x-3">
                 {/* Network Icon */}
@@ -305,7 +304,7 @@ const SendLayer = () => {
           style={{
             backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
             borderRadius: buttonStyle.borderRadius || '12px',
-            transition: buttonStyle.transition,
+            transition: getTransition('default'),
             color: buttonStyle.textColor || '#FFFFFF',
             fontFamily: globalStyle.fontFamily
           }}

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { useWalletStyles } from '@/hooks/useWalletStyles';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { useToast } from '@/hooks/use-toast';
 
 interface Token {
@@ -56,23 +56,20 @@ const popularTokens: Token[] = [
 ];
 
 const BuyLayer = () => {
-  const {
-    setCurrentLayer,
-    getStyleForComponent
-  } = useWalletCustomizationStore();
+  const { setCurrentLayer } = useWalletCustomizationStore();
+  const { getComponentStyle, getTransition } = useWalletTheme();
   
-  const { getButtonStyle, getTransition } = useWalletStyles();
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  // Get dynamic styles from the customization system
-  const overlayStyle = getStyleForComponent('overlays');
-  const containerStyle = getStyleForComponent('containers');
-  const globalStyle = getStyleForComponent('global');
-  const headerStyle = getStyleForComponent('header');
-  const inputStyle = getStyleForComponent('searchInputs');
-  const cardStyle = getStyleForComponent('cards');
-  const buttonStyle = getStyleForComponent('buttons');
+  // Get component-specific styles from theme
+  const overlayStyle = getComponentStyle('overlays');
+  const containerStyle = getComponentStyle('containers');
+  const globalStyle = getComponentStyle('global');
+  const headerStyle = getComponentStyle('layerHeaders');
+  const inputStyle = getComponentStyle('searchInputs');
+  const cardStyle = getComponentStyle('cards');
+  const buttonStyle = getComponentStyle('buttons');
 
   const handleBack = () => {
     setCurrentLayer('home');
@@ -122,7 +119,7 @@ const BuyLayer = () => {
             backgroundColor: buttonStyle.backgroundColor || 'transparent',
             color: headerStyle.textColor || '#FFFFFF',
             borderRadius: buttonStyle.borderRadius || '8px',
-            transition: getTransition('buttons'),
+            transition: getTransition('default'),
           }}
         >
           <ArrowLeft className="w-5 h-5 buy-back-icon" data-element-id="buy-back-icon" />
@@ -170,7 +167,7 @@ const BuyLayer = () => {
               borderRadius: inputStyle.borderRadius || '12px',
               color: inputStyle.textColor || '#FFFFFF',
               fontFamily: globalStyle.fontFamily,
-              transition: getTransition('searchInputs'),
+              transition: getTransition('default'),
             }}
           />
         </div>
@@ -201,7 +198,7 @@ const BuyLayer = () => {
                   backgroundColor: cardStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
                   borderColor: cardStyle.border || 'rgba(255, 255, 255, 0.1)',
                   borderRadius: cardStyle.borderRadius || '12px',
-                  transition: getTransition('cards'),
+                  transition: getTransition('default'),
                 }}
               >
                 <div className="flex items-center space-x-3">
@@ -241,7 +238,7 @@ const BuyLayer = () => {
                     color: buttonStyle.textColor || '#FFFFFF',
                     borderRadius: buttonStyle.borderRadius || '8px',
                     fontFamily: globalStyle.fontFamily,
-                    transition: getTransition('buttons'),
+                    transition: getTransition('default'),
                   }}
                 >
                   <span className="buy-get-started-token-button-text" data-element-id={`buy-get-started-token-button-text-${index}`}>
@@ -276,7 +273,7 @@ const BuyLayer = () => {
                   backgroundColor: cardStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
                   borderColor: cardStyle.border || 'rgba(255, 255, 255, 0.1)',
                   borderRadius: cardStyle.borderRadius || '12px',
-                  transition: getTransition('cards'),
+                  transition: getTransition('default'),
                 }}
               >
                 <div className="flex items-center space-x-3">
@@ -316,7 +313,7 @@ const BuyLayer = () => {
                     color: buttonStyle.textColor || '#FFFFFF',
                     borderRadius: buttonStyle.borderRadius || '8px',
                     fontFamily: globalStyle.fontFamily,
-                    transition: getTransition('buttons'),
+                    transition: getTransition('default'),
                   }}
                 >
                   <span className="buy-popular-token-button-text" data-element-id={`buy-popular-token-button-text-${index}`}>
@@ -354,7 +351,7 @@ const BuyLayer = () => {
           style={{
             backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
             borderRadius: buttonStyle.borderRadius || '12px',
-            transition: getTransition('buttons'),
+            transition: getTransition('default'),
             color: buttonStyle.textColor || '#FFFFFF',
             fontFamily: globalStyle.fontFamily,
           }}
