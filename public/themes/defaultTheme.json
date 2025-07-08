@@ -100,25 +100,25 @@
       "backgroundSize": "cover",
       "backgroundPosition": "center",
       "backgroundRepeat": "no-repeat",
-      "textColor": "#121211",
+      "textColor": "#000000",
       "titleStyle": {
         "fontSize": "24px",
         "fontWeight": "bold",
-        "color": "#00ff08",
+        "color": "#f20000",
         "fontFamily": "Inter, sans-serif"
       },
 
       "inputStyle": {
         "backgroundColor": "rgba(255, 255, 255, 0.1)",
-        "textColor": "#121211",
+        "textColor": "#f2e600",
         "placeholderColor": "rgba(255, 255, 255, 0.6)",
         "borderRadius": "12px",
         "border": "none",
         "padding": "12px 16px"
       },
       "primaryButton": {
-        "backgroundColor": "#111211",
-        "textColor": "#55ad55",
+        "backgroundColor": "#2cf200",
+        "textColor": "#00f2de",
         "borderRadius": "12px",
         "fontWeight": "500",
         "fontSize": "14px",
@@ -129,9 +129,9 @@
         "fontSize": "14px",
         "fontFamily": "Inter, sans-serif"
       },
-      "accentColor": "#9945FF",
+      "accentColor": "#0059f2",
       "logoBackground": {
-        "backgroundColor": "#9945FF",
+        "backgroundColor": "#a900f2",
         "opacity": "0.2"
       },
       "footerText": {
