@@ -13,11 +13,12 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
       className="wallet-preview flex flex-col rounded-2xl overflow-hidden"
       style={{
         backgroundColor: lockScreenStyle.backgroundColor,
-        backgroundImage: style.backgroundImage,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundImage: lockScreenStyle.backgroundImage,
+        backgroundSize: lockScreenStyle.backgroundSize || 'cover',
+        backgroundPosition: lockScreenStyle.backgroundPosition || 'center',
+        backgroundRepeat: lockScreenStyle.backgroundRepeat || 'no-repeat',
         color: lockScreenStyle.textColor,
-        fontFamily: lockScreenStyle.titleStyle.fontFamily,
+        fontFamily: lockScreenStyle.titleStyle?.fontFamily,
         boxShadow: style.boxShadow,
       }}
     >

@@ -99,12 +99,12 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
       data-element-id="unlock-screen-container"
       style={{
         backgroundColor: lockScreenStyle.backgroundColor || '#181818',
-        backgroundImage: loginStyle.backgroundImage,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        background: loginStyle.backgroundImage 
-          ? `url(${loginStyle.backgroundImage.replace('url(', '').replace(')', '')}) center/cover no-repeat, ${lockScreenStyle.backgroundColor || '#181818'}`
+        backgroundImage: lockScreenStyle.backgroundImage,
+        backgroundSize: lockScreenStyle.backgroundSize || 'cover',
+        backgroundPosition: lockScreenStyle.backgroundPosition || 'center',
+        backgroundRepeat: lockScreenStyle.backgroundRepeat || 'no-repeat',
+        background: lockScreenStyle.backgroundImage 
+          ? `url(${lockScreenStyle.backgroundImage.replace('url(', '').replace(')', '')}) ${lockScreenStyle.backgroundPosition || 'center'}/${lockScreenStyle.backgroundSize || 'cover'} ${lockScreenStyle.backgroundRepeat || 'no-repeat'}, ${lockScreenStyle.backgroundColor || '#181818'}`
           : lockScreenStyle.backgroundColor || '#181818',
         height: '650px',
         borderBottomLeftRadius: '1rem',

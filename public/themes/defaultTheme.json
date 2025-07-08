@@ -94,7 +94,11 @@
       "transition": "all 0.2s ease"
     },
     "lockScreen": {
-      "backgroundColor": "#FFFFFF",
+      "backgroundColor": "#181818",
+      "backgroundImage": "",
+      "backgroundSize": "cover",
+      "backgroundPosition": "center",
+      "backgroundRepeat": "no-repeat",
       "textColor": "#FFFFFF",
       "titleStyle": {
         "fontSize": "24px",

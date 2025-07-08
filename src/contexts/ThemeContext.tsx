@@ -61,6 +61,9 @@ export interface ComponentStyle {
   transition?: string;
   gradient?: string;
   backgroundImage?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundRepeat?: string;
   // For nested lockScreen structure
   titleStyle?: {
     fontSize?: string;
