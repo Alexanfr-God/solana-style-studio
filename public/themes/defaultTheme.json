@@ -94,19 +94,43 @@
       "transition": "all 0.2s ease"
     },
 
-    "lockScreen": {
-      "backgroundColor": "#181818",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
-      "backgroundSize": "cover",
-      "backgroundPosition": "center",
-      "backgroundRepeat": "no-repeat",
-      "textColor": "#FFFFFF",
-      "titleStyle": {
-        "fontSize": "24px",
-        "fontWeight": "bold",
-        "color": "#FFFFFF",
-        "fontFamily": "Inter, sans-serif"
-      },
+   "lockScreen": {
+  "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+  "backgroundColor": "#120900",
+  "backgroundSize": "cover",
+  "backgroundPosition": "center",
+  "backgroundRepeat": "no-repeat",
+  "containerShadow": "0 8px 64px rgba(0,0,0,0.4)",
+  "borderRadius": "24px",
+  "textColor": "#fff2d6",
+  "titleStyle": {
+    "fontSize": "28px",
+    "fontWeight": "700",
+    "color": "#fff2d6",
+    "fontFamily": "Inter, sans-serif"
+  },
+  "inputStyle": {
+    "backgroundColor": "#391f06",
+    "textColor": "#ffe082",
+    "placeholderColor": "#c09e6c",
+    "border": "none",
+    "borderRadius": "14px",
+    "padding": "16px"
+  },
+  "primaryButton": {
+    "backgroundColor": "#ffbb24",
+    "textColor": "#222",
+    "borderRadius": "16px",
+    "fontWeight": "600",
+    "fontSize": "20px",
+    "padding": "18px"
+  },
+  "iconColor": "#ffd700",
+  "secondaryText": {
+    "color": "#ffe082",
+    "fontSize": "16px"
+  }
+},
 
       "inputStyle": {
         "backgroundColor": "rgba(255, 255, 255, 0.1)",
