@@ -93,6 +93,7 @@
       "fontFamily": "Inter, sans-serif",
       "transition": "all 0.2s ease"
     },
+// -------- LOCK WALLET LAYER --------
     "lockScreen": {
       "backgroundColor": "#181818",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
@@ -106,6 +107,7 @@
         "color": "#FFFFFF",
         "fontFamily": "Inter, sans-serif"
       },
+// -------- /LOCK WALLET LAYER --------
       "inputStyle": {
         "backgroundColor": "rgba(255, 255, 255, 0.1)",
         "textColor": "#FFFFFF",
