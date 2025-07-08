@@ -110,14 +110,14 @@
 
       "inputStyle": {
         "backgroundColor": "rgba(255, 255, 255, 0.1)",
-        "textColor": "#121211",
+        "textColor": "#eda711",
         "placeholderColor": "rgba(255, 255, 255, 0.6)",
         "borderRadius": "12px",
         "border": "none",
         "padding": "12px 16px"
       },
       "primaryButton": {
-        "backgroundColor": "#111211",
+        "backgroundColor": "#1aed1a",
         "textColor": "#55ad55",
         "borderRadius": "12px",
         "fontWeight": "500",
