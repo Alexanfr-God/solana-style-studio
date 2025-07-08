@@ -1,59 +1,103 @@
 
 import React from 'react';
 import { useCustomizationStore, WalletStyle, LayerType } from '../stores/customizationStore';
+import { useWalletTheme } from '../hooks/useWalletTheme';
 import { cn } from '../lib/utils';
 
-// Render Login Screen UI
+// Render Login Screen UI - now using theme system
 const LoginScreen = ({ style }: { style: WalletStyle }) => {
+  const { getComponentStyle } = useWalletTheme();
+  const lockScreenStyle = getComponentStyle('lockScreen');
   return (
     <div 
       className="wallet-preview flex flex-col rounded-2xl overflow-hidden"
       style={{
-        backgroundColor: style.backgroundColor,
+        backgroundColor: lockScreenStyle.backgroundColor,
         backgroundImage: style.backgroundImage,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        color: style.textColor,
-        fontFamily: style.fontFamily,
+        color: lockScreenStyle.textColor,
+        fontFamily: lockScreenStyle.titleStyle.fontFamily,
         boxShadow: style.boxShadow,
       }}
     >
       {/* Header */}
       <div className="flex justify-center p-6 pt-10">
         <div 
-          className="h-14 w-14 rounded-full bg-opacity-20" 
-          style={{ backgroundColor: style.accentColor }}
+          className="h-14 w-14 rounded-full flex items-center justify-center"
+          style={{ 
+            backgroundColor: lockScreenStyle.accentColor,
+            opacity: lockScreenStyle.logoBackground.opacity
+          }}
         >
-          <div className="flex h-full items-center justify-center">
-            <span className="font-bold text-2xl">S</span>
-          </div>
+          <span 
+            className="font-bold text-2xl"
+            style={{ color: lockScreenStyle.textColor }}
+          >
+            S
+          </span>
         </div>
       </div>
       
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <h2 className="text-2xl font-bold mb-2">Welcome to Solana</h2>
-        <p className="text-sm opacity-80 text-center mb-8">Log in to access your crypto wallet and assets.</p>
+        <h2 
+          className="text-2xl font-bold mb-2"
+          style={{
+            fontSize: lockScreenStyle.titleStyle.fontSize,
+            fontWeight: lockScreenStyle.titleStyle.fontWeight,
+            color: lockScreenStyle.titleStyle.color,
+            fontFamily: lockScreenStyle.titleStyle.fontFamily
+          }}
+        >
+          Welcome to Solana
+        </h2>
+        <p 
+          className="text-sm text-center mb-8"
+          style={{
+            color: lockScreenStyle.secondaryText.color,
+            fontSize: lockScreenStyle.secondaryText.fontSize,
+            fontFamily: lockScreenStyle.secondaryText.fontFamily
+          }}
+        >
+          Log in to access your crypto wallet and assets.
+        </p>
         
         {/* Input fields */}
         <div className="w-full max-w-xs space-y-4 mb-6">
           <div 
             className="h-12 rounded-lg px-4 flex items-center"
             style={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: style.borderRadius,
+              backgroundColor: lockScreenStyle.inputStyle.backgroundColor,
+              borderRadius: lockScreenStyle.inputStyle.borderRadius,
+              border: lockScreenStyle.inputStyle.border,
+              padding: lockScreenStyle.inputStyle.padding
             }}
           >
-            <span className="opacity-60">Email</span>
+            <span 
+              style={{ 
+                color: lockScreenStyle.inputStyle.placeholderColor 
+              }}
+            >
+              Email
+            </span>
           </div>
           <div 
             className="h-12 rounded-lg px-4 flex items-center"
             style={{ 
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: style.borderRadius,
+              backgroundColor: lockScreenStyle.inputStyle.backgroundColor,
+              borderRadius: lockScreenStyle.inputStyle.borderRadius,
+              border: lockScreenStyle.inputStyle.border,
+              padding: lockScreenStyle.inputStyle.padding
             }}
           >
-            <span className="opacity-60">Password</span>
+            <span 
+              style={{ 
+                color: lockScreenStyle.inputStyle.placeholderColor 
+              }}
+            >
+              Password
+            </span>
           </div>
         </div>
         
@@ -62,22 +106,44 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
           <button 
             className="w-full h-12 font-medium"
             style={{ 
-              backgroundColor: style.buttonColor,
-              color: style.buttonTextColor,
-              borderRadius: style.borderRadius,
+              backgroundColor: lockScreenStyle.primaryButton.backgroundColor,
+              color: lockScreenStyle.primaryButton.textColor,
+              borderRadius: lockScreenStyle.primaryButton.borderRadius,
+              fontWeight: lockScreenStyle.primaryButton.fontWeight,
+              fontSize: lockScreenStyle.primaryButton.fontSize,
+              padding: lockScreenStyle.primaryButton.padding
             }}
           >
             Login
           </button>
           <div className="flex justify-center mt-4">
-            <span className="text-sm opacity-70">New user? <span style={{ color: style.accentColor }}>Create account</span></span>
+            <span 
+              className="text-sm"
+              style={{
+                color: lockScreenStyle.secondaryText.color,
+                fontSize: lockScreenStyle.secondaryText.fontSize
+              }}
+            >
+              New user?{' '}
+              <span style={{ color: lockScreenStyle.accentColor }}>
+                Create account
+              </span>
+            </span>
           </div>
         </div>
       </div>
       
       {/* Footer */}
       <div className="p-6 text-center">
-        <span className="text-xs opacity-50">v1.0.0</span>
+        <span 
+          className="text-xs"
+          style={{
+            color: lockScreenStyle.footerText.color,
+            fontSize: lockScreenStyle.footerText.fontSize
+          }}
+        >
+          v1.0.0
+        </span>
       </div>
     </div>
   );

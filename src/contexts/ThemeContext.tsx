@@ -27,6 +27,11 @@ export interface WalletTheme {
     cards: ComponentStyle;
     navigation: ComponentStyle;
     containers: ComponentStyle;
+    overlays: ComponentStyle;
+    searchInputs: ComponentStyle;
+    layerHeaders: ComponentStyle;
+    networkItems: ComponentStyle;
+    lockScreen: ComponentStyle;
   };
   tokenColors: {
     positive: string;
@@ -56,6 +61,43 @@ export interface ComponentStyle {
   transition?: string;
   gradient?: string;
   backgroundImage?: string;
+  // For nested lockScreen structure
+  titleStyle?: {
+    fontSize?: string;
+    fontWeight?: string;
+    color?: string;
+    fontFamily?: string;
+  };
+  inputStyle?: {
+    backgroundColor?: string;
+    textColor?: string;
+    placeholderColor?: string;
+    borderRadius?: string;
+    border?: string;
+    padding?: string;
+  };
+  primaryButton?: {
+    backgroundColor?: string;
+    textColor?: string;
+    borderRadius?: string;
+    fontWeight?: string;
+    fontSize?: string;
+    padding?: string;
+  };
+  secondaryText?: {
+    color?: string;
+    fontSize?: string;
+    fontFamily?: string;
+  };
+  accentColor?: string;
+  logoBackground?: {
+    backgroundColor?: string;
+    opacity?: string;
+  };
+  footerText?: {
+    color?: string;
+    fontSize?: string;
+  };
 }
 
 interface ThemeContextType {
@@ -159,6 +201,76 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               textColor: '#FFFFFF',
               borderRadius: '16px',
               fontFamily: 'Inter, sans-serif'
+            },
+            overlays: {
+              backgroundColor: 'rgba(24, 24, 24, 0.95)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '16px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)'
+            },
+            searchInputs: {
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              textColor: '#FFFFFF',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.2s ease'
+            },
+            layerHeaders: {
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              textColor: '#FFFFFF',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              fontFamily: 'Inter, sans-serif'
+            },
+            networkItems: {
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              textColor: '#FFFFFF',
+              borderRadius: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              fontFamily: 'Inter, sans-serif',
+              transition: 'all 0.2s ease'
+            },
+            lockScreen: {
+              backgroundColor: '#181818',
+              textColor: '#FFFFFF',
+              titleStyle: {
+                fontSize: '24px',
+                fontWeight: 'bold',
+                color: '#FFFFFF',
+                fontFamily: 'Inter, sans-serif'
+              },
+              inputStyle: {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                textColor: '#FFFFFF',
+                placeholderColor: 'rgba(255, 255, 255, 0.6)',
+                borderRadius: '12px',
+                border: 'none',
+                padding: '12px 16px'
+              },
+              primaryButton: {
+                backgroundColor: '#a390f5',
+                textColor: '#FFFFFF',
+                borderRadius: '12px',
+                fontWeight: '500',
+                fontSize: '14px',
+                padding: '12px 0'
+              },
+              secondaryText: {
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '14px',
+                fontFamily: 'Inter, sans-serif'
+              },
+              accentColor: '#9945FF',
+              logoBackground: {
+                backgroundColor: '#9945FF',
+                opacity: '0.2'
+              },
+              footerText: {
+                color: 'rgba(255, 255, 255, 0.5)',
+                fontSize: '12px'
+              }
             }
           },
           tokenColors: {

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { Eye, EyeOff, Lock, Unlock, Edit3, Bug } from 'lucide-react';
 import WalletContainer from '@/components/wallet/WalletContainer';
 import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
@@ -89,19 +90,22 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     setCurrentLayer('login');
   };
 
+  const { getComponentStyle } = useWalletTheme();
+  const lockScreenStyle = getComponentStyle('lockScreen');
+
   const renderLoginScreen = () => (
     <div 
       className="relative p-6 flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
       style={{
-        backgroundColor: loginStyle.backgroundColor || '#181818',
+        backgroundColor: lockScreenStyle.backgroundColor || '#181818',
         backgroundImage: loginStyle.backgroundImage,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         background: loginStyle.backgroundImage 
-          ? `url(${loginStyle.backgroundImage.replace('url(', '').replace(')', '')}) center/cover no-repeat, ${loginStyle.backgroundColor || '#181818'}`
-          : loginStyle.backgroundColor || '#181818',
+          ? `url(${loginStyle.backgroundImage.replace('url(', '').replace(')', '')}) center/cover no-repeat, ${lockScreenStyle.backgroundColor || '#181818'}`
+          : lockScreenStyle.backgroundColor || '#181818',
         height: '650px',
         borderBottomLeftRadius: '1rem',
         borderBottomRightRadius: '1rem'
@@ -122,8 +126,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="text-center font-medium text-white text-lg login-password-title" 
             data-element-id="login-password-title"
             style={{
-              fontFamily: loginStyle.fontFamily || 'Inter',
-              color: loginStyle.textColor || '#FFFFFF'
+              fontFamily: lockScreenStyle.titleStyle?.fontFamily || 'Inter',
+              color: lockScreenStyle.titleStyle?.color || '#FFFFFF',
+              fontSize: lockScreenStyle.titleStyle?.fontSize || '18px',
+              fontWeight: lockScreenStyle.titleStyle?.fontWeight || '500'
             }}
           >
             <span 
@@ -147,8 +153,11 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
               data-element-id="login-password-input"
               style={{
-                backgroundColor: '#0f0f0f',
-                fontFamily: loginStyle.fontFamily || 'Inter'
+                backgroundColor: lockScreenStyle.inputStyle?.backgroundColor || '#0f0f0f',
+                color: lockScreenStyle.inputStyle?.textColor || '#FFFFFF',
+                fontFamily: lockScreenStyle.titleStyle?.fontFamily || 'Inter',
+                borderRadius: lockScreenStyle.inputStyle?.borderRadius || '12px',
+                border: lockScreenStyle.inputStyle?.border || 'none'
               }}
             />
             {password && (
@@ -175,7 +184,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             <button
               className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
               data-element-id="login-forgot-password"
-              style={{ fontFamily: loginStyle.fontFamily || 'Inter' }}
+              style={{ 
+                fontFamily: lockScreenStyle.secondaryText?.fontFamily || 'Inter',
+                color: lockScreenStyle.secondaryText?.color || '#9CA3AF'
+              }}
             >
               <span 
                 className="unlock-forgot-text"
@@ -191,9 +203,12 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
             data-element-id="login-unlock-button"
             style={{
-              backgroundColor: loginStyle.accentColor || '#a390f5',
-              fontFamily: loginStyle.fontFamily || 'Inter',
-              borderRadius: '12px'
+              backgroundColor: lockScreenStyle.primaryButton?.backgroundColor || '#a390f5',
+              color: lockScreenStyle.primaryButton?.textColor || '#FFFFFF',
+              fontFamily: lockScreenStyle.titleStyle?.fontFamily || 'Inter',
+              borderRadius: lockScreenStyle.primaryButton?.borderRadius || '12px',
+              fontWeight: lockScreenStyle.primaryButton?.fontWeight || '700',
+              fontSize: lockScreenStyle.primaryButton?.fontSize || '14px'
             }}
             onClick={handleUnlock}
           >
