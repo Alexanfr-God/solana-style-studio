@@ -100,11 +100,11 @@
       "backgroundSize": "cover",
       "backgroundPosition": "center",
       "backgroundRepeat": "no-repeat",
-      "textColor": "#FFFFFF",
+      "textColor": "#121211",
       "titleStyle": {
         "fontSize": "24px",
         "fontWeight": "bold",
-        "color": "#FFFFFF",
+        "color": "#00ff08",
         "fontFamily": "Inter, sans-serif"
       },
 
