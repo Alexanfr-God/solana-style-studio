@@ -85,7 +85,7 @@
       "fontSize": "14px"
     },
     "assetCard": {
-      "backgroundColor": "rgba(40,40,40,0.9)",
+      "backgroundColor": "#14e06d",
       "textColor": "#fff",
       "borderRadius": "14px",
       "fontFamily": "Inter, sans-serif"
@@ -110,14 +110,14 @@
       "fontSize": "15px"
     },
     "seeAll": {
-      "textColor": "#6a55ff",
+      "textColor": "#14e06d",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "13px"
     }
   },
   "inputs": {
     "passwordInput": {
-      "backgroundColor": "rgba(30,30,30,0.8)",
+      "backgroundColor": "#14e06d",
       "textColor": "#fff",
       "placeholderColor": "#aaa",
       "iconEyeColor": "#aaa",
@@ -126,7 +126,7 @@
       "fontFamily": "Inter, sans-serif"
     },
     "searchInput": {
-      "backgroundColor": "#191919",
+      "backgroundColor": "#14e06d",
       "textColor": "#fff",
       "placeholderColor": "#666",
       "borderRadius": "10px",
