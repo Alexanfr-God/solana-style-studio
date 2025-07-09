@@ -42,6 +42,7 @@ export interface WalletTheme {
     boxShadow?: string;
     header: {
       backgroundColor: string;
+      backgroundImage?: string;
       textColor: string;
       fontFamily: string;
       fontWeight: string;
@@ -51,15 +52,27 @@ export interface WalletTheme {
       borderRadius?: string;
       boxShadow?: string;
       gradient?: string;
+      searchIcon?: {
+        color: string;
+        type: string;
+      };
     };
     footer: {
       backgroundColor: string;
+      backgroundImage?: string;
       iconColor: string;
       activeIconColor: string;
       textColor: string;
       activeTextColor: string;
       fontFamily: string;
       fontSize: string;
+      navigationIcons?: {
+        homeIcon: { color: string; activeColor: string; type: string; };
+        appsIcon: { color: string; activeColor: string; type: string; };
+        swapIcon: { color: string; activeColor: string; type: string; };
+        historyIcon: { color: string; activeColor: string; type: string; };
+        searchIcon: { color: string; activeColor: string; type: string; };
+      };
     };
     mainContainer: {
       backgroundColor: string;
@@ -84,13 +97,39 @@ export interface WalletTheme {
       fontFamily: string;
       fontSize: string;
     };
-    mainButtons: {
-      backgroundColor: string;
-      iconColor: string;
-      textColor: string;
-      borderRadius: string;
-      fontFamily: string;
-      fontSize: string;
+    actionButtons?: {
+      receiveButton: {
+        containerColor: string;
+        iconColor: string;
+        labelColor: string;
+        labelFontFamily: string;
+        labelFontSize: string;
+        borderRadius: string;
+      };
+      sendButton: {
+        containerColor: string;
+        iconColor: string;
+        labelColor: string;
+        labelFontFamily: string;
+        labelFontSize: string;
+        borderRadius: string;
+      };
+      swapButton: {
+        containerColor: string;
+        iconColor: string;
+        labelColor: string;
+        labelFontFamily: string;
+        labelFontSize: string;
+        borderRadius: string;
+      };
+      buyButton: {
+        containerColor: string;
+        iconColor: string;
+        labelColor: string;
+        labelFontFamily: string;
+        labelFontSize: string;
+        borderRadius: string;
+      };
     };
     assetCard: {
       backgroundColor: string;
@@ -121,6 +160,37 @@ export interface WalletTheme {
       textColor: string;
       fontFamily: string;
       fontSize: string;
+    };
+    accountDropdown?: {
+      containerBackgroundColor: string;
+      containerBorderRadius: string;
+      headerText: {
+        selectAccountColor: string;
+        selectAccountFontFamily: string;
+        selectAccountFontSize: string;
+      };
+      accountItems: {
+        mainAccountColor: string;
+        mainAccountFontFamily: string;
+        mainAccountFontSize: string;
+        tradingAccountColor: string;
+        tradingAccountFontFamily: string;
+        tradingAccountFontSize: string;
+      };
+      actionButtons: {
+        addAccountColor: string;
+        addAccountFontFamily: string;
+        addAccountFontSize: string;
+        manageCollectibleColor: string;
+        manageCollectibleFontFamily: string;
+        manageCollectibleFontSize: string;
+      };
+      icons: {
+        copyAddressIcon: {
+          color: string;
+          type: string;
+        };
+      };
     };
   };
   inputs: {

@@ -10,7 +10,7 @@ const WalletBottomNavigation = () => {
     setCurrentLayer
   } = useWalletCustomizationStore();
   
-  const { getHomeLayer, tokenColors } = useWalletTheme();
+  const { getHomeLayer } = useWalletTheme();
   const homeStyle = getHomeLayer();
 
   const navItems = [
@@ -64,8 +64,11 @@ const WalletBottomNavigation = () => {
       className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 z-[5] bottom-navigation"
       data-element-id="bottom-navigation"
       style={{
-        backgroundColor: homeStyle.footer?.backgroundColor || 'rgba(0, 0, 0, 0.5)',
-        background: homeStyle.footer?.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: homeStyle.footer?.backgroundImage 
+          ? `url(${homeStyle.footer.backgroundImage})` 
+          : homeStyle.footer?.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+        backgroundSize: homeStyle.footer?.backgroundImage ? 'cover' : undefined,
+        backgroundPosition: homeStyle.footer?.backgroundImage ? 'center' : undefined,
         backdropFilter: 'blur(10px)',
         borderBottomLeftRadius: '1rem',
         borderBottomRightRadius: '1rem',
@@ -73,48 +76,49 @@ const WalletBottomNavigation = () => {
       }}
     >
       <div className="grid grid-cols-5 items-center">
-        {navItems.map(item => (
-          <button 
-            key={item.id}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 ${item.className} ${
-              currentLayer === item.id ? 'opacity-100' : 'opacity-50'
-            }`}
-            data-element-id={item.dataElementId}
-            onClick={() => handleNavClick(item.id)}
-            style={{
-              borderRadius: '8px'
-            }}
-          >
-            <item.icon 
-              className={`w-6 h-6 transition-colors ${item.className} ${
-                currentLayer === item.id 
-                  ? 'text-white' 
-                  : 'text-gray-400 hover:text-white'
-              }`} 
-              data-element-id={item.dataElementId}
-              style={{
-                color: currentLayer === item.id 
-                  ? tokenColors.info
-                  : undefined
-              }}
-            />
-            <span 
-              className={`text-xs mt-1 transition-colors ${
-                currentLayer === item.id 
-                  ? 'text-white' 
-                  : 'text-gray-400'
+        {navItems.map(item => {
+          const iconConfig = homeStyle.footer?.navigationIcons?.[`${item.id}Icon` as keyof typeof homeStyle.footer.navigationIcons];
+          const isActive = currentLayer === item.id;
+          
+          return (
+            <button 
+              key={item.id}
+              className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 ${item.className} ${
+                isActive ? 'opacity-100' : 'opacity-50'
               }`}
+              data-element-id={item.dataElementId}
+              onClick={() => handleNavClick(item.id)}
               style={{
-                color: currentLayer === item.id 
-                  ? homeStyle.footer?.textColor || '#FFFFFF'
-                  : undefined,
-                fontFamily: homeStyle.footer?.fontFamily
+                borderRadius: '8px'
               }}
             >
-              {item.label}
-            </span>
-          </button>
-        ))}
+              <item.icon 
+                className={`w-6 h-6 transition-colors ${item.className}`} 
+                data-element-id={item.dataElementId}
+                style={{
+                  color: isActive 
+                    ? iconConfig?.activeColor || homeStyle.footer?.activeIconColor || '#fff'
+                    : iconConfig?.color || homeStyle.footer?.iconColor || '#6a55ff'
+                }}
+              />
+              <span 
+                className={`text-xs mt-1 transition-colors ${
+                  isActive 
+                    ? 'text-white' 
+                    : 'text-gray-400'
+                }`}
+                style={{
+                  color: isActive 
+                    ? homeStyle.footer?.activeTextColor || '#FFFFFF'
+                    : homeStyle.footer?.textColor || '#FFFFFF',
+                  fontFamily: homeStyle.footer?.fontFamily
+                }}
+              >
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

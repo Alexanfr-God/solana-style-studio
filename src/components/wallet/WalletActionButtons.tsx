@@ -18,7 +18,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
   showAccountDropdown = false 
 }) => {
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
-  const { getHomeLayer, getTransition, tokenColors } = useWalletTheme();
+  const { getHomeLayer, getTransition } = useWalletTheme();
 
   const actions = [
     { id: 'receive', icon: Download, label: 'Receive' },
@@ -33,11 +33,13 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
     <div className="grid grid-cols-4 gap-2 px-4 pt-0 pb-4">
       {actions.map(action => {
         const isHovered = hoveredAction === action.id;
+        const buttonConfig = homeStyle.actionButtons?.[`${action.id}Button` as keyof typeof homeStyle.actionButtons];
+        
         const actionButtonStyle: React.CSSProperties = {
           height: '56px',
           width: '56px',
-          borderRadius: style.borderRadius || homeStyle.mainButtons?.borderRadius || '16px',
-          backgroundColor: homeStyle.mainButtons?.backgroundColor || 'rgba(40, 40, 40, 0.8)',
+          borderRadius: buttonConfig?.borderRadius || style.borderRadius || '16px',
+          backgroundColor: buttonConfig?.containerColor || 'rgba(40, 40, 40, 0.8)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -60,15 +62,16 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
               <action.icon 
                 className={`h-5 w-5 home-${action.id}-icon`}
                 data-element-id={`home-${action.id}-icon`}
-                style={{ color: style.accentColor || tokenColors.info }} 
+                style={{ color: buttonConfig?.iconColor || style.accentColor }} 
               />
             </button>
             <span 
               className={`text-xs mt-2 home-${action.id}-label`}
               data-element-id={`home-${action.id}-label`}
               style={{ 
-                color: homeStyle.mainButtons?.textColor || '#FFFFFF',
-                fontFamily: homeStyle.mainButtons?.fontFamily 
+                color: buttonConfig?.labelColor || '#FFFFFF',
+                fontFamily: buttonConfig?.labelFontFamily || 'Inter, sans-serif',
+                fontSize: buttonConfig?.labelFontSize || '14px'
               }}
             >
               {action.label}

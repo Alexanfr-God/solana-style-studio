@@ -92,13 +92,20 @@ const WalletHomeLayer = () => {
         className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 z-[10] home-header"
         data-element-id="home-header"
         style={{
-          backgroundColor: homeStyle.header.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: homeStyle.header.backdropFilter || 'blur(10px)',
+          backgroundColor: homeStyle.header?.backgroundImage 
+            ? undefined 
+            : homeStyle.header?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+          backgroundImage: homeStyle.header?.backgroundImage 
+            ? `url(${homeStyle.header.backgroundImage})` 
+            : undefined,
+          backgroundSize: homeStyle.header?.backgroundImage ? 'cover' : undefined,
+          backgroundPosition: homeStyle.header?.backgroundImage ? 'center' : undefined,
+          backdropFilter: homeStyle.header?.backdropFilter || 'blur(10px)',
           borderTopLeftRadius: '1rem',
           borderTopRightRadius: '1rem',
-          border: homeStyle.header.border || '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: homeStyle.header.boxShadow,
-          color: homeStyle.header.textColor || '#FFFFFF'
+          border: homeStyle.header?.border || '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: homeStyle.header?.boxShadow,
+          color: homeStyle.header?.textColor || '#FFFFFF'
         }}
       >
         {/* Account Section */}
@@ -147,11 +154,15 @@ const WalletHomeLayer = () => {
           className="p-2 rounded-lg hover:bg-white/10 transition-colors home-search-button"
           data-element-id="home-search-button"
           style={{
-            borderRadius: homeStyle.header.borderRadius || '8px',
-            color: homeStyle.header.textColor || '#FFFFFF'
+            borderRadius: homeStyle.header?.borderRadius || '8px'
           }}
         >
-          <Search className="w-5 h-5 text-gray-400" />
+          <Search 
+            className="w-5 h-5" 
+            style={{
+              color: homeStyle.header?.searchIcon?.color || homeStyle.header?.textColor || '#FFFFFF'
+            }}
+          />
         </button>
       </div>
 

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -15,13 +14,11 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
     setActiveAccount
   } = useWalletCustomizationStore();
   
-  const { getComponentStyle, getTransition } = useWalletTheme();
+  const { getHomeLayer, getTransition } = useWalletTheme();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Get component-specific styles from theme
-  const overlayStyle = getComponentStyle('overlays');
-  const globalStyle = getComponentStyle('global');
-  const buttonStyle = getComponentStyle('buttons');
+  const homeStyle = getHomeLayer();
+  const dropdownConfig = homeStyle.accountDropdown;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -80,7 +77,7 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
         data-element-id="account-dropdown-overlay"
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.2)',
-          borderRadius: overlayStyle.borderRadius || '16px',
+          borderRadius: dropdownConfig?.containerBorderRadius || '16px',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
@@ -102,12 +99,11 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
         className="fixed w-80 rounded-xl border shadow-2xl overflow-hidden animate-fade-in z-[9999] account-dropdown-menu"
         data-element-id="account-dropdown-menu"
         style={{
-          backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
-          backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
-          borderRadius: overlayStyle.borderRadius || '16px',
-          border: overlayStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: dropdownConfig?.containerBackgroundColor || 'rgba(24, 24, 24, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: dropdownConfig?.containerBorderRadius || '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-          fontFamily: globalStyle.fontFamily || 'Inter',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)'
@@ -125,8 +121,9 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
             className="text-sm font-medium text-white account-dropdown-title"
             data-element-id="account-dropdown-title"
             style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily
+              color: dropdownConfig?.headerText?.selectAccountColor || '#FFFFFF',
+              fontFamily: dropdownConfig?.headerText?.selectAccountFontFamily || 'Inter, sans-serif',
+              fontSize: dropdownConfig?.headerText?.selectAccountFontSize || '14px'
             }}
           >
             {getTitle()}
@@ -134,7 +131,9 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
           <p 
             className="text-xs text-gray-400 mt-1 account-dropdown-description"
             data-element-id="account-dropdown-description"
-            style={{ fontFamily: globalStyle.fontFamily }}
+            style={{ 
+              fontFamily: dropdownConfig?.headerText?.selectAccountFontFamily || 'Inter, sans-serif'
+            }}
           >
             {getDescription()}
           </p>
@@ -172,8 +171,9 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
               }
             }}
             style={{
-              color: buttonStyle.backgroundColor || '#FFD700',
-              fontFamily: globalStyle.fontFamily,
+              color: dropdownConfig?.actionButtons?.addAccountColor || '#FFD700',
+              fontFamily: dropdownConfig?.actionButtons?.addAccountFontFamily || 'Inter, sans-serif',
+              fontSize: dropdownConfig?.actionButtons?.addAccountFontSize || '14px',
               transition: getTransition('default')
             }}
           >

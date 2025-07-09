@@ -39,22 +39,55 @@
     "backgroundColor": "#181818",
     "header": {
       "backgroundColor": "#14e06d",
+      "backgroundImage": "",
       "textColor": "#fff",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
-      "fontSize": "17px"
+      "fontSize": "17px",
+      "searchIcon": {
+        "color": "#fff",
+        "type": "search"
+      }
     },
     "footer": {
       "backgroundColor": "#14e06d",
+      "backgroundImage": "",
       "iconColor": "#131413",
       "activeIconColor": "#fff",
       "textColor": "#131413",
       "activeTextColor": "#fff",
       "fontFamily": "Inter, sans-serif",
-      "fontSize": "14px"
+      "fontSize": "14px",
+      "navigationIcons": {
+        "homeIcon": {
+          "color": "#131413",
+          "activeColor": "#fff",
+          "type": "home"
+        },
+        "appsIcon": {
+          "color": "#131413",
+          "activeColor": "#fff",
+          "type": "layout-grid"
+        },
+        "swapIcon": {
+          "color": "#131413",
+          "activeColor": "#fff",
+          "type": "arrow-right-left"
+        },
+        "historyIcon": {
+          "color": "#131413",
+          "activeColor": "#fff",
+          "type": "clock"
+        },
+        "searchIcon": {
+          "color": "#131413",
+          "activeColor": "#fff",
+          "type": "search"
+        }
+      }
     },
     "mainContainer": {
-      "backgroundColor": "##14e06d",
+      "backgroundColor": "#14e06d",
       "borderRadius": "18px"
     },
     "totalBalanceLabel": {
@@ -76,13 +109,39 @@
       "fontFamily": "Inter, sans-serif",
       "fontSize": "16px"
     },
-    "mainButtons": {
-      "backgroundColor": "rgba(32,32,32,0.7)",
-      "iconColor": "#6a55ff",
-      "textColor": "#ffd600",
-      "borderRadius": "12px",
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "14px"
+    "actionButtons": {
+      "receiveButton": {
+        "containerColor": "rgba(32,32,32,0.7)",
+        "iconColor": "#6a55ff",
+        "labelColor": "#ffd600",
+        "labelFontFamily": "Inter, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "sendButton": {
+        "containerColor": "rgba(32,32,32,0.7)",
+        "iconColor": "#6a55ff",
+        "labelColor": "#ffd600",
+        "labelFontFamily": "Inter, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "swapButton": {
+        "containerColor": "rgba(32,32,32,0.7)",
+        "iconColor": "#6a55ff",
+        "labelColor": "#ffd600",
+        "labelFontFamily": "Inter, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "buyButton": {
+        "containerColor": "rgba(32,32,32,0.7)",
+        "iconColor": "#6a55ff",
+        "labelColor": "#ffd600",
+        "labelFontFamily": "Inter, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      }
     },
     "assetCard": {
       "backgroundColor": "#14e06d",
@@ -113,6 +172,37 @@
       "textColor": "#14e06d",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "13px"
+    },
+    "accountDropdown": {
+      "containerBackgroundColor": "rgba(24, 24, 24, 0.95)",
+      "containerBorderRadius": "16px",
+      "headerText": {
+        "selectAccountColor": "#fff",
+        "selectAccountFontFamily": "Inter, sans-serif",
+        "selectAccountFontSize": "14px"
+      },
+      "accountItems": {
+        "mainAccountColor": "#fff",
+        "mainAccountFontFamily": "Inter, sans-serif",
+        "mainAccountFontSize": "14px",
+        "tradingAccountColor": "#fff",
+        "tradingAccountFontFamily": "Inter, sans-serif",
+        "tradingAccountFontSize": "14px"
+      },
+      "actionButtons": {
+        "addAccountColor": "#FFD700",
+        "addAccountFontFamily": "Inter, sans-serif",
+        "addAccountFontSize": "14px",
+        "manageCollectibleColor": "#FFD700",
+        "manageCollectibleFontFamily": "Inter, sans-serif",
+        "manageCollectibleFontSize": "14px"
+      },
+      "icons": {
+        "copyAddressIcon": {
+          "color": "#aaa",
+          "type": "copy"
+        }
+      }
     }
   },
   "inputs": {
