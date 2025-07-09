@@ -82,7 +82,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
           onAction={handleAction} 
           style={{ 
             accentColor: tokenColors.info,
-            borderRadius: homeStyle.mainButtons?.borderRadius || '12px'
+            borderRadius: homeStyle.actionButtons?.receiveButton?.borderRadius || '12px'
           }}
           showAccountDropdown={showAccountDropdown}
         />

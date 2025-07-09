@@ -47,9 +47,9 @@ export const useWalletTheme = () => {
         };
       case 'buttons':
         return {
-          backgroundColor: getHomeLayer().mainButtons?.backgroundColor || 'rgba(32, 32, 32, 0.7)',
-          borderRadius: getHomeLayer().mainButtons?.borderRadius || '12px',
-          textColor: getHomeLayer().mainButtons?.textColor || '#FFFFFF'
+          backgroundColor: getHomeLayer().actionButtons?.receiveButton?.containerColor || 'rgba(32, 32, 32, 0.7)',
+          borderRadius: getHomeLayer().actionButtons?.receiveButton?.borderRadius || '12px',
+          textColor: getHomeLayer().actionButtons?.receiveButton?.labelColor || '#FFFFFF'
         };
       case 'cards':
         return {

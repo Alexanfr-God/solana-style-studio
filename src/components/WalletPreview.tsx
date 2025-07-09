@@ -177,7 +177,7 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
         <div className="flex items-center space-x-3">
           <div 
             className="h-10 w-10 rounded-full bg-opacity-20" 
-            style={{ backgroundColor: homeLayerStyle.mainButtons?.iconColor }}
+            style={{ backgroundColor: homeLayerStyle.actionButtons?.receiveButton?.iconColor }}
           >
             <div className="flex h-full items-center justify-center">
               <span className="font-bold">S</span>
@@ -243,18 +243,18 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
           <div 
             className="h-12 w-12 rounded-full flex items-center justify-center mb-2"
             style={{ 
-              backgroundColor: homeLayerStyle.mainButtons?.backgroundColor,
-              borderRadius: homeLayerStyle.mainButtons?.borderRadius
+              backgroundColor: homeLayerStyle.actionButtons?.sendButton?.containerColor,
+              borderRadius: homeLayerStyle.actionButtons?.sendButton?.borderRadius
             }}
           >
-            <span style={{ color: homeLayerStyle.mainButtons?.iconColor }}>↑</span>
+            <span style={{ color: homeLayerStyle.actionButtons?.sendButton?.iconColor }}>↑</span>
           </div>
           <span 
             className="text-xs"
             style={{
-              color: homeLayerStyle.mainButtons?.textColor,
-              fontFamily: homeLayerStyle.mainButtons?.fontFamily,
-              fontSize: homeLayerStyle.mainButtons?.fontSize
+              color: homeLayerStyle.actionButtons?.sendButton?.labelColor,
+              fontFamily: homeLayerStyle.actionButtons?.sendButton?.labelFontFamily,
+              fontSize: homeLayerStyle.actionButtons?.sendButton?.labelFontSize
             }}
           >
             Send
@@ -264,18 +264,18 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
           <div 
             className="h-12 w-12 rounded-full flex items-center justify-center mb-2"
             style={{ 
-              backgroundColor: homeLayerStyle.mainButtons?.backgroundColor,
-              borderRadius: homeLayerStyle.mainButtons?.borderRadius
+              backgroundColor: homeLayerStyle.actionButtons?.receiveButton?.containerColor,
+              borderRadius: homeLayerStyle.actionButtons?.receiveButton?.borderRadius
             }}
           >
-            <span style={{ color: homeLayerStyle.mainButtons?.iconColor }}>↓</span>
+            <span style={{ color: homeLayerStyle.actionButtons?.receiveButton?.iconColor }}>↓</span>
           </div>
           <span 
             className="text-xs"
             style={{
-              color: homeLayerStyle.mainButtons?.textColor,
-              fontFamily: homeLayerStyle.mainButtons?.fontFamily,
-              fontSize: homeLayerStyle.mainButtons?.fontSize
+              color: homeLayerStyle.actionButtons?.receiveButton?.labelColor,
+              fontFamily: homeLayerStyle.actionButtons?.receiveButton?.labelFontFamily,
+              fontSize: homeLayerStyle.actionButtons?.receiveButton?.labelFontSize
             }}
           >
             Receive
@@ -285,18 +285,18 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
           <div 
             className="h-12 w-12 rounded-full flex items-center justify-center mb-2"
             style={{ 
-              backgroundColor: homeLayerStyle.mainButtons?.backgroundColor,
-              borderRadius: homeLayerStyle.mainButtons?.borderRadius
+              backgroundColor: homeLayerStyle.actionButtons?.swapButton?.containerColor,
+              borderRadius: homeLayerStyle.actionButtons?.swapButton?.borderRadius
             }}
           >
-            <span style={{ color: homeLayerStyle.mainButtons?.iconColor }}>↔</span>
+            <span style={{ color: homeLayerStyle.actionButtons?.swapButton?.iconColor }}>↔</span>
           </div>
           <span 
             className="text-xs"
             style={{
-              color: homeLayerStyle.mainButtons?.textColor,
-              fontFamily: homeLayerStyle.mainButtons?.fontFamily,
-              fontSize: homeLayerStyle.mainButtons?.fontSize
+              color: homeLayerStyle.actionButtons?.swapButton?.labelColor,
+              fontFamily: homeLayerStyle.actionButtons?.swapButton?.labelFontFamily,
+              fontSize: homeLayerStyle.actionButtons?.swapButton?.labelFontSize
             }}
           >
             Swap
@@ -340,7 +340,7 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
           <div className="flex items-center">
             <div 
               className="h-10 w-10 rounded-full mr-3 flex items-center justify-center"
-              style={{ backgroundColor: homeLayerStyle.mainButtons?.iconColor }}
+              style={{ backgroundColor: homeLayerStyle.actionButtons?.receiveButton?.iconColor }}
             >
               <span>S</span>
             </div>
