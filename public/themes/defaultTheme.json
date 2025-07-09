@@ -46,9 +46,9 @@
     },
     "footer": {
       "backgroundColor": "#14e06d",
-      "iconColor": "#6a55ff",
+      "iconColor": "#131413",
       "activeIconColor": "#fff",
-      "textColor": "#fff",
+      "textColor": "#131413",
       "activeTextColor": "#fff",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "14px"
