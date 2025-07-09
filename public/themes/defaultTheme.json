@@ -35,7 +35,7 @@
       "fontFamily": "Inter, sans-serif"
     },
     "buttons": {
-      "backgroundColor": "#FFD700",
+      "backgroundColor": "#f2e600",
       "textColor": "#FFFFFF",
       "borderRadius": "12px",
       "fontSize": "14px",
@@ -44,14 +44,14 @@
     },
     "cards": {
       "backgroundColor": "rgba(40, 40, 40, 0.8)",
-      "textColor": "#FFFFFF",
+      "textColor": "#f20000",
       "borderRadius": "16px",
       "border": "1px solid rgba(255, 255, 255, 0.1)",
       "fontFamily": "Inter, sans-serif"
     },
     "navigation": {
       "backgroundColor": "rgba(0, 0, 0, 0.5)",
-      "textColor": "#FFFFFF",
+      "textColor": "#2cf200",
       "borderRadius": "8px",
       "backdropFilter": "blur(10px)",
       "border": "1px solid rgba(255, 255, 255, 0.1)",
@@ -59,7 +59,7 @@
     },
     "containers": {
       "backgroundColor": "rgba(40, 40, 40, 0.8)",
-      "textColor": "#FFD700",
+      "textColor": "#0059f2",
       "borderRadius": "16px",
       "fontFamily": "Inter, sans-serif"
     },
@@ -72,7 +72,7 @@
     },
     "searchInputs": {
       "backgroundColor": "rgba(255, 255, 255, 0.08)",
-      "textColor": "#FFFFFF",
+      "textColor": "#f20000",
       "border": "1px solid rgba(255, 255, 255, 0.2)",
       "borderRadius": "12px",
       "backdropFilter": "blur(10px)",
