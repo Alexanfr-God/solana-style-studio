@@ -1,39 +1,38 @@
+
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const useWalletTheme = () => {
-  const { theme, getComponentStyle, getTokenColor, getTransition } = useTheme();
+  const { theme, getLockLayerStyle, getHomeLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
 
-  // FIXED: Only use theme system - no more fallback to old store
-  const getUnifiedComponentStyle = (component: string) => {
-    const themeStyle = getComponentStyle(component as any);
-    console.log(`🎨 Theme style for ${component}:`, themeStyle);
-    return themeStyle;
+  const getLockLayer = () => {
+    const lockStyle = getLockLayerStyle();
+    console.log('🔒 Lock layer style:', lockStyle);
+    return lockStyle;
   };
 
-  const getUnifiedTokenColor = (change: string) => {
-    // Determine if positive or negative change
-    const isPositive = change.includes('+') || parseFloat(change) > 0;
-    const colorType = isPositive ? 'positive' : 'negative';
-    
-    return {
-      color: getTokenColor(colorType),
-      fontFamily: theme.components.global.fontFamily
-    };
+  const getHomeLayer = () => {
+    const homeStyle = getHomeLayerStyle();
+    console.log('🏠 Home layer style:', homeStyle);
+    return homeStyle;
+  };
+
+  const getInputs = () => {
+    const inputsStyle = getInputsStyle();
+    console.log('⌨️ Inputs style:', inputsStyle);
+    return inputsStyle;
+  };
+
+  const getGlobal = () => {
+    const globalStyle = getGlobalStyle();
+    console.log('🌍 Global style:', globalStyle);
+    return globalStyle;
   };
 
   return {
     theme,
-    getComponentStyle: getUnifiedComponentStyle,
-    getTokenColor,
-    getTransition,
-    getUnifiedTokenColor,
-    // Legacy compatibility
-    tokenColors: {
-      positive: getTokenColor('positive'),
-      negative: getTokenColor('negative'),
-      neutral: getTokenColor('neutral'),
-      warning: getTokenColor('warning'),
-      info: getTokenColor('info')
-    }
+    getLockLayer,
+    getHomeLayer,
+    getInputs,
+    getGlobal
   };
 };

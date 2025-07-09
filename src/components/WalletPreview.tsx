@@ -4,21 +4,22 @@ import { useCustomizationStore, WalletStyle, LayerType } from '../stores/customi
 import { useWalletTheme } from '../hooks/useWalletTheme';
 import { cn } from '../lib/utils';
 
-// Render Login Screen UI - now using theme system
+// Render Login Screen UI - now using new lockLayer theme structure
 const LoginScreen = ({ style }: { style: WalletStyle }) => {
-  const { getComponentStyle } = useWalletTheme();
-  const lockScreenStyle = getComponentStyle('lockScreen');
+  const { getLockLayer } = useWalletTheme();
+  const lockLayerStyle = getLockLayer();
+  
   return (
     <div 
       className="wallet-preview flex flex-col rounded-2xl overflow-hidden"
       style={{
-        backgroundColor: lockScreenStyle.backgroundColor,
-        backgroundImage: lockScreenStyle.backgroundImage,
-        backgroundSize: lockScreenStyle.backgroundSize || 'cover',
-        backgroundPosition: lockScreenStyle.backgroundPosition || 'center',
-        backgroundRepeat: lockScreenStyle.backgroundRepeat || 'no-repeat',
-        color: lockScreenStyle.textColor,
-        fontFamily: lockScreenStyle.titleStyle?.fontFamily,
+        backgroundColor: lockLayerStyle.backgroundColor,
+        backgroundImage: lockLayerStyle.backgroundImage ? `url(${lockLayerStyle.backgroundImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        color: lockLayerStyle.title?.textColor,
+        fontFamily: lockLayerStyle.title?.fontFamily,
         boxShadow: style.boxShadow,
       }}
     >
@@ -27,13 +28,13 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
         <div 
           className="h-14 w-14 rounded-full flex items-center justify-center"
           style={{ 
-            backgroundColor: lockScreenStyle.accentColor,
-            opacity: lockScreenStyle.logoBackground.opacity
+            backgroundColor: lockLayerStyle.unlockButton?.backgroundColor,
+            opacity: 0.2
           }}
         >
           <span 
             className="font-bold text-2xl"
-            style={{ color: lockScreenStyle.textColor }}
+            style={{ color: lockLayerStyle.title?.textColor }}
           >
             S
           </span>
@@ -45,10 +46,10 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
         <h2 
           className="text-2xl font-bold mb-2"
           style={{
-            fontSize: lockScreenStyle.titleStyle.fontSize,
-            fontWeight: lockScreenStyle.titleStyle.fontWeight,
-            color: lockScreenStyle.titleStyle.color,
-            fontFamily: lockScreenStyle.titleStyle.fontFamily
+            fontSize: lockLayerStyle.title?.fontSize,
+            fontWeight: lockLayerStyle.title?.fontWeight,
+            color: lockLayerStyle.title?.textColor,
+            fontFamily: lockLayerStyle.title?.fontFamily
           }}
         >
           Welcome to Solana
@@ -56,9 +57,9 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
         <p 
           className="text-sm text-center mb-8"
           style={{
-            color: lockScreenStyle.secondaryText.color,
-            fontSize: lockScreenStyle.secondaryText.fontSize,
-            fontFamily: lockScreenStyle.secondaryText.fontFamily
+            color: lockLayerStyle.forgotPassword?.textColor,
+            fontSize: lockLayerStyle.forgotPassword?.fontSize,
+            fontFamily: lockLayerStyle.forgotPassword?.fontFamily
           }}
         >
           Log in to access your crypto wallet and assets.
@@ -69,15 +70,14 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
           <div 
             className="h-12 rounded-lg px-4 flex items-center"
             style={{ 
-              backgroundColor: lockScreenStyle.inputStyle.backgroundColor,
-              borderRadius: lockScreenStyle.inputStyle.borderRadius,
-              border: lockScreenStyle.inputStyle.border,
-              padding: lockScreenStyle.inputStyle.padding
+              backgroundColor: lockLayerStyle.passwordInput?.backgroundColor,
+              borderRadius: lockLayerStyle.passwordInput?.borderRadius,
+              border: lockLayerStyle.passwordInput?.border
             }}
           >
             <span 
               style={{ 
-                color: lockScreenStyle.inputStyle.placeholderColor 
+                color: lockLayerStyle.passwordInput?.placeholderColor 
               }}
             >
               Email
@@ -86,15 +86,14 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
           <div 
             className="h-12 rounded-lg px-4 flex items-center"
             style={{ 
-              backgroundColor: lockScreenStyle.inputStyle.backgroundColor,
-              borderRadius: lockScreenStyle.inputStyle.borderRadius,
-              border: lockScreenStyle.inputStyle.border,
-              padding: lockScreenStyle.inputStyle.padding
+              backgroundColor: lockLayerStyle.passwordInput?.backgroundColor,
+              borderRadius: lockLayerStyle.passwordInput?.borderRadius,
+              border: lockLayerStyle.passwordInput?.border
             }}
           >
             <span 
               style={{ 
-                color: lockScreenStyle.inputStyle.placeholderColor 
+                color: lockLayerStyle.passwordInput?.placeholderColor 
               }}
             >
               Password
@@ -107,12 +106,11 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
           <button 
             className="w-full h-12 font-medium"
             style={{ 
-              backgroundColor: lockScreenStyle.primaryButton.backgroundColor,
-              color: lockScreenStyle.primaryButton.textColor,
-              borderRadius: lockScreenStyle.primaryButton.borderRadius,
-              fontWeight: lockScreenStyle.primaryButton.fontWeight,
-              fontSize: lockScreenStyle.primaryButton.fontSize,
-              padding: lockScreenStyle.primaryButton.padding
+              backgroundColor: lockLayerStyle.unlockButton?.backgroundColor,
+              color: lockLayerStyle.unlockButton?.textColor,
+              borderRadius: lockLayerStyle.unlockButton?.borderRadius,
+              fontWeight: lockLayerStyle.unlockButton?.fontWeight,
+              fontSize: lockLayerStyle.unlockButton?.fontSize
             }}
           >
             Login
@@ -121,12 +119,12 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
             <span 
               className="text-sm"
               style={{
-                color: lockScreenStyle.secondaryText.color,
-                fontSize: lockScreenStyle.secondaryText.fontSize
+                color: lockLayerStyle.forgotPassword?.textColor,
+                fontSize: lockLayerStyle.forgotPassword?.fontSize
               }}
             >
               New user?{' '}
-              <span style={{ color: lockScreenStyle.accentColor }}>
+              <span style={{ color: lockLayerStyle.unlockButton?.backgroundColor }}>
                 Create account
               </span>
             </span>
@@ -139,8 +137,8 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
         <span 
           className="text-xs"
           style={{
-            color: lockScreenStyle.footerText.color,
-            fontSize: lockScreenStyle.footerText.fontSize
+            color: lockLayerStyle.forgotPassword?.textColor,
+            fontSize: '12px'
           }}
         >
           v1.0.0
@@ -150,33 +148,51 @@ const LoginScreen = ({ style }: { style: WalletStyle }) => {
   );
 };
 
-// Render Wallet Screen UI
+// Render Wallet Screen UI - using homeLayer theme structure
 const WalletScreen = ({ style }: { style: WalletStyle }) => {
+  const { getHomeLayer } = useWalletTheme();
+  const homeLayerStyle = getHomeLayer();
+
   return (
     <div 
       className="wallet-preview flex flex-col rounded-2xl overflow-hidden"
       style={{
-        backgroundColor: style.backgroundColor,
-        backgroundImage: style.backgroundImage,
+        backgroundColor: homeLayerStyle.backgroundColor,
+        backgroundImage: homeLayerStyle.backgroundImage ? `url(${homeLayerStyle.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        color: style.textColor,
-        fontFamily: style.fontFamily,
+        color: homeLayerStyle.assetName?.textColor,
+        fontFamily: homeLayerStyle.header?.fontFamily,
         boxShadow: style.boxShadow,
       }}
     >
       {/* Header */}
-      <div className="p-6 flex justify-between items-center">
+      <div 
+        className="p-6 flex justify-between items-center"
+        style={{
+          backgroundColor: homeLayerStyle.header?.backgroundColor,
+          color: homeLayerStyle.header?.textColor
+        }}
+      >
         <div className="flex items-center space-x-3">
           <div 
             className="h-10 w-10 rounded-full bg-opacity-20" 
-            style={{ backgroundColor: style.accentColor }}
+            style={{ backgroundColor: homeLayerStyle.mainButtons?.iconColor }}
           >
             <div className="flex h-full items-center justify-center">
               <span className="font-bold">S</span>
             </div>
           </div>
-          <span className="font-medium">Wallet</span>
+          <span 
+            className="font-medium"
+            style={{
+              fontFamily: homeLayerStyle.header?.fontFamily,
+              fontSize: homeLayerStyle.header?.fontSize,
+              fontWeight: homeLayerStyle.header?.fontWeight
+            }}
+          >
+            Wallet
+          </span>
         </div>
         <div 
           className="h-10 w-10 rounded-full flex items-center justify-center"
@@ -188,9 +204,37 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
       
       {/* Balance */}
       <div className="px-6 py-4">
-        <div className="text-sm opacity-70">Total Balance</div>
-        <div className="text-3xl font-bold">34.218 SOL</div>
-        <div className="text-sm" style={{ color: style.accentColor }}>$2,532.42 USD</div>
+        <div 
+          className="text-sm"
+          style={{
+            color: homeLayerStyle.totalBalanceLabel?.textColor,
+            fontFamily: homeLayerStyle.totalBalanceLabel?.fontFamily,
+            fontSize: homeLayerStyle.totalBalanceLabel?.fontSize
+          }}
+        >
+          Total Balance
+        </div>
+        <div 
+          className="text-3xl font-bold"
+          style={{
+            color: homeLayerStyle.totalBalanceValue?.textColor,
+            fontFamily: homeLayerStyle.totalBalanceValue?.fontFamily,
+            fontSize: homeLayerStyle.totalBalanceValue?.fontSize,
+            fontWeight: homeLayerStyle.totalBalanceValue?.fontWeight
+          }}
+        >
+          34.218 SOL
+        </div>
+        <div 
+          className="text-sm" 
+          style={{ 
+            color: homeLayerStyle.totalBalanceChange?.positiveColor,
+            fontFamily: homeLayerStyle.totalBalanceChange?.fontFamily,
+            fontSize: homeLayerStyle.totalBalanceChange?.fontSize
+          }}
+        >
+          $2,532.42 USD
+        </div>
       </div>
       
       {/* Action Buttons */}
@@ -198,62 +242,152 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
         <div className="flex flex-col items-center">
           <div 
             className="h-12 w-12 rounded-full flex items-center justify-center mb-2"
-            style={{ backgroundColor: style.buttonColor }}
+            style={{ 
+              backgroundColor: homeLayerStyle.mainButtons?.backgroundColor,
+              borderRadius: homeLayerStyle.mainButtons?.borderRadius
+            }}
           >
-            <span style={{ color: style.buttonTextColor }}>↑</span>
+            <span style={{ color: homeLayerStyle.mainButtons?.iconColor }}>↑</span>
           </div>
-          <span className="text-xs">Send</span>
+          <span 
+            className="text-xs"
+            style={{
+              color: homeLayerStyle.mainButtons?.textColor,
+              fontFamily: homeLayerStyle.mainButtons?.fontFamily,
+              fontSize: homeLayerStyle.mainButtons?.fontSize
+            }}
+          >
+            Send
+          </span>
         </div>
         <div className="flex flex-col items-center">
           <div 
             className="h-12 w-12 rounded-full flex items-center justify-center mb-2"
-            style={{ backgroundColor: style.buttonColor }}
+            style={{ 
+              backgroundColor: homeLayerStyle.mainButtons?.backgroundColor,
+              borderRadius: homeLayerStyle.mainButtons?.borderRadius
+            }}
           >
-            <span style={{ color: style.buttonTextColor }}>↓</span>
+            <span style={{ color: homeLayerStyle.mainButtons?.iconColor }}>↓</span>
           </div>
-          <span className="text-xs">Receive</span>
+          <span 
+            className="text-xs"
+            style={{
+              color: homeLayerStyle.mainButtons?.textColor,
+              fontFamily: homeLayerStyle.mainButtons?.fontFamily,
+              fontSize: homeLayerStyle.mainButtons?.fontSize
+            }}
+          >
+            Receive
+          </span>
         </div>
         <div className="flex flex-col items-center">
           <div 
             className="h-12 w-12 rounded-full flex items-center justify-center mb-2"
-            style={{ backgroundColor: style.buttonColor }}
+            style={{ 
+              backgroundColor: homeLayerStyle.mainButtons?.backgroundColor,
+              borderRadius: homeLayerStyle.mainButtons?.borderRadius
+            }}
           >
-            <span style={{ color: style.buttonTextColor }}>↔</span>
+            <span style={{ color: homeLayerStyle.mainButtons?.iconColor }}>↔</span>
           </div>
-          <span className="text-xs">Swap</span>
+          <span 
+            className="text-xs"
+            style={{
+              color: homeLayerStyle.mainButtons?.textColor,
+              fontFamily: homeLayerStyle.mainButtons?.fontFamily,
+              fontSize: homeLayerStyle.mainButtons?.fontSize
+            }}
+          >
+            Swap
+          </span>
         </div>
       </div>
       
       {/* Assets List */}
       <div className="flex-1 p-6">
         <div className="flex justify-between items-center mb-4">
-          <span className="font-medium">Assets</span>
-          <span className="text-sm opacity-70">See all</span>
+          <span 
+            className="font-medium"
+            style={{
+              color: homeLayerStyle.assetName?.textColor,
+              fontFamily: homeLayerStyle.assetName?.fontFamily,
+              fontWeight: homeLayerStyle.assetName?.fontWeight
+            }}
+          >
+            Assets
+          </span>
+          <span 
+            className="text-sm"
+            style={{
+              color: homeLayerStyle.seeAll?.textColor,
+              fontFamily: homeLayerStyle.seeAll?.fontFamily,
+              fontSize: homeLayerStyle.seeAll?.fontSize
+            }}
+          >
+            See all
+          </span>
         </div>
         
         {/* Asset Item */}
         <div 
           className="mb-3 p-4 flex justify-between items-center"
           style={{ 
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: style.borderRadius,
+            backgroundColor: homeLayerStyle.assetCard?.backgroundColor,
+            borderRadius: homeLayerStyle.assetCard?.borderRadius,
           }}
         >
           <div className="flex items-center">
             <div 
               className="h-10 w-10 rounded-full mr-3 flex items-center justify-center"
-              style={{ backgroundColor: style.accentColor }}
+              style={{ backgroundColor: homeLayerStyle.mainButtons?.iconColor }}
             >
               <span>S</span>
             </div>
             <div>
-              <div className="font-medium">Solana</div>
-              <div className="text-xs opacity-70">SOL</div>
+              <div 
+                className="font-medium"
+                style={{
+                  color: homeLayerStyle.assetName?.textColor,
+                  fontFamily: homeLayerStyle.assetName?.fontFamily,
+                  fontWeight: homeLayerStyle.assetName?.fontWeight,
+                  fontSize: homeLayerStyle.assetName?.fontSize
+                }}
+              >
+                Solana
+              </div>
+              <div 
+                className="text-xs"
+                style={{
+                  color: homeLayerStyle.assetName?.textColor,
+                  opacity: 0.7
+                }}
+              >
+                SOL
+              </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-medium">32.4</div>
-            <div className="text-xs opacity-70">$2,405.23</div>
+            <div 
+              className="font-medium"
+              style={{
+                color: homeLayerStyle.assetValue?.textColor,
+                fontFamily: homeLayerStyle.assetValue?.fontFamily,
+                fontWeight: homeLayerStyle.assetValue?.fontWeight,
+                fontSize: homeLayerStyle.assetValue?.fontSize
+              }}
+            >
+              32.4
+            </div>
+            <div 
+              className="text-xs"
+              style={{
+                color: homeLayerStyle.assetValue?.textColor,
+                opacity: 0.7
+              }}
+            >
+              $2,405.23
+            </div>
           </div>
         </div>
         
@@ -261,8 +395,8 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
         <div 
           className="mb-3 p-4 flex justify-between items-center"
           style={{ 
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: style.borderRadius,
+            backgroundColor: homeLayerStyle.assetCard?.backgroundColor,
+            borderRadius: homeLayerStyle.assetCard?.borderRadius,
           }}
         >
           <div className="flex items-center">
@@ -272,13 +406,49 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
               <span>B</span>
             </div>
             <div>
-              <div className="font-medium">Bitcoin</div>
-              <div className="text-xs opacity-70">BTC</div>
+              <div 
+                className="font-medium"
+                style={{
+                  color: homeLayerStyle.assetName?.textColor,
+                  fontFamily: homeLayerStyle.assetName?.fontFamily,
+                  fontWeight: homeLayerStyle.assetName?.fontWeight,
+                  fontSize: homeLayerStyle.assetName?.fontSize
+                }}
+              >
+                Bitcoin
+              </div>
+              <div 
+                className="text-xs"
+                style={{
+                  color: homeLayerStyle.assetName?.textColor,
+                  opacity: 0.7
+                }}
+              >
+                BTC
+              </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="font-medium">0.023</div>
-            <div className="text-xs opacity-70">$127.19</div>
+            <div 
+              className="font-medium"
+              style={{
+                color: homeLayerStyle.assetValue?.textColor,
+                fontFamily: homeLayerStyle.assetValue?.fontFamily,
+                fontWeight: homeLayerStyle.assetValue?.fontWeight,
+                fontSize: homeLayerStyle.assetValue?.fontSize
+              }}
+            >
+              0.023
+            </div>
+            <div 
+              className="text-xs"
+              style={{
+                color: homeLayerStyle.assetValue?.textColor,
+                opacity: 0.7
+              }}
+            >
+              $127.19
+            </div>
           </div>
         </div>
       </div>
@@ -286,23 +456,62 @@ const WalletScreen = ({ style }: { style: WalletStyle }) => {
       {/* Navigation */}
       <div 
         className="px-6 py-4 flex justify-around"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}
+        style={{ 
+          backgroundColor: homeLayerStyle.footer?.backgroundColor,
+          color: homeLayerStyle.footer?.textColor
+        }}
       >
         <div className="flex flex-col items-center">
-          <div style={{ color: style.accentColor }}>📊</div>
-          <span className="text-xs mt-1">Home</span>
+          <div style={{ color: homeLayerStyle.footer?.activeIconColor }}>📊</div>
+          <span 
+            className="text-xs mt-1"
+            style={{
+              color: homeLayerStyle.footer?.activeTextColor,
+              fontFamily: homeLayerStyle.footer?.fontFamily,
+              fontSize: homeLayerStyle.footer?.fontSize
+            }}
+          >
+            Home
+          </span>
         </div>
         <div className="flex flex-col items-center opacity-60">
-          <div>💱</div>
-          <span className="text-xs mt-1">Swap</span>
+          <div style={{ color: homeLayerStyle.footer?.iconColor }}>💱</div>
+          <span 
+            className="text-xs mt-1"
+            style={{
+              color: homeLayerStyle.footer?.textColor,
+              fontFamily: homeLayerStyle.footer?.fontFamily,
+              fontSize: homeLayerStyle.footer?.fontSize
+            }}
+          >
+            Swap
+          </span>
         </div>
         <div className="flex flex-col items-center opacity-60">
-          <div>📈</div>
-          <span className="text-xs mt-1">Market</span>
+          <div style={{ color: homeLayerStyle.footer?.iconColor }}>📈</div>
+          <span 
+            className="text-xs mt-1"
+            style={{
+              color: homeLayerStyle.footer?.textColor,
+              fontFamily: homeLayerStyle.footer?.fontFamily,
+              fontSize: homeLayerStyle.footer?.fontSize
+            }}
+          >
+            Market
+          </span>
         </div>
         <div className="flex flex-col items-center opacity-60">
-          <div>⚙️</div>
-          <span className="text-xs mt-1">Settings</span>
+          <div style={{ color: homeLayerStyle.footer?.iconColor }}>⚙️</div>
+          <span 
+            className="text-xs mt-1"
+            style={{
+              color: homeLayerStyle.footer?.textColor,
+              fontFamily: homeLayerStyle.footer?.fontFamily,
+              fontSize: homeLayerStyle.footer?.fontSize
+            }}
+          >
+            Settings
+          </span>
         </div>
       </div>
     </div>

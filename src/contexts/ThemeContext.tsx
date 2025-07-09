@@ -1,114 +1,155 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface WalletTheme {
   name: string;
   version: string;
-  colors: {
-    primary: string;
-    primaryForeground: string;
-    secondary: string;
-    secondaryForeground: string;
-    background: string;
-    foreground: string;
-    muted: string;
-    mutedForeground: string;
-    accent: string;
-    accentForeground: string;
-    border: string;
-    success: string;
-    error: string;
-    warning: string;
-    info: string;
-  };
-  components: {
-    global: ComponentStyle;
-    header: ComponentStyle;
-    buttons: ComponentStyle;
-    cards: ComponentStyle;
-    navigation: ComponentStyle;
-    containers: ComponentStyle;
-    overlays: ComponentStyle;
-    searchInputs: ComponentStyle;
-    layerHeaders: ComponentStyle;
-    networkItems: ComponentStyle;
-    lockScreen: ComponentStyle;
-  };
-  tokenColors: {
-    positive: string;
-    negative: string;
-    neutral: string;
-    warning: string;
-    info: string;
-  };
-  transitions: {
-    default: string;
-    hover: string;
-    focus: string;
-  };
-}
-
-export interface ComponentStyle {
-  backgroundColor?: string;
-  textColor?: string;
-  color?: string;
-  fontFamily?: string;
-  borderRadius?: string;
-  boxShadow?: string;
-  backdropFilter?: string;
-  border?: string;
-  fontSize?: string;
-  fontWeight?: string;
-  transition?: string;
-  gradient?: string;
-  backgroundImage?: string;
-  backgroundSize?: string;
-  backgroundPosition?: string;
-  backgroundRepeat?: string;
-  // For nested lockScreen structure
-  titleStyle?: {
-    fontSize?: string;
-    fontWeight?: string;
-    color?: string;
-    fontFamily?: string;
-  };
-  inputStyle?: {
+  lockLayer: {
+    backgroundImage?: string;
     backgroundColor?: string;
-    textColor?: string;
-    placeholderColor?: string;
-    borderRadius?: string;
-    border?: string;
-    padding?: string;
+    title: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    passwordInput: {
+      backgroundColor: string;
+      textColor: string;
+      placeholderColor: string;
+      borderRadius: string;
+      border: string;
+      fontFamily: string;
+      iconEyeColor: string;
+    };
+    forgotPassword: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    unlockButton: {
+      backgroundColor: string;
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+      borderRadius: string;
+    };
   };
-  primaryButton?: {
+  homeLayer: {
+    backgroundImage?: string;
     backgroundColor?: string;
-    textColor?: string;
-    borderRadius?: string;
-    fontWeight?: string;
-    fontSize?: string;
-    padding?: string;
+    header: {
+      backgroundColor: string;
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    footer: {
+      backgroundColor: string;
+      iconColor: string;
+      activeIconColor: string;
+      textColor: string;
+      activeTextColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    mainContainer: {
+      backgroundColor: string;
+      borderRadius: string;
+    };
+    totalBalanceLabel: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    totalBalanceValue: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    totalBalanceChange: {
+      positiveColor: string;
+      negativeColor: string;
+      zeroColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    mainButtons: {
+      backgroundColor: string;
+      iconColor: string;
+      textColor: string;
+      borderRadius: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    assetCard: {
+      backgroundColor: string;
+      textColor: string;
+      borderRadius: string;
+      fontFamily: string;
+    };
+    assetName: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    assetValue: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    assetChange: {
+      positiveColor: string;
+      negativeColor: string;
+      zeroColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    seeAll: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
   };
-  secondaryText?: {
-    color?: string;
-    fontSize?: string;
-    fontFamily?: string;
+  inputs: {
+    passwordInput: {
+      backgroundColor: string;
+      textColor: string;
+      placeholderColor: string;
+      iconEyeColor: string;
+      borderRadius: string;
+      border: string;
+      fontFamily: string;
+    };
+    searchInput: {
+      backgroundColor: string;
+      textColor: string;
+      placeholderColor: string;
+      borderRadius: string;
+      border: string;
+      fontFamily: string;
+    };
   };
-  accentColor?: string;
-  logoBackground?: {
-    backgroundColor?: string;
-    opacity?: string;
-  };
-  footerText?: {
-    color?: string;
-    fontSize?: string;
+  global: {
+    fontFamily: string;
+    borderRadius: string;
+    transition: string;
   };
 }
 
 interface ThemeContextType {
   theme: WalletTheme;
   setTheme: (theme: WalletTheme) => void;
-  getComponentStyle: (component: keyof WalletTheme['components']) => ComponentStyle;
-  getTokenColor: (type: keyof WalletTheme['tokenColors']) => string;
-  getTransition: (type: keyof WalletTheme['transitions']) => string;
+  getLockLayerStyle: () => WalletTheme['lockLayer'];
+  getHomeLayerStyle: () => WalletTheme['homeLayer'];
+  getInputsStyle: () => WalletTheme['inputs'];
+  getGlobalStyle: () => WalletTheme['global'];
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -143,150 +184,140 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
         setTheme({
           name: 'Fallback Theme',
           version: '1.0.0',
-          colors: {
-            primary: '#a390f5',
-            primaryForeground: '#FFFFFF',
-            secondary: '#282828',
-            secondaryForeground: '#FFFFFF',
-            background: '#181818',
-            foreground: '#FFFFFF',
-            muted: '#2D2D3F',
-            mutedForeground: '#9CA3AF',
-            accent: '#9945FF',
-            accentForeground: '#FFFFFF',
-            border: 'rgba(255, 255, 255, 0.1)',
-            success: '#10B981',
-            error: '#EF4444',
-            warning: '#F59E0B',
-            info: '#3B82F6'
-          },
-          components: {
-            global: {
-              backgroundColor: '#181818',
-              textColor: '#FFFFFF',
+          lockLayer: {
+            backgroundColor: '#181818',
+            title: {
+              textColor: '#fff',
               fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '28px'
+            },
+            passwordInput: {
+              backgroundColor: 'rgba(30,30,30,0.8)',
+              textColor: '#fff',
+              placeholderColor: '#aaa',
               borderRadius: '12px',
-              boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.5)'
-            },
-            header: {
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              textColor: '#FFFFFF',
-              borderRadius: '8px',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              fontFamily: 'Inter, sans-serif'
-            },
-            buttons: {
-              backgroundColor: '#a390f5',
-              textColor: '#FFFFFF',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'all 0.2s ease'
-            },
-            cards: {
-              backgroundColor: 'rgba(40, 40, 40, 0.8)',
-              textColor: '#FFFFFF',
-              borderRadius: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              fontFamily: 'Inter, sans-serif'
-            },
-            navigation: {
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              textColor: '#FFFFFF',
-              borderRadius: '8px',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              fontFamily: 'Inter, sans-serif'
-            },
-            containers: {
-              backgroundColor: 'rgba(40, 40, 40, 0.8)',
-              textColor: '#FFFFFF',
-              borderRadius: '16px',
-              fontFamily: 'Inter, sans-serif'
-            },
-            overlays: {
-              backgroundColor: 'rgba(24, 24, 24, 0.95)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '16px',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)'
-            },
-            searchInputs: {
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              textColor: '#FFFFFF',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.2s ease'
-            },
-            layerHeaders: {
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              textColor: '#FFFFFF',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              fontFamily: 'Inter, sans-serif'
-            },
-            networkItems: {
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              textColor: '#FFFFFF',
-              borderRadius: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: 'none',
               fontFamily: 'Inter, sans-serif',
-              transition: 'all 0.2s ease'
+              iconEyeColor: '#aaa'
             },
-            lockScreen: {
-              backgroundColor: '#181818',
-              textColor: '#FFFFFF',
-              titleStyle: {
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: '#FFFFFF',
-                fontFamily: 'Inter, sans-serif'
-              },
-              inputStyle: {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                textColor: '#FFFFFF',
-                placeholderColor: 'rgba(255, 255, 255, 0.6)',
-                borderRadius: '12px',
-                border: 'none',
-                padding: '12px 16px'
-              },
-              primaryButton: {
-                backgroundColor: '#a390f5',
-                textColor: '#FFFFFF',
-                borderRadius: '12px',
-                fontWeight: '500',
-                fontSize: '14px',
-                padding: '12px 0'
-              },
-              secondaryText: {
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '14px',
-                fontFamily: 'Inter, sans-serif'
-              },
-              accentColor: '#9945FF',
-              logoBackground: {
-                backgroundColor: '#9945FF',
-                opacity: '0.2'
-              },
-              footerText: {
-                color: 'rgba(255, 255, 255, 0.5)',
-                fontSize: '12px'
-              }
+            forgotPassword: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            unlockButton: {
+              backgroundColor: '#13e163',
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '600',
+              fontSize: '19px',
+              borderRadius: '14px'
             }
           },
-          tokenColors: {
-            positive: '#10B981',
-            negative: '#EF4444',
-            neutral: '#6B7280',
-            warning: '#F59E0B',
-            info: '#3B82F6'
+          homeLayer: {
+            backgroundColor: '#181818',
+            header: {
+              backgroundColor: 'rgba(24,24,24,0.92)',
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '17px'
+            },
+            footer: {
+              backgroundColor: 'rgba(24,24,24,0.9)',
+              iconColor: '#6a55ff',
+              activeIconColor: '#fff',
+              textColor: '#fff',
+              activeTextColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px'
+            },
+            mainContainer: {
+              backgroundColor: 'rgba(40,40,40,0.7)',
+              borderRadius: '18px'
+            },
+            totalBalanceLabel: {
+              textColor: '#c8c8c8',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'normal',
+              fontSize: '17px'
+            },
+            totalBalanceValue: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '32px'
+            },
+            totalBalanceChange: {
+              positiveColor: '#13e163',
+              negativeColor: '#ff5959',
+              zeroColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px'
+            },
+            mainButtons: {
+              backgroundColor: 'rgba(32,32,32,0.7)',
+              iconColor: '#6a55ff',
+              textColor: '#ffd600',
+              borderRadius: '12px',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px'
+            },
+            assetCard: {
+              backgroundColor: 'rgba(40,40,40,0.9)',
+              textColor: '#fff',
+              borderRadius: '14px',
+              fontFamily: 'Inter, sans-serif'
+            },
+            assetName: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '500',
+              fontSize: '16px'
+            },
+            assetValue: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '17px'
+            },
+            assetChange: {
+              positiveColor: '#13e163',
+              negativeColor: '#ff5959',
+              zeroColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            seeAll: {
+              textColor: '#6a55ff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '13px'
+            }
           },
-          transitions: {
-            default: 'all 0.2s ease',
-            hover: 'all 0.3s ease',
-            focus: 'all 0.15s ease'
+          inputs: {
+            passwordInput: {
+              backgroundColor: 'rgba(30,30,30,0.8)',
+              textColor: '#fff',
+              placeholderColor: '#aaa',
+              iconEyeColor: '#aaa',
+              borderRadius: '12px',
+              border: 'none',
+              fontFamily: 'Inter, sans-serif'
+            },
+            searchInput: {
+              backgroundColor: '#191919',
+              textColor: '#fff',
+              placeholderColor: '#666',
+              borderRadius: '10px',
+              border: '1px solid #2a2a2a',
+              fontFamily: 'Inter, sans-serif'
+            }
+          },
+          global: {
+            fontFamily: 'Inter, sans-serif',
+            borderRadius: '14px',
+            transition: 'all 0.2s ease'
           }
         });
       }
@@ -295,16 +326,20 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     loadDefaultTheme();
   }, [initialTheme]);
 
-  const getComponentStyle = (component: keyof WalletTheme['components']): ComponentStyle => {
-    return theme?.components[component] || {};
+  const getLockLayerStyle = () => {
+    return theme?.lockLayer || {} as WalletTheme['lockLayer'];
   };
 
-  const getTokenColor = (type: keyof WalletTheme['tokenColors']): string => {
-    return theme?.tokenColors[type] || '#FFFFFF';
+  const getHomeLayerStyle = () => {
+    return theme?.homeLayer || {} as WalletTheme['homeLayer'];
   };
 
-  const getTransition = (type: keyof WalletTheme['transitions']): string => {
-    return theme?.transitions[type] || 'all 0.2s ease';
+  const getInputsStyle = () => {
+    return theme?.inputs || {} as WalletTheme['inputs'];
+  };
+
+  const getGlobalStyle = () => {
+    return theme?.global || {} as WalletTheme['global'];
   };
 
   if (!theme) {
@@ -315,9 +350,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     <ThemeContext.Provider value={{
       theme,
       setTheme,
-      getComponentStyle,
-      getTokenColor,
-      getTransition
+      getLockLayerStyle,
+      getHomeLayerStyle,
+      getInputsStyle,
+      getGlobalStyle
     }}>
       {children}
     </ThemeContext.Provider>

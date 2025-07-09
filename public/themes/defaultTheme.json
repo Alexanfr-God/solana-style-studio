@@ -1,155 +1,142 @@
+
 {
   "name": "Default Wallet Theme",
   "version": "1.0.0",
-  "colors": {
-    "primary": "#000000",
-    "primaryForeground": "#f20000",
-    "secondary": "#f2e600",
-    "secondaryForeground": "#2cf200",
-    "background": "#FFFFFF",
-    "foreground": "#FFFFFF",
-    "muted": "#2D2D3F",
-    "mutedForeground": "#9CA3AF",
-    "accent": "#9945FF",
-    "accentForeground": "#FFFFFF",
-    "border": "rgba(255, 255, 255, 0.1)",
-    "success": "#10B981",
-    "error": "#EF4444",
-    "warning": "#F59E0B",
-    "info": "#3B82F6"
-  },
-  "components": {
-    "global": {
-      "backgroundColor": "#00f2de",
-      "textColor": "#0059f2",
+  "lockLayer": {
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+    "backgroundColor": "#181818",
+    "title": {
+      "textColor": "#fff",
       "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "28px"
+    },
+    "passwordInput": {
+      "backgroundColor": "rgba(30,30,30,0.8)",
+      "textColor": "#fff",
+      "placeholderColor": "#aaa",
       "borderRadius": "12px",
-      "boxShadow": "0px 4px 20px rgba(0, 0, 0, 0.5)"
-    },
-    "header": {
-      "backgroundColor": "rgba(255, 255, 255, 0.05)",
-      "textColor": "#a900f2",
-      "borderRadius": "8px",
-      "backdropFilter": "blur(10px)",
-      "border": "1px solid rgba(255, 255, 255, 0.1)",
-      "fontFamily": "Inter, sans-serif"
-    },
-    "buttons": {
-      "backgroundColor": "#f2e600",
-      "textColor": "#FFFFFF",
-      "borderRadius": "12px",
-      "fontSize": "14px",
-      "fontWeight": "500",
-      "transition": "all 0.2s ease"
-    },
-    "cards": {
-      "backgroundColor": "rgba(40, 40, 40, 0.8)",
-      "textColor": "#f20000",
-      "borderRadius": "16px",
-      "border": "1px solid rgba(255, 255, 255, 0.1)",
-      "fontFamily": "Inter, sans-serif"
-    },
-    "navigation": {
-      "backgroundColor": "rgba(0, 0, 0, 0.5)",
-      "textColor": "#2cf200",
-      "borderRadius": "8px",
-      "backdropFilter": "blur(10px)",
-      "border": "1px solid rgba(255, 255, 255, 0.1)",
-      "fontFamily": "Inter, sans-serif"
-    },
-    "containers": {
-      "backgroundColor": "rgba(40, 40, 40, 0.8)",
-      "textColor": "#0059f2",
-      "borderRadius": "16px",
-      "fontFamily": "Inter, sans-serif"
-    },
-    "overlays": {
-      "backgroundColor": "rgba(24, 24, 24, 0.95)",
-      "backdropFilter": "blur(20px)",
-      "border": "1px solid rgba(255, 255, 255, 0.1)",
-      "borderRadius": "16px",
-      "boxShadow": "0 20px 40px rgba(0, 0, 0, 0.5)"
-    },
-    "searchInputs": {
-      "backgroundColor": "rgba(255, 255, 255, 0.08)",
-      "textColor": "#f20000",
-      "border": "1px solid rgba(255, 255, 255, 0.2)",
-      "borderRadius": "12px",
-      "backdropFilter": "blur(10px)",
-      "transition": "all 0.2s ease"
-    },
-    "layerHeaders": {
-      "backgroundColor": "rgba(255, 255, 255, 0.05)",
-      "textColor": "#FFFFFF",
-      "borderRadius": "8px",
-      "border": "1px solid rgba(255, 255, 255, 0.1)",
-      "fontFamily": "Inter, sans-serif"
-    },
-    "networkItems": {
-      "backgroundColor": "rgba(255, 255, 255, 0.05)",
-      "textColor": "#FFFFFF",
-      "borderRadius": "16px",
-      "border": "1px solid rgba(255, 255, 255, 0.1)",
+      "border": "none",
       "fontFamily": "Inter, sans-serif",
-      "transition": "all 0.2s ease"
+      "iconEyeColor": "#aaa"
     },
-
-    "lockScreen": {
-      "backgroundColor": "#181818",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
-      "backgroundSize": "cover",
-      "backgroundPosition": "center",
-      "backgroundRepeat": "no-repeat",
-      "textColor": "#000000",
-      "titleStyle": {
-        "fontSize": "24px",
-        "fontWeight": "bold",
-        "color": "#ffffff",
-        "fontFamily": "Inter, sans-serif"
-      },
-
-      "inputStyle": {
-        "backgroundColor": "rgba(255, 255, 255, 0.1)",
-        "textColor": "#ffffff",
-        "placeholderColor": "rgba(255, 255, 255, 0.6)",
-        "borderRadius": "12px",
-        "border": "none",
-        "padding": "12px 16px"
-      },
-      "primaryButton": {
-        "backgroundColor": "#14e06d",
-        "textColor": "#ffffff",
-        "borderRadius": "12px",
-        "fontWeight": "500",
-        "fontSize": "14px",
-        "padding": "12px 0"
-      },
-      "secondaryText": {
-        "color": "rgba(255, 255, 255, 0.7)",
-        "fontSize": "14px",
-        "fontFamily": "Inter, sans-serif"
-      },
-      "accentColor": "#0059f2",
-      "logoBackground": {
-        "backgroundColor": "#a900f2",
-        "opacity": "0.2"
-      },
-      "footerText": {
-        "color": "rgba(255, 255, 255, 0.5)",
-        "fontSize": "12px"
-      }
+    "forgotPassword": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "unlockButton": {
+      "backgroundColor": "#13e163",
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "600",
+      "fontSize": "19px",
+      "borderRadius": "14px"
     }
   },
-  "tokenColors": {
-    "positive": "#10B981",
-    "negative": "#EF4444", 
-    "neutral": "#6B7280",
-    "warning": "#F59E0B",
-    "info": "#3B82F6"
+  "homeLayer": {
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+    "backgroundColor": "#181818",
+    "header": {
+      "backgroundColor": "rgba(24,24,24,0.92)",
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px"
+    },
+    "footer": {
+      "backgroundColor": "rgba(24,24,24,0.9)",
+      "iconColor": "#6a55ff",
+      "activeIconColor": "#fff",
+      "textColor": "#fff",
+      "activeTextColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "mainContainer": {
+      "backgroundColor": "rgba(40,40,40,0.7)",
+      "borderRadius": "18px"
+    },
+    "totalBalanceLabel": {
+      "textColor": "#c8c8c8",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "normal",
+      "fontSize": "17px"
+    },
+    "totalBalanceValue": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "32px"
+    },
+    "totalBalanceChange": {
+      "positiveColor": "#13e163",
+      "negativeColor": "#ff5959",
+      "zeroColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "16px"
+    },
+    "mainButtons": {
+      "backgroundColor": "rgba(32,32,32,0.7)",
+      "iconColor": "#6a55ff",
+      "textColor": "#ffd600",
+      "borderRadius": "12px",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "assetCard": {
+      "backgroundColor": "rgba(40,40,40,0.9)",
+      "textColor": "#fff",
+      "borderRadius": "14px",
+      "fontFamily": "Inter, sans-serif"
+    },
+    "assetName": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "500",
+      "fontSize": "16px"
+    },
+    "assetValue": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px"
+    },
+    "assetChange": {
+      "positiveColor": "#13e163",
+      "negativeColor": "#ff5959",
+      "zeroColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "seeAll": {
+      "textColor": "#6a55ff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "13px"
+    }
   },
-  "transitions": {
-    "default": "all 0.2s ease",
-    "hover": "all 0.3s ease",
-    "focus": "all 0.15s ease"
+  "inputs": {
+    "passwordInput": {
+      "backgroundColor": "rgba(30,30,30,0.8)",
+      "textColor": "#fff",
+      "placeholderColor": "#aaa",
+      "iconEyeColor": "#aaa",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Inter, sans-serif"
+    },
+    "searchInput": {
+      "backgroundColor": "#191919",
+      "textColor": "#fff",
+      "placeholderColor": "#666",
+      "borderRadius": "10px",
+      "border": "1px solid #2a2a2a",
+      "fontFamily": "Inter, sans-serif"
+    }
+  },
+  "global": {
+    "fontFamily": "Inter, sans-serif",
+    "borderRadius": "14px",
+    "transition": "all 0.2s ease"
   }
 }
