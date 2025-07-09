@@ -39,12 +39,18 @@ export interface WalletTheme {
   homeLayer: {
     backgroundImage?: string;
     backgroundColor?: string;
+    boxShadow?: string;
     header: {
       backgroundColor: string;
       textColor: string;
       fontFamily: string;
       fontWeight: string;
       fontSize: string;
+      backdropFilter?: string;
+      border?: string;
+      borderRadius?: string;
+      boxShadow?: string;
+      gradient?: string;
     };
     footer: {
       backgroundColor: string;
