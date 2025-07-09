@@ -2,10 +2,10 @@
   "name": "Default Wallet Theme",
   "version": "1.0.0",
   "colors": {
-    "primary": "#FFD700",
-    "primaryForeground": "#FFFFFF",
-    "secondary": "#282828",
-    "secondaryForeground": "#FFFFFF",
+    "primary": "#000000",
+    "primaryForeground": "#f20000",
+    "secondary": "#f2e600",
+    "secondaryForeground": "#2cf200",
     "background": "#FFFFFF",
     "foreground": "#FFFFFF",
     "muted": "#2D2D3F",
@@ -20,15 +20,15 @@
   },
   "components": {
     "global": {
-      "backgroundColor": "#181818",
-      "textColor": "#FFFFFF",
+      "backgroundColor": "#00f2de",
+      "textColor": "#0059f2",
       "fontFamily": "Inter, sans-serif",
       "borderRadius": "12px",
       "boxShadow": "0px 4px 20px rgba(0, 0, 0, 0.5)"
     },
     "header": {
       "backgroundColor": "rgba(255, 255, 255, 0.05)",
-      "textColor": "#FFFFFF",
+      "textColor": "#a900f2",
       "borderRadius": "8px",
       "backdropFilter": "blur(10px)",
       "border": "1px solid rgba(255, 255, 255, 0.1)",
