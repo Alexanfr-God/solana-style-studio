@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -16,7 +17,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
     isBalancePositive,
     setCurrentLayer 
   } = useWalletCustomizationStore();
-  const { getComponentStyle, getUnifiedTokenColor, tokenColors, getTransition } = useWalletTheme();
+  const { getHomeLayer, getUnifiedTokenColor, tokenColors, getTransition } = useWalletTheme();
 
   const handleAssetClick = (tokenName: string) => {
     console.log(`Clicked on ${tokenName}`);
@@ -42,7 +43,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
     }
   };
 
-  const balanceStyle = getComponentStyle('global');
+  const homeStyle = getHomeLayer();
   const changeStyle = getUnifiedTokenColor(totalChange);
 
   return (
@@ -52,7 +53,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
         <div 
           className="text-sm opacity-70 mb-1 home-balance-label"
           data-element-id="home-balance-label"
-          style={{ color: balanceStyle.textColor }}
+          style={{ color: homeStyle.totalBalanceLabel?.textColor }}
         >
           Total Balance
         </div>
@@ -60,8 +61,8 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
           className="text-3xl font-bold mb-1 home-sol-amount"
           data-element-id="home-sol-amount"
           style={{ 
-            color: balanceStyle.textColor,
-            fontFamily: balanceStyle.fontFamily 
+            color: homeStyle.totalBalanceValue?.textColor,
+            fontFamily: homeStyle.totalBalanceValue?.fontFamily 
           }}
         >
           {totalBalance}
@@ -81,7 +82,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
           onAction={handleAction} 
           style={{ 
             accentColor: tokenColors.info,
-            borderRadius: String(getComponentStyle('buttons').borderRadius || '12px')
+            borderRadius: homeStyle.mainButtons?.borderRadius || '12px'
           }}
           showAccountDropdown={showAccountDropdown}
         />
@@ -92,14 +93,14 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
         <div 
           className="flex justify-between items-center mb-4 home-assets-header"
           data-element-id="home-assets-header"
-          style={{ color: balanceStyle.textColor }}
+          style={{ color: homeStyle.totalBalanceValue?.textColor }}
         >
           <span className="font-medium home-assets-title" data-element-id="home-assets-title">Assets</span>
           <span 
             className="text-sm opacity-70 cursor-pointer hover:opacity-100 home-see-all"
             data-element-id="home-see-all"
             style={{ 
-              color: tokenColors.info,
+              color: homeStyle.seeAll?.textColor || tokenColors.info,
               transition: getTransition('default')
             }}
           >
@@ -120,10 +121,10 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
               color={token.isPositive ? tokenColors.positive : tokenColors.negative}
               onClick={() => handleAssetClick(token.name)}
               style={{
-                backgroundColor: getComponentStyle('cards').backgroundColor,
-                borderRadius: String(getComponentStyle('cards').borderRadius || '16px'),
+                backgroundColor: homeStyle.assetCard?.backgroundColor,
+                borderRadius: homeStyle.assetCard?.borderRadius || '16px',
                 accentColor: tokenColors.info,
-                textColor: balanceStyle.textColor
+                textColor: homeStyle.assetCard?.textColor
               }}
             />
           ))}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 
@@ -32,14 +33,14 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
   style
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const { getComponentStyle, getTransition, tokenColors } = useWalletTheme();
+  const { getHomeLayer, getTransition, tokenColors } = useWalletTheme();
 
-  const cardStyle = getComponentStyle('cards');
-  const textColor = style.textColor || cardStyle.textColor || '#FFFFFF';
+  const homeStyle = getHomeLayer();
+  const textColor = style.textColor || homeStyle.assetCard?.textColor || '#FFFFFF';
   
   const interactiveStyle: React.CSSProperties = {
-    backgroundColor: style.backgroundColor || cardStyle.backgroundColor,
-    borderRadius: style.borderRadius || cardStyle.borderRadius,
+    backgroundColor: style.backgroundColor || homeStyle.assetCard?.backgroundColor,
+    borderRadius: style.borderRadius || homeStyle.assetCard?.borderRadius,
     color: textColor,
     cursor: 'pointer',
     transform: isHovered ? 'scale(1.02)' : 'scale(1)',
@@ -67,7 +68,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
             <div 
               className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border"
               style={{ 
-                backgroundColor: cardStyle.backgroundColor,
+                backgroundColor: homeStyle.assetCard?.backgroundColor,
                 borderColor: textColor + '40'
               }}
             >
@@ -84,7 +85,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
             data-element-id="home-asset-name"
             style={{ 
               color: textColor,
-              fontFamily: cardStyle.fontFamily 
+              fontFamily: homeStyle.assetCard?.fontFamily 
             }}
           >
             {name}
@@ -104,7 +105,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
           data-element-id="home-asset-value"
           style={{ 
             color: textColor,
-            fontFamily: cardStyle.fontFamily 
+            fontFamily: homeStyle.assetCard?.fontFamily 
           }}
         >
           {value}

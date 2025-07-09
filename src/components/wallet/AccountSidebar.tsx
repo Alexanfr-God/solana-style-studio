@@ -46,7 +46,7 @@ const AccountSidebar = () => {
         data-element-id="account-sidebar-overlay"
         onClick={handleClose}
         style={{
-          backgroundColor: overlayStyle.backgroundColor?.replace('E6', '80') || 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
           backdropFilter: overlayStyle.backdropFilter || 'blur(8px)',
           borderRadius: overlayStyle.borderRadius || '16px'
         }}
@@ -70,7 +70,7 @@ const AccountSidebar = () => {
           className="flex items-center justify-between p-4 border-b account-sidebar-header"
           data-element-id="account-sidebar-header"
           style={{
-            borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+            borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
           <h2 
@@ -120,7 +120,7 @@ const AccountSidebar = () => {
                   className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium account-sidebar-avatar-fallback"
                   data-element-id={`account-sidebar-avatar-fallback-${index}`}
                   style={{
-                    background: buttonStyle.gradient || 'linear-gradient(135deg, #9945FF, #14F195)'
+                    background: 'linear-gradient(135deg, #9945FF, #14F195)'
                   }}
                 >
                   {account.name.charAt(account.name.length - 1)}
@@ -154,7 +154,7 @@ const AccountSidebar = () => {
           className="p-4 border-t account-sidebar-actions"
           data-element-id="account-sidebar-actions"
           style={{
-            borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+            borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
           <div className="flex items-center justify-center space-x-6 account-sidebar-action-buttons" data-element-id="account-sidebar-action-buttons">

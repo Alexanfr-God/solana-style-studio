@@ -10,9 +10,8 @@ const WalletBottomNavigation = () => {
     setCurrentLayer
   } = useWalletCustomizationStore();
   
-  const { getComponentStyle, tokenColors } = useWalletTheme();
-  const navigationStyle = getComponentStyle('navigation');
-  const buttonStyle = getComponentStyle('buttons');
+  const { getHomeLayer, tokenColors } = useWalletTheme();
+  const homeStyle = getHomeLayer();
 
   const navItems = [
     { 
@@ -65,13 +64,12 @@ const WalletBottomNavigation = () => {
       className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 z-[5] bottom-navigation"
       data-element-id="bottom-navigation"
       style={{
-        backgroundColor: navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
-        background: navigationStyle.gradient || navigationStyle.backgroundColor || 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: navigationStyle.backdropFilter || 'blur(10px)',
+        backgroundColor: homeStyle.footer?.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+        background: homeStyle.footer?.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(10px)',
         borderBottomLeftRadius: '1rem',
         borderBottomRightRadius: '1rem',
-        border: navigationStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: navigationStyle.boxShadow
+        border: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >
       <div className="grid grid-cols-5 items-center">
@@ -84,7 +82,7 @@ const WalletBottomNavigation = () => {
             data-element-id={item.dataElementId}
             onClick={() => handleNavClick(item.id)}
             style={{
-              borderRadius: navigationStyle.borderRadius || '8px'
+              borderRadius: '8px'
             }}
           >
             <item.icon 
@@ -108,9 +106,9 @@ const WalletBottomNavigation = () => {
               }`}
               style={{
                 color: currentLayer === item.id 
-                  ? navigationStyle.textColor || '#FFFFFF'
+                  ? homeStyle.footer?.textColor || '#FFFFFF'
                   : undefined,
-                fontFamily: navigationStyle.fontFamily
+                fontFamily: homeStyle.footer?.fontFamily
               }}
             >
               {item.label}

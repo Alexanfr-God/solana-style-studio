@@ -119,7 +119,7 @@ const ReceiveLayer = () => {
         className="flex items-center justify-between px-4 py-3 border-b receive-header"
         data-element-id="receive-header"
         style={{
-          borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+          borderColor: 'rgba(255, 255, 255, 0.1)'
         }}
       >
         <button
@@ -287,7 +287,7 @@ const ReceiveLayer = () => {
       </div>
 
       {/* Close Button */}
-      <div className="p-4 border-t receive-footer" data-element-id="receive-footer" style={{ borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)' }}>
+      <div className="p-4 border-t receive-footer" data-element-id="receive-footer" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
         <button
           onClick={handleClose}
           className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 receive-close-button"

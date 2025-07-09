@@ -106,7 +106,7 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
           backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
           borderRadius: overlayStyle.borderRadius || '16px',
           border: overlayStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: overlayStyle.boxShadow || '0 20px 40px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
           fontFamily: globalStyle.fontFamily || 'Inter',
           top: '50%',
           left: '50%',
@@ -118,7 +118,7 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
           className="px-4 py-3 border-b account-dropdown-header"
           data-element-id="account-dropdown-header"
           style={{
-            borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+            borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
           <h3 
@@ -156,8 +156,8 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
           className="px-4 py-3 border-t account-dropdown-footer"
           data-element-id="account-dropdown-footer"
           style={{
-            backgroundColor: overlayStyle.backgroundColor?.replace('E6', 'CC') || 'rgba(255, 255, 255, 0.05)',
-            borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
           <button 

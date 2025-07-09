@@ -28,11 +28,109 @@ export const useWalletTheme = () => {
     return globalStyle;
   };
 
+  // Legacy compatibility methods - map to new theme structure
+  const getComponentStyle = (component: string) => {
+    switch (component) {
+      case 'overlays':
+        return {
+          backgroundColor: 'rgba(24, 24, 24, 0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: getGlobal().borderRadius || '16px'
+        };
+      case 'containers':
+        return {
+          backgroundColor: getHomeLayer().mainContainer?.backgroundColor || 'rgba(40, 40, 40, 0.7)',
+          borderRadius: getHomeLayer().mainContainer?.borderRadius || '16px',
+          textColor: getHomeLayer().totalBalanceValue?.textColor || '#FFFFFF',
+          fontFamily: getGlobal().fontFamily || 'Inter, sans-serif'
+        };
+      case 'buttons':
+        return {
+          backgroundColor: getHomeLayer().mainButtons?.backgroundColor || 'rgba(32, 32, 32, 0.7)',
+          borderRadius: getHomeLayer().mainButtons?.borderRadius || '12px',
+          textColor: getHomeLayer().mainButtons?.textColor || '#FFFFFF'
+        };
+      case 'cards':
+        return {
+          backgroundColor: getHomeLayer().assetCard?.backgroundColor || 'rgba(40, 40, 40, 0.9)',
+          borderRadius: getHomeLayer().assetCard?.borderRadius || '14px',
+          textColor: getHomeLayer().assetCard?.textColor || '#FFFFFF',
+          fontFamily: getHomeLayer().assetCard?.fontFamily || 'Inter, sans-serif'
+        };
+      case 'navigation':
+        return {
+          backgroundColor: getHomeLayer().footer?.backgroundColor || 'rgba(24, 24, 24, 0.9)',
+          textColor: getHomeLayer().footer?.textColor || '#FFFFFF',
+          fontFamily: getHomeLayer().footer?.fontFamily || 'Inter, sans-serif',
+          borderRadius: getGlobal().borderRadius || '8px'
+        };
+      case 'global':
+        return {
+          textColor: getHomeLayer().totalBalanceValue?.textColor || '#FFFFFF',
+          fontFamily: getGlobal().fontFamily || 'Inter, sans-serif'
+        };
+      case 'layerHeaders':
+        return {
+          backgroundColor: getHomeLayer().header?.backgroundColor || 'rgba(24, 24, 24, 0.92)',
+          textColor: getHomeLayer().header?.textColor || '#FFFFFF',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        };
+      case 'searchInputs':
+        return {
+          backgroundColor: getInputs().searchInput?.backgroundColor || '#191919',
+          textColor: getInputs().searchInput?.textColor || '#FFFFFF',
+          borderRadius: getInputs().searchInput?.borderRadius || '10px',
+          border: getInputs().searchInput?.border || '1px solid #2a2a2a'
+        };
+      case 'networkItems':
+        return {
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(8px)'
+        };
+      default:
+        return {
+          backgroundColor: 'rgba(40, 40, 40, 0.7)',
+          borderRadius: '12px',
+          textColor: '#FFFFFF'
+        };
+    }
+  };
+
+  const getTransition = (type: string = 'default') => {
+    return getGlobal().transition || 'all 0.2s ease';
+  };
+
+  const tokenColors = {
+    positive: getHomeLayer().totalBalanceChange?.positiveColor || '#13e163',
+    negative: getHomeLayer().totalBalanceChange?.negativeColor || '#ff5959',
+    info: getHomeLayer().footer?.iconColor || '#6a55ff'
+  };
+
+  const getUnifiedTokenColor = (change: string) => {
+    const isPositive = change.startsWith('+');
+    const isNegative = change.startsWith('-');
+    
+    if (isPositive) {
+      return { color: tokenColors.positive };
+    } else if (isNegative) {
+      return { color: tokenColors.negative };
+    } else {
+      return { color: getHomeLayer().totalBalanceValue?.textColor || '#FFFFFF' };
+    }
+  };
+
   return {
     theme,
     getLockLayer,
     getHomeLayer,
     getInputs,
-    getGlobal
+    getGlobal,
+    getComponentStyle,
+    getTransition,
+    tokenColors,
+    getUnifiedTokenColor
   };
 };
