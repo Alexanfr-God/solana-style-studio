@@ -234,32 +234,32 @@
   },
   "swapLayer": {
     "mainContainer": {
-      "backgroundColor": "#242424",
+      "backgroundColor": "#181818",
       "backgroundImage": "",
       "borderRadius": "20px"
     },
     "swapTitle": {
-      "textColor": "#fff",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "22px"
     },
     "settingsIcon": {
-      "color": "#aaa",
+      "color": "#FFD166",
       "type": "settings"
     },
     "fromContainer": {
-      "backgroundColor": "#1a1a1a",
+      "backgroundColor": "#232323",
       "backgroundImage": "",
       "borderRadius": "15px"
     },
     "fromLabel": {
-      "textColor": "#aaa",
+      "textColor": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
     "fromBalance": {
-      "textColor": "#aaa",
+      "textColor": "#A9A9A9",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "14px"
     },
@@ -271,17 +271,17 @@
       "borderRadius": "10px"
     },
     "toContainer": {
-      "backgroundColor": "#1a1a1a",
+      "backgroundColor": "#232323",
       "backgroundImage": "",
       "borderRadius": "15px"
     },
     "toLabel": {
-      "textColor": "#aaa",
+      "textColor": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
     "toBalance": {
-      "textColor": "#aaa",
+      "textColor": "#A9A9A9",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "14px"
     },
@@ -293,7 +293,7 @@
       "borderRadius": "10px"
     },
     "arrowIcon": {
-      "color": "#fff",
+      "color": "#F3722C",
       "type": "arrow-up-down"
     },
     "rateContainer": {
@@ -302,17 +302,17 @@
       "borderRadius": "12px"
     },
     "rateLabel": {
-      "textColor": "#aaa",
+      "textColor": "#A9A9A9",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
     "rateValue": {
-      "textColor": "#fff",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "16px"
     },
     "infoIcon": {
-      "color": "#aaa",
+      "color": "#FFD166",
       "type": "info"
     }
   },
