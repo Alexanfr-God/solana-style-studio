@@ -212,12 +212,12 @@
       "fontSize": "26px"
     },
     "subtitle": {
-      "textColor": "#aaa",
+      "textColor": "#F3722C",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "16px"
     },
     "collectibleCard": {
-      "backgroundColor": "#232323",
+      "backgroundColor": "#FFD166",
       "backgroundImage": "",
       "borderRadius": "16px"
     },
