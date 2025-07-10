@@ -220,6 +220,90 @@ export interface WalletTheme {
       fontSize: string;
     };
   };
+  swapLayer: {
+    mainContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    swapTitle: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    settingsIcon: {
+      color: string;
+      type: string;
+    };
+    fromContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    fromLabel: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    fromBalance: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    fromCoinTag: {
+      backgroundColor: string;
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+      borderRadius: string;
+    };
+    toContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    toLabel: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    toBalance: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    toCoinTag: {
+      backgroundColor: string;
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+      borderRadius: string;
+    };
+    arrowIcon: {
+      color: string;
+      type: string;
+    };
+    rateContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    rateLabel: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    rateValue: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    infoIcon: {
+      color: string;
+      type: string;
+    };
+  };
   inputs: {
     passwordInput: {
       backgroundColor: string;
@@ -252,6 +336,7 @@ interface ThemeContextType {
   getLockLayerStyle: () => WalletTheme['lockLayer'];
   getHomeLayerStyle: () => WalletTheme['homeLayer'];
   getAppsLayerStyle: () => WalletTheme['appsLayer'];
+  getSwapLayerStyle: () => WalletTheme['swapLayer'];
   getInputsStyle: () => WalletTheme['inputs'];
   getGlobalStyle: () => WalletTheme['global'];
 }
@@ -453,6 +538,90 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               fontSize: '14px'
             }
           },
+          swapLayer: {
+            mainContainer: {
+              backgroundColor: '#242424',
+              backgroundImage: '',
+              borderRadius: '20px'
+            },
+            swapTitle: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '22px'
+            },
+            settingsIcon: {
+              color: '#aaa',
+              type: 'settings'
+            },
+            fromContainer: {
+              backgroundColor: '#1a1a1a',
+              backgroundImage: '',
+              borderRadius: '15px'
+            },
+            fromLabel: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            fromBalance: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px'
+            },
+            fromCoinTag: {
+              backgroundColor: '#232323',
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px',
+              borderRadius: '10px'
+            },
+            toContainer: {
+              backgroundColor: '#1a1a1a',
+              backgroundImage: '',
+              borderRadius: '15px'
+            },
+            toLabel: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            toBalance: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px'
+            },
+            toCoinTag: {
+              backgroundColor: '#232323',
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px',
+              borderRadius: '10px'
+            },
+            arrowIcon: {
+              color: '#fff',
+              type: 'arrow-up-down'
+            },
+            rateContainer: {
+              backgroundColor: '#232323',
+              backgroundImage: '',
+              borderRadius: '12px'
+            },
+            rateLabel: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            rateValue: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px'
+            },
+            infoIcon: {
+              color: '#aaa',
+              type: 'info'
+            }
+          },
           inputs: {
             passwordInput: {
               backgroundColor: 'rgba(30,30,30,0.8)',
@@ -496,6 +665,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return theme?.appsLayer || {} as WalletTheme['appsLayer'];
   };
 
+  const getSwapLayerStyle = () => {
+    return theme?.swapLayer || {} as WalletTheme['swapLayer'];
+  };
+
   const getInputsStyle = () => {
     return theme?.inputs || {} as WalletTheme['inputs'];
   };
@@ -515,6 +688,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       getLockLayerStyle,
       getHomeLayerStyle,
       getAppsLayerStyle,
+      getSwapLayerStyle,
       getInputsStyle,
       getGlobalStyle
     }}>

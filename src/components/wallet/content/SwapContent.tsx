@@ -1,24 +1,18 @@
 
 import React, { useState } from 'react';
 import { ArrowUpDown, Settings, Info } from 'lucide-react';
-import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const SwapContent = () => {
-  const {
-    getStyleForComponent
-  } = useWalletCustomizationStore();
+  const { getSwapLayer, getGlobal } = useWalletTheme();
 
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
   const [fromToken, setFromToken] = useState('SOL');
   const [toToken, setToToken] = useState('USDC');
 
-  // Get component-specific styles
-  const containerStyle = getStyleForComponent('containers');
-  const inputStyle = getStyleForComponent('searchInputs');
-  const buttonStyle = getStyleForComponent('buttons');
-  const panelStyle = getStyleForComponent('panels');
-  const globalStyle = getStyleForComponent('global');
+  const swapStyle = getSwapLayer();
+  const globalStyle = getGlobal();
 
   const handleSwap = () => {
     console.log('Swap initiated');
@@ -38,12 +32,11 @@ const SwapContent = () => {
         className="mt-6 p-6 rounded-xl border hover:scale-[1.01] transition-transform duration-200 swap-container"
         data-element-id="swap-container"
         style={{
-          backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-          borderRadius: containerStyle.borderRadius || '16px',
-          border: containerStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: containerStyle.boxShadow,
-          backdropFilter: containerStyle.backdropFilter,
-          transition: containerStyle.transition
+          backgroundColor: swapStyle.mainContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+          borderRadius: swapStyle.mainContainer?.borderRadius || '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundImage: swapStyle.mainContainer?.backgroundImage,
+          transition: globalStyle.transition
         }}
       >
         {/* Header */}
@@ -52,8 +45,10 @@ const SwapContent = () => {
             className="text-xl font-semibold swap-title"
             data-element-id="swap-title"
             style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily
+              color: swapStyle.swapTitle?.textColor || '#FFFFFF',
+              fontFamily: swapStyle.swapTitle?.fontFamily || globalStyle.fontFamily,
+              fontWeight: swapStyle.swapTitle?.fontWeight,
+              fontSize: swapStyle.swapTitle?.fontSize
             }}
           >
             Swap
@@ -62,10 +57,14 @@ const SwapContent = () => {
             className="p-2 rounded-lg hover:bg-white/10 transition-colors swap-settings"
             data-element-id="swap-settings"
             style={{
-              borderRadius: buttonStyle.borderRadius || '8px'
+              borderRadius: '8px'
             }}
           >
-            <Settings className="w-5 h-5 text-gray-400 swap-settings-icon" data-element-id="swap-settings-icon" />
+            <Settings 
+              className="w-5 h-5 swap-settings-icon" 
+              data-element-id="swap-settings-icon"
+              style={{ color: swapStyle.settingsIcon?.color || '#aaa' }}
+            />
           </button>
         </div>
 
@@ -74,24 +73,31 @@ const SwapContent = () => {
           className="p-4 rounded-xl mb-2 swap-from-container"
           data-element-id="swap-from-container"
           style={{
-            backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-            borderRadius: panelStyle.borderRadius || '12px',
-            border: panelStyle.border,
-            backdropFilter: panelStyle.backdropFilter
+            backgroundColor: swapStyle.fromContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            borderRadius: swapStyle.fromContainer?.borderRadius || '12px',
+            backgroundImage: swapStyle.fromContainer?.backgroundImage
           }}
         >
           <div className="flex justify-between items-center mb-2">
             <span 
-              className="text-sm text-gray-400 swap-from-label"
+              className="text-sm swap-from-label"
               data-element-id="swap-from-label"
-              style={{ fontFamily: globalStyle.fontFamily }}
+              style={{ 
+                color: swapStyle.fromLabel?.textColor || '#aaa',
+                fontFamily: swapStyle.fromLabel?.fontFamily || globalStyle.fontFamily,
+                fontSize: swapStyle.fromLabel?.fontSize
+              }}
             >
               From
             </span>
             <span 
-              className="text-sm text-gray-400 swap-from-balance"
+              className="text-sm swap-from-balance"
               data-element-id="swap-from-balance"
-              style={{ fontFamily: globalStyle.fontFamily }}
+              style={{ 
+                color: swapStyle.fromBalance?.textColor || '#aaa',
+                fontFamily: swapStyle.fromBalance?.fontFamily || globalStyle.fontFamily,
+                fontSize: swapStyle.fromBalance?.fontSize
+              }}
             >
               Balance: 5.03737 SOL
             </span>
@@ -106,16 +112,16 @@ const SwapContent = () => {
               data-element-id="swap-from-input"
               style={{
                 fontFamily: globalStyle.fontFamily,
-                color: globalStyle.textColor
+                color: '#FFFFFF'
               }}
             />
             <button 
               className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors swap-from-token-button"
               data-element-id="swap-from-token-button"
               style={{
-                backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
-                borderRadius: buttonStyle.borderRadius || '8px',
-                transition: buttonStyle.transition
+                backgroundColor: swapStyle.fromCoinTag?.backgroundColor || 'rgba(255, 255, 255, 0.1)',
+                borderRadius: swapStyle.fromCoinTag?.borderRadius || '8px',
+                transition: globalStyle.transition
               }}
             >
               <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center swap-from-token-icon" data-element-id="swap-from-token-icon">
@@ -125,8 +131,9 @@ const SwapContent = () => {
                 className="font-medium swap-from-token-name"
                 data-element-id="swap-from-token-name"
                 style={{
-                  color: buttonStyle.textColor || '#FFFFFF',
-                  fontFamily: globalStyle.fontFamily
+                  color: swapStyle.fromCoinTag?.textColor || '#FFFFFF',
+                  fontFamily: swapStyle.fromCoinTag?.fontFamily || globalStyle.fontFamily,
+                  fontSize: swapStyle.fromCoinTag?.fontSize
                 }}
               >
                 {fromToken}
@@ -142,12 +149,16 @@ const SwapContent = () => {
             className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110 swap-flip-button"
             data-element-id="swap-flip-button"
             style={{
-              backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
               borderRadius: '50%',
-              transition: buttonStyle.transition
+              transition: globalStyle.transition
             }}
           >
-            <ArrowUpDown className="w-5 h-5 text-gray-400 swap-flip-icon" data-element-id="swap-flip-icon" />
+            <ArrowUpDown 
+              className="w-5 h-5 swap-flip-icon" 
+              data-element-id="swap-flip-icon"
+              style={{ color: swapStyle.arrowIcon?.color || '#fff' }}
+            />
           </button>
         </div>
 
@@ -156,24 +167,31 @@ const SwapContent = () => {
           className="p-4 rounded-xl mb-6 swap-to-container"
           data-element-id="swap-to-container"
           style={{
-            backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-            borderRadius: panelStyle.borderRadius || '12px',
-            border: panelStyle.border,
-            backdropFilter: panelStyle.backdropFilter
+            backgroundColor: swapStyle.toContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+            borderRadius: swapStyle.toContainer?.borderRadius || '12px',
+            backgroundImage: swapStyle.toContainer?.backgroundImage
           }}
         >
           <div className="flex justify-between items-center mb-2">
             <span 
-              className="text-sm text-gray-400 swap-to-label"
+              className="text-sm swap-to-label"
               data-element-id="swap-to-label"
-              style={{ fontFamily: globalStyle.fontFamily }}
+              style={{ 
+                color: swapStyle.toLabel?.textColor || '#aaa',
+                fontFamily: swapStyle.toLabel?.fontFamily || globalStyle.fontFamily,
+                fontSize: swapStyle.toLabel?.fontSize
+              }}
             >
               To
             </span>
             <span 
-              className="text-sm text-gray-400 swap-to-balance"
+              className="text-sm swap-to-balance"
               data-element-id="swap-to-balance"
-              style={{ fontFamily: globalStyle.fontFamily }}
+              style={{ 
+                color: swapStyle.toBalance?.textColor || '#aaa',
+                fontFamily: swapStyle.toBalance?.fontFamily || globalStyle.fontFamily,
+                fontSize: swapStyle.toBalance?.fontSize
+              }}
             >
               Balance: 0 USDC
             </span>
@@ -188,16 +206,16 @@ const SwapContent = () => {
               data-element-id="swap-to-input"
               style={{
                 fontFamily: globalStyle.fontFamily,
-                color: globalStyle.textColor
+                color: '#FFFFFF'
               }}
             />
             <button 
               className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors swap-to-token-button"
               data-element-id="swap-to-token-button"
               style={{
-                backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
-                borderRadius: buttonStyle.borderRadius || '8px',
-                transition: buttonStyle.transition
+                backgroundColor: swapStyle.toCoinTag?.backgroundColor || 'rgba(255, 255, 255, 0.1)',
+                borderRadius: swapStyle.toCoinTag?.borderRadius || '8px',
+                transition: globalStyle.transition
               }}
             >
               <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center swap-to-token-icon" data-element-id="swap-to-token-icon">
@@ -207,8 +225,9 @@ const SwapContent = () => {
                 className="font-medium swap-to-token-name"
                 data-element-id="swap-to-token-name"
                 style={{
-                  color: buttonStyle.textColor || '#FFFFFF',
-                  fontFamily: globalStyle.fontFamily
+                  color: swapStyle.toCoinTag?.textColor || '#FFFFFF',
+                  fontFamily: swapStyle.toCoinTag?.fontFamily || globalStyle.fontFamily,
+                  fontSize: swapStyle.toCoinTag?.fontSize
                 }}
               >
                 {toToken}
@@ -222,27 +241,37 @@ const SwapContent = () => {
           className="p-3 rounded-lg mb-6 swap-info"
           data-element-id="swap-info"
           style={{
-            backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.03)',
-            borderRadius: panelStyle.borderRadius || '8px'
+            backgroundColor: swapStyle.rateContainer?.backgroundColor || 'rgba(255, 255, 255, 0.03)',
+            borderRadius: swapStyle.rateContainer?.borderRadius || '8px',
+            backgroundImage: swapStyle.rateContainer?.backgroundImage
           }}
         >
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center space-x-2">
-              <Info className="w-4 h-4 text-gray-400 swap-info-icon" data-element-id="swap-info-icon" />
+              <Info 
+                className="w-4 h-4 swap-info-icon" 
+                data-element-id="swap-info-icon"
+                style={{ color: swapStyle.infoIcon?.color || '#aaa' }}
+              />
               <span 
-                className="text-gray-400 swap-rate-label"
+                className="swap-rate-label"
                 data-element-id="swap-rate-label"
-                style={{ fontFamily: globalStyle.fontFamily }}
+                style={{
+                  color: swapStyle.rateLabel?.textColor || '#aaa',
+                  fontFamily: swapStyle.rateLabel?.fontFamily || globalStyle.fontFamily,
+                  fontSize: swapStyle.rateLabel?.fontSize
+                }}
               >
                 Rate
               </span>
             </div>
             <span 
-              className="text-white swap-rate-value"
+              className="swap-rate-value"
               data-element-id="swap-rate-value"
               style={{
-                color: globalStyle.textColor,
-                fontFamily: globalStyle.fontFamily
+                color: swapStyle.rateValue?.textColor || '#fff',
+                fontFamily: swapStyle.rateValue?.fontFamily || globalStyle.fontFamily,
+                fontSize: swapStyle.rateValue?.fontSize
               }}
             >
               1 SOL ≈ 224.7 USDC
@@ -256,13 +285,11 @@ const SwapContent = () => {
           className="w-full py-4 rounded-xl font-medium transition-all duration-200 hover:scale-105 swap-button"
           data-element-id="swap-button"
           style={{
-            backgroundColor: buttonStyle.backgroundColor || '#9945FF',
-            background: buttonStyle.gradient || buttonStyle.backgroundColor,
-            color: buttonStyle.textColor || '#FFFFFF',
-            borderRadius: buttonStyle.borderRadius || '12px',
-            boxShadow: buttonStyle.boxShadow,
+            backgroundColor: '#9945FF',
+            color: '#FFFFFF',
+            borderRadius: '12px',
             fontFamily: globalStyle.fontFamily,
-            transition: buttonStyle.transition
+            transition: globalStyle.transition
           }}
         >
           Swap

@@ -1,3 +1,4 @@
+
 {
   "name": "Default Wallet Theme",
   "version": "1.0.0",
@@ -230,6 +231,90 @@
       "textColor": "#FFD700",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "14px"
+    }
+  },
+  "swapLayer": {
+    "mainContainer": {
+      "backgroundColor": "#242424",
+      "backgroundImage": "",
+      "borderRadius": "20px"
+    },
+    "swapTitle": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "22px"
+    },
+    "settingsIcon": {
+      "color": "#aaa",
+      "type": "settings"
+    },
+    "fromContainer": {
+      "backgroundColor": "#1a1a1a",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "fromLabel": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "fromBalance": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "fromCoinTag": {
+      "backgroundColor": "#232323",
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px",
+      "borderRadius": "10px"
+    },
+    "toContainer": {
+      "backgroundColor": "#1a1a1a",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "toLabel": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "toBalance": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "toCoinTag": {
+      "backgroundColor": "#232323",
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px",
+      "borderRadius": "10px"
+    },
+    "arrowIcon": {
+      "color": "#fff",
+      "type": "arrow-up-down"
+    },
+    "rateContainer": {
+      "backgroundColor": "#232323",
+      "backgroundImage": "",
+      "borderRadius": "12px"
+    },
+    "rateLabel": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "rateValue": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "16px"
+    },
+    "infoIcon": {
+      "color": "#aaa",
+      "type": "info"
     }
   },
   "inputs": {

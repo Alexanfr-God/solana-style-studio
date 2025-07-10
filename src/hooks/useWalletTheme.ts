@@ -1,8 +1,7 @@
-
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const useWalletTheme = () => {
-  const { theme, getLockLayerStyle, getHomeLayerStyle, getAppsLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
+  const { theme, getLockLayerStyle, getHomeLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
 
   const getLockLayer = () => {
     const lockStyle = getLockLayerStyle();
@@ -20,6 +19,12 @@ export const useWalletTheme = () => {
     const appsStyle = getAppsLayerStyle();
     console.log('📱 Apps layer style:', appsStyle);
     return appsStyle;
+  };
+
+  const getSwapLayer = () => {
+    const swapStyle = getSwapLayerStyle();
+    console.log('🔄 Swap layer style:', swapStyle);
+    return swapStyle;
   };
 
   const getInputs = () => {
@@ -96,6 +101,11 @@ export const useWalletTheme = () => {
           border: '1px solid rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(8px)'
         };
+      case 'panels':
+        return {
+          backgroundColor: getSwapLayer().fromContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+          borderRadius: getSwapLayer().fromContainer?.borderRadius || '12px'
+        };
       default:
         return {
           backgroundColor: 'rgba(40, 40, 40, 0.7)',
@@ -133,6 +143,7 @@ export const useWalletTheme = () => {
     getLockLayer,
     getHomeLayer,
     getAppsLayer,
+    getSwapLayer,
     getInputs,
     getGlobal,
     getComponentStyle,
