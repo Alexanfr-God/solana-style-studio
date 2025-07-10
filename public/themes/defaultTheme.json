@@ -173,7 +173,7 @@
       "fontSize": "13px"
     },
     "accountDropdown": {
-      "containerBackgroundColor": "#ad7e26",
+      "containerBackgroundColor": "rgba(173,126,38,0.94)",
       "containerBorderRadius": "16px",
       "headerText": {
         "selectAccountColor": "#fff",
@@ -189,16 +189,16 @@
         "tradingAccountFontSize": "14px"
       },
       "actionButtons": {
-        "addAccountColor": "#FFD166",
+        "addAccountColor": "#ffe09a",
         "addAccountFontFamily": "Inter, sans-serif",
         "addAccountFontSize": "14px",
-        "manageCollectibleColor": "#FFD700",
+        "manageCollectibleColor": "#ffe09a",
         "manageCollectibleFontFamily": "Inter, sans-serif",
         "manageCollectibleFontSize": "14px"
       },
       "icons": {
         "copyAddressIcon": {
-          "color": "#aaa",
+          "color": "#fff",
           "type": "copy"
         }
       }
