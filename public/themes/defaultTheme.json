@@ -38,7 +38,7 @@
     "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
     "backgroundColor": "#181818",
     "header": {
-      "backgroundColor": "#14e06d",
+      "backgroundColor": "#ad7e26",
       "backgroundImage": "",
       "textColor": "#fff",
       "fontFamily": "Inter, sans-serif",
@@ -87,7 +87,7 @@
       }
     },
     "mainContainer": {
-      "backgroundColor": "#14e06d",
+      "backgroundColor": "#ad7e26",
       "borderRadius": "18px"
     },
     "totalBalanceLabel": {
@@ -111,7 +111,7 @@
     },
     "actionButtons": {
       "receiveButton": {
-        "containerColor": "rgba(32,32,32,0.7)",
+        "containerColor": "#ad7e26",
         "iconColor": "#6a55ff",
         "labelColor": "#ffd600",
         "labelFontFamily": "Inter, sans-serif",
@@ -119,7 +119,7 @@
         "borderRadius": "12px"
       },
       "sendButton": {
-        "containerColor": "rgba(32,32,32,0.7)",
+        "containerColor": "#ad7e26",
         "iconColor": "#6a55ff",
         "labelColor": "#ffd600",
         "labelFontFamily": "Inter, sans-serif",
@@ -127,7 +127,7 @@
         "borderRadius": "12px"
       },
       "swapButton": {
-        "containerColor": "rgba(32,32,32,0.7)",
+        "containerColor": "#ad7e26",
         "iconColor": "#6a55ff",
         "labelColor": "#ffd600",
         "labelFontFamily": "Inter, sans-serif",
@@ -135,7 +135,7 @@
         "borderRadius": "12px"
       },
       "buyButton": {
-        "containerColor": "rgba(32,32,32,0.7)",
+        "containerColor": "#ad7e26",
         "iconColor": "#6a55ff",
         "labelColor": "#ffd600",
         "labelFontFamily": "Inter, sans-serif",
@@ -174,7 +174,7 @@
       "fontSize": "13px"
     },
     "accountDropdown": {
-      "containerBackgroundColor": "rgba(24, 24, 24, 0.95)",
+      "containerBackgroundColor": "#ad7e26",
       "containerBorderRadius": "16px",
       "headerText": {
         "selectAccountColor": "#fff",
