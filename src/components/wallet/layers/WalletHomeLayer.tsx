@@ -26,11 +26,12 @@ const WalletHomeLayer = () => {
     setCurrentLayer
   } = useWalletCustomizationStore();
 
-  const { getHomeLayer, getGlobal } = useWalletTheme();
+  const { getHomeLayer, getAvatarHeader, getGlobal } = useWalletTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Get theme styles
   const homeStyle = getHomeLayer();
+  const avatarStyle = getAvatarHeader();
   const globalStyle = getGlobal();
 
   const activeAccount = accounts.find(acc => acc.id === activeAccountId);
@@ -110,14 +111,23 @@ const WalletHomeLayer = () => {
       >
         {/* Account Section */}
         <div className="flex items-center space-x-3">
-          {/* Clickable Round Avatar */}
+          {/* Clickable Round Avatar with theme styles */}
           <button
             onClick={handleAvatarClick}
             className="transition-transform duration-200 hover:scale-105"
           >
             <Avatar className="w-10 h-10 home-user-avatar" data-element-id="home-user-avatar">
               <AvatarImage src="" alt={activeAccount?.name} />
-              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
+              <AvatarFallback 
+                className="text-white font-medium"
+                style={{
+                  backgroundColor: avatarStyle.backgroundColor || '#7B6CFF',
+                  color: avatarStyle.textColor || '#fff',
+                  fontFamily: avatarStyle.fontFamily || 'Inter, sans-serif',
+                  fontWeight: avatarStyle.fontWeight || 'bold',
+                  fontSize: avatarStyle.fontSize || '20px'
+                }}
+              >
                 {activeAccount?.name.charAt(0) || 'A'}
               </AvatarFallback>
             </Avatar>

@@ -1,12 +1,25 @@
+
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const useWalletTheme = () => {
-  const { theme, getLockLayerStyle, getHomeLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
+  const { theme, getLockLayerStyle, getAvatarHeaderStyle, getSidebarLayerStyle, getHomeLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
 
   const getLockLayer = () => {
     const lockStyle = getLockLayerStyle();
     console.log('🔒 Lock layer style:', lockStyle);
     return lockStyle;
+  };
+
+  const getAvatarHeader = () => {
+    const avatarStyle = getAvatarHeaderStyle();
+    console.log('👤 Avatar header style:', avatarStyle);
+    return avatarStyle;
+  };
+
+  const getSidebarLayer = () => {
+    const sidebarStyle = getSidebarLayerStyle();
+    console.log('📱 Sidebar layer style:', sidebarStyle);
+    return sidebarStyle;
   };
 
   const getHomeLayer = () => {
@@ -168,6 +181,8 @@ export const useWalletTheme = () => {
   return {
     theme,
     getLockLayer,
+    getAvatarHeader,
+    getSidebarLayer,
     getHomeLayer,
     getAppsLayer,
     getSwapLayer,

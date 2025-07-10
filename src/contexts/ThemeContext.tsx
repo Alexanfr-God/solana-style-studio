@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface WalletTheme {
@@ -33,6 +34,63 @@ export interface WalletTheme {
       fontWeight: string;
       fontSize: string;
       borderRadius: string;
+    };
+  };
+  avatarHeader: {
+    backgroundColor: string;
+    textColor: string;
+    fontFamily: string;
+    fontWeight: string;
+    fontSize: string;
+  };
+  sidebarLayer: {
+    header: {
+      backgroundColor: string;
+      accountTitle: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+      closeIcon: {
+        color: string;
+        type: string;
+      };
+    };
+    center: {
+      backgroundColor: string;
+      accountList: {
+        avatar: {
+          backgroundColor: string;
+          textColor: string;
+          fontFamily: string;
+          fontWeight: string;
+          fontSize: string;
+        };
+        accountName: {
+          textColor: string;
+          fontFamily: string;
+          fontWeight: string;
+          fontSize: string;
+        };
+        accountAddress: {
+          textColor: string;
+          fontFamily: string;
+          fontSize: string;
+        };
+        selectedAnimation: {
+          color: string;
+          type: string;
+        };
+      };
+    };
+    footer: {
+      backgroundColor: string;
+      footerIcons: {
+        addIcon: { color: string; type: string; };
+        editIcon: { color: string; type: string; };
+        settingsIcon: { color: string; type: string; };
+      };
     };
   };
   homeLayer: {
@@ -422,6 +480,8 @@ interface ThemeContextType {
   theme: WalletTheme;
   setTheme: (theme: WalletTheme) => void;
   getLockLayerStyle: () => WalletTheme['lockLayer'];
+  getAvatarHeaderStyle: () => WalletTheme['avatarHeader'];
+  getSidebarLayerStyle: () => WalletTheme['sidebarLayer'];
   getHomeLayerStyle: () => WalletTheme['homeLayer'];
   getAppsLayerStyle: () => WalletTheme['appsLayer'];
   getSwapLayerStyle: () => WalletTheme['swapLayer'];
@@ -492,6 +552,63 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               fontWeight: '600',
               fontSize: '19px',
               borderRadius: '14px'
+            }
+          },
+          avatarHeader: {
+            backgroundColor: '#7B6CFF',
+            textColor: '#fff',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: 'bold',
+            fontSize: '20px'
+          },
+          sidebarLayer: {
+            header: {
+              backgroundColor: '#181818',
+              accountTitle: {
+                textColor: '#fff',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '19px'
+              },
+              closeIcon: {
+                color: '#aaa',
+                type: 'x'
+              }
+            },
+            center: {
+              backgroundColor: '#232323',
+              accountList: {
+                avatar: {
+                  backgroundColor: '#7B6CFF',
+                  textColor: '#fff',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 'bold',
+                  fontSize: '20px'
+                },
+                accountName: {
+                  textColor: '#fff',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 'bold',
+                  fontSize: '17px'
+                },
+                accountAddress: {
+                  textColor: '#aaa',
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '14px'
+                },
+                selectedAnimation: {
+                  color: '#a259ff',
+                  type: 'glow'
+                }
+              }
+            },
+            footer: {
+              backgroundColor: '#181818',
+              footerIcons: {
+                addIcon: { color: '#aaa', type: 'plus' },
+                editIcon: { color: '#aaa', type: 'pencil' },
+                settingsIcon: { color: '#aaa', type: 'settings' }
+              }
             }
           },
           homeLayer: {
@@ -835,6 +952,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return theme?.lockLayer || {} as WalletTheme['lockLayer'];
   };
 
+  const getAvatarHeaderStyle = () => {
+    return theme?.avatarHeader || {} as WalletTheme['avatarHeader'];
+  };
+
+  const getSidebarLayerStyle = () => {
+    return theme?.sidebarLayer || {} as WalletTheme['sidebarLayer'];
+  };
+
   const getHomeLayerStyle = () => {
     return theme?.homeLayer || {} as WalletTheme['homeLayer'];
   };
@@ -872,6 +997,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       theme,
       setTheme,
       getLockLayerStyle,
+      getAvatarHeaderStyle,
+      getSidebarLayerStyle,
       getHomeLayerStyle,
       getAppsLayerStyle,
       getSwapLayerStyle,

@@ -15,13 +15,12 @@ const AccountSidebar = () => {
     setShowAccountSidebar
   } = useWalletCustomizationStore();
 
-  const { getComponentStyle, getTransition } = useWalletTheme();
+  const { getSidebarLayer, getComponentStyle, getTransition } = useWalletTheme();
 
-  // Get component-specific styles from theme
+  // Get sidebar-specific styles from theme
+  const sidebarStyle = getSidebarLayer();
   const overlayStyle = getComponentStyle('overlays');
-  const containerStyle = getComponentStyle('containers');
   const buttonStyle = getComponentStyle('buttons');
-  const globalStyle = getComponentStyle('global');
 
   const handleAccountSelect = (accountId: string) => {
     setActiveAccount(accountId);
@@ -52,33 +51,36 @@ const AccountSidebar = () => {
         }}
       />
       
-      {/* Sidebar with rounded corners */}
+      {/* Sidebar with rounded corners and theme styles */}
       <div 
         className="fixed top-4 left-4 bottom-4 w-80 z-50 flex flex-col animate-slide-in-right account-sidebar-container"
         data-element-id="account-sidebar-container"
         style={{
           backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
           backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
-          fontFamily: globalStyle.fontFamily || 'Inter',
+          fontFamily: sidebarStyle.center?.accountList?.accountName?.fontFamily || 'Inter',
           border: overlayStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: overlayStyle.borderRadius || '16px',
           overflow: 'hidden'
         }}
       >
-        {/* Header with close button */}
+        {/* Header with close button and theme styles */}
         <div 
           className="flex items-center justify-between p-4 border-b account-sidebar-header"
           data-element-id="account-sidebar-header"
           style={{
+            backgroundColor: sidebarStyle.header?.backgroundColor || '#181818',
             borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
           <h2 
-            className="text-lg font-medium text-white account-sidebar-title"
+            className="text-lg font-medium account-sidebar-title"
             data-element-id="account-sidebar-title"
             style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily
+              color: sidebarStyle.header?.accountTitle?.textColor || '#FFFFFF',
+              fontFamily: sidebarStyle.header?.accountTitle?.fontFamily || 'Inter, sans-serif',
+              fontWeight: sidebarStyle.header?.accountTitle?.fontWeight || 'bold',
+              fontSize: sidebarStyle.header?.accountTitle?.fontSize || '19px'
             }}
           >
             Accounts
@@ -92,35 +94,57 @@ const AccountSidebar = () => {
               transition: getTransition('default')
             }}
           >
-            <X className="w-5 h-5 text-gray-400 account-sidebar-close-icon" data-element-id="account-sidebar-close-icon" />
+            <X 
+              className="w-5 h-5 account-sidebar-close-icon" 
+              data-element-id="account-sidebar-close-icon"
+              style={{
+                color: sidebarStyle.header?.closeIcon?.color || '#aaa'
+              }}
+            />
           </button>
         </div>
 
-        {/* Accounts List */}
-        <div className="flex-1 p-4 space-y-3 overflow-auto account-sidebar-list" data-element-id="account-sidebar-list">
+        {/* Accounts List with theme styles */}
+        <div 
+          className="flex-1 p-4 space-y-3 overflow-auto account-sidebar-list" 
+          data-element-id="account-sidebar-list"
+          style={{
+            backgroundColor: sidebarStyle.center?.backgroundColor || '#232323'
+          }}
+        >
           {accounts.map((account, index) => (
             <button
               key={account.id}
               onClick={() => handleAccountSelect(account.id)}
-              className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 hover:bg-white/10 account-sidebar-item ${
-                activeAccountId === account.id ? 'ring-1 ring-purple-500' : ''
-              }`}
+              className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 hover:bg-white/10 account-sidebar-item`}
               data-element-id={`account-sidebar-item-${index}`}
               style={{
                 backgroundColor: activeAccountId === account.id 
-                  ? containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)' 
+                  ? 'rgba(255, 255, 255, 0.1)' 
                   : 'transparent',
-                borderRadius: containerStyle.borderRadius || '12px',
-                transition: getTransition('default')
+                borderRadius: '12px',
+                transition: getTransition('default'),
+                ...(activeAccountId === account.id && {
+                  boxShadow: sidebarStyle.center?.accountList?.selectedAnimation?.type === 'glow' 
+                    ? `0 0 10px ${sidebarStyle.center?.accountList?.selectedAnimation?.color || '#a259ff'}` 
+                    : undefined,
+                  border: sidebarStyle.center?.accountList?.selectedAnimation?.type === 'border' 
+                    ? `1px solid ${sidebarStyle.center?.accountList?.selectedAnimation?.color || '#a259ff'}` 
+                    : undefined
+                })
               }}
             >
               <Avatar className="w-10 h-10 account-sidebar-avatar" data-element-id={`account-sidebar-avatar-${index}`}>
                 <AvatarImage src="" alt={account.name} />
                 <AvatarFallback 
-                  className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium account-sidebar-avatar-fallback"
+                  className="text-white font-medium account-sidebar-avatar-fallback"
                   data-element-id={`account-sidebar-avatar-fallback-${index}`}
                   style={{
-                    background: 'linear-gradient(135deg, #9945FF, #14F195)'
+                    backgroundColor: sidebarStyle.center?.accountList?.avatar?.backgroundColor || '#7B6CFF',
+                    color: sidebarStyle.center?.accountList?.avatar?.textColor || '#fff',
+                    fontFamily: sidebarStyle.center?.accountList?.avatar?.fontFamily || 'Inter, sans-serif',
+                    fontWeight: sidebarStyle.center?.accountList?.avatar?.fontWeight || 'bold',
+                    fontSize: sidebarStyle.center?.accountList?.avatar?.fontSize || '20px'
                   }}
                 >
                   {account.name.charAt(account.name.length - 1)}
@@ -128,19 +152,25 @@ const AccountSidebar = () => {
               </Avatar>
               <div className="text-left account-sidebar-account-info" data-element-id={`account-sidebar-account-info-${index}`}>
                 <div 
-                  className="text-sm font-medium text-white account-sidebar-account-name"
+                  className="text-sm font-medium account-sidebar-account-name"
                   data-element-id={`account-sidebar-account-name-${index}`}
                   style={{
-                    color: globalStyle.textColor || '#FFFFFF',
-                    fontFamily: globalStyle.fontFamily
+                    color: sidebarStyle.center?.accountList?.accountName?.textColor || '#FFFFFF',
+                    fontFamily: sidebarStyle.center?.accountList?.accountName?.fontFamily || 'Inter, sans-serif',
+                    fontWeight: sidebarStyle.center?.accountList?.accountName?.fontWeight || 'bold',
+                    fontSize: sidebarStyle.center?.accountList?.accountName?.fontSize || '17px'
                   }}
                 >
                   {account.name}
                 </div>
                 <div 
-                  className="text-xs text-gray-400 account-sidebar-account-address"
+                  className="text-xs account-sidebar-account-address"
                   data-element-id={`account-sidebar-account-address-${index}`}
-                  style={{ fontFamily: globalStyle.fontFamily }}
+                  style={{ 
+                    color: sidebarStyle.center?.accountList?.accountAddress?.textColor || '#aaa',
+                    fontFamily: sidebarStyle.center?.accountList?.accountAddress?.fontFamily || 'Inter, sans-serif',
+                    fontSize: sidebarStyle.center?.accountList?.accountAddress?.fontSize || '14px'
+                  }}
                 >
                   {formatAddress(account.address)}
                 </div>
@@ -149,11 +179,12 @@ const AccountSidebar = () => {
           ))}
         </div>
 
-        {/* Bottom Actions */}
+        {/* Bottom Actions with theme styles */}
         <div 
           className="p-4 border-t account-sidebar-actions"
           data-element-id="account-sidebar-actions"
           style={{
+            backgroundColor: sidebarStyle.footer?.backgroundColor || '#181818',
             borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
@@ -168,7 +199,13 @@ const AccountSidebar = () => {
                 transition: getTransition('default')
               }}
             >
-              <Plus className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-add-icon" data-element-id="account-sidebar-add-icon" />
+              <Plus 
+                className="w-6 h-6 hover:text-white account-sidebar-add-icon" 
+                data-element-id="account-sidebar-add-icon"
+                style={{
+                  color: sidebarStyle.footer?.footerIcons?.addIcon?.color || '#aaa'
+                }}
+              />
             </button>
             <button
               onClick={() => handleIconClick('edit')}
@@ -180,7 +217,13 @@ const AccountSidebar = () => {
                 transition: getTransition('default')
               }}
             >
-              <Pencil className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-edit-icon" data-element-id="account-sidebar-edit-icon" />
+              <Pencil 
+                className="w-6 h-6 hover:text-white account-sidebar-edit-icon" 
+                data-element-id="account-sidebar-edit-icon"
+                style={{
+                  color: sidebarStyle.footer?.footerIcons?.editIcon?.color || '#aaa'
+                }}
+              />
             </button>
             <button
               onClick={() => handleIconClick('settings')}
@@ -192,7 +235,13 @@ const AccountSidebar = () => {
                 transition: getTransition('default')
               }}
             >
-              <Settings className="w-6 h-6 text-gray-400 hover:text-white account-sidebar-settings-icon" data-element-id="account-sidebar-settings-icon" />
+              <Settings 
+                className="w-6 h-6 hover:text-white account-sidebar-settings-icon" 
+                data-element-id="account-sidebar-settings-icon"
+                style={{
+                  color: sidebarStyle.footer?.footerIcons?.settingsIcon?.color || '#aaa'
+                }}
+              />
             </button>
           </div>
         </div>
