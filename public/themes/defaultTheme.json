@@ -37,24 +37,24 @@
     "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
     "backgroundColor": "#181818",
     "header": {
-      "backgroundColor": "#ad7e26",
+      "backgroundColor": "#FFD166",
       "backgroundImage": "",
-      "textColor": "#fff",
+      "textColor": "#432818",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px",
       "searchIcon": {
-        "color": "#fff",
+        "color": "#432818",
         "type": "search"
       }
     },
     "footer": {
-      "backgroundColor": "#14e06d",
+      "backgroundColor": "#181818",
       "backgroundImage": "",
-      "iconColor": "#131413",
-      "activeIconColor": "#fff",
-      "textColor": "#131413",
-      "activeTextColor": "#fff",
+      "iconColor": "#FFD166",
+      "activeIconColor": "#F3722C",
+      "textColor": "#FFD166",
+      "activeTextColor": "#F3722C",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "14px",
       "navigationIcons": {
@@ -86,76 +86,76 @@
       }
     },
     "mainContainer": {
-      "backgroundColor": "#ad7e26",
+      "backgroundColor": "rgba(255, 209, 102, 0.08)",
       "borderRadius": "18px"
     },
     "totalBalanceLabel": {
-      "textColor": "#14e06d",
+      "textColor": "#F3722C",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "normal",
       "fontSize": "17px"
     },
     "totalBalanceValue": {
-      "textColor": "#14e06d",
+      "textColor": "#432818",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "32px"
     },
     "totalBalanceChange": {
-      "positiveColor": "#13e163",
-      "negativeColor": "#ff5959",
+      "positiveColor": "#17C964",
+      "negativeColor": "#F3722C",
       "zeroColor": "#fff",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "16px"
     },
     "actionButtons": {
       "receiveButton": {
-        "containerColor": "#ad7e26",
-        "iconColor": "#6a55ff",
-        "labelColor": "#ffd600",
+        "containerColor": "#FFD166",
+        "iconColor": "#F3722C",
+        "labelColor": "#432818",
         "labelFontFamily": "Inter, sans-serif",
         "labelFontSize": "14px",
         "borderRadius": "12px"
       },
       "sendButton": {
-        "containerColor": "#ad7e26",
-        "iconColor": "#6a55ff",
-        "labelColor": "#ffd600",
+        "containerColor": "#FFD166",
+        "iconColor": "#F3722C",
+        "labelColor": "#432818",
         "labelFontFamily": "Inter, sans-serif",
         "labelFontSize": "14px",
         "borderRadius": "12px"
       },
       "swapButton": {
-        "containerColor": "#ad7e26",
-        "iconColor": "#6a55ff",
-        "labelColor": "#ffd600",
+        "containerColor": "#FFD166",
+        "iconColor": "#F3722C",
+        "labelColor": "#432818",
         "labelFontFamily": "Inter, sans-serif",
         "labelFontSize": "14px",
         "borderRadius": "12px"
       },
       "buyButton": {
-        "containerColor": "#ad7e26",
-        "iconColor": "#6a55ff",
-        "labelColor": "#ffd600",
+        "containerColor": "#FFD166",
+        "iconColor": "#F3722C",
+        "labelColor": "#432818",
         "labelFontFamily": "Inter, sans-serif",
         "labelFontSize": "14px",
         "borderRadius": "12px"
       }
     },
     "assetCard": {
-      "backgroundColor": "#14e06d",
-      "textColor": "#fff",
+      "backgroundColor": "#432818",
+      "textColor": "#FFD166",
       "borderRadius": "14px",
       "fontFamily": "Inter, sans-serif"
     },
     "assetName": {
-      "textColor": "#fff",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "500",
       "fontSize": "16px"
     },
     "assetValue": {
-      "textColor": "#fff",
+      "textColor": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px"
@@ -168,7 +168,7 @@
       "fontSize": "15px"
     },
     "seeAll": {
-      "textColor": "#14e06d",
+      "textColor": "##F3722C",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "13px"
     },
@@ -189,7 +189,7 @@
         "tradingAccountFontSize": "14px"
       },
       "actionButtons": {
-        "addAccountColor": "#FFD700",
+        "addAccountColor": "#FFD166",
         "addAccountFontFamily": "Inter, sans-serif",
         "addAccountFontSize": "14px",
         "manageCollectibleColor": "#FFD700",
