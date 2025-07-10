@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface WalletTheme {
@@ -332,13 +331,39 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               fontFamily: 'Inter, sans-serif',
               fontSize: '16px'
             },
-            mainButtons: {
-              backgroundColor: 'rgba(32,32,32,0.7)',
-              iconColor: '#6a55ff',
-              textColor: '#ffd600',
-              borderRadius: '12px',
-              fontFamily: 'Inter, sans-serif',
-              fontSize: '14px'
+            actionButtons: {
+              receiveButton: {
+                containerColor: 'rgba(32,32,32,0.7)',
+                iconColor: '#6a55ff',
+                labelColor: '#ffd600',
+                labelFontFamily: 'Inter, sans-serif',
+                labelFontSize: '14px',
+                borderRadius: '12px'
+              },
+              sendButton: {
+                containerColor: 'rgba(32,32,32,0.7)',
+                iconColor: '#6a55ff',
+                labelColor: '#ffd600',
+                labelFontFamily: 'Inter, sans-serif',
+                labelFontSize: '14px',
+                borderRadius: '12px'
+              },
+              swapButton: {
+                containerColor: 'rgba(32,32,32,0.7)',
+                iconColor: '#6a55ff',
+                labelColor: '#ffd600',
+                labelFontFamily: 'Inter, sans-serif',
+                labelFontSize: '14px',
+                borderRadius: '12px'
+              },
+              buyButton: {
+                containerColor: 'rgba(32,32,32,0.7)',
+                iconColor: '#6a55ff',
+                labelColor: '#ffd600',
+                labelFontFamily: 'Inter, sans-serif',
+                labelFontSize: '14px',
+                borderRadius: '12px'
+              }
             },
             assetCard: {
               backgroundColor: 'rgba(40,40,40,0.9)',
