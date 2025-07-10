@@ -2,7 +2,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const useWalletTheme = () => {
-  const { theme, getLockLayerStyle, getHomeLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
+  const { theme, getLockLayerStyle, getHomeLayerStyle, getAppsLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
 
   const getLockLayer = () => {
     const lockStyle = getLockLayerStyle();
@@ -14,6 +14,12 @@ export const useWalletTheme = () => {
     const homeStyle = getHomeLayerStyle();
     console.log('🏠 Home layer style:', homeStyle);
     return homeStyle;
+  };
+
+  const getAppsLayer = () => {
+    const appsStyle = getAppsLayerStyle();
+    console.log('📱 Apps layer style:', appsStyle);
+    return appsStyle;
   };
 
   const getInputs = () => {
@@ -126,6 +132,7 @@ export const useWalletTheme = () => {
     theme,
     getLockLayer,
     getHomeLayer,
+    getAppsLayer,
     getInputs,
     getGlobal,
     getComponentStyle,

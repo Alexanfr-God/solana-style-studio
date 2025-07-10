@@ -1,15 +1,10 @@
 
 import React from 'react';
-import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const AppsContent = () => {
-  const { getStyleForComponent } = useWalletCustomizationStore();
-
-  // Get component-specific styles
-  const containerStyle = getStyleForComponent('containers');
-  const panelStyle = getStyleForComponent('panels');
-  const buttonStyle = getStyleForComponent('buttons');
-  const globalStyle = getStyleForComponent('global');
+  const { getAppsLayer } = useWalletTheme();
+  const appsStyle = getAppsLayer();
 
   const handleNftClick = (type: string) => {
     console.log(`${type} NFT clicked`);
@@ -24,19 +19,25 @@ const AppsContent = () => {
       {/* Collectibles Section */}
       <div className="py-6">
         <h2 
-          className="text-2xl font-bold text-white mb-2 collectibles-title"
+          className="text-2xl font-bold mb-2 collectibles-title"
           data-element-id="collectibles-title"
           style={{
-            color: globalStyle.textColor || '#FFFFFF',
-            fontFamily: globalStyle.fontFamily
+            color: appsStyle.title?.textColor || '#FFFFFF',
+            fontFamily: appsStyle.title?.fontFamily || 'Inter, sans-serif',
+            fontWeight: appsStyle.title?.fontWeight || 'bold',
+            fontSize: appsStyle.title?.fontSize || '26px'
           }}
         >
           Collectibles
         </h2>
         <p 
-          className="text-gray-400 mb-6 collectibles-description"
+          className="mb-6 collectibles-description"
           data-element-id="collectibles-description"
-          style={{ fontFamily: globalStyle.fontFamily }}
+          style={{ 
+            color: appsStyle.subtitle?.textColor || '#aaa',
+            fontFamily: appsStyle.subtitle?.fontFamily || 'Inter, sans-serif',
+            fontSize: appsStyle.subtitle?.fontSize || '16px'
+          }}
         >
           Manage your NFTs and digital collectibles
         </p>
@@ -48,19 +49,18 @@ const AppsContent = () => {
             className="p-6 rounded-xl hover:bg-white/10 transition-colors nft-icon-1"
             data-element-id="nft-icon-1"
             style={{
-              backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-              borderRadius: panelStyle.borderRadius || '12px',
-              border: panelStyle.border,
-              backdropFilter: panelStyle.backdropFilter,
-              transition: panelStyle.transition
+              backgroundColor: appsStyle.collectibleCard?.backgroundColor || '#232323',
+              borderRadius: appsStyle.collectibleCard?.borderRadius || '16px',
+              backgroundImage: appsStyle.collectibleCard?.backgroundImage || ''
             }}
           >
             <div className="text-4xl mb-2">🎨</div>
             <div 
-              className="text-white font-medium"
+              className="font-medium"
               style={{
-                color: globalStyle.textColor || '#FFFFFF',
-                fontFamily: globalStyle.fontFamily
+                color: appsStyle.collectibleName?.textColor || '#FFFFFF',
+                fontFamily: appsStyle.collectibleName?.fontFamily || 'Inter, sans-serif',
+                fontSize: appsStyle.collectibleName?.fontSize || '17px'
               }}
             >
               Art
@@ -72,19 +72,18 @@ const AppsContent = () => {
             className="p-6 rounded-xl hover:bg-white/10 transition-colors nft-icon-2"
             data-element-id="nft-icon-2"
             style={{
-              backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-              borderRadius: panelStyle.borderRadius || '12px',
-              border: panelStyle.border,
-              backdropFilter: panelStyle.backdropFilter,
-              transition: panelStyle.transition
+              backgroundColor: appsStyle.collectibleCard?.backgroundColor || '#232323',
+              borderRadius: appsStyle.collectibleCard?.borderRadius || '16px',
+              backgroundImage: appsStyle.collectibleCard?.backgroundImage || ''
             }}
           >
             <div className="text-4xl mb-2">🎮</div>
             <div 
-              className="text-white font-medium"
+              className="font-medium"
               style={{
-                color: globalStyle.textColor || '#FFFFFF',
-                fontFamily: globalStyle.fontFamily
+                color: appsStyle.collectibleName?.textColor || '#FFFFFF',
+                fontFamily: appsStyle.collectibleName?.fontFamily || 'Inter, sans-serif',
+                fontSize: appsStyle.collectibleName?.fontSize || '17px'
               }}
             >
               Pixel Art
@@ -96,19 +95,18 @@ const AppsContent = () => {
             className="p-6 rounded-xl hover:bg-white/10 transition-colors nft-icon-3"
             data-element-id="nft-icon-3"
             style={{
-              backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-              borderRadius: panelStyle.borderRadius || '12px',
-              border: panelStyle.border,
-              backdropFilter: panelStyle.backdropFilter,
-              transition: panelStyle.transition
+              backgroundColor: appsStyle.collectibleCard?.backgroundColor || '#232323',
+              borderRadius: appsStyle.collectibleCard?.borderRadius || '16px',
+              backgroundImage: appsStyle.collectibleCard?.backgroundImage || ''
             }}
           >
             <div className="text-4xl mb-2">🖼️</div>
             <div 
-              className="text-white font-medium"
+              className="font-medium"
               style={{
-                color: globalStyle.textColor || '#FFFFFF',
-                fontFamily: globalStyle.fontFamily
+                color: appsStyle.collectibleName?.textColor || '#FFFFFF',
+                fontFamily: appsStyle.collectibleName?.fontFamily || 'Inter, sans-serif',
+                fontSize: appsStyle.collectibleName?.fontSize || '17px'
               }}
             >
               Digital Art
@@ -120,19 +118,18 @@ const AppsContent = () => {
             className="p-6 rounded-xl hover:bg-white/10 transition-colors nft-icon-4"
             data-element-id="nft-icon-4"
             style={{
-              backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-              borderRadius: panelStyle.borderRadius || '12px',
-              border: panelStyle.border,
-              backdropFilter: panelStyle.backdropFilter,
-              transition: panelStyle.transition
+              backgroundColor: appsStyle.collectibleCard?.backgroundColor || '#232323',
+              borderRadius: appsStyle.collectibleCard?.borderRadius || '16px',
+              backgroundImage: appsStyle.collectibleCard?.backgroundImage || ''
             }}
           >
             <div className="text-4xl mb-2">⚔️</div>
             <div 
-              className="text-white font-medium"
+              className="font-medium"
               style={{
-                color: globalStyle.textColor || '#FFFFFF',
-                fontFamily: globalStyle.fontFamily
+                color: appsStyle.collectibleName?.textColor || '#FFFFFF',
+                fontFamily: appsStyle.collectibleName?.fontFamily || 'Inter, sans-serif',
+                fontSize: appsStyle.collectibleName?.fontSize || '17px'
               }}
             >
               Game Items
@@ -146,10 +143,9 @@ const AppsContent = () => {
           className="w-full py-3 text-center hover:bg-white/10 transition-colors manage-collectible-list"
           data-element-id="manage-collectible-list"
           style={{
-            color: buttonStyle.backgroundColor || '#9945FF',
-            fontFamily: globalStyle.fontFamily,
-            transition: buttonStyle.transition,
-            borderRadius: buttonStyle.borderRadius || '8px'
+            color: appsStyle.manageCollectibleList?.textColor || '#FFD700',
+            fontFamily: appsStyle.manageCollectibleList?.fontFamily || 'Inter, sans-serif',
+            fontSize: appsStyle.manageCollectibleList?.fontSize || '14px'
           }}
         >
           Manage collectible list

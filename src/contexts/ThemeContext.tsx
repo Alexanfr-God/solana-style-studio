@@ -192,6 +192,34 @@ export interface WalletTheme {
       };
     };
   };
+  appsLayer: {
+    title: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    subtitle: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    collectibleCard: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    collectibleName: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    manageCollectibleList: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+  };
   inputs: {
     passwordInput: {
       backgroundColor: string;
@@ -223,6 +251,7 @@ interface ThemeContextType {
   setTheme: (theme: WalletTheme) => void;
   getLockLayerStyle: () => WalletTheme['lockLayer'];
   getHomeLayerStyle: () => WalletTheme['homeLayer'];
+  getAppsLayerStyle: () => WalletTheme['appsLayer'];
   getInputsStyle: () => WalletTheme['inputs'];
   getGlobalStyle: () => WalletTheme['global'];
 }
@@ -396,6 +425,34 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               fontSize: '13px'
             }
           },
+          appsLayer: {
+            title: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '26px'
+            },
+            subtitle: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px'
+            },
+            collectibleCard: {
+              backgroundColor: '#232323',
+              backgroundImage: '',
+              borderRadius: '16px'
+            },
+            collectibleName: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '17px'
+            },
+            manageCollectibleList: {
+              textColor: '#FFD700',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px'
+            }
+          },
           inputs: {
             passwordInput: {
               backgroundColor: 'rgba(30,30,30,0.8)',
@@ -435,6 +492,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return theme?.homeLayer || {} as WalletTheme['homeLayer'];
   };
 
+  const getAppsLayerStyle = () => {
+    return theme?.appsLayer || {} as WalletTheme['appsLayer'];
+  };
+
   const getInputsStyle = () => {
     return theme?.inputs || {} as WalletTheme['inputs'];
   };
@@ -453,6 +514,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       setTheme,
       getLockLayerStyle,
       getHomeLayerStyle,
+      getAppsLayerStyle,
       getInputsStyle,
       getGlobalStyle
     }}>
