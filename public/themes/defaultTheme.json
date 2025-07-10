@@ -206,7 +206,7 @@
   },
   "appsLayer": {
     "title": {
-      "textColor": "#fff",
+      "textColor": "#432818",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "26px"
@@ -222,7 +222,7 @@
       "borderRadius": "16px"
     },
     "collectibleName": {
-      "textColor": "#fff",
+      "textColor": "#432818",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "17px"
     },
