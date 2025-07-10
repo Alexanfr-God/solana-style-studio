@@ -304,6 +304,94 @@ export interface WalletTheme {
       type: string;
     };
   };
+  historyLayer: {
+    recentActivityTitle: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    menuIcon: {
+      color: string;
+      type: string;
+    };
+    activityCard: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    activityText: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    activityStatus: {
+      successColor: string;
+      failedColor: string;
+      pendingColor: string;
+      fontWeight: string;
+    };
+    activityDate: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    loadMore: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+  };
+  searchLayer: {
+    searchInput: {
+      backgroundColor: string;
+      textColor: string;
+      placeholderColor: string;
+      borderRadius: string;
+      border: string;
+      fontFamily: string;
+      iconSearch: { color: string; type: string; };
+      iconClose: { color: string; type: string; };
+    };
+    searchInputFont: {
+      fontFamily: string;
+      fontSize: string;
+      textColor: string;
+    };
+    recentSearchesLabel: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+      iconTime: { color: string; type: string; };
+    };
+    trendingLabel: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+      iconTrending: { color: string; type: string; };
+    };
+    tokenTag: {
+      backgroundColor: string;
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+      borderRadius: string;
+    };
+    tokenCard: {
+      backgroundColor: string;
+      borderRadius: string;
+    };
+    tokenCardText: {
+      nameColor: string;
+      tickerColor: string;
+      priceColor: string;
+      percentPositiveColor: string;
+      percentNegativeColor: string;
+      fontFamily: string;
+    };
+  };
   inputs: {
     passwordInput: {
       backgroundColor: string;
@@ -337,6 +425,8 @@ interface ThemeContextType {
   getHomeLayerStyle: () => WalletTheme['homeLayer'];
   getAppsLayerStyle: () => WalletTheme['appsLayer'];
   getSwapLayerStyle: () => WalletTheme['swapLayer'];
+  getHistoryLayerStyle: () => WalletTheme['historyLayer'];
+  getSearchLayerStyle: () => WalletTheme['searchLayer'];
   getInputsStyle: () => WalletTheme['inputs'];
   getGlobalStyle: () => WalletTheme['global'];
 }
@@ -369,7 +459,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
         setTheme(defaultTheme);
       } catch (error) {
         console.error('Failed to load default theme:', error);
-        // Fallback theme
+        // Fallback theme with new layers
         setTheme({
           name: 'Fallback Theme',
           version: '1.0.0',
@@ -622,6 +712,94 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               type: 'info'
             }
           },
+          historyLayer: {
+            recentActivityTitle: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '19px'
+            },
+            menuIcon: {
+              color: '#fff',
+              type: 'more-vertical'
+            },
+            activityCard: {
+              backgroundColor: '#232323',
+              backgroundImage: '',
+              borderRadius: '15px'
+            },
+            activityText: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            activityStatus: {
+              successColor: '#13e163',
+              failedColor: '#ff5959',
+              pendingColor: '#ffd600',
+              fontWeight: '500'
+            },
+            activityDate: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '13px'
+            },
+            loadMore: {
+              textColor: '#b03fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            }
+          },
+          searchLayer: {
+            searchInput: {
+              backgroundColor: '#181818',
+              textColor: '#fff',
+              placeholderColor: '#aaa',
+              borderRadius: '12px',
+              border: 'none',
+              fontFamily: 'Inter, sans-serif',
+              iconSearch: { color: '#aaa', type: 'search' },
+              iconClose: { color: '#aaa', type: 'x' }
+            },
+            searchInputFont: {
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px',
+              textColor: '#fff'
+            },
+            recentSearchesLabel: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '17px',
+              iconTime: { color: '#fff', type: 'clock' }
+            },
+            trendingLabel: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '17px',
+              iconTrending: { color: '#13e163', type: 'trending-up' }
+            },
+            tokenTag: {
+              backgroundColor: '#232323',
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px',
+              borderRadius: '10px'
+            },
+            tokenCard: {
+              backgroundColor: '#232323',
+              borderRadius: '15px'
+            },
+            tokenCardText: {
+              nameColor: '#fff',
+              tickerColor: '#aaa',
+              priceColor: '#fff',
+              percentPositiveColor: '#13e163',
+              percentNegativeColor: '#ff5959',
+              fontFamily: 'Inter, sans-serif'
+            }
+          },
           inputs: {
             passwordInput: {
               backgroundColor: 'rgba(30,30,30,0.8)',
@@ -669,6 +847,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return theme?.swapLayer || {} as WalletTheme['swapLayer'];
   };
 
+  const getHistoryLayerStyle = () => {
+    return theme?.historyLayer || {} as WalletTheme['historyLayer'];
+  };
+
+  const getSearchLayerStyle = () => {
+    return theme?.searchLayer || {} as WalletTheme['searchLayer'];
+  };
+
   const getInputsStyle = () => {
     return theme?.inputs || {} as WalletTheme['inputs'];
   };
@@ -689,6 +875,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       getHomeLayerStyle,
       getAppsLayerStyle,
       getSwapLayerStyle,
+      getHistoryLayerStyle,
+      getSearchLayerStyle,
       getInputsStyle,
       getGlobalStyle
     }}>

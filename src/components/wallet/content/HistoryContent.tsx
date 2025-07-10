@@ -1,18 +1,13 @@
-
 import React from 'react';
 import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-react';
-import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const HistoryContent = () => {
-  const { 
-    getStyleForComponent
-  } = useWalletCustomizationStore();
+  const { getHistoryLayer, getGlobal } = useWalletTheme();
 
-  // Get component-specific styles
-  const panelStyle = getStyleForComponent('panels');
-  const containerStyle = getStyleForComponent('containers');
-  const buttonStyle = getStyleForComponent('buttons');
-  const globalStyle = getStyleForComponent('global');
+  // Get layer-specific styles
+  const historyStyle = getHistoryLayer();
+  const globalStyle = getGlobal();
 
   const handleTransactionClick = (transactionType: string) => {
     console.log(`Transaction ${transactionType} clicked`);
@@ -67,11 +62,13 @@ const HistoryContent = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 history-header" data-element-id="history-header">
         <h2 
-          className="text-lg font-semibold text-white history-title"
+          className="text-lg font-semibold history-title"
           data-element-id="history-title"
           style={{
-            color: globalStyle.textColor || '#FFFFFF',
-            fontFamily: globalStyle.fontFamily
+            color: historyStyle.recentActivityTitle?.textColor || '#FFFFFF',
+            fontFamily: historyStyle.recentActivityTitle?.fontFamily || globalStyle.fontFamily,
+            fontWeight: historyStyle.recentActivityTitle?.fontWeight || 'bold',
+            fontSize: historyStyle.recentActivityTitle?.fontSize || '19px'
           }}
         >
           Recent Activity
@@ -81,10 +78,14 @@ const HistoryContent = () => {
           data-element-id="history-menu"
           style={{
             borderRadius: '50%',
-            transition: buttonStyle.transition
+            transition: globalStyle.transition || 'all 0.2s ease'
           }}
         >
-          <MoreVertical className="w-5 h-5 text-gray-400 history-menu-icon" data-element-id="history-menu-icon" />
+          <MoreVertical 
+            className="w-5 h-5 history-menu-icon" 
+            data-element-id="history-menu-icon"
+            style={{ color: historyStyle.menuIcon?.color || '#FFFFFF' }}
+          />
         </button>
       </div>
 
@@ -94,9 +95,13 @@ const HistoryContent = () => {
           <div key={groupIndex} className="history-transaction-group" data-element-id={`history-transaction-group-${groupIndex}`}>
             {/* Date Header */}
             <div 
-              className="text-xs text-gray-400 mb-3 font-medium history-date"
+              className="text-xs mb-3 font-medium history-date"
               data-element-id={`history-date-${groupIndex}`}
-              style={{ fontFamily: globalStyle.fontFamily }}
+              style={{ 
+                color: historyStyle.activityDate?.textColor || '#aaa',
+                fontFamily: historyStyle.activityDate?.fontFamily || globalStyle.fontFamily,
+                fontSize: historyStyle.activityDate?.fontSize || '13px'
+              }}
             >
               {group.date}
             </div>
@@ -106,19 +111,19 @@ const HistoryContent = () => {
               {group.items.map((transaction, itemIndex) => (
                 <div
                   key={itemIndex}
-                  className="p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer history-transaction-item"
+                  className="p-3 hover:bg-white/5 transition-colors cursor-pointer history-transaction-item"
                   data-element-id={`history-transaction-item-${groupIndex}-${itemIndex}`}
                   onClick={() => handleTransactionClick(transaction.type)}
                   style={{
-                    backgroundColor: panelStyle.backgroundColor || 'rgba(255, 255, 255, 0.03)',
-                    borderRadius: panelStyle.borderRadius || '12px',
-                    border: panelStyle.border,
-                    backdropFilter: panelStyle.backdropFilter,
-                    transition: panelStyle.transition
+                    backgroundColor: historyStyle.activityCard?.backgroundColor || '#232323',
+                    borderRadius: historyStyle.activityCard?.borderRadius || '15px',
+                    backgroundImage: historyStyle.activityCard?.backgroundImage,
+                    transition: globalStyle.transition || 'all 0.2s ease'
                   }}
                 >
+                  
                   <div className="flex items-center space-x-3">
-                    {/* Transaction Icon/Avatar */}
+                    
                     <div className="relative">
                       {transaction.avatar ? (
                         <div className="w-10 h-10 rounded-full overflow-hidden history-transaction-avatar" data-element-id={`history-transaction-avatar-${groupIndex}-${itemIndex}`}>
@@ -149,7 +154,7 @@ const HistoryContent = () => {
                         </div>
                       )}
                       
-                      {/* Status Icon Overlay */}
+                      
                       <div
                         className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center history-transaction-status ${
                           transaction.type === 'sent'
@@ -162,7 +167,7 @@ const HistoryContent = () => {
                         style={{
                           borderRadius: '50%',
                           background: transaction.type === 'sent' 
-                            ? buttonStyle.backgroundColor || '#3B82F6'
+                            ? '#3B82F6'
                             : transaction.type === 'swapped'
                             ? '#10B981'
                             : '#EF4444'
@@ -175,20 +180,24 @@ const HistoryContent = () => {
                     {/* Transaction Details */}
                     <div className="flex-1">
                       <div 
-                        className="text-white text-sm font-medium history-transaction-title"
+                        className="text-sm font-medium history-transaction-title"
                         data-element-id={`history-transaction-title-${groupIndex}-${itemIndex}`}
                         style={{
-                          color: globalStyle.textColor || '#FFFFFF',
-                          fontFamily: globalStyle.fontFamily
+                          color: historyStyle.activityText?.textColor || '#FFFFFF',
+                          fontFamily: historyStyle.activityText?.fontFamily || globalStyle.fontFamily,
+                          fontSize: historyStyle.activityText?.fontSize || '15px'
                         }}
                       >
                         {transaction.title}
                       </div>
                       {transaction.subtitle && (
                         <div 
-                          className="text-gray-400 text-xs history-transaction-subtitle"
+                          className="text-xs history-transaction-subtitle"
                           data-element-id={`history-transaction-subtitle-${groupIndex}-${itemIndex}`}
-                          style={{ fontFamily: globalStyle.fontFamily }}
+                          style={{ 
+                            color: historyStyle.activityDate?.textColor || '#aaa',
+                            fontFamily: historyStyle.activityText?.fontFamily || globalStyle.fontFamily
+                          }}
                         >
                           {transaction.subtitle}
                         </div>
@@ -198,28 +207,23 @@ const HistoryContent = () => {
                     {/* Amount */}
                     <div className="text-right">
                       <div
-                        className={`text-sm font-medium history-transaction-amount ${
-                          transaction.isFailed
-                            ? 'text-red-400'
-                            : transaction.isNegative
-                            ? 'text-white'
-                            : 'text-green-400'
-                        }`}
+                        className="text-sm font-medium history-transaction-amount"
                         data-element-id={`history-transaction-amount-${groupIndex}-${itemIndex}`}
                         style={{
-                          fontFamily: globalStyle.fontFamily,
+                          fontFamily: historyStyle.activityText?.fontFamily || globalStyle.fontFamily,
+                          fontWeight: historyStyle.activityStatus?.fontWeight || '500',
                           color: transaction.isFailed
-                            ? '#F87171'
+                            ? historyStyle.activityStatus?.failedColor || '#ff5959'
                             : transaction.isNegative
-                            ? globalStyle.textColor
-                            : '#34D399'
+                            ? historyStyle.activityText?.textColor || '#FFFFFF'
+                            : historyStyle.activityStatus?.successColor || '#13e163'
                         }}
                       >
                         {transaction.amount}
                       </div>
                       {transaction.subtitle && transaction.type === 'swapped' && (
                         <div 
-                          className="text-gray-400 text-xs history-transaction-amount-subtitle"
+                          className="text-xs history-transaction-amount-subtitle"
                           data-element-id={`history-transaction-amount-subtitle-${groupIndex}-${itemIndex}`}
                           style={{ fontFamily: globalStyle.fontFamily }}
                         >
@@ -242,9 +246,10 @@ const HistoryContent = () => {
           data-element-id="history-load-more"
           onClick={() => handleTransactionClick('load-more')}
           style={{
-            color: buttonStyle.backgroundColor || '#9945FF',
-            fontFamily: globalStyle.fontFamily,
-            transition: buttonStyle.transition
+            color: historyStyle.loadMore?.textColor || '#b03fff',
+            fontFamily: historyStyle.loadMore?.fontFamily || globalStyle.fontFamily,
+            fontSize: historyStyle.loadMore?.fontSize || '15px',
+            transition: globalStyle.transition || 'all 0.2s ease'
           }}
         >
           <span className="history-load-more-text" data-element-id="history-load-more-text">

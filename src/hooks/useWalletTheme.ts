@@ -1,7 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const useWalletTheme = () => {
-  const { theme, getLockLayerStyle, getHomeLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
+  const { theme, getLockLayerStyle, getHomeLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
 
   const getLockLayer = () => {
     const lockStyle = getLockLayerStyle();
@@ -27,6 +27,18 @@ export const useWalletTheme = () => {
     return swapStyle;
   };
 
+  const getHistoryLayer = () => {
+    const historyStyle = getHistoryLayerStyle();
+    console.log('📜 History layer style:', historyStyle);
+    return historyStyle;
+  };
+
+  const getSearchLayer = () => {
+    const searchStyle = getSearchLayerStyle();
+    console.log('🔍 Search layer style:', searchStyle);
+    return searchStyle;
+  };
+
   const getInputs = () => {
     const inputsStyle = getInputsStyle();
     console.log('⌨️ Inputs style:', inputsStyle);
@@ -39,7 +51,6 @@ export const useWalletTheme = () => {
     return globalStyle;
   };
 
-  // Legacy compatibility methods - map to new theme structure
   const getComponentStyle = (component: string) => {
     switch (component) {
       case 'overlays':
@@ -106,6 +117,22 @@ export const useWalletTheme = () => {
           backgroundColor: getSwapLayer().fromContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
           borderRadius: getSwapLayer().fromContainer?.borderRadius || '12px'
         };
+      case 'historyActivityCards':
+        return {
+          backgroundColor: getHistoryLayer().activityCard?.backgroundColor || '#232323',
+          borderRadius: getHistoryLayer().activityCard?.borderRadius || '15px'
+        };
+      case 'searchTokenCards':
+        return {
+          backgroundColor: getSearchLayer().tokenCard?.backgroundColor || '#232323',
+          borderRadius: getSearchLayer().tokenCard?.borderRadius || '15px'
+        };
+      case 'searchTokenTags':
+        return {
+          backgroundColor: getSearchLayer().tokenTag?.backgroundColor || '#232323',
+          borderRadius: getSearchLayer().tokenTag?.borderRadius || '10px',
+          textColor: getSearchLayer().tokenTag?.textColor || '#FFFFFF'
+        };
       default:
         return {
           backgroundColor: 'rgba(40, 40, 40, 0.7)',
@@ -144,6 +171,8 @@ export const useWalletTheme = () => {
     getHomeLayer,
     getAppsLayer,
     getSwapLayer,
+    getHistoryLayer,
+    getSearchLayer,
     getInputs,
     getGlobal,
     getComponentStyle,

@@ -1,4 +1,3 @@
-
 {
   "name": "Default Wallet Theme",
   "version": "1.0.0",
@@ -315,6 +314,94 @@
     "infoIcon": {
       "color": "#aaa",
       "type": "info"
+    }
+  },
+  "historyLayer": {
+    "recentActivityTitle": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "19px"
+    },
+    "menuIcon": {
+      "color": "#fff",
+      "type": "more-vertical"
+    },
+    "activityCard": {
+      "backgroundColor": "#232323",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "activityText": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "activityStatus": {
+      "successColor": "#13e163",
+      "failedColor": "#ff5959",
+      "pendingColor": "#ffd600",
+      "fontWeight": "500"
+    },
+    "activityDate": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "13px"
+    },
+    "loadMore": {
+      "textColor": "#b03fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    }
+  },
+  "searchLayer": {
+    "searchInput": {
+      "backgroundColor": "#181818",
+      "textColor": "#fff",
+      "placeholderColor": "#aaa",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Inter, sans-serif",
+      "iconSearch": { "color": "#aaa", "type": "search" },
+      "iconClose": { "color": "#aaa", "type": "x" }
+    },
+    "searchInputFont": {
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px",
+      "textColor": "#fff"
+    },
+    "recentSearchesLabel": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "iconTime": { "color": "#fff", "type": "clock" }
+    },
+    "trendingLabel": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "iconTrending": { "color": "#13e163", "type": "trending-up" }
+    },
+    "tokenTag": {
+      "backgroundColor": "#232323",
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px",
+      "borderRadius": "10px"
+    },
+    "tokenCard": {
+      "backgroundColor": "#232323",
+      "borderRadius": "15px"
+    },
+    "tokenCardText": {
+      "nameColor": "#fff",
+      "tickerColor": "#aaa",
+      "priceColor": "#fff",
+      "percentPositiveColor": "#13e163",
+      "percentNegativeColor": "#ff5959",
+      "fontFamily": "Inter, sans-serif"
     }
   },
   "inputs": {
