@@ -35,58 +35,58 @@
   },
   "avatarHeader": {
     "backgroundColor": "#7B6CFF",
-    "textColor": "#fff",
+    "textColor": "#ffe6a2",
     "fontFamily": "Inter, sans-serif",
     "fontWeight": "bold",
     "fontSize": "20px"
   },
   "sidebarLayer": {
     "header": {
-      "backgroundColor": "#181818",
+      "backgroundColor": "#191716",
       "accountTitle": {
-        "textColor": "#ad7e26",
+        "textColor": "#FFD166",
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
         "fontSize": "19px"
       },
       "closeIcon": {
-        "color": "#aaa",
+        "color": "#FFD166",
         "type": "x"
       }
     },
     "center": {
-      "backgroundColor": "#232323",
+      "backgroundColor": "#18140e",
       "accountList": {
         "avatar": {
-          "backgroundColor": "#7B6CFF",
-          "textColor": "#fff",
+          "backgroundColor": "#ad7e26",
+          "textColor": "#FFD166",
           "fontFamily": "Inter, sans-serif",
           "fontWeight": "bold",
           "fontSize": "20px"
         },
         "accountName": {
-          "textColor": "#ad7e26",
+          "textColor": "#FFD166",
           "fontFamily": "Inter, sans-serif",
           "fontWeight": "bold",
           "fontSize": "17px"
         },
         "accountAddress": {
-          "textColor": "#aaa",
+          "textColor": "#ffe6a2",
           "fontFamily": "Inter, sans-serif",
           "fontSize": "14px"
         },
         "selectedAnimation": {
-          "color": "#a259ff",
+          "color": "#FFD166",
           "type": "glow"
         }
       }
     },
     "footer": {
-      "backgroundColor": "#181818",
+      "backgroundColor": "#191716",
       "footerIcons": {
-        "addIcon": { "color": "#aaa", "type": "plus" },
-        "editIcon": { "color": "#aaa", "type": "pencil" },
-        "settingsIcon": { "color": "#aaa", "type": "settings" }
+        "addIcon": { "color": "#FFD166", "type": "plus" },
+        "editIcon": { "color": "#FFD166", "type": "pencil" },
+        "settingsIcon": { "color": "#FFD166", "type": "settings" }
       }
     }
   },
