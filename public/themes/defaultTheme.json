@@ -318,13 +318,13 @@
   },
   "historyLayer": {
     "recentActivityTitle": {
-      "textColor": "#fff",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "19px"
     },
     "menuIcon": {
-      "color": "#fff",
+      "color": "#FFD166",
       "type": "more-vertical"
     },
     "activityCard": {
@@ -344,7 +344,7 @@
       "fontWeight": "500"
     },
     "activityDate": {
-      "textColor": "#aaa",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "13px"
     },
