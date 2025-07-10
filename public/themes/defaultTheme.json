@@ -356,50 +356,50 @@
   },
   "searchLayer": {
     "searchInput": {
-      "backgroundColor": "#181818",
-      "textColor": "#fff",
-      "placeholderColor": "#aaa",
+      "backgroundColor": "#1b140a",
+      "textColor": "#ffd873",
+      "placeholderColor": "#ad7e26",
       "borderRadius": "12px",
       "border": "none",
       "fontFamily": "Inter, sans-serif",
-      "iconSearch": { "color": "#aaa", "type": "search" },
-      "iconClose": { "color": "#aaa", "type": "x" }
+      "iconSearch": { "color": "#ffd873", "type": "search" },
+      "iconClose": { "color": "#ffd873", "type": "x" }
     },
     "searchInputFont": {
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px",
-      "textColor": "#fff"
+      "textColor": "#ffd873"
     },
     "recentSearchesLabel": {
-      "textColor": "#fff",
+      "textColor": "#ffd873",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px",
       "iconTime": { "color": "#fff", "type": "clock" }
     },
     "trendingLabel": {
-      "textColor": "#fff",
+      "textColor": "#ffd873",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px",
       "iconTrending": { "color": "#13e163", "type": "trending-up" }
     },
     "tokenTag": {
-      "backgroundColor": "#232323",
-      "textColor": "#fff",
+      "backgroundColor": "#2a2115",
+      "textColor": "#ffd873",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "14px",
       "borderRadius": "10px"
     },
     "tokenCard": {
-      "backgroundColor": "#232323",
+      "backgroundColor": "#36260f",
       "borderRadius": "15px"
     },
     "tokenCardText": {
-      "nameColor": "#fff",
-      "tickerColor": "#aaa",
-      "priceColor": "#fff",
-      "percentPositiveColor": "#13e163",
+      "nameColor": "#ffd873",
+      "tickerColor": "#ad7e26",
+      "priceColor": "#ffd873",
+      "percentPositiveColor": "#37e86e",
       "percentNegativeColor": "#ff5959",
       "fontFamily": "Inter, sans-serif"
     }
