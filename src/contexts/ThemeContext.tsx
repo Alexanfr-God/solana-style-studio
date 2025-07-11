@@ -427,6 +427,91 @@ export interface WalletTheme {
       fontSize: string;
     };
   };
+  buyLayer: {
+    headerContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    header: {
+      backButton: {
+        backgroundColor: string;
+        borderRadius: string;
+        text: {
+          textColor: string;
+          fontFamily: string;
+          fontWeight: string;
+          fontSize: string;
+        };
+        icon: { color: string; type: string; };
+      };
+      title: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+    };
+    searchInputContainer: {
+      backgroundColor: string;
+      borderRadius: string;
+    };
+    searchInput: {
+      textColor: string;
+      placeholderColor: string;
+      fontFamily: string;
+      fontSize: string;
+      iconSearch: { color: string; type: string; };
+    };
+    centerContainer: {
+      backgroundColor: string;
+      borderRadius: string;
+    };
+    sectionLabel: {
+      getStarted: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+      popular: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+    };
+    tokenCard: {
+      backgroundColor: string;
+      borderRadius: string;
+    };
+    tokenCardContent: {
+      tokenName: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+      tokenDescription: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+    };
+    buyButton: {
+      backgroundColor: string;
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+      borderRadius: string;
+    };
+    footerContainer: {
+      backgroundColor: string;
+      borderRadius: string;
+    };
+  };
   swapLayer: {
     mainContainer: {
       backgroundColor: string;
@@ -635,6 +720,7 @@ interface ThemeContextType {
   getReceiveLayerStyle: () => WalletTheme['receiveLayer'];
   getSendLayerStyle: () => WalletTheme['sendLayer'];
   getAppsLayerStyle: () => WalletTheme['appsLayer'];
+  getBuyLayerStyle: () => WalletTheme['buyLayer'];
   getSwapLayerStyle: () => WalletTheme['swapLayer'];
   getHistoryLayerStyle: () => WalletTheme['historyLayer'];
   getSearchLayerStyle: () => WalletTheme['searchLayer'];
@@ -1045,6 +1131,91 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               fontSize: '14px'
             }
           },
+          buyLayer: {
+            headerContainer: {
+              backgroundColor: '#181818',
+              backgroundImage: '',
+              borderRadius: '0px'
+            },
+            header: {
+              backButton: {
+                backgroundColor: '#FFD166',
+                borderRadius: '14px',
+                text: {
+                  textColor: '#181818',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 'bold',
+                  fontSize: '17px'
+                },
+                icon: { color: '#181818', type: 'arrow-left' }
+              },
+              title: {
+                textColor: '#FFD166',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '26px'
+              }
+            },
+            searchInputContainer: {
+              backgroundColor: '#13e163',
+              borderRadius: '14px'
+            },
+            searchInput: {
+              textColor: '#fff',
+              placeholderColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px',
+              iconSearch: { color: '#fff', type: 'search' }
+            },
+            centerContainer: {
+              backgroundColor: '#232323',
+              borderRadius: '0px'
+            },
+            sectionLabel: {
+              getStarted: {
+                textColor: '#5f4025',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '18px'
+              },
+              popular: {
+                textColor: '#5f4025',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '18px'
+              }
+            },
+            tokenCard: {
+              backgroundColor: '#613c19',
+              borderRadius: '18px'
+            },
+            tokenCardContent: {
+              tokenName: {
+                textColor: '#fff',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'normal',
+                fontSize: '16px'
+              },
+              tokenDescription: {
+                textColor: '#d0d0d0',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'normal',
+                fontSize: '15px'
+              }
+            },
+            buyButton: {
+              backgroundColor: '#FFD166',
+              textColor: '#181818',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '18px',
+              borderRadius: '14px'
+            },
+            footerContainer: {
+              backgroundColor: '#181818',
+              borderRadius: '0px'
+            }
+          },
           swapLayer: {
             mainContainer: {
               backgroundColor: '#242424',
@@ -1276,6 +1447,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return theme?.appsLayer || {} as WalletTheme['appsLayer'];
   };
 
+  const getBuyLayerStyle = () => {
+    return theme?.buyLayer || {} as WalletTheme['buyLayer'];
+  };
+
   const getSwapLayerStyle = () => {
     return theme?.swapLayer || {} as WalletTheme['swapLayer'];
   };
@@ -1311,6 +1486,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       getReceiveLayerStyle,
       getSendLayerStyle,
       getAppsLayerStyle,
+      getBuyLayerStyle,
       getSwapLayerStyle,
       getHistoryLayerStyle,
       getSearchLayerStyle,

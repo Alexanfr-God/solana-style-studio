@@ -1,8 +1,7 @@
-
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const useWalletTheme = () => {
-  const { theme, getLockLayerStyle, getAvatarHeaderStyle, getSidebarLayerStyle, getHomeLayerStyle, getReceiveLayerStyle, getSendLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
+  const { theme, getLockLayerStyle, getAvatarHeaderStyle, getSidebarLayerStyle, getHomeLayerStyle, getReceiveLayerStyle, getSendLayerStyle, getAppsLayerStyle, getBuyLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
 
   const getLockLayer = () => {
     const lockStyle = getLockLayerStyle();
@@ -44,6 +43,12 @@ export const useWalletTheme = () => {
     const appsStyle = getAppsLayerStyle();
     console.log('📱 Apps layer style:', appsStyle);
     return appsStyle;
+  };
+
+  const getBuyLayer = () => {
+    const buyStyle = getBuyLayerStyle();
+    console.log('🛒 Buy layer style:', buyStyle);
+    return buyStyle;
   };
 
   const getSwapLayer = () => {
@@ -199,6 +204,7 @@ export const useWalletTheme = () => {
     getReceiveLayer,
     getSendLayer,
     getAppsLayer,
+    getBuyLayer,
     getSwapLayer,
     getHistoryLayer,
     getSearchLayer,

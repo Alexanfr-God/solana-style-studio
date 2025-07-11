@@ -57,19 +57,13 @@ const popularTokens: Token[] = [
 
 const BuyLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getComponentStyle, getTransition } = useWalletTheme();
+  const { getBuyLayer, getTransition } = useWalletTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  // Get component-specific styles from theme
-  const overlayStyle = getComponentStyle('overlays');
-  const containerStyle = getComponentStyle('containers');
-  const globalStyle = getComponentStyle('global');
-  const headerStyle = getComponentStyle('layerHeaders');
-  const inputStyle = getComponentStyle('searchInputs');
-  const cardStyle = getComponentStyle('cards');
-  const buttonStyle = getComponentStyle('buttons');
+  // Get buy layer theme styles
+  const buyLayerStyle = getBuyLayer();
 
   const handleBack = () => {
     setCurrentLayer('home');
@@ -98,8 +92,8 @@ const BuyLayer = () => {
       className="absolute inset-0 backdrop-blur-md animate-slide-in-bottom buy-layer"
       data-element-id="buy-layer"
       style={{
-        backgroundColor: overlayStyle.backgroundColor || '#181818',
-        fontFamily: globalStyle.fontFamily || 'Inter',
+        backgroundColor: buyLayerStyle.headerContainer?.backgroundColor || '#181818',
+        fontFamily: buyLayerStyle.header?.title?.fontFamily || 'Inter',
       }}
     >
       {/* Header */}
@@ -107,31 +101,47 @@ const BuyLayer = () => {
         className="flex items-center justify-between px-4 py-3 border-b border-white/10 buy-header"
         data-element-id="buy-header"
         style={{
-          backgroundColor: headerStyle.backgroundColor,
-          borderColor: headerStyle.border || 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: buyLayerStyle.headerContainer?.backgroundColor,
+          borderRadius: buyLayerStyle.headerContainer?.borderRadius || '0px',
         }}
       >
         <button
           onClick={handleBack}
-          className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors buy-back-button"
+          className="flex items-center space-x-2 p-2 rounded-lg transition-colors buy-back-button"
           data-element-id="buy-back-button"
           style={{
-            backgroundColor: buttonStyle.backgroundColor || 'transparent',
-            color: headerStyle.textColor || '#FFFFFF',
-            borderRadius: buttonStyle.borderRadius || '8px',
+            backgroundColor: buyLayerStyle.header?.backButton?.backgroundColor || '#FFD166',
+            borderRadius: buyLayerStyle.header?.backButton?.borderRadius || '14px',
             transition: getTransition('default'),
           }}
         >
-          <ArrowLeft className="w-5 h-5 buy-back-icon" data-element-id="buy-back-icon" />
-          <span className="font-medium buy-back-text" data-element-id="buy-back-text">Back</span>
+          <ArrowLeft 
+            className="w-5 h-5 buy-back-icon" 
+            data-element-id="buy-back-icon"
+            style={{ color: buyLayerStyle.header?.backButton?.icon?.color || '#181818' }}
+          />
+          <span 
+            className="font-medium buy-back-text" 
+            data-element-id="buy-back-text"
+            style={{
+              color: buyLayerStyle.header?.backButton?.text?.textColor || '#181818',
+              fontFamily: buyLayerStyle.header?.backButton?.text?.fontFamily || 'Inter',
+              fontWeight: buyLayerStyle.header?.backButton?.text?.fontWeight || 'bold',
+              fontSize: buyLayerStyle.header?.backButton?.text?.fontSize || '17px',
+            }}
+          >
+            Back
+          </span>
         </button>
         
         <h1 
           className="text-lg font-semibold buy-title"
           data-element-id="buy-title"
           style={{
-            color: headerStyle.textColor || '#FFFFFF',
-            fontFamily: globalStyle.fontFamily || 'Inter',
+            color: buyLayerStyle.header?.title?.textColor || '#FFD166',
+            fontFamily: buyLayerStyle.header?.title?.fontFamily || 'Inter',
+            fontWeight: buyLayerStyle.header?.title?.fontWeight || 'bold',
+            fontSize: buyLayerStyle.header?.title?.fontSize || '26px',
           }}
         >
           Buy Crypto
@@ -144,29 +154,32 @@ const BuyLayer = () => {
       <div 
         className="px-4 py-4 buy-search-container"
         data-element-id="buy-search-container"
-        style={{
-          backgroundColor: containerStyle.backgroundColor,
-        }}
       >
-        <div className="relative buy-search-input-container" data-element-id="buy-search-input-container">
+        <div 
+          className="relative buy-search-input-container" 
+          data-element-id="buy-search-input-container"
+          style={{
+            backgroundColor: buyLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
+            borderRadius: buyLayerStyle.searchInputContainer?.borderRadius || '14px',
+            padding: '12px',
+          }}
+        >
           <Search 
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 buy-search-icon" 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 buy-search-icon" 
             data-element-id="buy-search-icon"
-            style={{ color: inputStyle.textColor || '#9CA3AF' }}
+            style={{ color: buyLayerStyle.searchInput?.iconSearch?.color || '#fff' }}
           />
           <input
             type="text"
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none transition-colors buy-search-input"
+            className="w-full pl-10 pr-4 py-3 bg-transparent focus:outline-none transition-colors buy-search-input"
             data-element-id="buy-search-input"
             style={{
-              backgroundColor: inputStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-              borderColor: inputStyle.border || 'rgba(255, 255, 255, 0.2)',
-              borderRadius: inputStyle.borderRadius || '12px',
-              color: inputStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily,
+              color: buyLayerStyle.searchInput?.textColor || '#fff',
+              fontFamily: buyLayerStyle.searchInput?.fontFamily || 'Inter',
+              fontSize: buyLayerStyle.searchInput?.fontSize || '16px',
               transition: getTransition('default'),
             }}
           />
@@ -174,15 +187,24 @@ const BuyLayer = () => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-4 py-4 overflow-y-auto buy-content" data-element-id="buy-content">
+      <div 
+        className="flex-1 px-4 py-4 overflow-y-auto buy-content" 
+        data-element-id="buy-content"
+        style={{
+          backgroundColor: buyLayerStyle.centerContainer?.backgroundColor,
+          borderRadius: buyLayerStyle.centerContainer?.borderRadius || '0px',
+        }}
+      >
         {/* Get Started Section */}
         <div className="mb-6 buy-get-started-section" data-element-id="buy-get-started-section">
           <h2 
-            className="text-sm font-medium text-white mb-3 buy-get-started-title"
+            className="text-sm font-medium mb-3 buy-get-started-title"
             data-element-id="buy-get-started-title"
             style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily,
+              color: buyLayerStyle.sectionLabel?.getStarted?.textColor || '#5f4025',
+              fontFamily: buyLayerStyle.sectionLabel?.getStarted?.fontFamily || 'Inter',
+              fontWeight: buyLayerStyle.sectionLabel?.getStarted?.fontWeight || 'bold',
+              fontSize: buyLayerStyle.sectionLabel?.getStarted?.fontSize || '18px',
             }}
           >
             Get started
@@ -191,13 +213,12 @@ const BuyLayer = () => {
             {getStartedTokens.map((token, index) => (
               <div
                 key={token.id}
-                className="flex items-center justify-between p-4 rounded-xl border cursor-pointer hover:bg-white/5 transition-colors buy-get-started-token"
+                className="flex items-center justify-between p-4 cursor-pointer hover:opacity-90 transition-opacity buy-get-started-token"
                 data-element-id={`buy-get-started-token-${index}`}
                 onClick={() => handleTokenBuy(token.name)}
                 style={{
-                  backgroundColor: cardStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                  borderColor: cardStyle.border || 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: cardStyle.borderRadius || '12px',
+                  backgroundColor: buyLayerStyle.tokenCard?.backgroundColor || '#613c19',
+                  borderRadius: buyLayerStyle.tokenCard?.borderRadius || '18px',
                   transition: getTransition('default'),
                 }}
               >
@@ -212,32 +233,41 @@ const BuyLayer = () => {
                   </div>
                   <div className="buy-get-started-token-info" data-element-id={`buy-get-started-token-info-${index}`}>
                     <div 
-                      className="font-medium text-white text-sm buy-get-started-token-name"
+                      className="font-medium text-sm buy-get-started-token-name"
                       data-element-id={`buy-get-started-token-name-${index}`}
                       style={{
-                        color: globalStyle.textColor,
-                        fontFamily: globalStyle.fontFamily,
+                        color: buyLayerStyle.tokenCardContent?.tokenName?.textColor || '#fff',
+                        fontFamily: buyLayerStyle.tokenCardContent?.tokenName?.fontFamily || 'Inter',
+                        fontWeight: buyLayerStyle.tokenCardContent?.tokenName?.fontWeight || 'normal',
+                        fontSize: buyLayerStyle.tokenCardContent?.tokenName?.fontSize || '16px',
                       }}
                     >
                       {token.name}
                     </div>
                     <div 
-                      className="text-xs text-gray-400 buy-get-started-token-description"
+                      className="text-xs buy-get-started-token-description"
                       data-element-id={`buy-get-started-token-description-${index}`}
-                      style={{ fontFamily: globalStyle.fontFamily }}
+                      style={{ 
+                        color: buyLayerStyle.tokenCardContent?.tokenDescription?.textColor || '#d0d0d0',
+                        fontFamily: buyLayerStyle.tokenCardContent?.tokenDescription?.fontFamily || 'Inter',
+                        fontWeight: buyLayerStyle.tokenCardContent?.tokenDescription?.fontWeight || 'normal',
+                        fontSize: buyLayerStyle.tokenCardContent?.tokenDescription?.fontSize || '15px',
+                      }}
                     >
                       {token.description}
                     </div>
                   </div>
                 </div>
                 <button
-                  className="px-4 py-2 rounded-lg font-medium transition-colors hover:scale-105 buy-get-started-token-button"
+                  className="px-4 py-2 font-medium transition-colors hover:scale-105 buy-get-started-token-button"
                   data-element-id={`buy-get-started-token-button-${index}`}
                   style={{
-                    backgroundColor: buttonStyle.backgroundColor || token.color,
-                    color: buttonStyle.textColor || '#FFFFFF',
-                    borderRadius: buttonStyle.borderRadius || '8px',
-                    fontFamily: globalStyle.fontFamily,
+                    backgroundColor: buyLayerStyle.buyButton?.backgroundColor || '#FFD166',
+                    color: buyLayerStyle.buyButton?.textColor || '#181818',
+                    borderRadius: buyLayerStyle.buyButton?.borderRadius || '14px',
+                    fontFamily: buyLayerStyle.buyButton?.fontFamily || 'Inter',
+                    fontWeight: buyLayerStyle.buyButton?.fontWeight || 'bold',
+                    fontSize: buyLayerStyle.buyButton?.fontSize || '18px',
                     transition: getTransition('default'),
                   }}
                 >
@@ -253,11 +283,13 @@ const BuyLayer = () => {
         {/* Popular Tokens Section */}
         <div className="mb-6 buy-popular-section" data-element-id="buy-popular-section">
           <h2 
-            className="text-sm font-medium text-white mb-3 buy-popular-title"
+            className="text-sm font-medium mb-3 buy-popular-title"
             data-element-id="buy-popular-title"
             style={{
-              color: globalStyle.textColor || '#FFFFFF',
-              fontFamily: globalStyle.fontFamily,
+              color: buyLayerStyle.sectionLabel?.popular?.textColor || '#5f4025',
+              fontFamily: buyLayerStyle.sectionLabel?.popular?.fontFamily || 'Inter',
+              fontWeight: buyLayerStyle.sectionLabel?.popular?.fontWeight || 'bold',
+              fontSize: buyLayerStyle.sectionLabel?.popular?.fontSize || '18px',
             }}
           >
             Popular
@@ -266,13 +298,12 @@ const BuyLayer = () => {
             {filteredPopularTokens.map((token, index) => (
               <div
                 key={token.id}
-                className="flex items-center justify-between p-4 rounded-xl border cursor-pointer hover:bg-white/5 transition-colors buy-popular-token"
+                className="flex items-center justify-between p-4 cursor-pointer hover:opacity-90 transition-opacity buy-popular-token"
                 data-element-id={`buy-popular-token-${index}`}
                 onClick={() => handleTokenBuy(token.name)}
                 style={{
-                  backgroundColor: cardStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                  borderColor: cardStyle.border || 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: cardStyle.borderRadius || '12px',
+                  backgroundColor: buyLayerStyle.tokenCard?.backgroundColor || '#613c19',
+                  borderRadius: buyLayerStyle.tokenCard?.borderRadius || '18px',
                   transition: getTransition('default'),
                 }}
               >
@@ -287,32 +318,41 @@ const BuyLayer = () => {
                   </div>
                   <div className="buy-popular-token-info" data-element-id={`buy-popular-token-info-${index}`}>
                     <div 
-                      className="font-medium text-white text-sm buy-popular-token-name"
+                      className="font-medium text-sm buy-popular-token-name"
                       data-element-id={`buy-popular-token-name-${index}`}
                       style={{
-                        color: globalStyle.textColor,
-                        fontFamily: globalStyle.fontFamily,
+                        color: buyLayerStyle.tokenCardContent?.tokenName?.textColor || '#fff',
+                        fontFamily: buyLayerStyle.tokenCardContent?.tokenName?.fontFamily || 'Inter',
+                        fontWeight: buyLayerStyle.tokenCardContent?.tokenName?.fontWeight || 'normal',
+                        fontSize: buyLayerStyle.tokenCardContent?.tokenName?.fontSize || '16px',
                       }}
                     >
                       {token.name}
                     </div>
                     <div 
-                      className="text-xs text-gray-400 buy-popular-token-description"
+                      className="text-xs buy-popular-token-description"
                       data-element-id={`buy-popular-token-description-${index}`}
-                      style={{ fontFamily: globalStyle.fontFamily }}
+                      style={{ 
+                        color: buyLayerStyle.tokenCardContent?.tokenDescription?.textColor || '#d0d0d0',
+                        fontFamily: buyLayerStyle.tokenCardContent?.tokenDescription?.fontFamily || 'Inter',
+                        fontWeight: buyLayerStyle.tokenCardContent?.tokenDescription?.fontWeight || 'normal',
+                        fontSize: buyLayerStyle.tokenCardContent?.tokenDescription?.fontSize || '15px',
+                      }}
                     >
                       {token.description}
                     </div>
                   </div>
                 </div>
                 <button
-                  className="px-4 py-2 rounded-lg font-medium transition-colors hover:scale-105 buy-popular-token-button"
+                  className="px-4 py-2 font-medium transition-colors hover:scale-105 buy-popular-token-button"
                   data-element-id={`buy-popular-token-button-${index}`}
                   style={{
-                    backgroundColor: buttonStyle.backgroundColor || token.color,
-                    color: buttonStyle.textColor || '#FFFFFF',
-                    borderRadius: buttonStyle.borderRadius || '8px',
-                    fontFamily: globalStyle.fontFamily,
+                    backgroundColor: buyLayerStyle.buyButton?.backgroundColor || '#FFD166',
+                    color: buyLayerStyle.buyButton?.textColor || '#181818',
+                    borderRadius: buyLayerStyle.buyButton?.borderRadius || '14px',
+                    fontFamily: buyLayerStyle.buyButton?.fontFamily || 'Inter',
+                    fontWeight: buyLayerStyle.buyButton?.fontWeight || 'bold',
+                    fontSize: buyLayerStyle.buyButton?.fontSize || '18px',
                     transition: getTransition('default'),
                   }}
                 >
@@ -327,9 +367,12 @@ const BuyLayer = () => {
           {filteredPopularTokens.length === 0 && searchQuery && (
             <div className="text-center py-8 buy-no-results" data-element-id="buy-no-results">
               <p 
-                className="text-gray-400 text-sm buy-no-results-text"
+                className="text-sm buy-no-results-text"
                 data-element-id="buy-no-results-text"
-                style={{ fontFamily: globalStyle.fontFamily }}
+                style={{ 
+                  color: buyLayerStyle.tokenCardContent?.tokenDescription?.textColor || '#d0d0d0',
+                  fontFamily: buyLayerStyle.tokenCardContent?.tokenDescription?.fontFamily || 'Inter' 
+                }}
               >
                 No tokens found matching "{searchQuery}"
               </p>
@@ -342,18 +385,23 @@ const BuyLayer = () => {
       <div 
         className="p-4 border-t buy-footer"
         data-element-id="buy-footer"
-        style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+        style={{ 
+          backgroundColor: buyLayerStyle.footerContainer?.backgroundColor || '#181818',
+          borderRadius: buyLayerStyle.footerContainer?.borderRadius || '0px',
+          borderColor: 'rgba(255, 255, 255, 0.1)' 
+        }}
       >
         <button
           onClick={handleClose}
-          className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 buy-close-button"
+          className="w-full py-3 px-4 transition-colors flex items-center justify-center space-x-2 buy-close-button"
           data-element-id="buy-close-button"
           style={{
-            backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
-            borderRadius: buttonStyle.borderRadius || '12px',
+            backgroundColor: buyLayerStyle.buyButton?.backgroundColor || '#FFD166',
+            borderRadius: buyLayerStyle.buyButton?.borderRadius || '14px',
             transition: getTransition('default'),
-            color: buttonStyle.textColor || '#FFFFFF',
-            fontFamily: globalStyle.fontFamily,
+            color: buyLayerStyle.buyButton?.textColor || '#181818',
+            fontFamily: buyLayerStyle.buyButton?.fontFamily || 'Inter',
+            fontWeight: buyLayerStyle.buyButton?.fontWeight || 'bold',
           }}
         >
           <X className="w-5 h-5 buy-close-icon" data-element-id="buy-close-icon" />
