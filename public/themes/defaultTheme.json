@@ -264,7 +264,7 @@
   "receiveLayer": {
     "header": {
       "backgroundColor": "#181818",
-      "backgroundImage": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "backIcon": { "color": "#ad7e26", "type": "arrow-left" },
       "title": {
         "textColor": "#ad7e26",
@@ -314,7 +314,7 @@
   "sendLayer": {
     "headerContainer": {
       "backgroundColor": "#181818",
-      "backgroundImage": ""
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png"
     },
     "header": {
       "backIcon": { "color": "#ad7e26", "type": "arrow-left" },
@@ -442,7 +442,7 @@
   "buyLayer": {
     "headerContainer": {
       "backgroundColor": "#181818",
-      "backgroundImage": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "borderRadius": "0px"
     },
     "header": {
