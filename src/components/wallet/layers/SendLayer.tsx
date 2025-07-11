@@ -114,44 +114,36 @@ const SendLayer = () => {
           fontFamily: globalStyle.fontFamily || 'Inter'
         }}
       >
-        {/* Search Input - Direct child, no container wrapper */}
+        {/* Search Input - Direct child with minimal top margin */}
         <div 
-          className="px-4 py-4 border-b send-search-input-wrapper" 
-          data-element-id="send-search-input-wrapper" 
-          style={{ 
-            borderColor: 'rgba(255, 255, 255, 0.1)'
+          className="relative mt-4 mx-4 send-search-input-container" 
+          data-element-id="send-search-input-container"
+          style={{
+            borderRadius: sendLayerStyle.searchInputContainer?.borderRadius || '16px',
+            overflow: 'hidden'
           }}
         >
-          <div 
-            className="relative send-search-input-container" 
-            data-element-id="send-search-input-container"
+          <Search 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 send-search-icon" 
+            data-element-id="send-search-icon"
+            style={{ color: sendLayerStyle.searchInput?.iconSearch?.color || '#fff' }}
+          />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 focus:outline-none transition-colors send-search-input"
+            data-element-id="send-search-input"
             style={{
-              borderRadius: sendLayerStyle.searchInputContainer?.borderRadius || '16px',
-              overflow: 'hidden'
+              backgroundColor: sendLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
+              border: 'none',
+              fontFamily: sendLayerStyle.searchInput?.fontFamily || globalStyle.fontFamily,
+              fontSize: sendLayerStyle.searchInput?.fontSize || '16px',
+              color: sendLayerStyle.searchInput?.textColor || '#fff',
+              transition: getTransition('default')
             }}
-          >
-            <Search 
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 send-search-icon" 
-              data-element-id="send-search-icon"
-              style={{ color: sendLayerStyle.searchInput?.iconSearch?.color || '#fff' }}
-            />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 focus:outline-none transition-colors send-search-input"
-              data-element-id="send-search-input"
-              style={{
-                backgroundColor: sendLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
-                border: 'none',
-                fontFamily: sendLayerStyle.searchInput?.fontFamily || globalStyle.fontFamily,
-                fontSize: sendLayerStyle.searchInput?.fontSize || '16px',
-                color: sendLayerStyle.searchInput?.textColor || '#fff',
-                transition: getTransition('default')
-              }}
-            />
-          </div>
+          />
         </div>
 
         {/* Scrollable Content Container */}
@@ -159,8 +151,6 @@ const SendLayer = () => {
           className="flex-1 px-4 py-4 overflow-y-auto send-content" 
           data-element-id="send-content"
           style={{
-            backgroundColor: sendLayerStyle.centerContainer?.backgroundColor || '#232323',
-            backgroundImage: sendLayerStyle.centerContainer?.backgroundImage ? `url(${sendLayerStyle.centerContainer.backgroundImage})` : undefined,
             scrollbarWidth: 'none',
             msOverflowStyle: 'none'
           }}
@@ -311,39 +301,29 @@ const SendLayer = () => {
           )}
         </div>
 
-        {/* Footer Container */}
-        <div 
-          className="send-footer-container" 
-          data-element-id="send-footer-container"
-          style={{
-            backgroundColor: sendLayerStyle.footerContainer?.backgroundColor || '#181818',
-            backgroundImage: sendLayerStyle.footerContainer?.backgroundImage ? `url(${sendLayerStyle.footerContainer.backgroundImage})` : undefined
-          }}
-        >
-          {/* Close Button */}
-          <div className="p-4 border-t send-footer" data-element-id="send-footer" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-            <button
-              onClick={handleClose}
-              className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 send-close-button"
-              data-element-id="send-close-button"
-              style={{
-                backgroundColor: sendLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
-                borderRadius: sendLayerStyle.footer?.closeButton?.borderRadius || '16px',
-                transition: getTransition('default'),
-                color: sendLayerStyle.footer?.closeButton?.textColor || '#181818',
-                fontFamily: sendLayerStyle.footer?.closeButton?.fontFamily || globalStyle.fontFamily,
-                fontWeight: sendLayerStyle.footer?.closeButton?.fontWeight || 'bold',
-                fontSize: sendLayerStyle.footer?.closeButton?.fontSize || '19px'
-              }}
-            >
-              <X 
-                className="w-5 h-5 send-close-icon" 
-                data-element-id="send-close-icon"
-                style={{ color: sendLayerStyle.footer?.closeButton?.icon?.color || '#ad7e26' }}
-              />
-              <span className="send-close-text" data-element-id="send-close-text">Close</span>
-            </button>
-          </div>
+        {/* Close Button Footer */}
+        <div className="p-4 border-t send-footer" data-element-id="send-footer" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+          <button
+            onClick={handleClose}
+            className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 send-close-button"
+            data-element-id="send-close-button"
+            style={{
+              backgroundColor: sendLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
+              borderRadius: sendLayerStyle.footer?.closeButton?.borderRadius || '16px',
+              transition: getTransition('default'),
+              color: sendLayerStyle.footer?.closeButton?.textColor || '#181818',
+              fontFamily: sendLayerStyle.footer?.closeButton?.fontFamily || globalStyle.fontFamily,
+              fontWeight: sendLayerStyle.footer?.closeButton?.fontWeight || 'bold',
+              fontSize: sendLayerStyle.footer?.closeButton?.fontSize || '19px'
+            }}
+          >
+            <X 
+              className="w-5 h-5 send-close-icon" 
+              data-element-id="send-close-icon"
+              style={{ color: sendLayerStyle.footer?.closeButton?.icon?.color || '#ad7e26' }}
+            />
+            <span className="send-close-text" data-element-id="send-close-text">Close</span>
+          </button>
         </div>
       </div>
     </>
