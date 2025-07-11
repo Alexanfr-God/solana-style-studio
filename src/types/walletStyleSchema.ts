@@ -49,6 +49,13 @@ export interface StatusColors {
   inactive: string;
 }
 
+// Добавляем типы для контейнеров с backgroundImage
+export interface ContainerStyle {
+  backgroundColor?: string;
+  backgroundImage?: string;
+  borderRadius?: string;
+}
+
 export interface WalletStyleSet {
   global: ComponentStyle;
   header: ComponentStyle;

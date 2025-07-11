@@ -454,6 +454,7 @@ export interface WalletTheme {
     };
     searchInputContainer: {
       backgroundColor: string;
+      backgroundImage?: string;
       borderRadius: string;
     };
     searchInput: {
@@ -465,6 +466,7 @@ export interface WalletTheme {
     };
     centerContainer: {
       backgroundColor: string;
+      backgroundImage?: string;
       borderRadius: string;
     };
     sectionLabel: {
@@ -509,6 +511,7 @@ export interface WalletTheme {
     };
     footerContainer: {
       backgroundColor: string;
+      backgroundImage?: string;
       borderRadius: string;
     };
   };
