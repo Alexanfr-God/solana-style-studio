@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { ArrowLeft, Copy, Check, QrCode, X } from 'lucide-react';
+import { Copy, Check, QrCode, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { useToast } from '@/hooks/use-toast';
@@ -74,10 +75,6 @@ const ReceiveLayer = () => {
   // Get receiveLayer styles from theme
   const receiveLayerStyle = getReceiveLayer();
 
-  const handleBack = () => {
-    setCurrentLayer('home');
-  };
-
   const handleClose = () => {
     setCurrentLayer('home');
   };
@@ -102,252 +99,225 @@ const ReceiveLayer = () => {
 
   return (
     <div 
-      className="absolute inset-0 animate-slide-in-bottom receive-layer"
-      data-element-id="receive-layer"
-      style={{
-        backgroundColor: receiveLayerStyle.header?.backgroundColor || 'rgba(24, 24, 24, 0.95)',
-        backgroundImage: receiveLayerStyle.header?.backgroundImage ? `url(${receiveLayerStyle.header.backgroundImage})` : undefined,
-        backdropFilter: 'blur(20px)',
-        fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif'
-      }}
+      className="absolute inset-0 flex items-end justify-center bg-black bg-opacity-50 z-50"
+      data-element-id="receive-layer-overlay"
     >
-      {/* Header */}
       <div 
-        className="flex items-center justify-between px-4 py-3 border-b receive-header"
-        data-element-id="receive-header"
+        className="w-full max-w-md bg-gray-900 rounded-t-2xl animate-slide-in-bottom receive-layer-sheet"
+        data-element-id="receive-layer-sheet"
         style={{
-          backgroundColor: receiveLayerStyle.header?.backgroundColor,
-          backgroundImage: receiveLayerStyle.header?.backgroundImage ? `url(${receiveLayerStyle.header.backgroundImage})` : undefined,
-          borderColor: 'rgba(255, 255, 255, 0.1)'
+          maxHeight: '80vh',
+          fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif'
         }}
       >
-        <button
-          onClick={handleBack}
-          className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors receive-back-button"
-          data-element-id="receive-back-button"
+        {/* Header */}
+        <div 
+          className="flex items-center justify-center px-4 py-6 rounded-t-2xl receive-header"
+          data-element-id="receive-header"
           style={{
-            borderRadius: '8px',
-            transition: getTransition('default')
+            backgroundColor: receiveLayerStyle.header?.backgroundColor,
+            backgroundImage: receiveLayerStyle.header?.backgroundImage ? `url(${receiveLayerStyle.header.backgroundImage})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
           }}
         >
-          <ArrowLeft 
-            className="w-5 h-5 receive-back-icon" 
-            data-element-id="receive-back-icon"
-            style={{ color: receiveLayerStyle.header?.backIcon?.color || '#FFFFFF' }}
-          />
-          <span 
-            className="font-medium receive-back-text"
-            data-element-id="receive-back-text"
+          <h1 
+            className="text-lg font-semibold receive-title"
+            data-element-id="receive-title"
             style={{
-              color: receiveLayerStyle.header?.title?.textColor || '#FFFFFF',
-              fontFamily: receiveLayerStyle.header?.title?.fontFamily || 'Inter, sans-serif'
+              color: receiveLayerStyle.header?.textColor || '#FFFFFF',
+              fontFamily: receiveLayerStyle.header?.fontFamily || 'Inter, sans-serif',
+              fontWeight: receiveLayerStyle.header?.fontWeight || 'bold',
+              fontSize: receiveLayerStyle.header?.fontSize || '21px'
             }}
           >
-            Back
-          </span>
-        </button>
-        
-        <h1 
-          className="text-lg font-semibold receive-title"
-          data-element-id="receive-title"
-          style={{
-            color: receiveLayerStyle.header?.title?.textColor || '#FFFFFF',
-            fontFamily: receiveLayerStyle.header?.title?.fontFamily || 'Inter, sans-serif',
-            fontWeight: receiveLayerStyle.header?.title?.fontWeight || 'bold',
-            fontSize: receiveLayerStyle.header?.title?.fontSize || '21px'
-          }}
-        >
-          Receive Crypto
-        </h1>
-        
-        <button
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors receive-qr-button"
-          data-element-id="receive-qr-button"
-          onClick={() => handleQrCode('All')}
-          style={{
-            borderRadius: '8px',
-            transition: getTransition('default')
-          }}
-        >
-          <QrCode 
-            className="w-5 h-5 receive-qr-icon" 
-            data-element-id="receive-qr-icon"
-            style={{ color: receiveLayerStyle.header?.qrIcon?.color || '#FFFFFF' }}
-          />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 px-4 py-6 overflow-y-auto receive-content" data-element-id="receive-content">
-        <div className="mb-6 receive-instructions" data-element-id="receive-instructions">
-          <h2 
-            className="text-sm font-medium mb-2 receive-instructions-title"
-            data-element-id="receive-instructions-title"
-            style={{
-              color: receiveLayerStyle.selectNetworkLabel?.textColor || '#FFFFFF',
-              fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif',
-              fontWeight: receiveLayerStyle.selectNetworkLabel?.fontWeight || 'bold',
-              fontSize: receiveLayerStyle.selectNetworkLabel?.fontSize || '17px'
-            }}
-          >
-            Select Network
-          </h2>
-          <p 
-            className="text-xs receive-instructions-description"
-            data-element-id="receive-instructions-description"
-            style={{ 
-              color: receiveLayerStyle.selectNetworkDescription?.textColor || '#aaa',
-              fontFamily: receiveLayerStyle.selectNetworkDescription?.fontFamily || 'Inter, sans-serif',
-              fontSize: receiveLayerStyle.selectNetworkDescription?.fontSize || '15px'
-            }}
-          >
-            Choose which network you want to receive crypto on
-          </p>
+            Receive Crypto
+          </h1>
         </div>
 
-        {/* Crypto Networks List */}
+        {/* Center Container - Scrollable Content */}
         <div 
-          className="rounded-xl border overflow-hidden mb-6 receive-networks-container"
-          data-element-id="receive-networks-container"
+          className="flex-1 overflow-y-auto receive-center-container"
+          data-element-id="receive-center-container"
           style={{
-            backgroundColor: receiveLayerStyle.networksContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-            borderRadius: receiveLayerStyle.networksContainer?.borderRadius || '16px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backgroundImage: receiveLayerStyle.networksContainer?.backgroundImage
+            backgroundColor: receiveLayerStyle.centerContainer?.backgroundColor,
+            backgroundImage: receiveLayerStyle.centerContainer?.backgroundImage ? `url(${receiveLayerStyle.centerContainer.backgroundImage})` : undefined,
+            borderRadius: receiveLayerStyle.centerContainer?.borderRadius || '0px'
           }}
         >
-          {cryptoNetworks.map((network, index) => (
-            <div
-              key={network.id}
-              className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 receive-network-item"
-              data-element-id={`receive-network-item-${index}`}
-              style={{ 
-                transition: getTransition('default'),
-                backgroundColor: receiveLayerStyle.networkItem?.backgroundColor,
-                borderRadius: receiveLayerStyle.networkItem?.borderRadius
+          <div className="px-4 py-6 receive-content" data-element-id="receive-content">
+            <div className="mb-6 receive-instructions" data-element-id="receive-instructions">
+              <h2 
+                className="text-sm font-medium mb-2 receive-instructions-title"
+                data-element-id="receive-instructions-title"
+                style={{
+                  color: receiveLayerStyle.selectNetworkLabel?.textColor || '#FFFFFF',
+                  fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif',
+                  fontWeight: receiveLayerStyle.selectNetworkLabel?.fontWeight || 'bold',
+                  fontSize: receiveLayerStyle.selectNetworkLabel?.fontSize || '17px'
+                }}
+              >
+                Select Network
+              </h2>
+              <p 
+                className="text-xs receive-instructions-description"
+                data-element-id="receive-instructions-description"
+                style={{ 
+                  color: receiveLayerStyle.selectNetworkDescription?.textColor || '#aaa',
+                  fontFamily: receiveLayerStyle.selectNetworkDescription?.fontFamily || 'Inter, sans-serif',
+                  fontSize: receiveLayerStyle.selectNetworkDescription?.fontSize || '15px'
+                }}
+              >
+                Choose which network you want to receive crypto on
+              </p>
+            </div>
+
+            {/* Crypto Networks List */}
+            <div 
+              className="rounded-xl border overflow-hidden mb-6 receive-networks-container"
+              data-element-id="receive-networks-container"
+              style={{
+                backgroundColor: receiveLayerStyle.networksContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+                borderRadius: receiveLayerStyle.networksContainer?.borderRadius || '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundImage: receiveLayerStyle.networksContainer?.backgroundImage
               }}
             >
-              <div className="flex items-center space-x-3">
-                {/* Network Icon */}
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex items-center justify-center receive-network-icon-container" data-element-id={`receive-network-icon-container-${index}`}>
-                  <img
-                    src={network.icon}
-                    alt={network.name}
-                    className="w-8 h-8 object-cover rounded receive-network-icon"
-                    data-element-id={`receive-network-icon-${index}`}
-                  />
-                </div>
-                
-                {/* Network Info */}
-                <div className="receive-network-info" data-element-id={`receive-network-info-${index}`}>
-                  <div 
-                    className="font-medium text-sm receive-network-name"
-                    data-element-id={`receive-network-name-${index}`}
-                    style={{
-                      color: receiveLayerStyle.networkItem?.mainNameColor || '#FFFFFF',
-                      fontFamily: receiveLayerStyle.networkItem?.mainNameFontFamily || 'Inter, sans-serif',
-                      fontWeight: receiveLayerStyle.networkItem?.mainNameFontWeight || 'bold',
-                      fontSize: receiveLayerStyle.networkItem?.mainNameFontSize || '16px'
-                    }}
-                  >
-                    {network.name}
-                  </div>
-                  <div 
-                    className="text-xs receive-network-symbol"
-                    data-element-id={`receive-network-symbol-${index}`}
-                    style={{ 
-                      color: receiveLayerStyle.networkItem?.secondaryNameColor || '#aaa',
-                      fontFamily: receiveLayerStyle.networkItem?.secondaryNameFontFamily || 'Inter, sans-serif',
-                      fontSize: receiveLayerStyle.networkItem?.secondaryNameFontSize || '14px'
-                    }}
-                  >
-                    {network.symbol}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Address and Actions */}
-              <div className="flex items-center space-x-3 receive-network-actions" data-element-id={`receive-network-actions-${index}`}>
-                <span 
-                  className="text-xs font-mono receive-network-address"
-                  data-element-id={`receive-network-address-${index}`}
+              {cryptoNetworks.map((network, index) => (
+                <div
+                  key={network.id}
+                  className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 receive-network-item"
+                  data-element-id={`receive-network-item-${index}`}
                   style={{ 
-                    color: receiveLayerStyle.networkItem?.addressColor || '#FFFFFF',
-                    fontFamily: receiveLayerStyle.networkItem?.addressFontFamily || 'monospace',
-                    fontSize: receiveLayerStyle.networkItem?.addressFontSize || '15px'
+                    transition: getTransition('default'),
+                    backgroundColor: receiveLayerStyle.networkItem?.backgroundColor,
+                    borderRadius: receiveLayerStyle.networkItem?.borderRadius
                   }}
                 >
-                  {network.address}
-                </span>
-                
-                <div className="flex items-center space-x-2 receive-network-buttons" data-element-id={`receive-network-buttons-${index}`}>
-                  <button
-                    className="p-1.5 rounded hover:bg-white/10 transition-colors receive-network-qr-button"
-                    data-element-id={`receive-network-qr-button-${index}`}
-                    onClick={() => handleQrCode(network.name)}
-                    style={{
-                      borderRadius: '4px',
-                      transition: getTransition('default')
-                    }}
-                  >
-                    <QrCode 
-                      className="w-4 h-4 hover:text-white receive-network-qr-icon" 
-                      data-element-id={`receive-network-qr-icon-${index}`}
-                      style={{ color: receiveLayerStyle.networkItem?.qrIcon?.color || '#FFFFFF' }}
-                    />
-                  </button>
-                  
-                  <button
-                    className="p-1.5 rounded hover:bg-white/10 transition-colors receive-network-copy-button"
-                    data-element-id={`receive-network-copy-button-${index}`}
-                    onClick={() => handleCopyAddress(network.address, network.name)}
-                    style={{
-                      borderRadius: '4px',
-                      transition: getTransition('default')
-                    }}
-                  >
-                    {copiedAddress === network.address ? (
-                      <Check className="w-4 h-4 text-green-400 receive-network-copy-success-icon" data-element-id={`receive-network-copy-success-icon-${index}`} />
-                    ) : (
-                      <Copy 
-                        className="w-4 h-4 hover:text-white receive-network-copy-icon" 
-                        data-element-id={`receive-network-copy-icon-${index}`}
-                        style={{ color: receiveLayerStyle.networkItem?.copyIcon?.color || '#FFFFFF' }}
+                  <div className="flex items-center space-x-3">
+                    {/* Network Icon */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex items-center justify-center receive-network-icon-container" data-element-id={`receive-network-icon-container-${index}`}>
+                      <img
+                        src={network.icon}
+                        alt={network.name}
+                        className="w-8 h-8 object-cover rounded receive-network-icon"
+                        data-element-id={`receive-network-icon-${index}`}
                       />
-                    )}
-                  </button>
+                    </div>
+                    
+                    {/* Network Info */}
+                    <div className="receive-network-info" data-element-id={`receive-network-info-${index}`}>
+                      <div 
+                        className="font-medium text-sm receive-network-name"
+                        data-element-id={`receive-network-name-${index}`}
+                        style={{
+                          color: receiveLayerStyle.networkItem?.mainNameColor || '#FFFFFF',
+                          fontFamily: receiveLayerStyle.networkItem?.mainNameFontFamily || 'Inter, sans-serif',
+                          fontWeight: receiveLayerStyle.networkItem?.mainNameFontWeight || 'bold',
+                          fontSize: receiveLayerStyle.networkItem?.mainNameFontSize || '16px'
+                        }}
+                      >
+                        {network.name}
+                      </div>
+                      <div 
+                        className="text-xs receive-network-symbol"
+                        data-element-id={`receive-network-symbol-${index}`}
+                        style={{ 
+                          color: receiveLayerStyle.networkItem?.secondaryNameColor || '#aaa',
+                          fontFamily: receiveLayerStyle.networkItem?.secondaryNameFontFamily || 'Inter, sans-serif',
+                          fontSize: receiveLayerStyle.networkItem?.secondaryNameFontSize || '14px'
+                        }}
+                      >
+                        {network.symbol}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Address and Actions */}
+                  <div className="flex items-center space-x-3 receive-network-actions" data-element-id={`receive-network-actions-${index}`}>
+                    <span 
+                      className="text-xs font-mono receive-network-address"
+                      data-element-id={`receive-network-address-${index}`}
+                      style={{ 
+                        color: receiveLayerStyle.networkItem?.addressColor || '#FFFFFF',
+                        fontFamily: receiveLayerStyle.networkItem?.addressFontFamily || 'monospace',
+                        fontSize: receiveLayerStyle.networkItem?.addressFontSize || '15px'
+                      }}
+                    >
+                      {network.address}
+                    </span>
+                    
+                    <div className="flex items-center space-x-2 receive-network-buttons" data-element-id={`receive-network-buttons-${index}`}>
+                      <button
+                        className="p-1.5 rounded hover:bg-white/10 transition-colors receive-network-qr-button"
+                        data-element-id={`receive-network-qr-button-${index}`}
+                        onClick={() => handleQrCode(network.name)}
+                        style={{
+                          borderRadius: '4px',
+                          transition: getTransition('default')
+                        }}
+                      >
+                        <QrCode 
+                          className="w-4 h-4 hover:text-white receive-network-qr-icon" 
+                          data-element-id={`receive-network-qr-icon-${index}`}
+                          style={{ color: receiveLayerStyle.networkItem?.qrIcon?.color || '#FFFFFF' }}
+                        />
+                      </button>
+                      
+                      <button
+                        className="p-1.5 rounded hover:bg-white/10 transition-colors receive-network-copy-button"
+                        data-element-id={`receive-network-copy-button-${index}`}
+                        onClick={() => handleCopyAddress(network.address, network.name)}
+                        style={{
+                          borderRadius: '4px',
+                          transition: getTransition('default')
+                        }}
+                      >
+                        {copiedAddress === network.address ? (
+                          <Check className="w-4 h-4 text-green-400 receive-network-copy-success-icon" data-element-id={`receive-network-copy-success-icon-${index}`} />
+                        ) : (
+                          <Copy 
+                            className="w-4 h-4 hover:text-white receive-network-copy-icon" 
+                            data-element-id={`receive-network-copy-icon-${index}`}
+                            style={{ color: receiveLayerStyle.networkItem?.copyIcon?.color || '#FFFFFF' }}
+                          />
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
-      </div>
 
-      {/* Close Button */}
-      <div 
-        className="p-4 border-t receive-footer" 
-        data-element-id="receive-footer" 
-        style={{ 
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          backgroundColor: receiveLayerStyle.footer?.backgroundColor,
-          backgroundImage: receiveLayerStyle.footer?.backgroundImage ? `url(${receiveLayerStyle.footer.backgroundImage})` : undefined
-        }}
-      >
-        <button
-          onClick={handleClose}
-          className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 receive-close-button"
-          data-element-id="receive-close-button"
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            transition: getTransition('default'),
-            color: '#FFFFFF',
-            fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif'
+        {/* Footer */}
+        <div 
+          className="p-4 receive-footer" 
+          data-element-id="receive-footer" 
+          style={{ 
+            backgroundColor: receiveLayerStyle.footer?.backgroundColor,
+            backgroundImage: receiveLayerStyle.footer?.backgroundImage ? `url(${receiveLayerStyle.footer.backgroundImage})` : undefined
           }}
         >
-          <X className="w-5 h-5 receive-close-icon" data-element-id="receive-close-icon" />
-          <span className="font-medium receive-close-text" data-element-id="receive-close-text">Close</span>
-        </button>
+          <button
+            onClick={handleClose}
+            className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 receive-close-button"
+            data-element-id="receive-close-button"
+            style={{
+              backgroundColor: receiveLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
+              borderRadius: receiveLayerStyle.footer?.closeButton?.borderRadius || '12px',
+              transition: getTransition('default'),
+              color: receiveLayerStyle.footer?.closeButton?.textColor || '#181818',
+              fontFamily: receiveLayerStyle.footer?.closeButton?.fontFamily || 'Inter, sans-serif',
+              fontWeight: receiveLayerStyle.footer?.closeButton?.fontWeight || 'bold',
+              fontSize: receiveLayerStyle.footer?.closeButton?.fontSize || '16px'
+            }}
+          >
+            <X className="w-5 h-5 receive-close-icon" data-element-id="receive-close-icon" />
+            <span className="font-medium receive-close-text" data-element-id="receive-close-text">Close</span>
+          </button>
+        </div>
       </div>
     </div>
   );

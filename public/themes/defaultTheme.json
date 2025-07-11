@@ -263,16 +263,17 @@
   },
   "receiveLayer": {
     "header": {
-      "backgroundColor": "",
+      "backgroundColor": "#181818",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
-      "backIcon": { "color": "#ad7e26", "type": "arrow-left" },
-      "title": {
-        "textColor": "#ad7e26",
-        "fontFamily": "Inter, sans-serif",
-        "fontWeight": "bold",
-        "fontSize": "21px"
-      },
-      "qrIcon": { "color": "#ad7e26", "type": "qr-code" }
+      "textColor": "#FFD166",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px"
+    },
+    "centerContainer": {
+      "backgroundColor": "#232323",
+      "backgroundImage": "",
+      "borderRadius": "0px"
     },
     "selectNetworkLabel": {
       "textColor": "#ad7e26",
@@ -308,7 +309,15 @@
     },
     "footer": {
       "backgroundColor": "#181818",
-      "backgroundImage": ""
+      "backgroundImage": "",
+      "closeButton": {
+        "backgroundColor": "#FFD166",
+        "textColor": "#181818",
+        "fontFamily": "Inter, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "16px",
+        "borderRadius": "12px"
+      }
     }
   },
   "sendLayer": {

@@ -9,15 +9,14 @@ import BuyLayer from './layers/BuyLayer';
 const WalletContainer = () => {
   const { currentLayer } = useWalletCustomizationStore();
 
-  const renderLayer = () => {
+  const renderMainLayer = () => {
     switch (currentLayer) {
-      case 'receive':
-        return <ReceiveLayer />;
       case 'send':
         return <SendLayer />;
       case 'buy':
         return <BuyLayer />;
       case 'home':
+      case 'receive':
       case 'swap':
       case 'apps':
       case 'history':
@@ -29,7 +28,10 @@ const WalletContainer = () => {
 
   return (
     <div className="relative w-full h-full overflow-hidden rounded-2xl">
-      {renderLayer()}
+      {renderMainLayer()}
+      
+      {/* ReceiveLayer as bottom-sheet overlay */}
+      {currentLayer === 'receive' && <ReceiveLayer />}
     </div>
   );
 };

@@ -253,14 +253,15 @@ export interface WalletTheme {
     header: {
       backgroundColor: string;
       backgroundImage?: string;
-      backIcon: { color: string; type: string; };
-      title: {
-        textColor: string;
-        fontFamily: string;
-        fontWeight: string;
-        fontSize: string;
-      };
-      qrIcon: { color: string; type: string; };
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    centerContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
     };
     selectNetworkLabel: {
       textColor: string;
@@ -297,6 +298,14 @@ export interface WalletTheme {
     footer: {
       backgroundColor: string;
       backgroundImage?: string;
+      closeButton: {
+        backgroundColor: string;
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+        borderRadius: string;
+      };
     };
   };
   sendLayer: {
@@ -959,15 +968,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
           receiveLayer: {
             header: {
               backgroundColor: '#181818',
+              backgroundImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png',
+              textColor: '#FFD166',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '17px'
+            },
+            centerContainer: {
+              backgroundColor: '#232323',
               backgroundImage: '',
-              backIcon: { color: '#ad7e26', type: 'arrow-left' },
-              title: {
-                textColor: '#ad7e26',
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 'bold',
-                fontSize: '21px'
-              },
-              qrIcon: { color: '#ad7e26', type: 'qr-code' }
+              borderRadius: '0px'
             },
             selectNetworkLabel: {
               textColor: '#ad7e26',
@@ -1003,13 +1013,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
             },
             footer: {
               backgroundColor: '#181818',
-              backgroundImage: ''
+              backgroundImage: '',
+              closeButton: {
+                backgroundColor: '#FFD166',
+                textColor: '#181818',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                borderRadius: '12px'
+              }
             }
           },
           sendLayer: {
             headerContainer: {
-              backgroundColor: '#181818',
-              backgroundImage: ''
+              backgroundColor: '',
+              backgroundImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png'
             },
             header: {
               backIcon: { color: '#ad7e26', type: 'arrow-left' },
@@ -1221,66 +1239,66 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
           },
           swapLayer: {
             mainContainer: {
-              backgroundColor: '#242424',
+              backgroundColor: '#181818',
               backgroundImage: '',
               borderRadius: '20px'
             },
             swapTitle: {
-              textColor: '#fff',
+              textColor: '#FFD166',
               fontFamily: 'Inter, sans-serif',
               fontWeight: 'bold',
               fontSize: '22px'
             },
             settingsIcon: {
-              color: '#aaa',
+              color: '#FFD166',
               type: 'settings'
             },
             fromContainer: {
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#232323',
               backgroundImage: '',
               borderRadius: '15px'
             },
             fromLabel: {
-              textColor: '#aaa',
+              textColor: '#FFD166',
               fontFamily: 'Inter, sans-serif',
               fontSize: '15px'
             },
             fromBalance: {
-              textColor: '#aaa',
+              textColor: '#A9A9A9',
               fontFamily: 'Inter, sans-serif',
               fontSize: '14px'
             },
             fromCoinTag: {
               backgroundColor: '#232323',
-              textColor: '#fff',
+              textColor: '#FFD166',
               fontFamily: 'Inter, sans-serif',
               fontSize: '15px',
               borderRadius: '10px'
             },
             toContainer: {
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#232323',
               backgroundImage: '',
               borderRadius: '15px'
             },
             toLabel: {
-              textColor: '#aaa',
+              textColor: '#FFD166',
               fontFamily: 'Inter, sans-serif',
               fontSize: '15px'
             },
             toBalance: {
-              textColor: '#aaa',
+              textColor: '#A9A9A9',
               fontFamily: 'Inter, sans-serif',
               fontSize: '14px'
             },
             toCoinTag: {
               backgroundColor: '#232323',
-              textColor: '#fff',
+              textColor: '#FFD166',
               fontFamily: 'Inter, sans-serif',
               fontSize: '15px',
               borderRadius: '10px'
             },
             arrowIcon: {
-              color: '#fff',
+              color: '#F3722C',
               type: 'arrow-up-down'
             },
             rateContainer: {
@@ -1289,33 +1307,33 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               borderRadius: '12px'
             },
             rateLabel: {
-              textColor: '#aaa',
+              textColor: '#A9A9A9',
               fontFamily: 'Inter, sans-serif',
               fontSize: '15px'
             },
             rateValue: {
-              textColor: '#fff',
+              textColor: '#FFD166',
               fontFamily: 'Inter, sans-serif',
               fontSize: '16px'
             },
             infoIcon: {
-              color: '#aaa',
+              color: '#FFD166',
               type: 'info'
             }
           },
           historyLayer: {
             recentActivityTitle: {
-              textColor: '#fff',
+              textColor: '#FFD166',
               fontFamily: 'Inter, sans-serif',
               fontWeight: 'bold',
               fontSize: '19px'
             },
             menuIcon: {
-              color: '#fff',
+              color: '#FFD166',
               type: 'more-vertical'
             },
             activityCard: {
-              backgroundColor: '#232323',
+              backgroundColor: '#36260f',
               backgroundImage: '',
               borderRadius: '15px'
             },
