@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface WalletTheme {
@@ -250,6 +249,56 @@ export interface WalletTheme {
       };
     };
   };
+  receiveLayer: {
+    header: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      backIcon: { color: string; type: string; };
+      title: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+      qrIcon: { color: string; type: string; };
+    };
+    selectNetworkLabel: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    selectNetworkDescription: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    networksContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    networkItem: {
+      backgroundColor: string;
+      borderRadius: string;
+      mainNameColor: string;
+      mainNameFontFamily: string;
+      mainNameFontWeight: string;
+      mainNameFontSize: string;
+      secondaryNameColor: string;
+      secondaryNameFontFamily: string;
+      secondaryNameFontSize: string;
+      addressColor: string;
+      addressFontFamily: string;
+      addressFontSize: string;
+      qrIcon: { color: string; type: string; };
+      copyIcon: { color: string; type: string; };
+    };
+    footer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+    };
+  };
   appsLayer: {
     title: {
       textColor: string;
@@ -483,6 +532,7 @@ interface ThemeContextType {
   getAvatarHeaderStyle: () => WalletTheme['avatarHeader'];
   getSidebarLayerStyle: () => WalletTheme['sidebarLayer'];
   getHomeLayerStyle: () => WalletTheme['homeLayer'];
+  getReceiveLayerStyle: () => WalletTheme['receiveLayer'];
   getAppsLayerStyle: () => WalletTheme['appsLayer'];
   getSwapLayerStyle: () => WalletTheme['swapLayer'];
   getHistoryLayerStyle: () => WalletTheme['historyLayer'];
@@ -519,7 +569,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
         setTheme(defaultTheme);
       } catch (error) {
         console.error('Failed to load default theme:', error);
-        // Fallback theme with new layers
         setTheme({
           name: 'Fallback Theme',
           version: '1.0.0',
@@ -715,6 +764,56 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               textColor: '#6a55ff',
               fontFamily: 'Inter, sans-serif',
               fontSize: '13px'
+            }
+          },
+          receiveLayer: {
+            header: {
+              backgroundColor: '#181818',
+              backgroundImage: '',
+              backIcon: { color: '#ad7e26', type: 'arrow-left' },
+              title: {
+                textColor: '#ad7e26',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '21px'
+              },
+              qrIcon: { color: '#ad7e26', type: 'qr-code' }
+            },
+            selectNetworkLabel: {
+              textColor: '#ad7e26',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '17px'
+            },
+            selectNetworkDescription: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            networksContainer: {
+              backgroundColor: '#232323',
+              backgroundImage: '',
+              borderRadius: '15px'
+            },
+            networkItem: {
+              backgroundColor: '#232323',
+              borderRadius: '13px',
+              mainNameColor: '#ad7e26',
+              mainNameFontFamily: 'Inter, sans-serif',
+              mainNameFontWeight: 'bold',
+              mainNameFontSize: '16px',
+              secondaryNameColor: '#aaa',
+              secondaryNameFontFamily: 'Inter, sans-serif',
+              secondaryNameFontSize: '14px',
+              addressColor: '#fff',
+              addressFontFamily: 'Inter, sans-serif',
+              addressFontSize: '15px',
+              qrIcon: { color: '#ad7e26', type: 'qr-code' },
+              copyIcon: { color: '#ad7e26', type: 'copy' }
+            },
+            footer: {
+              backgroundColor: '#181818',
+              backgroundImage: ''
             }
           },
           appsLayer: {
@@ -964,6 +1063,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return theme?.homeLayer || {} as WalletTheme['homeLayer'];
   };
 
+  const getReceiveLayerStyle = () => {
+    return theme?.receiveLayer || {} as WalletTheme['receiveLayer'];
+  };
+
   const getAppsLayerStyle = () => {
     return theme?.appsLayer || {} as WalletTheme['appsLayer'];
   };
@@ -1000,6 +1103,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       getAvatarHeaderStyle,
       getSidebarLayerStyle,
       getHomeLayerStyle,
+      getReceiveLayerStyle,
       getAppsLayerStyle,
       getSwapLayerStyle,
       getHistoryLayerStyle,

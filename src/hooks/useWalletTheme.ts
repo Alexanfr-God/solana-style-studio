@@ -2,7 +2,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const useWalletTheme = () => {
-  const { theme, getLockLayerStyle, getAvatarHeaderStyle, getSidebarLayerStyle, getHomeLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
+  const { theme, getLockLayerStyle, getAvatarHeaderStyle, getSidebarLayerStyle, getHomeLayerStyle, getReceiveLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
 
   const getLockLayer = () => {
     const lockStyle = getLockLayerStyle();
@@ -26,6 +26,12 @@ export const useWalletTheme = () => {
     const homeStyle = getHomeLayerStyle();
     console.log('🏠 Home layer style:', homeStyle);
     return homeStyle;
+  };
+
+  const getReceiveLayer = () => {
+    const receiveStyle = getReceiveLayerStyle();
+    console.log('📨 Receive layer style:', receiveStyle);
+    return receiveStyle;
   };
 
   const getAppsLayer = () => {
@@ -120,8 +126,8 @@ export const useWalletTheme = () => {
         };
       case 'networkItems':
         return {
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '16px',
+          backgroundColor: getReceiveLayer().networksContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
+          borderRadius: getReceiveLayer().networksContainer?.borderRadius || '16px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(8px)'
         };
@@ -184,6 +190,7 @@ export const useWalletTheme = () => {
     getAvatarHeader,
     getSidebarLayer,
     getHomeLayer,
+    getReceiveLayer,
     getAppsLayer,
     getSwapLayer,
     getHistoryLayer,
