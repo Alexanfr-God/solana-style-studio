@@ -2,7 +2,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const useWalletTheme = () => {
-  const { theme, getLockLayerStyle, getAvatarHeaderStyle, getSidebarLayerStyle, getHomeLayerStyle, getReceiveLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
+  const { theme, getLockLayerStyle, getAvatarHeaderStyle, getSidebarLayerStyle, getHomeLayerStyle, getReceiveLayerStyle, getSendLayerStyle, getAppsLayerStyle, getSwapLayerStyle, getHistoryLayerStyle, getSearchLayerStyle, getInputsStyle, getGlobalStyle } = useTheme();
 
   const getLockLayer = () => {
     const lockStyle = getLockLayerStyle();
@@ -32,6 +32,12 @@ export const useWalletTheme = () => {
     const receiveStyle = getReceiveLayerStyle();
     console.log('📨 Receive layer style:', receiveStyle);
     return receiveStyle;
+  };
+
+  const getSendLayer = () => {
+    const sendStyle = getSendLayerStyle();
+    console.log('📤 Send layer style:', sendStyle);
+    return sendStyle;
   };
 
   const getAppsLayer = () => {
@@ -191,6 +197,7 @@ export const useWalletTheme = () => {
     getSidebarLayer,
     getHomeLayer,
     getReceiveLayer,
+    getSendLayer,
     getAppsLayer,
     getSwapLayer,
     getHistoryLayer,

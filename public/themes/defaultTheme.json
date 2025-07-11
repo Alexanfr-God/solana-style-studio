@@ -1,3 +1,4 @@
+
 {
   "name": "Default Wallet Theme",
   "version": "1.0.0",
@@ -309,6 +310,106 @@
     "footer": {
       "backgroundColor": "#181818",
       "backgroundImage": ""
+    }
+  },
+  "sendLayer": {
+    "headerContainer": {
+      "backgroundColor": "#181818",
+      "backgroundImage": ""
+    },
+    "header": {
+      "backIcon": { "color": "#ad7e26", "type": "arrow-left" },
+      "title": {
+        "textColor": "#643800",
+        "fontFamily": "Inter, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "23px"
+      },
+      "qrIcon": { "color": "#ad7e26", "type": "qr-code" }
+    },
+    "searchInputContainer": {
+      "backgroundColor": "#13e163",
+      "backgroundImage": "",
+      "borderRadius": "16px"
+    },
+    "searchInput": {
+      "textColor": "#fff",
+      "placeholderColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "16px",
+      "iconSearch": { "color": "#fff", "type": "search" }
+    },
+    "centerContainer": {
+      "backgroundColor": "#232323",
+      "backgroundImage": "",
+      "borderRadius": "18px"
+    },
+    "selectNetworkLabel": {
+      "textColor": "#ad7e26",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "19px"
+    },
+    "selectNetworkDescription": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "networkList": {
+      "container": {
+        "backgroundColor": "#232323",
+        "borderRadius": "16px"
+      },
+      "networkItem": {
+        "backgroundColor": "#181818",
+        "borderRadius": "13px"
+      },
+      "coinName": {
+        "textColor": "#ad7e26",
+        "fontFamily": "Inter, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "17px"
+      },
+      "coinTicker": {
+        "textColor": "#fff",
+        "fontFamily": "Inter, sans-serif",
+        "fontSize": "14px"
+      },
+      "balance": {
+        "textColor": "#ad7e26",
+        "fontFamily": "Inter, sans-serif",
+        "fontWeight": "600",
+        "fontSize": "15px"
+      },
+      "fiatValue": {
+        "textColor": "#fff",
+        "fontFamily": "Inter, sans-serif",
+        "fontSize": "14px"
+      },
+      "icons": {
+        "qrIcon": { "color": "#aaa", "type": "qr-code" },
+        "copyIcon": { "color": "#aaa", "type": "copy" }
+      }
+    },
+    "emptyState": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "footerContainer": {
+      "backgroundColor": "#181818",
+      "backgroundImage": ""
+    },
+    "footer": {
+      "closeButton": {
+        "backgroundColor": "#FFD166",
+        "textColor": "#181818",
+        "fontFamily": "Inter, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "19px",
+        "icon": { "color": "#ad7e26", "type": "x" },
+        "borderRadius": "16px"
+      }
     }
   },
   "appsLayer": {

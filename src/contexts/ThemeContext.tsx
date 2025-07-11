@@ -299,6 +299,106 @@ export interface WalletTheme {
       backgroundImage?: string;
     };
   };
+  sendLayer: {
+    headerContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+    };
+    header: {
+      backIcon: { color: string; type: string; };
+      title: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+      qrIcon: { color: string; type: string; };
+    };
+    searchInputContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    searchInput: {
+      textColor: string;
+      placeholderColor: string;
+      fontFamily: string;
+      fontSize: string;
+      iconSearch: { color: string; type: string; };
+    };
+    centerContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+      borderRadius: string;
+    };
+    selectNetworkLabel: {
+      textColor: string;
+      fontFamily: string;
+      fontWeight: string;
+      fontSize: string;
+    };
+    selectNetworkDescription: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    networkList: {
+      container: {
+        backgroundColor: string;
+        borderRadius: string;
+      };
+      networkItem: {
+        backgroundColor: string;
+        borderRadius: string;
+      };
+      coinName: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+      coinTicker: {
+        textColor: string;
+        fontFamily: string;
+        fontSize: string;
+      };
+      balance: {
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+      };
+      fiatValue: {
+        textColor: string;
+        fontFamily: string;
+        fontSize: string;
+      };
+      icons: {
+        qrIcon: { color: string; type: string; };
+        copyIcon: { color: string; type: string; };
+      };
+    };
+    emptyState: {
+      textColor: string;
+      fontFamily: string;
+      fontSize: string;
+    };
+    footerContainer: {
+      backgroundColor: string;
+      backgroundImage?: string;
+    };
+    footer: {
+      closeButton: {
+        backgroundColor: string;
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+        icon: { color: string; type: string; };
+        borderRadius: string;
+      };
+    };
+  };
   appsLayer: {
     title: {
       textColor: string;
@@ -533,6 +633,7 @@ interface ThemeContextType {
   getSidebarLayerStyle: () => WalletTheme['sidebarLayer'];
   getHomeLayerStyle: () => WalletTheme['homeLayer'];
   getReceiveLayerStyle: () => WalletTheme['receiveLayer'];
+  getSendLayerStyle: () => WalletTheme['sendLayer'];
   getAppsLayerStyle: () => WalletTheme['appsLayer'];
   getSwapLayerStyle: () => WalletTheme['swapLayer'];
   getHistoryLayerStyle: () => WalletTheme['historyLayer'];
@@ -816,6 +917,106 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
               backgroundImage: ''
             }
           },
+          sendLayer: {
+            headerContainer: {
+              backgroundColor: '#181818',
+              backgroundImage: ''
+            },
+            header: {
+              backIcon: { color: '#ad7e26', type: 'arrow-left' },
+              title: {
+                textColor: '#643800',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '23px'
+              },
+              qrIcon: { color: '#ad7e26', type: 'qr-code' }
+            },
+            searchInputContainer: {
+              backgroundColor: '#13e163',
+              backgroundImage: '',
+              borderRadius: '16px'
+            },
+            searchInput: {
+              textColor: '#fff',
+              placeholderColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px',
+              iconSearch: { color: '#fff', type: 'search' }
+            },
+            centerContainer: {
+              backgroundColor: '#232323',
+              backgroundImage: '',
+              borderRadius: '18px'
+            },
+            selectNetworkLabel: {
+              textColor: '#ad7e26',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 'bold',
+              fontSize: '19px'
+            },
+            selectNetworkDescription: {
+              textColor: '#aaa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            networkList: {
+              container: {
+                backgroundColor: '#232323',
+                borderRadius: '16px'
+              },
+              networkItem: {
+                backgroundColor: '#181818',
+                borderRadius: '13px'
+              },
+              coinName: {
+                textColor: '#ad7e26',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '17px'
+              },
+              coinTicker: {
+                textColor: '#fff',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '14px'
+              },
+              balance: {
+                textColor: '#ad7e26',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '600',
+                fontSize: '15px'
+              },
+              fiatValue: {
+                textColor: '#fff',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '14px'
+              },
+              icons: {
+                qrIcon: { color: '#aaa', type: 'qr-code' },
+                copyIcon: { color: '#aaa', type: 'copy' }
+              }
+            },
+            emptyState: {
+              textColor: '#fff',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '15px'
+            },
+            footerContainer: {
+              backgroundColor: '#181818',
+              backgroundImage: ''
+            },
+            footer: {
+              closeButton: {
+                backgroundColor: '#FFD166',
+                textColor: '#181818',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 'bold',
+                fontSize: '19px',
+                icon: { color: '#ad7e26', type: 'x' },
+                borderRadius: '16px'
+              }
+            }
+          },
           appsLayer: {
             title: {
               textColor: '#fff',
@@ -1067,6 +1268,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return theme?.receiveLayer || {} as WalletTheme['receiveLayer'];
   };
 
+  const getSendLayerStyle = () => {
+    return theme?.sendLayer || {} as WalletTheme['sendLayer'];
+  };
+
   const getAppsLayerStyle = () => {
     return theme?.appsLayer || {} as WalletTheme['appsLayer'];
   };
@@ -1104,6 +1309,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       getSidebarLayerStyle,
       getHomeLayerStyle,
       getReceiveLayerStyle,
+      getSendLayerStyle,
       getAppsLayerStyle,
       getSwapLayerStyle,
       getHistoryLayerStyle,

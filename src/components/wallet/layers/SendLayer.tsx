@@ -67,17 +67,14 @@ const cryptoNetworks: CryptoNetwork[] = [
 
 const SendLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getComponentStyle, getTransition } = useWalletTheme();
+  const { getSendLayer, getGlobal, getTransition } = useWalletTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  // Get component-specific styles from theme
-  const overlayStyle = getComponentStyle('overlays');
-  const searchInputStyle = getComponentStyle('searchInputs');
-  const containerStyle = getComponentStyle('networkItems');
-  const buttonStyle = getComponentStyle('buttons');
-  const globalStyle = getComponentStyle('global');
+  // Get sendLayer styles
+  const sendLayerStyle = getSendLayer();
+  const globalStyle = getGlobal();
 
   const handleBack = () => {
     setCurrentLayer('home');
@@ -106,96 +103,145 @@ const SendLayer = () => {
       className="absolute inset-0 animate-slide-in-bottom send-layer"
       data-element-id="send-layer"
       style={{
-        backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
-        backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
+        backgroundColor: sendLayerStyle.headerContainer?.backgroundColor || 'rgba(24, 24, 24, 0.95)',
+        backdropFilter: 'blur(20px)',
         fontFamily: globalStyle.fontFamily || 'Inter'
       }}
     >
-      {/* Header */}
+      {/* Header Container */}
       <div 
-        className="flex items-center justify-between px-4 py-3 border-b send-header"
-        data-element-id="send-header"
+        className="send-header-container"
+        data-element-id="send-header-container"
         style={{
-          borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)'
+          backgroundColor: sendLayerStyle.headerContainer?.backgroundColor || '#181818',
+          backgroundImage: sendLayerStyle.headerContainer?.backgroundImage || 'none'
         }}
       >
-        <button
-          onClick={handleBack}
-          className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors send-back-button"
-          data-element-id="send-back-button"
+        {/* Header */}
+        <div 
+          className="flex items-center justify-between px-4 py-3 border-b send-header"
+          data-element-id="send-header"
           style={{
-            borderRadius: buttonStyle.borderRadius || '8px',
-            transition: getTransition('default')
+            borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
-          <ArrowLeft className="w-5 h-5 text-white send-back-icon" data-element-id="send-back-icon" />
-          <span 
-            className="text-white font-medium send-back-text"
-            data-element-id="send-back-text"
+          <button
+            onClick={handleBack}
+            className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/10 transition-colors send-back-button"
+            data-element-id="send-back-button"
             style={{
-              color: globalStyle.textColor,
-              fontFamily: globalStyle.fontFamily
+              borderRadius: globalStyle.borderRadius || '8px',
+              transition: getTransition('default')
             }}
           >
-            Back
-          </span>
-        </button>
-        
-        <h1 
-          className="text-lg font-semibold text-white send-title"
-          data-element-id="send-title"
-          style={{
-            color: globalStyle.textColor,
-            fontFamily: globalStyle.fontFamily
-          }}
-        >
-          Send Crypto
-        </h1>
-        
-        <div className="w-[60px] send-header-spacer" data-element-id="send-header-spacer"></div>
+            <ArrowLeft 
+              className="w-5 h-5 send-back-icon" 
+              data-element-id="send-back-icon"
+              style={{ color: sendLayerStyle.header?.backIcon?.color || '#ad7e26' }}
+            />
+            <span 
+              className="font-medium send-back-text"
+              data-element-id="send-back-text"
+              style={{
+                color: sendLayerStyle.header?.backIcon?.color || '#ad7e26',
+                fontFamily: globalStyle.fontFamily
+              }}
+            >
+              Back
+            </span>
+          </button>
+          
+          <h1 
+            className="text-lg font-semibold send-title"
+            data-element-id="send-title"
+            style={{
+              color: sendLayerStyle.header?.title?.textColor || '#643800',
+              fontFamily: sendLayerStyle.header?.title?.fontFamily || globalStyle.fontFamily,
+              fontWeight: sendLayerStyle.header?.title?.fontWeight || 'bold',
+              fontSize: sendLayerStyle.header?.title?.fontSize || '23px'
+            }}
+          >
+            Send Crypto
+          </h1>
+          
+          <div className="w-[60px] send-header-spacer" data-element-id="send-header-spacer"></div>
+        </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="px-4 py-4 border-b send-search-container" data-element-id="send-search-container" style={{ borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)' }}>
-        <div className="relative send-search-input-container" data-element-id="send-search-input-container">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 send-search-icon" data-element-id="send-search-icon" />
+      {/* Search Bar Container */}
+      <div 
+        className="px-4 py-4 border-b send-search-container" 
+        data-element-id="send-search-container" 
+        style={{ 
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: sendLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
+          backgroundImage: sendLayerStyle.searchInputContainer?.backgroundImage || 'none'
+        }}
+      >
+        <div 
+          className="relative send-search-input-container" 
+          data-element-id="send-search-input-container"
+          style={{
+            borderRadius: sendLayerStyle.searchInputContainer?.borderRadius || '16px',
+            overflow: 'hidden'
+          }}
+        >
+          <Search 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 send-search-icon" 
+            data-element-id="send-search-icon"
+            style={{ color: sendLayerStyle.searchInput?.iconSearch?.color || '#fff' }}
+          />
           <input
             type="text"
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none transition-colors send-search-input"
+            className="w-full pl-10 pr-4 py-3 focus:outline-none transition-colors send-search-input"
             data-element-id="send-search-input"
             style={{
-              backgroundColor: searchInputStyle.backgroundColor || 'rgba(255, 255, 255, 0.08)',
-              border: searchInputStyle.border || '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: searchInputStyle.borderRadius || '12px',
-              fontFamily: globalStyle.fontFamily,
-              color: searchInputStyle.textColor,
-              backdropFilter: searchInputStyle.backdropFilter,
+              backgroundColor: 'transparent',
+              border: 'none',
+              fontFamily: sendLayerStyle.searchInput?.fontFamily || globalStyle.fontFamily,
+              fontSize: sendLayerStyle.searchInput?.fontSize || '16px',
+              color: sendLayerStyle.searchInput?.textColor || '#fff',
               transition: getTransition('default')
             }}
           />
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 px-4 py-4 overflow-y-auto send-content" data-element-id="send-content">
+      {/* Content Container */}
+      <div 
+        className="flex-1 px-4 py-4 overflow-y-auto send-content" 
+        data-element-id="send-content"
+        style={{
+          backgroundColor: sendLayerStyle.centerContainer?.backgroundColor || '#232323',
+          backgroundImage: sendLayerStyle.centerContainer?.backgroundImage || 'none',
+          borderRadius: sendLayerStyle.centerContainer?.borderRadius || '18px',
+          margin: '16px'
+        }}
+      >
         <div className="mb-4 send-instructions" data-element-id="send-instructions">
           <h2 
-            className="text-sm font-medium text-white mb-2 send-instructions-title"
+            className="text-sm font-medium mb-2 send-instructions-title"
             data-element-id="send-instructions-title"
             style={{
-              color: globalStyle.textColor,
-              fontFamily: globalStyle.fontFamily
+              color: sendLayerStyle.selectNetworkLabel?.textColor || '#ad7e26',
+              fontFamily: sendLayerStyle.selectNetworkLabel?.fontFamily || globalStyle.fontFamily,
+              fontWeight: sendLayerStyle.selectNetworkLabel?.fontWeight || 'bold',
+              fontSize: sendLayerStyle.selectNetworkLabel?.fontSize || '19px'
             }}
           >
             Select Network
           </h2>
           <p 
-            className="text-xs text-gray-400 send-instructions-description"
+            className="text-xs send-instructions-description"
             data-element-id="send-instructions-description"
-            style={{ fontFamily: globalStyle.fontFamily }}
+            style={{ 
+              color: sendLayerStyle.selectNetworkDescription?.textColor || '#aaa',
+              fontFamily: sendLayerStyle.selectNetworkDescription?.fontFamily || globalStyle.fontFamily,
+              fontSize: sendLayerStyle.selectNetworkDescription?.fontSize || '15px'
+            }}
           >
             Choose which network you want to send crypto from
           </p>
@@ -206,10 +252,9 @@ const SendLayer = () => {
           className="rounded-xl border overflow-hidden mb-6 send-networks-container"
           data-element-id="send-networks-container"
           style={{
-            backgroundColor: containerStyle.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-            borderRadius: containerStyle.borderRadius || '16px',
-            border: containerStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: containerStyle.backdropFilter
+            backgroundColor: sendLayerStyle.networkList?.container?.backgroundColor || '#232323',
+            borderRadius: sendLayerStyle.networkList?.container?.borderRadius || '16px',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}
         >
           {filteredNetworks.map((network, index) => (
@@ -218,7 +263,12 @@ const SendLayer = () => {
               className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 cursor-pointer send-network-item"
               data-element-id={`send-network-item-${index}`}
               onClick={() => handleNetworkSelect(network.name)}
-              style={{ transition: getTransition('default') }}
+              style={{ 
+                backgroundColor: sendLayerStyle.networkList?.networkItem?.backgroundColor || '#181818',
+                borderRadius: sendLayerStyle.networkList?.networkItem?.borderRadius || '13px',
+                margin: '4px',
+                transition: getTransition('default')
+              }}
             >
               <div className="flex items-center space-x-3">
                 {/* Network Icon */}
@@ -239,19 +289,25 @@ const SendLayer = () => {
                 {/* Network Info */}
                 <div className="send-network-info" data-element-id={`send-network-info-${index}`}>
                   <div 
-                    className="font-medium text-white text-sm send-network-name"
+                    className="font-medium text-sm send-network-name"
                     data-element-id={`send-network-name-${index}`}
                     style={{
-                      color: globalStyle.textColor,
-                      fontFamily: globalStyle.fontFamily
+                      color: sendLayerStyle.networkList?.coinName?.textColor || '#ad7e26',
+                      fontFamily: sendLayerStyle.networkList?.coinName?.fontFamily || globalStyle.fontFamily,
+                      fontWeight: sendLayerStyle.networkList?.coinName?.fontWeight || 'bold',
+                      fontSize: sendLayerStyle.networkList?.coinName?.fontSize || '17px'
                     }}
                   >
                     {network.name}
                   </div>
                   <div 
-                    className="text-xs text-gray-400 send-network-symbol"
+                    className="text-xs send-network-symbol"
                     data-element-id={`send-network-symbol-${index}`}
-                    style={{ fontFamily: globalStyle.fontFamily }}
+                    style={{ 
+                      color: sendLayerStyle.networkList?.coinTicker?.textColor || '#fff',
+                      fontFamily: sendLayerStyle.networkList?.coinTicker?.fontFamily || globalStyle.fontFamily,
+                      fontSize: sendLayerStyle.networkList?.coinTicker?.fontSize || '14px'
+                    }}
                   >
                     {network.symbol}
                   </div>
@@ -261,19 +317,25 @@ const SendLayer = () => {
               {/* Balance */}
               <div className="text-right send-network-balance" data-element-id={`send-network-balance-${index}`}>
                 <div 
-                  className="font-medium text-white text-sm send-network-balance-amount"
+                  className="font-medium text-sm send-network-balance-amount"
                   data-element-id={`send-network-balance-amount-${index}`}
                   style={{
-                    color: globalStyle.textColor,
-                    fontFamily: globalStyle.fontFamily
+                    color: sendLayerStyle.networkList?.balance?.textColor || '#ad7e26',
+                    fontFamily: sendLayerStyle.networkList?.balance?.fontFamily || globalStyle.fontFamily,
+                    fontWeight: sendLayerStyle.networkList?.balance?.fontWeight || '600',
+                    fontSize: sendLayerStyle.networkList?.balance?.fontSize || '15px'
                   }}
                 >
                   {network.balance} {network.symbol}
                 </div>
                 <div 
-                  className="text-xs text-gray-400 send-network-balance-usd"
+                  className="text-xs send-network-balance-usd"
                   data-element-id={`send-network-balance-usd-${index}`}
-                  style={{ fontFamily: globalStyle.fontFamily }}
+                  style={{ 
+                    color: sendLayerStyle.networkList?.fiatValue?.textColor || '#fff',
+                    fontFamily: sendLayerStyle.networkList?.fiatValue?.fontFamily || globalStyle.fontFamily,
+                    fontSize: sendLayerStyle.networkList?.fiatValue?.fontSize || '14px'
+                  }}
                 >
                   {network.balanceUsd}
                 </div>
@@ -285,9 +347,13 @@ const SendLayer = () => {
         {filteredNetworks.length === 0 && (
           <div className="text-center py-8 send-no-results" data-element-id="send-no-results">
             <p 
-              className="text-gray-400 text-sm send-no-results-text"
+              className="text-sm send-no-results-text"
               data-element-id="send-no-results-text"
-              style={{ fontFamily: globalStyle.fontFamily }}
+              style={{ 
+                color: sendLayerStyle.emptyState?.textColor || '#fff',
+                fontFamily: sendLayerStyle.emptyState?.fontFamily || globalStyle.fontFamily,
+                fontSize: sendLayerStyle.emptyState?.fontSize || '15px'
+              }}
             >
               No networks found
             </p>
@@ -295,23 +361,39 @@ const SendLayer = () => {
         )}
       </div>
 
-      {/* Close Button */}
-      <div className="p-4 border-t send-footer" data-element-id="send-footer" style={{ borderColor: overlayStyle.border?.split(' ')[2] || 'rgba(255, 255, 255, 0.1)' }}>
-        <button
-          onClick={handleClose}
-          className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 send-close-button"
-          data-element-id="send-close-button"
-          style={{
-            backgroundColor: buttonStyle.backgroundColor || 'rgba(255, 255, 255, 0.1)',
-            borderRadius: buttonStyle.borderRadius || '12px',
-            transition: getTransition('default'),
-            color: buttonStyle.textColor || '#FFFFFF',
-            fontFamily: globalStyle.fontFamily
-          }}
-        >
-          <X className="w-5 h-5 send-close-icon" data-element-id="send-close-icon" />
-          <span className="font-medium send-close-text" data-element-id="send-close-text">Close</span>
-        </button>
+      {/* Footer Container */}
+      <div 
+        className="send-footer-container" 
+        data-element-id="send-footer-container"
+        style={{
+          backgroundColor: sendLayerStyle.footerContainer?.backgroundColor || '#181818',
+          backgroundImage: sendLayerStyle.footerContainer?.backgroundImage || 'none'
+        }}
+      >
+        {/* Close Button */}
+        <div className="p-4 border-t send-footer" data-element-id="send-footer" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+          <button
+            onClick={handleClose}
+            className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 send-close-button"
+            data-element-id="send-close-button"
+            style={{
+              backgroundColor: sendLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
+              borderRadius: sendLayerStyle.footer?.closeButton?.borderRadius || '16px',
+              transition: getTransition('default'),
+              color: sendLayerStyle.footer?.closeButton?.textColor || '#181818',
+              fontFamily: sendLayerStyle.footer?.closeButton?.fontFamily || globalStyle.fontFamily,
+              fontWeight: sendLayerStyle.footer?.closeButton?.fontWeight || 'bold',
+              fontSize: sendLayerStyle.footer?.closeButton?.fontSize || '19px'
+            }}
+          >
+            <X 
+              className="w-5 h-5 send-close-icon" 
+              data-element-id="send-close-icon"
+              style={{ color: sendLayerStyle.footer?.closeButton?.icon?.color || '#ad7e26' }}
+            />
+            <span className="send-close-text" data-element-id="send-close-text">Close</span>
+          </button>
+        </div>
       </div>
     </div>
   );
