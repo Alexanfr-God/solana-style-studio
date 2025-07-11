@@ -93,6 +93,7 @@ const BuyLayer = () => {
       data-element-id="buy-layer"
       style={{
         backgroundColor: buyLayerStyle.headerContainer?.backgroundColor || '#181818',
+        backgroundImage: buyLayerStyle.headerContainer?.backgroundImage ? `url(${buyLayerStyle.headerContainer.backgroundImage})` : undefined,
         fontFamily: buyLayerStyle.header?.title?.fontFamily || 'Inter',
       }}
     >
@@ -102,6 +103,7 @@ const BuyLayer = () => {
         data-element-id="buy-header"
         style={{
           backgroundColor: buyLayerStyle.headerContainer?.backgroundColor,
+          backgroundImage: buyLayerStyle.headerContainer?.backgroundImage ? `url(${buyLayerStyle.headerContainer.backgroundImage})` : undefined,
           borderRadius: buyLayerStyle.headerContainer?.borderRadius || '0px',
         }}
       >
@@ -160,6 +162,7 @@ const BuyLayer = () => {
           data-element-id="buy-search-input-container"
           style={{
             backgroundColor: buyLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
+            backgroundImage: buyLayerStyle.searchInputContainer?.backgroundImage ? `url(${buyLayerStyle.searchInputContainer.backgroundImage})` : undefined,
             borderRadius: buyLayerStyle.searchInputContainer?.borderRadius || '14px',
             padding: '12px',
           }}
@@ -192,6 +195,7 @@ const BuyLayer = () => {
         data-element-id="buy-content"
         style={{
           backgroundColor: buyLayerStyle.centerContainer?.backgroundColor,
+          backgroundImage: buyLayerStyle.centerContainer?.backgroundImage ? `url(${buyLayerStyle.centerContainer.backgroundImage})` : undefined,
           borderRadius: buyLayerStyle.centerContainer?.borderRadius || '0px',
         }}
       >
@@ -387,6 +391,7 @@ const BuyLayer = () => {
         data-element-id="buy-footer"
         style={{ 
           backgroundColor: buyLayerStyle.footerContainer?.backgroundColor || '#181818',
+          backgroundImage: buyLayerStyle.footerContainer?.backgroundImage ? `url(${buyLayerStyle.footerContainer.backgroundImage})` : undefined,
           borderRadius: buyLayerStyle.footerContainer?.borderRadius || '0px',
           borderColor: 'rgba(255, 255, 255, 0.1)' 
         }}

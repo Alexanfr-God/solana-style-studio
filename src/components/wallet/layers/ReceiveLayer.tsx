@@ -106,6 +106,7 @@ const ReceiveLayer = () => {
       data-element-id="receive-layer"
       style={{
         backgroundColor: receiveLayerStyle.header?.backgroundColor || 'rgba(24, 24, 24, 0.95)',
+        backgroundImage: receiveLayerStyle.header?.backgroundImage ? `url(${receiveLayerStyle.header.backgroundImage})` : undefined,
         backdropFilter: 'blur(20px)',
         fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif'
       }}
@@ -116,7 +117,7 @@ const ReceiveLayer = () => {
         data-element-id="receive-header"
         style={{
           backgroundColor: receiveLayerStyle.header?.backgroundColor,
-          backgroundImage: receiveLayerStyle.header?.backgroundImage,
+          backgroundImage: receiveLayerStyle.header?.backgroundImage ? `url(${receiveLayerStyle.header.backgroundImage})` : undefined,
           borderColor: 'rgba(255, 255, 255, 0.1)'
         }}
       >
@@ -329,7 +330,7 @@ const ReceiveLayer = () => {
         style={{ 
           borderColor: 'rgba(255, 255, 255, 0.1)',
           backgroundColor: receiveLayerStyle.footer?.backgroundColor,
-          backgroundImage: receiveLayerStyle.footer?.backgroundImage
+          backgroundImage: receiveLayerStyle.footer?.backgroundImage ? `url(${receiveLayerStyle.footer.backgroundImage})` : undefined
         }}
       >
         <button

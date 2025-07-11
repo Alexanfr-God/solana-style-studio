@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -104,6 +103,7 @@ const SendLayer = () => {
       data-element-id="send-layer"
       style={{
         backgroundColor: sendLayerStyle.headerContainer?.backgroundColor || 'rgba(24, 24, 24, 0.95)',
+        backgroundImage: sendLayerStyle.headerContainer?.backgroundImage ? `url(${sendLayerStyle.headerContainer.backgroundImage})` : undefined,
         backdropFilter: 'blur(20px)',
         fontFamily: globalStyle.fontFamily || 'Inter'
       }}
@@ -114,7 +114,7 @@ const SendLayer = () => {
         data-element-id="send-header-container"
         style={{
           backgroundColor: sendLayerStyle.headerContainer?.backgroundColor || '#181818',
-          backgroundImage: sendLayerStyle.headerContainer?.backgroundImage || 'none'
+          backgroundImage: sendLayerStyle.headerContainer?.backgroundImage ? `url(${sendLayerStyle.headerContainer.backgroundImage})` : undefined
         }}
       >
         {/* Header */}
@@ -175,7 +175,7 @@ const SendLayer = () => {
         style={{ 
           borderColor: 'rgba(255, 255, 255, 0.1)',
           backgroundColor: sendLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
-          backgroundImage: sendLayerStyle.searchInputContainer?.backgroundImage || 'none'
+          backgroundImage: sendLayerStyle.searchInputContainer?.backgroundImage ? `url(${sendLayerStyle.searchInputContainer.backgroundImage})` : undefined
         }}
       >
         <div 
@@ -216,7 +216,7 @@ const SendLayer = () => {
         data-element-id="send-content"
         style={{
           backgroundColor: sendLayerStyle.centerContainer?.backgroundColor || '#232323',
-          backgroundImage: sendLayerStyle.centerContainer?.backgroundImage || 'none',
+          backgroundImage: sendLayerStyle.centerContainer?.backgroundImage ? `url(${sendLayerStyle.centerContainer.backgroundImage})` : undefined,
           borderRadius: sendLayerStyle.centerContainer?.borderRadius || '18px',
           margin: '16px'
         }}
@@ -367,7 +367,7 @@ const SendLayer = () => {
         data-element-id="send-footer-container"
         style={{
           backgroundColor: sendLayerStyle.footerContainer?.backgroundColor || '#181818',
-          backgroundImage: sendLayerStyle.footerContainer?.backgroundImage || 'none'
+          backgroundImage: sendLayerStyle.footerContainer?.backgroundImage ? `url(${sendLayerStyle.footerContainer.backgroundImage})` : undefined
         }}
       >
         {/* Close Button */}
