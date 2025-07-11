@@ -263,7 +263,7 @@
   },
   "receiveLayer": {
     "header": {
-      "backgroundColor": "#181818",
+      "backgroundColor": "",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "backIcon": { "color": "#ad7e26", "type": "arrow-left" },
       "title": {
@@ -313,7 +313,7 @@
   },
   "sendLayer": {
     "headerContainer": {
-      "backgroundColor": "#181818",
+      "backgroundColor": "",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png"
     },
     "header": {
@@ -441,7 +441,7 @@
   },
   "buyLayer": {
     "headerContainer": {
-      "backgroundColor": "#181818",
+      "backgroundColor": "",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "borderRadius": "0px"
     },
