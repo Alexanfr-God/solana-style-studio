@@ -165,7 +165,7 @@ const SendLayer = () => {
             msOverflowStyle: 'none'
           }}
         >
-          <style jsx>{`
+          <style>{`
             .send-content::-webkit-scrollbar {
               display: none;
             }
