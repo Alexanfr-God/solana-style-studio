@@ -54,6 +54,41 @@ export interface ContainerStyle {
   backgroundColor?: string;
   backgroundImage?: string;
   borderRadius?: string;
+  fontFamily?: string;
+}
+
+// Специальный интерфейс для BuyLayer
+export interface BuyLayerStyle {
+  headerContainer?: ContainerStyle;
+  header?: {
+    backButton?: ComponentStyle & {
+      text?: ComponentStyle;
+      icon?: { color?: string; type?: string; };
+    };
+    title?: ComponentStyle;
+  };
+  searchInputContainer?: ContainerStyle;
+  searchInput?: ComponentStyle & {
+    iconSearch?: { color?: string; type?: string; };
+    placeholderColor?: string;
+  };
+  centerContainer?: ContainerStyle;
+  sectionLabel?: {
+    getStarted?: ComponentStyle;
+    popular?: ComponentStyle;
+  };
+  tokenCard?: ContainerStyle;
+  tokenCardContent?: {
+    tokenName?: ComponentStyle;
+    tokenDescription?: ComponentStyle;
+  };
+  buyButton?: ComponentStyle;
+  footerContainer?: ContainerStyle;
+  footer?: {
+    closeButton?: ComponentStyle & {
+      icon?: { color?: string; type?: string; };
+    };
+  };
 }
 
 export interface WalletStyleSet {
@@ -77,4 +112,6 @@ export interface WalletStyleSet {
     duration?: string;
     easing?: string;
   };
+  // Layer-specific styles
+  buyLayer?: BuyLayerStyle;
 }
