@@ -531,6 +531,17 @@
     "footerContainer": {
       "backgroundColor": "#181818",
       "borderRadius": "0px"
+    },
+    "footer": {
+      "closeButton": {
+        "backgroundColor": "#FFD166",
+        "textColor": "#181818",
+        "fontFamily": "Inter, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "18px",
+        "borderRadius": "14px",
+        "icon": { "color": "#181818", "type": "x" }
+      }
     }
   },
   "swapLayer": {

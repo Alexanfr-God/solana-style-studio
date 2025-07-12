@@ -11,11 +11,10 @@ const WalletContainer = () => {
 
   const renderMainLayer = () => {
     switch (currentLayer) {
-      case 'buy':
-        return <BuyLayer />;
       case 'home':
       case 'receive':
       case 'send':
+      case 'buy':
       case 'swap':
       case 'apps':
       case 'history':
@@ -34,6 +33,9 @@ const WalletContainer = () => {
       
       {/* SendLayer as bottom-sheet overlay */}
       {currentLayer === 'send' && <SendLayer />}
+      
+      {/* BuyLayer as bottom-sheet overlay */}
+      {currentLayer === 'buy' && <BuyLayer />}
     </div>
   );
 };
