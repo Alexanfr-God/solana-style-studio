@@ -477,6 +477,7 @@ export interface WalletTheme {
       backgroundColor: string;
       backgroundImage?: string;
       borderRadius: string;
+      fontFamily?: string;
     };
     sectionLabel: {
       getStarted: {
@@ -522,6 +523,17 @@ export interface WalletTheme {
       backgroundColor: string;
       backgroundImage?: string;
       borderRadius: string;
+    };
+    footer?: {
+      closeButton: {
+        backgroundColor: string;
+        textColor: string;
+        fontFamily: string;
+        fontWeight: string;
+        fontSize: string;
+        borderRadius: string;
+        icon: { color: string; type: string; };
+      };
     };
   };
   swapLayer: {
