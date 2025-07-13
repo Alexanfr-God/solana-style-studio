@@ -1,4 +1,5 @@
 
+
 'use client';
 import React, { useEffect, useRef, memo } from 'react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -98,7 +99,7 @@ const SplashCursor = memo(function SplashCursor({
         antialias: false,
         preserveDrawingBuffer: false,
       };
-      let gl = canvas.getContext('webgl2', params) as WebGL2RenderingContext | null;
+      let gl: WebGL2RenderingContext | WebGLRenderingContext | null = canvas.getContext('webgl2', params) as WebGL2RenderingContext | null;
       const isWebGL2 = !!gl;
       if (!isWebGL2)
         gl =
@@ -138,7 +139,7 @@ const SplashCursor = memo(function SplashCursor({
       }
 
       return {
-        gl: gl!,
+        gl,
         ext: {
           formatRGBA,
           formatRG,
@@ -316,3 +317,4 @@ const SplashCursor = memo(function SplashCursor({
 });
 
 export default SplashCursor;
+
