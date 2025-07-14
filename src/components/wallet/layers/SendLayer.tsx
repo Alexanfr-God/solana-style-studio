@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -148,12 +147,8 @@ const SendLayer = () => {
 
         {/* Scrollable Content Container */}
         <div 
-          className="flex-1 px-4 py-4 overflow-y-auto send-content" 
+          className="flex-1 px-4 py-4 send-content invisible-scroll" 
           data-element-id="send-content"
-          style={{
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}
         >
           <style>{`
             .send-content::-webkit-scrollbar {

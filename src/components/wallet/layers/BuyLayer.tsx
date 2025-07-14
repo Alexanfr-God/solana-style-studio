@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -137,7 +136,7 @@ const BuyLayer = () => {
 
         {/* Content - Scrollable with hidden scrollbar */}
         <div 
-          className="flex-1 overflow-y-auto px-4 py-4 buy-content scrollbar-hide" 
+          className="flex-1 overflow-y-auto px-4 py-4 buy-content invisible-scroll" 
           data-element-id="buy-content"
         >
           {/* Get Started Section */}

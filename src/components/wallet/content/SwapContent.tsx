@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowUpDown, Settings, Info } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -26,7 +25,7 @@ const SwapContent = () => {
   };
 
   return (
-    <div className="flex-1 px-4 pb-20 overflow-auto swap-content" data-element-id="swap-content">
+    <div className="flex-1 px-4 pb-20 overflow-auto invisible-scroll swap-content" data-element-id="swap-content">
       {/* Swap Container */}
       <div 
         className="mt-6 p-6 rounded-xl border hover:scale-[1.01] transition-transform duration-200 swap-container"

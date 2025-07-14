@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, X, TrendingUp, Clock } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -41,7 +40,7 @@ const SearchContent = () => {
   };
 
   return (
-    <div className="flex-1 px-4 pb-20 overflow-auto search-content" data-element-id="search-content">
+    <div className="flex-1 px-4 pb-20 overflow-auto invisible-scroll search-content" data-element-id="search-content">
       {/* Search Input */}
       <div className="mb-6 pt-4">
         <div className="relative search-input-container" data-element-id="search-input-container">

@@ -100,4 +100,15 @@
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(153, 69, 255, 0.8);
   }
+
+  /* Invisible scroll class for hiding scrollbars */
+  .invisible-scroll {
+    overflow-y: auto;
+    scrollbar-width: none;       /* Firefox */
+    -ms-overflow-style: none;    /* IE/Edge */
+  }
+
+  .invisible-scroll::-webkit-scrollbar {
+    display: none;               /* Chrome/Safari/WebKit */
+  }
 }

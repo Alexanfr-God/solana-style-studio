@@ -113,7 +113,7 @@ const ReceiveLayer = () => {
       >
         {/* Center Container - Scrollable Content */}
         <div 
-          className="flex-1 overflow-y-auto receive-center-container"
+          className="flex-1 overflow-y-auto receive-center-container invisible-scroll"
           data-element-id="receive-center-container"
           style={{
             backgroundColor: receiveLayerStyle.centerContainer?.backgroundColor,
