@@ -24,8 +24,22 @@ const SwapContent = () => {
     setToAmount(fromAmount);
   };
 
+  // Scroll-lock handlers
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="flex-1 px-4 pb-20 overflow-auto invisible-scroll swap-content" data-element-id="swap-content">
+    <div 
+      className="flex-1 px-4 pb-20 overflow-auto invisible-scroll swap-content" 
+      data-element-id="swap-content"
+      onWheel={handleWheel}
+      onTouchMove={handleTouchMove}
+    >
       {/* Swap Container */}
       <div 
         className="mt-6 p-6 rounded-xl border hover:scale-[1.01] transition-transform duration-200 swap-container"

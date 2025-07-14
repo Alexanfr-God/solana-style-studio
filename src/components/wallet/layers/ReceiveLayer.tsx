@@ -98,6 +98,15 @@ const ReceiveLayer = () => {
     console.log('QR Code clicked for:', networkName);
   };
 
+  // Scroll-lock handlers
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <div 
       className="absolute inset-0 flex items-end justify-center bg-black bg-opacity-50 z-50"
@@ -115,6 +124,8 @@ const ReceiveLayer = () => {
         <div 
           className="flex-1 overflow-y-auto receive-center-container invisible-scroll"
           data-element-id="receive-center-container"
+          onWheel={handleWheel}
+          onTouchMove={handleTouchMove}
           style={{
             backgroundColor: receiveLayerStyle.centerContainer?.backgroundColor,
             backgroundImage: receiveLayerStyle.centerContainer?.backgroundImage ? `url(${receiveLayerStyle.centerContainer.backgroundImage})` : undefined,

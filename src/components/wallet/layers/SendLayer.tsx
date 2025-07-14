@@ -93,6 +93,15 @@ const SendLayer = () => {
     network.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Scroll-lock handlers
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <>
       {/* Backdrop overlay */}
@@ -149,6 +158,8 @@ const SendLayer = () => {
         <div 
           className="flex-1 px-4 py-4 send-content invisible-scroll" 
           data-element-id="send-content"
+          onWheel={handleWheel}
+          onTouchMove={handleTouchMove}
         >
           <style>{`
             .send-content::-webkit-scrollbar {

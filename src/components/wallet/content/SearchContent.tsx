@@ -39,8 +39,22 @@ const SearchContent = () => {
     setSearchQuery('');
   };
 
+  // Scroll-lock handlers
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="flex-1 px-4 pb-20 overflow-auto invisible-scroll search-content" data-element-id="search-content">
+    <div 
+      className="flex-1 px-4 pb-20 overflow-auto invisible-scroll search-content" 
+      data-element-id="search-content"
+      onWheel={handleWheel}
+      onTouchMove={handleTouchMove}
+    >
       {/* Search Input */}
       <div className="mb-6 pt-4">
         <div className="relative search-input-container" data-element-id="search-input-container">
