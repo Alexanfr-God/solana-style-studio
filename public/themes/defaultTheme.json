@@ -117,7 +117,7 @@
       "fontSize": "14px",
       "navigationIcons": {
         "homeIcon": {
-          "color": "#131413",
+          "color": "#FFD166",
           "activeColor": "#fff",
           "type": "home"
         },
