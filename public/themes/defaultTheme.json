@@ -264,7 +264,7 @@
   },
   "receiveLayer": {
     "header": {
-      "backgroundColor": "#181818",
+      "backgroundColor": "#432818",
       "backgroundImage": "",
       "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
@@ -272,7 +272,7 @@
       "fontSize": "17px"
     },
     "centerContainer": {
-      "backgroundColor": "#232323",
+      "backgroundColor": "",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "borderRadius": "0px"
     },
@@ -288,7 +288,7 @@
       "fontSize": "15px"
     },
     "networksContainer": {
-      "backgroundColor": "#232323",
+      "backgroundColor": "#432818",
       "backgroundImage": "",
       "borderRadius": "15px"
     },
