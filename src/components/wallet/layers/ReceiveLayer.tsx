@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Copy, Check, QrCode, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -135,7 +134,7 @@ const ReceiveLayer = () => {
             borderRadius: receiveLayerStyle.centerContainer?.borderRadius || '0px'
           }}
         >
-          <div className="px-4 py-6 receive-content" data-element-id="receive-content">
+          <div className="px-4 pt-4 pb-6 receive-content" data-element-id="receive-content">
             <div className="mb-6 receive-instructions" data-element-id="receive-instructions">
               <h2 
                 className="text-sm font-medium mb-2 receive-instructions-title"
