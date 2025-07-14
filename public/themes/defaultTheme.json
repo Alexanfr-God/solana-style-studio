@@ -200,31 +200,6 @@
         "borderRadius": "12px"
       }
     },
-    "assetCard": {
-      "backgroundColor": "#432818",
-      "textColor": "#FFD166",
-      "borderRadius": "14px",
-      "fontFamily": "Inter, sans-serif"
-    },
-    "assetName": {
-      "textColor": "#FFD166",
-      "fontFamily": "Inter, sans-serif",
-      "fontWeight": "500",
-      "fontSize": "16px"
-    },
-    "assetValue": {
-      "textColor": "#FFFFFF",
-      "fontFamily": "Inter, sans-serif",
-      "fontWeight": "bold",
-      "fontSize": "17px"
-    },
-    "assetChange": {
-      "positiveColor": "#13e163",
-      "negativeColor": "#ff5959",
-      "zeroColor": "#fff",
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "15px"
-    },
     "seeAll": {
       "textColor": "##F3722C",
       "fontFamily": "Inter, sans-serif",
@@ -263,14 +238,6 @@
     }
   },
   "receiveLayer": {
-    "header": {
-      "backgroundColor": "#f2f0eb",
-      "backgroundImage": "",
-      "textColor": "#eb4913",
-      "fontFamily": "Inter, sans-serif",
-      "fontWeight": "bold",
-      "fontSize": "17px"
-    },
     "centerContainer": {
       "backgroundColor": "",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
@@ -286,27 +253,6 @@
       "textColor": "#48f205",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
-    },
-    "networksContainer": {
-      "backgroundColor": "#0cf7e0",
-      "backgroundImage": "",
-      "borderRadius": "15px"
-    },
-    "networkItem": {
-      "backgroundColor": "#232323",
-      "borderRadius": "13px",
-      "mainNameColor": "#ad7e26",
-      "mainNameFontFamily": "Inter, sans-serif",
-      "mainNameFontWeight": "bold",
-      "mainNameFontSize": "16px",
-      "secondaryNameColor": "#aaa",
-      "secondaryNameFontFamily": "Inter, sans-serif",
-      "secondaryNameFontSize": "14px",
-      "addressColor": "#fff",
-      "addressFontFamily": "Inter, sans-serif",
-      "addressFontSize": "15px",
-      "qrIcon": { "color": "#ad7e26", "type": "qr-code" },
-      "copyIcon": { "color": "#ad7e26", "type": "copy" }
     },
     "footer": {
       "backgroundColor": "#0c37f7",
@@ -363,42 +309,6 @@
       "textColor": "#aaa",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
-    },
-    "networkList": {
-      "container": {
-        "backgroundColor": "#232323",
-        "borderRadius": "16px"
-      },
-      "networkItem": {
-        "backgroundColor": "#181818",
-        "borderRadius": "13px"
-      },
-      "coinName": {
-        "textColor": "#ad7e26",
-        "fontFamily": "Inter, sans-serif",
-        "fontWeight": "bold",
-        "fontSize": "17px"
-      },
-      "coinTicker": {
-        "textColor": "#fff",
-        "fontFamily": "Inter, sans-serif",
-        "fontSize": "14px"
-      },
-      "balance": {
-        "textColor": "#ad7e26",
-        "fontFamily": "Inter, sans-serif",
-        "fontWeight": "600",
-        "fontSize": "15px"
-      },
-      "fiatValue": {
-        "textColor": "#fff",
-        "fontFamily": "Inter, sans-serif",
-        "fontSize": "14px"
-      },
-      "icons": {
-        "qrIcon": { "color": "#aaa", "type": "qr-code" },
-        "copyIcon": { "color": "#aaa", "type": "copy" }
-      }
     },
     "emptyState": {
       "textColor": "#fff",
@@ -503,24 +413,6 @@
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
         "fontSize": "18px"
-      }
-    },
-    "tokenCard": {
-      "backgroundColor": "#613c19",
-      "borderRadius": "18px"
-    },
-    "tokenCardContent": {
-      "tokenName": {
-        "textColor": "#fff",
-        "fontFamily": "Inter, sans-serif",
-        "fontWeight": "normal",
-        "fontSize": "16px"
-      },
-      "tokenDescription": {
-        "textColor": "#d0d0d0",
-        "fontFamily": "Inter, sans-serif",
-        "fontWeight": "normal",
-        "fontSize": "15px"
       }
     },
     "buyButton": {
@@ -642,26 +534,16 @@
       "color": "#FFD166",
       "type": "more-vertical"
     },
-    "activityCard": {
-      "backgroundColor": "#36260f",
-      "backgroundImage": "",
-      "borderRadius": "15px"
-    },
-    "activityText": {
-      "textColor": "#fff",
+    "activityDate": {
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
-      "fontSize": "15px"
+      "fontSize": "13px"
     },
     "activityStatus": {
       "successColor": "#13e163",
       "failedColor": "#ff5959",
       "pendingColor": "#ffd600",
       "fontWeight": "500"
-    },
-    "activityDate": {
-      "textColor": "#FFD166",
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "13px"
     },
     "loadMore": {
       "textColor": "#FFD166",
@@ -705,18 +587,36 @@
       "fontFamily": "Inter, sans-serif",
       "fontSize": "14px",
       "borderRadius": "10px"
+    }
+  },
+  "assetCard": {
+    "backgroundColor": "#432818",
+    "borderRadius": "14px",
+    "title": {
+      "textColor": "#FFD166",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "16px"
     },
-    "tokenCard": {
-      "backgroundColor": "#36260f",
-      "borderRadius": "15px"
+    "description": {
+      "textColor": "#aaa",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
     },
-    "tokenCardText": {
-      "nameColor": "#ffd873",
-      "tickerColor": "#ad7e26",
-      "priceColor": "#ffd873",
-      "percentPositiveColor": "#37e86e",
-      "percentNegativeColor": "#ff5959",
-      "fontFamily": "Inter, sans-serif"
+    "value": {
+      "textColor": "#fff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "percent": {
+      "positiveColor": "#13e163",
+      "negativeColor": "#ff5959",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "icon": {
+      "color": "#ad7e26",
+      "size": "24px"
     }
   },
   "inputs": {

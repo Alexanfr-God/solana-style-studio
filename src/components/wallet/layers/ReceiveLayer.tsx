@@ -67,13 +67,14 @@ const cryptoNetworks: CryptoNetwork[] = [
 
 const ReceiveLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getReceiveLayer, getTransition } = useWalletTheme();
+  const { getReceiveLayer, getAssetCard, getTransition } = useWalletTheme();
   
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Get receiveLayer styles from theme
+  // Get receiveLayer and assetCard styles from theme
   const receiveLayerStyle = getReceiveLayer();
+  const assetCard = getAssetCard();
 
   const handleClose = () => {
     setCurrentLayer('home');
@@ -110,31 +111,6 @@ const ReceiveLayer = () => {
           fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif'
         }}
       >
-        {/* Header */}
-        <div 
-          className="flex items-center justify-center px-4 py-6 rounded-t-2xl receive-header"
-          data-element-id="receive-header"
-          style={{
-            backgroundColor: receiveLayerStyle.header?.backgroundColor,
-            backgroundImage: receiveLayerStyle.header?.backgroundImage ? `url(${receiveLayerStyle.header.backgroundImage})` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
-        >
-          <h1 
-            className="text-lg font-semibold receive-title"
-            data-element-id="receive-title"
-            style={{
-              color: receiveLayerStyle.header?.textColor || '#FFFFFF',
-              fontFamily: receiveLayerStyle.header?.fontFamily || 'Inter, sans-serif',
-              fontWeight: receiveLayerStyle.header?.fontWeight || 'bold',
-              fontSize: receiveLayerStyle.header?.fontSize || '21px'
-            }}
-          >
-            Receive Crypto
-          </h1>
-        </div>
-
         {/* Center Container - Scrollable Content */}
         <div 
           className="flex-1 overflow-y-auto receive-center-container"
@@ -172,26 +148,17 @@ const ReceiveLayer = () => {
               </p>
             </div>
 
-            {/* Crypto Networks List */}
-            <div 
-              className="rounded-xl border overflow-hidden mb-6 receive-networks-container"
-              data-element-id="receive-networks-container"
-              style={{
-                backgroundColor: receiveLayerStyle.networksContainer?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-                borderRadius: receiveLayerStyle.networksContainer?.borderRadius || '16px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundImage: receiveLayerStyle.networksContainer?.backgroundImage
-              }}
-            >
+            {/* Crypto Networks List - Using assetCard */}
+            <div className="space-y-3 mb-6 receive-networks-container" data-element-id="receive-networks-container">
               {cryptoNetworks.map((network, index) => (
                 <div
                   key={network.id}
-                  className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 receive-network-item"
+                  className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors receive-network-item"
                   data-element-id={`receive-network-item-${index}`}
                   style={{ 
                     transition: getTransition('default'),
-                    backgroundColor: receiveLayerStyle.networkItem?.backgroundColor,
-                    borderRadius: receiveLayerStyle.networkItem?.borderRadius
+                    backgroundColor: assetCard.backgroundColor,
+                    borderRadius: assetCard.borderRadius
                   }}
                 >
                   <div className="flex items-center space-x-3">
@@ -211,10 +178,10 @@ const ReceiveLayer = () => {
                         className="font-medium text-sm receive-network-name"
                         data-element-id={`receive-network-name-${index}`}
                         style={{
-                          color: receiveLayerStyle.networkItem?.mainNameColor || '#FFFFFF',
-                          fontFamily: receiveLayerStyle.networkItem?.mainNameFontFamily || 'Inter, sans-serif',
-                          fontWeight: receiveLayerStyle.networkItem?.mainNameFontWeight || 'bold',
-                          fontSize: receiveLayerStyle.networkItem?.mainNameFontSize || '16px'
+                          color: assetCard.title?.textColor || '#FFFFFF',
+                          fontFamily: assetCard.title?.fontFamily || 'Inter, sans-serif',
+                          fontWeight: assetCard.title?.fontWeight || 'bold',
+                          fontSize: assetCard.title?.fontSize || '16px'
                         }}
                       >
                         {network.name}
@@ -223,9 +190,9 @@ const ReceiveLayer = () => {
                         className="text-xs receive-network-symbol"
                         data-element-id={`receive-network-symbol-${index}`}
                         style={{ 
-                          color: receiveLayerStyle.networkItem?.secondaryNameColor || '#aaa',
-                          fontFamily: receiveLayerStyle.networkItem?.secondaryNameFontFamily || 'Inter, sans-serif',
-                          fontSize: receiveLayerStyle.networkItem?.secondaryNameFontSize || '14px'
+                          color: assetCard.description?.textColor || '#aaa',
+                          fontFamily: assetCard.description?.fontFamily || 'Inter, sans-serif',
+                          fontSize: assetCard.description?.fontSize || '14px'
                         }}
                       >
                         {network.symbol}
@@ -239,9 +206,9 @@ const ReceiveLayer = () => {
                       className="text-xs font-mono receive-network-address"
                       data-element-id={`receive-network-address-${index}`}
                       style={{ 
-                        color: receiveLayerStyle.networkItem?.addressColor || '#FFFFFF',
-                        fontFamily: receiveLayerStyle.networkItem?.addressFontFamily || 'monospace',
-                        fontSize: receiveLayerStyle.networkItem?.addressFontSize || '15px'
+                        color: assetCard.value?.textColor || '#FFFFFF',
+                        fontFamily: assetCard.value?.fontFamily || 'monospace',
+                        fontSize: assetCard.value?.fontSize || '15px'
                       }}
                     >
                       {network.address}
@@ -260,7 +227,7 @@ const ReceiveLayer = () => {
                         <QrCode 
                           className="w-4 h-4 hover:text-white receive-network-qr-icon" 
                           data-element-id={`receive-network-qr-icon-${index}`}
-                          style={{ color: receiveLayerStyle.networkItem?.qrIcon?.color || '#FFFFFF' }}
+                          style={{ color: assetCard.icon?.color || '#FFFFFF' }}
                         />
                       </button>
                       
@@ -279,7 +246,7 @@ const ReceiveLayer = () => {
                           <Copy 
                             className="w-4 h-4 hover:text-white receive-network-copy-icon" 
                             data-element-id={`receive-network-copy-icon-${index}`}
-                            style={{ color: receiveLayerStyle.networkItem?.copyIcon?.color || '#FFFFFF' }}
+                            style={{ color: assetCard.icon?.color || '#FFFFFF' }}
                           />
                         )}
                       </button>

@@ -1,12 +1,14 @@
+
 import React from 'react';
 import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const HistoryContent = () => {
-  const { getHistoryLayer, getGlobal } = useWalletTheme();
+  const { getHistoryLayer, getAssetCard, getGlobal } = useWalletTheme();
 
   // Get layer-specific styles
   const historyStyle = getHistoryLayer();
+  const assetCard = getAssetCard();
   const globalStyle = getGlobal();
 
   const handleTransactionClick = (transactionType: string) => {
@@ -106,7 +108,7 @@ const HistoryContent = () => {
               {group.date}
             </div>
             
-            {/* Transactions for this date */}
+            {/* Transactions for this date - Using assetCard */}
             <div className="space-y-3">
               {group.items.map((transaction, itemIndex) => (
                 <div
@@ -115,9 +117,8 @@ const HistoryContent = () => {
                   data-element-id={`history-transaction-item-${groupIndex}-${itemIndex}`}
                   onClick={() => handleTransactionClick(transaction.type)}
                   style={{
-                    backgroundColor: historyStyle.activityCard?.backgroundColor || '#232323',
-                    borderRadius: historyStyle.activityCard?.borderRadius || '15px',
-                    backgroundImage: historyStyle.activityCard?.backgroundImage,
+                    backgroundColor: assetCard.backgroundColor || '#232323',
+                    borderRadius: assetCard.borderRadius || '15px',
                     transition: globalStyle.transition || 'all 0.2s ease'
                   }}
                 >
@@ -183,9 +184,9 @@ const HistoryContent = () => {
                         className="text-sm font-medium history-transaction-title"
                         data-element-id={`history-transaction-title-${groupIndex}-${itemIndex}`}
                         style={{
-                          color: historyStyle.activityText?.textColor || '#FFFFFF',
-                          fontFamily: historyStyle.activityText?.fontFamily || globalStyle.fontFamily,
-                          fontSize: historyStyle.activityText?.fontSize || '15px'
+                          color: assetCard.title?.textColor || '#FFFFFF',
+                          fontFamily: assetCard.title?.fontFamily || globalStyle.fontFamily,
+                          fontSize: assetCard.title?.fontSize || '15px'
                         }}
                       >
                         {transaction.title}
@@ -195,8 +196,8 @@ const HistoryContent = () => {
                           className="text-xs history-transaction-subtitle"
                           data-element-id={`history-transaction-subtitle-${groupIndex}-${itemIndex}`}
                           style={{ 
-                            color: historyStyle.activityDate?.textColor || '#aaa',
-                            fontFamily: historyStyle.activityText?.fontFamily || globalStyle.fontFamily
+                            color: assetCard.description?.textColor || '#aaa',
+                            fontFamily: assetCard.description?.fontFamily || globalStyle.fontFamily
                           }}
                         >
                           {transaction.subtitle}
@@ -210,13 +211,13 @@ const HistoryContent = () => {
                         className="text-sm font-medium history-transaction-amount"
                         data-element-id={`history-transaction-amount-${groupIndex}-${itemIndex}`}
                         style={{
-                          fontFamily: historyStyle.activityText?.fontFamily || globalStyle.fontFamily,
+                          fontFamily: assetCard.value?.fontFamily || globalStyle.fontFamily,
                           fontWeight: historyStyle.activityStatus?.fontWeight || '500',
                           color: transaction.isFailed
                             ? historyStyle.activityStatus?.failedColor || '#ff5959'
                             : transaction.isNegative
-                            ? historyStyle.activityText?.textColor || '#FFFFFF'
-                            : historyStyle.activityStatus?.successColor || '#13e163'
+                            ? assetCard.value?.textColor || '#FFFFFF'
+                            : assetCard.percent?.positiveColor || '#13e163'
                         }}
                       >
                         {transaction.amount}

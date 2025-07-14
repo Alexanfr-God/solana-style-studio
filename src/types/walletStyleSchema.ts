@@ -49,6 +49,25 @@ export interface StatusColors {
   inactive: string;
 }
 
+// Глобальный интерфейс для Asset Card
+export interface AssetCardStyle {
+  backgroundColor?: string;
+  borderRadius?: string;
+  title?: ComponentStyle;
+  description?: ComponentStyle;
+  value?: ComponentStyle;
+  percent?: {
+    positiveColor?: string;
+    negativeColor?: string;
+    fontFamily?: string;
+    fontSize?: string;
+  };
+  icon?: {
+    color?: string;
+    size?: string;
+  };
+}
+
 // Добавляем типы для контейнеров с backgroundImage
 export interface ContainerStyle {
   backgroundColor?: string;
@@ -77,11 +96,6 @@ export interface BuyLayerStyle {
     getStarted?: ComponentStyle;
     popular?: ComponentStyle;
   };
-  tokenCard?: ContainerStyle;
-  tokenCardContent?: {
-    tokenName?: ComponentStyle;
-    tokenDescription?: ComponentStyle;
-  };
   buyButton?: ComponentStyle;
   footerContainer?: ContainerStyle;
   footer?: {
@@ -105,6 +119,8 @@ export interface WalletStyleSet {
   // Color systems
   tokenColors: TokenColors;
   statusColors: StatusColors;
+  // Global Asset Card category
+  assetCard: AssetCardStyle;
   // Theme and animations support
   theme?: string;
   animations?: {

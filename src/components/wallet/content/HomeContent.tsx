@@ -17,7 +17,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
     isBalancePositive,
     setCurrentLayer 
   } = useWalletCustomizationStore();
-  const { getHomeLayer, getUnifiedTokenColor, tokenColors, getTransition } = useWalletTheme();
+  const { getHomeLayer, getAssetCard, getUnifiedTokenColor, tokenColors, getTransition } = useWalletTheme();
 
   const handleAssetClick = (tokenName: string) => {
     console.log(`Clicked on ${tokenName}`);
@@ -44,6 +44,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
   };
 
   const homeStyle = getHomeLayer();
+  const assetCard = getAssetCard();
   const changeStyle = getUnifiedTokenColor(totalChange);
 
   return (
@@ -121,10 +122,10 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
               color={token.isPositive ? tokenColors.positive : tokenColors.negative}
               onClick={() => handleAssetClick(token.name)}
               style={{
-                backgroundColor: homeStyle.assetCard?.backgroundColor,
-                borderRadius: homeStyle.assetCard?.borderRadius || '16px',
+                backgroundColor: assetCard.backgroundColor,
+                borderRadius: assetCard.borderRadius || '16px',
                 accentColor: tokenColors.info,
-                textColor: homeStyle.assetCard?.textColor
+                textColor: assetCard.title?.textColor
               }}
             />
           ))}

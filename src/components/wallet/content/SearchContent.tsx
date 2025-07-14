@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 import { Search, X, TrendingUp, Clock } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const SearchContent = () => {
-  const { getSearchLayer, getGlobal } = useWalletTheme();
+  const { getSearchLayer, getAssetCard, getGlobal } = useWalletTheme();
 
   // Get layer-specific styles
   const searchStyle = getSearchLayer();
+  const assetCard = getAssetCard();
   const globalStyle = getGlobal();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -127,7 +129,7 @@ const SearchContent = () => {
             </div>
           </div>
 
-          {/* Trending Tokens */}
+          {/* Trending Tokens - Using assetCard */}
           <div className="search-trending-section" data-element-id="search-trending-section">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp 
@@ -156,8 +158,8 @@ const SearchContent = () => {
                   className="w-full flex items-center justify-between p-3 hover:bg-white/10 transition-colors search-trending-item"
                   data-element-id={`search-trending-item-${index}`}
                   style={{
-                    backgroundColor: searchStyle.tokenCard?.backgroundColor || '#232323',
-                    borderRadius: searchStyle.tokenCard?.borderRadius || '15px',
+                    backgroundColor: assetCard.backgroundColor || '#232323',
+                    borderRadius: assetCard.borderRadius || '15px',
                     transition: globalStyle.transition || 'all 0.2s ease'
                   }}
                 >
@@ -179,8 +181,8 @@ const SearchContent = () => {
                         className="font-medium search-trending-token-name"
                         data-element-id={`search-trending-token-name-${index}`}
                         style={{
-                          color: searchStyle.tokenCardText?.nameColor || '#fff',
-                          fontFamily: searchStyle.tokenCardText?.fontFamily || globalStyle.fontFamily
+                          color: assetCard.title?.textColor || '#fff',
+                          fontFamily: assetCard.title?.fontFamily || globalStyle.fontFamily
                         }}
                       >
                         {token.name}
@@ -189,8 +191,8 @@ const SearchContent = () => {
                         className="text-sm search-trending-token-symbol"
                         data-element-id={`search-trending-token-symbol-${index}`}
                         style={{ 
-                          color: searchStyle.tokenCardText?.tickerColor || '#aaa',
-                          fontFamily: searchStyle.tokenCardText?.fontFamily || globalStyle.fontFamily
+                          color: assetCard.description?.textColor || '#aaa',
+                          fontFamily: assetCard.description?.fontFamily || globalStyle.fontFamily
                         }}
                       >
                         {token.symbol}
@@ -202,8 +204,8 @@ const SearchContent = () => {
                       className="font-medium search-trending-token-price"
                       data-element-id={`search-trending-token-price-${index}`}
                       style={{
-                        color: searchStyle.tokenCardText?.priceColor || '#fff',
-                        fontFamily: searchStyle.tokenCardText?.fontFamily || globalStyle.fontFamily
+                        color: assetCard.value?.textColor || '#fff',
+                        fontFamily: assetCard.value?.fontFamily || globalStyle.fontFamily
                       }}
                     >
                       {token.price}
@@ -213,9 +215,9 @@ const SearchContent = () => {
                       data-element-id={`search-trending-token-change-${index}`}
                       style={{ 
                         color: token.change.startsWith('+') 
-                          ? searchStyle.tokenCardText?.percentPositiveColor || '#13e163'
-                          : searchStyle.tokenCardText?.percentNegativeColor || '#ff5959',
-                        fontFamily: searchStyle.tokenCardText?.fontFamily || globalStyle.fontFamily
+                          ? assetCard.percent?.positiveColor || '#13e163'
+                          : assetCard.percent?.negativeColor || '#ff5959',
+                        fontFamily: assetCard.percent?.fontFamily || globalStyle.fontFamily
                       }}
                     >
                       {token.change}
@@ -232,7 +234,7 @@ const SearchContent = () => {
             className="mb-4 search-results-query"
             data-element-id="search-results-query"
             style={{ 
-              color: searchStyle.tokenCardText?.tickerColor || '#aaa',
+              color: assetCard.description?.textColor || '#aaa',
               fontFamily: globalStyle.fontFamily 
             }}
           >
@@ -242,7 +244,7 @@ const SearchContent = () => {
             className="text-sm search-results-message"
             data-element-id="search-results-message"
             style={{ 
-              color: searchStyle.tokenCardText?.tickerColor || '#aaa',
+              color: assetCard.description?.textColor || '#aaa',
               fontFamily: globalStyle.fontFamily 
             }}
           >
