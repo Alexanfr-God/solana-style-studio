@@ -201,7 +201,7 @@
       }
     },
     "seeAll": {
-      "textColor": "##F3722C",
+      "textColor": "#191716",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "13px"
     },
