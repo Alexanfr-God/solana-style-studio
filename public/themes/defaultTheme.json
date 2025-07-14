@@ -264,9 +264,9 @@
   },
   "receiveLayer": {
     "header": {
-      "backgroundColor": "#432818",
+      "backgroundColor": "#f2f0eb",
       "backgroundImage": "",
-      "textColor": "#FFD166",
+      "textColor": "#eb4913",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px"
@@ -277,18 +277,18 @@
       "borderRadius": "0px"
     },
     "selectNetworkLabel": {
-      "textColor": "#ad7e26",
+      "textColor": "#ebe413",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px"
     },
     "selectNetworkDescription": {
-      "textColor": "#aaa",
+      "textColor": "#48f205",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
     "networksContainer": {
-      "backgroundColor": "#432818",
+      "backgroundColor": "#0cf7e0",
       "backgroundImage": "",
       "borderRadius": "15px"
     },
@@ -309,10 +309,10 @@
       "copyIcon": { "color": "#ad7e26", "type": "copy" }
     },
     "footer": {
-      "backgroundColor": "#181818",
+      "backgroundColor": "#0c37f7",
       "backgroundImage": "",
       "closeButton": {
-        "backgroundColor": "#FFD166",
+        "backgroundColor": "#f30cf7",
         "textColor": "#181818",
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
