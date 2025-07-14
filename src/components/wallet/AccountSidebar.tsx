@@ -3,6 +3,7 @@ import React from 'react';
 import { X, Plus, Pencil, Settings } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
+import { useWalletStyles } from '@/hooks/useWalletStyles';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatAddress } from '@/lib/utils';
 
@@ -15,7 +16,8 @@ const AccountSidebar = () => {
     setShowAccountSidebar
   } = useWalletCustomizationStore();
 
-  const { getSidebarLayer, getComponentStyle, getTransition } = useWalletTheme();
+  const { getSidebarLayer, getTransition } = useWalletTheme();
+  const { getComponentStyle } = useWalletStyles();
 
   // Get sidebar-specific styles from theme
   const sidebarStyle = getSidebarLayer();
