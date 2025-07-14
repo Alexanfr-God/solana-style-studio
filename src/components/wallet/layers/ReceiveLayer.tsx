@@ -129,6 +129,9 @@ const ReceiveLayer = () => {
           style={{
             backgroundColor: receiveLayerStyle.centerContainer?.backgroundColor,
             backgroundImage: receiveLayerStyle.centerContainer?.backgroundImage ? `url(${receiveLayerStyle.centerContainer.backgroundImage})` : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+            backgroundRepeat: 'no-repeat',
             borderRadius: receiveLayerStyle.centerContainer?.borderRadius || '0px'
           }}
         >
