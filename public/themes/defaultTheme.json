@@ -35,7 +35,7 @@
     }
   },
   "avatarHeader": {
-    "backgroundColor": "#7B6CFF",
+    "backgroundColor": "#FFD166",
     "textColor": "#ffe6a2",
     "fontFamily": "Inter, sans-serif",
     "fontWeight": "bold",
@@ -122,22 +122,22 @@
           "type": "home"
         },
         "appsIcon": {
-          "color": "#131413",
+          "color": "#FFD166",
           "activeColor": "#fff",
           "type": "layout-grid"
         },
         "swapIcon": {
-          "color": "#131413",
+          "color": "#FFD166",
           "activeColor": "#fff",
           "type": "arrow-right-left"
         },
         "historyIcon": {
-          "color": "#131413",
+          "color": "#FFD166",
           "activeColor": "#fff",
           "type": "clock"
         },
         "searchIcon": {
-          "color": "#131413",
+          "color": "#FFD166",
           "activeColor": "#fff",
           "type": "search"
         }
@@ -265,7 +265,7 @@
   "receiveLayer": {
     "header": {
       "backgroundColor": "#181818",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundImage": "",
       "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
@@ -273,7 +273,7 @@
     },
     "centerContainer": {
       "backgroundColor": "#232323",
-      "backgroundImage": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "borderRadius": "0px"
     },
     "selectNetworkLabel": {
