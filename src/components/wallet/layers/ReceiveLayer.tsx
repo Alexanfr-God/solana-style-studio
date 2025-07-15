@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Copy, Check, QrCode, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -110,7 +111,34 @@ const ReceiveLayer = () => {
           fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif'
         }}
       >
-        {/* Center Container - Scrollable Content */}
+        {/* Header - Fixed at top */}
+        <div className="p-4 receive-instructions" data-element-id="receive-instructions">
+          <h2 
+            className="text-sm font-medium mb-2 receive-instructions-title"
+            data-element-id="receive-instructions-title"
+            style={{
+              color: receiveLayerStyle.selectNetworkLabel?.textColor || '#FFFFFF',
+              fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif',
+              fontWeight: receiveLayerStyle.selectNetworkLabel?.fontWeight || 'bold',
+              fontSize: receiveLayerStyle.selectNetworkLabel?.fontSize || '17px'
+            }}
+          >
+            Select Network
+          </h2>
+          <p 
+            className="text-xs receive-instructions-description"
+            data-element-id="receive-instructions-description"
+            style={{ 
+              color: receiveLayerStyle.selectNetworkDescription?.textColor || '#aaa',
+              fontFamily: receiveLayerStyle.selectNetworkDescription?.fontFamily || 'Inter, sans-serif',
+              fontSize: receiveLayerStyle.selectNetworkDescription?.fontSize || '15px'
+            }}
+          >
+            Choose which network you want to receive crypto on
+          </p>
+        </div>
+
+        {/* Scrollable Center Container */}
         <div 
           className="flex-1 overflow-y-auto receive-center-container invisible-scroll"
           data-element-id="receive-center-container"
@@ -123,33 +151,7 @@ const ReceiveLayer = () => {
             borderRadius: receiveLayerStyle.centerContainer?.borderRadius || '0px'
           }}
         >
-          <div className="px-4 pt-4 pb-6 receive-content" data-element-id="receive-content">
-            <div className="mb-6 receive-instructions" data-element-id="receive-instructions">
-              <h2 
-                className="text-sm font-medium mb-2 receive-instructions-title"
-                data-element-id="receive-instructions-title"
-                style={{
-                  color: receiveLayerStyle.selectNetworkLabel?.textColor || '#FFFFFF',
-                  fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif',
-                  fontWeight: receiveLayerStyle.selectNetworkLabel?.fontWeight || 'bold',
-                  fontSize: receiveLayerStyle.selectNetworkLabel?.fontSize || '17px'
-                }}
-              >
-                Select Network
-              </h2>
-              <p 
-                className="text-xs receive-instructions-description"
-                data-element-id="receive-instructions-description"
-                style={{ 
-                  color: receiveLayerStyle.selectNetworkDescription?.textColor || '#aaa',
-                  fontFamily: receiveLayerStyle.selectNetworkDescription?.fontFamily || 'Inter, sans-serif',
-                  fontSize: receiveLayerStyle.selectNetworkDescription?.fontSize || '15px'
-                }}
-              >
-                Choose which network you want to receive crypto on
-              </p>
-            </div>
-
+          <div className="px-4 pb-6 receive-content" data-element-id="receive-content">
             {/* Crypto Networks List - Using assetCard */}
             <div className="space-y-3 mb-6 receive-networks-container" data-element-id="receive-networks-container">
               {cryptoNetworks.map((network, index) => (
@@ -293,3 +295,4 @@ const ReceiveLayer = () => {
 };
 
 export default ReceiveLayer;
+
