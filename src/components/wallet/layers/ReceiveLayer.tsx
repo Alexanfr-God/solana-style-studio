@@ -112,7 +112,7 @@ const ReceiveLayer = () => {
       data-element-id="receive-layer-overlay"
     >
       <div 
-        className="w-full max-w-md bg-gray-900 rounded-t-2xl animate-slide-in-bottom receive-layer-sheet"
+        className="w-full max-w-md bg-gray-900 rounded-t-2xl animate-slide-in-bottom flex flex-col receive-layer-sheet"
         data-element-id="receive-layer-sheet"
         style={{
           maxHeight: '80vh',
