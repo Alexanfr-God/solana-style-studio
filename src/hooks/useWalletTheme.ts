@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import type { AssetCardStyle } from '@/types/walletStyleSchema';
 
@@ -5,7 +6,20 @@ interface WalletThemeLayer {
   [key: string]: any;
 }
 
+interface GlobalSearchInput {
+  backgroundColor?: string;
+  textColor?: string;
+  placeholderColor?: string;
+  borderRadius?: string;
+  border?: string;
+  fontFamily?: string;
+  fontSize?: string;
+  iconSearch?: { color?: string; type?: string };
+  iconClose?: { color?: string; type?: string };
+}
+
 interface WalletTheme {
+  globalSearchInput?: GlobalSearchInput;
   lockLayer?: WalletThemeLayer;
   avatarHeader?: WalletThemeLayer;
   sidebarLayer?: WalletThemeLayer;
@@ -37,6 +51,21 @@ export const useWalletTheme = () => {
 
     loadTheme();
   }, []);
+
+  // Global Search Input styles
+  const getGlobalSearchInput = (): GlobalSearchInput => {
+    return theme.globalSearchInput || {
+      backgroundColor: '#1b140a',
+      textColor: '#ffd873',
+      placeholderColor: '#ad7e26',
+      borderRadius: '12px',
+      border: 'none',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '15px',
+      iconSearch: { color: '#ffd873', type: 'search' },
+      iconClose: { color: '#ffd873', type: 'x' }
+    };
+  };
 
   // Global Asset Card styles
   const getAssetCard = (): AssetCardStyle => {
@@ -115,6 +144,7 @@ export const useWalletTheme = () => {
 
   return {
     theme,
+    getGlobalSearchInput,
     getAssetCard,
     getLockLayer,
     getAvatarHeader,

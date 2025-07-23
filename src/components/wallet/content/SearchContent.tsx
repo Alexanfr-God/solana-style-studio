@@ -3,9 +3,10 @@ import { Search, X, TrendingUp, Clock } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const SearchContent = () => {
-  const { getSearchLayer, getAssetCard, getGlobal } = useWalletTheme();
+  const { getGlobalSearchInput, getSearchLayer, getAssetCard, getGlobal } = useWalletTheme();
 
-  // Get layer-specific styles
+  // Get global search input styles and layer-specific styles
+  const globalSearchInput = getGlobalSearchInput();
   const searchStyle = getSearchLayer();
   const assetCard = getAssetCard();
   const globalStyle = getGlobal();
@@ -61,7 +62,7 @@ const SearchContent = () => {
           <Search 
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 search-input-icon" 
             data-element-id="search-input-icon"
-            style={{ color: searchStyle.searchInput?.iconSearch?.color || '#aaa' }}
+            style={{ color: globalSearchInput.iconSearch?.color || '#aaa' }}
           />
           <input
             type="text"
@@ -72,12 +73,12 @@ const SearchContent = () => {
             className="w-full pl-10 pr-10 py-3 focus:outline-none transition-colors search-input"
             data-element-id="search-input"
             style={{
-              backgroundColor: searchStyle.searchInput?.backgroundColor || '#181818',
-              border: searchStyle.searchInput?.border || 'none',
-              borderRadius: searchStyle.searchInput?.borderRadius || '12px',
-              fontFamily: searchStyle.searchInputFont?.fontFamily || globalStyle.fontFamily,
-              fontSize: searchStyle.searchInputFont?.fontSize || '15px',
-              color: searchStyle.searchInputFont?.textColor || '#fff',
+              backgroundColor: globalSearchInput.backgroundColor || '#181818',
+              border: globalSearchInput.border || 'none',
+              borderRadius: globalSearchInput.borderRadius || '12px',
+              fontFamily: globalSearchInput.fontFamily || globalStyle.fontFamily,
+              fontSize: globalSearchInput.fontSize || '15px',
+              color: globalSearchInput.textColor || '#fff',
               transition: globalStyle.transition || 'all 0.2s ease'
             }}
           />
@@ -90,7 +91,7 @@ const SearchContent = () => {
               <X 
                 className="w-5 h-5 search-clear-icon" 
                 data-element-id="search-clear-icon"
-                style={{ color: searchStyle.searchInput?.iconClose?.color || '#aaa' }}
+                style={{ color: globalSearchInput.iconClose?.color || '#aaa' }}
               />
             </button>
           )}

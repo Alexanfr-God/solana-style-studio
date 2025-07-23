@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -58,13 +57,14 @@ const cryptoNetworks: CryptoNetwork[] = [
 
 const SendLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getSendLayer, getGlobal, getTransition, getAssetCard } = useWalletTheme();
+  const { getSendLayer, getGlobalSearchInput, getGlobal, getTransition, getAssetCard } = useWalletTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  // Get sendLayer styles and assetCard styles
+  // Get sendLayer styles, global search input, and assetCard styles
   const sendLayerStyle = getSendLayer();
+  const globalSearchInput = getGlobalSearchInput();
   const globalStyle = getGlobal();
   const assetCard = getAssetCard();
 
@@ -115,33 +115,27 @@ const SendLayer = () => {
           fontFamily: globalStyle.fontFamily || 'Inter'
         }}
       >
-        {/* Search Input - Direct child with minimal top margin */}
-        <div 
-          className="relative mt-4 mx-4 send-search-input-container" 
-          data-element-id="send-search-input-container"
-          style={{
-            borderRadius: sendLayerStyle.searchInputContainer?.borderRadius || '16px',
-            overflow: 'hidden'
-          }}
-        >
+        {/* Search Input - Using global search input styles */}
+        <div className="relative mt-4 mx-4 send-search-input-container" data-element-id="send-search-input-container">
           <Search 
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 send-search-icon" 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 send-search-icon" 
             data-element-id="send-search-icon"
-            style={{ color: sendLayerStyle.searchInput?.iconSearch?.color || '#fff' }}
+            style={{ color: globalSearchInput.iconSearch?.color || '#aaa' }}
           />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search tokens, NFTs, transactions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 focus:outline-none transition-colors send-search-input"
             data-element-id="send-search-input"
             style={{
-              backgroundColor: sendLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
-              border: 'none',
-              fontFamily: sendLayerStyle.searchInput?.fontFamily || globalStyle.fontFamily,
-              fontSize: sendLayerStyle.searchInput?.fontSize || '16px',
-              color: sendLayerStyle.searchInput?.textColor || '#fff',
+              backgroundColor: globalSearchInput.backgroundColor || '#181818',
+              border: globalSearchInput.border || 'none',
+              borderRadius: globalSearchInput.borderRadius || '12px',
+              fontFamily: globalSearchInput.fontFamily || globalStyle.fontFamily,
+              fontSize: globalSearchInput.fontSize || '15px',
+              color: globalSearchInput.textColor || '#fff',
               transition: getTransition('default')
             }}
           />

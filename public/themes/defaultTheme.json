@@ -1,7 +1,17 @@
-
 {
   "name": "Default Wallet Theme",
   "version": "1.0.0",
+  "globalSearchInput": {
+    "backgroundColor": "#1b140a",
+    "textColor": "#ffd873", 
+    "placeholderColor": "#ad7e26",
+    "borderRadius": "12px",
+    "border": "none",
+    "fontFamily": "Inter, sans-serif",
+    "fontSize": "15px",
+    "iconSearch": { "color": "#ffd873", "type": "search" },
+    "iconClose": { "color": "#ffd873", "type": "x" }
+  },
   "lockLayer": {
     "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
     "backgroundColor": "#181818",
@@ -282,18 +292,6 @@
       },
       "qrIcon": { "color": "#ad7e26", "type": "qr-code" }
     },
-    "searchInputContainer": {
-      "backgroundColor": "rgba(30,30,30,0.8)",
-      "backgroundImage": "",
-      "borderRadius": "16px"
-    },
-    "searchInput": {
-      "textColor": "#fff",
-      "placeholderColor": "#fff",
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "16px",
-      "iconSearch": { "color": "#fff", "type": "search" }
-    },
     "centerContainer": {
       "backgroundColor": "#232323",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
@@ -383,17 +381,6 @@
         "fontWeight": "bold",
         "fontSize": "26px"
       }
-    },
-    "searchInputContainer": {
-      "backgroundColor": "#FFD166",
-      "borderRadius": "14px"
-    },
-    "searchInput": {
-      "textColor": "#fff",
-      "placeholderColor": "#fff",
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "16px",
-      "iconSearch": { "color": "#fff", "type": "search" }
     },
     "centerContainer": {
       "backgroundColor": "#232323",
