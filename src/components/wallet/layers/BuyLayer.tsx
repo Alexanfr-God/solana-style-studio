@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Search, X, ArrowLeft } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -115,17 +116,14 @@ const BuyLayer = () => {
           <input
             type="text"
             placeholder="Search..."
-            className="w-full pl-12 pr-4 py-3 focus:outline-none rounded-[14px] buy-search-input"
+            className="w-full pl-12 pr-4 py-3 focus:outline-none rounded-[14px] buy-search-input placeholder:text-white"
             data-element-id="buy-search-input"
             style={{
               backgroundColor: buyLayerStyle.searchInput?.backgroundColor || '#13e163',
               border: 'none',
               fontFamily: buyLayerStyle.searchInput?.fontFamily || globalStyle.fontFamily,
               fontSize: buyLayerStyle.searchInput?.fontSize || '16px',
-              color: buyLayerStyle.searchInput?.textColor || '#fff',
-              '::placeholder': {
-                color: buyLayerStyle.searchInput?.placeholderColor || '#fff'
-              }
+              color: buyLayerStyle.searchInput?.textColor || '#fff'
             }}
           />
         </div>
