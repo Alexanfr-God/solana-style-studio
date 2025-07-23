@@ -513,6 +513,13 @@
     "infoIcon": {
       "color": "#FFD166",
       "type": "info"
+    },
+    "swapActionButton": {
+      "backgroundColor": "#9945FF",
+      "color": "#FFFFFF",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "16px",
+      "borderRadius": "12px"
     }
   },
   "historyLayer": {

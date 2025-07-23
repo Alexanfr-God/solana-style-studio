@@ -3,7 +3,7 @@ import { ArrowUpDown, Settings, Info } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const SwapContent = () => {
-  const { getSwapLayer, getGlobal } = useWalletTheme();
+  const { getSwapLayer, getGlobal, theme } = useWalletTheme();
 
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
@@ -298,10 +298,11 @@ const SwapContent = () => {
           className="w-full py-4 rounded-xl font-medium transition-all duration-200 hover:scale-105 swap-button"
           data-element-id="swap-button"
           style={{
-            backgroundColor: '#9945FF',
-            color: '#FFFFFF',
-            borderRadius: '12px',
-            fontFamily: globalStyle.fontFamily,
+            backgroundColor: theme.swapLayer?.swapActionButton?.backgroundColor || '#9945FF',
+            color: theme.swapLayer?.swapActionButton?.color || '#FFFFFF',
+            borderRadius: theme.swapLayer?.swapActionButton?.borderRadius || '12px',
+            fontFamily: theme.swapLayer?.swapActionButton?.fontFamily || globalStyle.fontFamily,
+            fontSize: theme.swapLayer?.swapActionButton?.fontSize || '16px',
             transition: globalStyle.transition
           }}
         >
