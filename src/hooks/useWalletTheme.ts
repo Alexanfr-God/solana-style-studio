@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import type { AssetCardStyle } from '@/types/walletStyleSchema';
 
@@ -19,22 +18,6 @@ interface WalletTheme {
   historyLayer?: WalletThemeLayer;
   searchLayer?: WalletThemeLayer;
   assetCard?: AssetCardStyle;
-  walletActionButton?: {
-    backgroundColor?: string;
-    textColor?: string;
-    fontFamily?: string;
-    fontWeight?: string;
-    fontSize?: string;
-    borderRadius?: string;
-    padding?: string;
-    border?: string;
-    boxShadow?: string;
-    hoverOpacity?: string;
-    icon?: {
-      color?: string;
-      size?: string;
-    };
-  };
   global?: WalletThemeLayer;
 }
 

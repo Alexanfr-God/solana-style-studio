@@ -53,7 +53,7 @@
 /* Global wallet action button styles */
 .wallet-action-button {
   width: 100%;
-  padding: var(--wallet-button-padding, 12px 16px);
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -64,14 +64,14 @@
   font-family: var(--wallet-button-font, 'Inter, sans-serif');
   font-weight: var(--wallet-button-weight, bold);
   font-size: var(--wallet-button-size, 16px);
-  border: var(--wallet-button-border, none);
+  border: none;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: var(--wallet-button-shadow, none);
 }
 
 .wallet-action-button:hover {
-  opacity: var(--wallet-button-hover-opacity, 0.9);
+  opacity: 0.9;
   transform: translateY(-1px);
 }
 
@@ -80,8 +80,7 @@
 }
 
 .wallet-action-button-icon {
-  width: var(--wallet-button-icon-size, 20px);
-  height: var(--wallet-button-icon-size, 20px);
-  color: var(--wallet-button-icon-color, var(--wallet-button-text, #181818));
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 }

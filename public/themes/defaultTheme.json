@@ -619,22 +619,6 @@
       "size": "24px"
     }
   },
-  "walletActionButton": {
-    "backgroundColor": "#FFD166",
-    "textColor": "#181818",
-    "fontFamily": "Inter, sans-serif",
-    "fontWeight": "bold",
-    "fontSize": "16px",
-    "borderRadius": "12px",
-    "padding": "12px 16px",
-    "border": "none",
-    "boxShadow": "none",
-    "hoverOpacity": "0.9",
-    "icon": {
-      "color": "#181818",
-      "size": "20px"
-    }
-  },
   "inputs": {
     "passwordInput": {
       "backgroundColor": "#14e06d",
