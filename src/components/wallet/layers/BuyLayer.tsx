@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
+import { useWalletButtonStyles } from '@/hooks/useWalletButtonStyles';
 import { useToast } from '@/hooks/use-toast';
 
 interface Token {
@@ -57,6 +58,7 @@ const popularTokens: Token[] = [
 const BuyLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
   const { getBuyLayer, getGlobalSearchInput, getTransition } = useWalletTheme();
+  useWalletButtonStyles();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
@@ -340,22 +342,12 @@ const BuyLayer = () => {
         >
           <button
             onClick={handleClose}
-            className="w-full py-3 px-4 transition-colors flex items-center justify-center space-x-2 buy-close-button"
+            className="wallet-action-button w-full py-3 px-4 flex items-center justify-center space-x-2 buy-close-button"
             data-element-id="buy-close-button"
-            style={{
-              backgroundColor: buyLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
-              borderRadius: buyLayerStyle.footer?.closeButton?.borderRadius || '14px',
-              transition: getTransition('default'),
-              color: buyLayerStyle.footer?.closeButton?.textColor || '#181818',
-              fontFamily: buyLayerStyle.footer?.closeButton?.fontFamily || 'Inter',
-              fontWeight: buyLayerStyle.footer?.closeButton?.fontWeight || 'bold',
-              fontSize: buyLayerStyle.footer?.closeButton?.fontSize || '18px',
-            }}
           >
             <X 
-              className="w-5 h-5 buy-close-icon" 
-              data-element-id="buy-close-icon" 
-              style={{ color: buyLayerStyle.footer?.closeButton?.icon?.color || '#181818' }}
+              className="wallet-action-button-icon w-5 h-5 buy-close-icon" 
+              data-element-id="buy-close-icon"
             />
             <span className="font-medium buy-close-text" data-element-id="buy-close-text">Close</span>
           </button>

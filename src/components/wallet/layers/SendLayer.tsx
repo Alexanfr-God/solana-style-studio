@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, X, QrCode } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
+import { useWalletButtonStyles } from '@/hooks/useWalletButtonStyles';
 import { useToast } from '@/hooks/use-toast';
 
 interface Network {
@@ -43,6 +44,7 @@ const availableNetworks: Network[] = [
 const SendLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
   const { getSendLayer, getGlobalSearchInput, getTransition } = useWalletTheme();
+  useWalletButtonStyles();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
@@ -238,22 +240,12 @@ const SendLayer = () => {
         >
           <button
             onClick={handleClose}
-            className="w-full py-3 px-4 transition-colors flex items-center justify-center space-x-2 send-close-button"
+            className="wallet-action-button w-full py-3 px-4 flex items-center justify-center space-x-2 send-close-button"
             data-element-id="send-close-button"
-            style={{
-              backgroundColor: sendLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
-              borderRadius: sendLayerStyle.footer?.closeButton?.borderRadius || '14px',
-              transition: getTransition('default'),
-              color: sendLayerStyle.footer?.closeButton?.textColor || '#181818',
-              fontFamily: sendLayerStyle.footer?.closeButton?.fontFamily || 'Inter',
-              fontWeight: sendLayerStyle.footer?.closeButton?.fontWeight || 'bold',
-              fontSize: sendLayerStyle.footer?.closeButton?.fontSize || '18px',
-            }}
           >
             <X 
-              className="w-5 h-5 send-close-icon" 
-              data-element-id="send-close-icon" 
-              style={{ color: sendLayerStyle.footer?.closeButton?.icon?.color || '#181818' }}
+              className="wallet-action-button-icon w-5 h-5 send-close-icon" 
+              data-element-id="send-close-icon"
             />
             <span className="font-medium send-close-text" data-element-id="send-close-text">Close</span>
           </button>
