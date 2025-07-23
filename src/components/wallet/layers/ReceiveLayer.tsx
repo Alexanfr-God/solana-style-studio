@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Copy, Check, QrCode, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
+import { useWalletButtonStyles } from '@/hooks/useWalletButtonStyles';
 import { useToast } from '@/hooks/use-toast';
 
 interface CryptoNetwork {
@@ -50,7 +51,8 @@ const cryptoNetworks: CryptoNetwork[] = [
 
 const ReceiveLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getReceiveLayer, getAssetCard, getTransition } = useWalletTheme();
+  const { getReceiveLayer, getAssetCard } = useWalletTheme();
+  const { getTransition } = useWalletButtonStyles();
   
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const { toast } = useToast();
@@ -266,20 +268,11 @@ const ReceiveLayer = () => {
         >
           <button
             onClick={handleClose}
-            className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 receive-close-button"
+            className="wallet-action-button receive-close-button"
             data-element-id="receive-close-button"
-            style={{
-              backgroundColor: receiveLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
-              borderRadius: receiveLayerStyle.footer?.closeButton?.borderRadius || '12px',
-              transition: getTransition('default'),
-              color: receiveLayerStyle.footer?.closeButton?.textColor || '#181818',
-              fontFamily: receiveLayerStyle.footer?.closeButton?.fontFamily || 'Inter, sans-serif',
-              fontWeight: receiveLayerStyle.footer?.closeButton?.fontWeight || 'bold',
-              fontSize: receiveLayerStyle.footer?.closeButton?.fontSize || '16px'
-            }}
           >
-            <X className="w-5 h-5 receive-close-icon" data-element-id="receive-close-icon" />
-            <span className="font-medium receive-close-text" data-element-id="receive-close-text">Close</span>
+            <X className="wallet-action-button-icon receive-close-icon" data-element-id="receive-close-icon" />
+            <span className="receive-close-text" data-element-id="receive-close-text">Close</span>
           </button>
         </div>
       </div>

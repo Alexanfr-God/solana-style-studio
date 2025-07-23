@@ -49,3 +49,38 @@
 .wallet-dropdown-animation {
   animation: dropdownAppear 0.2s ease-out forwards;
 }
+
+/* Global wallet action button styles */
+.wallet-action-button {
+  width: 100%;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--wallet-button-radius, 12px);
+  background-color: var(--wallet-button-bg, #FFD166);
+  color: var(--wallet-button-text, #181818);
+  font-family: var(--wallet-button-font, 'Inter, sans-serif');
+  font-weight: var(--wallet-button-weight, bold);
+  font-size: var(--wallet-button-size, 16px);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--wallet-button-shadow, none);
+}
+
+.wallet-action-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.wallet-action-button:active {
+  transform: translateY(0);
+}
+
+.wallet-action-button-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
