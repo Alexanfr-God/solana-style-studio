@@ -60,7 +60,7 @@ const HistoryContent = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col px-4 py-3 overflow-y-auto history-content" data-element-id="history-content">
+    <div className="h-full flex flex-col px-4 py-3 overflow-y-auto history-content" data-element-id="history-content">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 history-header" data-element-id="history-header">
         <h2 

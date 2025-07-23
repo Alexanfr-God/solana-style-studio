@@ -25,14 +25,14 @@ const AppsLayer = () => {
 
   return (
     <div 
-      className="absolute inset-0 bg-black/95 backdrop-blur-md animate-slide-in-bottom"
+      className="h-full bg-black/95 backdrop-blur-md animate-slide-in-bottom"
       style={{
         backgroundColor: walletStyle.backgroundColor || '#181818',
         fontFamily: walletStyle.font || 'Inter'
       }}
     >
       {/* Content */}
-      <div className="flex-1 px-4 py-6 mt-16">
+      <div className="h-full px-4 py-6 mt-16 overflow-y-auto">
         {/* Apps Content Container */}
         <div className="bg-white/5 rounded-xl border border-white/10 p-6 mb-6">
           <div className="mb-8">

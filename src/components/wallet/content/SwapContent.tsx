@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ArrowUpDown, Settings, Info } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -24,21 +25,10 @@ const SwapContent = () => {
     setToAmount(fromAmount);
   };
 
-  // Scroll-lock handlers
-  const handleWheel = (e: React.WheelEvent) => {
-    e.stopPropagation();
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <div 
-      className="flex-1 px-4 pb-20 overflow-auto invisible-scroll swap-content" 
+      className="h-full px-4 pb-20 overflow-y-auto swap-content" 
       data-element-id="swap-content"
-      onWheel={handleWheel}
-      onTouchMove={handleTouchMove}
     >
       {/* Swap Container */}
       <div 

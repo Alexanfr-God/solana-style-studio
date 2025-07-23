@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, X, TrendingUp, Clock } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -39,21 +40,10 @@ const SearchContent = () => {
     setSearchQuery('');
   };
 
-  // Scroll-lock handlers
-  const handleWheel = (e: React.WheelEvent) => {
-    e.stopPropagation();
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <div 
-      className="flex-1 px-4 pb-20 overflow-auto invisible-scroll search-content" 
+      className="h-full px-4 pb-20 overflow-y-auto search-content" 
       data-element-id="search-content"
-      onWheel={handleWheel}
-      onTouchMove={handleTouchMove}
     >
       {/* Search Input */}
       <div className="mb-6 pt-4">

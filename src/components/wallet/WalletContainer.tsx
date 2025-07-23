@@ -5,20 +5,28 @@ import WalletHomeLayer from './layers/WalletHomeLayer';
 import ReceiveLayer from './layers/ReceiveLayer';
 import SendLayer from './layers/SendLayer';
 import BuyLayer from './layers/BuyLayer';
+import SwapContent from './content/SwapContent';
+import AppsContent from './content/AppsContent';
+import HistoryContent from './content/HistoryContent';
+import SearchContent from './content/SearchContent';
 
 const WalletContainer = () => {
   const { currentLayer } = useWalletCustomizationStore();
 
   const renderMainLayer = () => {
     switch (currentLayer) {
+      case 'swap':
+        return <SwapContent />;
+      case 'apps':
+        return <AppsContent />;
+      case 'history':
+        return <HistoryContent />;
+      case 'search':
+        return <SearchContent />;
       case 'home':
       case 'receive':
       case 'send':
       case 'buy':
-      case 'swap':
-      case 'apps':
-      case 'history':
-      case 'search':
       default:
         return <WalletHomeLayer />;
     }
