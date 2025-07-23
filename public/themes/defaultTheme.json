@@ -251,6 +251,7 @@
     "centerContainer": {
       "backgroundColor": "",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundPosition": "center",
       "borderRadius": "0px"
     },
     "selectNetworkLabel": {
@@ -280,7 +281,8 @@
   "sendLayer": {
     "headerContainer": {
       "backgroundColor": "",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png"
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundPosition": "center"
     },
     "header": {
       "backIcon": { "color": "#ad7e26", "type": "arrow-left" },
@@ -295,6 +297,7 @@
     "centerContainer": {
       "backgroundColor": "#232323",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundPosition": "center",
       "borderRadius": "18px"
     },
     "selectNetworkLabel": {
@@ -361,6 +364,7 @@
     "headerContainer": {
       "backgroundColor": "",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundPosition": "center",
       "borderRadius": "0px"
     },
     "header": {
@@ -385,6 +389,7 @@
     "centerContainer": {
       "backgroundColor": "#232323",
       "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundPosition": "center",
       "borderRadius": "0px",
       "fontFamily": "Inter, sans-serif"
     },

@@ -107,6 +107,8 @@ const BuyLayer = () => {
         style={{
           backgroundColor: buyLayerStyle.centerContainer?.backgroundColor || '#232323',
           backgroundImage: buyLayerStyle.centerContainer?.backgroundImage ? `url(${buyLayerStyle.centerContainer.backgroundImage})` : undefined,
+          backgroundPosition: buyLayerStyle.centerContainer?.backgroundPosition || 'center',
+          backgroundSize: 'cover',
           fontFamily: buyLayerStyle.centerContainer?.fontFamily || 'Inter',
           borderTopLeftRadius: '24px',
           borderTopRightRadius: '24px',

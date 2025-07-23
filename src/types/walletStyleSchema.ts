@@ -72,6 +72,7 @@ export interface AssetCardStyle {
 export interface ContainerStyle {
   backgroundColor?: string;
   backgroundImage?: string;
+  backgroundPosition?: string;
   borderRadius?: string;
   fontFamily?: string;
 }

@@ -1,72 +1,55 @@
 import React, { useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, QrCode } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { useToast } from '@/hooks/use-toast';
 
-interface CryptoNetwork {
+interface Network {
   id: string;
   name: string;
   symbol: string;
-  balance: string;
-  balanceUsd: string;
   icon: string;
   color: string;
-  isSpecial?: boolean;
+  description: string;
 }
 
-const cryptoNetworks: CryptoNetwork[] = [
+const availableNetworks: Network[] = [
   {
     id: 'solana',
     name: 'Solana',
     symbol: 'SOL',
-    balance: '5.03737',
-    balanceUsd: '$1,127.61',
     icon: '/lovable-uploads/72224164-59bd-4fc3-abf5-d57bbdbee278.png',
-    color: '#9945FF'
+    color: '#9945FF',
+    description: 'Fast, secure and censorship resistant blockchain'
   },
   {
     id: 'ethereum',
     name: 'Ethereum',
     symbol: 'ETH',
-    balance: '0',
-    balanceUsd: '$0.00',
-    icon: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
-    color: '#627EEA'
-  },
-  {
-    id: 'ethereum-theta',
-    name: 'Ethereum',
-    symbol: 'ETH',
-    balance: '0',
-    balanceUsd: '$0.00',
     icon: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
     color: '#627EEA',
-    isSpecial: true
+    description: 'Decentralized platform for smart contracts'
   },
   {
-    id: 'sui',
-    name: 'Sui',
-    symbol: 'SUI',
-    balance: '0',
-    balanceUsd: '$0.00',
-    icon: '/lovable-uploads/9dd9ce9c-2158-40cf-98ee-2e189bd56595.png',
-    color: '#4CA2FF'
+    id: 'bitcoin',
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    icon: '/lovable-uploads/f57c7d94-7776-485c-8d15-e2da5c9c80b4.png',
+    color: '#F7931A',
+    description: 'The original cryptocurrency'
   }
 ];
 
 const SendLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getSendLayer, getGlobalSearchInput, getGlobal, getTransition, getAssetCard } = useWalletTheme();
+  const { getSendLayer, getGlobalSearchInput, getTransition } = useWalletTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  // Get sendLayer styles, global search input, and assetCard styles
+  // Get send layer theme styles and global search input
   const sendLayerStyle = getSendLayer();
   const globalSearchInput = getGlobalSearchInput();
-  const globalStyle = getGlobal();
-  const assetCard = getAssetCard();
 
   const handleClose = () => {
     setCurrentLayer('home');
@@ -77,11 +60,11 @@ const SendLayer = () => {
     
     toast({
       title: "Network Selected",
-      description: `Selected ${networkName} for sending`,
+      description: `You have selected ${networkName} network`,
     });
   };
 
-  const filteredNetworks = cryptoNetworks.filter(network =>
+  const filteredNetworks = availableNetworks.filter(network =>
     network.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     network.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -110,9 +93,11 @@ const SendLayer = () => {
         style={{
           backgroundColor: sendLayerStyle.centerContainer?.backgroundColor || '#232323',
           backgroundImage: sendLayerStyle.centerContainer?.backgroundImage ? `url(${sendLayerStyle.centerContainer.backgroundImage})` : undefined,
+          backgroundPosition: sendLayerStyle.centerContainer?.backgroundPosition || 'center',
+          backgroundSize: 'cover',
+          fontFamily: sendLayerStyle.centerContainer?.fontFamily || 'Inter',
           borderTopLeftRadius: '24px',
           borderTopRightRadius: '24px',
-          fontFamily: globalStyle.fontFamily || 'Inter'
         }}
       >
         {/* Search Input - Using global search input styles */}
@@ -124,7 +109,7 @@ const SendLayer = () => {
           />
           <input
             type="text"
-            placeholder="Search tokens, NFTs, transactions..."
+            placeholder="Search networks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 focus:outline-none transition-colors send-search-input"
@@ -133,7 +118,7 @@ const SendLayer = () => {
               backgroundColor: globalSearchInput.backgroundColor || '#181818',
               border: globalSearchInput.border || 'none',
               borderRadius: globalSearchInput.borderRadius || '12px',
-              fontFamily: globalSearchInput.fontFamily || globalStyle.fontFamily,
+              fontFamily: globalSearchInput.fontFamily || 'Inter',
               fontSize: globalSearchInput.fontSize || '15px',
               color: globalSearchInput.textColor || '#fff',
               transition: getTransition('default')
@@ -141,165 +126,136 @@ const SendLayer = () => {
           />
         </div>
 
-        {/* Scrollable Content Container */}
+        {/* Content - Scrollable with hidden scrollbar */}
         <div 
-          className="flex-1 px-4 py-4 send-content invisible-scroll" 
+          className="flex-1 overflow-y-auto px-4 py-4 send-content invisible-scroll" 
           data-element-id="send-content"
           onWheel={handleWheel}
           onTouchMove={handleTouchMove}
         >
-          <style>{`
-            .send-content::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-
-          <div className="mb-4 send-instructions" data-element-id="send-instructions">
+          {/* Select Network Section */}
+          <div className="mb-6 send-select-network-section" data-element-id="send-select-network-section">
             <h2 
-              className="text-sm font-medium mb-2 send-instructions-title"
-              data-element-id="send-instructions-title"
+              className="text-sm font-medium mb-3 send-select-network-title"
+              data-element-id="send-select-network-title"
               style={{
                 color: sendLayerStyle.selectNetworkLabel?.textColor || '#ad7e26',
-                fontFamily: sendLayerStyle.selectNetworkLabel?.fontFamily || globalStyle.fontFamily,
+                fontFamily: sendLayerStyle.selectNetworkLabel?.fontFamily || 'Inter',
                 fontWeight: sendLayerStyle.selectNetworkLabel?.fontWeight || 'bold',
-                fontSize: sendLayerStyle.selectNetworkLabel?.fontSize || '19px'
+                fontSize: sendLayerStyle.selectNetworkLabel?.fontSize || '19px',
               }}
             >
               Select Network
             </h2>
             <p 
-              className="text-xs send-instructions-description"
-              data-element-id="send-instructions-description"
-              style={{ 
+              className="text-xs mb-4 send-select-network-description"
+              data-element-id="send-select-network-description"
+              style={{
                 color: sendLayerStyle.selectNetworkDescription?.textColor || '#aaa',
-                fontFamily: sendLayerStyle.selectNetworkDescription?.fontFamily || globalStyle.fontFamily,
-                fontSize: sendLayerStyle.selectNetworkDescription?.fontSize || '15px'
+                fontFamily: sendLayerStyle.selectNetworkDescription?.fontFamily || 'Inter',
+                fontSize: sendLayerStyle.selectNetworkDescription?.fontSize || '15px',
               }}
             >
-              Choose which network you want to send crypto from
+              Choose the network to send your assets.
             </p>
-          </div>
 
-          {/* Crypto Networks List - Updated to match ReceiveLayer structure */}
-          <div 
-            className="space-y-3 send-networks-list"
-            data-element-id="send-networks-list"
-          >
-            {filteredNetworks.map((network, index) => (
-              <div
-                key={network.id}
-                className="cursor-pointer send-network-item"
-                data-element-id={`send-network-item-${index}`}
-                onClick={() => handleNetworkSelect(network.name)}
-                style={{ 
-                  backgroundColor: assetCard.backgroundColor || '#432818',
-                  borderRadius: assetCard.borderRadius || '14px',
-                  padding: '16px',
-                  transition: getTransition('default')
-                }}
-              >
-                <div className="flex items-center justify-between">
+            {/* Networks List */}
+            <div className="space-y-3 send-networks-list" data-element-id="send-networks-list">
+              {filteredNetworks.map((network, index) => (
+                <div
+                  key={network.id}
+                  className="flex items-center justify-between p-4 cursor-pointer hover:opacity-90 transition-opacity send-network-item"
+                  data-element-id={`send-network-item-${index}`}
+                  onClick={() => handleNetworkSelect(network.name)}
+                  style={{
+                    backgroundColor: sendLayerStyle.networkCard?.backgroundColor || '#613c19',
+                    borderRadius: sendLayerStyle.networkCard?.borderRadius || '18px',
+                    transition: getTransition('default'),
+                  }}
+                >
                   <div className="flex items-center space-x-3">
-                    {/* Network Icon */}
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex items-center justify-center relative send-network-icon-container" data-element-id={`send-network-icon-container-${index}`}>
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex items-center justify-center send-network-icon-container" data-element-id={`send-network-icon-container-${index}`}>
                       <img
                         src={network.icon}
                         alt={network.name}
                         className="w-8 h-8 object-cover rounded send-network-icon"
                         data-element-id={`send-network-icon-${index}`}
                       />
-                      {network.isSpecial && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold send-network-special-badge" data-element-id={`send-network-special-badge-${index}`}>
-                          <span className="send-network-special-badge-text" data-element-id={`send-network-special-badge-text-${index}`}>Θ</span>
-                        </div>
-                      )}
                     </div>
-                    
-                    {/* Network Info */}
                     <div className="send-network-info" data-element-id={`send-network-info-${index}`}>
                       <div 
                         className="font-medium text-sm send-network-name"
                         data-element-id={`send-network-name-${index}`}
                         style={{
-                          color: assetCard.title?.textColor || '#FFD166',
-                          fontFamily: assetCard.title?.fontFamily || globalStyle.fontFamily,
-                          fontWeight: assetCard.title?.fontWeight || 'bold',
-                          fontSize: assetCard.title?.fontSize || '16px'
+                          color: sendLayerStyle.networkCardContent?.networkName?.textColor || '#fff',
+                          fontFamily: sendLayerStyle.networkCardContent?.networkName?.fontFamily || 'Inter',
+                          fontWeight: sendLayerStyle.networkCardContent?.networkName?.fontWeight || 'normal',
+                          fontSize: sendLayerStyle.networkCardContent?.networkName?.fontSize || '16px',
                         }}
                       >
                         {network.name}
                       </div>
                       <div 
-                        className="text-xs send-network-symbol"
-                        data-element-id={`send-network-symbol-${index}`}
+                        className="text-xs send-network-description"
+                        data-element-id={`send-network-description-${index}`}
                         style={{ 
-                          color: assetCard.description?.textColor || '#aaa',
-                          fontFamily: assetCard.description?.fontFamily || globalStyle.fontFamily,
-                          fontSize: assetCard.description?.fontSize || '14px'
+                          color: sendLayerStyle.networkCardContent?.networkDescription?.textColor || '#d0d0d0',
+                          fontFamily: sendLayerStyle.networkCardContent?.networkDescription?.fontFamily || 'Inter',
+                          fontWeight: sendLayerStyle.networkCardContent?.networkDescription?.fontWeight || 'normal',
+                          fontSize: sendLayerStyle.networkCardContent?.networkDescription?.fontSize || '15px',
                         }}
                       >
-                        {network.symbol}
+                        {network.description}
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Balance */}
-                  <div className="text-right send-network-balance" data-element-id={`send-network-balance-${index}`}>
-                    <div 
-                      className="font-medium text-sm send-network-balance-amount"
-                      data-element-id={`send-network-balance-amount-${index}`}
-                      style={{
-                        color: assetCard.value?.textColor || '#fff',
-                        fontFamily: assetCard.value?.fontFamily || globalStyle.fontFamily,
-                        fontWeight: assetCard.title?.fontWeight || 'bold',
-                        fontSize: assetCard.value?.fontSize || '15px'
-                      }}
-                    >
-                      {network.balance} {network.symbol}
-                    </div>
-                    <div 
-                      className="text-xs send-network-balance-usd"
-                      data-element-id={`send-network-balance-usd-${index}`}
-                      style={{ 
-                        color: assetCard.description?.textColor || '#aaa',
-                        fontFamily: assetCard.description?.fontFamily || globalStyle.fontFamily,
-                        fontSize: assetCard.description?.fontSize || '14px'
-                      }}
-                    >
-                      {network.balanceUsd}
-                    </div>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredNetworks.length === 0 && (
-            <div className="text-center py-8 send-no-results" data-element-id="send-no-results">
-              <p 
-                className="text-sm send-no-results-text"
-                data-element-id="send-no-results-text"
-                style={{ 
-                  color: sendLayerStyle.emptyState?.textColor || '#fff',
-                  fontFamily: sendLayerStyle.emptyState?.fontFamily || globalStyle.fontFamily,
-                  fontSize: sendLayerStyle.emptyState?.fontSize || '15px'
-                }}
-              >
-                No networks found
-              </p>
+              ))}
             </div>
-          )}
+
+            {filteredNetworks.length === 0 && searchQuery && (
+              <div className="text-center py-8 send-no-results" data-element-id="send-no-results">
+                <p 
+                  className="text-sm send-no-results-text"
+                  data-element-id="send-no-results-text"
+                  style={{ 
+                    color: sendLayerStyle.emptyState?.textColor || '#fff',
+                    fontFamily: sendLayerStyle.emptyState?.fontFamily || 'Inter',
+                    fontSize: sendLayerStyle.emptyState?.fontSize || '15px'
+                  }}
+                >
+                  No networks found matching "{searchQuery}"
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Close Button Footer */}
-        <div className="p-4 border-t send-footer" data-element-id="send-footer" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+        {/* Footer with Close button */}
+        <div 
+          className="p-4 border-t border-white/10 send-footer"
+          data-element-id="send-footer"
+        >
           <button
             onClick={handleClose}
-            className="wallet-action-button send-close-button"
+            className="w-full py-3 px-4 transition-colors flex items-center justify-center space-x-2 send-close-button"
             data-element-id="send-close-button"
+            style={{
+              backgroundColor: sendLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
+              borderRadius: sendLayerStyle.footer?.closeButton?.borderRadius || '14px',
+              transition: getTransition('default'),
+              color: sendLayerStyle.footer?.closeButton?.textColor || '#181818',
+              fontFamily: sendLayerStyle.footer?.closeButton?.fontFamily || 'Inter',
+              fontWeight: sendLayerStyle.footer?.closeButton?.fontWeight || 'bold',
+              fontSize: sendLayerStyle.footer?.closeButton?.fontSize || '18px',
+            }}
           >
-            <X className="wallet-action-button-icon send-close-icon" data-element-id="send-close-icon" />
-            <span className="send-close-text" data-element-id="send-close-text">Close</span>
+            <X 
+              className="w-5 h-5 send-close-icon" 
+              data-element-id="send-close-icon" 
+              style={{ color: sendLayerStyle.footer?.closeButton?.icon?.color || '#181818' }}
+            />
+            <span className="font-medium send-close-text" data-element-id="send-close-text">Close</span>
           </button>
         </div>
       </div>
