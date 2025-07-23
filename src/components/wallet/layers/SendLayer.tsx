@@ -1,89 +1,58 @@
-
 import React, { useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { ArrowLeft, Search, QrCode, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
-import { useToast } from '@/hooks/use-toast';
 
-interface CryptoNetwork {
+interface Contact {
   id: string;
   name: string;
-  symbol: string;
-  balance: string;
-  balanceUsd: string;
-  icon: string;
-  color: string;
-  isSpecial?: boolean;
+  address: string;
+  avatar?: string;
+  initials?: string;
 }
 
-const cryptoNetworks: CryptoNetwork[] = [
+const mockContacts: Contact[] = [
   {
-    id: 'solana',
-    name: 'Solana',
-    symbol: 'SOL',
-    balance: '5.03737',
-    balanceUsd: '$1,127.61',
-    icon: '/lovable-uploads/72224164-59bd-4fc3-abf5-d57bbdbee278.png',
-    color: '#9945FF'
+    id: '1',
+    name: 'Alice Smith',
+    address: '0x1234...5678',
+    initials: 'AS'
   },
   {
-    id: 'ethereum',
-    name: 'Ethereum',
-    symbol: 'ETH',
-    balance: '0',
-    balanceUsd: '$0.00',
-    icon: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
-    color: '#627EEA'
+    id: '2',
+    name: 'Bob Johnson',
+    address: '0xabcd...efgh',
+    initials: 'BJ'
   },
   {
-    id: 'ethereum-theta',
-    name: 'Ethereum',
-    symbol: 'ETH',
-    balance: '0',
-    balanceUsd: '$0.00',
-    icon: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
-    color: '#627EEA',
-    isSpecial: true
-  },
-  {
-    id: 'sui',
-    name: 'Sui',
-    symbol: 'SUI',
-    balance: '0',
-    balanceUsd: '$0.00',
-    icon: '/lovable-uploads/9dd9ce9c-2158-40cf-98ee-2e189bd56595.png',
-    color: '#4CA2FF'
+    id: '3',
+    name: 'Charlie Brown',
+    address: '0x9999...1111',
+    initials: 'CB'
   }
 ];
 
 const SendLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getSendLayer, getGlobal, getTransition, getAssetCard } = useWalletTheme();
+  const { getSendLayer, getGlobalSearchInput, getTransition } = useWalletTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const { toast } = useToast();
 
-  // Get sendLayer styles and assetCard styles
+  // Get send layer theme styles and global search input
   const sendLayerStyle = getSendLayer();
-  const globalStyle = getGlobal();
-  const assetCard = getAssetCard();
+  const globalSearchInput = getGlobalSearchInput();
 
   const handleClose = () => {
     setCurrentLayer('home');
   };
 
-  const handleNetworkSelect = (networkName: string) => {
-    console.log('Network selected:', networkName);
-    
-    toast({
-      title: "Network Selected",
-      description: `Selected ${networkName} for sending`,
-    });
+  const handleQrScan = () => {
+    console.log('QR scan clicked');
   };
 
-  const filteredNetworks = cryptoNetworks.filter(network =>
-    network.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    network.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredContacts = mockContacts.filter(contact =>
+    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.address.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Scroll-lock handlers
@@ -104,207 +73,216 @@ const SendLayer = () => {
       />
       
       {/* Bottom sheet modal */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 z-50 max-h-[85vh] flex flex-col animate-slide-in-bottom send-layer"
-        data-element-id="send-layer"
-        style={{
-          backgroundColor: sendLayerStyle.centerContainer?.backgroundColor || '#232323',
-          backgroundImage: sendLayerStyle.centerContainer?.backgroundImage ? `url(${sendLayerStyle.centerContainer.backgroundImage})` : undefined,
-          borderTopLeftRadius: '24px',
-          borderTopRightRadius: '24px',
-          fontFamily: globalStyle.fontFamily || 'Inter'
-        }}
-      >
-        {/* Search Input - Direct child with minimal top margin */}
+      <div className="absolute bottom-0 left-0 right-0 z-50 max-h-[85vh] flex flex-col animate-slide-in-bottom send-layer" data-element-id="send-layer">
+        
+        {/* Header */}
         <div 
-          className="relative mt-4 mx-4 send-search-input-container" 
-          data-element-id="send-search-input-container"
+          className="p-4 flex items-center justify-between send-header"
+          data-element-id="send-header"
           style={{
-            borderRadius: sendLayerStyle.searchInputContainer?.borderRadius || '16px',
-            overflow: 'hidden'
+            backgroundColor: sendLayerStyle.headerContainer?.backgroundColor || 'transparent',
+            backgroundImage: sendLayerStyle.headerContainer?.backgroundImage ? `url(${sendLayerStyle.headerContainer.backgroundImage})` : undefined,
           }}
         >
-          <Search 
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 send-search-icon" 
-            data-element-id="send-search-icon"
-            style={{ color: sendLayerStyle.searchInput?.iconSearch?.color || '#fff' }}
-          />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 focus:outline-none transition-colors send-search-input"
-            data-element-id="send-search-input"
+          <button
+            onClick={handleClose}
+            className="flex items-center space-x-2 send-back-button"
+            data-element-id="send-back-button"
+          >
+            <ArrowLeft 
+              className="w-6 h-6 send-back-icon" 
+              data-element-id="send-back-icon"
+              style={{ color: sendLayerStyle.header?.backIcon?.color || '#ad7e26' }}
+            />
+          </button>
+          
+          <h1 
+            className="text-xl font-bold send-title"
+            data-element-id="send-title"
             style={{
-              backgroundColor: sendLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
-              border: 'none',
-              fontFamily: sendLayerStyle.searchInput?.fontFamily || globalStyle.fontFamily,
-              fontSize: sendLayerStyle.searchInput?.fontSize || '16px',
-              color: sendLayerStyle.searchInput?.textColor || '#fff',
-              transition: getTransition('default')
+              color: sendLayerStyle.header?.title?.textColor || '#643800',
+              fontFamily: sendLayerStyle.header?.title?.fontFamily || 'Inter',
+              fontWeight: sendLayerStyle.header?.title?.fontWeight || 'bold',
+              fontSize: sendLayerStyle.header?.title?.fontSize || '23px',
             }}
-          />
+          >
+            Send
+          </h1>
+          
+          <button
+            onClick={handleQrScan}
+            className="send-qr-button"
+            data-element-id="send-qr-button"
+          >
+            <QrCode 
+              className="w-6 h-6 send-qr-icon" 
+              data-element-id="send-qr-icon"
+              style={{ color: sendLayerStyle.header?.qrIcon?.color || '#ad7e26' }}
+            />
+          </button>
         </div>
 
-        {/* Scrollable Content Container */}
+        {/* Search Input - Now using global styles */}
+        <div className="px-4 mb-4 send-search-section" data-element-id="send-search-section">
+          <div className="relative send-search-input-container" data-element-id="send-search-input-container">
+            <Search 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 send-search-icon" 
+              data-element-id="send-search-icon"
+              style={{ color: globalSearchInput.iconSearch?.color || '#fff' }}
+            />
+            <input
+              type="text"
+              placeholder="Search contacts or paste address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 focus:outline-none transition-colors send-search-input"
+              data-element-id="send-search-input"
+              style={{
+                backgroundColor: globalSearchInput.backgroundColor || '#181818',
+                border: globalSearchInput.border || 'none',
+                borderRadius: globalSearchInput.borderRadius || '12px',
+                fontFamily: globalSearchInput.fontFamily || 'Inter',
+                fontSize: globalSearchInput.fontSize || '16px',
+                color: globalSearchInput.textColor || '#fff',
+                transition: getTransition('default'),
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Content */}
         <div 
-          className="flex-1 px-4 py-4 send-content invisible-scroll" 
+          className="flex-1 overflow-y-auto send-content invisible-scroll"
           data-element-id="send-content"
           onWheel={handleWheel}
           onTouchMove={handleTouchMove}
+          style={{
+            backgroundColor: sendLayerStyle.centerContainer?.backgroundColor || '#232323',
+            backgroundImage: sendLayerStyle.centerContainer?.backgroundImage ? `url(${sendLayerStyle.centerContainer.backgroundImage})` : undefined,
+            borderTopLeftRadius: sendLayerStyle.centerContainer?.borderRadius || '18px',
+            borderTopRightRadius: sendLayerStyle.centerContainer?.borderRadius || '18px',
+          }}
         >
-          <style>{`
-            .send-content::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-
-          <div className="mb-4 send-instructions" data-element-id="send-instructions">
+          <div className="p-4">
             <h2 
-              className="text-sm font-medium mb-2 send-instructions-title"
-              data-element-id="send-instructions-title"
+              className="text-lg font-bold mb-2 send-contacts-title"
+              data-element-id="send-contacts-title"
               style={{
                 color: sendLayerStyle.selectNetworkLabel?.textColor || '#ad7e26',
-                fontFamily: sendLayerStyle.selectNetworkLabel?.fontFamily || globalStyle.fontFamily,
+                fontFamily: sendLayerStyle.selectNetworkLabel?.fontFamily || 'Inter',
                 fontWeight: sendLayerStyle.selectNetworkLabel?.fontWeight || 'bold',
-                fontSize: sendLayerStyle.selectNetworkLabel?.fontSize || '19px'
+                fontSize: sendLayerStyle.selectNetworkLabel?.fontSize || '19px',
               }}
             >
-              Select Network
+              Recent Contacts
             </h2>
             <p 
-              className="text-xs send-instructions-description"
-              data-element-id="send-instructions-description"
-              style={{ 
+              className="text-sm mb-4 send-contacts-description"
+              data-element-id="send-contacts-description"
+              style={{
                 color: sendLayerStyle.selectNetworkDescription?.textColor || '#aaa',
-                fontFamily: sendLayerStyle.selectNetworkDescription?.fontFamily || globalStyle.fontFamily,
-                fontSize: sendLayerStyle.selectNetworkDescription?.fontSize || '15px'
+                fontFamily: sendLayerStyle.selectNetworkDescription?.fontFamily || 'Inter',
+                fontSize: sendLayerStyle.selectNetworkDescription?.fontSize || '15px',
               }}
             >
-              Choose which network you want to send crypto from
+              Select a contact or enter a wallet address
             </p>
-          </div>
 
-          {/* Crypto Networks List - Updated to match ReceiveLayer structure */}
-          <div 
-            className="space-y-3 send-networks-list"
-            data-element-id="send-networks-list"
-          >
-            {filteredNetworks.map((network, index) => (
-              <div
-                key={network.id}
-                className="cursor-pointer send-network-item"
-                data-element-id={`send-network-item-${index}`}
-                onClick={() => handleNetworkSelect(network.name)}
-                style={{ 
-                  backgroundColor: assetCard.backgroundColor || '#432818',
-                  borderRadius: assetCard.borderRadius || '14px',
-                  padding: '16px',
-                  transition: getTransition('default')
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    {/* Network Icon */}
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex items-center justify-center relative send-network-icon-container" data-element-id={`send-network-icon-container-${index}`}>
-                      <img
-                        src={network.icon}
-                        alt={network.name}
-                        className="w-8 h-8 object-cover rounded send-network-icon"
-                        data-element-id={`send-network-icon-${index}`}
-                      />
-                      {network.isSpecial && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold send-network-special-badge" data-element-id={`send-network-special-badge-${index}`}>
-                          <span className="send-network-special-badge-text" data-element-id={`send-network-special-badge-text-${index}`}>Θ</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Network Info */}
-                    <div className="send-network-info" data-element-id={`send-network-info-${index}`}>
-                      <div 
-                        className="font-medium text-sm send-network-name"
-                        data-element-id={`send-network-name-${index}`}
-                        style={{
-                          color: assetCard.title?.textColor || '#FFD166',
-                          fontFamily: assetCard.title?.fontFamily || globalStyle.fontFamily,
-                          fontWeight: assetCard.title?.fontWeight || 'bold',
-                          fontSize: assetCard.title?.fontSize || '16px'
-                        }}
-                      >
-                        {network.name}
-                      </div>
-                      <div 
-                        className="text-xs send-network-symbol"
-                        data-element-id={`send-network-symbol-${index}`}
-                        style={{ 
-                          color: assetCard.description?.textColor || '#aaa',
-                          fontFamily: assetCard.description?.fontFamily || globalStyle.fontFamily,
-                          fontSize: assetCard.description?.fontSize || '14px'
-                        }}
-                      >
-                        {network.symbol}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Balance */}
-                  <div className="text-right send-network-balance" data-element-id={`send-network-balance-${index}`}>
+            {/* Contacts List */}
+            <div className="space-y-3 send-contacts-list" data-element-id="send-contacts-list">
+              {filteredContacts.length > 0 ? (
+                filteredContacts.map((contact, index) => (
+                  <div
+                    key={contact.id}
+                    className="flex items-center p-3 hover:bg-white/5 transition-colors cursor-pointer send-contact-item"
+                    data-element-id={`send-contact-item-${index}`}
+                    style={{
+                      borderRadius: '12px',
+                      transition: getTransition('default'),
+                    }}
+                  >
                     <div 
-                      className="font-medium text-sm send-network-balance-amount"
-                      data-element-id={`send-network-balance-amount-${index}`}
+                      className="w-12 h-12 rounded-full flex items-center justify-center mr-3 send-contact-avatar"
+                      data-element-id={`send-contact-avatar-${index}`}
                       style={{
-                        color: assetCard.value?.textColor || '#fff',
-                        fontFamily: assetCard.value?.fontFamily || globalStyle.fontFamily,
-                        fontWeight: assetCard.title?.fontWeight || 'bold',
-                        fontSize: assetCard.value?.fontSize || '15px'
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
                       }}
                     >
-                      {network.balance} {network.symbol}
+                      <span 
+                        className="text-sm font-bold send-contact-initials"
+                        data-element-id={`send-contact-initials-${index}`}
+                        style={{ color: '#fff' }}
+                      >
+                        {contact.initials}
+                      </span>
                     </div>
-                    <div 
-                      className="text-xs send-network-balance-usd"
-                      data-element-id={`send-network-balance-usd-${index}`}
-                      style={{ 
-                        color: assetCard.description?.textColor || '#aaa',
-                        fontFamily: assetCard.description?.fontFamily || globalStyle.fontFamily,
-                        fontSize: assetCard.description?.fontSize || '14px'
-                      }}
-                    >
-                      {network.balanceUsd}
+                    <div className="flex-1 send-contact-info" data-element-id={`send-contact-info-${index}`}>
+                      <div 
+                        className="font-medium send-contact-name"
+                        data-element-id={`send-contact-name-${index}`}
+                        style={{ color: '#fff' }}
+                      >
+                        {contact.name}
+                      </div>
+                      <div 
+                        className="text-sm send-contact-address"
+                        data-element-id={`send-contact-address-${index}`}
+                        style={{ 
+                          color: sendLayerStyle.selectNetworkDescription?.textColor || '#aaa' 
+                        }}
+                      >
+                        {contact.address}
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8 send-empty-state" data-element-id="send-empty-state">
+                  <p 
+                    className="send-empty-message"
+                    data-element-id="send-empty-message"
+                    style={{
+                      color: sendLayerStyle.emptyState?.textColor || '#fff',
+                      fontFamily: sendLayerStyle.emptyState?.fontFamily || 'Inter',
+                      fontSize: sendLayerStyle.emptyState?.fontSize || '15px',
+                    }}
+                  >
+                    {searchQuery ? `No contacts found for "${searchQuery}"` : 'No recent contacts'}
+                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredNetworks.length === 0 && (
-            <div className="text-center py-8 send-no-results" data-element-id="send-no-results">
-              <p 
-                className="text-sm send-no-results-text"
-                data-element-id="send-no-results-text"
-                style={{ 
-                  color: sendLayerStyle.emptyState?.textColor || '#fff',
-                  fontFamily: sendLayerStyle.emptyState?.fontFamily || globalStyle.fontFamily,
-                  fontSize: sendLayerStyle.emptyState?.fontSize || '15px'
-                }}
-              >
-                No networks found
-              </p>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Close Button Footer */}
-        <div className="p-4 border-t send-footer" data-element-id="send-footer" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+        {/* Footer */}
+        <div 
+          className="p-4 send-footer"
+          data-element-id="send-footer"
+          style={{
+            backgroundColor: sendLayerStyle.footerContainer?.backgroundColor || '#181818',
+            backgroundImage: sendLayerStyle.footerContainer?.backgroundImage ? `url(${sendLayerStyle.footerContainer.backgroundImage})` : undefined,
+          }}
+        >
           <button
             onClick={handleClose}
-            className="wallet-action-button send-close-button"
+            className="w-full py-3 px-4 transition-colors flex items-center justify-center space-x-2 send-close-button"
             data-element-id="send-close-button"
+            style={{
+              backgroundColor: sendLayerStyle.footer?.closeButton?.backgroundColor || '#432818',
+              borderRadius: sendLayerStyle.footer?.closeButton?.borderRadius || '16px',
+              transition: getTransition('default'),
+              color: sendLayerStyle.footer?.closeButton?.textColor || '#181818',
+              fontFamily: sendLayerStyle.footer?.closeButton?.fontFamily || 'Inter',
+              fontWeight: sendLayerStyle.footer?.closeButton?.fontWeight || 'bold',
+              fontSize: sendLayerStyle.footer?.closeButton?.fontSize || '19px',
+            }}
           >
-            <X className="wallet-action-button-icon send-close-icon" data-element-id="send-close-icon" />
+            <X 
+              className="w-5 h-5 send-close-icon" 
+              data-element-id="send-close-icon"
+              style={{ color: sendLayerStyle.footer?.closeButton?.icon?.color || '#ad7e26' }}
+            />
             <span className="send-close-text" data-element-id="send-close-text">Close</span>
           </button>
         </div>

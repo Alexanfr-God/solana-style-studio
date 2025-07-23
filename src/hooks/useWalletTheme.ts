@@ -5,6 +5,19 @@ interface WalletThemeLayer {
   [key: string]: any;
 }
 
+interface GlobalSearchInput {
+  backgroundColor?: string;
+  textColor?: string;
+  placeholderColor?: string;
+  borderRadius?: string;
+  border?: string;
+  fontFamily?: string;
+  fontSize?: string;
+  padding?: string;
+  iconSearch?: { color?: string; type?: string };
+  iconClose?: { color?: string; type?: string };
+}
+
 interface WalletTheme {
   lockLayer?: WalletThemeLayer;
   avatarHeader?: WalletThemeLayer;
@@ -17,6 +30,7 @@ interface WalletTheme {
   swapLayer?: WalletThemeLayer;
   historyLayer?: WalletThemeLayer;
   searchLayer?: WalletThemeLayer;
+  globalSearchInput?: GlobalSearchInput;
   assetCard?: AssetCardStyle;
   global?: WalletThemeLayer;
 }
@@ -37,6 +51,22 @@ export const useWalletTheme = () => {
 
     loadTheme();
   }, []);
+
+  // Global Search Input styles
+  const getGlobalSearchInput = (): GlobalSearchInput => {
+    return theme.globalSearchInput || {
+      backgroundColor: '#1b140a',
+      textColor: '#ffd873',
+      placeholderColor: '#ad7e26',
+      borderRadius: '12px',
+      border: 'none',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '15px',
+      padding: '12px',
+      iconSearch: { color: '#ffd873', type: 'search' },
+      iconClose: { color: '#ffd873', type: 'x' }
+    };
+  };
 
   // Global Asset Card styles
   const getAssetCard = (): AssetCardStyle => {
@@ -115,6 +145,7 @@ export const useWalletTheme = () => {
 
   return {
     theme,
+    getGlobalSearchInput,
     getAssetCard,
     getLockLayer,
     getAvatarHeader,
