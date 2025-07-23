@@ -244,22 +244,22 @@
       "borderRadius": "0px"
     },
     "selectNetworkLabel": {
-      "textColor": "#ebe413",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px"
     },
     "selectNetworkDescription": {
-      "textColor": "#48f205",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
     "footer": {
-      "backgroundColor": "#0c37f7",
+      "backgroundColor": "181818",
       "backgroundImage": "",
       "closeButton": {
         "backgroundColor": "#f30cf7",
-        "textColor": "#181818",
+        "textColor": "#FFD166",
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
         "fontSize": "16px",
