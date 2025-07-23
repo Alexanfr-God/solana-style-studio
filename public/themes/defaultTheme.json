@@ -255,11 +255,11 @@
       "fontSize": "15px"
     },
     "footer": {
-      "backgroundColor": "181818",
+      "backgroundColor": "#181818",
       "backgroundImage": "",
       "closeButton": {
-        "backgroundColor": "#f30cf7",
-        "textColor": "#FFD166",
+        "backgroundColor": "#FFD166",
+        "textColor": "#181818",
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
         "fontSize": "16px",
