@@ -385,7 +385,7 @@
       }
     },
     "searchInputContainer": {
-      "backgroundColor": "#13e163",
+      "backgroundColor": "#FFD166",
       "borderRadius": "14px"
     },
     "searchInput": {
