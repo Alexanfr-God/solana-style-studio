@@ -283,8 +283,8 @@
       "qrIcon": { "color": "#ad7e26", "type": "qr-code" }
     },
     "searchInputContainer": {
-      "backgroundColor": "#13e163",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundColor": "rgba(30,30,30,0.8)",
+      "backgroundImage": "",
       "borderRadius": "16px"
     },
     "searchInput": {
