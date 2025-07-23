@@ -296,7 +296,7 @@
     },
     "centerContainer": {
       "backgroundColor": "#232323",
-      "backgroundImage": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "borderRadius": "18px"
     },
     "selectNetworkLabel": {
@@ -321,7 +321,7 @@
     },
     "footer": {
       "closeButton": {
-        "backgroundColor": "#FFD166",
+        "backgroundColor": "#432818",
         "textColor": "#181818",
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
