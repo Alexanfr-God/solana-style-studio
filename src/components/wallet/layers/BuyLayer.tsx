@@ -56,14 +56,13 @@ const popularTokens: Token[] = [
 
 const BuyLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getBuyLayer, getGlobalSearchInput, getTransition } = useWalletTheme();
+  const { getBuyLayer, getTransition } = useWalletTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  // Get buy layer theme styles and global search input
+  // Get buy layer theme styles
   const buyLayerStyle = getBuyLayer();
-  const globalSearchInput = getGlobalSearchInput();
 
   const handleClose = () => {
     setCurrentLayer('home');
@@ -112,12 +111,21 @@ const BuyLayer = () => {
           borderTopRightRadius: '24px',
         }}
       >
-        {/* Search Input - Now using global styles */}
-        <div className="relative mt-4 mx-4 buy-search-input-container" data-element-id="buy-search-input-container">
+        {/* Search Input - Direct child with minimal top margin */}
+        <div 
+          className="relative mt-4 mx-4 buy-search-input-container" 
+          data-element-id="buy-search-input-container"
+          style={{
+            backgroundColor: buyLayerStyle.searchInputContainer?.backgroundColor || '#13e163',
+            backgroundImage: buyLayerStyle.searchInputContainer?.backgroundImage ? `url(${buyLayerStyle.searchInputContainer.backgroundImage})` : undefined,
+            borderRadius: buyLayerStyle.searchInputContainer?.borderRadius || '14px',
+            padding: '12px',
+          }}
+        >
           <Search 
             className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 buy-search-icon" 
             data-element-id="buy-search-icon"
-            style={{ color: globalSearchInput.iconSearch?.color || '#fff' }}
+            style={{ color: buyLayerStyle.searchInput?.iconSearch?.color || '#fff' }}
           />
           <input
             type="text"
@@ -127,12 +135,9 @@ const BuyLayer = () => {
             className="w-full pl-10 pr-4 py-3 bg-transparent focus:outline-none transition-colors buy-search-input"
             data-element-id="buy-search-input"
             style={{
-              backgroundColor: globalSearchInput.backgroundColor || '#181818',
-              border: globalSearchInput.border || 'none',
-              borderRadius: globalSearchInput.borderRadius || '12px',
-              fontFamily: globalSearchInput.fontFamily || 'Inter',
-              fontSize: globalSearchInput.fontSize || '16px',
-              color: globalSearchInput.textColor || '#fff',
+              color: buyLayerStyle.searchInput?.textColor || '#fff',
+              fontFamily: buyLayerStyle.searchInput?.fontFamily || 'Inter',
+              fontSize: buyLayerStyle.searchInput?.fontSize || '16px',
               transition: getTransition('default'),
             }}
           />
