@@ -515,7 +515,7 @@
       "type": "info"
     },
     "swapActionButton": {
-      "backgroundColor": "#9945FF",
+      "backgroundColor": "#FFD166",
       "color": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "16px",
