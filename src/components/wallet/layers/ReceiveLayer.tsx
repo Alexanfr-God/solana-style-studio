@@ -45,22 +45,6 @@ const cryptoNetworks: CryptoNetwork[] = [
     address: '0xd1d1...c8f9',
     icon: '/lovable-uploads/9dd9ce9c-2158-40cf-98ee-2e189bd56595.png',
     color: '#4CA2FF'
-  },
-  {
-    id: 'polygon',
-    name: 'Polygon',
-    symbol: 'MATIC',
-    address: '0xa30b...4Ff4',
-    icon: '/lovable-uploads/a5f8972f-b18d-4f17-8799-eeb025813f3b.png',
-    color: '#8247E5'
-  },
-  {
-    id: 'bitcoin',
-    name: 'Bitcoin',
-    symbol: 'BTC',
-    address: 'bc1q...x7h2',
-    icon: '/lovable-uploads/cd33fecf-bff4-4243-bd9d-3f3062e0ba37.png',
-    color: '#F7931A'
   }
 ];
 
