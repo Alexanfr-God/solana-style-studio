@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -52,28 +53,20 @@ const cryptoNetworks: CryptoNetwork[] = [
     balanceUsd: '$0.00',
     icon: '/lovable-uploads/9dd9ce9c-2158-40cf-98ee-2e189bd56595.png',
     color: '#4CA2FF'
-  },
-  {
-    id: 'polygon',
-    name: 'Polygon',
-    symbol: 'MATIC',
-    balance: '0',
-    balanceUsd: '$0.00',
-    icon: '/lovable-uploads/a5f8972f-b18d-4f17-8799-eeb025813f3b.png',
-    color: '#8247E5'
   }
 ];
 
 const SendLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getSendLayer, getGlobal, getTransition } = useWalletTheme();
+  const { getSendLayer, getGlobal, getTransition, getAssetCard } = useWalletTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
 
-  // Get sendLayer styles
+  // Get sendLayer styles and assetCard styles
   const sendLayerStyle = getSendLayer();
   const globalStyle = getGlobal();
+  const assetCard = getAssetCard();
 
   const handleClose = () => {
     setCurrentLayer('home');
@@ -193,97 +186,94 @@ const SendLayer = () => {
             </p>
           </div>
 
-          {/* Crypto Networks List */}
+          {/* Crypto Networks List - Updated to match ReceiveLayer structure */}
           <div 
-            className="rounded-xl border overflow-hidden mb-6 send-networks-container"
-            data-element-id="send-networks-container"
-            style={{
-              backgroundColor: sendLayerStyle.networkList?.container?.backgroundColor || '#232323',
-              borderRadius: sendLayerStyle.networkList?.container?.borderRadius || '16px',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}
+            className="space-y-3 send-networks-list"
+            data-element-id="send-networks-list"
           >
             {filteredNetworks.map((network, index) => (
               <div
                 key={network.id}
-                className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0 cursor-pointer send-network-item"
+                className="cursor-pointer send-network-item"
                 data-element-id={`send-network-item-${index}`}
                 onClick={() => handleNetworkSelect(network.name)}
                 style={{ 
-                  backgroundColor: sendLayerStyle.networkList?.networkItem?.backgroundColor || '#181818',
-                  borderRadius: sendLayerStyle.networkList?.networkItem?.borderRadius || '13px',
-                  margin: '4px',
+                  backgroundColor: assetCard.backgroundColor || '#432818',
+                  borderRadius: assetCard.borderRadius || '14px',
+                  padding: '16px',
                   transition: getTransition('default')
                 }}
               >
-                <div className="flex items-center space-x-3">
-                  {/* Network Icon */}
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex items-center justify-center relative send-network-icon-container" data-element-id={`send-network-icon-container-${index}`}>
-                    <img
-                      src={network.icon}
-                      alt={network.name}
-                      className="w-8 h-8 object-cover rounded send-network-icon"
-                      data-element-id={`send-network-icon-${index}`}
-                    />
-                    {network.isSpecial && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold send-network-special-badge" data-element-id={`send-network-special-badge-${index}`}>
-                        <span className="send-network-special-badge-text" data-element-id={`send-network-special-badge-text-${index}`}>Θ</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {/* Network Icon */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 flex items-center justify-center relative send-network-icon-container" data-element-id={`send-network-icon-container-${index}`}>
+                      <img
+                        src={network.icon}
+                        alt={network.name}
+                        className="w-8 h-8 object-cover rounded send-network-icon"
+                        data-element-id={`send-network-icon-${index}`}
+                      />
+                      {network.isSpecial && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold send-network-special-badge" data-element-id={`send-network-special-badge-${index}`}>
+                          <span className="send-network-special-badge-text" data-element-id={`send-network-special-badge-text-${index}`}>Θ</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Network Info */}
+                    <div className="send-network-info" data-element-id={`send-network-info-${index}`}>
+                      <div 
+                        className="font-medium text-sm send-network-name"
+                        data-element-id={`send-network-name-${index}`}
+                        style={{
+                          color: assetCard.title?.textColor || '#FFD166',
+                          fontFamily: assetCard.title?.fontFamily || globalStyle.fontFamily,
+                          fontWeight: assetCard.title?.fontWeight || 'bold',
+                          fontSize: assetCard.title?.fontSize || '16px'
+                        }}
+                      >
+                        {network.name}
                       </div>
-                    )}
+                      <div 
+                        className="text-xs send-network-symbol"
+                        data-element-id={`send-network-symbol-${index}`}
+                        style={{ 
+                          color: assetCard.description?.textColor || '#aaa',
+                          fontFamily: assetCard.description?.fontFamily || globalStyle.fontFamily,
+                          fontSize: assetCard.description?.fontSize || '14px'
+                        }}
+                      >
+                        {network.symbol}
+                      </div>
+                    </div>
                   </div>
                   
-                  {/* Network Info */}
-                  <div className="send-network-info" data-element-id={`send-network-info-${index}`}>
+                  {/* Balance */}
+                  <div className="text-right send-network-balance" data-element-id={`send-network-balance-${index}`}>
                     <div 
-                      className="font-medium text-sm send-network-name"
-                      data-element-id={`send-network-name-${index}`}
+                      className="font-medium text-sm send-network-balance-amount"
+                      data-element-id={`send-network-balance-amount-${index}`}
                       style={{
-                        color: sendLayerStyle.networkList?.coinName?.textColor || '#ad7e26',
-                        fontFamily: sendLayerStyle.networkList?.coinName?.fontFamily || globalStyle.fontFamily,
-                        fontWeight: sendLayerStyle.networkList?.coinName?.fontWeight || 'bold',
-                        fontSize: sendLayerStyle.networkList?.coinName?.fontSize || '17px'
+                        color: assetCard.value?.textColor || '#fff',
+                        fontFamily: assetCard.value?.fontFamily || globalStyle.fontFamily,
+                        fontWeight: assetCard.title?.fontWeight || 'bold',
+                        fontSize: assetCard.value?.fontSize || '15px'
                       }}
                     >
-                      {network.name}
+                      {network.balance} {network.symbol}
                     </div>
                     <div 
-                      className="text-xs send-network-symbol"
-                      data-element-id={`send-network-symbol-${index}`}
+                      className="text-xs send-network-balance-usd"
+                      data-element-id={`send-network-balance-usd-${index}`}
                       style={{ 
-                        color: sendLayerStyle.networkList?.coinTicker?.textColor || '#fff',
-                        fontFamily: sendLayerStyle.networkList?.coinTicker?.fontFamily || globalStyle.fontFamily,
-                        fontSize: sendLayerStyle.networkList?.coinTicker?.fontSize || '14px'
+                        color: assetCard.description?.textColor || '#aaa',
+                        fontFamily: assetCard.description?.fontFamily || globalStyle.fontFamily,
+                        fontSize: assetCard.description?.fontSize || '14px'
                       }}
                     >
-                      {network.symbol}
+                      {network.balanceUsd}
                     </div>
-                  </div>
-                </div>
-                
-                {/* Balance */}
-                <div className="text-right send-network-balance" data-element-id={`send-network-balance-${index}`}>
-                  <div 
-                    className="font-medium text-sm send-network-balance-amount"
-                    data-element-id={`send-network-balance-amount-${index}`}
-                    style={{
-                      color: sendLayerStyle.networkList?.balance?.textColor || '#ad7e26',
-                      fontFamily: sendLayerStyle.networkList?.balance?.fontFamily || globalStyle.fontFamily,
-                      fontWeight: sendLayerStyle.networkList?.balance?.fontWeight || '600',
-                      fontSize: sendLayerStyle.networkList?.balance?.fontSize || '15px'
-                    }}
-                  >
-                    {network.balance} {network.symbol}
-                  </div>
-                  <div 
-                    className="text-xs send-network-balance-usd"
-                    data-element-id={`send-network-balance-usd-${index}`}
-                    style={{ 
-                      color: sendLayerStyle.networkList?.fiatValue?.textColor || '#fff',
-                      fontFamily: sendLayerStyle.networkList?.fiatValue?.fontFamily || globalStyle.fontFamily,
-                      fontSize: sendLayerStyle.networkList?.fiatValue?.fontSize || '14px'
-                    }}
-                  >
-                    {network.balanceUsd}
                   </div>
                 </div>
               </div>
@@ -311,23 +301,10 @@ const SendLayer = () => {
         <div className="p-4 border-t send-footer" data-element-id="send-footer" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
           <button
             onClick={handleClose}
-            className="w-full py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 send-close-button"
+            className="wallet-action-button send-close-button"
             data-element-id="send-close-button"
-            style={{
-              backgroundColor: sendLayerStyle.footer?.closeButton?.backgroundColor || '#FFD166',
-              borderRadius: sendLayerStyle.footer?.closeButton?.borderRadius || '16px',
-              transition: getTransition('default'),
-              color: sendLayerStyle.footer?.closeButton?.textColor || '#181818',
-              fontFamily: sendLayerStyle.footer?.closeButton?.fontFamily || globalStyle.fontFamily,
-              fontWeight: sendLayerStyle.footer?.closeButton?.fontWeight || 'bold',
-              fontSize: sendLayerStyle.footer?.closeButton?.fontSize || '19px'
-            }}
           >
-            <X 
-              className="w-5 h-5 send-close-icon" 
-              data-element-id="send-close-icon"
-              style={{ color: sendLayerStyle.footer?.closeButton?.icon?.color || '#ad7e26' }}
-            />
+            <X className="wallet-action-button-icon send-close-icon" data-element-id="send-close-icon" />
             <span className="send-close-text" data-element-id="send-close-text">Close</span>
           </button>
         </div>
