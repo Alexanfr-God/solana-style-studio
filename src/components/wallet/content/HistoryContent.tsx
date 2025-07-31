@@ -23,7 +23,7 @@ const HistoryContent = () => {
           icon: ArrowRight,
           title: 'To 3QLo...yJd2',
           amount: '-5.34M Wacocu',
-          avatar: '/lovable-uploads/de31213d-e2de-463b-9173-ee0377d1d6c8.png',
+          avatar: 'https://raw.githubusercontent.com/Alexanfr-God/solana-style-studio/refs/heads/main/public/lovable-uploads/WCC.png',
           isNegative: true
         }
       ]
@@ -37,7 +37,7 @@ const HistoryContent = () => {
           title: 'pump.fun',
           amount: '+5.34M Wacocu',
           subtitle: '-1.01117 SOL',
-          avatar: '/lovable-uploads/de31213d-e2de-463b-9173-ee0377d1d6c8.png',
+          avatar: 'https://raw.githubusercontent.com/Alexanfr-God/solana-style-studio/refs/heads/main/public/lovable-uploads/WCC.png',
           isNegative: false
         }
       ]
@@ -51,7 +51,7 @@ const HistoryContent = () => {
           title: 'Unknown',
           amount: 'Transaction failed',
           subtitle: 'Insufficient funds',
-          avatar: '/lovable-uploads/de31213d-e2de-463b-9173-ee0377d1d6c8.png',
+          avatar: 'https://raw.githubusercontent.com/Alexanfr-God/solana-style-studio/refs/heads/main/public/lovable-uploads/WCC.png',
           isNegative: false,
           isFailed: true
         }
