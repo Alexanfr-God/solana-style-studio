@@ -4,6 +4,7 @@ import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { useWalletButtonStyles } from '@/hooks/useWalletButtonStyles';
 import { useToast } from '@/hooks/use-toast';
+import { getCoinIcon } from '@/constants/coinIcons';
 
 interface CryptoNetwork {
   id: string;
@@ -20,7 +21,7 @@ const cryptoNetworks: CryptoNetwork[] = [
     name: 'Solana',
     symbol: 'SOL',
     address: '52Tm...mBCN',
-    icon: '/lovable-uploads/72224164-59bd-4fc3-abf5-d57bbdbee278.png',
+    icon: getCoinIcon('SOL'),
     color: '#9945FF'
   },
   {
@@ -28,7 +29,7 @@ const cryptoNetworks: CryptoNetwork[] = [
     name: 'Ethereum',
     symbol: 'ETH',
     address: '0xa30b...4Ff4',
-    icon: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
+    icon: getCoinIcon('ETH'),
     color: '#627EEA'
   },
   {
@@ -36,7 +37,7 @@ const cryptoNetworks: CryptoNetwork[] = [
     name: 'Base',
     symbol: 'BASE',
     address: '0xa30b...4Ff4',
-    icon: '/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png',
+    icon: getCoinIcon('BASE'),
     color: '#0052FF'
   },
   {
@@ -44,7 +45,7 @@ const cryptoNetworks: CryptoNetwork[] = [
     name: 'Sui',
     symbol: 'SUI',
     address: '0xd1d1...c8f9',
-    icon: '/lovable-uploads/9dd9ce9c-2158-40cf-98ee-2e189bd56595.png',
+    icon: getCoinIcon('SUI'),
     color: '#4CA2FF'
   }
 ];
@@ -168,6 +169,14 @@ const ReceiveLayer = () => {
                         alt={network.name}
                         className="w-8 h-8 object-cover rounded receive-network-icon"
                         data-element-id={`receive-network-icon-${index}`}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white" style="background-color: ${network.color}">${network.symbol[0]}</div>`;
+                          }
+                        }}
                       />
                     </div>
                     

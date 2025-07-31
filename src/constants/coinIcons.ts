@@ -10,6 +10,8 @@ export const COINMARKETCAP_ICONS: Record<string, string> = {
   DOT: 'https://s2.coinmarketcap.com/static/img/coins/64x64/6636.png',
   MATIC: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3890.png',
   AVAX: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5805.png',
+  BASE: 'https://s2.coinmarketcap.com/static/img/coins/64x64/9195.png',
+  SUI: 'https://s2.coinmarketcap.com/static/img/coins/64x64/20947.png',
 };
 
 // Fallback function to get icon URL with placeholder
