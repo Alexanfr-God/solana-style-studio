@@ -23,7 +23,7 @@ const HistoryContent = () => {
           icon: ArrowRight,
           title: 'To 3QLo...yJd2',
           amount: '-5.34M Wacocu',
-          avatar: '/lovable-uploads/c4753ae0-11b8-48a6-a9ce-e18d636fa6e0.png',
+          avatar: '/lovable-uploads/de31213d-e2de-463b-9173-ee0377d1d6c8.png',
           isNegative: true
         }
       ]
@@ -37,7 +37,7 @@ const HistoryContent = () => {
           title: 'pump.fun',
           amount: '+5.34M Wacocu',
           subtitle: '-1.01117 SOL',
-          avatar: '/lovable-uploads/c4753ae0-11b8-48a6-a9ce-e18d636fa6e0.png',
+          avatar: '/lovable-uploads/de31213d-e2de-463b-9173-ee0377d1d6c8.png',
           isNegative: false
         }
       ]
@@ -51,7 +51,7 @@ const HistoryContent = () => {
           title: 'Unknown',
           amount: 'Transaction failed',
           subtitle: 'Insufficient funds',
-          avatar: '/lovable-uploads/c4753ae0-11b8-48a6-a9ce-e18d636fa6e0.png',
+          avatar: '/lovable-uploads/de31213d-e2de-463b-9173-ee0377d1d6c8.png',
           isNegative: false,
           isFailed: true
         }
