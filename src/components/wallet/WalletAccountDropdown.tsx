@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -99,7 +100,7 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
         className="fixed w-80 rounded-xl border shadow-2xl overflow-hidden animate-fade-in z-[9999] account-dropdown-menu"
         data-element-id="account-dropdown-menu"
         style={{
-          backgroundColor: dropdownConfig?.containerBackgroundColor || 'rgba(24, 24, 24, 0.95)',
+          backgroundColor: dropdownConfig?.containerBackgroundColor || '#18140e',
           backdropFilter: 'blur(20px)',
           borderRadius: dropdownConfig?.containerBorderRadius || '16px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -118,10 +119,10 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
           }}
         >
           <h3 
-            className="text-sm font-medium text-white account-dropdown-title"
+            className="text-sm font-medium account-dropdown-title"
             data-element-id="account-dropdown-title"
             style={{
-              color: dropdownConfig?.headerText?.selectAccountColor || '#FFFFFF',
+              color: dropdownConfig?.headerText?.selectAccountColor || '#FFD166',
               fontFamily: dropdownConfig?.headerText?.selectAccountFontFamily || 'Inter, sans-serif',
               fontSize: dropdownConfig?.headerText?.selectAccountFontSize || '14px'
             }}
@@ -129,9 +130,10 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
             {getTitle()}
           </h3>
           <p 
-            className="text-xs text-gray-400 mt-1 account-dropdown-description"
+            className="text-xs mt-1 account-dropdown-description"
             data-element-id="account-dropdown-description"
             style={{ 
+              color: dropdownConfig?.headerText?.selectAccountDescription || '#ffe6a2',
               fontFamily: dropdownConfig?.headerText?.selectAccountFontFamily || 'Inter, sans-serif'
             }}
           >

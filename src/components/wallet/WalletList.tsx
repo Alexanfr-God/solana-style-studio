@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { formatAddress } from '@/lib/utils';
 
 interface WalletListProps {
@@ -25,6 +26,9 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
     walletStyle,
     setActiveAccount
   } = useWalletCustomizationStore();
+  
+  const { getHomeLayer } = useWalletTheme();
+  const dropdownStyle = getHomeLayer()?.accountDropdown;
   
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
@@ -86,10 +90,24 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
             
             {/* Account Info */}
             <div className="wallet-list-account-info" data-element-id={`wallet-list-account-info-${index}`}>
-              <div className="font-medium text-white text-sm wallet-list-account-name" data-element-id={`wallet-list-account-name-${index}`}>
+              <div 
+                className="font-medium text-sm wallet-list-account-name" 
+                data-element-id={`wallet-list-account-name-${index}`}
+                style={{
+                  color: dropdownStyle?.accountItems?.mainAccountColor || '#FFFFFF',
+                  fontFamily: dropdownStyle?.accountItems?.mainAccountFontFamily || 'Inter, sans-serif'
+                }}
+              >
                 {account.name}
               </div>
-              <div className="text-xs text-gray-400 wallet-list-account-network" data-element-id={`wallet-list-account-network-${index}`}>
+              <div 
+                className="text-xs wallet-list-account-network" 
+                data-element-id={`wallet-list-account-network-${index}`}
+                style={{
+                  color: dropdownStyle?.accountItems?.accountNetworkColor || '#aaa',
+                  fontFamily: dropdownStyle?.accountItems?.tradingAccountFontFamily || 'Inter, sans-serif'
+                }}
+              >
                 {account.network}
               </div>
             </div>
@@ -97,7 +115,14 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
           
           {/* Address and Copy */}
           <div className="flex items-center space-x-2 wallet-list-item-right" data-element-id={`wallet-list-item-right-${index}`}>
-            <span className="text-xs text-gray-400 font-mono wallet-list-address" data-element-id={`wallet-list-address-${index}`}>
+            <span 
+              className="text-xs font-mono wallet-list-address" 
+              data-element-id={`wallet-list-address-${index}`}
+              style={{
+                color: dropdownStyle?.accountItems?.accountAddressColor || '#aaa',
+                fontFamily: 'monospace'
+              }}
+            >
               {formatAddress(account.address)}
             </span>
             <button
@@ -109,7 +134,13 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
               {copiedAddress === account.address ? (
                 <Check className="w-3 h-3 text-green-400 wallet-list-copy-check" data-element-id={`wallet-list-copy-check-${index}`} />
               ) : (
-                <Copy className="w-3 h-3 text-gray-400 hover:text-white wallet-list-copy-icon" data-element-id={`wallet-list-copy-icon-${index}`} />
+                <Copy 
+                  className="w-3 h-3 hover:scale-105 transition-transform wallet-list-copy-icon" 
+                  data-element-id={`wallet-list-copy-icon-${index}`}
+                  style={{
+                    color: dropdownStyle?.icons?.copyAddressIcon?.color || '#aaa'
+                  }}
+                />
               )}
             </button>
           </div>

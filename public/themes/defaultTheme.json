@@ -216,20 +216,23 @@
       "fontSize": "13px"
     },
     "accountDropdown": {
-      "containerBackgroundColor": "rgba(173,126,38,0.94)",
+      "containerBackgroundColor": "#18140e",
       "containerBorderRadius": "16px",
       "headerText": {
-        "selectAccountColor": "#fff",
+        "selectAccountColor": "#FFD166",
+        "selectAccountDescription": "#ffe6a2",
         "selectAccountFontFamily": "Inter, sans-serif",
         "selectAccountFontSize": "14px"
       },
       "accountItems": {
-        "mainAccountColor": "#fff",
+        "mainAccountColor": "#FFD166",
         "mainAccountFontFamily": "Inter, sans-serif",
         "mainAccountFontSize": "14px",
-        "tradingAccountColor": "#fff",
+        "tradingAccountColor": "#ffe6a2",
         "tradingAccountFontFamily": "Inter, sans-serif",
-        "tradingAccountFontSize": "14px"
+        "tradingAccountFontSize": "14px",
+        "accountNetworkColor": "#ffe6a2",
+        "accountAddressColor": "#ffe6a2"
       },
       "actionButtons": {
         "addAccountColor": "#ffe09a",
@@ -241,7 +244,7 @@
       },
       "icons": {
         "copyAddressIcon": {
-          "color": "#fff",
+          "color": "#FFD166",
           "type": "copy"
         }
       }
