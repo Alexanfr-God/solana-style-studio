@@ -33,6 +33,7 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
   style
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { getHomeLayer, getTransition, tokenColors } = useWalletTheme();
 
   const homeStyle = getHomeLayer();
@@ -47,6 +48,10 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
     transition: getTransition('hover')
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <div 
       className="mb-3 p-4 rounded-xl flex justify-between items-center home-asset-item"
@@ -58,12 +63,21 @@ const WalletAssetItem: React.FC<WalletAssetItemProps> = ({
     >
       <div className="flex items-center">
         <div className="mr-3 relative home-asset-icon" data-element-id="home-asset-icon">
-          <div 
-            className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white"
-            style={{ backgroundColor: style.accentColor || tokenColors.info }}
-          >
-            {name[0]}
-          </div>
+          {!imageError ? (
+            <img
+              src={image}
+              alt={name}
+              className="h-10 w-10 rounded-full object-cover"
+              onError={handleImageError}
+            />
+          ) : (
+            <div 
+              className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-white"
+              style={{ backgroundColor: style.accentColor || tokenColors.info }}
+            >
+              {name[0]}
+            </div>
+          )}
           {isLocked && (
             <div 
               className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border"

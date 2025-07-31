@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { WalletStyle } from './customizationStore';
+import { getCoinIcon } from '@/constants/coinIcons';
 
 export type WalletLayer = 'login' | 'wallet' | 'receive' | 'send' | 'buy' | 'swap' | 'apps' | 'history' | 'search' | 'home';
 
@@ -132,7 +133,7 @@ const mockTokens = [
     balance: '12.45',
     value: '$2,150.32',
     change: '+5.2%',
-    icon: '/placeholder.svg',
+    icon: getCoinIcon('SOL'),
     amount: '12.45',
     isPositive: true
   },
@@ -143,7 +144,7 @@ const mockTokens = [
     balance: '1,000.00',
     value: '$1,000.00',
     change: '0.0%',
-    icon: '/placeholder.svg',
+    icon: getCoinIcon('USDC'),
     amount: '1,000.00',
     isPositive: true
   }

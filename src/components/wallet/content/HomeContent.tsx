@@ -2,6 +2,7 @@
 import React from 'react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
+import { getCoinIcon } from '@/constants/coinIcons';
 import WalletAssetItem from '../WalletAssetItem';
 import WalletActionButtons from '../WalletActionButtons';
 
@@ -113,7 +114,7 @@ const HomeContent: React.FC<HomeContentProps> = ({ showAccountDropdown = false }
           {tokens.map(token => (
             <WalletAssetItem
               key={token.id}
-              image={`/lovable-uploads/placeholder-${token.symbol.toLowerCase()}.png`}
+              image={getCoinIcon(token.symbol)}
               name={token.name}
               ticker={token.symbol}
               amount={token.amount}

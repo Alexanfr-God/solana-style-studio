@@ -4,6 +4,7 @@ import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { useWalletButtonStyles } from '@/hooks/useWalletButtonStyles';
 import { useToast } from '@/hooks/use-toast';
+import { COINMARKETCAP_ICONS } from '@/constants/coinIcons';
 
 interface Token {
   id: string;
@@ -20,7 +21,7 @@ const getStartedTokens: Token[] = [
     id: 'solana',
     name: 'Solana',
     symbol: 'SOL',
-    icon: '/lovable-uploads/72224164-59bd-4fc3-abf5-d57bbdbee278.png',
+    icon: COINMARKETCAP_ICONS.SOL,
     color: '#9945FF',
     description: 'Fast, secure and censorship resistant blockchain',
     isGetStarted: true
@@ -29,7 +30,7 @@ const getStartedTokens: Token[] = [
     id: 'usdc',
     name: 'USD Coin',
     symbol: 'USDC',
-    icon: '/lovable-uploads/ac5b7bea-562a-4609-a80b-c37750039adc.png',
+    icon: COINMARKETCAP_ICONS.USDC,
     color: '#2775CA',
     description: 'Digital dollar for the internet',
     isGetStarted: true
@@ -41,7 +42,7 @@ const popularTokens: Token[] = [
     id: 'ethereum',
     name: 'Ethereum',
     symbol: 'ETH',
-    icon: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
+    icon: COINMARKETCAP_ICONS.ETH,
     color: '#627EEA',
     description: 'Decentralized platform for smart contracts'
   },
@@ -49,7 +50,7 @@ const popularTokens: Token[] = [
     id: 'bitcoin',
     name: 'Bitcoin',
     symbol: 'BTC',
-    icon: '/lovable-uploads/f57c7d94-7776-485c-8d15-e2da5c9c80b4.png',
+    icon: COINMARKETCAP_ICONS.BTC,
     color: '#F7931A',
     description: 'The original cryptocurrency'
   }
