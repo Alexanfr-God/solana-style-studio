@@ -270,7 +270,7 @@
     },
     "footer": {
       "backgroundColor": "",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundImage": "",
       "closeButton": {
         "backgroundColor": "#FFD166",
         "textColor": "#181818",
