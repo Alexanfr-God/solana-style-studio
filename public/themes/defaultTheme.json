@@ -571,7 +571,7 @@
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px",
-      "iconTime": { "color": "#fff", "type": "clock" }
+      "iconTime": { "color": "#ffd873", "type": "clock" }
     },
     "trendingLabel": {
       "textColor": "#ffd873",
