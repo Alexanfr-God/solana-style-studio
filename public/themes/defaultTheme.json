@@ -158,13 +158,13 @@
       "borderRadius": "18px"
     },
     "totalBalanceLabel": {
-      "textColor": "#F3722C",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "normal",
       "fontSize": "17px"
     },
     "totalBalanceValue": {
-      "textColor": "#432818",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "32px"
