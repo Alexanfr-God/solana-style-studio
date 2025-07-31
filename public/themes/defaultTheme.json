@@ -269,8 +269,8 @@
       "fontSize": "15px"
     },
     "footer": {
-      "backgroundColor": "#181818",
-      "backgroundImage": "",
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "closeButton": {
         "backgroundColor": "#FFD166",
         "textColor": "#181818",
