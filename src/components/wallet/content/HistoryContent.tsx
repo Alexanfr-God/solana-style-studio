@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
@@ -23,8 +22,8 @@ const HistoryContent = () => {
           type: 'sent',
           icon: ArrowRight,
           title: 'To 3QLo...yJd2',
-          amount: '-5.34M THECOIN',
-          avatar: '/lovable-uploads/60caa821-2df9-4d5e-81f1-0e723c7b7193.png',
+          amount: '-5.34M Wacocu',
+          avatar: '/lovable-uploads/c4753ae0-11b8-48a6-a9ce-e18d636fa6e0.png',
           isNegative: true
         }
       ]
@@ -36,9 +35,9 @@ const HistoryContent = () => {
           type: 'swapped',
           icon: ArrowLeftRight,
           title: 'pump.fun',
-          amount: '+5.34M THECOIN',
+          amount: '+5.34M Wacocu',
           subtitle: '-1.01117 SOL',
-          avatar: '/lovable-uploads/a2d78101-8353-4107-915f-b3ee8481a1f7.png',
+          avatar: '/lovable-uploads/c4753ae0-11b8-48a6-a9ce-e18d636fa6e0.png',
           isNegative: false
         }
       ]
@@ -52,6 +51,7 @@ const HistoryContent = () => {
           title: 'Unknown',
           amount: 'Transaction failed',
           subtitle: 'Insufficient funds',
+          avatar: '/lovable-uploads/c4753ae0-11b8-48a6-a9ce-e18d636fa6e0.png',
           isNegative: false,
           isFailed: true
         }
