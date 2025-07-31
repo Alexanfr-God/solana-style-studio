@@ -337,13 +337,13 @@
   },
   "appsLayer": {
     "title": {
-      "textColor": "#432818",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "26px"
     },
     "subtitle": {
-      "textColor": "#F3722C",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "16px"
     },
