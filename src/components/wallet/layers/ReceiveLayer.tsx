@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Copy, Check, QrCode, X } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -106,9 +107,9 @@ const ReceiveLayer = () => {
           fontFamily: receiveLayerStyle.selectNetworkLabel?.fontFamily || 'Inter, sans-serif'
         }}
       >
-        {/* Center Container - Scrollable Content */}
+        {/* Center Container - Scrollable Content with Footer inside */}
         <div 
-          className="flex-1 overflow-y-auto receive-center-container invisible-scroll"
+          className="flex-1 overflow-y-auto receive-center-container invisible-scroll flex flex-col"
           data-element-id="receive-center-container"
           onWheel={handleWheel}
           onTouchMove={handleTouchMove}
@@ -118,10 +119,11 @@ const ReceiveLayer = () => {
             backgroundSize: 'cover',
             backgroundPosition: 'center top',
             backgroundRepeat: 'no-repeat',
-            borderRadius: receiveLayerStyle.centerContainer?.borderRadius || '0px'
+            borderRadius: receiveLayerStyle.centerContainer?.borderRadius || '0px',
+            maxHeight: '80vh'
           }}
         >
-          <div className="px-4 pt-4 pb-6 receive-content" data-element-id="receive-content">
+          <div className="px-4 pt-4 pb-6 receive-content flex-1" data-element-id="receive-content">
             <div className="mb-6 receive-instructions" data-element-id="receive-instructions">
               <h2 
                 className="text-sm font-medium mb-2 receive-instructions-title"
@@ -264,21 +266,21 @@ const ReceiveLayer = () => {
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div 
-          className="p-4 border-t border-white/10 receive-footer" 
-          data-element-id="receive-footer"
-        >
-          <button
-            onClick={handleClose}
-            className="wallet-action-button w-full py-3 px-4 flex items-center justify-center space-x-2 receive-close-button"
-            data-element-id="receive-close-button"
+          {/* Footer - now inside the center container */}
+          <div 
+            className="p-4 border-t border-white/10 receive-footer" 
+            data-element-id="receive-footer"
           >
-            <X className="wallet-action-button-icon w-5 h-5 receive-close-icon" data-element-id="receive-close-icon" />
-            <span className="font-medium receive-close-text" data-element-id="receive-close-text">Close</span>
-          </button>
+            <button
+              onClick={handleClose}
+              className="wallet-action-button w-full py-3 px-4 flex items-center justify-center space-x-2 receive-close-button"
+              data-element-id="receive-close-button"
+            >
+              <X className="wallet-action-button-icon w-5 h-5 receive-close-icon" data-element-id="receive-close-icon" />
+              <span className="font-medium receive-close-text" data-element-id="receive-close-text">Close</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
