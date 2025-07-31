@@ -268,12 +268,8 @@ const ReceiveLayer = () => {
 
         {/* Footer */}
         <div 
-          className="p-4 receive-footer" 
-          data-element-id="receive-footer" 
-          style={{ 
-            backgroundColor: receiveLayerStyle.footer?.backgroundColor,
-            backgroundImage: receiveLayerStyle.footer?.backgroundImage ? `url(${receiveLayerStyle.footer.backgroundImage})` : undefined
-          }}
+          className="p-4 border-t border-white/10 receive-footer" 
+          data-element-id="receive-footer"
         >
           <button
             onClick={handleClose}
