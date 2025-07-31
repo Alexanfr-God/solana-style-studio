@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, X, TrendingUp, Clock } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
+import { getCoinIcon } from '@/constants/coinIcons';
 
 const SearchContent = () => {
   const { getGlobalSearchInput, getSearchLayer, getAssetCard, getGlobal } = useWalletTheme();
@@ -14,16 +15,16 @@ const SearchContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [recentSearches] = useState([
     'Bitcoin',
-    'Ethereum',
+    'Ethereum', 
     'Solana',
     'USDC'
   ]);
 
   const [trendingTokens] = useState([
-    { name: 'Bitcoin', symbol: 'BTC', price: '$67,234', change: '+2.4%', icon: '₿' },
-    { name: 'Ethereum', symbol: 'ETH', price: '$3,456', change: '+1.8%', icon: 'Ξ' },
-    { name: 'Solana', symbol: 'SOL', price: '$184', change: '+5.2%', icon: '◎' },
-    { name: 'Cardano', symbol: 'ADA', price: '$0.67', change: '-0.5%', icon: '₳' }
+    { name: 'Bitcoin', symbol: 'BTC', price: '$67,234', change: '+2.4%' },
+    { name: 'Ethereum', symbol: 'ETH', price: '$3,456', change: '+1.8%' },
+    { name: 'Solana', symbol: 'SOL', price: '$184', change: '+5.2%' },
+    { name: 'Cardano', symbol: 'ADA', price: '$0.67', change: '-0.5%' }
   ]);
 
   const handleSearch = (query: string) => {
@@ -186,9 +187,20 @@ const SearchContent = () => {
                         borderRadius: '50%'
                       }}
                     >
-                      <span className={`text-lg search-trending-token-icon-${index}`} data-element-id={`search-trending-token-icon-${index}`}>
-                        {token.icon}
-                      </span>
+                      <img
+                        src={getCoinIcon(token.symbol)}
+                        alt={token.name}
+                        className={`w-6 h-6 search-trending-token-icon-${index}`}
+                        data-element-id={`search-trending-token-icon-${index}`}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<span class="text-sm font-bold" style="color: white">${token.symbol[0]}</span>`;
+                          }
+                        }}
+                      />
                     </div>
                     <div className="text-left">
                       <div 
