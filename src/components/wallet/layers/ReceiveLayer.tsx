@@ -273,11 +273,11 @@ const ReceiveLayer = () => {
         >
           <button
             onClick={handleClose}
-            className="wallet-action-button receive-close-button"
+            className="wallet-action-button w-full py-3 px-4 flex items-center justify-center space-x-2 receive-close-button"
             data-element-id="receive-close-button"
           >
-            <X className="wallet-action-button-icon receive-close-icon" data-element-id="receive-close-icon" />
-            <span className="receive-close-text" data-element-id="receive-close-text">Close</span>
+            <X className="wallet-action-button-icon w-5 h-5 receive-close-icon" data-element-id="receive-close-icon" />
+            <span className="font-medium receive-close-text" data-element-id="receive-close-text">Close</span>
           </button>
         </div>
       </div>
