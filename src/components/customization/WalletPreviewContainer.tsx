@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import DualWalletPreview from '@/components/wallet/DualWalletPreview';
 import { useCustomizationStore } from '@/stores/customizationStore';
@@ -12,7 +13,11 @@ import { JSONElementDebugger } from '@/components/debug-tools/JSONElementDebugge
 import { JSONKeyMapper, addMissingElementIds } from '@/components/debug-tools/JSONKeyMapper';
 import { JsonThemeElement } from '@/utils/jsonThemeAnalyzer';
 
-const WalletPreviewContainer = () => {
+interface WalletPreviewContainerProps {
+  onElementSelect?: (elementKey: string) => void;
+}
+
+const WalletPreviewContainer = ({ onElementSelect }: WalletPreviewContainerProps = {}) => {
   const { 
     activeLayer, 
     loginStyle, 
@@ -48,9 +53,21 @@ const WalletPreviewContainer = () => {
     return () => clearTimeout(timer);
   }, [activeLayer]);
 
-  const handleElementSelect = (element: string) => {
-    setSelectedElementFromPreview(element);
-    console.log('🎯 Element selected from preview:', element);
+  // Create adapter function to match expected signature
+  const handleElementSelect = (element: any) => {
+    // If selectElement expects 2 arguments, find the DOM element
+    const domElement = document.querySelector(`[data-element-id="${element.id || element.key}"]`) as HTMLElement;
+    if (domElement && selectElement.length === 2) {
+      selectElement(element, domElement);
+    } else {
+      selectElement(element);
+    }
+    
+    // Call the optional onElementSelect prop
+    const elementKey = element.id || element.key || element.name || '';
+    setSelectedElementFromPreview(elementKey);
+    onElementSelect?.(elementKey);
+    console.log('🎯 Element selected from preview:', elementKey);
   };
 
   const handleJsonElementSelect = (element: JsonThemeElement) => {
@@ -58,8 +75,8 @@ const WalletPreviewContainer = () => {
     setSelectedElementFromPreview(element.key);
     console.log('🎯 JSON Element selected for chat integration:', element);
     
-    // Future: Pass to AI chat context
-    // onElementSelect?.(element);
+    // Call the optional onElementSelect prop
+    onElementSelect?.(element.key);
   };
 
   const handleJsonDomElementFound = (domElement: HTMLElement | null) => {
@@ -115,7 +132,7 @@ const WalletPreviewContainer = () => {
               categories={categories}
               containerRef={walletPreviewRef}
               editModeState={editModeState}
-              onElementSelect={selectElement}
+              onElementSelect={handleElementSelect}
               onElementHover={setHoveredElement}
             />
             
