@@ -21,20 +21,20 @@ const availableThemes: ThemeItem[] = [
     themeData: null
   },
   {
+    id: 'wif',
+    name: 'WIF',
+    description: 'WIF themed wallet design',
+    previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png',
+    coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png',
+    themeData: null
+  },
+  {
     id: 'default',
     name: 'Classic Theme',
     description: 'Clean and modern wallet design',
     previewImage: '/themes/covers/default-cover.jpg',
     coverUrl: '/themes/covers/default-cover.jpg',
     themeData: null // Will be loaded from JSON
-  },
-  {
-    id: 'neon',
-    name: 'Neon Dream',
-    description: 'Cyberpunk-inspired neon aesthetics',
-    previewImage: '/themes/covers/neon-cover.jpg',
-    coverUrl: '/themes/covers/neon-cover.jpg',
-    themeData: null
   }
 ];
 
