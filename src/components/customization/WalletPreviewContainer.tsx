@@ -4,12 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
-import { Eye, EyeOff, Lock, Unlock, Edit3 } from 'lucide-react';
+import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import WalletContainer from '@/components/wallet/WalletContainer';
-import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
+import { useWalletElements } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
-import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
-import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -32,8 +30,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const walletContainerRef = useRef<HTMLDivElement>(null);
 
   // Load elements from Supabase
@@ -45,38 +41,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
       console.log('🔄 Updated wallet elements mapper with', elements.length, 'elements');
     }
   }, [elements]);
-
-  const handleEditModeToggle = () => {
-    const newEditMode = !isEditMode;
-    setIsEditMode(newEditMode);
-    if (newEditMode) {
-      console.log('🎯 Advanced Edit Mode activated');
-      console.log('🎯 Wallet container ref:', walletContainerRef.current);
-    } else {
-      console.log('🎯 Advanced Edit Mode deactivated');
-      setSelectedElementId(null);
-    }
-  };
-
-  const handleElementSelect = (element: WalletElement) => {
-    setSelectedElementId(element.id);
-    console.log('✅ Advanced Element selected in preview:', element.name, element.selector);
-    
-    // Auto-populate chat with element selector
-    if (onElementSelect && element.selector) {
-      const cleanSelector = element.selector.startsWith('.') 
-        ? element.selector.substring(1) 
-        : element.selector;
-      onElementSelect(cleanSelector);
-      console.log('📝 Auto-populated chat with selector:', cleanSelector);
-    }
-  };
-
-  const handleEditModeExit = () => {
-    setIsEditMode(false);
-    setSelectedElementId(null);
-    console.log('🚪 Advanced Edit Mode exited');
-  };
 
   const globalStyle = getStyleForComponent('global');
   const headerStyle = getStyleForComponent('header');
@@ -250,21 +214,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
-            
-            {/* Enhanced EDIT Button */}
-            <Button
-              variant={isEditMode ? "default" : "outline"}
-              size="sm"
-              onClick={handleEditModeToggle}
-              className={`${
-                isEditMode 
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                  : 'border-purple-500 text-purple-400 hover:bg-purple-500/10'
-              } transition-colors`}
-            >
-              <Edit3 className="h-4 w-4 mr-1" />
-              {isEditMode ? 'Exit Advanced Edit' : 'ADVANCED EDIT'}
-            </Button>
           </div>
           
           {/* Wallet Selector */}
@@ -314,14 +263,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             )}
           </div>
           
-          {/* Enhanced Edit Mode Indicator */}
-          <EditModeIndicator
-            isActive={isEditMode}
-            selectedElementName={elements.find(e => e.id === selectedElementId)?.name}
-            elementsCount={elements.length}
-            onExit={handleEditModeExit}
-          />
-          
           {/* Wallet Container */}
           <div 
             ref={walletContainerRef}
@@ -335,28 +276,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
                 : '0 20px 40px rgba(0,0,0,0.3)'
             }}
           >
-            {/* Overlay контейнер */}
-            {isEditMode && (
-              <div 
-                className="absolute inset-0 pointer-events-none z-50"
-                style={{ 
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  zIndex: 9998
-                }}
-              >
-                <AdvancedInteractiveElementSelector
-                  isActive={isEditMode}
-                  onElementSelect={handleElementSelect}
-                  onExit={handleEditModeExit}
-                  containerRef={walletContainerRef}
-                />
-              </div>
-            )}
-
             {currentLayer === 'login' ? (
               renderLoginScreen()
             ) : (
@@ -364,28 +283,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             )}
           </div>
         </div>
-
-        {/* Enhanced Edit Mode Info */}
-        {isEditMode && (
-          <div className="mt-4 p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                <span className="text-sm text-purple-300">
-                  Advanced Edit Mode: Hover elements, use keyboard shortcuts
-                </span>
-              </div>
-              <span className="text-xs text-purple-400">
-                {elements.length} elements | ESC to exit | ↑↓ for history
-              </span>
-            </div>
-            {selectedElementId && (
-              <div className="mt-2 text-xs text-green-400">
-                ✨ Selected: {elements.find(e => e.id === selectedElementId)?.name}
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
