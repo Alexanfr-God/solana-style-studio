@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 import ChatInterface from '@/components/chat/ChatInterface';
@@ -31,8 +32,8 @@ const WalletAlivePlayground = () => {
         {/* Header */}
         <Header />
         
-        {/* Main Content */}
-        <main className="flex-1 pt-20 pb-6 px-6">
+        {/* Main Content - flex-grow to push footer down */}
+        <main className="flex-grow pt-20 pb-6 px-6">
           <div className="max-w-full mx-auto">
             {/* Title Section */}
             <div className="text-center mb-8">
@@ -49,8 +50,8 @@ const WalletAlivePlayground = () => {
               </div>
             </div>
 
-            {/* Main Layout */}
-            <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-6">
+            {/* Main Layout Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-6 mb-8">
               {/* Left Column - Chat Interface */}
               <div className="xl:col-span-1 lg:col-span-1 space-y-6">
                 <ChatInterface 
@@ -60,31 +61,31 @@ const WalletAlivePlayground = () => {
               </div>
               
               {/* Right Column - Wallet Preview */}
-              <div className="xl:col-span-3 lg:col-span-2 space-y-6">
+              <div className="xl:col-span-3 lg:col-span-2">
                 <WalletPreviewContainer 
                   onElementSelect={handleElementSelectFromPreview}
                 />
-                
-                {/* NEW: Theme Selector Coverflow */}
-                <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg">
-                  <ThemeSelectorCoverflow />
-                </div>
-                
-                {/* MINT Button */}
-                <div className="flex justify-center">
-                  <Button
-                    onClick={handleMintClick}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-[0_0_20px_rgba(153,69,255,0.4)]"
-                  >
-                    🚀 MINT NFT
-                  </Button>
-                </div>
               </div>
+            </div>
+
+            {/* MINT NFT Button - Moved outside grid, between Preview and Coverflow */}
+            <div className="flex justify-center mb-8">
+              <Button
+                onClick={handleMintClick}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-[0_0_20px_rgba(153,69,255,0.4)]"
+              >
+                🚀 MINT NFT
+              </Button>
+            </div>
+            
+            {/* Theme Selector Coverflow */}
+            <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg">
+              <ThemeSelectorCoverflow />
             </div>
           </div>
         </main>
 
-        {/* Footer */}
+        {/* Footer - Will stick to bottom with mt-auto from flex layout */}
         <Footer />
       </div>
     </WalletChatProvider>
