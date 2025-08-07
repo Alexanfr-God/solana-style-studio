@@ -398,13 +398,13 @@
     },
     "sectionLabel": {
       "getStarted": {
-        "textColor": "#5f4025",
+        "textColor": "#FFD166",
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
         "fontSize": "18px"
       },
       "popular": {
-        "textColor": "#5f4025",
+        "textColor": "#FFD166",
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
         "fontSize": "18px"
