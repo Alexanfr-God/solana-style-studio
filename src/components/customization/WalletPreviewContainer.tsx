@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import DualWalletPreview from '@/components/wallet/DualWalletPreview';
 import { useCustomizationStore } from '@/stores/customizationStore';
@@ -70,6 +69,10 @@ const WalletPreviewContainer = ({ onElementSelect }: WalletPreviewContainerProps
     console.log('🎯 Element selected from preview:', elementKey);
   };
 
+  const handleElementHover = (element: WalletElement | null, domElement: HTMLElement | null) => {
+    setHoveredElement(element, domElement);
+  };
+
   const handleJsonElementSelect = (element: JsonThemeElement) => {
     setSelectedJsonElement(element);
     setSelectedElementFromPreview(element.key);
@@ -133,7 +136,7 @@ const WalletPreviewContainer = ({ onElementSelect }: WalletPreviewContainerProps
               containerRef={walletPreviewRef}
               editModeState={editModeState}
               onElementSelect={handleElementSelect}
-              onElementHover={setHoveredElement}
+              onElementHover={handleElementHover}
             />
             
             <ElementHighlightOverlay
