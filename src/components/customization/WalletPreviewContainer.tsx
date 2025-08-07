@@ -55,18 +55,18 @@ const WalletPreviewContainer = ({ onElementSelect }: WalletPreviewContainerProps
   // Create adapter function to match expected signature
   const handleElementSelect = (element: WalletElement) => {
     // Find the DOM element
-    const domElement = document.querySelector(`[data-element-id="${element.id || element.key}"]`) as HTMLElement;
-    if (domElement && selectElement.length === 2) {
+    const domElement = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
+    if (domElement) {
       selectElement(element, domElement);
+      
+      // Call the optional onElementSelect prop
+      const elementKey = element.id || element.name || '';
+      setSelectedElementFromPreview(elementKey);
+      onElementSelect?.(elementKey);
+      console.log('🎯 Element selected from preview:', elementKey);
     } else {
-      selectElement(element);
+      console.warn('⚠️ DOM element not found for:', element.id);
     }
-    
-    // Call the optional onElementSelect prop
-    const elementKey = element.id || element.key || element.name || '';
-    setSelectedElementFromPreview(elementKey);
-    onElementSelect?.(elementKey);
-    console.log('🎯 Element selected from preview:', elementKey);
   };
 
   const handleElementHover = (element: WalletElement | null, domElement: HTMLElement | null) => {
