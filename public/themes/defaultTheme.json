@@ -304,18 +304,18 @@
       "borderRadius": "18px"
     },
     "selectNetworkLabel": {
-      "textColor": "#ad7e26",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "19px"
     },
     "selectNetworkDescription": {
-      "textColor": "#aaa",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
     "emptyState": {
-      "textColor": "#fff",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
