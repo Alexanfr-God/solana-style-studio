@@ -625,7 +625,7 @@
     "fontSize": "13px",
     "fontWeight": "400",
     "fontFamily": "Inter, sans-serif",
-    "color": "#CCCCCC"
+    "color": "#FFD166"
   },
   "inputs": {
     "passwordInput": {
