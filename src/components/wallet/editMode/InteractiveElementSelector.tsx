@@ -1,40 +1,25 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { WalletElement, ElementCategory } from '@/hooks/useWalletElements';
+import { WalletElement } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
 
-interface EditModeState {
-  isActive: boolean;
-  selectedElement: WalletElement | null;
-  selectedDomElement: HTMLElement | null;
-  hoveredElement: WalletElement | null;
-  hoveredDomElement: HTMLElement | null;
-  history: WalletElement[];
-}
-
 interface InteractiveElementSelectorProps {
-  elements: WalletElement[];
-  categories: ElementCategory[];
-  containerRef: React.RefObject<HTMLElement>;
-  editModeState: EditModeState;
+  isActive: boolean;
   onElementSelect: (element: WalletElement) => void;
-  onElementHover: (element: WalletElement | null, domElement: HTMLElement | null) => void;
+  onExit: () => void;
+  containerRef: React.RefObject<HTMLElement>;
 }
 
 export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProps> = ({
-  elements,
-  categories,
-  containerRef,
-  editModeState,
+  isActive,
   onElementSelect,
-  onElementHover
+  onExit,
+  containerRef
 }) => {
   const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
   const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-
-  const isActive = editModeState.isActive;
 
   useEffect(() => {
     if (!isActive || !containerRef.current) return;
@@ -49,7 +34,6 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
       if (!elementAtPoint || !container.contains(elementAtPoint)) {
         setHoveredElement(null);
         setTooltip(null);
-        onElementHover(null, null);
         return;
       }
 
@@ -65,13 +49,11 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
               y: e.clientY - 30,
               text: `${elementInfo.name} (${elementInfo.type})`
             });
-            onElementHover(elementInfo, elementAtPoint);
           }
         }
       } else {
         setHoveredElement(null);
         setTooltip(null);
-        onElementHover(null, null);
       }
     };
 
@@ -96,7 +78,7 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        // Exit edit mode - this should be handled by parent
+        onExit();
       }
     };
 
@@ -110,7 +92,7 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isActive, hoveredElement, containerRef, onElementSelect, onElementHover]);
+  }, [isActive, hoveredElement, containerRef, onElementSelect, onExit]);
 
   // Очищаем состояние при выходе из режима
   useEffect(() => {

@@ -1,204 +1,414 @@
-import React, { useState, useEffect, useRef } from 'react';
-import DualWalletPreview from '@/components/wallet/DualWalletPreview';
-import { useCustomizationStore } from '@/stores/customizationStore';
-import { InteractiveElementSelector } from '@/components/wallet/editMode/InteractiveElementSelector';
-import { ElementHighlightOverlay } from '@/components/wallet/editMode/ElementHighlightOverlay';
-import { getElementPosition } from '@/utils/domUtils';
-import { EditModeDebugPanel } from '@/components/wallet/editMode/EditModeDebugPanel';
-import ChatInterface from '@/components/chat/ChatInterface';
-import { useEditModeManager } from '@/hooks/useEditModeManager';
+import React, { useEffect, useRef, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
+import { Eye, EyeOff, Lock, Unlock, Edit3, Bug } from 'lucide-react';
+import WalletContainer from '@/components/wallet/WalletContainer';
 import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
-import { JSONElementDebugger } from '@/components/debug-tools/JSONElementDebugger';
-import { JSONKeyMapper, addMissingElementIds } from '@/components/debug-tools/JSONKeyMapper';
-import { JsonThemeElement } from '@/utils/jsonThemeAnalyzer';
+import { walletElementsMapper } from '@/services/walletElementsMappingService';
+import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
+import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
+import { EditModeDebugPanel } from '@/components/wallet/editMode/EditModeDebugPanel';
 
 interface WalletPreviewContainerProps {
-  onElementSelect?: (elementKey: string) => void;
+  onElementSelect?: (elementSelector: string) => void;
 }
 
-const WalletPreviewContainer = ({ onElementSelect }: WalletPreviewContainerProps = {}) => {
-  const { 
-    activeLayer, 
-    loginStyle, 
-    walletStyle, 
-    isGenerating, 
-    editorMode, 
-    walletAnalysis,
-    isAnalyzing 
-  } = useCustomizationStore();
-  
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isJsonDebugMode, setIsJsonDebugMode] = useState(false);
-  const [selectedJsonElement, setSelectedJsonElement] = useState<JsonThemeElement | null>(null);
-  const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
-  
+const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
+  onElementSelect
+}) => {
   const {
-    state: editModeState,
-    activateEditMode,
-    deactivateEditMode,
-    selectElement,
-    setHoveredElement
-  } = useEditModeManager();
+    getStyleForComponent,
+    selectedWallet,
+    setSelectedWallet,
+    isCustomizing,
+    currentLayer,
+    unlockWallet,
+    setCurrentLayer,
+    loginStyle,
+    walletStyle
+  } = useWalletCustomizationStore();
   
-  const { elements, categories, loading } = useWalletElements();
-  const walletPreviewRef = useRef<HTMLDivElement>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const walletContainerRef = useRef<HTMLDivElement>(null);
 
-  // Add missing data-element-id attributes when component mounts
+  // Load elements from Supabase
+  const { elements, loading, error } = useWalletElements();
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      addMissingElementIds();
-    }, 1000); // Wait for wallet to render
-    
-    return () => clearTimeout(timer);
-  }, [activeLayer]);
+    if (elements.length > 0) {
+      walletElementsMapper.updateElements(elements);
+      console.log('🔄 Updated wallet elements mapper with', elements.length, 'elements');
+    }
+  }, [elements]);
 
-  // Create adapter function to match expected signature
-  const handleElementSelect = (element: WalletElement) => {
-    // Find the DOM element
-    const domElement = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
-    if (domElement) {
-      selectElement(element, domElement);
-      
-      // Call the optional onElementSelect prop
-      const elementKey = element.id || element.name || '';
-      setSelectedElementFromPreview(elementKey);
-      onElementSelect?.(elementKey);
-      console.log('🎯 Element selected from preview:', elementKey);
+  const handleEditModeToggle = () => {
+    const newEditMode = !isEditMode;
+    setIsEditMode(newEditMode);
+    if (newEditMode) {
+      console.log('🎯 Advanced Edit Mode activated');
+      console.log('🎯 Wallet container ref:', walletContainerRef.current);
     } else {
-      console.warn('⚠️ DOM element not found for:', element.id);
+      console.log('🎯 Advanced Edit Mode deactivated');
+      setSelectedElementId(null);
     }
   };
 
-  const handleElementHover = (element: WalletElement | null, domElement: HTMLElement | null) => {
-    setHoveredElement(element, domElement);
-  };
-
-  const handleJsonElementSelect = (element: JsonThemeElement) => {
-    setSelectedJsonElement(element);
-    setSelectedElementFromPreview(element.key);
-    console.log('🎯 JSON Element selected for chat integration:', element);
+  const handleElementSelect = (element: WalletElement) => {
+    setSelectedElementId(element.id);
+    console.log('✅ Advanced Element selected in preview:', element.name, element.selector);
     
-    // Call the optional onElementSelect prop
-    onElementSelect?.(element.key);
+    // Auto-populate chat with element selector
+    if (onElementSelect && element.selector) {
+      const cleanSelector = element.selector.startsWith('.') 
+        ? element.selector.substring(1) 
+        : element.selector;
+      onElementSelect(cleanSelector);
+      console.log('📝 Auto-populated chat with selector:', cleanSelector);
+    }
   };
 
-  const handleJsonDomElementFound = (domElement: HTMLElement | null) => {
-    // This could be used for additional highlighting or context
-    console.log('🔍 DOM element mapped:', domElement);
+  const handleEditModeExit = () => {
+    setIsEditMode(false);
+    setSelectedElementId(null);
+    console.log('🚪 Advanced Edit Mode exited');
   };
 
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center relative p-4">
-      {loading ? (
-        <div className="text-center text-gray-500">Loading...</div>
-      ) : (
-        <>
-          {isGenerating && (
-            <div className="absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-md z-50 flex items-center justify-center">
-              <div className="text-white text-2xl font-semibold">
-                Generating...
-              </div>
-            </div>
-          )}
+  const globalStyle = getStyleForComponent('global');
+  const headerStyle = getStyleForComponent('header');
 
-          {isAnalyzing && (
-            <div className="absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-md z-50 flex items-center justify-center">
-              <div className="text-white text-2xl font-semibold">
-                Analyzing Wallet...
-              </div>
-            </div>
-          )}
+  const handleUnlock = () => {
+    unlockWallet();
+  };
 
-          {walletAnalysis && editorMode === 'fine-tune' && (
-            <div className="absolute top-4 left-4 bg-black/70 text-white p-3 rounded-md z-50">
-              <h4 className="text-lg font-semibold mb-2">Wallet Analysis</h4>
-              <pre className="text-xs">{JSON.stringify(walletAnalysis, null, 2)}</pre>
-            </div>
-          )}
-        </>
-      )}
+  const handleLock = () => {
+    setCurrentLayer('login');
+  };
 
-      <div className="w-full max-w-sm mx-auto relative">
-        <div className="absolute top-2 left-2 z-10">
-          <h2 className="text-lg font-semibold text-white/90">
-            {activeLayer === 'login' ? 'Login Screen' : 'Wallet Screen'}
+  const { getLockLayer } = useWalletTheme();
+  const lockLayerStyle = getLockLayer();
+
+  const renderLoginScreen = () => (
+    <div 
+      className="relative p-6 flex flex-col justify-end unlock-screen-container" 
+      data-element-id="unlock-screen-container"
+      style={{
+        backgroundColor: lockLayerStyle.backgroundColor || '#181818',
+        backgroundImage: lockLayerStyle.backgroundImage ? `url(${lockLayerStyle.backgroundImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        height: '650px',
+        borderBottomLeftRadius: '1rem',
+        borderBottomRightRadius: '1rem'
+      }}
+    >
+
+      {/* Login Form - Bottom Section */}
+      <div 
+        className="w-full max-w-xs mx-auto mb-8 unlock-form-wrapper"
+        data-element-id="unlock-form-wrapper"
+      >
+        <div 
+          className="space-y-3 unlock-form-container"
+          data-element-id="unlock-form-container"
+        >
+          {/* Password Title */}
+          <h2 
+            className="text-center font-medium text-white text-lg login-password-title" 
+            data-element-id="login-password-title"
+            style={{
+              fontFamily: lockLayerStyle.title?.fontFamily || 'Inter',
+              color: lockLayerStyle.title?.textColor || '#FFFFFF',
+              fontSize: lockLayerStyle.title?.fontSize || '28px',
+              fontWeight: lockLayerStyle.title?.fontWeight || 'bold'
+            }}
+          >
+            <span 
+              className="unlock-password-title-text"
+              data-element-id="unlock-password-title-text"
+            >
+              Enter your password
+            </span>
           </h2>
+          
+          {/* Password Input */}
+          <div 
+            className="relative unlock-password-field-container"
+            data-element-id="unlock-password-field-container"
+          >
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
+              data-element-id="login-password-input"
+              style={{
+                backgroundColor: lockLayerStyle.passwordInput?.backgroundColor || 'rgba(30,30,30,0.8)',
+                color: lockLayerStyle.passwordInput?.textColor || '#FFFFFF',
+                fontFamily: lockLayerStyle.passwordInput?.fontFamily || 'Inter',
+                borderRadius: lockLayerStyle.passwordInput?.borderRadius || '12px',
+                border: lockLayerStyle.passwordInput?.border || 'none'
+              }}
+            />
+            {password && (
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white login-show-password"
+                data-element-id="login-show-password"
+                style={{
+                  color: lockLayerStyle.passwordInput?.iconEyeColor || '#aaa'
+                }}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 unlock-password-toggle-icon" data-element-id="unlock-password-toggle-icon" />
+                ) : (
+                  <Eye className="h-4 w-4 unlock-password-toggle-icon" data-element-id="unlock-password-toggle-icon" />
+                )}
+              </button>
+            )}
+          </div>
+          
+          {/* Forgot Password Link */}
+          <div 
+            className="text-center unlock-forgot-container"
+            data-element-id="unlock-forgot-container"
+          >
+            <button
+              className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
+              data-element-id="login-forgot-password"
+              style={{ 
+                fontFamily: lockLayerStyle.forgotPassword?.fontFamily || 'Inter',
+                color: lockLayerStyle.forgotPassword?.textColor || '#aaa',
+                fontSize: lockLayerStyle.forgotPassword?.fontSize || '15px'
+              }}
+            >
+              <span 
+                className="unlock-forgot-text"
+                data-element-id="unlock-forgot-text"
+              >
+                Forgot password?
+              </span>
+            </button>
+          </div>
+          
+          {/* Unlock Button */}
+          <button
+            className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
+            data-element-id="login-unlock-button"
+            style={{
+              backgroundColor: lockLayerStyle.unlockButton?.backgroundColor || '#13e163',
+              color: lockLayerStyle.unlockButton?.textColor || '#FFFFFF',
+              fontFamily: lockLayerStyle.unlockButton?.fontFamily || 'Inter',
+              borderRadius: lockLayerStyle.unlockButton?.borderRadius || '14px',
+              fontWeight: lockLayerStyle.unlockButton?.fontWeight || '600',
+              fontSize: lockLayerStyle.unlockButton?.fontSize || '19px'
+            }}
+            onClick={handleUnlock}
+          >
+            <span 
+              className="unlock-button-text"
+              data-element-id="unlock-button-text"
+            >
+              Unlock
+            </span>
+          </button>
         </div>
-        
-        <DualWalletPreview />
-        
-        {/* Enhanced Edit Mode Integration */}
-        {isEditMode && (
-          <>
-            <InteractiveElementSelector
-              elements={elements}
-              categories={categories}
-              containerRef={walletPreviewRef}
-              editModeState={editModeState}
-              onElementSelect={handleElementSelect}
-              onElementHover={handleElementHover}
-            />
-            
-            <ElementHighlightOverlay
-              element={editModeState.selectedDomElement}
-              walletElement={editModeState.selectedElement}
-              isSelected={!!editModeState.selectedElement}
-              isHovered={!!editModeState.hoveredElement}
-              position={getElementPosition(editModeState.selectedDomElement || editModeState.hoveredDomElement)}
-              containerRef={walletPreviewRef}
-            />
-            
-            <EditModeDebugPanel
-              isVisible={isEditMode}
-              elements={elements}
-              categories={categories}
-              onToggle={() => setIsEditMode(!isEditMode)}
-            />
-          </>
-        )}
-
-        {/* JSON Key Mapper for DOM element detection */}
-        <JSONKeyMapper
-          selectedElement={selectedJsonElement}
-          onDomElementFound={handleJsonDomElementFound}
-        />
-      </div>
-
-      {/* Control Buttons */}
-      <div className="absolute top-4 right-4 flex gap-2 z-50">
-        {!isEditMode && !isJsonDebugMode && (
-          <button
-            onClick={() => setIsEditMode(true)}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg transition-colors"
-          >
-            Debug
-          </button>
-        )}
-        
-        {isEditMode && (
-          <button
-            onClick={() => setIsEditMode(false)}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-lg transition-colors"
-          >
-            Exit Debug
-          </button>
-        )}
-      </div>
-
-      {/* New JSON Debug Panel */}
-      <JSONElementDebugger
-        isVisible={isJsonDebugMode}
-        onToggle={() => setIsJsonDebugMode(!isJsonDebugMode)}
-        onElementSelect={handleJsonElementSelect}
-      />
-
-      <div className="w-full max-w-2xl mx-auto mt-6">
-        <ChatInterface 
-          selectedElementFromPreview={selectedElementFromPreview}
-          onElementChange={setSelectedElementFromPreview}
-        />
       </div>
     </div>
+  );
+
+  if (loading) {
+    return (
+      <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
+        <CardContent className="p-6 h-full flex items-center justify-center">
+          <div className="text-white">Loading wallet elements...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
+        <CardContent className="p-6 h-full flex items-center justify-center">
+          <div className="text-red-400">Error loading wallet elements: {error}</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
+      <CardContent className="p-6 h-full flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-semibold text-white">Wallet Preview</h3>
+            
+            {/* Enhanced EDIT Button */}
+            <Button
+              variant={isEditMode ? "default" : "outline"}
+              size="sm"
+              onClick={handleEditModeToggle}
+              className={`${
+                isEditMode 
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                  : 'border-purple-500 text-purple-400 hover:bg-purple-500/10'
+              } transition-colors`}
+            >
+              <Edit3 className="h-4 w-4 mr-1" />
+              {isEditMode ? 'Exit Advanced Edit' : 'ADVANCED EDIT'}
+            </Button>
+
+            {/* Debug Toggle Button */}
+            {isEditMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDebugPanel(!showDebugPanel)}
+                className="border-orange-500 text-orange-400 hover:bg-orange-500/10"
+              >
+                <Bug className="h-4 w-4 mr-1" />
+                Debug
+              </Button>
+            )}
+          </div>
+          
+          {/* Wallet Selector */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={selectedWallet === 'phantom' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedWallet('phantom')}
+              className="text-xs"
+            >
+              WCC
+            </Button>
+            <Button
+              variant={selectedWallet === 'metamask' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedWallet('metamask')}
+              className="text-xs"
+              disabled
+            >
+              MetaMask
+            </Button>
+          </div>
+        </div>
+        
+        {/* Wallet container */}
+        <div className="flex-1 flex items-center justify-center overflow-visible relative">
+          {/* LOCK/UNLOCK Button - External to wallet container */}
+          <div className="absolute top-4 right-4 z-20">
+            {currentLayer === 'login' ? (
+              <Button
+                size="sm"
+                onClick={handleUnlock}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Unlock className="h-4 w-4 mr-1" />
+                Unlock
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleLock}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                <Lock className="h-4 w-4 mr-1" />
+                Lock
+              </Button>
+            )}
+          </div>
+          
+          {/* Enhanced Edit Mode Indicator */}
+          <EditModeIndicator
+            isActive={isEditMode}
+            selectedElementName={elements.find(e => e.id === selectedElementId)?.name}
+            elementsCount={elements.length}
+            onExit={handleEditModeExit}
+          />
+          
+          {/* Wallet Container */}
+          <div 
+            ref={walletContainerRef}
+            className="relative w-96 h-[650px] mx-auto rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: isCustomizing 
+                ? '0 0 30px rgba(153, 69, 255, 0.4), inset 0 0 20px rgba(153, 69, 255, 0.1)' 
+                : '0 20px 40px rgba(0,0,0,0.3)'
+            }}
+          >
+            {/* Overlay контейнер */}
+            {isEditMode && (
+              <div 
+                className="absolute inset-0 pointer-events-none z-50"
+                style={{ 
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 9998
+                }}
+              >
+                <AdvancedInteractiveElementSelector
+                  isActive={isEditMode}
+                  onElementSelect={handleElementSelect}
+                  onExit={handleEditModeExit}
+                  containerRef={walletContainerRef}
+                />
+              </div>
+            )}
+
+            {currentLayer === 'login' ? (
+              renderLoginScreen()
+            ) : (
+              <WalletContainer />
+            )}
+          </div>
+        </div>
+
+        {/* Enhanced Edit Mode Info */}
+        {isEditMode && (
+          <div className="mt-4 p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-purple-300">
+                  Advanced Edit Mode: Hover elements, use keyboard shortcuts
+                </span>
+              </div>
+              <span className="text-xs text-purple-400">
+                {elements.length} elements | ESC to exit | ↑↓ for history
+              </span>
+            </div>
+            {selectedElementId && (
+              <div className="mt-2 text-xs text-green-400">
+                ✨ Selected: {elements.find(e => e.id === selectedElementId)?.name}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Debug Panel */}
+        <EditModeDebugPanel
+          isVisible={showDebugPanel}
+          elements={elements}
+          onToggle={() => setShowDebugPanel(!showDebugPanel)}
+        />
+      </CardContent>
+    </Card>
   );
 };
 
