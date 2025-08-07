@@ -18,32 +18,6 @@ interface GlobalSearchInput {
   iconClose?: { color?: string; type?: string };
 }
 
-interface TokenElements {
-  name?: {
-    textColor?: string;
-    fontFamily?: string;
-    fontWeight?: string;
-    fontSize?: string;
-  };
-  amount?: {
-    textColor?: string;
-    fontFamily?: string;
-    fontSize?: string;
-  };
-  dollarValue?: {
-    textColor?: string;
-    fontFamily?: string;
-    fontSize?: string;
-  };
-  percentChange?: {
-    positiveColor?: string;
-    negativeColor?: string;
-    neutralColor?: string;
-    fontFamily?: string;
-    fontSize?: string;
-  };
-}
-
 interface WalletTheme {
   globalSearchInput?: GlobalSearchInput;
   lockLayer?: WalletThemeLayer;
@@ -58,7 +32,6 @@ interface WalletTheme {
   historyLayer?: WalletThemeLayer;
   searchLayer?: WalletThemeLayer;
   assetCard?: AssetCardStyle;
-  tokenElements?: TokenElements;
   global?: WalletThemeLayer;
 }
 
@@ -91,35 +64,6 @@ export const useWalletTheme = () => {
       fontSize: '15px',
       iconSearch: { color: '#ffd873', type: 'search' },
       iconClose: { color: '#ffd873', type: 'x' }
-    };
-  };
-
-  // Global Token Elements styles
-  const getTokenElements = (): TokenElements => {
-    return theme.tokenElements || {
-      name: {
-        textColor: '#FFD166',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: 'bold',
-        fontSize: '16px'
-      },
-      amount: {
-        textColor: '#FFFFFF',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '15px'
-      },
-      dollarValue: {
-        textColor: '#FFFFFF',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '15px'
-      },
-      percentChange: {
-        positiveColor: '#13e163',
-        negativeColor: '#ff5959',
-        neutralColor: '#FFFFFF',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '14px'
-      }
     };
   };
 
@@ -175,28 +119,25 @@ export const useWalletTheme = () => {
   };
 
   const getUnifiedTokenColor = (change: string) => {
-    const tokenElements = getTokenElements();
+    const assetCard = getAssetCard();
     const isPositive = change.startsWith('+');
-    const isNegative = change.startsWith('-');
-    const isZero = change === '0' || change === '$0.00' || change === '0.0%';
+    const isZero = change === '0' || change === '$0.00';
     
     return {
       color: isZero 
-        ? tokenElements.percentChange?.neutralColor || '#FFFFFF'
+        ? assetCard.value?.textColor || '#fff'
         : isPositive 
-        ? tokenElements.percentChange?.positiveColor || '#13e163'
-        : isNegative
-        ? tokenElements.percentChange?.negativeColor || '#ff5959'
-        : tokenElements.percentChange?.neutralColor || '#FFFFFF',
-      fontFamily: tokenElements.percentChange?.fontFamily || 'Inter, sans-serif',
-      fontSize: tokenElements.percentChange?.fontSize || '14px'
+        ? assetCard.percent?.positiveColor || '#13e163'
+        : assetCard.percent?.negativeColor || '#ff5959',
+      fontFamily: assetCard.percent?.fontFamily || 'Inter, sans-serif',
+      fontSize: assetCard.percent?.fontSize || '14px'
     };
   };
 
   const tokenColors = {
-    positive: theme.tokenElements?.percentChange?.positiveColor || '#13e163',
-    negative: theme.tokenElements?.percentChange?.negativeColor || '#ff5959',
-    neutral: theme.tokenElements?.percentChange?.neutralColor || '#FFFFFF',
+    positive: theme.assetCard?.percent?.positiveColor || '#13e163',
+    negative: theme.assetCard?.percent?.negativeColor || '#ff5959',
+    neutral: theme.assetCard?.value?.textColor || '#fff',
     warning: '#ffd600',
     info: theme.assetCard?.icon?.color || '#ad7e26'
   };
@@ -204,7 +145,6 @@ export const useWalletTheme = () => {
   return {
     theme,
     getGlobalSearchInput,
-    getTokenElements,
     getAssetCard,
     getLockLayer,
     getAvatarHeader,

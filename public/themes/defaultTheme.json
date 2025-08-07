@@ -591,31 +591,6 @@
       "borderRadius": "10px"
     }
   },
-  "tokenElements": {
-    "name": {
-      "textColor": "#FFD166",
-      "fontFamily": "Inter, sans-serif",
-      "fontWeight": "bold",
-      "fontSize": "16px"
-    },
-    "amount": {
-      "textColor": "#FFFFFF",
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "15px"
-    },
-    "dollarValue": {
-      "textColor": "#FFFFFF",
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "15px"
-    },
-    "percentChange": {
-      "positiveColor": "#13e163",
-      "negativeColor": "#ff5959",
-      "neutralColor": "#FFFFFF",
-      "fontFamily": "Inter, sans-serif",
-      "fontSize": "14px"
-    }
-  },
   "assetCard": {
     "backgroundColor": "#432818",
     "borderRadius": "14px",
