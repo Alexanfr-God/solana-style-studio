@@ -24,6 +24,22 @@ interface TokenCost {
   color?: string;
 }
 
+interface TokenCardTitle {
+  fontSize?: string;
+  fontWeight?: string;
+  fontFamily?: string;
+  color?: string;
+  textAlign?: string;
+}
+
+interface TokenCardDescription {
+  fontSize?: string;
+  fontWeight?: string;
+  fontFamily?: string;
+  color?: string;
+  textAlign?: string;
+}
+
 interface WalletTheme {
   globalSearchInput?: GlobalSearchInput;
   lockLayer?: WalletThemeLayer;
@@ -39,6 +55,8 @@ interface WalletTheme {
   searchLayer?: WalletThemeLayer;
   assetCard?: AssetCardStyle;
   tokenCost?: TokenCost;
+  tokenCardTitle?: TokenCardTitle;
+  tokenCardDescription?: TokenCardDescription;
   global?: WalletThemeLayer;
 }
 
@@ -118,6 +136,28 @@ export const useWalletTheme = () => {
     };
   };
 
+  // Token Card Title styles
+  const getTokenCardTitleStyle = (): TokenCardTitle => {
+    return theme.tokenCardTitle || {
+      fontSize: '16px',
+      fontWeight: '600',
+      fontFamily: 'Inter, sans-serif',
+      color: '#FFFFFF',
+      textAlign: 'center'
+    };
+  };
+
+  // Token Card Description styles
+  const getTokenCardDescriptionStyle = (): TokenCardDescription => {
+    return theme.tokenCardDescription || {
+      fontSize: '13px',
+      fontWeight: '400',
+      fontFamily: 'Inter, sans-serif',
+      color: '#CCCCCC',
+      textAlign: 'center'
+    };
+  };
+
   const getLockLayer = () => theme.lockLayer || {};
   const getAvatarHeader = () => theme.avatarHeader || {};
   const getSidebarLayer = () => theme.sidebarLayer || {};
@@ -164,6 +204,8 @@ export const useWalletTheme = () => {
     getGlobalSearchInput,
     getAssetCard,
     getTokenCost,
+    getTokenCardTitleStyle,
+    getTokenCardDescriptionStyle,
     getLockLayer,
     getAvatarHeader,
     getSidebarLayer,

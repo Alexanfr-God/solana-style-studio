@@ -44,7 +44,7 @@ const availableNetworks: Network[] = [
 
 const SendLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getSendLayer, getGlobalSearchInput, getTransition } = useWalletTheme();
+  const { getSendLayer, getGlobalSearchInput, getTransition, getTokenCardTitleStyle, getTokenCardDescriptionStyle } = useWalletTheme();
   useWalletButtonStyles();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,6 +53,8 @@ const SendLayer = () => {
   // Get send layer theme styles and global search input
   const sendLayerStyle = getSendLayer();
   const globalSearchInput = getGlobalSearchInput();
+  const tokenCardTitleStyle = getTokenCardTitleStyle();
+  const tokenCardDescriptionStyle = getTokenCardDescriptionStyle();
 
   const handleClose = () => {
     setCurrentLayer('home');
@@ -190,10 +192,11 @@ const SendLayer = () => {
                         className="font-medium text-sm send-network-name"
                         data-element-id={`send-network-name-${index}`}
                         style={{
-                          color: sendLayerStyle.networkCardContent?.networkName?.textColor || '#fff',
-                          fontFamily: sendLayerStyle.networkCardContent?.networkName?.fontFamily || 'Inter',
-                          fontWeight: sendLayerStyle.networkCardContent?.networkName?.fontWeight || 'normal',
-                          fontSize: sendLayerStyle.networkCardContent?.networkName?.fontSize || '16px',
+                          fontSize: tokenCardTitleStyle.fontSize,
+                          fontWeight: tokenCardTitleStyle.fontWeight,
+                          fontFamily: tokenCardTitleStyle.fontFamily,
+                          color: tokenCardTitleStyle.color,
+                          textAlign: tokenCardTitleStyle.textAlign as any
                         }}
                       >
                         {network.name}
@@ -202,10 +205,11 @@ const SendLayer = () => {
                         className="text-xs send-network-description"
                         data-element-id={`send-network-description-${index}`}
                         style={{ 
-                          color: sendLayerStyle.networkCardContent?.networkDescription?.textColor || '#d0d0d0',
-                          fontFamily: sendLayerStyle.networkCardContent?.networkDescription?.fontFamily || 'Inter',
-                          fontWeight: sendLayerStyle.networkCardContent?.networkDescription?.fontWeight || 'normal',
-                          fontSize: sendLayerStyle.networkCardContent?.networkDescription?.fontSize || '15px',
+                          fontSize: tokenCardDescriptionStyle.fontSize,
+                          fontWeight: tokenCardDescriptionStyle.fontWeight,
+                          fontFamily: tokenCardDescriptionStyle.fontFamily,
+                          color: tokenCardDescriptionStyle.color,
+                          textAlign: tokenCardDescriptionStyle.textAlign as any
                         }}
                       >
                         {network.description}
@@ -222,9 +226,9 @@ const SendLayer = () => {
                   className="text-sm send-no-results-text"
                   data-element-id="send-no-results-text"
                   style={{ 
-                    color: sendLayerStyle.emptyState?.textColor || '#fff',
-                    fontFamily: sendLayerStyle.emptyState?.fontFamily || 'Inter',
-                    fontSize: sendLayerStyle.emptyState?.fontSize || '15px'
+                    fontSize: tokenCardDescriptionStyle.fontSize,
+                    fontFamily: tokenCardDescriptionStyle.fontFamily,
+                    color: tokenCardDescriptionStyle.color
                   }}
                 >
                   No networks found matching "{searchQuery}"

@@ -58,7 +58,7 @@ const popularTokens: Token[] = [
 
 const BuyLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getBuyLayer, getGlobalSearchInput, getTransition } = useWalletTheme();
+  const { getBuyLayer, getGlobalSearchInput, getTransition, getTokenCardTitleStyle, getTokenCardDescriptionStyle } = useWalletTheme();
   useWalletButtonStyles();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,6 +67,8 @@ const BuyLayer = () => {
   // Get buy layer theme styles and global search input
   const buyLayerStyle = getBuyLayer();
   const globalSearchInput = getGlobalSearchInput();
+  const tokenCardTitleStyle = getTokenCardTitleStyle();
+  const tokenCardDescriptionStyle = getTokenCardDescriptionStyle();
 
   const handleClose = () => {
     setCurrentLayer('home');
@@ -156,7 +158,7 @@ const BuyLayer = () => {
               className="text-sm font-medium mb-3 buy-get-started-title"
               data-element-id="buy-get-started-title"
               style={{
-                color: buyLayerStyle.sectionLabel?.getStarted?.textColor || '#5f4025',
+                color: buyLayerStyle.sectionLabel?.getStarted?.textColor || '#FFD166',
                 fontFamily: buyLayerStyle.sectionLabel?.getStarted?.fontFamily || 'Inter',
                 fontWeight: buyLayerStyle.sectionLabel?.getStarted?.fontWeight || 'bold',
                 fontSize: buyLayerStyle.sectionLabel?.getStarted?.fontSize || '18px',
@@ -191,10 +193,11 @@ const BuyLayer = () => {
                         className="font-medium text-sm buy-get-started-token-name"
                         data-element-id={`buy-get-started-token-name-${index}`}
                         style={{
-                          color: buyLayerStyle.tokenCardContent?.tokenName?.textColor || '#fff',
-                          fontFamily: buyLayerStyle.tokenCardContent?.tokenName?.fontFamily || 'Inter',
-                          fontWeight: buyLayerStyle.tokenCardContent?.tokenName?.fontWeight || 'normal',
-                          fontSize: buyLayerStyle.tokenCardContent?.tokenName?.fontSize || '16px',
+                          fontSize: tokenCardTitleStyle.fontSize,
+                          fontWeight: tokenCardTitleStyle.fontWeight,
+                          fontFamily: tokenCardTitleStyle.fontFamily,
+                          color: tokenCardTitleStyle.color,
+                          textAlign: tokenCardTitleStyle.textAlign as any
                         }}
                       >
                         {token.name}
@@ -203,10 +206,11 @@ const BuyLayer = () => {
                         className="text-xs buy-get-started-token-description"
                         data-element-id={`buy-get-started-token-description-${index}`}
                         style={{ 
-                          color: buyLayerStyle.tokenCardContent?.tokenDescription?.textColor || '#d0d0d0',
-                          fontFamily: buyLayerStyle.tokenCardContent?.tokenDescription?.fontFamily || 'Inter',
-                          fontWeight: buyLayerStyle.tokenCardContent?.tokenDescription?.fontWeight || 'normal',
-                          fontSize: buyLayerStyle.tokenCardContent?.tokenDescription?.fontSize || '15px',
+                          fontSize: tokenCardDescriptionStyle.fontSize,
+                          fontWeight: tokenCardDescriptionStyle.fontWeight,
+                          fontFamily: tokenCardDescriptionStyle.fontFamily,
+                          color: tokenCardDescriptionStyle.color,
+                          textAlign: tokenCardDescriptionStyle.textAlign as any
                         }}
                       >
                         {token.description}
@@ -241,7 +245,7 @@ const BuyLayer = () => {
               className="text-sm font-medium mb-3 buy-popular-title"
               data-element-id="buy-popular-title"
               style={{
-                color: buyLayerStyle.sectionLabel?.popular?.textColor || '#5f4025',
+                color: buyLayerStyle.sectionLabel?.popular?.textColor || '#FFD166',
                 fontFamily: buyLayerStyle.sectionLabel?.popular?.fontFamily || 'Inter',
                 fontWeight: buyLayerStyle.sectionLabel?.popular?.fontWeight || 'bold',
                 fontSize: buyLayerStyle.sectionLabel?.popular?.fontSize || '18px',
@@ -276,10 +280,11 @@ const BuyLayer = () => {
                         className="font-medium text-sm buy-popular-token-name"
                         data-element-id={`buy-popular-token-name-${index}`}
                         style={{
-                          color: buyLayerStyle.tokenCardContent?.tokenName?.textColor || '#fff',
-                          fontFamily: buyLayerStyle.tokenCardContent?.tokenName?.fontFamily || 'Inter',
-                          fontWeight: buyLayerStyle.tokenCardContent?.tokenName?.fontWeight || 'normal',
-                          fontSize: buyLayerStyle.tokenCardContent?.tokenName?.fontSize || '16px',
+                          fontSize: tokenCardTitleStyle.fontSize,
+                          fontWeight: tokenCardTitleStyle.fontWeight,
+                          fontFamily: tokenCardTitleStyle.fontFamily,
+                          color: tokenCardTitleStyle.color,
+                          textAlign: tokenCardTitleStyle.textAlign as any
                         }}
                       >
                         {token.name}
@@ -288,10 +293,11 @@ const BuyLayer = () => {
                         className="text-xs buy-popular-token-description"
                         data-element-id={`buy-popular-token-description-${index}`}
                         style={{ 
-                          color: buyLayerStyle.tokenCardContent?.tokenDescription?.textColor || '#d0d0d0',
-                          fontFamily: buyLayerStyle.tokenCardContent?.tokenDescription?.fontFamily || 'Inter',
-                          fontWeight: buyLayerStyle.tokenCardContent?.tokenDescription?.fontWeight || 'normal',
-                          fontSize: buyLayerStyle.tokenCardContent?.tokenDescription?.fontSize || '15px',
+                          fontSize: tokenCardDescriptionStyle.fontSize,
+                          fontWeight: tokenCardDescriptionStyle.fontWeight,
+                          fontFamily: tokenCardDescriptionStyle.fontFamily,
+                          color: tokenCardDescriptionStyle.color,
+                          textAlign: tokenCardDescriptionStyle.textAlign as any
                         }}
                       >
                         {token.description}
@@ -325,8 +331,9 @@ const BuyLayer = () => {
                   className="text-sm buy-no-results-text"
                   data-element-id="buy-no-results-text"
                   style={{ 
-                    color: buyLayerStyle.tokenCardContent?.tokenDescription?.textColor || '#d0d0d0',
-                    fontFamily: buyLayerStyle.tokenCardContent?.tokenDescription?.fontFamily || 'Inter' 
+                    fontSize: tokenCardDescriptionStyle.fontSize,
+                    fontFamily: tokenCardDescriptionStyle.fontFamily,
+                    color: tokenCardDescriptionStyle.color
                   }}
                 >
                   No tokens found matching "{searchQuery}"
