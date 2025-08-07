@@ -61,14 +61,14 @@ interface WalletTheme {
 }
 
 export const useWalletTheme = () => {
-  const [theme, setTheme] = useState<WalletTheme>({});
+  const [theme, setThemeData] = useState<WalletTheme>({});
 
   useEffect(() => {
     const loadTheme = async () => {
       try {
         const response = await fetch('/themes/defaultTheme.json');
         const themeData = await response.json();
-        setTheme(themeData);
+        setThemeData(themeData);
       } catch (error) {
         console.error('Failed to load theme:', error);
       }
@@ -76,6 +76,12 @@ export const useWalletTheme = () => {
 
     loadTheme();
   }, []);
+
+  // NEW: Function to dynamically set theme
+  const setTheme = (newTheme: WalletTheme) => {
+    console.log('🎨 Setting new theme:', newTheme);
+    setThemeData(newTheme);
+  };
 
   // Global Search Input styles
   const getGlobalSearchInput = (): GlobalSearchInput => {
@@ -201,6 +207,7 @@ export const useWalletTheme = () => {
 
   return {
     theme,
+    setTheme,
     getGlobalSearchInput,
     getAssetCard,
     getTokenCost,

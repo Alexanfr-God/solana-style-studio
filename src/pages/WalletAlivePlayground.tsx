@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 import ChatInterface from '@/components/chat/ChatInterface';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { WalletChatProvider } from '@/contexts/WalletChatContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import ThemeSelectorCoverflow from '@/components/customization/ThemeSelectorCoverflow';
 
 const WalletAlivePlayground = () => {
   const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
@@ -60,10 +60,15 @@ const WalletAlivePlayground = () => {
               </div>
               
               {/* Right Column - Wallet Preview */}
-              <div className="xl:col-span-3 lg:col-span-2 space-y-4">
+              <div className="xl:col-span-3 lg:col-span-2 space-y-6">
                 <WalletPreviewContainer 
                   onElementSelect={handleElementSelectFromPreview}
                 />
+                
+                {/* NEW: Theme Selector Coverflow */}
+                <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg">
+                  <ThemeSelectorCoverflow />
+                </div>
                 
                 {/* MINT Button */}
                 <div className="flex justify-center">
