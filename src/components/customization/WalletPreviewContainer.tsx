@@ -7,7 +7,7 @@ import { getElementPosition } from '@/utils/domUtils';
 import { EditModeDebugPanel } from '@/components/wallet/editMode/EditModeDebugPanel';
 import ChatInterface from '@/components/chat/ChatInterface';
 import { useEditModeManager } from '@/hooks/useEditModeManager';
-import { useWalletElements } from '@/hooks/useWalletElements';
+import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
 import { JSONElementDebugger } from '@/components/debug-tools/JSONElementDebugger';
 import { JSONKeyMapper, addMissingElementIds } from '@/components/debug-tools/JSONKeyMapper';
 import { JsonThemeElement } from '@/utils/jsonThemeAnalyzer';
@@ -53,8 +53,8 @@ const WalletPreviewContainer = ({ onElementSelect }: WalletPreviewContainerProps
   }, [activeLayer]);
 
   // Create adapter function to match expected signature
-  const handleElementSelect = (element: any) => {
-    // If selectElement expects 2 arguments, find the DOM element
+  const handleElementSelect = (element: WalletElement) => {
+    // Find the DOM element
     const domElement = document.querySelector(`[data-element-id="${element.id || element.key}"]`) as HTMLElement;
     if (domElement && selectElement.length === 2) {
       selectElement(element, domElement);
