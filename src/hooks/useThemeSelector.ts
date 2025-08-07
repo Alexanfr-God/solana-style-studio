@@ -16,8 +16,8 @@ const availableThemes: ThemeItem[] = [
     id: 'luxury',
     name: 'Luxury Gold',
     description: 'Premium golden wallet interface',
-    previewImage: '/lovable-uploads/54546cd9-bd65-488c-bdb0-f7944c4cafe5.png',
-    coverUrl: '/lovable-uploads/54546cd9-bd65-488c-bdb0-f7944c4cafe5.png',
+    previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png',
+    coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png',
     themeData: null
   },
   {
