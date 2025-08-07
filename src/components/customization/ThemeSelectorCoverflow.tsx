@@ -1,7 +1,7 @@
 
 import React, { useCallback } from 'react';
 import { Card } from '@/components/ui/card';
-import { useEmblaCarousel } from 'embla-carousel-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
