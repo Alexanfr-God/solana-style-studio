@@ -1,14 +1,16 @@
+
 import React from 'react';
 import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-react';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const HistoryContent = () => {
-  const { getHistoryLayer, getAssetCard, getGlobal } = useWalletTheme();
+  const { getHistoryLayer, getAssetCard, getGlobal, getTokenElements } = useWalletTheme();
 
   // Get layer-specific styles
   const historyStyle = getHistoryLayer();
   const assetCard = getAssetCard();
   const globalStyle = getGlobal();
+  const tokenElements = getTokenElements();
 
   const handleTransactionClick = (transactionType: string) => {
     console.log(`Transaction ${transactionType} clicked`);
@@ -184,9 +186,10 @@ const HistoryContent = () => {
                         className="text-sm font-medium history-transaction-title"
                         data-element-id={`history-transaction-title-${groupIndex}-${itemIndex}`}
                         style={{
-                          color: assetCard.title?.textColor || '#FFFFFF',
-                          fontFamily: assetCard.title?.fontFamily || globalStyle.fontFamily,
-                          fontSize: assetCard.title?.fontSize || '15px'
+                          color: tokenElements.name?.textColor || '#FFFFFF',
+                          fontFamily: tokenElements.name?.fontFamily || globalStyle.fontFamily,
+                          fontWeight: tokenElements.name?.fontWeight || 'bold',
+                          fontSize: tokenElements.name?.fontSize || '16px'
                         }}
                       >
                         {transaction.title}
@@ -211,13 +214,14 @@ const HistoryContent = () => {
                         className="text-sm font-medium history-transaction-amount"
                         data-element-id={`history-transaction-amount-${groupIndex}-${itemIndex}`}
                         style={{
-                          fontFamily: assetCard.value?.fontFamily || globalStyle.fontFamily,
+                          fontFamily: tokenElements.amount?.fontFamily || globalStyle.fontFamily,
+                          fontSize: tokenElements.amount?.fontSize || '15px',
                           fontWeight: historyStyle.activityStatus?.fontWeight || '500',
                           color: transaction.isFailed
-                            ? historyStyle.activityStatus?.failedColor || '#ff5959'
+                            ? historyStyle.activityStatus?.failedColor || tokenElements.percentChange?.negativeColor || '#ff5959'
                             : transaction.isNegative
-                            ? assetCard.value?.textColor || '#FFFFFF'
-                            : assetCard.percent?.positiveColor || '#13e163'
+                            ? tokenElements.amount?.textColor || '#FFFFFF'
+                            : tokenElements.percentChange?.positiveColor || '#13e163'
                         }}
                       >
                         {transaction.amount}
@@ -226,7 +230,10 @@ const HistoryContent = () => {
                         <div 
                           className="text-xs history-transaction-amount-subtitle"
                           data-element-id={`history-transaction-amount-subtitle-${groupIndex}-${itemIndex}`}
-                          style={{ fontFamily: globalStyle.fontFamily }}
+                          style={{ 
+                            fontFamily: globalStyle.fontFamily,
+                            color: tokenElements.amount?.textColor || '#FFFFFF'
+                          }}
                         >
                           {transaction.subtitle}
                         </div>
