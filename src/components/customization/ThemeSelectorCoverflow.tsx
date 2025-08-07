@@ -99,27 +99,16 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     }
                   `}>
                     <div className="aspect-[3/4] relative">
-                      {/* Theme Cover Image */}
+                      {/* Theme Cover Image - Only show background image */}
                       <div 
-                        className="w-full h-full bg-gradient-to-br from-purple-600/20 via-pink-600/20 to-blue-600/20 rounded-lg flex items-center justify-center"
+                        className="w-full h-full bg-gradient-to-br from-purple-600/20 via-pink-600/20 to-blue-600/20 rounded-lg"
                         style={{
                           backgroundImage: `url(${theme.coverUrl})`,
                           backgroundSize: 'cover',
-                          backgroundPosition: 'center'
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat'
                         }}
-                      >
-                        {/* Fallback content if no image */}
-                        <div className="text-center space-y-2 p-4">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mx-auto flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">
-                              {theme.name.charAt(0)}
-                            </span>
-                          </div>
-                          <h5 className="text-white font-medium text-sm">
-                            {theme.name}
-                          </h5>
-                        </div>
-                      </div>
+                      />
 
                       {/* Active Indicator */}
                       {isActive && (

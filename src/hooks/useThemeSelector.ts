@@ -13,6 +13,14 @@ export interface ThemeItem {
 
 const availableThemes: ThemeItem[] = [
   {
+    id: 'luxury',
+    name: 'Luxury Gold',
+    description: 'Premium golden wallet interface',
+    previewImage: '/lovable-uploads/54546cd9-bd65-488c-bdb0-f7944c4cafe5.png',
+    coverUrl: '/lovable-uploads/54546cd9-bd65-488c-bdb0-f7944c4cafe5.png',
+    themeData: null
+  },
+  {
     id: 'default',
     name: 'Classic Theme',
     description: 'Clean and modern wallet design',
@@ -26,14 +34,6 @@ const availableThemes: ThemeItem[] = [
     description: 'Cyberpunk-inspired neon aesthetics',
     previewImage: '/themes/covers/neon-cover.jpg',
     coverUrl: '/themes/covers/neon-cover.jpg',
-    themeData: null
-  },
-  {
-    id: 'luxury',
-    name: 'Luxury Gold',
-    description: 'Premium golden wallet interface',
-    previewImage: '/themes/covers/luxury-cover.jpg',
-    coverUrl: '/themes/covers/luxury-cover.jpg',
     themeData: null
   }
 ];
