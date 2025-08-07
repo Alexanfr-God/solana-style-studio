@@ -601,12 +601,12 @@
       "fontSize": "16px"
     },
     "description": {
-      "textColor": "#aaa",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "14px"
     },
     "value": {
-      "textColor": "#fff",
+      "textColor": "#FFD166",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
