@@ -3,12 +3,13 @@ import { MoreVertical, ArrowUp, ArrowRight, ArrowLeftRight, X } from 'lucide-rea
 import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 const HistoryContent = () => {
-  const { getHistoryLayer, getAssetCard, getGlobal } = useWalletTheme();
+  const { getHistoryLayer, getAssetCard, getGlobal, getTokenCost } = useWalletTheme();
 
   // Get layer-specific styles
   const historyStyle = getHistoryLayer();
   const assetCard = getAssetCard();
   const globalStyle = getGlobal();
+  const tokenCost = getTokenCost();
 
   const handleTransactionClick = (transactionType: string) => {
     console.log(`Transaction ${transactionType} clicked`);
@@ -226,7 +227,12 @@ const HistoryContent = () => {
                         <div 
                           className="text-xs history-transaction-amount-subtitle"
                           data-element-id={`history-transaction-amount-subtitle-${groupIndex}-${itemIndex}`}
-                          style={{ fontFamily: globalStyle.fontFamily }}
+                          style={{
+                            fontSize: tokenCost.fontSize,
+                            fontWeight: tokenCost.fontWeight,
+                            fontFamily: tokenCost.fontFamily,
+                            color: tokenCost.color
+                          }}
                         >
                           {transaction.subtitle}
                         </div>

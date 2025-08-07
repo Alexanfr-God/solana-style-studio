@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import type { AssetCardStyle } from '@/types/walletStyleSchema';
 
@@ -18,6 +17,13 @@ interface GlobalSearchInput {
   iconClose?: { color?: string; type?: string };
 }
 
+interface TokenCost {
+  fontSize?: string;
+  fontWeight?: string;
+  fontFamily?: string;
+  color?: string;
+}
+
 interface WalletTheme {
   globalSearchInput?: GlobalSearchInput;
   lockLayer?: WalletThemeLayer;
@@ -32,6 +38,7 @@ interface WalletTheme {
   historyLayer?: WalletThemeLayer;
   searchLayer?: WalletThemeLayer;
   assetCard?: AssetCardStyle;
+  tokenCost?: TokenCost;
   global?: WalletThemeLayer;
 }
 
@@ -64,6 +71,16 @@ export const useWalletTheme = () => {
       fontSize: '15px',
       iconSearch: { color: '#ffd873', type: 'search' },
       iconClose: { color: '#ffd873', type: 'x' }
+    };
+  };
+
+  // Token Cost styles
+  const getTokenCost = (): TokenCost => {
+    return theme.tokenCost || {
+      fontSize: '13px',
+      fontWeight: '400',
+      fontFamily: 'Inter, sans-serif',
+      color: '#CCCCCC'
     };
   };
 
@@ -146,6 +163,7 @@ export const useWalletTheme = () => {
     theme,
     getGlobalSearchInput,
     getAssetCard,
+    getTokenCost,
     getLockLayer,
     getAvatarHeader,
     getSidebarLayer,
