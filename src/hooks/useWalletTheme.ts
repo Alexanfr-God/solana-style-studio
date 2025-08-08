@@ -60,27 +60,59 @@ interface WalletTheme {
   global?: WalletThemeLayer;
 }
 
+// Global theme state - singleton
+let globalTheme: WalletTheme = {};
+const subscribers = new Set<() => void>();
+
+// Global theme manager
+const themeManager = {
+  getTheme: () => globalTheme,
+  setTheme: (newTheme: WalletTheme) => {
+    console.log('🎨 Global theme updated:', newTheme);
+    globalTheme = newTheme;
+    // Notify all subscribers
+    subscribers.forEach(callback => callback());
+  },
+  subscribe: (callback: () => void) => {
+    subscribers.add(callback);
+    return () => subscribers.delete(callback);
+  }
+};
+
+// Load default theme on startup
+const loadDefaultTheme = async () => {
+  try {
+    const response = await fetch('/themes/defaultTheme.json');
+    const themeData = await response.json();
+    themeManager.setTheme(themeData);
+    console.log('🎨 Default theme loaded globally');
+  } catch (error) {
+    console.error('Failed to load default theme:', error);
+  }
+};
+
+// Load theme once
+if (Object.keys(globalTheme).length === 0) {
+  loadDefaultTheme();
+}
+
 export const useWalletTheme = () => {
-  const [theme, setThemeData] = useState<WalletTheme>({});
+  const [, forceUpdate] = useState({});
 
   useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const response = await fetch('/themes/defaultTheme.json');
-        const themeData = await response.json();
-        setThemeData(themeData);
-      } catch (error) {
-        console.error('Failed to load theme:', error);
-      }
-    };
+    // Subscribe to theme changes
+    const unsubscribe = themeManager.subscribe(() => {
+      forceUpdate({});
+    });
 
-    loadTheme();
+    return unsubscribe;
   }, []);
 
-  // NEW: Function to dynamically set theme
+  const theme = themeManager.getTheme();
+
+  // Function to dynamically set theme (used by ThemeSelector)
   const setTheme = (newTheme: WalletTheme) => {
-    console.log('🎨 Setting new theme:', newTheme);
-    setThemeData(newTheme);
+    themeManager.setTheme(newTheme);
   };
 
   // Global Search Input styles
