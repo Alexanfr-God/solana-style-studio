@@ -1,19 +1,17 @@
+
 import { create } from 'zustand';
-import { WalletStyle } from './customizationStore';
 import { getCoinIcon } from '@/constants/coinIcons';
 
 export type WalletLayer = 'login' | 'wallet' | 'receive' | 'send' | 'buy' | 'swap' | 'apps' | 'history' | 'search' | 'home';
 
 export interface WalletCustomizationState {
   currentLayer: WalletLayer;
-  walletStyle: WalletStyle;
-  loginStyle: WalletStyle;
   selectedWallet: 'phantom' | 'metamask';
   isCustomizing: boolean;
   customizationProgress: number;
   isSuccessAnimationActive: boolean;
   
-  // Add missing properties for compatibility
+  // Navigation and account management
   uploadedImage: string | null;
   accounts: Array<{
     id: string;
@@ -45,16 +43,6 @@ export interface WalletCustomizationState {
   setCurrentLayer: (layer: WalletLayer) => void;
   unlockWallet: () => void;
   
-  // Style management with automatic animation triggers
-  setWalletStyle: (style: Partial<WalletStyle>) => void;
-  setLoginStyle: (style: Partial<WalletStyle>) => void;
-  applyUniversalStyle: (style: Partial<WalletStyle>) => void;
-  
-  // NEW: Layer-specific background application methods
-  applyBackgroundToLoginLayer: (imageUrl: string) => void;
-  applyBackgroundToWalletLayer: (imageUrl: string) => void;
-  applyBackgroundToBothLayers: (imageUrl: string) => void;
-  
   // Animation control
   onCustomizationStart: () => void;
   onCustomizationStartWithTimeout: () => void;
@@ -71,39 +59,7 @@ export interface WalletCustomizationState {
   setActiveAccount: (accountId: string) => void;
   setShowAccountSidebar: (show: boolean) => void;
   setShowAccountDropdown: (show: boolean) => void;
-  
-  // Style helpers
-  getStyleForComponent: (component: string) => any;
-  getTokenColors: () => any;
-  getStatusColors: () => any;
 }
-
-// Default styles with extended properties
-const defaultWalletStyle: WalletStyle = {
-  backgroundColor: '#181818',
-  backgroundImage: undefined,
-  accentColor: '#a390f5',
-  textColor: '#FFFFFF',
-  buttonColor: '#a390f5',
-  buttonTextColor: '#FFFFFF',
-  borderRadius: '12px',
-  fontFamily: 'Inter, sans-serif',
-  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.5)',
-  styleNotes: 'Default wallet style'
-};
-
-const defaultLoginStyle: WalletStyle = {
-  backgroundColor: '#181818',
-  backgroundImage: undefined,
-  accentColor: '#a390f5',
-  textColor: '#FFFFFF',
-  buttonColor: '#a390f5',
-  buttonTextColor: '#FFFFFF',
-  borderRadius: '12px',
-  fontFamily: 'Inter, sans-serif',
-  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.5)',
-  styleNotes: 'Default login style'
-};
 
 // Mock data for compatibility
 const mockAccounts = [
@@ -152,7 +108,7 @@ const mockTokens = [
 
 // Universal style change wrapper - ВСЕГДА вызывает анимацию
 const withScanAnimation = (fn: () => void, set: any) => {
-  console.log('🎯 Triggering scan animation for style change');
+  console.log('🎯 Triggering scan animation for customization');
   
   // Запускаем анимацию сканирования
   set({ 
@@ -161,7 +117,7 @@ const withScanAnimation = (fn: () => void, set: any) => {
     isSuccessAnimationActive: false 
   });
   
-  // Выполняем изменение стиля
+  // Выполняем изменение
   fn();
   
   // Симулируем прогресс
@@ -192,14 +148,12 @@ const withScanAnimation = (fn: () => void, set: any) => {
 
 export const useWalletCustomizationStore = create<WalletCustomizationState>((set, get) => ({
   currentLayer: 'login',
-  walletStyle: { ...defaultWalletStyle },
-  loginStyle: { ...defaultLoginStyle },
   selectedWallet: 'phantom',
   isCustomizing: false,
   customizationProgress: 0,
   isSuccessAnimationActive: false,
   
-  // Add missing properties with default values
+  // Navigation and account state
   uploadedImage: null,
   accounts: mockAccounts,
   activeAccountId: 'account-1',
@@ -213,63 +167,6 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setCurrentLayer: (layer) => set({ currentLayer: layer }),
   
   unlockWallet: () => set({ currentLayer: 'wallet' }),
-
-  setWalletStyle: (newStyle) => {
-    withScanAnimation(() => {
-      set((state) => ({
-        walletStyle: { ...state.walletStyle, ...newStyle }
-      }));
-      console.log('✅ Wallet style updated with animation:', newStyle);
-    }, set);
-  },
-
-  setLoginStyle: (newStyle) => {
-    withScanAnimation(() => {
-      set((state) => ({
-        loginStyle: { ...state.loginStyle, ...newStyle }
-      }));
-      console.log('✅ Login style updated with animation:', newStyle);
-    }, set);
-  },
-
-  applyUniversalStyle: (newStyle) => {
-    withScanAnimation(() => {
-      set((state) => ({
-        walletStyle: { ...state.walletStyle, ...newStyle },
-        loginStyle: { ...state.loginStyle, ...newStyle }
-      }));
-      console.log('✅ Universal style applied to BOTH screens with animation:', newStyle);
-    }, set);
-  },
-
-  // NEW: Layer-specific background application methods
-  applyBackgroundToLoginLayer: (imageUrl: string) => {
-    withScanAnimation(() => {
-      set((state) => ({
-        loginStyle: { ...state.loginStyle, backgroundImage: `url(${imageUrl})` }
-      }));
-      console.log('🔒 Background applied to LOGIN layer only:', imageUrl);
-    }, set);
-  },
-
-  applyBackgroundToWalletLayer: (imageUrl: string) => {
-    withScanAnimation(() => {
-      set((state) => ({
-        walletStyle: { ...state.walletStyle, backgroundImage: `url(${imageUrl})` }
-      }));
-      console.log('🔓 Background applied to WALLET layer only:', imageUrl);
-    }, set);
-  },
-
-  applyBackgroundToBothLayers: (imageUrl: string) => {
-    withScanAnimation(() => {
-      set((state) => ({
-        walletStyle: { ...state.walletStyle, backgroundImage: `url(${imageUrl})` },
-        loginStyle: { ...state.loginStyle, backgroundImage: `url(${imageUrl})` }
-      }));
-      console.log('🔒✨ Background applied to BOTH layers:', imageUrl);
-    }, set);
-  },
 
   onCustomizationStart: () => {
     console.log('🔄 Manual customization animation started');
@@ -327,26 +224,5 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
 
   setActiveAccount: (accountId) => set({ activeAccountId: accountId }),
   setShowAccountSidebar: (show) => set({ showAccountSidebar: show }),
-  setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
-
-  getStyleForComponent: (component: string) => {
-    // DEPRECATED: This method is disabled to prevent conflicts with new theme system
-    console.warn(`⚠️ getStyleForComponent(${component}) is deprecated - use ThemeProvider instead`);
-    return {};
-  },
-
-  getTokenColors: () => ({
-    positive: '#10B981',
-    negative: '#EF4444',
-    neutral: '#6B7280',
-    warning: '#F59E0B',
-    info: '#3B82F6'
-  }),
-
-  getStatusColors: () => ({
-    success: '#10B981',
-    error: '#EF4444',
-    pending: '#F59E0B',
-    inactive: '#6B7280'
-  })
+  setShowAccountDropdown: (show) => set({ showAccountDropdown: show })
 }));
