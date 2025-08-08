@@ -8,67 +8,78 @@ export interface ThemeItem {
   description: string;
   previewImage: string;
   coverUrl: string;
-  filePath: string;
-  themeData?: any;
+  themeData: any;
 }
 
-interface ThemesManifest {
-  themes: Omit<ThemeItem, 'themeData'>[];
-}
+const availableThemes: ThemeItem[] = [
+  {
+    id: 'luxury',
+    name: 'Luxury Gold',
+    description: 'Premium golden wallet interface',
+    previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png',
+    coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png',
+    themeData: null
+  },
+  {
+    id: 'wif',
+    name: 'WIF',
+    description: 'WIF themed wallet design',
+    previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png',
+    coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png',
+    themeData: null
+  },
+  {
+    id: 'default',
+    name: 'Classic Theme',
+    description: 'Clean and modern wallet design',
+    previewImage: '/themes/covers/default-cover.jpg',
+    coverUrl: '/themes/covers/default-cover.jpg',
+    themeData: null // Will be loaded from JSON
+  }
+];
 
 export const useThemeSelector = () => {
-  const [themes, setThemes] = useState<ThemeItem[]>([]);
+  const [themes, setThemes] = useState<ThemeItem[]>(availableThemes);
   const [activeThemeId, setActiveThemeId] = useState('default');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const { setTheme } = useWalletTheme();
 
-  // Load themes from manifest and their data
+  // Load theme data
   useEffect(() => {
-    const loadThemes = async () => {
+    const loadThemeData = async () => {
       setIsLoading(true);
       try {
-        // Load themes manifest
-        const manifestResponse = await fetch('/themes/themes.json');
-        const manifest: ThemesManifest = await manifestResponse.json();
-        
-        // Load theme data for each theme
-        const themesWithData = await Promise.all(
-          manifest.themes.map(async (themeInfo) => {
+        const updatedThemes = await Promise.all(
+          themes.map(async (theme) => {
+            if (theme.themeData) return theme;
+            
             try {
-              const response = await fetch(themeInfo.filePath);
+              const response = await fetch(`/themes/${theme.id}Theme.json`);
               const themeData = await response.json();
-              return { ...themeInfo, themeData };
+              return { ...theme, themeData };
             } catch (error) {
-              console.warn(`Failed to load theme ${themeInfo.id}:`, error);
-              return { ...themeInfo, themeData: null };
+              console.warn(`Failed to load theme ${theme.id}:`, error);
+              return theme;
             }
           })
         );
-        
-        setThemes(themesWithData);
-        
-        // Auto-select default theme on load
-        const defaultTheme = themesWithData.find(t => t.id === 'default');
-        if (defaultTheme && defaultTheme.themeData) {
-          setTheme(defaultTheme.themeData);
-          console.log('🎨 Default theme loaded:', defaultTheme.name);
-        }
+        setThemes(updatedThemes);
       } catch (error) {
-        console.error('Error loading themes manifest:', error);
+        console.error('Error loading themes:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadThemes();
-  }, [setTheme]);
+    loadThemeData();
+  }, []);
 
   const selectTheme = (themeId: string) => {
     const selectedTheme = themes.find(t => t.id === themeId);
     if (selectedTheme && selectedTheme.themeData) {
       setActiveThemeId(themeId);
       setTheme(selectedTheme.themeData);
-      console.log('🎨 Theme selected and applied via useWalletTheme:', selectedTheme.name);
+      console.log('🎨 Theme selected:', selectedTheme.name);
     }
   };
 

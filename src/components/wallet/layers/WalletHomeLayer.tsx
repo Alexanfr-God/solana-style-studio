@@ -26,13 +26,13 @@ const WalletHomeLayer = () => {
     setCurrentLayer
   } = useWalletCustomizationStore();
 
-  const { theme } = useWalletTheme();
+  const { getHomeLayer, getAvatarHeader, getGlobal } = useWalletTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Get theme styles from unified useWalletTheme
-  const homeStyle = theme.homeLayer || {};
-  const avatarStyle = theme.avatarHeader || {};
-  const globalStyle = theme.global || {};
+  // Get theme styles
+  const homeStyle = getHomeLayer();
+  const avatarStyle = getAvatarHeader();
+  const globalStyle = getGlobal();
 
   const activeAccount = accounts.find(acc => acc.id === activeAccountId);
 
@@ -181,7 +181,7 @@ const WalletHomeLayer = () => {
         {renderContent()}
       </div>
 
-      {/* Bottom Navigation with unified theme styles */}
+      {/* Bottom Navigation with AI-generated styles */}
       <WalletBottomNavigation />
 
       {/* Account Sidebar */}
