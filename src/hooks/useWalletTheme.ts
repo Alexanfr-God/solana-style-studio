@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import type { AssetCardStyle } from '@/types/walletStyleSchema';
 
@@ -75,7 +76,9 @@ const themeManager = {
   },
   subscribe: (callback: () => void) => {
     subscribers.add(callback);
-    return () => subscribers.delete(callback);
+    return () => {
+      subscribers.delete(callback);
+    };
   }
 };
 
