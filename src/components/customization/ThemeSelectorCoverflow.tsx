@@ -99,9 +99,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     }
                   `}>
                     <div className="aspect-[3/4] relative">
-                      {/* Theme Cover Image - Only show background image */}
+                      {/* Theme Cover Image */}
                       <div 
-                        className="w-full h-full bg-gradient-to-br from-purple-600/20 via-pink-600/20 to-blue-600/20 rounded-lg"
+                        className="w-full h-full rounded-lg"
                         style={{
                           backgroundImage: `url(${theme.coverUrl})`,
                           backgroundSize: 'cover',

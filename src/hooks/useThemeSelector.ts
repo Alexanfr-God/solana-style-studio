@@ -30,12 +30,12 @@ const availableThemes: ThemeItem[] = [
     themeData: null
   },
   {
-    id: 'default',
-    name: 'Classic Theme',
-    description: 'Clean and modern wallet design',
-    previewImage: '/themes/covers/default-cover.jpg',
-    coverUrl: '/themes/covers/default-cover.jpg',
-    themeData: null // Will be loaded from JSON
+    id: 'pepe',
+    name: 'Pepe Theme',
+    description: 'Pepe themed wallet design',
+    previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_3/image_3.png',
+    coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_3/image_3.png',
+    themeData: null
   }
 ];
 
@@ -60,7 +60,7 @@ const convertThemeToWalletStyle = (themeData: any) => {
 
 export const useThemeSelector = () => {
   const [themes, setThemes] = useState<ThemeItem[]>(availableThemes);
-  const [activeThemeId, setActiveThemeId] = useState('default');
+  const [activeThemeId, setActiveThemeId] = useState('pepe');
   const [isLoading, setIsLoading] = useState(false);
   const { setTheme } = useWalletTheme();
 
@@ -74,9 +74,21 @@ export const useThemeSelector = () => {
             if (theme.themeData) return theme;
             
             try {
-              const response = await fetch(`/themes/${theme.id}Theme.json`);
-              const themeData = await response.json();
-              return { ...theme, themeData };
+              // First try the standard naming convention
+              let response = await fetch(`/themes/${theme.id}Theme.json`);
+              
+              // If that fails and it's the pepe theme, try the direct filename
+              if (!response.ok && theme.id === 'pepe') {
+                response = await fetch(`/themes/pepe.json`);
+              }
+              
+              if (response.ok) {
+                const themeData = await response.json();
+                return { ...theme, themeData };
+              } else {
+                console.warn(`Failed to load theme ${theme.id}: ${response.status}`);
+                return theme;
+              }
             } catch (error) {
               console.warn(`Failed to load theme ${theme.id}:`, error);
               return theme;
