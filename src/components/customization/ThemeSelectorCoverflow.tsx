@@ -25,6 +25,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
 
   const activeTheme = getActiveTheme();
 
+  // Now handle the loading state after all hooks have been called
   if (isLoading) {
     return (
       <div className="w-full py-8">
