@@ -126,15 +126,35 @@
       "fontFamily": "Rubik, Inter, sans-serif",
       "fontSize": "14px",
       "navigationIcons": {
-        "homeIcon":   { "color": "#A7B0D4", "activeColor": "#FFFFFF", "type": "home" },
-        "appsIcon":   { "color": "#A7B0D4", "activeColor": "#FFFFFF", "type": "layout-grid" },
-        "swapIcon":   { "color": "#A7B0D4", "activeColor": "#FFFFFF", "type": "arrow-right-left" },
-        "historyIcon":{ "color": "#A7B0D4", "activeColor": "#FFFFFF", "type": "clock" },
-        "searchIcon": { "color": "#A7B0D4", "activeColor": "#FFFFFF", "type": "search" }
+        "homeIcon": {
+          "color": "#A7B0D4",
+          "activeColor": "#FFFFFF",
+          "type": "home"
+        },
+        "appsIcon": {
+          "color": "#A7B0D4",
+          "activeColor": "#FFFFFF",
+          "type": "layout-grid"
+        },
+        "swapIcon": {
+          "color": "#A7B0D4",
+          "activeColor": "#FFFFFF",
+          "type": "arrow-right-left"
+        },
+        "historyIcon": {
+          "color": "#A7B0D4",
+          "activeColor": "#FFFFFF",
+          "type": "clock"
+        },
+        "searchIcon": {
+          "color": "#A7B0D4",
+          "activeColor": "#FFFFFF",
+          "type": "search"
+        }
       }
     },
     "mainContainer": {
-      "backgroundColor": "rgba(108,85,255,0.10)",
+      "backgroundColor": "rgba(108, 85, 255, 0.10)",
       "borderRadius": "18px"
     },
     "totalBalanceLabel": {
@@ -542,7 +562,7 @@
       "border": "none",
       "fontFamily": "Rubik, Inter, sans-serif",
       "iconSearch": { "color": "#6C55FF", "type": "search" },
-      "iconClose":  { "color": "#6C55FF", "type": "x" }
+      "iconClose": { "color": "#6C55FF", "type": "x" }
     },
     "searchInputFont": {
       "fontFamily": "Rubik, Inter, sans-serif",
@@ -561,7 +581,7 @@
       "fontFamily": "Rubik, Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px",
-      "iconTrending": { "color": "#6C55FF", "type": "trending-up" }
+      "iconTrending": { "color": "#F2A23A", "type": "trending-up" }
     },
     "tokenTag": {
       "backgroundColor": "#141833",
