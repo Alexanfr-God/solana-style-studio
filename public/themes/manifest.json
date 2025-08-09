@@ -35,5 +35,11 @@
     "name": "Binance CZ Dark",
     "description": "Binance CZ themed dark wallet design",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_6/image_6.png"
+  },
+  {
+    "id": "mia",
+    "name": "MIA Golden Brown",
+    "description": "Elegant golden brown theme with warm tones",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_7/image_7.png"
   }
 ]
