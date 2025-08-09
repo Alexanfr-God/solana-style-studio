@@ -23,5 +23,11 @@
     "name": "Elon Musk",
     "description": "Elon Musk themed wallet design",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_4/image_4.png"
+  },
+  {
+    "id": "guccicatluxurytheme",
+    "name": "Gucci Cat Luxury",
+    "description": "Luxurious cat-themed wallet with Gucci styling",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png"
   }
 ]
