@@ -1,0 +1,27 @@
+
+[
+  {
+    "id": "luxury",
+    "name": "Luxury Gold",
+    "description": "Premium golden wallet interface",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png"
+  },
+  {
+    "id": "wif",
+    "name": "WIF",
+    "description": "WIF themed wallet design",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png"
+  },
+  {
+    "id": "pepe",
+    "name": "Pepe Theme",
+    "description": "Pepe themed wallet design",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_3/image_3.png"
+  },
+  {
+    "id": "elonmusk",
+    "name": "Elon Musk",
+    "description": "Elon Musk themed wallet design",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_4/image_4.png"
+  }
+]
