@@ -58,6 +58,46 @@ const convertThemeToWalletStyle = (themeData: any) => {
   };
 };
 
+// Function to load theme data for a specific theme
+const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
+  if (theme.themeData) return theme;
+  
+  console.log(`🎨 Attempting to load theme data for: ${theme.id}`);
+  
+  // Define possible file paths to try
+  const possiblePaths = [
+    `/themes/${theme.id}Theme.json`,
+    `/themes/${theme.id}.json`
+  ];
+  
+  for (const path of possiblePaths) {
+    try {
+      console.log(`📁 Trying to load: ${path}`);
+      const response = await fetch(path);
+      
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        
+        // Ensure we're getting JSON content
+        if (contentType && contentType.includes('application/json')) {
+          const themeData = await response.json();
+          console.log(`✅ Successfully loaded theme data from: ${path}`, themeData);
+          return { ...theme, themeData };
+        } else {
+          console.warn(`⚠️ Invalid content type for ${path}: ${contentType}`);
+        }
+      } else {
+        console.warn(`❌ Failed to fetch ${path}: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.warn(`💥 Error loading ${path}:`, error);
+    }
+  }
+  
+  console.error(`🚫 Failed to load theme data for ${theme.id} from any path`);
+  return theme;
+};
+
 export const useThemeSelector = () => {
   const [themes, setThemes] = useState<ThemeItem[]>(availableThemes);
   const [activeThemeId, setActiveThemeId] = useState('pepe');
@@ -68,57 +108,69 @@ export const useThemeSelector = () => {
   useEffect(() => {
     const loadThemeData = async () => {
       setIsLoading(true);
+      console.log('🔄 Starting theme data loading process');
+      
       try {
         const updatedThemes = await Promise.all(
-          themes.map(async (theme) => {
-            if (theme.themeData) return theme;
-            
-            try {
-              // First try the standard naming convention
-              let response = await fetch(`/themes/${theme.id}Theme.json`);
-              
-              // If that fails and it's the pepe theme, try the direct filename
-              if (!response.ok && theme.id === 'pepe') {
-                response = await fetch(`/themes/pepe.json`);
-              }
-              
-              if (response.ok) {
-                const themeData = await response.json();
-                return { ...theme, themeData };
-              } else {
-                console.warn(`Failed to load theme ${theme.id}: ${response.status}`);
-                return theme;
-              }
-            } catch (error) {
-              console.warn(`Failed to load theme ${theme.id}:`, error);
-              return theme;
-            }
-          })
+          themes.map(theme => loadThemeDataForTheme(theme))
         );
+        
+        console.log('📦 All themes processed:', updatedThemes.map(t => ({ 
+          id: t.id, 
+          hasData: !!t.themeData 
+        })));
+        
         setThemes(updatedThemes);
+        
+        // Apply the active theme if it now has data
+        const activeTheme = updatedThemes.find(t => t.id === activeThemeId);
+        if (activeTheme && activeTheme.themeData) {
+          console.log('🎯 Auto-applying active theme:', activeTheme.name);
+          applyTheme(activeTheme);
+        }
+        
       } catch (error) {
-        console.error('Error loading themes:', error);
+        console.error('💥 Error loading themes:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadThemeData();
-  }, []);
+  }, [activeThemeId]);
+
+  // Helper function to apply theme
+  const applyTheme = (selectedTheme: ThemeItem) => {
+    if (!selectedTheme.themeData) {
+      console.warn('⚠️ Cannot apply theme without data:', selectedTheme.name);
+      return;
+    }
+    
+    // Apply theme to useWalletTheme (for Coverflow)
+    setTheme(selectedTheme.themeData);
+    console.log('🎨 Theme applied to useWalletTheme:', selectedTheme.name);
+    
+    // Apply theme to walletCustomizationStore (for wallet components)
+    const walletStyle = convertThemeToWalletStyle(selectedTheme.themeData);
+    useWalletCustomizationStore.getState().setWalletStyle(walletStyle);
+    console.log('🎨 Theme applied to walletCustomizationStore:', walletStyle);
+  };
 
   const selectTheme = (themeId: string) => {
+    console.log('👆 Theme selection requested:', themeId);
+    
     const selectedTheme = themes.find(t => t.id === themeId);
-    if (selectedTheme && selectedTheme.themeData) {
-      setActiveThemeId(themeId);
-      
-      // Apply theme to useWalletTheme (for Coverflow)
-      setTheme(selectedTheme.themeData);
-      console.log('🎨 Theme selected in useWalletTheme:', selectedTheme.name);
-      
-      // Apply theme to walletCustomizationStore (for wallet components)
-      const walletStyle = convertThemeToWalletStyle(selectedTheme.themeData);
-      useWalletCustomizationStore.getState().setWalletStyle(walletStyle);
-      console.log('🎨 Theme applied to walletCustomizationStore:', walletStyle);
+    if (!selectedTheme) {
+      console.error('🚫 Theme not found:', themeId);
+      return;
+    }
+    
+    setActiveThemeId(themeId);
+    
+    if (selectedTheme.themeData) {
+      applyTheme(selectedTheme);
+    } else {
+      console.log('⏳ Theme data not loaded yet, will apply when available');
     }
   };
 
