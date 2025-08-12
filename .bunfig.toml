@@ -4,6 +4,7 @@ timeout = "30m"
 cache = true
 registry = "https://registry.npmjs.org/"
 scopes = {}
+peer = true
 
 [install.scopes]
 "*" = { production = false }

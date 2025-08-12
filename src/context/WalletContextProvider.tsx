@@ -7,10 +7,12 @@ import {
   SolflareWalletAdapter,
   LedgerWalletAdapter,
   CoinbaseWalletAdapter,
-  TorusWalletAdapter,
-  CloverWalletAdapter,
-  MathWalletAdapter
-} from '@solana/wallet-adapter-wallets';
+  TorusWalletAdapter
+} from '@solana/wallet-adapter-phantom';
+import { SolflareWalletAdapter as SolflareAdapter } from '@solana/wallet-adapter-solflare';
+import { LedgerWalletAdapter as LedgerAdapter } from '@solana/wallet-adapter-ledger';
+import { CoinbaseWalletAdapter as CoinbaseAdapter } from '@solana/wallet-adapter-coinbase';
+import { TorusWalletAdapter as TorusAdapter } from '@solana/wallet-adapter-torus';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { toast } from "sonner";
@@ -46,15 +48,13 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
   // You can also provide a custom RPC endpoint
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
-  // @solana/wallet-adapter-wallets imports all the adapters but supports tree shaking
+  // Use specific wallet adapters instead of the aggregator
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
-    new SolflareWalletAdapter(),
-    new CoinbaseWalletAdapter(),
-    new LedgerWalletAdapter(),
-    new TorusWalletAdapter(),
-    new CloverWalletAdapter(),
-    new MathWalletAdapter()
+    new SolflareAdapter(),
+    new CoinbaseAdapter(),
+    new LedgerAdapter(),
+    new TorusAdapter()
   ], []);
 
   // Show wallet connection status notifications

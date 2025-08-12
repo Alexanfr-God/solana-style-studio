@@ -13,7 +13,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log(`🚀 Wallet Chat GPT Request: ${JSON.stringify(await req.clone().json(), null, 2)}`);
+  console.log(`🚀 Wallet Chat GPT Request received`);
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -31,23 +31,55 @@ serve(async (req) => {
       debugMode = false
     } = requestBody;
 
-    console.log(`🚀 Wallet Chat GPT Request: {
+    console.log(`🚀 Processing request: {
   mode: "${mode}",
   message: "${content}",
-  user_id: ${requestBody.user_id || 'undefined'},
-  file_name: ${requestBody.file_name || 'undefined'},
   isImageGeneration: ${isImageGeneration}
 }`);
+
+    // Check for required API keys
+    const openAiKey = Deno.env.get('OPENAI_API_KEY') || Deno.env.get('OPENA_API_KEY');
+    const leonardoKey = Deno.env.get('LEONARDO_API_KEY');
+    const replicateKey = Deno.env.get('REPLICATE_API_KEY');
+
+    console.log('🔑 API Keys status:', {
+      openAI: !!openAiKey,
+      leonardo: !!leonardoKey,
+      replicate: !!replicateKey
+    });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // ✅ CRITICAL FIX: Enable image generation for leonardo and replicate modes
+    // Handle image generation requests
     const isImageGenerationMode = mode === 'leonardo' || mode === 'replicate' || isImageGeneration;
     
     if (isImageGenerationMode) {
-      console.log(`🎨 [FIXED] Handling image generation with mode: ${mode}`);
+      console.log(`🎨 Handling image generation with mode: ${mode}`);
+      
+      // Check if the required API key exists for the selected generator
+      if (mode === 'leonardo' && !leonardoKey) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Leonardo API key not configured',
+          mode: mode
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      if (mode === 'replicate' && !replicateKey) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Replicate API key not configured',
+          mode: mode
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
       
       const imageManager = createImageGenerationManager(supabaseUrl, supabaseKey);
       
@@ -64,11 +96,11 @@ serve(async (req) => {
         }
       };
 
-      console.log(`📋 [FIXED] Image generation request:`, imageRequest);
+      console.log(`📋 Image generation request:`, imageRequest);
 
       const imageResult = await imageManager.generateImage(imageRequest);
       
-      console.log(`📊 [FIXED] Image generation result:`, imageResult);
+      console.log(`📊 Image generation result:`, imageResult);
 
       if (imageResult.success && imageResult.imageUrl) {
         return new Response(JSON.stringify({
@@ -83,7 +115,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } else {
-        console.error(`❌ [FIXED] Image generation failed:`, imageResult.error);
+        console.error(`❌ Image generation failed:`, imageResult.error);
         return new Response(JSON.stringify({
           success: false,
           error: imageResult.error || 'Image generation failed',
@@ -96,7 +128,17 @@ serve(async (req) => {
     }
 
     // Handle regular chat
-    console.log('💬 Handling enhanced general chat...');
+    console.log('💬 Handling chat request...');
+    
+    if (!openAiKey) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'OpenAI API key not configured for chat functionality'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
     
     const chatResult = await handleChatWithGPT({
       content,
