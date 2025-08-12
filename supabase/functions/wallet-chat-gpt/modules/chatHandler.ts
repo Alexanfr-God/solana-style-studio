@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createWalletManager } from './walletManager.ts';
 import { createStyleAnalyzer } from './styleAnalyzer.ts';
@@ -20,10 +21,35 @@ export class ChatHandler {
   }
 
   /**
-   * Обновление памяти контекста
+   * ✅ НОРМАЛИЗАЦИЯ КОНТЕКСТА - ГАРАНТИРУЕТ ПРАВИЛЬНУЮ СТРУКТУРУ
    */
-  updateContextMemory(context, message) {
-    // Инициализируем contextMemory если его нет
+  normalizeContext(context) {
+    console.log('🔧 Normalizing context:', !!context);
+    
+    if (!context || typeof context !== 'object') {
+      console.log('⚠️ Context is null/undefined, creating new context');
+      context = {};
+    }
+
+    // Ensure basic structure
+    if (!context.sessionId) {
+      context.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    if (!context.settings) {
+      context.settings = {
+        allowImageGeneration: false,
+        maxHistoryLength: 50,
+        enableProactiveHelp: true,
+        responseStyle: 'casual'
+      };
+    }
+
+    if (!Array.isArray(context.conversationHistory)) {
+      console.log('⚠️ conversationHistory is not an array, initializing');
+      context.conversationHistory = [];
+    }
+
     if (!context.contextMemory) {
       context.contextMemory = {
         conversationFlow: [],
@@ -32,6 +58,52 @@ export class ChatHandler {
         appliedStyles: new Map()
       };
     }
+
+    // Ensure contextMemory has correct structure
+    if (!Array.isArray(context.contextMemory.conversationFlow)) {
+      context.contextMemory.conversationFlow = [];
+    }
+
+    if (!(context.contextMemory.mentionedElements instanceof Set)) {
+      context.contextMemory.mentionedElements = new Set();
+    }
+
+    if (!Array.isArray(context.contextMemory.recentIntents)) {
+      context.contextMemory.recentIntents = [];
+    }
+
+    if (!(context.contextMemory.appliedStyles instanceof Map)) {
+      context.contextMemory.appliedStyles = new Map();
+    }
+
+    // Set default values for other common properties
+    if (!context.walletType) {
+      context.walletType = 'MetaMask';
+    }
+
+    if (!context.activeScreen) {
+      context.activeScreen = 'home';
+    }
+
+    if (!context.userProfile) {
+      context.userProfile = {
+        preferences: {
+          complexity: 'intermediate',
+          style: 'modern'
+        }
+      };
+    }
+
+    console.log('✅ Context normalized successfully');
+    return context;
+  }
+
+  /**
+   * Обновление памяти контекста
+   */
+  updateContextMemory(context, message) {
+    // Нормализуем контекст перед обновлением
+    context = this.normalizeContext(context);
 
     // Обновляем поток разговора
     context.contextMemory.conversationFlow.push(message.slice(0, 30));
@@ -54,6 +126,8 @@ export class ChatHandler {
     context.contextMemory.recentIntents = context.contextMemory.recentIntents.filter(
       intent => new Date(intent.timestamp).getTime() > oneHourAgo
     );
+
+    return context;
   }
 
   /**
@@ -62,21 +136,15 @@ export class ChatHandler {
   async handleChat(message, context, imageUrl) {
     const startTime = Date.now();
     console.log('💬 Processing enhanced chat message...');
-    console.log('🚫 [CHAT] Image generation allowed:', context.settings?.allowImageGeneration || false);
-
+    
     try {
-      // Инициализируем дефолтные настройки если их нет
-      if (!context.settings) {
-        context.settings = {
-          allowImageGeneration: false, // ✅ ПО УМОЛЧАНИЮ ЗАПРЕЩЕНО!
-          maxHistoryLength: 50,
-          enableProactiveHelp: true,
-          responseStyle: 'casual'
-        };
-      }
+      // ✅ КРИТИЧЕСКИ ВАЖНО: Нормализуем контекст перед любыми операциями
+      context = this.normalizeContext(context);
+      
+      console.log('🚫 [CHAT] Image generation allowed:', context.settings?.allowImageGeneration || false);
 
       // Обновляем контекст памяти
-      this.updateContextMemory(context, message);
+      context = this.updateContextMemory(context, message);
 
       // ✅ ВАЖНО: Определяем намерение БЕЗ автоперенаправления на генерацию
       const intent = await this.detectUserIntentSafe(message, context, imageUrl);
@@ -182,6 +250,9 @@ export class ChatHandler {
 
     } catch (error) {
       console.error('❌ Error in enhanced chat handler:', error);
+      
+      // ✅ БЕЗОПАСНАЯ ОБРАБОТКА ОШИБОК - нормализуем контекст и перед добавлением в историю
+      context = this.normalizeContext(context);
       
       // Добавляем ошибку в историю для контекста
       context.conversationHistory.push({

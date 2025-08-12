@@ -51,6 +51,36 @@ serve(async (req) => {
       isImageGeneration 
     })
 
+    // ✅ УЛУЧШЕННАЯ НОРМАЛИЗАЦИЯ КОНТЕКСТА В ГЛАВНОЙ ФУНКЦИИ
+    let normalizedContext = context;
+    if (!normalizedContext || typeof normalizedContext !== 'object') {
+      console.log('⚠️ Creating default context in main function');
+      normalizedContext = {
+        sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        settings: {
+          allowImageGeneration: false,
+          maxHistoryLength: 50,
+          enableProactiveHelp: true,
+          responseStyle: 'casual'
+        },
+        conversationHistory: [],
+        contextMemory: {
+          conversationFlow: [],
+          mentionedElements: new Set(),
+          recentIntents: [],
+          appliedStyles: new Map()
+        },
+        walletType: 'MetaMask',
+        activeScreen: 'home',
+        userProfile: {
+          preferences: {
+            complexity: 'intermediate',
+            style: 'modern'
+          }
+        }
+      };
+    }
+
     // Initialize managers with correct parameters
     const chatHandler = new ChatHandler(supabaseUrl, supabaseKey)
     const imageManager = createImageGenerationManager(supabaseUrl, supabaseKey)
@@ -288,7 +318,8 @@ serve(async (req) => {
 
         case 'chat':
         default:
-          const chatResponse = await chatHandler.handleChat(message, context)
+          // ✅ ПЕРЕДАЕМ НОРМАЛИЗОВАННЫЙ КОНТЕКСТ В ChatHandler
+          const chatResponse = await chatHandler.handleChat(message, normalizedContext)
           response = {
             success: true,
             data: {
@@ -324,4 +355,3 @@ serve(async (req) => {
     )
   }
 })
-
