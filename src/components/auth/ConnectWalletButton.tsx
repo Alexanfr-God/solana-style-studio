@@ -1,4 +1,3 @@
-
 import React, { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Wallet, MousePointerSquare, Squirrel } from 'lucide-react';
+import { Loader2, Wallet, MousePointer, Squirrel } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletName } from '@solana/wallet-adapter-base';
@@ -164,7 +163,7 @@ const ConnectWalletButton: React.FC = () => {
 
         <DropdownMenuContent align="end" className="bg-background border border-border w-64">
           <DropdownMenuItem onClick={() => connectEvmInjected('metamask')} className="cursor-pointer gap-2">
-            <MousePointerSquare className="h-4 w-4" />
+            <MousePointer className="h-4 w-4" />
             <span>MetaMask (EVM)</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => connectEvmInjected('rabby')} className="cursor-pointer gap-2">
