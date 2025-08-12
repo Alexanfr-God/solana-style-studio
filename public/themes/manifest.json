@@ -41,5 +41,11 @@
     "name": "MIA Golden Brown",
     "description": "Elegant golden brown theme with warm tones",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_7/image_7.png"
+  },
+  {
+    "id": "snoopdogg",
+    "name": "Snoop Dogg",
+    "description": "Hip-hop legend themed wallet with golden vibes",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_10/image_10.png"
   }
 ]
