@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { ChatHandler } from './modules/chatHandler.ts'
@@ -24,6 +25,11 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     
+    // Validate environment variables
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing required environment variables: SUPABASE_URL or SUPABASE_ANON_KEY')
+    }
+    
     const supabaseClient = createClient(supabaseUrl, supabaseKey)
 
     const requestData = await req.json()
@@ -46,11 +52,11 @@ serve(async (req) => {
     })
 
     // Initialize managers with correct parameters
-    const chatHandler = new ChatHandler()
+    const chatHandler = new ChatHandler(supabaseUrl, supabaseKey)
     const imageManager = createImageGenerationManager(supabaseUrl, supabaseKey)
-    const styleAnalyzer = new StyleAnalyzer()
-    const walletElementsManager = new WalletElementsManager(supabaseClient)
-    const walletManager = new WalletManager(supabaseClient)
+    const styleAnalyzer = new StyleAnalyzer(supabaseUrl, supabaseKey)
+    const walletElementsManager = new WalletElementsManager(supabaseUrl, supabaseKey)
+    const walletManager = new WalletManager(supabaseUrl, supabaseKey)
     const posterGenerator = createPosterGenerator(supabaseUrl, supabaseKey)
     const iconManager = new IconManager(supabaseClient)
     const iconChatHandler = new IconChatHandler(iconManager)
@@ -65,8 +71,13 @@ serve(async (req) => {
       
       if (iconContext.action === 'replace' && file_data) {
         try {
-          const fileBuffer = new Uint8Array(Buffer.from(file_data, 'base64'))
-          const file = new File([fileBuffer], file_name || 'icon.svg', { type: 'image/svg+xml' })
+          // Fix: Use atob instead of Buffer for Deno compatibility
+          const binaryString = atob(file_data)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+          const file = new File([bytes], file_name || 'icon.svg', { type: 'image/svg+xml' })
           
           if (iconContext.element_name) {
             const iconsByCategory = await iconManager.getIconsByCategory()
@@ -108,8 +119,13 @@ serve(async (req) => {
         }
       } else if (iconContext.action === 'batch_replace' && file_data && iconContext.icon_group) {
         try {
-          const fileBuffer = new Uint8Array(Buffer.from(file_data, 'base64'))
-          const file = new File([fileBuffer], file_name || 'icon.svg', { type: 'image/svg+xml' })
+          // Fix: Use atob instead of Buffer for Deno compatibility
+          const binaryString = atob(file_data)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+          const file = new File([bytes], file_name || 'icon.svg', { type: 'image/svg+xml' })
           
           const results = await iconManager.batchReplaceIcons(user_id, iconContext.icon_group, file)
           response = {
@@ -249,20 +265,30 @@ serve(async (req) => {
           break
 
         case 'wallet-elements':
-          const elementsResult = await walletElementsManager.getElementsInfo(message)
-          response = {
-            success: true,
-            data: {
-              type: 'wallet_elements',
-              elements: elementsResult
-            },
-            error: null
+          try {
+            const elements = await walletElementsManager.loadAllElements()
+            const grouped = walletElementsManager.groupElementsByScreen(elements)
+            response = {
+              success: true,
+              data: {
+                type: 'wallet_elements',
+                elements: grouped
+              },
+              error: null
+            }
+          } catch (error) {
+            console.error('❌ Wallet elements error:', error)
+            response = {
+              success: false,
+              data: null,
+              error: error.message
+            }
           }
           break
 
         case 'chat':
         default:
-          const chatResponse = await chatHandler.processMessage(message, context)
+          const chatResponse = await chatHandler.handleChat(message, context)
           response = {
             success: true,
             data: {
@@ -298,3 +324,4 @@ serve(async (req) => {
     )
   }
 })
+
