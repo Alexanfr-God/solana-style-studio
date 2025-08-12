@@ -1,6 +1,6 @@
 
 [install]
-timeout = "10m"
+timeout = "20m"
 cache = true
 
 [install.scopes]
