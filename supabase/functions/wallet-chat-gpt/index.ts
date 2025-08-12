@@ -1,357 +1,124 @@
 
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { ChatHandler } from './modules/chatHandler.ts'
-import { createImageGenerationManager } from './modules/imageGenerator.ts'
-import { StyleAnalyzer } from './modules/styleAnalyzer.ts'
-import { WalletElementsManager } from './modules/walletElementsManager.ts'
-import { WalletManager } from './modules/walletManager.ts'
-import { createPosterGenerator } from './modules/posterGeneration.ts'
-import { IconManager } from './modules/iconManager.ts'
-import { IconChatHandler } from './modules/iconChatHandler.ts'
+// Import modules
+import { createImageGenerationManager } from './modules/imageGenerator.ts';
+import { handleChatWithGPT } from './modules/chatHandler.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
+  console.log(`🚀 Wallet Chat GPT Request: ${JSON.stringify(await req.clone().json(), null, 2)}`);
+  
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    
-    // Validate environment variables
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing required environment variables: SUPABASE_URL or SUPABASE_ANON_KEY')
-    }
-    
-    const supabaseClient = createClient(supabaseUrl, supabaseKey)
-
-    const requestData = await req.json()
-    
-    // Normalize request data - handle both 'message' and 'content' fields
-    const message = requestData.message || requestData.content || requestData.prompt
-    const mode = requestData.mode || 'chat'
-    const context = requestData.context || {}
-    const user_id = requestData.user_id
-    const file_data = requestData.file_data
-    const file_name = requestData.file_name
-    const isImageGeneration = requestData.isImageGeneration || mode === 'image-generation'
-    
-    console.log('🚀 Wallet Chat GPT Request:', { 
+    const requestBody = await req.json();
+    const { 
+      content, 
       mode, 
-      message: message?.substring(0, 100), 
-      user_id, 
-      file_name,
-      isImageGeneration 
-    })
+      imageUrl, 
+      walletContext, 
+      sessionId,
+      isImageGeneration = false,
+      debugMode = false
+    } = requestBody;
 
-    // ✅ УЛУЧШЕННАЯ НОРМАЛИЗАЦИЯ КОНТЕКСТА В ГЛАВНОЙ ФУНКЦИИ
-    let normalizedContext = context;
-    if (!normalizedContext || typeof normalizedContext !== 'object') {
-      console.log('⚠️ Creating default context in main function');
-      normalizedContext = {
-        sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        settings: {
-          allowImageGeneration: false,
-          maxHistoryLength: 50,
-          enableProactiveHelp: true,
-          responseStyle: 'casual'
-        },
-        conversationHistory: [],
-        contextMemory: {
-          conversationFlow: [],
-          mentionedElements: new Set(),
-          recentIntents: [],
-          appliedStyles: new Map()
-        },
-        walletType: 'MetaMask',
-        activeScreen: 'home',
-        userProfile: {
-          preferences: {
-            complexity: 'intermediate',
-            style: 'modern'
-          }
+    console.log(`🚀 Wallet Chat GPT Request: {
+  mode: "${mode}",
+  message: "${content}",
+  user_id: ${requestBody.user_id || 'undefined'},
+  file_name: ${requestBody.file_name || 'undefined'},
+  isImageGeneration: ${isImageGeneration}
+}`);
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // ✅ CRITICAL FIX: Enable image generation for leonardo and replicate modes
+    const isImageGenerationMode = mode === 'leonardo' || mode === 'replicate' || isImageGeneration;
+    
+    if (isImageGenerationMode) {
+      console.log(`🎨 [FIXED] Handling image generation with mode: ${mode}`);
+      
+      const imageManager = createImageGenerationManager(supabaseUrl, supabaseKey);
+      
+      const imageRequest = {
+        prompt: content,
+        style: 'digital art',
+        type: 'wallet_background',
+        dimensions: { width: 1024, height: 1024 },
+        generator: mode as 'leonardo' | 'replicate',
+        options: {
+          enhancePrompt: true,
+          optimizeForWallet: true,
+          highQuality: true
         }
       };
-    }
 
-    // Initialize managers with correct parameters
-    const chatHandler = new ChatHandler(supabaseUrl, supabaseKey)
-    const imageManager = createImageGenerationManager(supabaseUrl, supabaseKey)
-    const styleAnalyzer = new StyleAnalyzer(supabaseUrl, supabaseKey)
-    const walletElementsManager = new WalletElementsManager(supabaseUrl, supabaseKey)
-    const walletManager = new WalletManager(supabaseUrl, supabaseKey)
-    const posterGenerator = createPosterGenerator(supabaseUrl, supabaseKey)
-    const iconManager = new IconManager(supabaseClient)
-    const iconChatHandler = new IconChatHandler(iconManager)
+      console.log(`📋 [FIXED] Image generation request:`, imageRequest);
 
-    let response = { success: false, data: null, error: null }
-
-    // Check if this is an icon-related request
-    const iconContext = iconChatHandler.analyzeIconRequest(message)
-    
-    if (iconContext) {
-      console.log('🎨 Icon request detected:', iconContext)
+      const imageResult = await imageManager.generateImage(imageRequest);
       
-      if (iconContext.action === 'replace' && file_data) {
-        try {
-          // Fix: Use atob instead of Buffer for Deno compatibility
-          const binaryString = atob(file_data)
-          const bytes = new Uint8Array(binaryString.length)
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i)
-          }
-          const file = new File([bytes], file_name || 'icon.svg', { type: 'image/svg+xml' })
-          
-          if (iconContext.element_name) {
-            const iconsByCategory = await iconManager.getIconsByCategory()
-            let targetElementId = null
-            
-            Object.values(iconsByCategory).forEach(icons => {
-              const found = icons.find(icon => 
-                icon.storage_file_name.includes(iconContext.element_name!) ||
-                icon.name.toLowerCase().includes(iconContext.element_name!)
-              )
-              if (found) targetElementId = found.id
-            })
-            
-            if (targetElementId) {
-              const result = await iconManager.replaceUserIcon(user_id, targetElementId, file)
-              response = {
-                success: true,
-                data: {
-                  type: 'icon_replaced',
-                  message: `✅ Иконка "${iconContext.element_name}" успешно заменена!`,
-                  icon_data: result
-                },
-                error: null
-              }
-            } else {
-              response = {
-                success: false,
-                data: null,
-                error: `❌ Иконка "${iconContext.element_name}" не найдена`
-              }
-            }
-          }
-        } catch (error) {
-          response = {
-            success: false,
-            data: null,
-            error: `❌ Ошибка при замене иконки: ${error.message}`
-          }
-        }
-      } else if (iconContext.action === 'batch_replace' && file_data && iconContext.icon_group) {
-        try {
-          // Fix: Use atob instead of Buffer for Deno compatibility
-          const binaryString = atob(file_data)
-          const bytes = new Uint8Array(binaryString.length)
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i)
-          }
-          const file = new File([bytes], file_name || 'icon.svg', { type: 'image/svg+xml' })
-          
-          const results = await iconManager.batchReplaceIcons(user_id, iconContext.icon_group, file)
-          response = {
-            success: true,
-            data: {
-              type: 'icons_batch_replaced',
-              message: `✅ Группа иконок "${iconContext.icon_group}" заменена! Обновлено: ${results.length} иконок`,
-              icons_data: results
-            },
-            error: null
-          }
-        } catch (error) {
-          response = {
-            success: false,
-            data: null,
-            error: `❌ Ошибка при групповой замене: ${error.message}`
-          }
-        }
-      } else {
-        const iconResponse = await iconChatHandler.generateIconResponse(iconContext, user_id)
-        response = {
+      console.log(`📊 [FIXED] Image generation result:`, imageResult);
+
+      if (imageResult.success && imageResult.imageUrl) {
+        return new Response(JSON.stringify({
           success: true,
+          imageUrl: imageResult.imageUrl,
           data: {
-            type: 'icon_info',
-            message: iconResponse
+            imageUrl: imageResult.imageUrl
           },
-          error: null
-        }
-      }
-    } else {
-      // Handle other request types
-      switch (mode) {
-        case 'style-analysis':
-          if (file_data) {
-            const analysis = await styleAnalyzer.analyzeImage(file_data)
-            response = {
-              success: true,
-              data: {
-                type: 'style_analysis',
-                analysis: analysis
-              },
-              error: null
-            }
-          }
-          break
-
-        case 'image-generation':
-          try {
-            const imageRequest = {
-              prompt: message,
-              style: context.style || 'poster',
-              type: context.type || 'wallpaper',
-              dimensions: context.dimensions || { width: 1024, height: 1024 },
-              generator: context.generator || 'leonardo',
-              options: {
-                enhancePrompt: true,
-                learnFromExamples: true,
-                optimizeForWallet: true,
-                highQuality: true
-              }
-            }
-            
-            const imageResult = await imageManager.generateImage(imageRequest)
-            
-            if (imageResult.success && imageResult.imageUrl) {
-              response = {
-                success: true,
-                data: {
-                  type: 'generated_image',
-                  imageUrl: imageResult.imageUrl,
-                  image_url: imageResult.imageUrl, // Also include legacy field name
-                  prompt: message
-                },
-                error: null
-              }
-            } else {
-              response = {
-                success: false,
-                data: null,
-                error: imageResult.error || 'Image generation failed'
-              }
-            }
-          } catch (error) {
-            console.error('❌ Image generation error:', error)
-            response = {
-              success: false,
-              data: null,
-              error: error.message
-            }
-          }
-          break
-
-        case 'poster-generation':
-          try {
-            const posterConfig = {
-              type: context.type || 'wallpaper',
-              dimensions: context.dimensions || { width: 1024, height: 1024 },
-              style: context.style || 'cartoon',
-              elements: context.elements || [],
-              colors: context.colors || [],
-              mood: context.mood || 'powerful',
-              composition: context.composition || 'centered',
-              quality: context.quality || 'high'
-            }
-            
-            const posterResult = await posterGenerator.generatePoster(posterConfig, message, {
-              generator: context.generator || 'leonardo',
-              saveToDatabase: false
-            })
-            
-            if (posterResult.success && posterResult.imageUrl) {
-              response = {
-                success: true,
-                data: {
-                  type: 'generated_poster',
-                  imageUrl: posterResult.imageUrl,
-                  poster_url: posterResult.imageUrl, // Also include legacy field name
-                  prompt: posterResult.metadata.enhancedPrompt
-                },
-                error: null
-              }
-            } else {
-              response = {
-                success: false,
-                data: null,
-                error: posterResult.error || 'Poster generation failed'
-              }
-            }
-          } catch (error) {
-            console.error('❌ Poster generation error:', error)
-            response = {
-              success: false,
-              data: null,
-              error: error.message
-            }
-          }
-          break
-
-        case 'wallet-elements':
-          try {
-            const elements = await walletElementsManager.loadAllElements()
-            const grouped = walletElementsManager.groupElementsByScreen(elements)
-            response = {
-              success: true,
-              data: {
-                type: 'wallet_elements',
-                elements: grouped
-              },
-              error: null
-            }
-          } catch (error) {
-            console.error('❌ Wallet elements error:', error)
-            response = {
-              success: false,
-              data: null,
-              error: error.message
-            }
-          }
-          break
-
-        case 'chat':
-        default:
-          // ✅ ПЕРЕДАЕМ НОРМАЛИЗОВАННЫЙ КОНТЕКСТ В ChatHandler
-          const chatResponse = await chatHandler.handleChat(message, normalizedContext)
-          response = {
-            success: true,
-            data: {
-              type: 'chat_response',
-              message: chatResponse.message,
-              suggestions: chatResponse.suggestions
-            },
-            error: null
-          }
-          break
+          metadata: imageResult.metadata,
+          mode: mode
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } else {
+        console.error(`❌ [FIXED] Image generation failed:`, imageResult.error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: imageResult.error || 'Image generation failed',
+          mode: mode
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
     }
 
-    return new Response(
-      JSON.stringify(response),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
+    // Handle regular chat
+    console.log('💬 Handling enhanced general chat...');
+    
+    const chatResult = await handleChatWithGPT({
+      content,
+      imageUrl,
+      walletContext,
+      sessionId,
+      mode: 'analysis'
+    });
+
+    return new Response(JSON.stringify(chatResult), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
-    console.error('❌ Error in wallet-chat-gpt:', error)
-    return new Response(
-      JSON.stringify({
-        success: false,
-        data: null,
-        error: error.message
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
+    console.error('💥 Edge Function Error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+      details: 'Check function logs for more information'
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
-})
+});

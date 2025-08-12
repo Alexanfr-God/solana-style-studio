@@ -1,7 +1,9 @@
 
 [install]
-timeout = "20m"
+timeout = "30m"
 cache = true
+registry = "https://registry.npmjs.org/"
+scopes = {}
 
 [install.scopes]
 "*" = { production = false }
