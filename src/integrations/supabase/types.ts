@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_nonces: {
+        Row: {
+          address: string
+          chain: string
+          created_at: string
+          expires_at: string
+          id: string
+          nonce: string
+          used: boolean
+        }
+        Insert: {
+          address: string
+          chain: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          nonce: string
+          used?: boolean
+        }
+        Update: {
+          address?: string
+          chain?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          nonce?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       element_categories: {
         Row: {
           created_at: string | null
@@ -285,6 +315,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wallet_profiles: {
+        Row: {
+          chain: string
+          created_at: string
+          id: string
+          last_login_at: string | null
+          metadata: Json
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          chain: string
+          created_at?: string
+          id?: string
+          last_login_at?: string | null
+          metadata?: Json
+          updated_at?: string
+          wallet_address: string
+        }
+        Update: {
+          chain?: string
+          created_at?: string
+          id?: string
+          last_login_at?: string | null
+          metadata?: Json
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import WalletSelector from '@/components/wallet/WalletSelector';
+import ConnectWalletButton from '@/components/auth/ConnectWalletButton';
 
 const Header = () => {
   return (
@@ -20,13 +20,13 @@ const Header = () => {
           
           {/* Right: Connect Wallet */}
           <div className="flex items-center">
-            <WalletSelector />
+            <ConnectWalletButton />
           </div>
         </div>
       </div>
       
       {/* Ambient glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-transparent to-pink-500/10 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 pointer-events-none"></div>
     </header>
   );
 };

@@ -2,13 +2,7 @@
 import { FC, ReactNode, useMemo, createContext, useState, useContext, useCallback } from 'react';
 import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { 
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-  LedgerWalletAdapter,
-  CoinbaseWalletAdapter,
-  TorusWalletAdapter
-} from '@solana/wallet-adapter-phantom';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { SolflareWalletAdapter as SolflareAdapter } from '@solana/wallet-adapter-solflare';
 import { LedgerWalletAdapter as LedgerAdapter } from '@solana/wallet-adapter-ledger';
 import { CoinbaseWalletAdapter as CoinbaseAdapter } from '@solana/wallet-adapter-coinbase';
