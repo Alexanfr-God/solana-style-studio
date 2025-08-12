@@ -2,11 +2,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { ChatHandler } from './modules/chatHandler.ts'
-import { ImageGenerator } from './modules/imageGenerator.ts'
+import { createImageGenerationManager } from './modules/imageGenerator.ts'
 import { StyleAnalyzer } from './modules/styleAnalyzer.ts'
 import { WalletElementsManager } from './modules/walletElementsManager.ts'
 import { WalletManager } from './modules/walletManager.ts'
-import { PosterGeneration } from './modules/posterGeneration.ts'
+import { createPosterGenerator } from './modules/posterGeneration.ts'
 import { IconManager } from './modules/iconManager.ts'
 import { IconChatHandler } from './modules/iconChatHandler.ts'
 
@@ -21,42 +21,54 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    )
-
-    const { message, mode, context, user_id, file_data, file_name } = await req.json()
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     
-    console.log('🚀 Wallet Chat GPT Request:', { mode, message: message?.substring(0, 100), user_id, file_name })
+    const supabaseClient = createClient(supabaseUrl, supabaseKey)
 
-    // Инициализация всех менеджеров
+    const requestData = await req.json()
+    
+    // Normalize request data - handle both 'message' and 'content' fields
+    const message = requestData.message || requestData.content || requestData.prompt
+    const mode = requestData.mode || 'chat'
+    const context = requestData.context || {}
+    const user_id = requestData.user_id
+    const file_data = requestData.file_data
+    const file_name = requestData.file_name
+    const isImageGeneration = requestData.isImageGeneration || mode === 'image-generation'
+    
+    console.log('🚀 Wallet Chat GPT Request:', { 
+      mode, 
+      message: message?.substring(0, 100), 
+      user_id, 
+      file_name,
+      isImageGeneration 
+    })
+
+    // Initialize managers with correct parameters
     const chatHandler = new ChatHandler()
-    const imageGenerator = new ImageGenerator()
+    const imageManager = createImageGenerationManager(supabaseUrl, supabaseKey)
     const styleAnalyzer = new StyleAnalyzer()
     const walletElementsManager = new WalletElementsManager(supabaseClient)
     const walletManager = new WalletManager(supabaseClient)
-    const posterGeneration = new PosterGeneration(supabaseClient)
+    const posterGenerator = createPosterGenerator(supabaseUrl, supabaseKey)
     const iconManager = new IconManager(supabaseClient)
     const iconChatHandler = new IconChatHandler(iconManager)
 
     let response = { success: false, data: null, error: null }
 
-    // Проверяем, является ли запрос связанным с иконками
+    // Check if this is an icon-related request
     const iconContext = iconChatHandler.analyzeIconRequest(message)
     
     if (iconContext) {
       console.log('🎨 Icon request detected:', iconContext)
       
-      // Обработка иконок
       if (iconContext.action === 'replace' && file_data) {
-        // Замена одной иконки
         try {
           const fileBuffer = new Uint8Array(Buffer.from(file_data, 'base64'))
           const file = new File([fileBuffer], file_name || 'icon.svg', { type: 'image/svg+xml' })
           
           if (iconContext.element_name) {
-            // Найти element_id по имени
             const iconsByCategory = await iconManager.getIconsByCategory()
             let targetElementId = null
             
@@ -95,7 +107,6 @@ serve(async (req) => {
           }
         }
       } else if (iconContext.action === 'batch_replace' && file_data && iconContext.icon_group) {
-        // Групповая замена иконок
         try {
           const fileBuffer = new Uint8Array(Buffer.from(file_data, 'base64'))
           const file = new File([fileBuffer], file_name || 'icon.svg', { type: 'image/svg+xml' })
@@ -118,7 +129,6 @@ serve(async (req) => {
           }
         }
       } else {
-        // Обычные запросы по иконкам (список, помощь, информация)
         const iconResponse = await iconChatHandler.generateIconResponse(iconContext, user_id)
         response = {
           success: true,
@@ -130,7 +140,7 @@ serve(async (req) => {
         }
       }
     } else {
-      // Существующая обработка других запросов
+      // Handle other request types
       switch (mode) {
         case 'style-analysis':
           if (file_data) {
@@ -147,28 +157,94 @@ serve(async (req) => {
           break
 
         case 'image-generation':
-          const imageResult = await imageGenerator.generateImage(message, context)
-          response = {
-            success: true,
-            data: {
-              type: 'generated_image',
-              image_url: imageResult.image_url,
-              prompt: imageResult.prompt
-            },
-            error: null
+          try {
+            const imageRequest = {
+              prompt: message,
+              style: context.style || 'poster',
+              type: context.type || 'wallpaper',
+              dimensions: context.dimensions || { width: 1024, height: 1024 },
+              generator: context.generator || 'leonardo',
+              options: {
+                enhancePrompt: true,
+                learnFromExamples: true,
+                optimizeForWallet: true,
+                highQuality: true
+              }
+            }
+            
+            const imageResult = await imageManager.generateImage(imageRequest)
+            
+            if (imageResult.success && imageResult.imageUrl) {
+              response = {
+                success: true,
+                data: {
+                  type: 'generated_image',
+                  imageUrl: imageResult.imageUrl,
+                  image_url: imageResult.imageUrl, // Also include legacy field name
+                  prompt: message
+                },
+                error: null
+              }
+            } else {
+              response = {
+                success: false,
+                data: null,
+                error: imageResult.error || 'Image generation failed'
+              }
+            }
+          } catch (error) {
+            console.error('❌ Image generation error:', error)
+            response = {
+              success: false,
+              data: null,
+              error: error.message
+            }
           }
           break
 
         case 'poster-generation':
-          const posterResult = await posterGeneration.generatePoster(message, context)
-          response = {
-            success: true,
-            data: {
-              type: 'generated_poster',
-              poster_url: posterResult.poster_url,
-              prompt: posterResult.prompt
-            },
-            error: null
+          try {
+            const posterConfig = {
+              type: context.type || 'wallpaper',
+              dimensions: context.dimensions || { width: 1024, height: 1024 },
+              style: context.style || 'cartoon',
+              elements: context.elements || [],
+              colors: context.colors || [],
+              mood: context.mood || 'powerful',
+              composition: context.composition || 'centered',
+              quality: context.quality || 'high'
+            }
+            
+            const posterResult = await posterGenerator.generatePoster(posterConfig, message, {
+              generator: context.generator || 'leonardo',
+              saveToDatabase: false
+            })
+            
+            if (posterResult.success && posterResult.imageUrl) {
+              response = {
+                success: true,
+                data: {
+                  type: 'generated_poster',
+                  imageUrl: posterResult.imageUrl,
+                  poster_url: posterResult.imageUrl, // Also include legacy field name
+                  prompt: posterResult.metadata.enhancedPrompt
+                },
+                error: null
+              }
+            } else {
+              response = {
+                success: false,
+                data: null,
+                error: posterResult.error || 'Poster generation failed'
+              }
+            }
+          } catch (error) {
+            console.error('❌ Poster generation error:', error)
+            response = {
+              success: false,
+              data: null,
+              error: error.message
+            }
           }
           break
 
