@@ -47,5 +47,11 @@
     "name": "Snoop Dogg",
     "description": "Hip-hop legend themed wallet with golden vibes",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_10/image_10.png"
+  },
+  {
+    "id": "gorillaz",
+    "name": "Gorillaz",
+    "description": "Virtual band themed wallet with futuristic styling",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_11/image_11.png"
   }
 ]
