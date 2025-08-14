@@ -1,5 +1,5 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -10,17 +10,17 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { callPatch } from '@/lib/api/client';
 import { useThemeActions } from '@/state/themeStore';
 import { toast } from 'sonner';
+import { logReactVersion } from '@/utils/logReactVersion';
 
 const ThemeSelectorCoverflow: React.FC = () => {
-  // Add safety check for React
-  if (!React || !React.useState) {
-    console.error('React is not properly loaded');
-    return <div className="text-white">Loading...</div>;
+  // Dev diagnostics
+  if (process.env.NODE_ENV === 'development') {
+    logReactVersion('ThemeSelectorCoverflow');
   }
 
-  const { themes, activeThemeId, selectTheme, getActiveTheme, isLoading } = useThemeSelector();
+  const { themes, activeThemeId, getActiveTheme, isLoading } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
-  const [isProcessing, setIsProcessing] = useState(false);
+  const isProcessingRef = useRef(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
@@ -39,13 +39,11 @@ const ThemeSelectorCoverflow: React.FC = () => {
   }, [emblaApi]);
 
   const handleThemeClick = useCallback(async (theme: any) => {
-    // Prevent multiple simultaneous processing
-    if (isProcessing) return;
-    
-    // Don't reprocess if same theme is already active and we're not switching modes
+    // Prevent multiple simultaneous processing or repeated clicks on same theme
+    if (isProcessingRef.current) return;
     if (theme.id === activeThemeId && mode === "apply") return;
     
-    setIsProcessing(true);
+    isProcessingRef.current = true;
     
     try {
       if (mode === "apply") {
@@ -102,9 +100,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
     } catch (error) {
       toast.error(`Error processing theme: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setIsProcessing(false);
+      isProcessingRef.current = false;
     }
-  }, [mode, activeThemeId, applyPatch, isProcessing]);
+  }, [mode, activeThemeId, applyPatch]);
 
   const activeTheme = getActiveTheme();
 
@@ -166,7 +164,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           size="icon"
           className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           onClick={scrollPrev}
-          disabled={isProcessing}
+          disabled={isProcessingRef.current}
         >
           <ChevronLeft className="h-5 w-5 text-white" />
         </Button>
@@ -176,7 +174,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           size="icon"
           className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           onClick={scrollNext}
-          disabled={isProcessing}
+          disabled={isProcessingRef.current}
         >
           <ChevronRight className="h-5 w-5 text-white" />
         </Button>
@@ -194,7 +192,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     isActive 
                       ? 'scale-110 z-10' 
                       : 'scale-90 opacity-60 hover:opacity-80 hover:scale-95'
-                  } ${isProcessing ? 'pointer-events-none' : ''}`}
+                  } ${isProcessingRef.current ? 'pointer-events-none' : ''}`}
                   onClick={() => handleThemeClick(theme)}
                   data-theme-id={theme.id}
                 >
@@ -233,7 +231,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                       </div>
 
                       {/* Processing Indicator */}
-                      {isProcessing && (
+                      {isProcessingRef.current && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-400 border-t-transparent"></div>
                         </div>
@@ -270,8 +268,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
                 ? 'bg-purple-400 w-6' 
                 : 'bg-white/30 hover:bg-white/50'
             }`}
-            onClick={() => !isProcessing && handleThemeClick(theme)}
-            disabled={isProcessing}
+            onClick={() => !isProcessingRef.current && handleThemeClick(theme)}
+            disabled={isProcessingRef.current}
           />
         ))}
       </div>

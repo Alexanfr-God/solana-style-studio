@@ -130,7 +130,8 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const handleUndo = () => {
     if (isProcessing) return;
     
-    if (undo()) {
+    const success = undo();
+    if (success) {
       toast.success('↶ Changes undone');
     } else {
       toast.error('Nothing to undo');
@@ -140,7 +141,8 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const handleRedo = () => {
     if (isProcessing) return;
     
-    if (redo()) {
+    const success = redo();
+    if (success) {
       toast.success('↷ Changes redone');
     } else {
       toast.error('Nothing to redo');
