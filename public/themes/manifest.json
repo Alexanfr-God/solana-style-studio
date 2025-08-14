@@ -3,67 +3,36 @@
   {
     "id": "luxury",
     "name": "Luxury Gold",
-    "description": "Premium golden wallet interface",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png"
+    "description": "Premium golden wallet interface with elegant styling",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+    "sample_patch": []
   },
   {
     "id": "wif",
     "name": "WIF",
-    "description": "WIF themed wallet design",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png"
+    "description": "WIF themed wallet design with vibrant colors",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png",
+    "sample_patch": []
   },
   {
     "id": "pepe",
     "name": "Pepe Theme",
-    "description": "Pepe themed wallet design",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_3/image_3.png"
+    "description": "Pepe themed wallet design with meme aesthetics",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_3/image_3.png",
+    "sample_patch": []
   },
   {
     "id": "elonmusk",
     "name": "Elon Musk",
-    "description": "Elon Musk themed wallet design",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_4/image_4.png"
+    "description": "Elon Musk themed wallet design with futuristic elements",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_4/image_4.png",
+    "sample_patch": []
   },
   {
-    "id": "guccicatluxurytheme",
-    "name": "Gucci Cat Luxury",
-    "description": "Luxurious cat-themed wallet with Gucci styling",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png"
-  },
-  {
-    "id": "cz",
-    "name": "Binance CZ Dark",
-    "description": "Binance CZ themed dark wallet design",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_6/image_6.png"
-  },
-  {
-    "id": "mia",
-    "name": "MIA Golden Brown",
-    "description": "Elegant golden brown theme with warm tones",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_7/image_7.png"
-  },
-  {
-    "id": "superman",
-    "name": "Superman",
-    "description": "Heroic Superman themed wallet with iconic styling",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png"
-  },
-  {
-    "id": "snoopdogg",
-    "name": "Snoop Dogg",
-    "description": "Hip-hop legend themed wallet with golden vibes",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_10/image_10.png"
-  },
-  {
-    "id": "gorillaz",
-    "name": "Gorillaz",
-    "description": "Virtual band themed wallet with futuristic styling",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_11/image_11.png"
-  },
-  {
-    "id": "wolf",
-    "name": "Wolf of Wall Street",
-    "description": "Premium golden Wall Street wolf themed wallet",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_12/Image_12.png"
+    "id": "trump",
+    "name": "TRUMP",
+    "description": "Bold patriotic theme with red, white and blue American styling",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_8/image_8.png",
+    "sample_patch": []
   }
 ]
