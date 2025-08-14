@@ -1,3 +1,4 @@
+
 [
   {
     "id": "luxuryTheme",
@@ -10,7 +11,7 @@
     "id": "defaultTheme",
     "name": "Simple Gray Theme",
     "description": "Clean minimal gray theme with white text and transparent containers",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_grey/539c54cd-9341-4448-9622-0678e1ee453f.png",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
     "sample_patch": []
   },
   {
