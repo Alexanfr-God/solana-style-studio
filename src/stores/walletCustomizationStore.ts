@@ -5,6 +5,9 @@ import { THEME_SOT_IS_ZUSTAND } from '@/config/flags';
 
 export type WalletLayer = 'login' | 'wallet' | 'receive' | 'send' | 'buy' | 'swap' | 'apps' | 'history' | 'search' | 'home';
 
+// Stable empty style object to prevent infinite re-renders
+const EMPTY_STYLE = {};
+
 export interface WalletCustomizationState {
   currentLayer: WalletLayer;
   walletStyle: WalletStyle;
@@ -281,11 +284,11 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
 
   getStyleForComponent: (component: string) => {
     if (THEME_SOT_IS_ZUSTAND) {
-      console.warn(`⚠️ getStyleForComponent(${component}) is deprecated in SoT mode - use useThemeStore instead`);
-      return {};
+      // Return stable reference to prevent infinite re-renders
+      return EMPTY_STYLE;
     }
     // Legacy implementation for rollback
-    return {};
+    return EMPTY_STYLE;
   },
 
   getTokenColors: () => ({

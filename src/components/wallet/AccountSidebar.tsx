@@ -1,9 +1,8 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { X, Plus, Pencil, Settings } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletTheme } from '@/hooks/useWalletTheme';
-import { useWalletStyles } from '@/hooks/useWalletStyles';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatAddress } from '@/lib/utils';
 
@@ -16,13 +15,29 @@ const AccountSidebar = () => {
     setShowAccountSidebar
   } = useWalletCustomizationStore();
 
-  const { getSidebarLayer, getTransition } = useWalletTheme();
-  const { getComponentStyle } = useWalletStyles();
+  const { theme } = useWalletTheme();
 
-  // Get sidebar-specific styles from theme
-  const sidebarStyle = getSidebarLayer();
-  const overlayStyle = getComponentStyle('overlays');
-  const buttonStyle = getComponentStyle('buttons');
+  // Memoize computed styles to prevent unnecessary re-renders
+  const styles = useMemo(() => {
+    const sidebarStyle = theme.sidebarLayer || {};
+    const overlayStyle = {
+      backgroundColor: 'rgba(24, 24, 24, 0.95)',
+      backdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '16px'
+    };
+    const buttonStyle = {
+      borderRadius: '8px'
+    };
+    const transition = 'all 0.2s ease';
+
+    return {
+      sidebarStyle,
+      overlayStyle,
+      buttonStyle,
+      transition
+    };
+  }, [theme]);
 
   const handleAccountSelect = (accountId: string) => {
     setActiveAccount(accountId);
@@ -48,8 +63,8 @@ const AccountSidebar = () => {
         onClick={handleClose}
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: overlayStyle.backdropFilter || 'blur(8px)',
-          borderRadius: overlayStyle.borderRadius || '16px'
+          backdropFilter: styles.overlayStyle.backdropFilter,
+          borderRadius: styles.overlayStyle.borderRadius
         }}
       />
       
@@ -58,11 +73,11 @@ const AccountSidebar = () => {
         className="fixed top-4 left-4 bottom-4 w-80 z-50 flex flex-col animate-slide-in-right account-sidebar-container"
         data-element-id="account-sidebar-container"
         style={{
-          backgroundColor: overlayStyle.backgroundColor || 'rgba(24, 24, 24, 0.95)',
-          backdropFilter: overlayStyle.backdropFilter || 'blur(20px)',
-          fontFamily: sidebarStyle.center?.accountList?.accountName?.fontFamily || 'Inter',
-          border: overlayStyle.border || '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: overlayStyle.borderRadius || '16px',
+          backgroundColor: styles.overlayStyle.backgroundColor,
+          backdropFilter: styles.overlayStyle.backdropFilter,
+          fontFamily: styles.sidebarStyle.center?.accountList?.accountName?.fontFamily || 'Inter',
+          border: styles.overlayStyle.border,
+          borderRadius: styles.overlayStyle.borderRadius,
           overflow: 'hidden'
         }}
       >
@@ -71,7 +86,7 @@ const AccountSidebar = () => {
           className="flex items-center justify-between p-4 border-b account-sidebar-header"
           data-element-id="account-sidebar-header"
           style={{
-            backgroundColor: sidebarStyle.header?.backgroundColor || '#181818',
+            backgroundColor: styles.sidebarStyle.header?.backgroundColor || '#181818',
             borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
@@ -79,10 +94,10 @@ const AccountSidebar = () => {
             className="text-lg font-medium account-sidebar-title"
             data-element-id="account-sidebar-title"
             style={{
-              color: sidebarStyle.header?.accountTitle?.textColor || '#FFFFFF',
-              fontFamily: sidebarStyle.header?.accountTitle?.fontFamily || 'Inter, sans-serif',
-              fontWeight: sidebarStyle.header?.accountTitle?.fontWeight || 'bold',
-              fontSize: sidebarStyle.header?.accountTitle?.fontSize || '19px'
+              color: styles.sidebarStyle.header?.accountTitle?.textColor || '#FFFFFF',
+              fontFamily: styles.sidebarStyle.header?.accountTitle?.fontFamily || 'Inter, sans-serif',
+              fontWeight: styles.sidebarStyle.header?.accountTitle?.fontWeight || 'bold',
+              fontSize: styles.sidebarStyle.header?.accountTitle?.fontSize || '19px'
             }}
           >
             Accounts
@@ -92,15 +107,15 @@ const AccountSidebar = () => {
             className="p-2 rounded-lg hover:bg-white/10 transition-colors account-sidebar-close"
             data-element-id="account-sidebar-close"
             style={{
-              borderRadius: buttonStyle.borderRadius || '8px',
-              transition: getTransition('default')
+              borderRadius: styles.buttonStyle.borderRadius,
+              transition: styles.transition
             }}
           >
             <X 
               className="w-5 h-5 account-sidebar-close-icon" 
               data-element-id="account-sidebar-close-icon"
               style={{
-                color: sidebarStyle.header?.closeIcon?.color || '#aaa'
+                color: styles.sidebarStyle.header?.closeIcon?.color || '#aaa'
               }}
             />
           </button>
@@ -111,7 +126,7 @@ const AccountSidebar = () => {
           className="flex-1 p-4 space-y-3 overflow-auto account-sidebar-list" 
           data-element-id="account-sidebar-list"
           style={{
-            backgroundColor: sidebarStyle.center?.backgroundColor || '#232323'
+            backgroundColor: styles.sidebarStyle.center?.backgroundColor || '#232323'
           }}
         >
           {accounts.map((account, index) => (
@@ -125,13 +140,13 @@ const AccountSidebar = () => {
                   ? 'rgba(255, 255, 255, 0.1)' 
                   : 'transparent',
                 borderRadius: '12px',
-                transition: getTransition('default'),
+                transition: styles.transition,
                 ...(activeAccountId === account.id && {
-                  boxShadow: sidebarStyle.center?.accountList?.selectedAnimation?.type === 'glow' 
-                    ? `0 0 10px ${sidebarStyle.center?.accountList?.selectedAnimation?.color || '#a259ff'}` 
+                  boxShadow: styles.sidebarStyle.center?.accountList?.selectedAnimation?.type === 'glow' 
+                    ? `0 0 10px ${styles.sidebarStyle.center?.accountList?.selectedAnimation?.color || '#a259ff'}` 
                     : undefined,
-                  border: sidebarStyle.center?.accountList?.selectedAnimation?.type === 'border' 
-                    ? `1px solid ${sidebarStyle.center?.accountList?.selectedAnimation?.color || '#a259ff'}` 
+                  border: styles.sidebarStyle.center?.accountList?.selectedAnimation?.type === 'border' 
+                    ? `1px solid ${styles.sidebarStyle.center?.accountList?.selectedAnimation?.color || '#a259ff'}` 
                     : undefined
                 })
               }}
@@ -142,11 +157,11 @@ const AccountSidebar = () => {
                   className="text-white font-medium account-sidebar-avatar-fallback"
                   data-element-id={`account-sidebar-avatar-fallback-${index}`}
                   style={{
-                    backgroundColor: sidebarStyle.center?.accountList?.avatar?.backgroundColor || '#7B6CFF',
-                    color: sidebarStyle.center?.accountList?.avatar?.textColor || '#fff',
-                    fontFamily: sidebarStyle.center?.accountList?.avatar?.fontFamily || 'Inter, sans-serif',
-                    fontWeight: sidebarStyle.center?.accountList?.avatar?.fontWeight || 'bold',
-                    fontSize: sidebarStyle.center?.accountList?.avatar?.fontSize || '20px'
+                    backgroundColor: styles.sidebarStyle.center?.accountList?.avatar?.backgroundColor || '#7B6CFF',
+                    color: styles.sidebarStyle.center?.accountList?.avatar?.textColor || '#fff',
+                    fontFamily: styles.sidebarStyle.center?.accountList?.avatar?.fontFamily || 'Inter, sans-serif',
+                    fontWeight: styles.sidebarStyle.center?.accountList?.avatar?.fontWeight || 'bold',
+                    fontSize: styles.sidebarStyle.center?.accountList?.avatar?.fontSize || '20px'
                   }}
                 >
                   {account.name.charAt(account.name.length - 1)}
@@ -157,10 +172,10 @@ const AccountSidebar = () => {
                   className="text-sm font-medium account-sidebar-account-name"
                   data-element-id={`account-sidebar-account-name-${index}`}
                   style={{
-                    color: sidebarStyle.center?.accountList?.accountName?.textColor || '#FFFFFF',
-                    fontFamily: sidebarStyle.center?.accountList?.accountName?.fontFamily || 'Inter, sans-serif',
-                    fontWeight: sidebarStyle.center?.accountList?.accountName?.fontWeight || 'bold',
-                    fontSize: sidebarStyle.center?.accountList?.accountName?.fontSize || '17px'
+                    color: styles.sidebarStyle.center?.accountList?.accountName?.textColor || '#FFFFFF',
+                    fontFamily: styles.sidebarStyle.center?.accountList?.accountName?.fontFamily || 'Inter, sans-serif',
+                    fontWeight: styles.sidebarStyle.center?.accountList?.accountName?.fontWeight || 'bold',
+                    fontSize: styles.sidebarStyle.center?.accountList?.accountName?.fontSize || '17px'
                   }}
                 >
                   {account.name}
@@ -169,9 +184,9 @@ const AccountSidebar = () => {
                   className="text-xs account-sidebar-account-address"
                   data-element-id={`account-sidebar-account-address-${index}`}
                   style={{ 
-                    color: sidebarStyle.center?.accountList?.accountAddress?.textColor || '#aaa',
-                    fontFamily: sidebarStyle.center?.accountList?.accountAddress?.fontFamily || 'Inter, sans-serif',
-                    fontSize: sidebarStyle.center?.accountList?.accountAddress?.fontSize || '14px'
+                    color: styles.sidebarStyle.center?.accountList?.accountAddress?.textColor || '#aaa',
+                    fontFamily: styles.sidebarStyle.center?.accountList?.accountAddress?.fontFamily || 'Inter, sans-serif',
+                    fontSize: styles.sidebarStyle.center?.accountList?.accountAddress?.fontSize || '14px'
                   }}
                 >
                   {formatAddress(account.address)}
@@ -186,7 +201,7 @@ const AccountSidebar = () => {
           className="p-4 border-t account-sidebar-actions"
           data-element-id="account-sidebar-actions"
           style={{
-            backgroundColor: sidebarStyle.footer?.backgroundColor || '#181818',
+            backgroundColor: styles.sidebarStyle.footer?.backgroundColor || '#181818',
             borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
@@ -197,15 +212,15 @@ const AccountSidebar = () => {
               data-element-id="account-sidebar-add-button"
               title="Add Account"
               style={{
-                borderRadius: buttonStyle.borderRadius || '12px',
-                transition: getTransition('default')
+                borderRadius: styles.buttonStyle.borderRadius,
+                transition: styles.transition
               }}
             >
               <Plus 
                 className="w-6 h-6 hover:text-white account-sidebar-add-icon" 
                 data-element-id="account-sidebar-add-icon"
                 style={{
-                  color: sidebarStyle.footer?.footerIcons?.addIcon?.color || '#aaa'
+                  color: styles.sidebarStyle.footer?.footerIcons?.addIcon?.color || '#aaa'
                 }}
               />
             </button>
@@ -215,15 +230,15 @@ const AccountSidebar = () => {
               data-element-id="account-sidebar-edit-button"
               title="Edit Account"
               style={{
-                borderRadius: buttonStyle.borderRadius || '12px',
-                transition: getTransition('default')
+                borderRadius: styles.buttonStyle.borderRadius,
+                transition: styles.transition
               }}
             >
               <Pencil 
                 className="w-6 h-6 hover:text-white account-sidebar-edit-icon" 
                 data-element-id="account-sidebar-edit-icon"
                 style={{
-                  color: sidebarStyle.footer?.footerIcons?.editIcon?.color || '#aaa'
+                  color: styles.sidebarStyle.footer?.footerIcons?.editIcon?.color || '#aaa'
                 }}
               />
             </button>
@@ -233,15 +248,15 @@ const AccountSidebar = () => {
               data-element-id="account-sidebar-settings-button"
               title="Settings"
               style={{
-                borderRadius: buttonStyle.borderRadius || '12px',
-                transition: getTransition('default')
+                borderRadius: styles.buttonStyle.borderRadius,
+                transition: styles.transition
               }}
             >
               <Settings 
                 className="w-6 h-6 hover:text-white account-sidebar-settings-icon" 
                 data-element-id="account-sidebar-settings-icon"
                 style={{
-                  color: sidebarStyle.footer?.footerIcons?.settingsIcon?.color || '#aaa'
+                  color: styles.sidebarStyle.footer?.footerIcons?.settingsIcon?.color || '#aaa'
                 }}
               />
             </button>
