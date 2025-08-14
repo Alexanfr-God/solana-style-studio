@@ -9,7 +9,8 @@ import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
-  const { activeTheme } = useThemeSelector();
+  const { getActiveTheme } = useThemeSelector();
+  const activeTheme = getActiveTheme();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
 
   // For feedback purposes, create placeholder values
