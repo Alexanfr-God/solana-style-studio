@@ -1,0 +1,633 @@
+{
+  "name": "Football",
+  "version": "1.0.0",
+  "globalSearchInput": {
+    "backgroundColor": "#06102e",
+    "textColor": "#eaf2ff",
+    "placeholderColor": "#133078",
+    "borderRadius": "12px",
+    "border": "none",
+    "fontFamily": "Inter, sans-serif",
+    "fontSize": "15px",
+    "iconSearch": { "color": "#e7aa66", "type": "search" },
+    "iconClose": { "color": "#e7aa66", "type": "x" }
+  },
+  "lockLayer": {
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_16/image_16.png",
+    "backgroundColor": "#061e50",
+    "title": {
+      "textColor": "#ffffff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "28px"
+    },
+    "passwordInput": {
+      "backgroundColor": "rgba(6,16,46,0.8)",
+      "textColor": "#ffffff",
+      "placeholderColor": "#295694",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Inter, sans-serif",
+      "iconEyeColor": "#e7aa66"
+    },
+    "forgotPassword": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "unlockButton": {
+      "backgroundColor": "#072e7a",
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "600",
+      "fontSize": "19px",
+      "borderRadius": "14px"
+    }
+  },
+  "avatarHeader": {
+    "backgroundColor": "#072e7a",
+    "textColor": "#ffffff",
+    "fontFamily": "Montserrat, sans-serif",
+    "fontWeight": "bold",
+    "fontSize": "20px"
+  },
+  "sidebarLayer": {
+    "header": {
+      "backgroundColor": "#091f55",
+      "accountTitle": {
+        "textColor": "#e7aa66",
+        "fontFamily": "Montserrat, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "19px"
+      },
+      "closeIcon": {
+        "color": "#e7aa66",
+        "type": "x"
+      }
+    },
+    "center": {
+      "backgroundColor": "#06102e",
+      "accountList": {
+        "avatar": {
+          "backgroundColor": "#295694",
+          "textColor": "#ffffff",
+          "fontFamily": "Montserrat, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "20px"
+        },
+        "accountName": {
+          "textColor": "#eaf2ff",
+          "fontFamily": "Montserrat, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "17px"
+        },
+        "accountAddress": {
+          "textColor": "#295694",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "14px"
+        },
+        "selectedAnimation": {
+          "color": "#e7aa66",
+          "type": "glow"
+        }
+      }
+    },
+    "footer": {
+      "backgroundColor": "#091f55",
+      "footerIcons": {
+        "addIcon": { "color": "#e7aa66", "type": "plus" },
+        "editIcon": { "color": "#e7aa66", "type": "pencil" },
+        "settingsIcon": { "color": "#e7aa66", "type": "settings" }
+      }
+    }
+  },
+  "homeLayer": {
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_16/image_16.png",
+    "backgroundColor": "#061e50",
+    "header": {
+      "backgroundColor": "#061e50",
+      "backgroundImage": "",
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "searchIcon": {
+        "color": "#e7aa66",
+        "type": "search"
+      }
+    },
+    "footer": {
+      "backgroundColor": "#061e50",
+      "backgroundImage": "",
+      "iconColor": "#e7aa66",
+      "activeIconColor": "#ffffff",
+      "textColor": "#eaf2ff",
+      "activeTextColor": "#ffffff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px",
+      "navigationIcons": {
+        "homeIcon": { "color": "#e7aa66", "activeColor": "#ffffff", "type": "home" },
+        "appsIcon": { "color": "#e7aa66", "activeColor": "#ffffff", "type": "layout-grid" },
+        "swapIcon": { "color": "#e7aa66", "activeColor": "#ffffff", "type": "arrow-right-left" },
+        "historyIcon": { "color": "#e7aa66", "activeColor": "#ffffff", "type": "clock" },
+        "searchIcon": { "color": "#e7aa66", "activeColor": "#ffffff", "type": "search" }
+      }
+    },
+    "mainContainer": {
+      "backgroundColor": "rgba(41,86,148,0.08)",
+      "borderRadius": "18px"
+    },
+    "totalBalanceLabel": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Inter, sans-serif",
+      "fontWeight": "normal",
+      "fontSize": "17px"
+    },
+    "totalBalanceValue": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "32px"
+    },
+    "totalBalanceChange": {
+      "positiveColor": "#4ade80",
+      "negativeColor": "#ef4444",
+      "zeroColor": "#ffffff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "16px"
+    },
+    "actionButtons": {
+      "receiveButton": {
+        "containerColor": "#072e7a",
+        "iconColor": "#ffffff",
+        "labelColor": "#ffffff",
+        "labelFontFamily": "Montserrat, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "sendButton": {
+        "containerColor": "#072e7a",
+        "iconColor": "#ffffff",
+        "labelColor": "#ffffff",
+        "labelFontFamily": "Montserrat, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "swapButton": {
+        "containerColor": "#072e7a",
+        "iconColor": "#ffffff",
+        "labelColor": "#ffffff",
+        "labelFontFamily": "Montserrat, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "buyButton": {
+        "containerColor": "#072e7a",
+        "iconColor": "#ffffff",
+        "labelColor": "#ffffff",
+        "labelFontFamily": "Montserrat, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      }
+    },
+    "seeAll": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "13px"
+    },
+    "accountDropdown": {
+      "containerBackgroundColor": "#091f55",
+      "containerBorderRadius": "16px",
+      "headerText": {
+        "selectAccountColor": "#eaf2ff",
+        "selectAccountDescription": "#295694",
+        "selectAccountFontFamily": "Inter, sans-serif",
+        "selectAccountFontSize": "14px"
+      },
+      "accountItems": {
+        "mainAccountColor": "#eaf2ff",
+        "mainAccountFontFamily": "Inter, sans-serif",
+        "mainAccountFontSize": "14px",
+        "tradingAccountColor": "#295694",
+        "tradingAccountFontFamily": "Inter, sans-serif",
+        "tradingAccountFontSize": "14px",
+        "accountNetworkColor": "#295694",
+        "accountAddressColor": "#295694"
+      },
+      "actionButtons": {
+        "addAccountColor": "#e7aa66",
+        "addAccountFontFamily": "Inter, sans-serif",
+        "addAccountFontSize": "14px",
+        "manageCollectibleColor": "#e7aa66",
+        "manageCollectibleFontFamily": "Inter, sans-serif",
+        "manageCollectibleFontSize": "14px"
+      },
+      "icons": {
+        "copyAddressIcon": { "color": "#e7aa66", "type": "copy" }
+      }
+    }
+  },
+  "receiveLayer": {
+    "centerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_16/image_16.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px"
+    },
+    "selectNetworkLabel": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px"
+    },
+    "selectNetworkDescription": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "footer": {
+      "backgroundColor": "",
+      "backgroundImage": "",
+      "closeButton": {
+        "backgroundColor": "#072e7a",
+        "textColor": "#eaf2ff",
+        "fontFamily": "Montserrat, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "16px",
+        "borderRadius": "12px"
+      }
+    }
+  },
+  "sendLayer": {
+    "headerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_16/image_16.png",
+      "backgroundPosition": "center"
+    },
+    "header": {
+      "backIcon": { "color": "#e7aa66", "type": "arrow-left" },
+      "title": {
+        "textColor": "#eaf2ff",
+        "fontFamily": "Montserrat, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "23px"
+      },
+      "qrIcon": { "color": "#e7aa66", "type": "qr-code" }
+    },
+    "centerContainer": {
+      "backgroundColor": "#091f55",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_16/image_16.png",
+      "backgroundPosition": "center",
+      "borderRadius": "18px"
+    },
+    "selectNetworkLabel": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "19px"
+    },
+    "selectNetworkDescription": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "emptyState": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "footerContainer": {
+      "backgroundColor": "#061e50",
+      "backgroundImage": ""
+    },
+    "footer": {
+      "closeButton": {
+        "backgroundColor": "#295694",
+        "textColor": "#eaf2ff",
+        "fontFamily": "Montserrat, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "19px",
+        "icon": { "color": "#e7aa66", "type": "x" },
+        "borderRadius": "16px"
+      }
+    }
+  },
+  "appsLayer": {
+    "title": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "26px"
+    },
+    "subtitle": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "16px"
+    },
+    "collectibleCard": {
+      "backgroundColor": "#072e7a",
+      "backgroundImage": "",
+      "borderRadius": "16px"
+    },
+    "collectibleName": {
+      "textColor": "#ffffff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontSize": "17px"
+    },
+    "manageCollectibleList": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    }
+  },
+  "buyLayer": {
+    "headerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_16/image_16.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px"
+    },
+    "header": {
+      "backButton": {
+        "backgroundColor": "#072e7a",
+        "borderRadius": "14px",
+        "text": {
+          "textColor": "#eaf2ff",
+          "fontFamily": "Montserrat, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "17px"
+        },
+        "icon": { "color": "#eaf2ff", "type": "arrow-left" }
+      },
+      "title": {
+        "textColor": "#eaf2ff",
+        "fontFamily": "Montserrat, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "26px"
+      }
+    },
+    "centerContainer": {
+      "backgroundColor": "#091f55",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_16/image_16.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px",
+      "fontFamily": "Inter, sans-serif"
+    },
+    "sectionLabel": {
+      "getStarted": {
+        "textColor": "#eaf2ff",
+        "fontFamily": "Montserrat, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "18px"
+      },
+      "popular": {
+        "textColor": "#eaf2ff",
+        "fontFamily": "Montserrat, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "18px"
+      }
+    },
+    "buyButton": {
+      "backgroundColor": "#072e7a",
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "18px",
+      "borderRadius": "14px"
+    },
+    "footerContainer": {
+      "backgroundColor": "#061e50",
+      "borderRadius": "0px"
+    },
+    "footer": {
+      "closeButton": {
+        "backgroundColor": "#072e7a",
+        "textColor": "#eaf2ff",
+        "fontFamily": "Montserrat, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "18px",
+        "borderRadius": "14px",
+        "icon": { "color": "#eaf2ff", "type": "x" }
+      }
+    }
+  },
+  "swapLayer": {
+    "mainContainer": {
+      "backgroundColor": "#061e50",
+      "backgroundImage": "",
+      "borderRadius": "20px"
+    },
+    "swapTitle": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "22px"
+    },
+    "settingsIcon": { "color": "#e7aa66", "type": "settings" },
+    "fromContainer": {
+      "backgroundColor": "#091f55",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "fromLabel": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "fromBalance": {
+      "textColor": "#295694",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "fromCoinTag": {
+      "backgroundColor": "#091f55",
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px",
+      "borderRadius": "10px"
+    },
+    "toContainer": {
+      "backgroundColor": "#091f55",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "toLabel": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "toBalance": {
+      "textColor": "#295694",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "toCoinTag": {
+      "backgroundColor": "#091f55",
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px",
+      "borderRadius": "10px"
+    },
+    "arrowIcon": { "color": "#e7aa66", "type": "arrow-up-down" },
+    "rateContainer": {
+      "backgroundColor": "#091f55",
+      "backgroundImage": "",
+      "borderRadius": "12px"
+    },
+    "rateLabel": {
+      "textColor": "#295694",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "rateValue": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "16px"
+    },
+    "infoIcon": { "color": "#e7aa66", "type": "info" },
+    "swapActionButton": {
+      "backgroundColor": "#072e7a",
+      "color": "#ffffff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontSize": "16px",
+      "borderRadius": "12px"
+    }
+  },
+  "historyLayer": {
+    "recentActivityTitle": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "19px"
+    },
+    "menuIcon": { "color": "#e7aa66", "type": "more-vertical" },
+    "activityDate": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "13px"
+    },
+    "activityStatus": {
+      "successColor": "#4ade80",
+      "failedColor": "#ef4444",
+      "pendingColor": "#e7aa66",
+      "fontWeight": "500"
+    },
+    "loadMore": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    }
+  },
+  "searchLayer": {
+    "searchInput": {
+      "backgroundColor": "#06102e",
+      "textColor": "#eaf2ff",
+      "placeholderColor": "#295694",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Inter, sans-serif",
+      "iconSearch": { "color": "#e7aa66", "type": "search" },
+      "iconClose": { "color": "#e7aa66", "type": "x" }
+    },
+    "searchInputFont": {
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px",
+      "textColor": "#eaf2ff"
+    },
+    "recentSearchesLabel": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "iconTime": { "color": "#e7aa66", "type": "clock" }
+    },
+    "trendingLabel": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "iconTrending": { "color": "#4ade80", "type": "trending-up" }
+    },
+    "tokenTag": {
+      "backgroundColor": "#295694",
+      "textColor": "#eaf2ff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px",
+      "borderRadius": "10px"
+    }
+  },
+  "assetCard": {
+    "backgroundColor": "#091f55",
+    "borderRadius": "14px",
+    "title": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Montserrat, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "16px"
+    },
+    "description": {
+      "textColor": "#e7aa66",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "value": {
+      "textColor": "#eaf2ff",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "15px"
+    },
+    "percent": {
+      "positiveColor": "#4ade80",
+      "negativeColor": "#ef4444",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px"
+    },
+    "icon": {
+      "color": "#e7aa66",
+      "size": "24px"
+    }
+  },
+  "tokenCost": {
+    "fontSize": "13px",
+    "fontWeight": "400",
+    "fontFamily": "Inter, sans-serif",
+    "color": "#e7aa66"
+  },
+  "tokenCardTitle": {
+    "fontSize": "16px",
+    "fontWeight": "600",
+    "fontFamily": "Montserrat, sans-serif",
+    "color": "#eaf2ff",
+    "textAlign": "center"
+  },
+  "tokenCardDescription": {
+    "fontSize": "13px",
+    "fontWeight": "400",
+    "fontFamily": "Inter, sans-serif",
+    "color": "#e7aa66",
+    "textAlign": "center"
+  },
+  "inputs": {
+    "passwordInput": {
+      "backgroundColor": "#091f55",
+      "textColor": "#ffffff",
+      "placeholderColor": "#295694",
+      "iconEyeColor": "#e7aa66",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Inter, sans-serif"
+    },
+    "searchInput": {
+      "backgroundColor": "#091f55",
+      "textColor": "#ffffff",
+      "placeholderColor": "#295694",
+      "borderRadius": "10px",
+      "border": "1px solid #295694",
+      "fontFamily": "Inter, sans-serif"
+    }
+  },
+  "global": {
+    "fontFamily": "Inter, sans-serif",
+    "borderRadius": "14px",
+    "transition": "all 0.2s ease"
+  }
+}
