@@ -146,7 +146,7 @@ export const useThemeSelector = () => {
   const [activeThemeId, setActiveThemeId] = useState('trump'); // Default to trump
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load themes from manifest on mount
+  // Load themes from manifest on mount ONLY
   useEffect(() => {
     const initializeThemes = async () => {
       setIsLoading(true);
@@ -166,13 +166,17 @@ export const useThemeSelector = () => {
     initializeThemes();
   }, []); // Only load once on mount
 
-  // Load theme data when themes change (but NO auto-apply)
+  // Load theme data when themes are first loaded - NO auto-apply, NO dependency on activeThemeId
   useEffect(() => {
     if (themes.length === 0) return;
     
+    // Only load data if themes don't have it yet
+    const needsDataLoad = themes.some(theme => !theme.themeData);
+    if (!needsDataLoad) return;
+    
     const loadThemeData = async () => {
       setIsLoading(true);
-      console.log('🔄 Starting theme data loading process (NO AUTO-APPLY)');
+      console.log('🔄 Loading theme data (NO AUTO-APPLY)');
       
       try {
         const updatedThemes = await Promise.all(
@@ -185,9 +189,7 @@ export const useThemeSelector = () => {
         })));
         
         setThemes(updatedThemes);
-        
-        // REMOVED: Auto-apply active theme - only explicit user action should apply themes
-        console.log('🚫 NO AUTO-APPLY - themes loaded but not applied');
+        console.log('🚫 Theme data loaded but NOT applied - awaiting explicit user action');
         
       } catch (error) {
         console.error('💥 Error loading themes:', error);
@@ -197,7 +199,7 @@ export const useThemeSelector = () => {
     };
 
     loadThemeData();
-  }, [themes.length]); // Only when themes count changes, NO activeThemeId dependency
+  }, [themes.length]); // Only when themes count changes - NO other dependencies
 
   // Helper function to apply theme (ONLY called explicitly by user action)
   const applyTheme = (selectedTheme: ThemeItem) => {
@@ -210,11 +212,12 @@ export const useThemeSelector = () => {
     try {
       const currentTheme = useThemeStore.getState().theme;
       if (JSON.stringify(currentTheme) === JSON.stringify(selectedTheme.themeData)) {
-        console.log('🔄 Theme already applied, skipping');
+        console.log('🔄 Theme already applied, skipping:', selectedTheme.name);
         return;
       }
     } catch (error) {
       // If comparison fails, proceed with set
+      console.warn('Theme comparison failed, proceeding with apply');
     }
     
     if (THEME_SOT_IS_ZUSTAND) {
@@ -229,8 +232,9 @@ export const useThemeSelector = () => {
     }
   };
 
+  // EXPLICIT theme selection - only sets active, does NOT auto-apply
   const selectTheme = (themeId: string) => {
-    console.log('👆 Theme selection requested:', themeId);
+    console.log('👆 Theme selection (no auto-apply):', themeId);
     
     const selectedTheme = themes.find(t => t.id === themeId);
     if (!selectedTheme) {
@@ -238,13 +242,9 @@ export const useThemeSelector = () => {
       return;
     }
     
+    // ONLY set active - NO automatic application
     setActiveThemeId(themeId);
-    
-    if (selectedTheme.themeData) {
-      applyTheme(selectedTheme);
-    } else {
-      console.log('⏳ Theme data not loaded yet, will need explicit apply when available');
-    }
+    console.log('✅ Theme selected but NOT applied. Use applyTheme() to apply.');
   };
 
   const getActiveTheme = () => {

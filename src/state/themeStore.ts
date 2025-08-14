@@ -25,11 +25,6 @@ interface ThemeState {
   isLoading: boolean;
   error: string | null;
   
-  // Reentrancy protection with enhanced diagnostics
-  _busy: boolean;
-  _updateCount: number;
-  _lastUpdateTime: number;
-  
   // Actions
   setTheme: (theme: any) => void;
   applyPatch: (patch: ThemePatch) => void;
@@ -45,45 +40,6 @@ interface ThemeState {
   getCurrentPatch: () => ThemePatch | null;
 }
 
-// Circuit breaker constants - more restrictive
-const MAX_UPDATES_PER_SECOND = 3;
-const UPDATE_WINDOW_MS = 1000;
-
-// Enhanced circuit breaker with diagnostics
-const withEnhancedCircuitBreaker = (operation: string, fn: () => void, set: any, get: any) => {
-  const state = get();
-  const now = Date.now();
-  
-  // Reset counter if enough time has passed
-  if (now - state._lastUpdateTime > UPDATE_WINDOW_MS) {
-    set({ _updateCount: 0, _lastUpdateTime: now });
-  }
-  
-  // Check if we're exceeding the limit
-  if (state._updateCount >= MAX_UPDATES_PER_SECOND) {
-    console.error(`🚨 CIRCUIT BREAKER: ${operation} blocked - too many updates (${state._updateCount}/${MAX_UPDATES_PER_SECOND})`);
-    console.trace('Circuit breaker activation stack trace');
-    return false;
-  }
-  
-  console.log(`🔄 ThemeStore.${operation} - update ${state._updateCount + 1}/${MAX_UPDATES_PER_SECOND}`);
-  
-  // Execute with incremented counter
-  try {
-    fn();
-    set((prevState: ThemeState) => ({ 
-      ...prevState,
-      _updateCount: prevState._updateCount + 1,
-      _lastUpdateTime: now
-    }));
-    return true;
-  } catch (error) {
-    console.error(`💥 Error in ${operation}:`, error);
-    set({ error: error instanceof Error ? error.message : 'Unknown error' });
-    return false;
-  }
-};
-
 export const useThemeStore = create<ThemeState>()((set, get) => ({
   // Initial state
   theme: {},
@@ -91,147 +47,140 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   currentIndex: -1,
   isLoading: false,
   error: null,
-  _busy: false,
-  _updateCount: 0,
-  _lastUpdateTime: 0,
 
-  // Set base theme (without adding to history) - with enhanced protection
+  // Set base theme (without adding to history) - SINGLE ATOMIC UPDATE
   setTheme: (theme: any) => {
     const state = get();
-    if (state._busy) {
-      console.warn('🚫 setTheme blocked - store is busy');
-      return;
-    }
-
-    withEnhancedCircuitBreaker('setTheme', () => {
-      // Set busy flag first
-      set((prevState) => ({ ...prevState, _busy: true }));
+    
+    // Simple comparison to prevent redundant updates
+    try {
+      const currentThemeStr = JSON.stringify(state.theme);
+      const newThemeStr = JSON.stringify(theme);
       
-      try {
-        // Apply theme update
-        set((prevState) => ({
-          ...prevState,
-          theme,
-          error: null
-        }));
-        
-        console.log('🎨 Theme set successfully');
-      } finally {
-        // Always reset busy flag
-        set((prevState) => ({ ...prevState, _busy: false }));
+      if (currentThemeStr === newThemeStr) {
+        console.log('🔄 Theme unchanged, skipping update');
+        return;
       }
-    }, set, get);
+    } catch (error) {
+      // If comparison fails, proceed with update
+      console.warn('Theme comparison failed, proceeding with update');
+    }
+    
+    // Single atomic update - no intermediate states
+    set({
+      theme,
+      error: null
+    });
+    
+    console.log('🎨 Theme set successfully');
   },
 
-  // Apply patch and add to history - with enhanced protection
+  // Apply patch and add to history - SINGLE ATOMIC UPDATE
   applyPatch: (patch: ThemePatch) => {
     const state = get();
-    if (state._busy) {
-      console.warn('🚫 applyPatch blocked - store is busy');
-      return;
-    }
     
-    const success = withEnhancedCircuitBreaker('applyPatch', () => {
-      // Set busy flag first
-      set((prevState) => ({ ...prevState, _busy: true }));
+    try {
+      // Apply patch to current theme
+      const newTheme = applyJsonPatch(state.theme, patch.operations);
       
-      try {
-        // Apply patch to current theme
-        const newTheme = applyJsonPatch(state.theme, patch.operations);
-        
-        // Update patch with the resulting theme
-        const patchWithTheme = { ...patch, theme: newTheme };
-        
-        // Remove any future history if we're not at the end
-        const newHistory = state.history.slice(0, state.currentIndex + 1);
-        newHistory.push(patchWithTheme);
-        
-        // Single atomic state update
-        set((prevState) => ({
-          ...prevState,
-          theme: newTheme,
-          history: newHistory,
-          currentIndex: newHistory.length - 1,
-          error: null
-        }));
-        
-        console.log('🎨 Patch applied:', patch.userPrompt);
-      } finally {
-        // Always reset busy flag
-        set((prevState) => ({ ...prevState, _busy: false }));
-      }
-    }, set, get);
-    
-    if (!success) {
-      console.error('❌ Patch application failed due to circuit breaker');
+      // Update patch with the resulting theme
+      const patchWithTheme = { ...patch, theme: newTheme };
+      
+      // Remove any future history if we're not at the end
+      const newHistory = state.history.slice(0, state.currentIndex + 1);
+      newHistory.push(patchWithTheme);
+      
+      // Single atomic state update - everything at once
+      set({
+        theme: newTheme,
+        history: newHistory,
+        currentIndex: newHistory.length - 1,
+        error: null
+      });
+      
+      console.log('🎨 Patch applied:', patch.userPrompt);
+    } catch (error) {
+      console.error('💥 Error applying patch:', error);
+      set({
+        error: error instanceof Error ? error.message : 'Failed to apply patch'
+      });
     }
   },
 
-  // Undo last patch - with enhanced protection
+  // Undo last patch - SINGLE ATOMIC UPDATE
   undo: () => {
     const state = get();
-    if (state._busy) return false;
     if (state.currentIndex < 0) return false;
     
-    return withEnhancedCircuitBreaker('undo', () => {
+    try {
       const newIndex = state.currentIndex - 1;
       const targetTheme = newIndex >= 0 
         ? state.history[newIndex].theme 
         : {}; // Base theme if we go before first patch
       
-      set((prevState) => ({
-        ...prevState,
+      // Single atomic update
+      set({
         theme: targetTheme,
         currentIndex: newIndex,
         error: null
-      }));
+      });
       
       console.log('↶ Undo applied, index:', newIndex);
-    }, set, get) || false;
+      return true;
+    } catch (error) {
+      console.error('💥 Error during undo:', error);
+      set({
+        error: error instanceof Error ? error.message : 'Undo failed'
+      });
+      return false;
+    }
   },
 
-  // Redo next patch - with enhanced protection
+  // Redo next patch - SINGLE ATOMIC UPDATE
   redo: () => {
     const state = get();
-    if (state._busy) return false;
     if (state.currentIndex >= state.history.length - 1) return false;
     
-    return withEnhancedCircuitBreaker('redo', () => {
+    try {
       const newIndex = state.currentIndex + 1;
       const targetTheme = state.history[newIndex].theme;
       
-      set((prevState) => ({
-        ...prevState,
+      // Single atomic update
+      set({
         theme: targetTheme,
         currentIndex: newIndex,
         error: null
-      }));
+      });
       
       console.log('↷ Redo applied, index:', newIndex);
-    }, set, get) || false;
+      return true;
+    } catch (error) {
+      console.error('💥 Error during redo:', error);
+      set({
+        error: error instanceof Error ? error.message : 'Redo failed'
+      });
+      return false;
+    }
   },
 
   // Clear all history
   clearHistory: () => {
-    withEnhancedCircuitBreaker('clearHistory', () => {
-      set((prevState) => ({
-        ...prevState,
-        history: [],
-        currentIndex: -1,
-        error: null
-      }));
-      console.log('🗑️ Theme history cleared');
-    }, set, get);
+    set({
+      history: [],
+      currentIndex: -1,
+      error: null
+    });
+    console.log('🗑️ Theme history cleared');
   },
 
   // Set loading state
   setLoading: (loading: boolean) => {
-    set((prevState) => ({ ...prevState, isLoading: loading }));
+    set({ isLoading: loading });
   },
 
   // Set error state  
   setError: (error: string | null) => {
-    set((prevState) => ({ ...prevState, error }));
+    set({ error });
   },
 
   // Pure getters - no side effects

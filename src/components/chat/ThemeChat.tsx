@@ -75,12 +75,13 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     };
   }, []); // Empty dependency array - load once only
 
-  // Set initial theme only once - no theme dependency to prevent loops
+  // Set initial theme only once on mount - NO theme dependency to prevent loops
   useEffect(() => {
-    if (initialTheme && (!theme || Object.keys(theme).length === 0)) {
+    if (initialTheme) {
       setTheme(initialTheme);
+      console.log('🎨 Initial theme set in ThemeChat');
     }
-  }, [initialTheme, setTheme]); // Only depend on initialTheme and setTheme
+  }, [initialTheme, setTheme]); // Only depend on initialTheme and setTheme, NOT on theme
 
   // Protected submit handler - отправка только по submit, без эффектов на theme
   const handleApplyPatch = once(async () => {
