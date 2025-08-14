@@ -7,10 +7,9 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { callPatch } from '@/lib/api/client';
-import { useThemeActions } from '@/state/themeStore';
+import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
 import { withRenderGuard, once } from '@/utils/guard';
-import { THEME_SOT_IS_ZUSTAND } from '@/config/flags';
 
 const ThemeSelectorCoverflow: React.FC = () => {
   const guard = withRenderGuard("ThemeSelectorCoverflow");
@@ -36,7 +35,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
     dragFree: false
   });
 
-  const { applyPatch } = useThemeActions();
+  // Use only useThemeStore actions
+  const applyPatch = useThemeStore(s => s.applyPatch);
+  const setTheme = useThemeStore(s => s.setTheme);
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -85,30 +86,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
           return;
         }
         
-        if (THEME_SOT_IS_ZUSTAND) {
-          console.log('🎨 Applying theme via SoT:', theme.name);
-          applyTheme(theme);
-          toast.success(`🎨 Applied theme: ${theme.name}`);
-        } else {
-          if (!theme.sample_patch || theme.sample_patch.length === 0) {
-            toast.error('Theme has no direct patch. Use "Inspire AI" mode.');
-            return;
-          }
-          
-          const patchEntry = {
-            id: `preset-${theme.id}`,
-            operations: theme.sample_patch,
-            userPrompt: `Applied preset: ${theme.name}`,
-            pageId: 'global',
-            presetId: theme.id,
-            timestamp: new Date(),
-            theme: null
-          };
-          
-          console.log('🎨 Applying theme via legacy patch:', theme.name);
-          applyPatch(patchEntry);
-          toast.success(`🎨 Applied preset: ${theme.name}`);
-        }
+        console.log('🎨 Applying theme via SoT:', theme.name);
+        applyTheme(theme);
+        toast.success(`🎨 Applied theme: ${theme.name}`);
         
       } else {
         try {

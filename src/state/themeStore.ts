@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import type { Operation } from 'fast-json-patch';
 import { applyJsonPatch } from '@/services/llmPatchService';
@@ -24,6 +25,9 @@ interface ThemeState {
   isLoading: boolean;
   error: string | null;
   
+  // Circuit breaker
+  _busy: boolean;
+  
   // Actions
   setTheme: (theme: any) => void;
   applyPatch: (patch: ThemePatch) => void;
@@ -48,14 +52,21 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   currentIndex: -1,
   isLoading: false,
   error: null,
+  _busy: false,
 
-  // Set base theme (without adding to history) - SINGLE ATOMIC UPDATE
+  // Set base theme with circuit breaker protection
   setTheme: (theme: any) => {
+    const state = get();
+    
+    // Circuit breaker - prevent re-entry
+    if (state._busy) {
+      console.warn('🚫 setTheme blocked - already busy');
+      return;
+    }
+    
     updateCounter++;
     const callStack = new Error().stack;
     console.log(`🎨 setTheme called (#${updateCounter}) from:`, callStack?.split('\n')[2]);
-    
-    const state = get();
     
     // Enhanced comparison to prevent redundant updates
     try {
@@ -70,20 +81,33 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       console.warn(`Theme comparison failed (#${updateCounter}), proceeding with update`);
     }
     
-    // Single atomic update - no intermediate states
+    // Single atomic update with busy flag
     set({
+      _busy: true,
       theme,
       error: null
     });
     
+    // Release busy flag after update
+    setTimeout(() => {
+      set({ _busy: false });
+    }, 0);
+    
     console.log(`✅ Theme set successfully (#${updateCounter})`);
   },
 
-  // Apply patch and add to history - SINGLE ATOMIC UPDATE
+  // Apply patch and add to history
   applyPatch: (patch: ThemePatch) => {
     const state = get();
     
+    if (state._busy) {
+      console.warn('🚫 applyPatch blocked - already busy');
+      return;
+    }
+    
     try {
+      set({ _busy: true });
+      
       const newTheme = applyJsonPatch(state.theme, patch.operations);
       const patchWithTheme = { ...patch, theme: newTheme };
       const newHistory = state.history.slice(0, state.currentIndex + 1);
@@ -93,24 +117,28 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
         theme: newTheme,
         history: newHistory,
         currentIndex: newHistory.length - 1,
-        error: null
+        error: null,
+        _busy: false
       });
       
       console.log('🎨 Patch applied:', patch.userPrompt);
     } catch (error) {
       console.error('💥 Error applying patch:', error);
       set({
-        error: error instanceof Error ? error.message : 'Failed to apply patch'
+        error: error instanceof Error ? error.message : 'Failed to apply patch',
+        _busy: false
       });
     }
   },
 
-  // Undo last patch - SINGLE ATOMIC UPDATE
+  // Undo last patch
   undo: () => {
     const state = get();
-    if (state.currentIndex < 0) return false;
+    if (state.currentIndex < 0 || state._busy) return false;
     
     try {
+      set({ _busy: true });
+      
       const newIndex = state.currentIndex - 1;
       const targetTheme = newIndex >= 0 
         ? state.history[newIndex].theme 
@@ -119,7 +147,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       set({
         theme: targetTheme,
         currentIndex: newIndex,
-        error: null
+        error: null,
+        _busy: false
       });
       
       console.log('↶ Undo applied, index:', newIndex);
@@ -127,25 +156,29 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     } catch (error) {
       console.error('💥 Error during undo:', error);
       set({
-        error: error instanceof Error ? error.message : 'Undo failed'
+        error: error instanceof Error ? error.message : 'Undo failed',
+        _busy: false
       });
       return false;
     }
   },
 
-  // Redo next patch - SINGLE ATOMIC UPDATE
+  // Redo next patch
   redo: () => {
     const state = get();
-    if (state.currentIndex >= state.history.length - 1) return false;
+    if (state.currentIndex >= state.history.length - 1 || state._busy) return false;
     
     try {
+      set({ _busy: true });
+      
       const newIndex = state.currentIndex + 1;
       const targetTheme = state.history[newIndex].theme;
       
       set({
         theme: targetTheme,
         currentIndex: newIndex,
-        error: null
+        error: null,
+        _busy: false
       });
       
       console.log('↷ Redo applied, index:', newIndex);
@@ -153,7 +186,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     } catch (error) {
       console.error('💥 Error during redo:', error);
       set({
-        error: error instanceof Error ? error.message : 'Redo failed'
+        error: error instanceof Error ? error.message : 'Redo failed',
+        _busy: false
       });
       return false;
     }
@@ -196,7 +230,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   }
 }));
 
-// RENAMED: useTheme -> useWalletTheme to avoid conflict
 export const useWalletTheme = () => useThemeStore(state => state.theme);
 export const useThemeHistory = () => useThemeStore(state => ({
   history: state.history,

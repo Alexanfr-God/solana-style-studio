@@ -116,23 +116,6 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
   return theme;
 };
 
-const convertThemeToWalletStyle = (themeData: any) => {
-  if (!themeData || !THEME_SOT_IS_ZUSTAND) return {};
-  
-  return {
-    backgroundColor: themeData.global?.backgroundColor || themeData.homeLayer?.backgroundColor || '#181818',
-    backgroundImage: themeData.global?.backgroundImage || themeData.homeLayer?.backgroundImage,
-    accentColor: themeData.global?.accentColor || themeData.assetCard?.title?.textColor || '#a390f5',
-    textColor: themeData.global?.textColor || themeData.assetCard?.value?.textColor || '#FFFFFF',
-    buttonColor: themeData.global?.buttonColor || themeData.assetCard?.backgroundColor || '#a390f5',
-    buttonTextColor: themeData.global?.buttonTextColor || '#FFFFFF',
-    borderRadius: themeData.global?.borderRadius || themeData.assetCard?.borderRadius || '12px',
-    fontFamily: themeData.global?.fontFamily || themeData.assetCard?.title?.fontFamily || 'Inter, sans-serif',
-    boxShadow: themeData.global?.boxShadow || '0px 4px 20px rgba(0, 0, 0, 0.5)',
-    styleNotes: `Applied theme: ${themeData.name || 'Custom'}`
-  };
-};
-
 export const useThemeSelector = () => {
   const [themes, setThemes] = useState<ThemeItem[]>([]);
   const [activeThemeId, setActiveThemeId] = useState('trump');
@@ -199,9 +182,14 @@ export const useThemeSelector = () => {
       return;
     }
     
+    // Use only useThemeStore as single source of truth
+    const setTheme = useThemeStore.getState().setTheme;
+    const next = selectedTheme.themeData;
+    
+    // Simple protection against "same theme overwrite"
+    const curr = useThemeStore.getState().theme;
     try {
-      const currentTheme = useThemeStore.getState().theme;
-      if (JSON.stringify(currentTheme) === JSON.stringify(selectedTheme.themeData)) {
+      if (JSON.stringify(curr) === JSON.stringify(next)) {
         console.log('🔄 Theme already applied, skipping:', selectedTheme.name);
         return;
       }
@@ -209,15 +197,8 @@ export const useThemeSelector = () => {
       console.warn('Theme comparison failed, proceeding with apply');
     }
     
-    if (THEME_SOT_IS_ZUSTAND) {
-      // FIXED: Use correct hook name
-      useThemeStore.getState().setTheme(selectedTheme.themeData);
-      console.log('🎨 Theme applied to useThemeStore (SoT):', selectedTheme.name);
-    } else {
-      console.warn('🔙 Using legacy theme application path');
-      const walletStyle = convertThemeToWalletStyle(selectedTheme.themeData);
-      useWalletCustomizationStore.getState().setWalletStyle(walletStyle);
-    }
+    setTheme(next);
+    console.log('🎨 Theme applied to useThemeStore (SoT):', selectedTheme.name);
   };
 
   // EXPLICIT theme selection - only sets active, does NOT auto-apply

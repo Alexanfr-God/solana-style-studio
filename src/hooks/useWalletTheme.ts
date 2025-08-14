@@ -1,5 +1,5 @@
 
-// DEPRECATED bridge — do not add new logic here. SoT is useThemeStore.
+// DEPRECATED bridge — не добавлять новую логику здесь. SoT is useThemeStore.
 import { useThemeStore } from '@/state/themeStore';
 import type { AssetCardStyle } from '@/types/walletStyleSchema';
 
