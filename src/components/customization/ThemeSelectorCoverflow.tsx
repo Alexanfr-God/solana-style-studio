@@ -221,9 +221,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                   <Card className={`
                     relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900
                     border transition-all duration-300 group
-                    ${isActive 
-                      ? 'border-purple-500/50 shadow-lg shadow-purple-500/20' 
-                      : isSelected
+                    ${isSelected
                       ? 'border-blue-500/50 shadow-lg shadow-blue-500/20'
                       : 'border-white/10 hover:border-white/30'
                     }
@@ -238,14 +236,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
                           backgroundRepeat: 'no-repeat'
                         }}
                       />
-
-                      {isActive && (
-                        <div className="absolute inset-0 border-2 border-purple-400 rounded-lg animate-pulse">
-                          <div className="absolute top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
-                            Active
-                          </div>
-                        </div>
-                      )}
 
                       <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
                         {mode === "apply" ? "Apply" : "Inspire"}
@@ -281,9 +271,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <button
             key={theme.id}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              theme.id === activeThemeId 
-                ? 'bg-purple-400 w-6' 
-                : theme.id === selectedId
+              theme.id === selectedId
                 ? 'bg-blue-400 w-4'
                 : 'bg-white/30 hover:bg-white/50'
             }`}
