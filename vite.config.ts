@@ -19,6 +19,9 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Force React to use the same instance
+      "react": path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     },
     dedupe: ["react", "react-dom"]
   },
@@ -28,6 +31,8 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     include: [
+      'react',
+      'react-dom',
       '@solana/wallet-adapter-wallets',
       '@solana/wallet-adapter-react',
       '@solana/wallet-adapter-base',

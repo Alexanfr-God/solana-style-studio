@@ -1,6 +1,12 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+
+// Ensure React is available globally for debugging
+if (typeof window !== 'undefined') {
+  window.React = React;
+}
+
 import App from './App.tsx';
 // Make sure all CSS imports are in the correct order
 import './styles/index.css'; // This already imports all other CSS files
@@ -13,6 +19,7 @@ window.Buffer = Buffer;
 
 // Add better debugging
 console.log('Main rendering started');
+console.log('React version:', React.version);
 console.log('Screen size:', window.innerWidth, 'x', window.innerHeight);
 console.log('User agent:', navigator.userAgent);
 

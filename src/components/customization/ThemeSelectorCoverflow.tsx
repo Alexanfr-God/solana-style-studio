@@ -12,6 +12,12 @@ import { useThemeActions } from '@/state/themeStore';
 import { toast } from 'sonner';
 
 const ThemeSelectorCoverflow: React.FC = () => {
+  // Add safety check for React
+  if (!React || !React.useState) {
+    console.error('React is not properly loaded');
+    return <div className="text-white">Loading...</div>;
+  }
+
   const { themes, activeThemeId, selectTheme, getActiveTheme, isLoading } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [isProcessing, setIsProcessing] = useState(false);
