@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Undo2, Redo2, Send, Compare, Wand2, History } from 'lucide-react';
+import { Loader2, Undo2, Redo2, Send, GitCompare, Wand2, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThemeStore, useTheme, useThemeHistory, useThemeActions } from '@/state/themeStore';
 import { callPatch, getPresets, type PatchRequest } from '@/lib/api/client';
@@ -36,10 +36,10 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const [presets, setPresets] = useState<any[]>([]);
   const [isCompareMode, setIsCompareMode] = useState(false);
   
-  const { isLoading, error } = useThemeStore();
+  const { isLoading, error, setLoading, setError } = useThemeStore();
   const theme = useTheme();
   const { history, currentIndex, canUndo, canRedo } = useThemeHistory();
-  const { applyPatch, undo, redo, setTheme, setLoading, setError } = useThemeActions();
+  const { applyPatch, undo, redo, setTheme } = useThemeActions();
 
   // Load presets on mount
   useEffect(() => {
@@ -98,12 +98,9 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       };
 
       // Apply patch to store (this will update theme and add to history)
-      const success = applyPatch(patchEntry);
-
-      if (success) {
-        toast.success('🎨 Theme updated successfully!');
-        setUserPrompt(''); // Clear input after successful application
-      }
+      applyPatch(patchEntry);
+      toast.success('🎨 Theme updated successfully!');
+      setUserPrompt(''); // Clear input after successful application
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setError(errorMessage);
@@ -116,12 +113,16 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const handleUndo = () => {
     if (undo()) {
       toast.success('↶ Changes undone');
+    } else {
+      toast.error('Nothing to undo');
     }
   };
 
   const handleRedo = () => {
     if (redo()) {
       toast.success('↷ Changes redone');
+    } else {
+      toast.error('Nothing to redo');
     }
   };
 
@@ -270,7 +271,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               disabled={history.length === 0}
               className="border-white/20 text-white/80 hover:text-white"
             >
-              <Compare className="h-4 w-4 mr-1" />
+              <GitCompare className="h-4 w-4 mr-1" />
               Compare
             </Button>
           </div>

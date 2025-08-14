@@ -78,12 +78,10 @@ export const useThemeStore = create<ThemeState>()(
         });
         
         console.log('🎨 Patch applied:', patch.userPrompt);
-        return true;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to apply patch';
         set({ error: errorMessage });
         console.error('❌ Patch application failed:', error);
-        return false;
       }
     },
 
