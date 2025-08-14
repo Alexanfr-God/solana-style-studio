@@ -35,6 +35,12 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const guard = withRenderGuard("ThemeChat");
   guard();
 
+  // Диагностика React дубликатов в dev режиме
+  if (import.meta.env.DEV) { 
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    import("@/utils/reactDiag").then(m => m.logReactIdentity("ThemeChat"));
+  }
+
   const [userPrompt, setUserPrompt] = useState('');
   const [selectedPageId, setSelectedPageId] = useState('home');
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
