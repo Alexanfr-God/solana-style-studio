@@ -45,8 +45,8 @@ interface ThemeState {
   getCurrentPatch: () => ThemePatch | null;
 }
 
-// Circuit breaker constants
-const MAX_UPDATES_PER_SECOND = 5;
+// Circuit breaker constants - more restrictive
+const MAX_UPDATES_PER_SECOND = 3;
 const UPDATE_WINDOW_MS = 1000;
 
 // Enhanced circuit breaker with diagnostics
@@ -104,16 +104,22 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
 
     withEnhancedCircuitBreaker('setTheme', () => {
-      // Single atomic update
-      set((prevState) => ({
-        ...prevState,
-        _busy: true,
-        theme,
-        error: null,
-        _busy: false
-      }));
+      // Set busy flag first
+      set((prevState) => ({ ...prevState, _busy: true }));
       
-      console.log('🎨 Theme set successfully');
+      try {
+        // Apply theme update
+        set((prevState) => ({
+          ...prevState,
+          theme,
+          error: null
+        }));
+        
+        console.log('🎨 Theme set successfully');
+      } finally {
+        // Always reset busy flag
+        set((prevState) => ({ ...prevState, _busy: false }));
+      }
     }, set, get);
   },
 
@@ -126,28 +132,34 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
     
     const success = withEnhancedCircuitBreaker('applyPatch', () => {
-      // Apply patch to current theme
-      const newTheme = applyJsonPatch(state.theme, patch.operations);
+      // Set busy flag first
+      set((prevState) => ({ ...prevState, _busy: true }));
       
-      // Update patch with the resulting theme
-      const patchWithTheme = { ...patch, theme: newTheme };
-      
-      // Remove any future history if we're not at the end
-      const newHistory = state.history.slice(0, state.currentIndex + 1);
-      newHistory.push(patchWithTheme);
-      
-      // Single atomic state update
-      set((prevState) => ({
-        ...prevState,
-        _busy: true,
-        theme: newTheme,
-        history: newHistory,
-        currentIndex: newHistory.length - 1,
-        error: null,
-        _busy: false
-      }));
-      
-      console.log('🎨 Patch applied:', patch.userPrompt);
+      try {
+        // Apply patch to current theme
+        const newTheme = applyJsonPatch(state.theme, patch.operations);
+        
+        // Update patch with the resulting theme
+        const patchWithTheme = { ...patch, theme: newTheme };
+        
+        // Remove any future history if we're not at the end
+        const newHistory = state.history.slice(0, state.currentIndex + 1);
+        newHistory.push(patchWithTheme);
+        
+        // Single atomic state update
+        set((prevState) => ({
+          ...prevState,
+          theme: newTheme,
+          history: newHistory,
+          currentIndex: newHistory.length - 1,
+          error: null
+        }));
+        
+        console.log('🎨 Patch applied:', patch.userPrompt);
+      } finally {
+        // Always reset busy flag
+        set((prevState) => ({ ...prevState, _busy: false }));
+      }
     }, set, get);
     
     if (!success) {
