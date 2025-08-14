@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, X, QrCode } from 'lucide-react';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -44,7 +45,7 @@ const availableNetworks: Network[] = [
 
 const SendLayer = () => {
   const { setCurrentLayer } = useWalletCustomizationStore();
-  const { getSendLayer, getGlobalSearchInput, getTransition, getTokenCardTitleStyle, getTokenCardDescriptionStyle } = useWalletTheme();
+  const { getSendLayer, getGlobalSearchInput, getTransition, getAssetCard } = useWalletTheme();
   useWalletButtonStyles();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,8 +54,7 @@ const SendLayer = () => {
   // Get send layer theme styles and global search input
   const sendLayerStyle = getSendLayer();
   const globalSearchInput = getGlobalSearchInput();
-  const tokenCardTitleStyle = getTokenCardTitleStyle();
-  const tokenCardDescriptionStyle = getTokenCardDescriptionStyle();
+  const assetCard = getAssetCard();
 
   const handleClose = () => {
     setCurrentLayer('home');
@@ -173,8 +173,8 @@ const SendLayer = () => {
                   data-element-id={`send-network-item-${index}`}
                   onClick={() => handleNetworkSelect(network.name)}
                   style={{
-                    backgroundColor: sendLayerStyle.networkCard?.backgroundColor || '#613c19',
-                    borderRadius: sendLayerStyle.networkCard?.borderRadius || '18px',
+                    backgroundColor: assetCard.backgroundColor || '#613c19',
+                    borderRadius: assetCard.borderRadius || '18px',
                     transition: getTransition('default'),
                   }}
                 >
@@ -192,11 +192,10 @@ const SendLayer = () => {
                         className="font-medium text-sm send-network-name"
                         data-element-id={`send-network-name-${index}`}
                         style={{
-                          fontSize: tokenCardTitleStyle.fontSize,
-                          fontWeight: tokenCardTitleStyle.fontWeight,
-                          fontFamily: tokenCardTitleStyle.fontFamily,
-                          color: tokenCardTitleStyle.color,
-                          textAlign: tokenCardTitleStyle.textAlign as any
+                          fontSize: assetCard.title?.fontSize || '16px',
+                          fontWeight: assetCard.title?.fontWeight || 'bold',
+                          fontFamily: assetCard.title?.fontFamily || 'Inter, sans-serif',
+                          color: assetCard.title?.textColor || '#FFFFFF',
                         }}
                       >
                         {network.name}
@@ -205,11 +204,10 @@ const SendLayer = () => {
                         className="text-xs send-network-description"
                         data-element-id={`send-network-description-${index}`}
                         style={{ 
-                          fontSize: tokenCardDescriptionStyle.fontSize,
-                          fontWeight: tokenCardDescriptionStyle.fontWeight,
-                          fontFamily: tokenCardDescriptionStyle.fontFamily,
-                          color: tokenCardDescriptionStyle.color,
-                          textAlign: tokenCardDescriptionStyle.textAlign as any
+                          fontSize: assetCard.description?.fontSize || '14px',
+                          fontWeight: assetCard.description?.fontWeight || '400',
+                          fontFamily: assetCard.description?.fontFamily || 'Inter, sans-serif',
+                          color: assetCard.description?.textColor || '#aaa',
                         }}
                       >
                         {network.description}
@@ -226,9 +224,9 @@ const SendLayer = () => {
                   className="text-sm send-no-results-text"
                   data-element-id="send-no-results-text"
                   style={{ 
-                    fontSize: tokenCardDescriptionStyle.fontSize,
-                    fontFamily: tokenCardDescriptionStyle.fontFamily,
-                    color: tokenCardDescriptionStyle.color
+                    fontSize: assetCard.description?.fontSize || '14px',
+                    fontFamily: assetCard.description?.fontFamily || 'Inter, sans-serif',
+                    color: assetCard.description?.textColor || '#aaa'
                   }}
                 >
                   No networks found matching "{searchQuery}"
