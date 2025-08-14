@@ -139,5 +139,12 @@
     "description": "Futuristic space-themed wallet design with cosmic aesthetics and stellar visuals",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
     "sample_patch": []
+  },
+  {
+    "id": "wcc",
+    "name": "WCC Theme",
+    "description": "West Coast Customs themed wallet design with premium automotive aesthetics",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_20/image_20.png",
+    "sample_patch": []
   }
 ]
