@@ -97,5 +97,12 @@
     "description": "Traditional Chinese themed design with red and gold accents, featuring elegant typography",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_13/Image_13.png",
     "sample_patch": []
+  },
+  {
+    "id": "nirvana",
+    "name": "Nirvana Theme",
+    "description": "Spiritual golden brown theme with warm earth tones and enlightened aesthetics",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_14/image_14.png",
+    "sample_patch": []
   }
 ]
