@@ -125,5 +125,12 @@
     "description": "Vibrant Mexican themed wallet design with warm colors and traditional elements",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_17/image_17.png",
     "sample_patch": []
+  },
+  {
+    "id": "simpsons",
+    "name": "Simpsons Theme",
+    "description": "Iconic Simpsons themed wallet design with cartoon aesthetics and Springfield vibes",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
+    "sample_patch": []
   }
 ]
