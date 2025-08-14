@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -211,6 +211,145 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      patches: {
+        Row: {
+          applied_by: string | null
+          created_at: string
+          id: string
+          ops: Json
+          theme_id: string
+        }
+        Insert: {
+          applied_by?: string | null
+          created_at?: string
+          id?: string
+          ops: Json
+          theme_id: string
+        }
+        Update: {
+          applied_by?: string | null
+          created_at?: string
+          id?: string
+          ops?: Json
+          theme_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patches_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presets: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          id: string
+          sample_context: Json | null
+          sample_patch: Json | null
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          sample_context?: Json | null
+          sample_patch?: Json | null
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          sample_context?: Json | null
+          sample_patch?: Json | null
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      schema_versions: {
+        Row: {
+          schema: Json
+          version: string
+        }
+        Insert: {
+          schema: Json
+          version: string
+        }
+        Update: {
+          schema?: Json
+          version?: string
+        }
+        Relationships: []
+      }
+      themes: {
+        Row: {
+          base_theme: Json
+          created_at: string
+          current_theme: Json
+          id: string
+          name: string
+          project_id: string
+          schema_version: string
+          updated_at: string
+        }
+        Insert: {
+          base_theme: Json
+          created_at?: string
+          current_theme: Json
+          id?: string
+          name: string
+          project_id: string
+          schema_version?: string
+          updated_at?: string
+        }
+        Update: {
+          base_theme?: Json
+          created_at?: string
+          current_theme?: Json
+          id?: string
+          name?: string
+          project_id?: string
+          schema_version?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "themes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_custom_icons: {
         Row: {
