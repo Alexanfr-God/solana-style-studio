@@ -19,10 +19,10 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Force single React instance
-      "react": path.resolve(process.cwd(), "node_modules/react/index.js"),
-      "react/jsx-runtime": path.resolve(process.cwd(), "node_modules/react/jsx-runtime.js"),
-      "react-dom": path.resolve(process.cwd(), "./node_modules/react-dom/index.js"),
+      // Fix React deduplication with correct paths
+      "react": path.resolve(__dirname, "./node_modules/react/index.js"),
+      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime.js"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom/index.js"),
     },
     dedupe: ["react", "react-dom"]
   },
