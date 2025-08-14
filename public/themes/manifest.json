@@ -59,5 +59,11 @@
     "name": "Gorillaz",
     "description": "Virtual band themed wallet with futuristic styling",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_11/image_11.png"
+  },
+  {
+    "id": "wolf",
+    "name": "Wolf of Wall Street",
+    "description": "Premium golden Wall Street wolf themed wallet",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_12/Image_12.png"
   }
 ]
