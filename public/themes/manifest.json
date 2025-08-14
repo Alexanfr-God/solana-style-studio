@@ -118,5 +118,12 @@
     "description": "Dynamic sports-themed wallet design with football aesthetics and team colors",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_16/image_16.png",
     "sample_patch": []
+  },
+  {
+    "id": "mexico",
+    "name": "Mexico Theme",
+    "description": "Vibrant Mexican themed wallet design with warm colors and traditional elements",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_17/image_17.png",
+    "sample_patch": []
   }
 ]
