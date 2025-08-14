@@ -76,7 +76,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     }
   }, [initialTheme, setTheme]); // Only depend on initialTheme and setTheme
 
-  // Protected submit handler to prevent multiple calls
+  // Protected submit handler - отправка только по submit, без эффектов на theme
   const handleApplyPatch = once(async () => {
     if (!userPrompt.trim() || isProcessing) {
       if (!userPrompt.trim()) {

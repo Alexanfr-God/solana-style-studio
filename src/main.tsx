@@ -2,6 +2,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
+// Диагностика React дубликатов в dev режиме
+if (import.meta.env.DEV) { 
+  import("./utils/reactDiag").then(m => m.logReactIdentity("main")); 
+}
+
 // Ensure React is available globally for debugging
 if (typeof window !== 'undefined') {
   window.React = React;

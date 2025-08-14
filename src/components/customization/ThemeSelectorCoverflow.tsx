@@ -17,6 +17,12 @@ const ThemeSelectorCoverflow: React.FC = () => {
   const guard = withRenderGuard("ThemeSelectorCoverflow");
   guard();
 
+  // Диагностика React дубликатов в dev режиме
+  if (import.meta.env.DEV) { 
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    import("@/utils/reactDiag").then(m => m.logReactIdentity("Coverflow"));
+  }
+
   const { themes, activeThemeId, getActiveTheme, isLoading } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -28,7 +34,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     dragFree: false
   });
 
-  const { applyPatch } = useThemeActions();
+  const { applyPatch, setTheme } = useThemeActions();
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -38,7 +44,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Protected handler to prevent multiple simultaneous calls
+  // Protected handler to prevent multiple simultaneous calls - все действия только в onClick
   const handleThemeClick = once(async (theme: any) => {
     // Prevent processing or repeated clicks on same theme in apply mode
     if (isProcessingRef.current) return;

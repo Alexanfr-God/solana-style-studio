@@ -20,8 +20,26 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    // Remove React aliases, only use dedupe
+    // Only use dedupe, no React aliases to avoid jsx-runtime issues
     dedupe: ["react", "react-dom"]
+  },
+  optimizeDeps: {
+    exclude: ["@radix-ui/react-switch"], // чтобы не тянуть в отдельный бандл
+    include: [
+      'react',
+      'react-dom',
+      '@solana/wallet-adapter-wallets',
+      '@solana/wallet-adapter-react',
+      '@solana/wallet-adapter-base',
+      '@solana/web3.js',
+      'buffer',
+    ],
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis',
+      },
+    }
   },
   build: {
     sourcemap: true,
@@ -38,22 +56,5 @@ export default defineConfig(({ mode }) => ({
     global: 'globalThis',
     // Set NODE_ENV properly for dev
     ...(mode === 'development' ? { "process.env.NODE_ENV": JSON.stringify("development") } : {})
-  },
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      '@solana/wallet-adapter-wallets',
-      '@solana/wallet-adapter-react',
-      '@solana/wallet-adapter-base',
-      '@solana/web3.js',
-      'buffer',
-    ],
-    esbuildOptions: {
-      // Node.js global to browser globalThis
-      define: {
-        global: 'globalThis',
-      },
-    }
   }
 }));
