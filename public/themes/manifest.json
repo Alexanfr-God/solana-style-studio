@@ -1,9 +1,16 @@
 
 [
   {
-    "id": "luxury",
-    "name": "Luxury Gold",
-    "description": "Premium golden wallet interface with elegant styling",
+    "id": "luxuryTheme",
+    "name": "Luxury Gold Theme",
+    "description": "Premium golden luxury wallet interface design",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+    "sample_patch": []
+  },
+  {
+    "id": "defaultTheme",
+    "name": "Simple Gray Theme",
+    "description": "Clean minimal gray theme with white text and transparent containers",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
     "sample_patch": []
   },
@@ -82,20 +89,6 @@
     "name": "Gucci Cat Luxury",
     "description": "Luxury themed design with premium cat aesthetics",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
-    "sample_patch": []
-  },
-  {
-    "id": "luxuryTheme",
-    "name": "Luxury Theme",
-    "description": "Premium golden luxury wallet interface design",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
-    "sample_patch": []
-  },
-  {
-    "id": "defaultTheme",
-    "name": "Default Theme",
-    "description": "Classic default wallet design with golden accents",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
     "sample_patch": []
   }
 ]
