@@ -1,19 +1,27 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { callPatch } from '@/lib/api/client';
+import { useThemeActions } from '@/state/themeStore';
+import { toast } from 'sonner';
 
 const ThemeSelectorCoverflow: React.FC = () => {
   const { themes, activeThemeId, selectTheme, getActiveTheme, isLoading } = useThemeSelector();
+  const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
     skipSnaps: false,
     dragFree: false
   });
+
+  const { applyPatch } = useThemeActions();
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -23,9 +31,62 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
+  const handleThemeClick = async (theme: any) => {
+    if (mode === "apply") {
+      // Apply mode - direct preset application
+      if (!theme.sample_patch || theme.sample_patch.length === 0) {
+        toast.error('У пресета нет прямого патча. Используй режим "Inspire AI".');
+        return;
+      }
+      
+      // Apply the sample patch directly
+      const patchEntry = {
+        id: `preset-${theme.id}`,
+        operations: theme.sample_patch,
+        userPrompt: `Applied preset: ${theme.name}`,
+        pageId: 'global',
+        presetId: theme.id,
+        timestamp: new Date(),
+        theme: null // Will be computed by applyPatch
+      };
+      
+      applyPatch(patchEntry);
+      toast.success(`🎨 Applied preset: ${theme.name}`);
+      
+    } else {
+      // Inspire AI mode - use preset as style reference
+      try {
+        const response = await callPatch({
+          themeId: activeThemeId || 'default',
+          pageId: 'home', // Default to home page
+          presetId: theme.id,
+          userPrompt: `Apply the style inspiration from ${theme.name} preset`
+        });
+
+        if (response.success) {
+          const patchEntry = {
+            id: `inspire-${theme.id}`,
+            operations: response.patch,
+            userPrompt: `Inspired by preset: ${theme.name}`,
+            pageId: 'home',
+            presetId: theme.id,
+            timestamp: new Date(),
+            theme: response.theme
+          };
+          
+          applyPatch(patchEntry);
+          toast.success(`✨ Applied inspiration from: ${theme.name}`);
+        } else {
+          toast.error(`Failed to apply inspiration: ${response.error}`);
+        }
+      } catch (error) {
+        toast.error(`Error applying inspiration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+  };
+
   const activeTheme = getActiveTheme();
 
-  // Now handle the loading state after all hooks have been called
   if (isLoading) {
     return (
       <div className="w-full py-8">
@@ -37,10 +98,33 @@ const ThemeSelectorCoverflow: React.FC = () => {
   return (
     <div className="w-full py-8 space-y-6">
       {/* Theme Info Section */}
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-4">
         <h3 className="text-xl font-semibold text-white">
           Choose Your Theme
         </h3>
+        
+        {/* Mode Toggle */}
+        <div className="flex items-center justify-center gap-4">
+          <Label htmlFor="mode-toggle" className="text-white/80">
+            Apply preset
+          </Label>
+          <Switch
+            id="mode-toggle"
+            checked={mode === "inspire"}
+            onCheckedChange={(checked) => setMode(checked ? "inspire" : "apply")}
+          />
+          <Label htmlFor="mode-toggle" className="text-white/80">
+            Inspire AI
+          </Label>
+        </div>
+        
+        <p className="text-sm text-white/60 max-w-md mx-auto">
+          {mode === "apply" 
+            ? "Directly apply preset styles (requires sample_patch)" 
+            : "Use preset as style inspiration for AI generation"
+          }
+        </p>
+        
         {activeTheme && (
           <div className="space-y-1">
             <h4 className="text-lg font-medium bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -77,7 +161,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         {/* Embla Carousel */}
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex items-center gap-4 px-16">
-            {themes.map((theme, index) => {
+            {themes.map((theme) => {
               const isActive = theme.id === activeThemeId;
               
               return (
@@ -88,7 +172,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                       ? 'scale-110 z-10' 
                       : 'scale-90 opacity-60 hover:opacity-80 hover:scale-95'
                   }`}
-                  onClick={() => selectTheme(theme.id)}
+                  onClick={() => handleThemeClick(theme)}
                   data-theme-id={theme.id}
                 >
                   <Card className={`
@@ -119,6 +203,11 @@ const ThemeSelectorCoverflow: React.FC = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Mode Indicator */}
+                      <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+                        {mode === "apply" ? "Apply" : "Inspire"}
+                      </div>
 
                       {/* Hover Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -151,7 +240,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                 ? 'bg-purple-400 w-6' 
                 : 'bg-white/30 hover:bg-white/50'
             }`}
-            onClick={() => selectTheme(theme.id)}
+            onClick={() => handleThemeClick(theme)}
           />
         ))}
       </div>

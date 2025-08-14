@@ -133,32 +133,55 @@ serve(async (req) => {
       return jsonResponse({ error: 'Schema version not found' }, 500);
     }
 
-    // 3. Get preset examples (limit 3)
-    let presets: any[] = [];
+    // 3. Get preset data if presetId provided
+    let presetContext = '';
+    let referencePatch = '';
+    
     if (presetId) {
-      const { data: presetData } = await supabase
+      const { data: presetData, error: presetError } = await supabase
         .from('presets')
-        .select('sample_context, sample_patch')
+        .select('title, sample_context, sample_patch')
         .eq('id', presetId)
-        .limit(1);
-      
-      if (presetData && presetData.length > 0) {
-        presets = presetData;
+        .single();
+
+      if (presetData && !presetError) {
+        console.log(`🎨 Using preset: ${presetData.title}`);
+        
+        // Build style context from preset
+        if (presetData.sample_context) {
+          const context = presetData.sample_context;
+          presetContext = `
+STYLE CONTEXT from preset "${presetData.title}":
+- Style Summary: ${context.styleSummary || 'Not specified'}
+- Color Palette: ${JSON.stringify(context.palette || {})}
+- Typography: ${JSON.stringify(context.typography || {})}  
+- Components: ${JSON.stringify(context.components || {})}
+`;
+        }
+
+        // Add reference patch as example
+        if (presetData.sample_patch && presetData.sample_patch.length > 0) {
+          referencePatch = `
+REFERENCE PATCH (for style inspiration only):
+${JSON.stringify(presetData.sample_patch, null, 2)}
+`;
+        }
       }
     }
 
-    // If no specific preset, get some random examples
-    if (presets.length === 0) {
+    // 4. Get some example presets for context (limit 2)
+    let examplePresets: any[] = [];
+    if (!presetId) {
       const { data: randomPresets } = await supabase
         .from('presets')
         .select('sample_context, sample_patch')
         .not('sample_patch', 'is', null)
-        .limit(3);
+        .limit(2);
       
-      presets = randomPresets || [];
+      examplePresets = randomPresets || [];
     }
 
-    // 4. Prepare context for OpenAI
+    // 5. Prepare context for OpenAI
     const currentTheme = themeData.current_theme;
     const pageData = currentTheme.pages?.[pageId];
     
@@ -166,7 +189,18 @@ serve(async (req) => {
       return jsonResponse({ error: `Page '${pageId}' not found in theme` }, 400);
     }
 
-    const systemPrompt = `You are a theme customization AI. Your task is to generate JSON Patch operations (RFC6902) to modify wallet themes.
+    const systemPrompt = `You are WCC Maestro — a page‑aware theme editor for a crypto wallet.
+Return **JSON Patch only**. Modify **values only**; never rename keys or add unknown fields.
+Default scope is the provided pageId. Apply global changes only if the user explicitly requests it.
+Respect the provided JSON Schema (version from theme). If changes violate the schema, propose the closest valid alternative.
+Use only whitelisted icon sets and fonts. For any images, return placeholders and ask the asset tool; insert only approved CDN URLs.
+Maintain WCAG AA contrast for text vs background where possible.
+Follow safety policy RUG. Keep responses minimal and deterministic.
+
+**PRESET INTEGRATION RULES:**
+When presetId is provided, use STYLE CONTEXT from preset.sample_context to bias suggestions. Do not copy brand names or celebrity likeness; keep stylistic, generic and safe.
+REFERENCE PATCH is an example only; infer the aesthetic and produce a minimal valid JSON Patch scoped to pageId unless a global change is explicitly requested.
+Extract color palettes, typography preferences, and component styling from the context to guide your modifications.
 
 IMPORTANT RULES:
 1. Return ONLY valid JSON with a "patch" array containing RFC6902 operations
@@ -180,8 +214,11 @@ IMPORTANT RULES:
 Current page structure:
 ${JSON.stringify(pageData, null, 2)}
 
-Example patches:
-${presets.map(p => JSON.stringify(p.sample_patch, null, 2)).join('\n\n')}
+${presetContext}
+${referencePatch}
+
+${examplePresets.length > 0 ? `Example patches:
+${examplePresets.map(p => JSON.stringify(p.sample_patch, null, 2)).join('\n\n')}` : ''}
 
 Respond with: {"patch": [{"op": "replace", "path": "/pages/${pageId}/components/someComponent/backgroundColor", "value": "#RRGGBB"}]}`;
 
@@ -190,13 +227,15 @@ Respond with: {"patch": [{"op": "replace", "path": "/pages/${pageId}/components/
 Target page: ${pageId}
 Current page data: ${JSON.stringify(pageData, null, 2)}
 
+${presetContext ? `Apply the style inspiration from the provided preset context.` : ''}
+
 Generate a JSON Patch to fulfill this request while maintaining the existing structure and only modifying the specified page.`;
 
-    // 5. Call OpenAI
+    // 6. Call OpenAI
     console.log('🤖 Calling OpenAI...');
     const patchOperations = await callOpenAI(systemPrompt, userContext);
 
-    // 6. Validate patch by applying to copy
+    // 7. Validate patch by applying to copy
     const themeCopy = JSON.parse(JSON.stringify(currentTheme));
     let updatedTheme;
     
@@ -207,7 +246,7 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
       return jsonResponse({ error: 'Generated patch is invalid', details: patchError.message }, 400);
     }
 
-    // 7. Validate updated theme against schema
+    // 8. Validate updated theme against schema
     const ajv = new Ajv({ strict: false });
     addFormats(ajv);
     
@@ -222,7 +261,7 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
       }, 400);
     }
 
-    // 8. Save patch and update theme
+    // 9. Save patch and update theme
     const { error: patchError } = await supabase
       .from('patches')
       .insert({
@@ -248,7 +287,7 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
 
     console.log('✅ Patch applied successfully');
 
-    // 9. Return response
+    // 10. Return response
     const response: PatchResponse = {
       patch: patchOperations,
       theme: updatedTheme
