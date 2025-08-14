@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useThemeStore, useTheme, useThemeHistory, useThemeActions } from '@/state/themeStore';
 import { callPatch, getPresets, type PatchRequest } from '@/lib/api/client';
 import { v4 as uuidv4 } from 'uuid';
+import { withRenderGuard, once } from '@/utils/guard';
 
 interface ThemeChatProps {
   themeId: string;
@@ -30,6 +31,10 @@ const AVAILABLE_PAGES = [
 ];
 
 const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
+  // Render guard for debugging
+  const guard = withRenderGuard("ThemeChat");
+  guard();
+
   const [userPrompt, setUserPrompt] = useState('');
   const [selectedPageId, setSelectedPageId] = useState('home');
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
@@ -42,7 +47,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const { history, currentIndex, canUndo, canRedo } = useThemeHistory();
   const { applyPatch, undo, redo, setTheme } = useThemeActions();
 
-  // Load presets on mount only
+  // Load presets on mount only - no dependencies to prevent loops
   useEffect(() => {
     let mounted = true;
     
@@ -62,16 +67,17 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, []); // Empty dependency array - load once only
 
-  // Set initial theme only once
+  // Set initial theme only once - no theme dependency to prevent loops
   useEffect(() => {
-    if (initialTheme && Object.keys(theme).length === 0) {
+    if (initialTheme && (!theme || Object.keys(theme).length === 0)) {
       setTheme(initialTheme);
     }
-  }, [initialTheme, setTheme]); // Remove theme from deps to prevent loop
+  }, [initialTheme, setTheme]); // Only depend on initialTheme and setTheme
 
-  const handleApplyPatch = async () => {
+  // Protected submit handler to prevent multiple calls
+  const handleApplyPatch = once(async () => {
     if (!userPrompt.trim() || isProcessing) {
       if (!userPrompt.trim()) {
         toast.error('Please enter a theme modification request');
@@ -125,9 +131,9 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       setIsProcessing(false);
       setLoading(false);
     }
-  };
+  });
 
-  const handleUndo = () => {
+  const handleUndo = once(() => {
     if (isProcessing) return;
     
     const success = undo();
@@ -136,9 +142,9 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     } else {
       toast.error('Nothing to undo');
     }
-  };
+  });
 
-  const handleRedo = () => {
+  const handleRedo = once(() => {
     if (isProcessing) return;
     
     const success = redo();
@@ -147,7 +153,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     } else {
       toast.error('Nothing to redo');
     }
-  };
+  });
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isProcessing) {

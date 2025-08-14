@@ -19,15 +19,25 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Fix React deduplication - point to directories, not specific files
-      "react": path.resolve(__dirname, "./node_modules/react"),
-      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
+    // Remove React aliases, only use dedupe
     dedupe: ["react", "react-dom"]
+  },
+  build: {
+    sourcemap: true,
+    minify: mode === 'production',
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      plugins: []
+    }
   },
   define: {
     // Add this to make Buffer available globally
     global: 'globalThis',
+    // Set NODE_ENV properly for dev
+    ...(mode === 'development' ? { "process.env.NODE_ENV": JSON.stringify("development") } : {})
   },
   optimizeDeps: {
     include: [
@@ -44,15 +54,6 @@ export default defineConfig(({ mode }) => ({
       define: {
         global: 'globalThis',
       },
-    }
-  },
-  build: {
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
-    rollupOptions: {
-      // Enable the node polyfills plugin
-      plugins: []
     }
   }
 }));

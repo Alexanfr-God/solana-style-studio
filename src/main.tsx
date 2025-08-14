@@ -27,10 +27,9 @@ console.log('User agent:', navigator.userAgent);
 console.log('🚀 Application initialized successfully!');
 console.log('🎯 Ready for wallet customization!');
 
+// Temporarily remove StrictMode to debug render loops
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App />
 );
 
 console.log('Main rendering completed');

@@ -10,16 +10,16 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { callPatch } from '@/lib/api/client';
 import { useThemeActions } from '@/state/themeStore';
 import { toast } from 'sonner';
-import { logReactVersion } from '@/utils/logReactVersion';
+import { withRenderGuard, once } from '@/utils/guard';
 
 const ThemeSelectorCoverflow: React.FC = () => {
-  // Dev diagnostics
-  if (process.env.NODE_ENV === 'development') {
-    logReactVersion('ThemeSelectorCoverflow');
-  }
+  // Render guard for debugging
+  const guard = withRenderGuard("ThemeSelectorCoverflow");
+  guard();
 
   const { themes, activeThemeId, getActiveTheme, isLoading } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const isProcessingRef = useRef(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
@@ -38,14 +38,17 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  const handleThemeClick = useCallback(async (theme: any) => {
-    // Prevent multiple simultaneous processing or repeated clicks on same theme
+  // Protected handler to prevent multiple simultaneous calls
+  const handleThemeClick = once(async (theme: any) => {
+    // Prevent processing or repeated clicks on same theme in apply mode
     if (isProcessingRef.current) return;
-    if (theme.id === activeThemeId && mode === "apply") return;
+    if (theme.id === selectedId && mode === "apply") return;
     
     isProcessingRef.current = true;
     
     try {
+      setSelectedId(theme.id);
+      
       if (mode === "apply") {
         // Apply mode - direct preset application
         if (!theme.sample_patch || theme.sample_patch.length === 0) {
@@ -102,7 +105,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     } finally {
       isProcessingRef.current = false;
     }
-  }, [mode, activeThemeId, applyPatch]);
+  });
 
   const activeTheme = getActiveTheme();
 
@@ -184,6 +187,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <div className="flex items-center gap-4 px-16">
             {themes.map((theme) => {
               const isActive = theme.id === activeThemeId;
+              const isSelected = theme.id === selectedId;
               
               return (
                 <div
@@ -201,6 +205,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     border transition-all duration-300 group
                     ${isActive 
                       ? 'border-purple-500/50 shadow-lg shadow-purple-500/20' 
+                      : isSelected
+                      ? 'border-blue-500/50 shadow-lg shadow-blue-500/20'
                       : 'border-white/10 hover:border-white/30'
                     }
                   `}>
@@ -231,7 +237,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                       </div>
 
                       {/* Processing Indicator */}
-                      {isProcessingRef.current && (
+                      {isProcessingRef.current && isSelected && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-400 border-t-transparent"></div>
                         </div>
@@ -266,6 +272,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
               theme.id === activeThemeId 
                 ? 'bg-purple-400 w-6' 
+                : theme.id === selectedId
+                ? 'bg-blue-400 w-4'
                 : 'bg-white/30 hover:bg-white/50'
             }`}
             onClick={() => !isProcessingRef.current && handleThemeClick(theme)}

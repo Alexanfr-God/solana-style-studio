@@ -50,12 +50,12 @@ export const useThemeStore = create<ThemeState>()(
     isLoading: false,
     error: null,
 
-    // Set base theme (without adding to history)
+    // Set base theme (without adding to history) - single state update only
     setTheme: (theme: any) => {
       set({ theme, error: null });
     },
 
-    // Apply patch and add to history
+    // Apply patch and add to history - single state update only
     applyPatch: (patch: ThemePatch) => {
       const state = get();
       
@@ -70,6 +70,7 @@ export const useThemeStore = create<ThemeState>()(
         const newHistory = state.history.slice(0, state.currentIndex + 1);
         newHistory.push(patchWithTheme);
         
+        // Single atomic state update - no recursive calls
         set({
           theme: newTheme,
           history: newHistory,
@@ -80,16 +81,17 @@ export const useThemeStore = create<ThemeState>()(
         console.log('🎨 Patch applied:', patch.userPrompt);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to apply patch';
+        // Only set error, don't trigger other state changes
         set({ error: errorMessage });
         console.error('❌ Patch application failed:', error);
       }
     },
 
-    // Undo last patch
+    // Undo last patch - single state update only
     undo: () => {
       const state = get();
       
-      if (!state.canUndo()) {
+      if (state.currentIndex < 0) {
         return false;
       }
       
@@ -98,6 +100,7 @@ export const useThemeStore = create<ThemeState>()(
         ? state.history[newIndex].theme 
         : {}; // Base theme if we go before first patch
       
+      // Single atomic state update
       set({
         theme: targetTheme,
         currentIndex: newIndex,
@@ -108,17 +111,18 @@ export const useThemeStore = create<ThemeState>()(
       return true;
     },
 
-    // Redo next patch
+    // Redo next patch - single state update only
     redo: () => {
       const state = get();
       
-      if (!state.canRedo()) {
+      if (state.currentIndex >= state.history.length - 1) {
         return false;
       }
       
       const newIndex = state.currentIndex + 1;
       const targetTheme = state.history[newIndex].theme;
       
+      // Single atomic state update
       set({
         theme: targetTheme,
         currentIndex: newIndex,
@@ -129,7 +133,7 @@ export const useThemeStore = create<ThemeState>()(
       return true;
     },
 
-    // Clear all history
+    // Clear all history - single state update only
     clearHistory: () => {
       set({
         history: [],
@@ -139,29 +143,27 @@ export const useThemeStore = create<ThemeState>()(
       console.log('🗑️ Theme history cleared');
     },
 
-    // Set loading state
+    // Set loading state - single state update only
     setLoading: (loading: boolean) => {
       set({ isLoading: loading });
     },
 
-    // Set error state
+    // Set error state - single state update only
     setError: (error: string | null) => {
       set({ error });
     },
 
-    // Check if undo is possible
+    // Pure getters - no side effects
     canUndo: () => {
       const state = get();
       return state.currentIndex >= 0;
     },
 
-    // Check if redo is possible
     canRedo: () => {
       const state = get();
       return state.currentIndex < state.history.length - 1;
     },
 
-    // Get current patch info
     getCurrentPatch: () => {
       const state = get();
       return state.currentIndex >= 0 ? state.history[state.currentIndex] : null;
@@ -169,7 +171,7 @@ export const useThemeStore = create<ThemeState>()(
   }))
 );
 
-// Selector hooks for performance
+// Selector hooks for performance - pure selectors only
 export const useTheme = () => useThemeStore(state => state.theme);
 export const useThemeHistory = () => useThemeStore(state => ({
   history: state.history,
