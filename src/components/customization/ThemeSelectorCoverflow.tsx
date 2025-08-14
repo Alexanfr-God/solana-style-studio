@@ -27,7 +27,12 @@ const ThemeSelectorCoverflow: React.FC = () => {
   const { themes, activeThemeId, getActiveTheme, isLoading, applyTheme } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  
+  // Enhanced processing protection
   const isProcessingRef = useRef(false);
+  const lastClickTimeRef = useRef(0);
+  const clickCountRef = useRef(0);
+  
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
@@ -45,8 +50,18 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Protected handler - ONLY in onClick, no useEffect theme application
+  // Enhanced click protection with rate limiting
   const handleThemeClick = once(async (theme: any) => {
+    const now = Date.now();
+    
+    // Rate limiting: max 1 click per 500ms
+    if (now - lastClickTimeRef.current < 500) {
+      console.log('🚫 Click ignored - rate limited');
+      return;
+    }
+    
+    lastClickTimeRef.current = now;
+    
     // Prevent processing or repeated clicks on same theme in apply mode
     if (isProcessingRef.current) {
       console.log('🚫 Click ignored - already processing');
@@ -58,11 +73,19 @@ const ThemeSelectorCoverflow: React.FC = () => {
       return;
     }
     
+    // Click count protection
+    clickCountRef.current++;
+    if (clickCountRef.current > 10) {
+      console.error('🚨 Too many clicks detected, cooling down...');
+      setTimeout(() => { clickCountRef.current = 0; }, 5000);
+      return;
+    }
+    
     isProcessingRef.current = true;
     
     try {
       setSelectedId(theme.id);
-      console.log(`👆 Theme click: ${theme.name} (mode: ${mode})`);
+      console.log(`👆 Theme click: ${theme.name} (mode: ${mode}) - attempt ${clickCountRef.current}`);
       
       if (mode === "apply") {
         // Apply mode - direct theme application using SoT
@@ -72,7 +95,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
         }
         
         if (THEME_SOT_IS_ZUSTAND) {
-          // Use SoT approach
+          // Use SoT approach with enhanced logging
+          console.log('🎨 Applying theme via SoT:', theme.name);
           applyTheme(theme);
           toast.success(`🎨 Applied theme: ${theme.name}`);
         } else {
@@ -92,6 +116,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
             theme: null
           };
           
+          console.log('🎨 Applying theme via legacy patch:', theme.name);
           applyPatch(patchEntry);
           toast.success(`🎨 Applied preset: ${theme.name}`);
         }
@@ -99,6 +124,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
       } else {
         // Inspire AI mode - use preset as style reference
         try {
+          console.log('✨ Inspiring from theme:', theme.name);
           const response = await callPatch({
             themeId: activeThemeId || 'default',
             pageId: 'home',
@@ -123,13 +149,17 @@ const ThemeSelectorCoverflow: React.FC = () => {
             toast.error(`Failed to apply inspiration: ${response.error}`);
           }
         } catch (error) {
+          console.error('💥 Inspiration error:', error);
           toast.error(`Error applying inspiration: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
     } catch (error) {
+      console.error('💥 Theme processing error:', error);
       toast.error(`Error processing theme: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       isProcessingRef.current = false;
+      // Reset click count after successful operation
+      setTimeout(() => { clickCountRef.current = Math.max(0, clickCountRef.current - 1); }, 1000);
     }
   });
 
@@ -307,6 +337,13 @@ const ThemeSelectorCoverflow: React.FC = () => {
           />
         ))}
       </div>
+      
+      {/* Debug Info (dev only) */}
+      {import.meta.env.DEV && (
+        <div className="text-xs text-white/40 text-center">
+          Updates: {clickCountRef.current}/10 | Processing: {isProcessingRef.current ? 'Yes' : 'No'}
+        </div>
+      )}
     </div>
   );
 };

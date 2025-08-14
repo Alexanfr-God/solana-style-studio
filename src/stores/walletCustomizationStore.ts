@@ -43,11 +43,15 @@ export interface WalletCustomizationState {
   totalChange: string;
   isBalancePositive: boolean;
   
+  // Circuit breaker for preventing infinite updates
+  _updateCount: number;
+  _lastUpdateTime: number;
+  
   // Navigation and state management
   setCurrentLayer: (layer: WalletLayer) => void;
   unlockWallet: () => void;
   
-  // Style management with automatic animation triggers
+  // Style management with circuit breaker
   setWalletStyle: (style: Partial<WalletStyle>) => void;
   setLoginStyle: (style: Partial<WalletStyle>) => void;
   applyUniversalStyle: (style: Partial<WalletStyle>) => void;
@@ -152,47 +156,75 @@ const mockTokens = [
   }
 ];
 
+// Circuit breaker constants
+const MAX_UPDATES_PER_SECOND = 10;
+const UPDATE_WINDOW_MS = 1000;
+
+// Circuit breaker function
+const withCircuitBreaker = (fn: () => void, set: any, get: any) => {
+  const state = get();
+  const now = Date.now();
+  
+  // Reset counter if enough time has passed
+  if (now - state._lastUpdateTime > UPDATE_WINDOW_MS) {
+    set({ _updateCount: 0, _lastUpdateTime: now });
+  }
+  
+  // Check if we're exceeding the limit
+  if (state._updateCount >= MAX_UPDATES_PER_SECOND) {
+    console.warn('🚫 Circuit breaker: Too many updates, skipping to prevent infinite loop');
+    return;
+  }
+  
+  // Increment counter and execute
+  set({ _updateCount: state._updateCount + 1 });
+  fn();
+};
+
 // Universal style change wrapper - controlled by feature flag
-const withScanAnimation = (fn: () => void, set: any) => {
+const withScanAnimation = (fn: () => void, set: any, get: any) => {
   if (THEME_SOT_IS_ZUSTAND) {
     // In new system, don't do automatic animation for cross-store updates
     console.log('🚫 Skipping scan animation - SoT is useThemeStore');
-    fn();
+    withCircuitBreaker(fn, set, get);
     return;
   }
   
   console.log('🎯 Triggering scan animation for style change (legacy mode)');
   
-  // Legacy animation logic
-  set({ 
-    isCustomizing: true, 
-    customizationProgress: 0,
-    isSuccessAnimationActive: false 
-  });
-  
-  fn();
-  
-  let progress = 0;
-  const progressInterval = setInterval(() => {
-    progress += 25;
-    set({ customizationProgress: progress });
+  withCircuitBreaker(() => {
+    // Single atomic state update
+    set((state: WalletCustomizationState) => {
+      fn();
+      return { 
+        isCustomizing: true, 
+        customizationProgress: 0,
+        isSuccessAnimationActive: false 
+      };
+    });
     
-    if (progress >= 100) {
-      clearInterval(progressInterval);
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += 25;
+      set({ customizationProgress: progress });
       
-      setTimeout(() => {
-        set({ 
-          isCustomizing: false,
-          customizationProgress: 0,
-          isSuccessAnimationActive: true 
-        });
+      if (progress >= 100) {
+        clearInterval(progressInterval);
         
         setTimeout(() => {
-          set({ isSuccessAnimationActive: false });
-        }, 800);
-      }, 1500);
-    }
-  }, 200);
+          set({ 
+            isCustomizing: false,
+            customizationProgress: 0,
+            isSuccessAnimationActive: true 
+          });
+          
+          setTimeout(() => {
+            set({ isSuccessAnimationActive: false });
+          }, 800);
+        }, 1500);
+      }
+    }, 200);
+  }, set, get);
 };
 
 export const useWalletCustomizationStore = create<WalletCustomizationState>((set, get) => ({
@@ -214,6 +246,10 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   totalBalance: '$3,150.32',
   totalChange: '+4.8%',
   isBalancePositive: true,
+  
+  // Circuit breaker state
+  _updateCount: 0,
+  _lastUpdateTime: 0,
 
   setCurrentLayer: (layer) => set({ currentLayer: layer }),
   
@@ -223,42 +259,48 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     if (THEME_SOT_IS_ZUSTAND) {
       // In new system, only update local state if explicitly requested
       console.log('⚠️ setWalletStyle called in SoT mode - local update only');
-      set((state) => ({
-        walletStyle: { ...state.walletStyle, ...newStyle }
-      }));
+      withCircuitBreaker(() => {
+        set((state) => ({
+          walletStyle: { ...state.walletStyle, ...newStyle }
+        }));
+      }, set, get);
     } else {
       withScanAnimation(() => {
         set((state) => ({
           walletStyle: { ...state.walletStyle, ...newStyle }
         }));
         console.log('✅ Wallet style updated with animation:', newStyle);
-      }, set);
+      }, set, get);
     }
   },
 
   setLoginStyle: (newStyle) => {
     if (THEME_SOT_IS_ZUSTAND) {
       console.log('⚠️ setLoginStyle called in SoT mode - local update only');
-      set((state) => ({
-        loginStyle: { ...state.loginStyle, ...newStyle }
-      }));
+      withCircuitBreaker(() => {
+        set((state) => ({
+          loginStyle: { ...state.loginStyle, ...newStyle }
+        }));
+      }, set, get);
     } else {
       withScanAnimation(() => {
         set((state) => ({
           loginStyle: { ...state.loginStyle, ...newStyle }
         }));
         console.log('✅ Login style updated with animation:', newStyle);
-      }, set);
+      }, set, get);
     }
   },
 
   applyUniversalStyle: (newStyle) => {
     if (THEME_SOT_IS_ZUSTAND) {
       console.log('⚠️ applyUniversalStyle called in SoT mode - local update only');
-      set((state) => ({
-        walletStyle: { ...state.walletStyle, ...newStyle },
-        loginStyle: { ...state.loginStyle, ...newStyle }
-      }));
+      withCircuitBreaker(() => {
+        set((state) => ({
+          walletStyle: { ...state.walletStyle, ...newStyle },
+          loginStyle: { ...state.loginStyle, ...newStyle }
+        }));
+      }, set, get);
     } else {
       withScanAnimation(() => {
         set((state) => ({
@@ -266,7 +308,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
           loginStyle: { ...state.loginStyle, ...newStyle }
         }));
         console.log('✅ Universal style applied to BOTH screens with animation:', newStyle);
-      }, set);
+      }, set, get);
     }
   },
 
@@ -277,7 +319,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
         loginStyle: { ...state.loginStyle, backgroundImage: `url(${imageUrl})` }
       }));
       console.log('🔒 Background applied to LOGIN layer only:', imageUrl);
-    }, set);
+    }, set, get);
   },
 
   applyBackgroundToWalletLayer: (imageUrl: string) => {
@@ -286,7 +328,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
         walletStyle: { ...state.walletStyle, backgroundImage: `url(${imageUrl})` }
       }));
       console.log('🔓 Background applied to WALLET layer only:', imageUrl);
-    }, set);
+    }, set, get);
   },
 
   applyBackgroundToBothLayers: (imageUrl: string) => {
@@ -296,7 +338,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
         loginStyle: { ...state.loginStyle, backgroundImage: `url(${imageUrl})` }
       }));
       console.log('🔒✨ Background applied to BOTH layers:', imageUrl);
-    }, set);
+    }, set, get);
   },
 
   onCustomizationStart: () => {
@@ -333,7 +375,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     set({ 
       isCustomizing: false, 
       customizationProgress: 0,
-      isSuccessAnimationState: false 
+      isSuccessAnimationActive: false 
     });
   },
 
