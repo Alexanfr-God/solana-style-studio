@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 const ThemeSelectorCoverflow: React.FC = () => {
   const { themes, activeThemeId, selectTheme, getActiveTheme, isLoading } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
+  const [isProcessing, setIsProcessing] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
@@ -31,59 +32,73 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  const handleThemeClick = async (theme: any) => {
-    if (mode === "apply") {
-      // Apply mode - direct preset application
-      if (!theme.sample_patch || theme.sample_patch.length === 0) {
-        toast.error('У пресета нет прямого патча. Используй режим "Inspire AI".');
-        return;
-      }
-      
-      // Apply the sample patch directly
-      const patchEntry = {
-        id: `preset-${theme.id}`,
-        operations: theme.sample_patch,
-        userPrompt: `Applied preset: ${theme.name}`,
-        pageId: 'global',
-        presetId: theme.id,
-        timestamp: new Date(),
-        theme: null // Will be computed by applyPatch
-      };
-      
-      applyPatch(patchEntry);
-      toast.success(`🎨 Applied preset: ${theme.name}`);
-      
-    } else {
-      // Inspire AI mode - use preset as style reference
-      try {
-        const response = await callPatch({
-          themeId: activeThemeId || 'default',
-          pageId: 'home', // Default to home page
-          presetId: theme.id,
-          userPrompt: `Apply the style inspiration from ${theme.name} preset`
-        });
-
-        if (response.success) {
-          const patchEntry = {
-            id: `inspire-${theme.id}`,
-            operations: response.patch,
-            userPrompt: `Inspired by preset: ${theme.name}`,
-            pageId: 'home',
-            presetId: theme.id,
-            timestamp: new Date(),
-            theme: response.theme
-          };
-          
-          applyPatch(patchEntry);
-          toast.success(`✨ Applied inspiration from: ${theme.name}`);
-        } else {
-          toast.error(`Failed to apply inspiration: ${response.error}`);
+  const handleThemeClick = useCallback(async (theme: any) => {
+    // Prevent multiple simultaneous processing
+    if (isProcessing) return;
+    
+    // Don't reprocess if same theme is already active and we're not switching modes
+    if (theme.id === activeThemeId && mode === "apply") return;
+    
+    setIsProcessing(true);
+    
+    try {
+      if (mode === "apply") {
+        // Apply mode - direct preset application
+        if (!theme.sample_patch || theme.sample_patch.length === 0) {
+          toast.error('У пресета нет прямого патча. Используй режим "Inspire AI".');
+          return;
         }
-      } catch (error) {
-        toast.error(`Error applying inspiration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        
+        // Apply the sample patch directly
+        const patchEntry = {
+          id: `preset-${theme.id}`,
+          operations: theme.sample_patch,
+          userPrompt: `Applied preset: ${theme.name}`,
+          pageId: 'global',
+          presetId: theme.id,
+          timestamp: new Date(),
+          theme: null // Will be computed by applyPatch
+        };
+        
+        applyPatch(patchEntry);
+        toast.success(`🎨 Applied preset: ${theme.name}`);
+        
+      } else {
+        // Inspire AI mode - use preset as style reference
+        try {
+          const response = await callPatch({
+            themeId: activeThemeId || 'default',
+            pageId: 'home', // Default to home page
+            presetId: theme.id,
+            userPrompt: `Apply the style inspiration from ${theme.name} preset`
+          });
+
+          if (response.success) {
+            const patchEntry = {
+              id: `inspire-${theme.id}`,
+              operations: response.patch,
+              userPrompt: `Inspired by preset: ${theme.name}`,
+              pageId: 'home',
+              presetId: theme.id,
+              timestamp: new Date(),
+              theme: response.theme
+            };
+            
+            applyPatch(patchEntry);
+            toast.success(`✨ Applied inspiration from: ${theme.name}`);
+          } else {
+            toast.error(`Failed to apply inspiration: ${response.error}`);
+          }
+        } catch (error) {
+          toast.error(`Error applying inspiration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
       }
+    } catch (error) {
+      toast.error(`Error processing theme: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [mode, activeThemeId, applyPatch, isProcessing]);
 
   const activeTheme = getActiveTheme();
 
@@ -145,6 +160,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           size="icon"
           className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           onClick={scrollPrev}
+          disabled={isProcessing}
         >
           <ChevronLeft className="h-5 w-5 text-white" />
         </Button>
@@ -154,6 +170,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           size="icon"
           className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           onClick={scrollNext}
+          disabled={isProcessing}
         >
           <ChevronRight className="h-5 w-5 text-white" />
         </Button>
@@ -171,7 +188,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     isActive 
                       ? 'scale-110 z-10' 
                       : 'scale-90 opacity-60 hover:opacity-80 hover:scale-95'
-                  }`}
+                  } ${isProcessing ? 'pointer-events-none' : ''}`}
                   onClick={() => handleThemeClick(theme)}
                   data-theme-id={theme.id}
                 >
@@ -209,6 +226,13 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         {mode === "apply" ? "Apply" : "Inspire"}
                       </div>
 
+                      {/* Processing Indicator */}
+                      {isProcessing && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-400 border-t-transparent"></div>
+                        </div>
+                      )}
+
                       {/* Hover Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
@@ -240,7 +264,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
                 ? 'bg-purple-400 w-6' 
                 : 'bg-white/30 hover:bg-white/50'
             }`}
-            onClick={() => handleThemeClick(theme)}
+            onClick={() => !isProcessing && handleThemeClick(theme)}
+            disabled={isProcessing}
           />
         ))}
       </div>

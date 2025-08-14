@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom"]
   },
   define: {
     // Add this to make Buffer available globally

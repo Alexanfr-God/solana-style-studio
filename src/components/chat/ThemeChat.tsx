@@ -35,32 +35,47 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [presets, setPresets] = useState<any[]>([]);
   const [isCompareMode, setIsCompareMode] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const { isLoading, error, setLoading, setError } = useThemeStore();
   const theme = useTheme();
   const { history, currentIndex, canUndo, canRedo } = useThemeHistory();
   const { applyPatch, undo, redo, setTheme } = useThemeActions();
 
-  // Load presets on mount
+  // Load presets on mount only
   useEffect(() => {
+    let mounted = true;
+    
+    const loadPresets = async () => {
+      try {
+        const presetsData = await getPresets();
+        if (mounted) {
+          setPresets(presetsData);
+        }
+      } catch (error) {
+        console.error('Failed to load presets:', error);
+      }
+    };
+
     loadPresets();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Set initial theme
+  // Set initial theme only once
   useEffect(() => {
     if (initialTheme && Object.keys(theme).length === 0) {
       setTheme(initialTheme);
     }
-  }, [initialTheme, theme, setTheme]);
-
-  const loadPresets = async () => {
-    const presetsData = await getPresets();
-    setPresets(presetsData);
-  };
+  }, [initialTheme, setTheme]); // Remove theme from deps to prevent loop
 
   const handleApplyPatch = async () => {
-    if (!userPrompt.trim()) {
-      toast.error('Please enter a theme modification request');
+    if (!userPrompt.trim() || isProcessing) {
+      if (!userPrompt.trim()) {
+        toast.error('Please enter a theme modification request');
+      }
       return;
     }
 
@@ -71,6 +86,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       userPrompt: userPrompt.trim()
     };
 
+    setIsProcessing(true);
     setLoading(true);
     setError(null);
 
@@ -106,11 +122,14 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       setError(errorMessage);
       toast.error(`Failed to update theme: ${errorMessage}`);
     } finally {
+      setIsProcessing(false);
       setLoading(false);
     }
   };
 
   const handleUndo = () => {
+    if (isProcessing) return;
+    
     if (undo()) {
       toast.success('↶ Changes undone');
     } else {
@@ -119,6 +138,8 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   };
 
   const handleRedo = () => {
+    if (isProcessing) return;
+    
     if (redo()) {
       toast.success('↷ Changes redone');
     } else {
@@ -127,7 +148,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isProcessing) {
       e.preventDefault();
       handleApplyPatch();
     }
@@ -172,7 +193,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-white text-sm">Target Page</Label>
-            <Select value={selectedPageId} onValueChange={setSelectedPageId}>
+            <Select value={selectedPageId} onValueChange={setSelectedPageId} disabled={isProcessing}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue />
               </SelectTrigger>
@@ -194,7 +215,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
           <div className="space-y-2">
             <Label className="text-white text-sm">Style Preset (Optional)</Label>
-            <Select value={selectedPresetId} onValueChange={setSelectedPresetId}>
+            <Select value={selectedPresetId} onValueChange={setSelectedPresetId} disabled={isProcessing}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Choose preset..." />
               </SelectTrigger>
@@ -230,7 +251,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
             onKeyDown={handleKeyPress}
             placeholder="Describe the changes you want to make (e.g., 'Make the background darker', 'Change button colors to blue', 'Add more padding to cards')"
             className="min-h-[100px] bg-white/10 border-white/20 text-white placeholder:text-white/40 resize-none"
-            disabled={isLoading}
+            disabled={isLoading || isProcessing}
           />
           <p className="text-xs text-white/50">
             Tip: Press Ctrl/Cmd + Enter to apply changes
@@ -245,7 +266,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               variant="outline"
               size="sm"
               onClick={handleUndo}
-              disabled={!canUndo || isLoading}
+              disabled={!canUndo || isLoading || isProcessing}
               className="border-white/20 text-white/80 hover:text-white"
             >
               <Undo2 className="h-4 w-4 mr-1" />
@@ -256,7 +277,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               variant="outline"
               size="sm"
               onClick={handleRedo}
-              disabled={!canRedo || isLoading}
+              disabled={!canRedo || isLoading || isProcessing}
               className="border-white/20 text-white/80 hover:text-white"
             >
               <Redo2 className="h-4 w-4 mr-1" />
@@ -268,7 +289,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               variant="outline"
               size="sm"
               onClick={() => setIsCompareMode(!isCompareMode)}
-              disabled={history.length === 0}
+              disabled={history.length === 0 || isProcessing}
               className="border-white/20 text-white/80 hover:text-white"
             >
               <GitCompare className="h-4 w-4 mr-1" />
@@ -279,10 +300,10 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
           {/* Apply button */}
           <Button
             onClick={handleApplyPatch}
-            disabled={isLoading || !userPrompt.trim()}
+            disabled={isLoading || isProcessing || !userPrompt.trim()}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
           >
-            {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {(isLoading || isProcessing) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             <Send className="h-4 w-4 mr-2" />
             Apply Changes
           </Button>
