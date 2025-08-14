@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { Operation } from 'fast-json-patch';
 
@@ -14,6 +13,48 @@ export interface PatchResponse {
   theme: any;
   success: boolean;
   error?: string;
+}
+
+/**
+ * Prepare theme for minting by exporting it to storage
+ */
+export async function prepareMint(themeId: string): Promise<{
+  url: string;
+  themeId: string;
+  walletTarget: 'phantom' | 'metamask' | 'demo';
+}> {
+  console.log('🚀 Preparing theme for mint:', themeId);
+  
+  try {
+    const { data, error } = await supabase.functions.invoke('export_theme', {
+      body: { themeId }
+    });
+
+    if (error) {
+      console.error('❌ Export service error:', error);
+      throw new Error(`Export failed: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('No response from export service');
+    }
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    console.log('✅ Theme export prepared:', data);
+    
+    return {
+      url: data.url,
+      themeId: data.themeId,
+      walletTarget: data.walletTarget
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Prepare mint failed:', error);
+    throw new Error(`Export failed: ${errorMessage}`);
+  }
 }
 
 /**

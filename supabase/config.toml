@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.generate-wallet-mask-v3]
 verify_jwt = false
+
+[functions.export_theme]
+verify_jwt = true

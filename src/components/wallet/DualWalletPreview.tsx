@@ -1,6 +1,7 @@
 
 import React, { useRef } from 'react';
 import { useCustomizationStore } from '@/stores/customizationStore';
+import { useThemeSelector } from '@/hooks/useThemeSelector';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import MintNftButton from './ExportToIpfsButton';
@@ -8,6 +9,7 @@ import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
+  const { activeTheme } = useThemeSelector();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
 
   // For feedback purposes, create placeholder values
@@ -50,7 +52,10 @@ const DualWalletPreview = () => {
       {/* Mint as NFT Button */}
       <div className="mt-6 flex justify-center">
         <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3">
-          <MintNftButton targetRef={dualPreviewRef} />
+          <MintNftButton 
+            targetRef={dualPreviewRef} 
+            themeId={activeTheme?.id}
+          />
         </div>
       </div>
     </div>
