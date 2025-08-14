@@ -34,5 +34,68 @@
     "description": "Bold patriotic theme with red, white and blue American styling",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_8/image_8.png",
     "sample_patch": []
+  },
+  {
+    "id": "gorillaz",
+    "name": "Gorillaz",
+    "description": "Cool blue-themed wallet design inspired by Gorillaz aesthetics",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_11/image_11.png",
+    "sample_patch": []
+  },
+  {
+    "id": "snoopdogg",
+    "name": "Snoop Dogg",
+    "description": "Golden hip-hop themed wallet design with West Coast vibes",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_10/image_10.png",
+    "sample_patch": []
+  },
+  {
+    "id": "cz",
+    "name": "CZ",
+    "description": "Professional crypto exchange themed design",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png",
+    "sample_patch": []
+  },
+  {
+    "id": "superman",
+    "name": "Superman",
+    "description": "Heroic red and blue superhero themed wallet design",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_6/image_6.png",
+    "sample_patch": []
+  },
+  {
+    "id": "mia",
+    "name": "Mia",
+    "description": "Elegant and sophisticated wallet design with modern aesthetics",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_7/image_7.png",
+    "sample_patch": []
+  },
+  {
+    "id": "wifTheme",
+    "name": "WIF Theme",
+    "description": "Enhanced WIF themed design with dynamic color scheme",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png",
+    "sample_patch": []
+  },
+  {
+    "id": "guccicatluxurytheme",
+    "name": "Gucci Cat Luxury",
+    "description": "Luxury themed design with premium cat aesthetics",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
+    "sample_patch": []
+  },
+  {
+    "id": "luxuryTheme",
+    "name": "Luxury Theme",
+    "description": "Premium golden luxury wallet interface design",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+    "sample_patch": []
+  },
+  {
+    "id": "defaultTheme",
+    "name": "Default Theme",
+    "description": "Classic default wallet design with golden accents",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+    "sample_patch": []
   }
 ]
