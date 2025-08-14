@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { useWalletTheme } from './useWalletTheme';
+import { useThemeStore } from '@/state/themeStore';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
+import { THEME_SOT_IS_ZUSTAND } from '@/config/flags';
 
 export interface ThemeItem {
   id: string;
@@ -25,7 +26,7 @@ const loadThemeManifest = async (): Promise<ThemeItem[]> => {
       // Convert manifest items to ThemeItem format
       return manifest.map((item: any) => ({
         ...item,
-        previewImage: item.coverUrl, // Use coverUrl as previewImage for consistency
+        previewImage: item.coverUrl,
         themeData: null // Will be loaded separately
       }));
     } else {
@@ -67,6 +68,14 @@ const loadThemeManifest = async (): Promise<ThemeItem[]> => {
         description: 'Elon Musk themed wallet design',
         previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_4/image_4.png',
         coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_4/image_4.png',
+        themeData: null
+      },
+      {
+        id: 'trump',
+        name: 'TRUMP',
+        description: 'Bold patriotic theme with red, white and blue American styling',
+        previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_8/image_8.png',
+        coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_8/image_8.png',
         themeData: null
       }
     ];
@@ -113,9 +122,9 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
   return theme;
 };
 
-// Helper function to convert theme JSON to WalletStyle format
+// Helper function to convert theme JSON to WalletStyle format (if needed for legacy)
 const convertThemeToWalletStyle = (themeData: any) => {
-  if (!themeData) return {};
+  if (!themeData || !THEME_SOT_IS_ZUSTAND) return {};
   
   // Extract wallet-relevant styles from theme JSON
   return {
@@ -134,9 +143,8 @@ const convertThemeToWalletStyle = (themeData: any) => {
 
 export const useThemeSelector = () => {
   const [themes, setThemes] = useState<ThemeItem[]>([]);
-  const [activeThemeId, setActiveThemeId] = useState('elonmusk'); // Set Elon Musk as default
+  const [activeThemeId, setActiveThemeId] = useState('trump'); // Default to trump
   const [isLoading, setIsLoading] = useState(false);
-  const { setTheme } = useWalletTheme();
 
   // Load themes from manifest on mount
   useEffect(() => {
@@ -156,15 +164,15 @@ export const useThemeSelector = () => {
     };
 
     initializeThemes();
-  }, []);
+  }, []); // Only load once on mount
 
-  // Load theme data when themes change or active theme changes
+  // Load theme data when themes change (but NO auto-apply)
   useEffect(() => {
     if (themes.length === 0) return;
     
     const loadThemeData = async () => {
       setIsLoading(true);
-      console.log('🔄 Starting theme data loading process');
+      console.log('🔄 Starting theme data loading process (NO AUTO-APPLY)');
       
       try {
         const updatedThemes = await Promise.all(
@@ -178,12 +186,8 @@ export const useThemeSelector = () => {
         
         setThemes(updatedThemes);
         
-        // Apply the active theme if it now has data
-        const activeTheme = updatedThemes.find(t => t.id === activeThemeId);
-        if (activeTheme && activeTheme.themeData) {
-          console.log('🎯 Auto-applying active theme:', activeTheme.name);
-          applyTheme(activeTheme);
-        }
+        // REMOVED: Auto-apply active theme - only explicit user action should apply themes
+        console.log('🚫 NO AUTO-APPLY - themes loaded but not applied');
         
       } catch (error) {
         console.error('💥 Error loading themes:', error);
@@ -193,23 +197,36 @@ export const useThemeSelector = () => {
     };
 
     loadThemeData();
-  }, [activeThemeId, themes.length]);
+  }, [themes.length]); // Only when themes count changes, NO activeThemeId dependency
 
-  // Helper function to apply theme
+  // Helper function to apply theme (ONLY called explicitly by user action)
   const applyTheme = (selectedTheme: ThemeItem) => {
     if (!selectedTheme.themeData) {
       console.warn('⚠️ Cannot apply theme without data:', selectedTheme.name);
       return;
     }
     
-    // Apply theme to useWalletTheme (for Coverflow)
-    setTheme(selectedTheme.themeData);
-    console.log('🎨 Theme applied to useWalletTheme:', selectedTheme.name);
+    // Check if theme already applied (avoid redundant sets)
+    try {
+      const currentTheme = useThemeStore.getState().theme;
+      if (JSON.stringify(currentTheme) === JSON.stringify(selectedTheme.themeData)) {
+        console.log('🔄 Theme already applied, skipping');
+        return;
+      }
+    } catch (error) {
+      // If comparison fails, proceed with set
+    }
     
-    // Apply theme to walletCustomizationStore (for wallet components)
-    const walletStyle = convertThemeToWalletStyle(selectedTheme.themeData);
-    useWalletCustomizationStore.getState().setWalletStyle(walletStyle);
-    console.log('🎨 Theme applied to walletCustomizationStore:', walletStyle);
+    if (THEME_SOT_IS_ZUSTAND) {
+      // Apply theme to useThemeStore - SINGLE SOURCE OF TRUTH
+      useThemeStore.getState().setTheme(selectedTheme.themeData);
+      console.log('🎨 Theme applied to useThemeStore (SoT):', selectedTheme.name);
+    } else {
+      // Legacy path (for rollback if needed)
+      console.warn('🔙 Using legacy theme application path');
+      const walletStyle = convertThemeToWalletStyle(selectedTheme.themeData);
+      useWalletCustomizationStore.getState().setWalletStyle(walletStyle);
+    }
   };
 
   const selectTheme = (themeId: string) => {
@@ -226,7 +243,7 @@ export const useThemeSelector = () => {
     if (selectedTheme.themeData) {
       applyTheme(selectedTheme);
     } else {
-      console.log('⏳ Theme data not loaded yet, will apply when available');
+      console.log('⏳ Theme data not loaded yet, will need explicit apply when available');
     }
   };
 
@@ -234,11 +251,21 @@ export const useThemeSelector = () => {
     return themes.find(t => t.id === activeThemeId);
   };
 
+  // Explicit apply method for external use
+  const applyThemeById = (themeId: string) => {
+    const selectedTheme = themes.find(t => t.id === themeId);
+    if (selectedTheme && selectedTheme.themeData) {
+      applyTheme(selectedTheme);
+    }
+  };
+
   return {
     themes,
     activeThemeId,
     isLoading,
     selectTheme,
-    getActiveTheme
+    getActiveTheme,
+    applyTheme,
+    applyThemeById
   };
 };

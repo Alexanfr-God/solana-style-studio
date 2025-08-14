@@ -11,19 +11,20 @@ import { callPatch } from '@/lib/api/client';
 import { useThemeActions } from '@/state/themeStore';
 import { toast } from 'sonner';
 import { withRenderGuard, once } from '@/utils/guard';
+import { THEME_SOT_IS_ZUSTAND } from '@/config/flags';
 
 const ThemeSelectorCoverflow: React.FC = () => {
   // Render guard for debugging
   const guard = withRenderGuard("ThemeSelectorCoverflow");
   guard();
 
-  // Диагностика React дубликатов в dev режиме
+  // React diagnostics in dev mode
   if (import.meta.env.DEV) { 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     import("@/utils/reactDiag").then(m => m.logReactIdentity("Coverflow"));
   }
 
-  const { themes, activeThemeId, getActiveTheme, isLoading } = useThemeSelector();
+  const { themes, activeThemeId, getActiveTheme, isLoading, applyTheme } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const isProcessingRef = useRef(false);
@@ -34,7 +35,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     dragFree: false
   });
 
-  const { applyPatch, setTheme } = useThemeActions();
+  const { applyPatch } = useThemeActions();
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -44,44 +45,63 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Protected handler to prevent multiple simultaneous calls - все действия только в onClick
+  // Protected handler - ONLY in onClick, no useEffect theme application
   const handleThemeClick = once(async (theme: any) => {
     // Prevent processing or repeated clicks on same theme in apply mode
-    if (isProcessingRef.current) return;
-    if (theme.id === selectedId && mode === "apply") return;
+    if (isProcessingRef.current) {
+      console.log('🚫 Click ignored - already processing');
+      return;
+    }
+    
+    if (theme.id === selectedId && mode === "apply") {
+      console.log('🚫 Click ignored - same theme already selected in apply mode');
+      return;
+    }
     
     isProcessingRef.current = true;
     
     try {
       setSelectedId(theme.id);
+      console.log(`👆 Theme click: ${theme.name} (mode: ${mode})`);
       
       if (mode === "apply") {
-        // Apply mode - direct preset application
-        if (!theme.sample_patch || theme.sample_patch.length === 0) {
-          toast.error('У пресета нет прямого патча. Используй режим "Inspire AI".');
+        // Apply mode - direct theme application using SoT
+        if (!theme.themeData) {
+          toast.error('Theme data not loaded. Try switching to "Inspire AI" mode.');
           return;
         }
         
-        // Apply the sample patch directly
-        const patchEntry = {
-          id: `preset-${theme.id}`,
-          operations: theme.sample_patch,
-          userPrompt: `Applied preset: ${theme.name}`,
-          pageId: 'global',
-          presetId: theme.id,
-          timestamp: new Date(),
-          theme: null // Will be computed by applyPatch
-        };
-        
-        applyPatch(patchEntry);
-        toast.success(`🎨 Applied preset: ${theme.name}`);
+        if (THEME_SOT_IS_ZUSTAND) {
+          // Use SoT approach
+          applyTheme(theme);
+          toast.success(`🎨 Applied theme: ${theme.name}`);
+        } else {
+          // Legacy approach with sample_patch
+          if (!theme.sample_patch || theme.sample_patch.length === 0) {
+            toast.error('Theme has no direct patch. Use "Inspire AI" mode.');
+            return;
+          }
+          
+          const patchEntry = {
+            id: `preset-${theme.id}`,
+            operations: theme.sample_patch,
+            userPrompt: `Applied preset: ${theme.name}`,
+            pageId: 'global',
+            presetId: theme.id,
+            timestamp: new Date(),
+            theme: null
+          };
+          
+          applyPatch(patchEntry);
+          toast.success(`🎨 Applied preset: ${theme.name}`);
+        }
         
       } else {
         // Inspire AI mode - use preset as style reference
         try {
           const response = await callPatch({
             themeId: activeThemeId || 'default',
-            pageId: 'home', // Default to home page
+            pageId: 'home',
             presetId: theme.id,
             userPrompt: `Apply the style inspiration from ${theme.name} preset`
           });
@@ -148,8 +168,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
         
         <p className="text-sm text-white/60 max-w-md mx-auto">
           {mode === "apply" 
-            ? "Directly apply preset styles (requires sample_patch)" 
-            : "Use preset as style inspiration for AI generation"
+            ? "Directly apply theme styles" 
+            : "Use theme as style inspiration for AI generation"
           }
         </p>
         

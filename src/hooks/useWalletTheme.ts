@@ -1,10 +1,7 @@
 
-import { useState, useEffect } from 'react';
+// DEPRECATED bridge — do not add new logic here. SoT is useThemeStore.
+import { useThemeStore } from '@/state/themeStore';
 import type { AssetCardStyle } from '@/types/walletStyleSchema';
-
-interface WalletThemeLayer {
-  [key: string]: any;
-}
 
 interface GlobalSearchInput {
   backgroundColor?: string;
@@ -43,82 +40,30 @@ interface TokenCardDescription {
 
 interface WalletTheme {
   globalSearchInput?: GlobalSearchInput;
-  lockLayer?: WalletThemeLayer;
-  avatarHeader?: WalletThemeLayer;
-  sidebarLayer?: WalletThemeLayer;
-  homeLayer?: WalletThemeLayer;
-  receiveLayer?: WalletThemeLayer;
-  sendLayer?: WalletThemeLayer;
-  appsLayer?: WalletThemeLayer;
-  buyLayer?: WalletThemeLayer;
-  swapLayer?: WalletThemeLayer;
-  historyLayer?: WalletThemeLayer;
-  searchLayer?: WalletThemeLayer;
+  lockLayer?: any;
+  avatarHeader?: any;
+  sidebarLayer?: any;
+  homeLayer?: any;
+  receiveLayer?: any;
+  sendLayer?: any;
+  appsLayer?: any;
+  buyLayer?: any;
+  swapLayer?: any;
+  historyLayer?: any;
+  searchLayer?: any;
   assetCard?: AssetCardStyle;
   tokenCost?: TokenCost;
   tokenCardTitle?: TokenCardTitle;
   tokenCardDescription?: TokenCardDescription;
-  global?: WalletThemeLayer;
+  global?: any;
 }
 
-// Global theme state - singleton
-let globalTheme: WalletTheme = {};
-const subscribers = new Set<() => void>();
-
-// Global theme manager
-const themeManager = {
-  getTheme: () => globalTheme,
-  setTheme: (newTheme: WalletTheme) => {
-    console.log('🎨 Global theme updated:', newTheme);
-    globalTheme = newTheme;
-    // Notify all subscribers
-    subscribers.forEach(callback => callback());
-  },
-  subscribe: (callback: () => void) => {
-    subscribers.add(callback);
-    return () => {
-      subscribers.delete(callback);
-    };
-  }
-};
-
-// Load default theme on startup
-const loadDefaultTheme = async () => {
-  try {
-    const response = await fetch('/themes/defaultTheme.json');
-    const themeData = await response.json();
-    themeManager.setTheme(themeData);
-    console.log('🎨 Default theme loaded globally');
-  } catch (error) {
-    console.error('Failed to load default theme:', error);
-  }
-};
-
-// Load theme once
-if (Object.keys(globalTheme).length === 0) {
-  loadDefaultTheme();
-}
-
+// Bridge to useThemeStore - single source of truth
 export const useWalletTheme = () => {
-  const [, forceUpdate] = useState({});
+  const theme = useThemeStore(state => state.theme);
+  const setTheme = useThemeStore(state => state.setTheme);
 
-  useEffect(() => {
-    // Subscribe to theme changes
-    const unsubscribe = themeManager.subscribe(() => {
-      forceUpdate({});
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const theme = themeManager.getTheme();
-
-  // Function to dynamically set theme (used by ThemeSelector)
-  const setTheme = (newTheme: WalletTheme) => {
-    themeManager.setTheme(newTheme);
-  };
-
-  // Global Search Input styles
+  // Computed getters based on theme from useThemeStore
   const getGlobalSearchInput = (): GlobalSearchInput => {
     return theme.globalSearchInput || {
       backgroundColor: '#1b140a',
@@ -133,7 +78,6 @@ export const useWalletTheme = () => {
     };
   };
 
-  // Token Cost styles
   const getTokenCost = (): TokenCost => {
     return theme.tokenCost || {
       fontSize: '13px',
@@ -143,7 +87,6 @@ export const useWalletTheme = () => {
     };
   };
 
-  // Global Asset Card styles
   const getAssetCard = (): AssetCardStyle => {
     return theme.assetCard || {
       backgroundColor: '#432818',
@@ -177,7 +120,6 @@ export const useWalletTheme = () => {
     };
   };
 
-  // Token Card Title styles
   const getTokenCardTitleStyle = (): TokenCardTitle => {
     return theme.tokenCardTitle || {
       fontSize: '16px',
@@ -188,7 +130,6 @@ export const useWalletTheme = () => {
     };
   };
 
-  // Token Card Description styles
   const getTokenCardDescriptionStyle = (): TokenCardDescription => {
     return theme.tokenCardDescription || {
       fontSize: '13px',
@@ -265,3 +206,7 @@ export const useWalletTheme = () => {
     tokenColors
   };
 };
+
+// Utils for external usage (non-React contexts)
+export const getCurrentTheme = () => useThemeStore.getState().theme;
+export const setCurrentTheme = (theme: WalletTheme) => useThemeStore.getState().setTheme(theme);

@@ -1,6 +1,8 @@
+
 import { create } from 'zustand';
 import { WalletStyle } from './customizationStore';
 import { getCoinIcon } from '@/constants/coinIcons';
+import { THEME_SOT_IS_ZUSTAND } from '@/config/flags';
 
 export type WalletLayer = 'login' | 'wallet' | 'receive' | 'send' | 'buy' | 'swap' | 'apps' | 'history' | 'search' | 'home';
 
@@ -50,7 +52,7 @@ export interface WalletCustomizationState {
   setLoginStyle: (style: Partial<WalletStyle>) => void;
   applyUniversalStyle: (style: Partial<WalletStyle>) => void;
   
-  // NEW: Layer-specific background application methods
+  // Layer-specific background application methods
   applyBackgroundToLoginLayer: (imageUrl: string) => void;
   applyBackgroundToWalletLayer: (imageUrl: string) => void;
   applyBackgroundToBothLayers: (imageUrl: string) => void;
@@ -150,21 +152,26 @@ const mockTokens = [
   }
 ];
 
-// Universal style change wrapper - ВСЕГДА вызывает анимацию
+// Universal style change wrapper - controlled by feature flag
 const withScanAnimation = (fn: () => void, set: any) => {
-  console.log('🎯 Triggering scan animation for style change');
+  if (THEME_SOT_IS_ZUSTAND) {
+    // In new system, don't do automatic animation for cross-store updates
+    console.log('🚫 Skipping scan animation - SoT is useThemeStore');
+    fn();
+    return;
+  }
   
-  // Запускаем анимацию сканирования
+  console.log('🎯 Triggering scan animation for style change (legacy mode)');
+  
+  // Legacy animation logic
   set({ 
     isCustomizing: true, 
     customizationProgress: 0,
     isSuccessAnimationActive: false 
   });
   
-  // Выполняем изменение стиля
   fn();
   
-  // Симулируем прогресс
   let progress = 0;
   const progressInterval = setInterval(() => {
     progress += 25;
@@ -173,7 +180,6 @@ const withScanAnimation = (fn: () => void, set: any) => {
     if (progress >= 100) {
       clearInterval(progressInterval);
       
-      // Завершаем анимацию через 1.5 секунды
       setTimeout(() => {
         set({ 
           isCustomizing: false,
@@ -181,7 +187,6 @@ const withScanAnimation = (fn: () => void, set: any) => {
           isSuccessAnimationActive: true 
         });
         
-        // Убираем success анимацию через 0.8 секунды
         setTimeout(() => {
           set({ isSuccessAnimationActive: false });
         }, 800);
@@ -215,34 +220,57 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   unlockWallet: () => set({ currentLayer: 'wallet' }),
 
   setWalletStyle: (newStyle) => {
-    withScanAnimation(() => {
+    if (THEME_SOT_IS_ZUSTAND) {
+      // In new system, only update local state if explicitly requested
+      console.log('⚠️ setWalletStyle called in SoT mode - local update only');
       set((state) => ({
         walletStyle: { ...state.walletStyle, ...newStyle }
       }));
-      console.log('✅ Wallet style updated with animation:', newStyle);
-    }, set);
+    } else {
+      withScanAnimation(() => {
+        set((state) => ({
+          walletStyle: { ...state.walletStyle, ...newStyle }
+        }));
+        console.log('✅ Wallet style updated with animation:', newStyle);
+      }, set);
+    }
   },
 
   setLoginStyle: (newStyle) => {
-    withScanAnimation(() => {
+    if (THEME_SOT_IS_ZUSTAND) {
+      console.log('⚠️ setLoginStyle called in SoT mode - local update only');
       set((state) => ({
         loginStyle: { ...state.loginStyle, ...newStyle }
       }));
-      console.log('✅ Login style updated with animation:', newStyle);
-    }, set);
+    } else {
+      withScanAnimation(() => {
+        set((state) => ({
+          loginStyle: { ...state.loginStyle, ...newStyle }
+        }));
+        console.log('✅ Login style updated with animation:', newStyle);
+      }, set);
+    }
   },
 
   applyUniversalStyle: (newStyle) => {
-    withScanAnimation(() => {
+    if (THEME_SOT_IS_ZUSTAND) {
+      console.log('⚠️ applyUniversalStyle called in SoT mode - local update only');
       set((state) => ({
         walletStyle: { ...state.walletStyle, ...newStyle },
         loginStyle: { ...state.loginStyle, ...newStyle }
       }));
-      console.log('✅ Universal style applied to BOTH screens with animation:', newStyle);
-    }, set);
+    } else {
+      withScanAnimation(() => {
+        set((state) => ({
+          walletStyle: { ...state.walletStyle, ...newStyle },
+          loginStyle: { ...state.loginStyle, ...newStyle }
+        }));
+        console.log('✅ Universal style applied to BOTH screens with animation:', newStyle);
+      }, set);
+    }
   },
 
-  // NEW: Layer-specific background application methods
+  // Background application methods - no cross-store calls
   applyBackgroundToLoginLayer: (imageUrl: string) => {
     withScanAnimation(() => {
       set((state) => ({
@@ -305,7 +333,7 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
     set({ 
       isCustomizing: false, 
       customizationProgress: 0,
-      isSuccessAnimationActive: false 
+      isSuccessAnimationState: false 
     });
   },
 
@@ -330,8 +358,11 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
 
   getStyleForComponent: (component: string) => {
-    // DEPRECATED: This method is disabled to prevent conflicts with new theme system
-    console.warn(`⚠️ getStyleForComponent(${component}) is deprecated - use ThemeProvider instead`);
+    if (THEME_SOT_IS_ZUSTAND) {
+      console.warn(`⚠️ getStyleForComponent(${component}) is deprecated in SoT mode - use useThemeStore instead`);
+      return {};
+    }
+    // Legacy implementation for rollback
     return {};
   },
 
