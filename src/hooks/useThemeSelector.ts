@@ -13,7 +13,6 @@ export interface ThemeItem {
   themeData: any;
 }
 
-// Function to load theme manifest
 const loadThemeManifest = async (): Promise<ThemeItem[]> => {
   try {
     console.log('📋 Loading theme manifest...');
@@ -23,11 +22,10 @@ const loadThemeManifest = async (): Promise<ThemeItem[]> => {
       const manifest = await response.json();
       console.log('✅ Theme manifest loaded:', manifest);
       
-      // Convert manifest items to ThemeItem format
       return manifest.map((item: any) => ({
         ...item,
         previewImage: item.coverUrl,
-        themeData: null // Will be loaded separately
+        themeData: null
       }));
     } else {
       console.warn('⚠️ Failed to load manifest, falling back to default themes');
@@ -36,7 +34,6 @@ const loadThemeManifest = async (): Promise<ThemeItem[]> => {
   } catch (error) {
     console.error('💥 Error loading theme manifest:', error);
     
-    // Fallback to hardcoded themes if manifest fails
     return [
       {
         id: 'luxury',
@@ -82,13 +79,11 @@ const loadThemeManifest = async (): Promise<ThemeItem[]> => {
   }
 };
 
-// Function to load theme data for a specific theme
 const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
   if (theme.themeData) return theme;
   
   console.log(`🎨 Attempting to load theme data for: ${theme.id}`);
   
-  // Define possible file paths to try
   const possiblePaths = [
     `/themes/${theme.id}.json`,
     `/themes/${theme.id}Theme.json`
@@ -102,7 +97,6 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
       if (response.ok) {
         const contentType = response.headers.get('content-type');
         
-        // Ensure we're getting JSON content
         if (contentType && contentType.includes('application/json')) {
           const themeData = await response.json();
           console.log(`✅ Successfully loaded theme data from: ${path}`, themeData);
@@ -122,11 +116,9 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
   return theme;
 };
 
-// Helper function to convert theme JSON to WalletStyle format (if needed for legacy)
 const convertThemeToWalletStyle = (themeData: any) => {
   if (!themeData || !THEME_SOT_IS_ZUSTAND) return {};
   
-  // Extract wallet-relevant styles from theme JSON
   return {
     backgroundColor: themeData.global?.backgroundColor || themeData.homeLayer?.backgroundColor || '#181818',
     backgroundImage: themeData.global?.backgroundImage || themeData.homeLayer?.backgroundImage,
@@ -143,7 +135,7 @@ const convertThemeToWalletStyle = (themeData: any) => {
 
 export const useThemeSelector = () => {
   const [themes, setThemes] = useState<ThemeItem[]>([]);
-  const [activeThemeId, setActiveThemeId] = useState('trump'); // Default to trump
+  const [activeThemeId, setActiveThemeId] = useState('trump');
   const [isLoading, setIsLoading] = useState(false);
 
   // Load themes from manifest on mount ONLY
@@ -166,11 +158,10 @@ export const useThemeSelector = () => {
     initializeThemes();
   }, []); // Only load once on mount
 
-  // Load theme data when themes are first loaded - NO auto-apply, NO dependency on activeThemeId
+  // Load theme data when themes are first loaded - NO auto-apply
   useEffect(() => {
     if (themes.length === 0) return;
     
-    // Only load data if themes don't have it yet
     const needsDataLoad = themes.some(theme => !theme.themeData);
     if (!needsDataLoad) return;
     
@@ -199,16 +190,15 @@ export const useThemeSelector = () => {
     };
 
     loadThemeData();
-  }, [themes.length]); // Only when themes count changes - NO other dependencies
+  }, [themes.length]); // Only when themes count changes
 
-  // Helper function to apply theme (ONLY called explicitly by user action)
+  // EXPLICIT theme application - only called by user action
   const applyTheme = (selectedTheme: ThemeItem) => {
     if (!selectedTheme.themeData) {
       console.warn('⚠️ Cannot apply theme without data:', selectedTheme.name);
       return;
     }
     
-    // Check if theme already applied (avoid redundant sets)
     try {
       const currentTheme = useThemeStore.getState().theme;
       if (JSON.stringify(currentTheme) === JSON.stringify(selectedTheme.themeData)) {
@@ -216,16 +206,14 @@ export const useThemeSelector = () => {
         return;
       }
     } catch (error) {
-      // If comparison fails, proceed with set
       console.warn('Theme comparison failed, proceeding with apply');
     }
     
     if (THEME_SOT_IS_ZUSTAND) {
-      // Apply theme to useThemeStore - SINGLE SOURCE OF TRUTH
+      // FIXED: Use correct hook name
       useThemeStore.getState().setTheme(selectedTheme.themeData);
       console.log('🎨 Theme applied to useThemeStore (SoT):', selectedTheme.name);
     } else {
-      // Legacy path (for rollback if needed)
       console.warn('🔙 Using legacy theme application path');
       const walletStyle = convertThemeToWalletStyle(selectedTheme.themeData);
       useWalletCustomizationStore.getState().setWalletStyle(walletStyle);
@@ -251,7 +239,6 @@ export const useThemeSelector = () => {
     return themes.find(t => t.id === activeThemeId);
   };
 
-  // Explicit apply method for external use
   const applyThemeById = (themeId: string) => {
     const selectedTheme = themes.find(t => t.id === themeId);
     if (selectedTheme && selectedTheme.themeData) {

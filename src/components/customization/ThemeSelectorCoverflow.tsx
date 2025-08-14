@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,11 +13,9 @@ import { withRenderGuard, once } from '@/utils/guard';
 import { THEME_SOT_IS_ZUSTAND } from '@/config/flags';
 
 const ThemeSelectorCoverflow: React.FC = () => {
-  // Render guard for debugging
   const guard = withRenderGuard("ThemeSelectorCoverflow");
   guard();
 
-  // React diagnostics in dev mode
   if (import.meta.env.DEV) { 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     import("@/utils/reactDiag").then(m => m.logReactIdentity("Coverflow"));
@@ -28,7 +25,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
-  // Enhanced processing protection
   const isProcessingRef = useRef(false);
   const lastClickTimeRef = useRef(0);
   const clickCountRef = useRef(0);
@@ -50,11 +46,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Enhanced click protection with rate limiting
   const handleThemeClick = once(async (theme: any) => {
     const now = Date.now();
     
-    // Rate limiting: max 1 click per 500ms
     if (now - lastClickTimeRef.current < 500) {
       console.log('🚫 Click ignored - rate limited');
       return;
@@ -62,7 +56,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
     
     lastClickTimeRef.current = now;
     
-    // Prevent processing or repeated clicks on same theme in apply mode
     if (isProcessingRef.current) {
       console.log('🚫 Click ignored - already processing');
       return;
@@ -73,7 +66,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
       return;
     }
     
-    // Click count protection
     clickCountRef.current++;
     if (clickCountRef.current > 10) {
       console.error('🚨 Too many clicks detected, cooling down...');
@@ -88,19 +80,16 @@ const ThemeSelectorCoverflow: React.FC = () => {
       console.log(`👆 Theme click: ${theme.name} (mode: ${mode}) - attempt ${clickCountRef.current}`);
       
       if (mode === "apply") {
-        // Apply mode - direct theme application using SoT
         if (!theme.themeData) {
           toast.error('Theme data not loaded. Try switching to "Inspire AI" mode.');
           return;
         }
         
         if (THEME_SOT_IS_ZUSTAND) {
-          // Use SoT approach with enhanced logging
           console.log('🎨 Applying theme via SoT:', theme.name);
           applyTheme(theme);
           toast.success(`🎨 Applied theme: ${theme.name}`);
         } else {
-          // Legacy approach with sample_patch
           if (!theme.sample_patch || theme.sample_patch.length === 0) {
             toast.error('Theme has no direct patch. Use "Inspire AI" mode.');
             return;
@@ -122,7 +111,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
         }
         
       } else {
-        // Inspire AI mode - use preset as style reference
         try {
           console.log('✨ Inspiring from theme:', theme.name);
           const response = await callPatch({
@@ -158,7 +146,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
       toast.error(`Error processing theme: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       isProcessingRef.current = false;
-      // Reset click count after successful operation
       setTimeout(() => { clickCountRef.current = Math.max(0, clickCountRef.current - 1); }, 1000);
     }
   });
@@ -175,13 +162,11 @@ const ThemeSelectorCoverflow: React.FC = () => {
 
   return (
     <div className="w-full py-8 space-y-6">
-      {/* Theme Info Section */}
       <div className="text-center space-y-4">
         <h3 className="text-xl font-semibold text-white">
           Choose Your Theme
         </h3>
         
-        {/* Mode Toggle */}
         <div className="flex items-center justify-center gap-4">
           <Label htmlFor="mode-toggle" className="text-white/80">
             Apply preset
@@ -215,9 +200,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         )}
       </div>
 
-      {/* Coverflow Container */}
       <div className="relative">
-        {/* Navigation Buttons */}
         <Button
           variant="ghost"
           size="icon"
@@ -238,7 +221,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <ChevronRight className="h-5 w-5 text-white" />
         </Button>
 
-        {/* Embla Carousel */}
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex items-center gap-4 px-16">
             {themes.map((theme) => {
@@ -267,7 +249,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     }
                   `}>
                     <div className="aspect-[3/4] relative">
-                      {/* Theme Cover Image */}
                       <div 
                         className="w-full h-full rounded-lg"
                         style={{
@@ -278,7 +259,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         }}
                       />
 
-                      {/* Active Indicator */}
                       {isActive && (
                         <div className="absolute inset-0 border-2 border-purple-400 rounded-lg animate-pulse">
                           <div className="absolute top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
@@ -287,23 +267,19 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Mode Indicator */}
                       <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
                         {mode === "apply" ? "Apply" : "Inspire"}
                       </div>
 
-                      {/* Processing Indicator */}
                       {isProcessingRef.current && isSelected && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-400 border-t-transparent"></div>
                         </div>
                       )}
 
-                      {/* Hover Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
 
-                    {/* Theme Info */}
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
                       <h5 className="text-white font-medium text-sm truncate">
                         {theme.name}
@@ -320,7 +296,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
         </div>
       </div>
 
-      {/* Theme Dots Indicator */}
       <div className="flex justify-center gap-2">
         {themes.map((theme) => (
           <button
@@ -338,7 +313,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
         ))}
       </div>
       
-      {/* Debug Info (dev only) */}
       {import.meta.env.DEV && (
         <div className="text-xs text-white/40 text-center">
           Updates: {clickCountRef.current}/10 | Processing: {isProcessingRef.current ? 'Yes' : 'No'}

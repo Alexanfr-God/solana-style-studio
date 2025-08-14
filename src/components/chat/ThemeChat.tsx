@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Undo2, Redo2, Send, GitCompare, Wand2, History } from 'lucide-react';
 import { toast } from 'sonner';
-import { useThemeStore, useTheme, useThemeHistory, useThemeActions } from '@/state/themeStore';
+import { useThemeStore, useWalletTheme, useThemeHistory, useThemeActions } from '@/state/themeStore';
 import { callPatch, getPresets, type PatchRequest } from '@/lib/api/client';
 import { v4 as uuidv4 } from 'uuid';
 import { withRenderGuard, once } from '@/utils/guard';
@@ -31,11 +30,9 @@ const AVAILABLE_PAGES = [
 ];
 
 const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
-  // Render guard for debugging
   const guard = withRenderGuard("ThemeChat");
   guard();
 
-  // Диагностика React дубликатов в dev режиме
   if (import.meta.env.DEV) { 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     import("@/utils/reactDiag").then(m => m.logReactIdentity("ThemeChat"));
@@ -49,7 +46,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   
   const { isLoading, error, setLoading, setError } = useThemeStore();
-  const theme = useTheme();
+  const theme = useWalletTheme();
   const { history, currentIndex, canUndo, canRedo } = useThemeHistory();
   const { applyPatch, undo, redo, setTheme } = useThemeActions();
 
@@ -78,12 +75,11 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   // Set initial theme only once on mount - NO theme dependency to prevent loops
   useEffect(() => {
     if (initialTheme) {
+      console.log('🎨 Setting initial theme in ThemeChat (one-time only)');
       setTheme(initialTheme);
-      console.log('🎨 Initial theme set in ThemeChat');
     }
-  }, [initialTheme, setTheme]); // Only depend on initialTheme and setTheme, NOT on theme
+  }, [setTheme]); // Only depend on setTheme function, NOT on theme state
 
-  // Protected submit handler - отправка только по submit, без эффектов на theme
   const handleApplyPatch = once(async () => {
     if (!userPrompt.trim() || isProcessing) {
       if (!userPrompt.trim()) {
@@ -115,7 +111,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
         return;
       }
 
-      // Create patch entry for history
       const patchEntry = {
         id: uuidv4(),
         operations: response.patch,
@@ -126,10 +121,9 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
         theme: response.theme
       };
 
-      // Apply patch to store (this will update theme and add to history)
       applyPatch(patchEntry);
       toast.success('🎨 Theme updated successfully!');
-      setUserPrompt(''); // Clear input after successful application
+      setUserPrompt('');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setError(errorMessage);
@@ -186,7 +180,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
             </p>
           </div>
           
-          {/* History indicator */}
           {history.length > 0 && (
             <div className="flex items-center gap-2 text-xs text-white/60">
               <History className="h-4 w-4" />
@@ -195,7 +188,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
           )}
         </div>
 
-        {/* Error display */}
         {error && (
           <div className="mt-2 p-2 bg-red-500/20 border border-red-500/30 rounded text-sm text-red-300">
             {error}
@@ -204,7 +196,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Page and Preset Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-white text-sm">Target Page</Label>
@@ -257,7 +248,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
         <Separator className="bg-white/10" />
 
-        {/* Prompt Input */}
         <div className="space-y-2">
           <Label className="text-white text-sm">Theme Modification Request</Label>
           <Textarea
@@ -273,10 +263,8 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
           </p>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            {/* Undo/Redo */}
             <Button
               variant="outline"
               size="sm"
@@ -299,7 +287,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               Redo
             </Button>
 
-            {/* Compare mode toggle */}
             <Button
               variant="outline"
               size="sm"
@@ -312,7 +299,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
             </Button>
           </div>
 
-          {/* Apply button */}
           <Button
             onClick={handleApplyPatch}
             disabled={isLoading || isProcessing || !userPrompt.trim()}
@@ -324,7 +310,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
           </Button>
         </div>
 
-        {/* Current Status */}
         {history.length > 0 && (
           <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded">
             <div className="text-sm text-purple-300">

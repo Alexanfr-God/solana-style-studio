@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { Operation } from 'fast-json-patch';
 import { applyJsonPatch } from '@/services/llmPatchService';
@@ -40,6 +39,8 @@ interface ThemeState {
   getCurrentPatch: () => ThemePatch | null;
 }
 
+let updateCounter = 0;
+
 export const useThemeStore = create<ThemeState>()((set, get) => ({
   // Initial state
   theme: {},
@@ -50,20 +51,23 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
 
   // Set base theme (without adding to history) - SINGLE ATOMIC UPDATE
   setTheme: (theme: any) => {
+    updateCounter++;
+    const callStack = new Error().stack;
+    console.log(`🎨 setTheme called (#${updateCounter}) from:`, callStack?.split('\n')[2]);
+    
     const state = get();
     
-    // Simple comparison to prevent redundant updates
+    // Enhanced comparison to prevent redundant updates
     try {
       const currentThemeStr = JSON.stringify(state.theme);
       const newThemeStr = JSON.stringify(theme);
       
       if (currentThemeStr === newThemeStr) {
-        console.log('🔄 Theme unchanged, skipping update');
+        console.log(`🔄 Theme unchanged (#${updateCounter}), skipping update`);
         return;
       }
     } catch (error) {
-      // If comparison fails, proceed with update
-      console.warn('Theme comparison failed, proceeding with update');
+      console.warn(`Theme comparison failed (#${updateCounter}), proceeding with update`);
     }
     
     // Single atomic update - no intermediate states
@@ -72,7 +76,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       error: null
     });
     
-    console.log('🎨 Theme set successfully');
+    console.log(`✅ Theme set successfully (#${updateCounter})`);
   },
 
   // Apply patch and add to history - SINGLE ATOMIC UPDATE
@@ -80,17 +84,11 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     const state = get();
     
     try {
-      // Apply patch to current theme
       const newTheme = applyJsonPatch(state.theme, patch.operations);
-      
-      // Update patch with the resulting theme
       const patchWithTheme = { ...patch, theme: newTheme };
-      
-      // Remove any future history if we're not at the end
       const newHistory = state.history.slice(0, state.currentIndex + 1);
       newHistory.push(patchWithTheme);
       
-      // Single atomic state update - everything at once
       set({
         theme: newTheme,
         history: newHistory,
@@ -116,9 +114,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       const newIndex = state.currentIndex - 1;
       const targetTheme = newIndex >= 0 
         ? state.history[newIndex].theme 
-        : {}; // Base theme if we go before first patch
+        : {};
       
-      // Single atomic update
       set({
         theme: targetTheme,
         currentIndex: newIndex,
@@ -145,7 +142,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       const newIndex = state.currentIndex + 1;
       const targetTheme = state.history[newIndex].theme;
       
-      // Single atomic update
       set({
         theme: targetTheme,
         currentIndex: newIndex,
@@ -200,8 +196,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   }
 }));
 
-// Selector hooks for performance - pure selectors only
-export const useTheme = () => useThemeStore(state => state.theme);
+// RENAMED: useTheme -> useWalletTheme to avoid conflict
+export const useWalletTheme = () => useThemeStore(state => state.theme);
 export const useThemeHistory = () => useThemeStore(state => ({
   history: state.history,
   currentIndex: state.currentIndex,
