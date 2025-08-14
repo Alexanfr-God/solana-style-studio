@@ -1,0 +1,262 @@
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://walletcc.com/schemas/theme/v1.0.0",
+  "title": "WCC Wallet Theme Schema",
+  "description": "JSON Schema for WCC wallet themes with strict validation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "meta", "colors", "typography", "icons", "pages"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "author", "createdAt"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "walletTarget": {
+          "type": "string",
+          "enum": ["demo", "phantom", "metamask", "rabby", "walletconnect"]
+        }
+      }
+    },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "secondary", "background", "surface", "success", "warning", "danger"],
+      "properties": {
+        "primary": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+        },
+        "secondary": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+        },
+        "background": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+        },
+        "surface": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+        },
+        "success": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+        },
+        "warning": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+        },
+        "danger": {
+          "type": "string",
+          "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+        }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fontFamily", "scale"],
+      "properties": {
+        "fontFamily": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["xs", "sm", "base", "lg", "xl"],
+          "properties": {
+            "xs": {
+              "type": "number",
+              "minimum": 8,
+              "maximum": 72
+            },
+            "sm": {
+              "type": "number",
+              "minimum": 8,
+              "maximum": 72
+            },
+            "base": {
+              "type": "number",
+              "minimum": 8,
+              "maximum": 72
+            },
+            "lg": {
+              "type": "number",
+              "minimum": 8,
+              "maximum": 72
+            },
+            "xl": {
+              "type": "number",
+              "minimum": 8,
+              "maximum": 72
+            }
+          }
+        }
+      }
+    },
+    "icons": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["set", "mapping"],
+      "properties": {
+        "set": {
+          "type": "string",
+          "enum": ["lucide", "phosphor", "heroicons", "custom"]
+        },
+        "mapping": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pages": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Za-z0-9_-]+$": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["layout", "components"],
+          "properties": {
+            "layout": {
+              "type": "string",
+              "enum": ["login", "dashboard", "send", "receive", "swap", "nft", "settings"]
+            },
+            "components": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["visible", "bgImage", "bgFit", "radius", "shadow", "padding", "color"],
+                "properties": {
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "bgImage": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "bgFit": {
+                    "type": "string",
+                    "enum": ["cover", "contain", "pattern"]
+                  },
+                  "radius": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 32
+                  },
+                  "shadow": {
+                    "type": "string",
+                    "enum": ["none", "sm", "md", "lg"]
+                  },
+                  "padding": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 48
+                  },
+                  "color": {
+                    "type": "string",
+                    "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+                  },
+                  "backgroundColor": {
+                    "type": "string",
+                    "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+                  },
+                  "textColor": {
+                    "type": "string",
+                    "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+                  },
+                  "borderColor": {
+                    "type": "string",
+                    "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "meta": {
+        "name": "Example Theme",
+        "author": "WCC",
+        "createdAt": "2024-08-14T12:00:00Z",
+        "walletTarget": "demo"
+      },
+      "colors": {
+        "primary": "#7C3AED",
+        "secondary": "#3B82F6",
+        "background": "#0B0B0F",
+        "surface": "#1B1B23",
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "danger": "#EF4444"
+      },
+      "typography": {
+        "fontFamily": "Inter",
+        "scale": {
+          "xs": 12,
+          "sm": 14,
+          "base": 16,
+          "lg": 18,
+          "xl": 24
+        }
+      },
+      "icons": {
+        "set": "lucide",
+        "mapping": {
+          "home": "Home",
+          "send": "Send"
+        }
+      },
+      "pages": {
+        "login": {
+          "layout": "login",
+          "components": {
+            "heroPanel": {
+              "visible": true,
+              "padding": 24,
+              "radius": 16,
+              "shadow": "md",
+              "bgFit": "cover",
+              "bgImage": null,
+              "color": "#FFFFFF"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

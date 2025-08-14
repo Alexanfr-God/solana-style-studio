@@ -1,0 +1,109 @@
+
+{
+  "schemaVersion": "1.0.0",
+  "meta": {
+    "name": "WCC Baseline",
+    "author": "WCC",
+    "createdAt": "2024-08-14T12:00:00Z",
+    "walletTarget": "demo"
+  },
+  "colors": {
+    "primary": "#7C3AED",
+    "secondary": "#3B82F6",
+    "background": "#0B0B0F",
+    "surface": "#1B1B23",
+    "success": "#10B981",
+    "warning": "#F59E0B",
+    "danger": "#EF4444"
+  },
+  "typography": {
+    "fontFamily": "Inter",
+    "scale": {
+      "xs": 12,
+      "sm": 14,
+      "base": 16,
+      "lg": 18,
+      "xl": 24
+    }
+  },
+  "icons": {
+    "set": "lucide",
+    "mapping": {
+      "home": "Home",
+      "send": "Send",
+      "swap": "Repeat2",
+      "receive": "ArrowDown",
+      "nft": "Image",
+      "settings": "Settings",
+      "user": "User",
+      "wallet": "Wallet"
+    }
+  },
+  "pages": {
+    "login": {
+      "layout": "login",
+      "components": {
+        "heroPanel": {
+          "visible": true,
+          "padding": 24,
+          "radius": 16,
+          "shadow": "md",
+          "bgFit": "cover",
+          "bgImage": null,
+          "color": "#FFFFFF",
+          "backgroundColor": "#1B1B23",
+          "textColor": "#FFFFFF"
+        },
+        "loginButton": {
+          "visible": true,
+          "padding": 16,
+          "radius": 12,
+          "shadow": "sm",
+          "bgFit": "contain",
+          "bgImage": null,
+          "color": "#FFFFFF",
+          "backgroundColor": "#7C3AED",
+          "textColor": "#FFFFFF"
+        }
+      }
+    },
+    "dashboard": {
+      "layout": "dashboard",
+      "components": {
+        "balanceCard": {
+          "visible": true,
+          "padding": 16,
+          "radius": 16,
+          "shadow": "sm",
+          "bgFit": "cover",
+          "bgImage": null,
+          "color": "#FFFFFF",
+          "backgroundColor": "#1B1B23",
+          "textColor": "#FFFFFF"
+        },
+        "actionsBar": {
+          "visible": true,
+          "padding": 12,
+          "radius": 12,
+          "shadow": "none",
+          "bgFit": "contain",
+          "bgImage": null,
+          "color": "#FFFFFF",
+          "backgroundColor": "#0B0B0F",
+          "textColor": "#FFFFFF"
+        },
+        "assetsList": {
+          "visible": true,
+          "padding": 8,
+          "radius": 8,
+          "shadow": "none",
+          "bgFit": "contain",
+          "bgImage": null,
+          "color": "#FFFFFF",
+          "backgroundColor": "#1B1B23",
+          "textColor": "#FFFFFF"
+        }
+      }
+    }
+  }
+}
