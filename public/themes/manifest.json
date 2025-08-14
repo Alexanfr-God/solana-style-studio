@@ -132,5 +132,12 @@
     "description": "Iconic Simpsons themed wallet design with cartoon aesthetics and Springfield vibes",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
     "sample_patch": []
+  },
+  {
+    "id": "space",
+    "name": "Space Theme",
+    "description": "Futuristic space-themed wallet design with cosmic aesthetics and stellar visuals",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
+    "sample_patch": []
   }
 ]
