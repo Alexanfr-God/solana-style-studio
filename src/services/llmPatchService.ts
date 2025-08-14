@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Operation } from 'fast-json-patch';
+import { applyPatch, type Operation } from 'fast-json-patch';
 
 export interface PatchRequest {
   themeId: string;
@@ -12,6 +12,14 @@ export interface PatchRequest {
 export interface PatchResponse {
   patch: Operation[];
   theme: any;
+}
+
+function applyJsonPatch(doc: any, ops: Operation[]) {
+  const res = applyPatch(structuredClone(doc), ops, /*validate*/ true, /*mutateDocument*/ false);
+  if (res.testFailures && res.testFailures.length > 0) {
+    throw new Error("JSON Patch test operation failed");
+  }
+  return res.newDocument;
 }
 
 export class LlmPatchService {
@@ -70,9 +78,14 @@ export class LlmPatchService {
   }
 
   static async createProject(name: string) {
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) throw new Error(`Auth error: ${userError.message}`);
+    if (!user) throw new Error('Unauthorized');
+
     const { data, error } = await supabase
       .from('projects')
-      .insert({ name })
+      .insert({ name, user_id: user.id })
       .select()
       .single();
 
@@ -101,5 +114,23 @@ export class LlmPatchService {
     }
 
     return data;
+  }
+
+  // Utility method to apply and validate JSON patch
+  static applyAndValidateJsonPatch(currentTheme: any, patchOps: Operation[], schema?: any): any {
+    try {
+      // Apply patch to a copy
+      const updatedTheme = applyJsonPatch(currentTheme, patchOps);
+
+      // If schema is provided, validate the result
+      if (schema) {
+        // Note: AJV validation would be added here when schema validation is implemented
+        // For now, we just return the updated theme
+      }
+
+      return updatedTheme;
+    } catch (error) {
+      throw new Error(`Patch validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }
