@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 import { applyPatch, type Operation } from 'fast-json-patch';
 
@@ -14,12 +15,25 @@ export interface PatchResponse {
   theme: any;
 }
 
-function applyJsonPatch(doc: any, ops: Operation[]) {
-  const res = applyPatch(structuredClone(doc), ops, /*validate*/ true, /*mutateDocument*/ false);
-  if (res.testFailures && res.testFailures.length > 0) {
-    throw new Error("JSON Patch test operation failed");
+function safeClone<T>(doc: T): T {
+  // structuredClone есть в современных рантаймах; добавляем фоллбэк
+  return (globalThis as any).structuredClone
+    ? (structuredClone as any)(doc)
+    : JSON.parse(JSON.stringify(doc));
+}
+
+/**
+ * Применяет JSON Patch c валидацией.
+ * Если есть некорректная операция (включая провал test), applyPatch бросит ошибку.
+ */
+export function applyJsonPatch<T>(doc: T, ops: Operation[]): T {
+  try {
+    const res = applyPatch(safeClone(doc) as any, ops, /*validate*/ true, /*mutateDocument*/ false);
+    return res.newDocument as T;
+  } catch (err) {
+    // Пробрасываем дальше с более понятным сообщением
+    throw new Error("JSON Patch failed: " + (err instanceof Error ? err.message : String(err)));
   }
-  return res.newDocument;
 }
 
 export class LlmPatchService {
@@ -126,6 +140,10 @@ export class LlmPatchService {
       if (schema) {
         // Note: AJV validation would be added here when schema validation is implemented
         // For now, we just return the updated theme
+        // Example:
+        // if (!ajvValidate(updatedTheme)) {
+        //   throw new Error("Schema validation failed: " + JSON.stringify(ajvValidate.errors));
+        // }
       }
 
       return updatedTheme;
@@ -134,3 +152,4 @@ export class LlmPatchService {
     }
   }
 }
+
