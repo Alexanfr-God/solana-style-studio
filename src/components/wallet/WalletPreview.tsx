@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { useCustomizationStore, WalletStyle, LayerType } from '../../stores/customizationStore';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,6 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { toast } from 'sonner';
 import MintNftButton from './ExportToIpfsButton';
 import WalletNftCard from './WalletNftCard';
-import ImageFeedbackWrapper from '@/components/feedback/ImageFeedbackWrapper';
 
 // Render Login Screen UI
 const LoginScreen = ({ style }: { style: WalletStyle }) => {
@@ -238,12 +236,6 @@ const WalletPreview = () => {
   const walletPreviewRef = useRef<HTMLDivElement>(null);
   const [nftData, setNftData] = useState<{ ipfsUrl: string, imageUrl: string } | null>(null);
 
-  // For feedback purposes
-  const previewImageUrl = "/placeholder.svg"; // This would ideally be the actual rendered image
-  const previewPrompt = activeLayer === 'login' ? 
-    "Login screen with custom styling" : 
-    "Wallet screen with custom styling";
-
   const getShortenedAddress = (address: string) => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
@@ -274,15 +266,13 @@ const WalletPreview = () => {
             onClose={closeNftCard} 
           />
         ) : (
-          <ImageFeedbackWrapper imageUrl={previewImageUrl} prompt={previewPrompt}>
-            <div ref={walletPreviewRef}>
-              {activeLayer === 'login' ? (
-                <LoginScreen style={currentStyle} />
-              ) : (
-                <WalletScreen style={currentStyle} />
-              )}
-            </div>
-          </ImageFeedbackWrapper>
+          <div ref={walletPreviewRef}>
+            {activeLayer === 'login' ? (
+              <LoginScreen style={currentStyle} />
+            ) : (
+              <WalletScreen style={currentStyle} />
+            )}
+          </div>
         )}
         
         <div className="absolute top-4 right-4 flex gap-2">
