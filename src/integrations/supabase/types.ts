@@ -116,39 +116,6 @@ export type Database = {
         }
         Relationships: []
       }
-      generated_images: {
-        Row: {
-          created_at: string | null
-          generation_mode: string
-          id: string
-          metadata: Json | null
-          prompt: string
-          public_url: string
-          storage_path: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          generation_mode: string
-          id?: string
-          metadata?: Json | null
-          prompt: string
-          public_url: string
-          storage_path: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          generation_mode?: string
-          id?: string
-          metadata?: Json | null
-          prompt?: string
-          public_url?: string
-          storage_path?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       icon_variants: {
         Row: {
           created_at: string | null
@@ -176,39 +143,6 @@ export type Database = {
           storage_file_name?: string
           storage_path?: string
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      image_feedback: {
-        Row: {
-          created_at: string | null
-          feedback_text: string | null
-          id: string
-          image_url: string
-          prompt: string
-          rating: number
-          tags: string[] | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          feedback_text?: string | null
-          id?: string
-          image_url: string
-          prompt: string
-          rating: number
-          tags?: string[] | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          feedback_text?: string | null
-          id?: string
-          image_url?: string
-          prompt?: string
-          rating?: number
-          tags?: string[] | null
-          user_id?: string | null
         }
         Relationships: []
       }
