@@ -397,6 +397,7 @@ export type Database = {
           last_login_at: string | null
           metadata: Json
           updated_at: string
+          user_id: string | null
           wallet_address: string
         }
         Insert: {
@@ -406,6 +407,7 @@ export type Database = {
           last_login_at?: string | null
           metadata?: Json
           updated_at?: string
+          user_id?: string | null
           wallet_address: string
         }
         Update: {
@@ -415,6 +417,7 @@ export type Database = {
           last_login_at?: string | null
           metadata?: Json
           updated_at?: string
+          user_id?: string | null
           wallet_address?: string
         }
         Relationships: []
