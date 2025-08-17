@@ -435,6 +435,10 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_nonces: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_final_icon_path: {
         Args: { p_element_id: string; p_user_id?: string }
         Returns: string
