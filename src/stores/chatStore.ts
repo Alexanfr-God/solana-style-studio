@@ -5,13 +5,15 @@ import { useWalletCustomizationStore } from './walletCustomizationStore';
 import { WALLET_ELEMENTS_REGISTRY, getAllCategories } from '@/components/wallet/WalletElementsRegistry';
 import { walletStructureService } from '@/services/walletStructureService';
 import { toast } from 'sonner';
+import { callPatch, type PatchRequest } from '@/lib/api/client';
+import { applyPatch, type Operation } from 'fast-json-patch';
 
 function detectLanguage(text: string): 'ru' | 'en' {
   return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'en';
 }
 
-// ✅ ИСПРАВЛЕНИЕ ЭТАП 1: Унифицируем режимы - оставляем только один источник истины
-export type ChatMode = 'analysis' | 'leonardo' | 'replicate';
+// ✅ ИСПРАВЛЕНИЕ ЭТАП 1: Унифицируем режимы - добавляем theme-patch
+export type ChatMode = 'analysis' | 'leonardo' | 'replicate' | 'theme-patch';
 
 interface ChatState {
   messages: ChatMessage[];
@@ -29,6 +31,12 @@ interface ChatState {
     changes: any;
     description: string;
   }>;
+
+  // New theme patch states
+  lastPatch: Operation[] | null;
+  isPreviewMode: boolean;
+  previewTheme: any;
+  originalTheme: any;
   
   // ✅ УБИРАЕМ imageGenerationMode - используем только chatMode
   setChatMode: (mode: ChatMode) => void;
@@ -51,6 +59,19 @@ interface ChatState {
     imageUrl?: string;
     analysisDepth?: 'basic' | 'detailed' | 'comprehensive';
   }) => Promise<void>;
+
+  // New theme patch methods
+  sendThemePatchMessage: (message: {
+    content: string;
+    themeId: string;
+    pageId: string;
+    presetId?: string;
+  }) => Promise<void>;
+  
+  applyPatchPreview: (patch: Operation[], theme: any) => void;
+  commitPatch: (themeId: string) => Promise<boolean>;
+  undoLastPatch: () => void;
+  getChangedPaths: () => string[];
   
   clearHistory: () => void;
   applyStyleChanges: (changes: any) => void;
@@ -208,6 +229,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
   chatHistory: {},
   
   styleHistory: [],
+
+  // New theme patch states
+  lastPatch: null,
+  isPreviewMode: false,
+  previewTheme: null,
+  originalTheme: null,
   
   setChatMode: (mode) => {
     console.log('🔄 [УНИФИЦИРОВАННЫЙ РЕЖИМ] Switching to:', mode);
@@ -222,6 +249,187 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setUserId: (userId) => {
     console.log('👤 Setting user ID:', userId);
     set({ userId });
+  },
+
+  // New theme patch message handler
+  sendThemePatchMessage: async (messageData) => {
+    const { messages, sessionId } = get();
+    
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: messageData.content,
+      timestamp: new Date(),
+    };
+
+    set({ 
+      messages: [...messages, userMessage],
+      isLoading: true 
+    });
+
+    try {
+      console.log('🎨 Sending theme patch request:', messageData);
+
+      const patchRequest: PatchRequest = {
+        themeId: messageData.themeId,
+        pageId: messageData.pageId,
+        presetId: messageData.presetId,
+        userPrompt: messageData.content
+      };
+
+      const response = await callPatch(patchRequest);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to generate patch');
+      }
+
+      if (!response.patch || response.patch.length === 0) {
+        toast.warning('No changes generated for this request');
+        
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          type: 'assistant',
+          content: 'No changes were needed for your request. The theme is already optimized!',
+          timestamp: new Date(),
+        };
+
+        set(state => ({
+          messages: [...state.messages, assistantMessage],
+          isLoading: false
+        }));
+        return;
+      }
+
+      // Apply patch locally for preview
+      get().applyPatchPreview(response.patch, response.theme);
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: `✨ Preview applied! I've made the requested changes to your theme. Use the Apply button to save these changes or Undo to revert.`,
+        timestamp: new Date(),
+        isPatchPreview: true,
+        patchOperations: response.patch,
+      };
+
+      set(state => ({
+        messages: [...state.messages, assistantMessage],
+        isLoading: false
+      }));
+
+      toast.success('🎨 Theme preview updated! Click Apply to save changes.');
+
+    } catch (error) {
+      console.error('❌ Theme patch error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      set(state => ({
+        messages: [...state.messages, {
+          id: `error-${Date.now()}`,
+          type: 'assistant',
+          content: `Sorry, there was an error generating the theme changes: ${errorMessage}`,
+          timestamp: new Date(),
+        }],
+        isLoading: false
+      }));
+
+      toast.error(`❌ Theme patch failed: ${errorMessage}`);
+    }
+  },
+
+  applyPatchPreview: (patch, theme) => {
+    console.log('🎨 Applying patch preview:', patch);
+    
+    const walletStore = useWalletCustomizationStore.getState();
+    const currentTheme = walletStore.walletStyle;
+    
+    // Store original theme for undo
+    if (!get().originalTheme) {
+      set({ originalTheme: JSON.parse(JSON.stringify(currentTheme)) });
+    }
+    
+    set({ 
+      lastPatch: patch,
+      isPreviewMode: true,
+      previewTheme: theme
+    });
+
+    // Apply to wallet store for immediate preview
+    if (theme) {
+      walletStore.applyUniversalStyle(theme);
+    }
+  },
+
+  commitPatch: async (themeId) => {
+    const { lastPatch, previewTheme } = get();
+    
+    if (!lastPatch || !previewTheme) {
+      toast.error('No changes to commit');
+      return false;
+    }
+
+    try {
+      console.log('💾 Committing patch to database:', themeId);
+      
+      // The patch is already applied locally, we just need to save it
+      // Using the same llm-patch endpoint to ensure consistency
+      const response = await callPatch({
+        themeId,
+        pageId: 'global', // Use global for commit
+        userPrompt: 'Commit current changes',
+        presetId: undefined
+      });
+
+      if (response.success) {
+        set({ 
+          isPreviewMode: false,
+          originalTheme: null
+        });
+        
+        toast.success('✅ Changes saved successfully!');
+        return true;
+      } else {
+        throw new Error(response.error || 'Failed to save changes');
+      }
+    } catch (error) {
+      console.error('❌ Failed to commit patch:', error);
+      toast.error(`Failed to save changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return false;
+    }
+  },
+
+  undoLastPatch: () => {
+    const { originalTheme, isPreviewMode } = get();
+    
+    if (!isPreviewMode || !originalTheme) {
+      toast.warning('Nothing to undo');
+      return;
+    }
+
+    console.log('↶ Undoing last patch');
+    
+    const walletStore = useWalletCustomizationStore.getState();
+    walletStore.applyUniversalStyle(originalTheme);
+    
+    set({
+      lastPatch: null,
+      isPreviewMode: false,
+      previewTheme: null,
+      originalTheme: null
+    });
+
+    toast.success('↶ Changes reverted');
+  },
+
+  getChangedPaths: () => {
+    const { lastPatch } = get();
+    
+    if (!lastPatch) return [];
+    
+    return lastPatch.map(op => op.path).filter((path, index, self) => 
+      self.indexOf(path) === index
+    );
   },
 
   preserveAndMergeStyles: (newChanges) => {

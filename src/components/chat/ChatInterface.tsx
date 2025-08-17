@@ -1,14 +1,17 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import MessageHistory from './MessageHistory';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Brain, MessageSquare, Palette, Settings, Sparkles, Image, X, GitCompare } from 'lucide-react';
+import { useChatStore, ChatMode } from '@/stores/chatStore';
+import { WALLET_ELEMENTS_REGISTRY } from '@/components/wallet/WalletElementsRegistry';
+import { ASSETS_ENABLED, ICON_LIB_ENABLED } from '@/config/flags';
 import MessageInput from './MessageInput';
-import ModeSelectionModal from './ModeSelectionModal';
-import { EnhancedSmartEditAssistant } from './EnhancedSmartEditAssistant';
-import { ElementContextDisplay } from './ElementContextDisplay';
-import { useChatStore } from '@/stores/chatStore';
-import { useSmartEditContext } from '@/hooks/useSmartEditContext';
-import { useWalletElements, WalletElement } from '@/hooks/useWalletElements';
+import MessageHistory from './MessageHistory';
+import ModeSelector from './ModeSelector';
+import ElementSelector from './ElementSelector';
 
 export interface ChatMessage {
   id: string;
@@ -16,223 +19,195 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   imageUrl?: string;
-  walletElement?: string;
   isGenerated?: boolean;
   autoApplied?: boolean;
+  walletElement?: string;
+  isPatchPreview?: boolean;
+  patchOperations?: any[];
 }
 
 interface ChatInterfaceProps {
-  selectedElementFromPreview?: string;
-  onElementChange?: (element: string) => void;
+  className?: string;
+  // Theme patch specific props
+  themeId?: string;
+  pageId?: string;
+  presetId?: string;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({
-  selectedElementFromPreview,
-  onElementChange
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
+  className = '',
+  themeId,
+  pageId = 'global',
+  presetId
 }) => {
+  const [selectedElement, setSelectedElement] = useState('');
+  const [isElementSelectorOpen, setIsElementSelectorOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
   const { 
     messages, 
     isLoading, 
-    chatMode,
-    sessionId,
-    sendMessage, 
-    sendImageGenerationMessage,
-    sendStyleAnalysis
+    chatMode, 
+    setChatMode, 
+    clearHistory,
+    isPreviewMode,
+    getChangedPaths
   } = useChatStore();
-  
-  const [selectedElement, setSelectedElement] = useState<string>('');
-  const { elements } = useWalletElements();
-  
-  const {
-    selectedElement: smartEditElement,
-    isEditMode,
-    updateSelectedElement,
-    setIsEditMode,
-    getSmartSuggestions,
-    contextualPrompt,
-    elementHistory
-  } = useSmartEditContext();
 
-  // Update selectedElement when element is selected from preview
-  React.useEffect(() => {
-    if (selectedElementFromPreview) {
-      setSelectedElement(selectedElementFromPreview);
-      
-      // Find the corresponding WalletElement for smart edit context
-      const foundElement = elements.find(el => 
-        el.selector === `.${selectedElementFromPreview}` || 
-        el.selector === selectedElementFromPreview ||
-        el.id === selectedElementFromPreview
-      );
-      
-      if (foundElement) {
-        updateSelectedElement(foundElement);
-        setIsEditMode(true);
-        console.log('🎯 Smart Edit context activated for:', foundElement.name);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleModeChange = (mode: ChatMode) => {
+    setChatMode(mode);
+    console.log('🎛️ Chat mode changed to:', mode);
+  };
+
+  const getAvailableModes = (): { mode: ChatMode; label: string; icon: React.ReactNode; description: string }[] => {
+    const baseModes = [
+      {
+        mode: 'analysis' as ChatMode,
+        label: 'Style Analysis',
+        icon: <Brain className="h-4 w-4" />,
+        description: 'Analyze and improve wallet styling'
       }
-      
-      console.log('🎯 Element auto-populated from preview:', selectedElementFromPreview);
+    ];
+
+    // Add theme-patch mode if themeId is provided
+    if (themeId) {
+      baseModes.push({
+        mode: 'theme-patch' as ChatMode,
+        label: 'Theme Patch',
+        icon: <Palette className="h-4 w-4" />,
+        description: 'Apply JSON patches to theme'
+      });
     }
-  }, [selectedElementFromPreview, elements, updateSelectedElement, setIsEditMode]);
 
-  // Notify parent when element changes
-  const handleElementSelect = (element: string) => {
-    setSelectedElement(element);
-    if (onElementChange) {
-      onElementChange(element);
+    // Add image generation modes based on feature flags
+    if (ASSETS_ENABLED) {
+      baseModes.push(
+        {
+          mode: 'leonardo' as ChatMode,
+          label: 'Leonardo AI',
+          icon: <Image className="h-4 w-4" />,
+          description: 'Generate backgrounds with Leonardo.ai'
+        },
+        {
+          mode: 'replicate' as ChatMode,
+          label: 'Replicate',
+          icon: <Sparkles className="h-4 w-4" />,
+          description: 'Create artistic backgrounds with Replicate'
+        }
+      );
     }
+
+    return baseModes;
   };
 
-  const handleSmartSuggestionClick = (suggestion: string) => {
-    console.log('🤖 Enhanced Smart suggestion clicked:', suggestion);
-    
-    // Create enhanced prompt with element context
-    const enhancedPrompt = smartEditElement 
-      ? `${suggestion}\n\nElement Context:\n${contextualPrompt}`
-      : suggestion;
-
-    // Send message based on current mode
-    switch (chatMode) {
-      case 'analysis':
-        sendStyleAnalysis({ 
-          content: enhancedPrompt, 
-          analysisDepth: 'comprehensive' 
-        });
-        break;
-      case 'leonardo':
-        sendImageGenerationMessage({ content: suggestion, mode: 'leonardo' });
-        break;
-      case 'replicate':
-        sendImageGenerationMessage({ content: suggestion, mode: 'replicate' });
-        break;
-      default:
-        sendMessage({ 
-          content: enhancedPrompt,
-          walletElement: smartEditElement?.selector || selectedElement
-        });
-    }
-  };
-
-  const handleStarterClick = (message: string) => {
-    console.log('🎯 Handling starter click for mode:', chatMode);
-    
-    // Enhanced message with element context if available
-    const enhancedMessage = smartEditElement && chatMode === 'analysis'
-      ? `${message}\n\nSelected Element: ${smartEditElement.name} (${smartEditElement.type})\n${contextualPrompt}`
-      : message;
-    
-    switch (chatMode) {
-      case 'analysis':
-        sendStyleAnalysis({ content: enhancedMessage, analysisDepth: 'comprehensive' });
-        break;
-      case 'leonardo':
-        sendImageGenerationMessage({ content: message, mode: 'leonardo' });
-        break;
-      case 'replicate':
-        sendImageGenerationMessage({ content: message, mode: 'replicate' });
-        break;
-      default:
-        sendMessage({ content: enhancedMessage });
-    }
-  };
-
-  const getModeTitle = () => {
-    const titles = {
-      'analysis': 'Smart Style Analysis',
-      'leonardo': 'Leonardo AI Background Generator',
-      'replicate': 'Replicate Art Background Generator'
-    };
-    return titles[chatMode] || 'AI Assistant';
-  };
-
-  const getModeDescription = () => {
-    const descriptions = {
-      'analysis': smartEditElement 
-        ? `Analyzing "${smartEditElement.name}" element. I'll provide contextual styling suggestions while preserving your design.`
-        : "Analyze your current wallet style and apply smart improvements. I'll preserve your background while enhancing colors, typography, and effects.",
-      'leonardo': "Generate stunning artistic backgrounds with Leonardo.ai. Your new background will be automatically applied to both lock and unlock screens.",
-      'replicate': "Create unique art backgrounds with Replicate. Perfect for creative and meme-style designs that will transform your wallet's appearance."
-    };
-    return descriptions[chatMode] || "AI-powered wallet customization assistant";
-  };
+  const availableModes = getAvailableModes();
+  const changedPaths = getChangedPaths();
 
   return (
-    <Card className="bg-black/30 backdrop-blur-md border-white/10 h-[835px] flex flex-col">
-      <CardContent className="p-4 h-full flex flex-col">
-        {/* Compact Header */}
-        <div className="flex-shrink-0 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-lg font-semibold text-white">
-                {getModeTitle()}
-              </h3>
-              <p className="text-sm text-white/70">
-                {getModeDescription()}
-              </p>
-            </div>
-            <ModeSelectionModal />
-          </div>
-          
-          {/* Enhanced Session Info */}
-          <div className="text-xs text-white/40 mb-2">
-            Session: {sessionId.split('_')[1]} | Mode: {chatMode} | Language: Auto-detect
-            {smartEditElement && (
-              <span className="text-purple-400 ml-2">
-                | Smart Edit: Active ({elementHistory.length} history)
-              </span>
+    <Card className={`bg-black/20 backdrop-blur-md border-white/10 ${className}`}>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-white flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-blue-400" />
+            AI Assistant
+            {isPreviewMode && (
+              <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 text-xs">
+                Preview ({changedPaths.length} changes)
+              </Badge>
             )}
+          </CardTitle>
+          
+          <div className="flex items-center gap-2">
+            {/* Compare button for theme-patch mode */}
+            {chatMode === 'theme-patch' && isPreviewMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-white/20 text-white/80 hover:text-white"
+                onClick={() => {
+                  // TODO: Implement compare functionality
+                  console.log('🔍 Compare changes:', changedPaths);
+                }}
+              >
+                <GitCompare className="h-4 w-4 mr-1" />
+                Compare
+              </Button>
+            )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearHistory}
+              className="border-white/20 text-white/80 hover:text-white"
+            >
+              Clear
+            </Button>
           </div>
         </div>
 
-        {/* Element Context Display */}
-        <div className="flex-shrink-0 mb-3">
-          <ElementContextDisplay 
-            element={smartEditElement} 
-            isVisible={isEditMode && !!smartEditElement} 
+        <p className="text-sm text-white/70">
+          {chatMode === 'theme-patch' 
+            ? 'Send theme modification requests to generate JSON patches'
+            : 'Get help with wallet styling, design, and customization'
+          }
+        </p>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Mode Selector */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-white/70">
+            <Settings className="h-4 w-4" />
+            Mode Selection:
+          </div>
+          <ModeSelector
+            currentMode={chatMode}
+            onModeChange={handleModeChange}
+            availableModes={availableModes}
           />
         </div>
 
-        {/* Enhanced Smart Edit Assistant */}
-        <div className="flex-shrink-0 mb-3">
-          <EnhancedSmartEditAssistant
-            selectedElement={smartEditElement}
-            isEditMode={isEditMode && chatMode === 'analysis'}
-            onSuggestionClick={handleSmartSuggestionClick}
-            elementHistory={elementHistory}
-          />
+        <Separator className="bg-white/10" />
+
+        {/* Element Selector - only show for non-theme-patch modes and when ICON_LIB_ENABLED */}
+        {chatMode !== 'theme-patch' && ICON_LIB_ENABLED && (
+          <>
+            <ElementSelector
+              selectedElement={selectedElement}
+              onElementSelect={setSelectedElement}
+              isOpen={isElementSelectorOpen}
+              onToggle={setIsElementSelectorOpen}
+              elements={WALLET_ELEMENTS_REGISTRY}
+            />
+            <Separator className="bg-white/10" />
+          </>
+        )}
+
+        {/* Message History */}
+        <div className="h-64 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+          <MessageHistory messages={messages} isLoading={isLoading} />
+          <div ref={messagesEndRef} />
         </div>
-        
-        {/* Expanded Message Area */}
-        <div className="flex-1 min-h-0 mb-4">
-          <MessageHistory 
-            messages={messages} 
-            isLoading={isLoading}
-            onStarterClick={handleStarterClick}
-            currentMode={chatMode}
-          />
-        </div>
-        
-        {/* Fixed Input Area */}
-        <div className="flex-shrink-0">
-          <MessageInput 
-            selectedElement={selectedElement}
-            onElementSelect={handleElementSelect}
-            currentMode={chatMode}
-          />
-          
-          {selectedElement && chatMode === 'analysis' && (
-            <div className="mt-2 p-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
-              <p className="text-sm text-purple-300">
-                Selected element: <span className="font-medium">{selectedElement}</span>
-                {smartEditElement && (
-                  <span className="text-green-400 ml-2">
-                    ✨ Smart Edit Active | Use ↑↓ for history
-                  </span>
-                )}
-              </p>
-            </div>
-          )}
-        </div>
+
+        <Separator className="bg-white/10" />
+
+        {/* Message Input */}
+        <MessageInput
+          selectedElement={selectedElement}
+          onElementSelect={setSelectedElement}
+          currentMode={chatMode}
+          themeId={themeId}
+          pageId={pageId}
+          presetId={presetId}
+        />
       </CardContent>
     </Card>
   );

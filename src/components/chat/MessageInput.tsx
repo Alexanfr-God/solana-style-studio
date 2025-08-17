@@ -1,8 +1,7 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2, Image, Brain, Sparkles, Upload, X } from 'lucide-react';
+import { Send, Loader2, Image, Brain, Sparkles, Upload, X, Palette, Check, Undo } from 'lucide-react';
 import { useChatStore, ChatMode } from '@/stores/chatStore';
 import { toast } from 'sonner';
 
@@ -11,6 +10,10 @@ interface MessageInputProps {
   selectedElement: string;
   onElementSelect: React.Dispatch<React.SetStateAction<string>>;
   currentMode?: ChatMode;
+  // Theme patch specific props
+  themeId?: string;
+  pageId?: string;
+  presetId?: string;
 }
 
 interface UploadedFile {
@@ -24,15 +27,28 @@ const MessageInput: React.FC<MessageInputProps> = ({
   disabled, 
   selectedElement, 
   onElementSelect,
-  currentMode 
+  currentMode,
+  themeId,
+  pageId = 'global',
+  presetId
 }) => {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Используем только chatMode
-  const { sendMessage, sendImageGenerationMessage, chatMode, isLoading: chatIsLoading } = useChatStore();
+  // ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Используем только chatMode + новые методы
+  const { 
+    sendMessage, 
+    sendImageGenerationMessage, 
+    sendThemePatchMessage,
+    chatMode, 
+    isLoading: chatIsLoading,
+    isPreviewMode,
+    commitPatch,
+    undoLastPatch,
+    getChangedPaths
+  } = useChatStore();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -99,7 +115,19 @@ const MessageInput: React.FC<MessageInputProps> = ({
       console.log('💬 [ИСПРАВЛЕНИЕ] Есть файл:', !!fileToSend);
 
       // ✅ ИСПРАВЛЕНИЕ ЭТАП 3: Четкая логика на основе единого chatMode
-      if (chatMode === 'leonardo') {
+      if (chatMode === 'theme-patch') {
+        if (!themeId) {
+          toast.error('Theme ID is required for theme patch mode');
+          return;
+        }
+        console.log('🎨 [THEME-PATCH] Вызываем theme patch через sendThemePatchMessage');
+        await sendThemePatchMessage({ 
+          content: currentMessage,
+          themeId,
+          pageId: pageId || 'global',
+          presetId
+        });
+      } else if (chatMode === 'leonardo') {
         console.log('🎨 [ИСПРАВЛЕНИЕ] Вызываем Leonardo генерацию через sendImageGenerationMessage');
         await sendImageGenerationMessage({ 
           content: currentMessage, 
@@ -127,6 +155,22 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
+  const handleApply = async () => {
+    if (!themeId) {
+      toast.error('Theme ID is required to apply changes');
+      return;
+    }
+
+    const success = await commitPatch(themeId);
+    if (success) {
+      toast.success('✅ Changes applied successfully!');
+    }
+  };
+
+  const handleUndo = () => {
+    undoLastPatch();
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -137,6 +181,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   // ✅ ИСПРАВЛЕНИЕ ЭТАП 2: Иконки и плейсхолдеры на основе chatMode
   const getModeIcon = () => {
     switch (chatMode) {
+      case 'theme-patch': return <Palette className="h-4 w-4 text-purple-500" />;
       case 'leonardo': return <Image className="h-4 w-4 text-green-500" />;
       case 'replicate': return <Sparkles className="h-4 w-4 text-purple-500" />;
       default: return <Brain className="h-4 w-4 text-blue-500" />;
@@ -145,6 +190,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   const getPlaceholder = () => {
     switch (chatMode) {
+      case 'theme-patch':
+        return 'Describe theme changes (e.g., "make background darker", "change buttons to blue")...';
       case 'leonardo':
         return 'Describe the background image you want Leonardo.ai to generate...';
       case 'replicate':
@@ -156,11 +203,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   const getModeDisplayName = () => {
     switch (chatMode) {
+      case 'theme-patch': return '🎨 Theme Patch Mode';
       case 'leonardo': return '🎨 Leonardo.ai Generation Mode';
       case 'replicate': return '🎨 Replicate Art Mode';
       default: return '🧠 Style Analysis Mode';
     }
   };
+
+  const showApplyUndo = chatMode === 'theme-patch' && isPreviewMode;
+  const changedPaths = getChangedPaths();
 
   return (
     <div className="space-y-3">
@@ -170,10 +221,44 @@ const MessageInput: React.FC<MessageInputProps> = ({
         <span className="font-medium">
           {getModeDisplayName()}
         </span>
-        {chatMode !== 'analysis' && (
+        {chatMode === 'theme-patch' && isPreviewMode && (
+          <span className="text-yellow-400 text-xs">→ Preview active ({changedPaths.length} changes)</span>
+        )}
+        {(chatMode === 'leonardo' || chatMode === 'replicate') && (
           <span className="text-green-400 text-xs">→ Will generate image</span>
         )}
       </div>
+
+      {/* Apply/Undo buttons for theme-patch mode */}
+      {showApplyUndo && (
+        <div className="flex items-center gap-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+          <div className="flex-1">
+            <p className="text-sm text-purple-300 font-medium">Preview Active</p>
+            <p className="text-xs text-purple-300/70">
+              Changed paths: {changedPaths.join(', ')}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleUndo}
+              size="sm"
+              variant="outline"
+              className="border-white/20 text-white/80 hover:text-white"
+            >
+              <Undo className="h-4 w-4 mr-1" />
+              Undo
+            </Button>
+            <Button
+              onClick={handleApply}
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Apply
+            </Button>
+          </div>
+        </div>
+      )}
       
       {/* File Preview */}
       {uploadedFile && (
@@ -214,15 +299,17 @@ const MessageInput: React.FC<MessageInputProps> = ({
         
         {/* File Upload Button */}
         <div className="flex flex-col gap-2">
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || isLoading || chatIsLoading}
-            size="icon"
-            variant="outline"
-            className="border-white/20 text-white/80 hover:text-white hover:bg-white/10"
-          >
-            <Upload className="h-4 w-4" />
-          </Button>
+          {chatMode !== 'theme-patch' && (
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || isLoading || chatIsLoading}
+              size="icon"
+              variant="outline"
+              className="border-white/20 text-white/80 hover:text-white hover:bg-white/10"
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
+          )}
           
           {/* Send Button */}
           <Button

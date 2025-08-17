@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Operation } from 'fast-json-patch';
 
@@ -59,9 +60,10 @@ export async function prepareMint(themeId: string): Promise<{
 
 /**
  * Call the LLM patch service to generate theme modifications
+ * Enhanced with better error handling and success/failure responses
  */
 export async function callPatch(request: PatchRequest): Promise<PatchResponse> {
-  console.log('🚀 Calling patch service:', request);
+  console.log('🎨 Calling LLM patch service:', request);
   
   try {
     const { data, error } = await supabase.functions.invoke('llm-patch', {
@@ -69,7 +71,7 @@ export async function callPatch(request: PatchRequest): Promise<PatchResponse> {
     });
 
     if (error) {
-      console.error('❌ Patch service error:', error);
+      console.error('❌ LLM patch service error:', error);
       return {
         patch: [],
         theme: null,
@@ -83,11 +85,12 @@ export async function callPatch(request: PatchRequest): Promise<PatchResponse> {
         patch: [],
         theme: null,
         success: false,
-        error: 'No response from patch service'
+        error: 'No response from LLM patch service'
       };
     }
 
     if (data.error) {
+      console.error('❌ LLM patch data error:', data.error);
       return {
         patch: [],
         theme: null,
@@ -96,22 +99,36 @@ export async function callPatch(request: PatchRequest): Promise<PatchResponse> {
       };
     }
 
-    console.log('✅ Patch service response:', data);
+    // Validate that we have a proper patch response
+    if (!Array.isArray(data.patch)) {
+      console.warn('⚠️ Invalid patch format received:', data);
+      return {
+        patch: [],
+        theme: data.theme || null,
+        success: false,
+        error: 'Invalid patch format received from service'
+      };
+    }
+
+    console.log('✅ LLM patch service success:', {
+      patchOperations: data.patch.length,
+      hasTheme: !!data.theme
+    });
     
     return {
-      patch: data.patch || [],
+      patch: data.patch,
       theme: data.theme,
       success: true
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('❌ Patch call failed:', error);
+    console.error('❌ LLM patch call failed:', error);
     
     return {
       patch: [],
       theme: null,
       success: false,
-      error: errorMessage
+      error: `Call failed: ${errorMessage}`
     };
   }
 }
