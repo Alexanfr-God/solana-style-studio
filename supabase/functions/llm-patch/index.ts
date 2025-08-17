@@ -18,14 +18,52 @@ interface PatchRequest {
 }
 
 interface PatchResponse {
-  patch: Operation[];
-  theme: any;
+  valid: boolean;
+  patch?: Operation[];
+  theme?: any;
+  errors?: ValidationError[];
+  executionTime?: number;
 }
+
+interface ValidationError {
+  path: string;
+  message: string;
+  expected?: any;
+  actual?: any;
+}
+
+// Cache for compiled schema
+let compiledSchema: any = null;
 
 function jsonResponse(data: any, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
+function formatValidationErrors(ajvErrors: any[]): ValidationError[] {
+  return ajvErrors.map(error => {
+    const path = error.instancePath || error.schemaPath || 'root';
+    let message = error.message || 'Validation failed';
+    
+    // Add more context for specific error types
+    if (error.keyword === 'pattern') {
+      message = `Value should match pattern ${error.schema}`;
+    } else if (error.keyword === 'enum') {
+      message = `Value should be one of: ${error.schema.join(', ')}`;
+    } else if (error.keyword === 'required') {
+      message = `Missing required property: ${error.params?.missingProperty}`;
+    } else if (error.keyword === 'type') {
+      message = `Expected ${error.schema}, got ${typeof error.data}`;
+    }
+
+    return {
+      path: path.replace(/^\//, ''), // Remove leading slash
+      message,
+      expected: error.schema,
+      actual: error.data
+    };
   });
 }
 
@@ -68,6 +106,7 @@ async function callOpenAI(systemPrompt: string, userContext: string): Promise<Op
 }
 
 serve(async (req) => {
+  const startTime = performance.now();
   console.log(`🚀 LLM Patch Request received: ${req.method}`);
   
   if (req.method === 'OPTIONS') {
@@ -75,7 +114,10 @@ serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
+    return jsonResponse({ 
+      valid: false,
+      errors: [{ path: 'request', message: 'Method not allowed' }]
+    }, 405);
   }
 
   try {
@@ -86,7 +128,10 @@ serve(async (req) => {
     // Get user from auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return jsonResponse({ error: 'Authorization required' }, 401);
+      return jsonResponse({ 
+        valid: false,
+        errors: [{ path: 'auth', message: 'Authorization required' }]
+      }, 401);
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(
@@ -94,14 +139,20 @@ serve(async (req) => {
     );
 
     if (authError || !user) {
-      return jsonResponse({ error: 'Invalid authorization' }, 401);
+      return jsonResponse({ 
+        valid: false,
+        errors: [{ path: 'auth', message: 'Invalid authorization' }]
+      }, 401);
     }
 
     const requestBody: PatchRequest = await req.json();
     const { themeId, pageId, presetId, userPrompt } = requestBody;
 
     if (!themeId || !pageId || !userPrompt) {
-      return jsonResponse({ error: 'Missing required fields: themeId, pageId, userPrompt' }, 400);
+      return jsonResponse({ 
+        valid: false,
+        errors: [{ path: 'request', message: 'Missing required fields: themeId, pageId, userPrompt' }]
+      }, 400);
     }
 
     console.log(`📋 Processing patch request for theme: ${themeId}, page: ${pageId}`);
@@ -118,19 +169,32 @@ serve(async (req) => {
 
     if (themeError || !themeData) {
       console.error('❌ Theme not found:', themeError);
-      return jsonResponse({ error: 'Theme not found or access denied' }, 404);
+      return jsonResponse({ 
+        valid: false,
+        errors: [{ path: 'theme', message: 'Theme not found or access denied' }]
+      }, 404);
     }
 
-    // 2. Get schema for validation
-    const { data: schemaData, error: schemaError } = await supabase
-      .from('schema_versions')
-      .select('schema')
-      .eq('version', themeData.schema_version)
-      .single();
+    // 2. Get or compile schema for validation
+    if (!compiledSchema) {
+      const { data: schemaData, error: schemaError } = await supabase
+        .from('schema_versions')
+        .select('schema')
+        .eq('version', themeData.schema_version)
+        .single();
 
-    if (schemaError || !schemaData) {
-      console.error('❌ Schema not found:', schemaError);
-      return jsonResponse({ error: 'Schema version not found' }, 500);
+      if (schemaError || !schemaData) {
+        console.error('❌ Schema not found:', schemaError);
+        return jsonResponse({ 
+          valid: false,
+          errors: [{ path: 'schema', message: 'Schema version not found' }]
+        }, 500);
+      }
+
+      const ajv = new Ajv({ strict: false });
+      addFormats(ajv);
+      compiledSchema = ajv.compile(schemaData.schema);
+      console.log('🔧 Schema compiled and cached');
     }
 
     // 3. Get preset data if presetId provided
@@ -147,7 +211,6 @@ serve(async (req) => {
       if (presetData && !presetError) {
         console.log(`🎨 Using preset: ${presetData.title}`);
         
-        // Build style context from preset
         if (presetData.sample_context) {
           const context = presetData.sample_context;
           presetContext = `
@@ -159,7 +222,6 @@ STYLE CONTEXT from preset "${presetData.title}":
 `;
         }
 
-        // Add reference patch as example
         if (presetData.sample_patch && presetData.sample_patch.length > 0) {
           referencePatch = `
 REFERENCE PATCH (for style inspiration only):
@@ -169,7 +231,7 @@ ${JSON.stringify(presetData.sample_patch, null, 2)}
       }
     }
 
-    // 4. Get some example presets for context (limit 2)
+    // 4. Get example presets for context (limit 2)
     let examplePresets: any[] = [];
     if (!presetId) {
       const { data: randomPresets } = await supabase
@@ -186,7 +248,10 @@ ${JSON.stringify(presetData.sample_patch, null, 2)}
     const pageData = currentTheme.pages?.[pageId];
     
     if (!pageData) {
-      return jsonResponse({ error: `Page '${pageId}' not found in theme` }, 400);
+      return jsonResponse({ 
+        valid: false,
+        errors: [{ path: 'page', message: `Page '${pageId}' not found in theme` }]
+      }, 400);
     }
 
     const systemPrompt = `You are WCC Maestro — a page‑aware theme editor for a crypto wallet.
@@ -233,9 +298,16 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
 
     // 6. Call OpenAI
     console.log('🤖 Calling OpenAI...');
+    const aiStartTime = performance.now();
+    
     const patchOperations = await callOpenAI(systemPrompt, userContext);
+    
+    const aiEndTime = performance.now();
+    console.log(`🤖 OpenAI completed in ${(aiEndTime - aiStartTime).toFixed(2)}ms`);
+    console.log(`📏 Generated patch with ${patchOperations.length} operations`);
 
     // 7. Validate patch by applying to copy
+    const validationStartTime = performance.now();
     const themeCopy = JSON.parse(JSON.stringify(currentTheme));
     let updatedTheme;
     
@@ -243,25 +315,38 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
       updatedTheme = applyPatch(themeCopy, patchOperations, false, false).newDocument;
     } catch (patchError) {
       console.error('❌ Invalid patch operations:', patchError);
-      return jsonResponse({ error: 'Generated patch is invalid', details: patchError.message }, 400);
+      const validationEndTime = performance.now();
+      return jsonResponse({ 
+        valid: false,
+        errors: [{ 
+          path: 'patch', 
+          message: 'Generated patch is invalid', 
+          actual: patchError.message 
+        }],
+        executionTime: validationEndTime - startTime
+      }, 400);
     }
 
     // 8. Validate updated theme against schema
-    const ajv = new Ajv({ strict: false });
-    addFormats(ajv);
-    
-    const validate = ajv.compile(schemaData.schema);
-    const isValid = validate(updatedTheme);
+    const isValid = compiledSchema(updatedTheme);
+    const validationEndTime = performance.now();
+    console.log(`🔍 Schema validation completed in ${(validationEndTime - validationStartTime).toFixed(2)}ms`);
     
     if (!isValid) {
-      console.error('❌ Theme validation failed:', validate.errors);
+      const validationErrors = formatValidationErrors(compiledSchema.errors || []);
+      console.error('❌ Theme validation failed:', validationErrors);
+      
+      const endTime = performance.now();
       return jsonResponse({ 
-        error: 'Updated theme fails schema validation', 
-        details: validate.errors 
+        valid: false,
+        errors: validationErrors,
+        executionTime: endTime - startTime
       }, 400);
     }
 
     // 9. Save patch and update theme
+    const dbStartTime = performance.now();
+    
     const { error: patchError } = await supabase
       .from('patches')
       .insert({
@@ -272,7 +357,12 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
 
     if (patchError) {
       console.error('❌ Failed to save patch:', patchError);
-      return jsonResponse({ error: 'Failed to save patch' }, 500);
+      const endTime = performance.now();
+      return jsonResponse({ 
+        valid: false,
+        errors: [{ path: 'database', message: 'Failed to save patch' }],
+        executionTime: endTime - startTime
+      }, 500);
     }
 
     const { error: updateError } = await supabase
@@ -282,24 +372,46 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
 
     if (updateError) {
       console.error('❌ Failed to update theme:', updateError);
-      return jsonResponse({ error: 'Failed to update theme' }, 500);
+      const endTime = performance.now();
+      return jsonResponse({ 
+        valid: false,
+        errors: [{ path: 'database', message: 'Failed to update theme' }],
+        executionTime: endTime - startTime
+      }, 500);
     }
 
-    console.log('✅ Patch applied successfully');
+    const dbEndTime = performance.now();
+    console.log(`💾 Database operations completed in ${(dbEndTime - dbStartTime).toFixed(2)}ms`);
 
-    // 10. Return response
+    const endTime = performance.now();
+    const totalTime = endTime - startTime;
+    
+    console.log(`✅ Patch applied successfully in ${totalTime.toFixed(2)}ms`);
+    console.log(`📊 Performance: AI=${(aiEndTime - aiStartTime).toFixed(2)}ms, Validation=${(validationEndTime - validationStartTime).toFixed(2)}ms, DB=${(dbEndTime - dbStartTime).toFixed(2)}ms`);
+
+    // 10. Return success response
     const response: PatchResponse = {
+      valid: true,
       patch: patchOperations,
-      theme: updatedTheme
+      theme: updatedTheme,
+      executionTime: totalTime
     };
 
     return jsonResponse(response);
 
   } catch (error: any) {
+    const endTime = performance.now();
+    const totalTime = endTime - startTime;
+    
     console.error('💥 LLM Patch Error:', error);
     return jsonResponse({
-      error: 'Internal server error',
-      details: error.message
+      valid: false,
+      errors: [{ 
+        path: 'system', 
+        message: 'Internal server error',
+        actual: error.message 
+      }],
+      executionTime: totalTime
     }, 500);
   }
 });
