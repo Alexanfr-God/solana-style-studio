@@ -21,11 +21,6 @@ const WalletAlivePlayground = () => {
     console.log('🎯 Element selected from preview:', elementSelector);
   };
 
-  const handleElementChangeFromChat = (element: string) => {
-    // This handles changes from chat interface if needed
-    console.log('🎯 Element changed from chat:', element);
-  };
-
   return (
     <WalletChatProvider>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex flex-col">
@@ -54,10 +49,7 @@ const WalletAlivePlayground = () => {
             <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-6 mb-8">
               {/* Left Column - Chat Interface */}
               <div className="xl:col-span-1 lg:col-span-1 space-y-6">
-                <ChatInterface 
-                  selectedElementFromPreview={selectedElementFromPreview}
-                  onElementChange={handleElementChangeFromChat}
-                />
+                <ChatInterface />
               </div>
               
               {/* Right Column - Wallet Preview */}

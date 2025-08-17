@@ -67,6 +67,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     console.log('🎛️ Chat mode changed to:', mode);
   };
 
+  const handleStarterClick = (message: string) => {
+    // This will be handled by MessageInput when it's implemented
+    console.log('Starter clicked:', message);
+  };
+
   const getAvailableModes = (): { mode: ChatMode; label: string; icon: React.ReactNode; description: string }[] => {
     const baseModes = [
       {
@@ -184,7 +189,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               selectedElement={selectedElement}
               onElementSelect={setSelectedElement}
               isOpen={isElementSelectorOpen}
-              onToggle={setIsElementSelectorOpen}
+              onToggle={() => setIsElementSelectorOpen(!isElementSelectorOpen)}
               elements={WALLET_ELEMENTS_REGISTRY}
             />
             <Separator className="bg-white/10" />
@@ -193,7 +198,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
         {/* Message History */}
         <div className="h-64 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-          <MessageHistory messages={messages} isLoading={isLoading} />
+          <MessageHistory 
+            messages={messages} 
+            isLoading={isLoading}
+            onStarterClick={handleStarterClick}
+          />
           <div ref={messagesEndRef} />
         </div>
 
