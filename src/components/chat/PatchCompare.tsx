@@ -11,11 +11,6 @@ interface PatchCompareProps {
   updatedTheme?: any;
 }
 
-// Type guards for operations that have a value property
-const hasValue = (op: Operation): op is Operation & { value: any } => {
-  return 'value' in op && op.op !== 'remove' && op.op !== 'move' && op.op !== 'copy';
-};
-
 const PatchCompare: React.FC<PatchCompareProps> = ({ 
   patch, 
   originalTheme, 
@@ -68,7 +63,7 @@ const PatchCompare: React.FC<PatchCompareProps> = ({
       <CardContent className="space-y-4">
         {patch.map((operation, index) => {
           const oldValue = originalTheme ? getValueAtPath(originalTheme, operation.path) : undefined;
-          const newValue = operation.op === 'remove' ? undefined : (hasValue(operation) ? operation.value : undefined);
+          const newValue = operation.op === 'remove' ? undefined : ('value' in operation ? (operation as any).value : undefined);
 
           return (
             <div key={index} className="p-3 bg-white/5 rounded-lg border border-white/10">
