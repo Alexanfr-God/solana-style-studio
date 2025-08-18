@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     import("@/utils/reactDiag").then(m => m.logReactIdentity("Coverflow"));
   }
 
-  const { themes, activeThemeId, getActiveTheme, isLoading, applyTheme } = useThemeSelector();
+  const { themes, activeThemeId, getActiveTheme, isLoading, applyTheme, selectTheme } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
@@ -47,6 +48,25 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
+  // Функция сброса выделения после успешного применения
+  const resetSelection = useCallback(() => {
+    setTimeout(() => {
+      setSelectedId(null);
+      console.log('🔄 Selection reset after successful apply');
+    }, 1500);
+  }, []);
+
+  // Функция обработки успешного применения темы
+  const handleSuccessfulApply = useCallback((themeId: string, themeName: string) => {
+    console.log(`✅ Theme successfully applied: ${themeName} (${themeId})`);
+    // В режиме "apply" делаем тему активной
+    if (mode === "apply") {
+      selectTheme(themeId);
+      console.log(`🎯 Theme ${themeId} set as active`);
+    }
+    resetSelection();
+  }, [mode, selectTheme, resetSelection]);
+
   const handleThemeClick = once(async (theme: any) => {
     const now = Date.now();
     
@@ -62,8 +82,15 @@ const ThemeSelectorCoverflow: React.FC = () => {
       return;
     }
     
-    if (theme.id === selectedId && mode === "apply") {
-      console.log('🚫 Click ignored - same theme already selected in apply mode');
+    // В режиме apply: не обрабатывать клик по уже активной теме
+    if (theme.id === activeThemeId && mode === "apply") {
+      console.log('🚫 Click ignored - theme already active in apply mode');
+      return;
+    }
+    
+    // В режиме inspire: можно кликать по любой теме
+    if (theme.id === selectedId && mode === "inspire") {
+      console.log('🚫 Click ignored - same theme already selected in inspire mode');
       return;
     }
     
@@ -90,6 +117,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
         applyTheme(theme);
         toast.success(`🎨 Applied theme: ${theme.name}`);
         
+        // Обработка успешного применения
+        handleSuccessfulApply(theme.id, theme.name);
+        
       } else {
         try {
           console.log('✨ Inspiring from theme:', theme.name);
@@ -113,6 +143,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
             
             applyPatch(patchEntry);
             toast.success(`✨ Applied inspiration from: ${theme.name}`);
+            
+            // В режиме inspiration сбрасываем выделение, но не меняем активную тему
+            resetSelection();
           } else {
             toast.error(`Failed to apply inspiration: ${response.error}`);
           }
@@ -154,7 +187,10 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <Switch
             id="mode-toggle"
             checked={mode === "inspire"}
-            onCheckedChange={(checked) => setMode(checked ? "inspire" : "apply")}
+            onCheckedChange={(checked) => {
+              setMode(checked ? "inspire" : "apply");
+              setSelectedId(null); // Сброс выделения при смене режима
+            }}
           />
           <Label htmlFor="mode-toggle" className="text-white/80">
             Inspire AI
@@ -163,7 +199,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         
         <p className="text-sm text-white/60 max-w-md mx-auto">
           {mode === "apply" 
-            ? "Directly apply theme styles" 
+            ? "Directly apply theme styles and set as active" 
             : "Use theme as style inspiration for AI generation"
           }
         </p>
@@ -213,6 +249,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
                   className={`flex-shrink-0 w-48 transition-all duration-500 ease-out cursor-pointer ${
                     isActive 
                       ? 'scale-110 z-10' 
+                      : isSelected
+                      ? 'scale-105 z-5'
                       : 'scale-90 opacity-60 hover:opacity-80 hover:scale-95'
                   } ${isProcessingRef.current ? 'pointer-events-none' : ''}`}
                   onClick={() => handleThemeClick(theme)}
@@ -243,6 +281,14 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         <div className="absolute inset-0 border-2 border-purple-400 rounded-lg animate-pulse">
                           <div className="absolute top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
                             Active
+                          </div>
+                        </div>
+                      )}
+
+                      {isSelected && !isActive && (
+                        <div className="absolute inset-0 border-2 border-blue-400 rounded-lg">
+                          <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                            Selected
                           </div>
                         </div>
                       )}
@@ -295,7 +341,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
       
       {import.meta.env.DEV && (
         <div className="text-xs text-white/40 text-center">
-          Updates: {clickCountRef.current}/10 | Processing: {isProcessingRef.current ? 'Yes' : 'No'}
+          Active: {activeThemeId} | Selected: {selectedId} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}
         </div>
       )}
     </div>

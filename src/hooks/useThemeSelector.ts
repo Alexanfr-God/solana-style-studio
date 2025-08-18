@@ -118,7 +118,8 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
 
 export const useThemeSelector = () => {
   const [themes, setThemes] = useState<ThemeItem[]>([]);
-  const [activeThemeId, setActiveThemeId] = useState('trump');
+  // Убираем хардкод и делаем начальное значение null
+  const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Load themes from manifest on mount ONLY
@@ -130,6 +131,14 @@ export const useThemeSelector = () => {
       try {
         const manifestThemes = await loadThemeManifest();
         setThemes(manifestThemes);
+        
+        // Устанавливаем первую тему как активную по умолчанию, если activeThemeId не задан
+        if (!activeThemeId && manifestThemes.length > 0) {
+          const defaultTheme = manifestThemes.find(t => t.id === 'luxury') || manifestThemes[0];
+          setActiveThemeId(defaultTheme.id);
+          console.log('🎯 Set default active theme:', defaultTheme.id);
+        }
+        
         console.log('📦 Themes initialized from manifest:', manifestThemes.length);
       } catch (error) {
         console.error('💥 Error initializing themes:', error);
@@ -213,10 +222,11 @@ export const useThemeSelector = () => {
     
     // ONLY set active - NO automatic application
     setActiveThemeId(themeId);
-    console.log('✅ Theme selected but NOT applied. Use applyTheme() to apply.');
+    console.log('✅ Theme selected as active:', themeId);
   };
 
   const getActiveTheme = () => {
+    if (!activeThemeId) return null;
     return themes.find(t => t.id === activeThemeId);
   };
 
