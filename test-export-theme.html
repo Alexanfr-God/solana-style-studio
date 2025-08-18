@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Theme Smoke Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; }
+        pre { white-space: pre-wrap; font-size: 12px; }
+        input[type="text"] { width: 300px; padding: 5px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Export Theme Smoke Test</h1>
+    
+    <div class="test-section warning">
+        <h3>⚙️ Setup</h3>
+        <p>Before running tests, you need:</p>
+        <ol>
+            <li>Valid JWT token from your wallet authentication</li>
+            <li>At least one theme created in your account</li>
+            <li>Theme ID (UUID format)</li>
+        </ol>
+        
+        <label>JWT Token:</label><br>
+        <input type="text" id="jwtToken" placeholder="Bearer eyJ..." style="width: 500px;"><br>
+        
+        <label>Theme ID:</label><br>
+        <input type="text" id="themeId" placeholder="123e4567-e89b-12d3-a456-426614174000"><br>
+        
+        <label>Supabase URL:</label><br>
+        <input type="text" id="supabaseUrl" value="https://opxordptvpvzmhakvdde.supabase.co" style="width: 400px;">
+    </div>
+
+    <div class="test-section">
+        <h3>🔒 Test 1: No Authorization (Should return 401)</h3>
+        <button onclick="testNoAuth()">Run Test</button>
+        <div id="test1Result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>❌ Test 2: Invalid Theme ID Format (Should return 400)</h3>
+        <button onclick="testInvalidUUID()">Run Test</button>
+        <div id="test2Result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔍 Test 3: Non-existent Theme ID (Should return 404)</h3>
+        <button onclick="testNotFound()">Run Test</button>
+        <div id="test3Result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>✅ Test 4: Valid GET Request (Should return 200 + JSON)</h3>
+        <button onclick="testValidGet()">Run Test</button>
+        <div id="test4Result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📁 Test 5: Valid POST Request (Should return 200 + URL)</h3>
+        <button onclick="testValidPost()">Run Test</button>
+        <div id="test5Result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🌐 Test 6: CORS Preflight (Should return 200)</h3>
+        <button onclick="testCORS()">Run Test</button>
+        <div id="test6Result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        function getBaseUrl() {
+            const url = document.getElementById('supabaseUrl').value;
+            return `${url}/functions/v1/export_theme`;
+        }
+
+        function getToken() {
+            return document.getElementById('jwtToken').value.trim();
+        }
+
+        function getThemeId() {
+            return document.getElementById('themeId').value.trim();
+        }
+
+        function showResult(testId, success, status, response, details = '') {
+            const resultDiv = document.getElementById(`test${testId}Result`);
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${success ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <strong>Status:</strong> ${status}<br>
+                <strong>Response:</strong><br>
+                <pre>${JSON.stringify(response, null, 2)}</pre>
+                ${details ? `<strong>Details:</strong> ${details}` : ''}
+            `;
+        }
+
+        async function testNoAuth() {
+            try {
+                const response = await fetch(`${getBaseUrl()}?themeId=${getThemeId()}`);
+                const data = await response.text();
+                showResult(1, response.status === 401, response.status, data);
+            } catch (error) {
+                showResult(1, false, 'ERROR', error.message);
+            }
+        }
+
+        async function testInvalidUUID() {
+            try {
+                const response = await fetch(`${getBaseUrl()}?themeId=invalid-uuid`, {
+                    headers: { 'Authorization': getToken() }
+                });
+                const data = await response.json();
+                showResult(2, response.status === 400, response.status, data);
+            } catch (error) {
+                showResult(2, false, 'ERROR', error.message);
+            }
+        }
+
+        async function testNotFound() {
+            const fakeUuid = '00000000-0000-0000-0000-000000000000';
+            try {
+                const response = await fetch(`${getBaseUrl()}?themeId=${fakeUuid}`, {
+                    headers: { 'Authorization': getToken() }
+                });
+                const data = await response.json();
+                showResult(3, response.status === 404, response.status, data);
+            } catch (error) {
+                showResult(3, false, 'ERROR', error.message);
+            }
+        }
+
+        async function testValidGet() {
+            try {
+                const response = await fetch(`${getBaseUrl()}?themeId=${getThemeId()}`, {
+                    headers: { 'Authorization': getToken() }
+                });
+                const data = await response.json();
+                const isValidJson = typeof data === 'object' && data !== null;
+                showResult(4, response.status === 200 && isValidJson, response.status, data, 
+                    `Content-Type: ${response.headers.get('content-type')}`);
+            } catch (error) {
+                showResult(4, false, 'ERROR', error.message);
+            }
+        }
+
+        async function testValidPost() {
+            try {
+                const response = await fetch(getBaseUrl(), {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': getToken(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ themeId: getThemeId() })
+                });
+                const data = await response.json();
+                showResult(5, response.status === 200, response.status, data);
+            } catch (error) {
+                showResult(5, false, 'ERROR', error.message);
+            }
+        }
+
+        async function testCORS() {
+            try {
+                const response = await fetch(getBaseUrl(), {
+                    method: 'OPTIONS'
+                });
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                showResult(6, response.status === 200 && corsHeader === '*', response.status, 
+                    'CORS Headers', `Access-Control-Allow-Origin: ${corsHeader}`);
+            } catch (error) {
+                showResult(6, false, 'ERROR', error.message);
+            }
+        }
+    </script>
+</body>
+</html>

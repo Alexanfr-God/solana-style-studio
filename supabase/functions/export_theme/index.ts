@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -16,44 +15,36 @@ interface ExportThemeResponse {
   walletTarget: 'phantom' | 'metamask' | 'demo';
 }
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function validateUUID(uuid: string): boolean {
+  return UUID_REGEX.test(uuid);
+}
+
+function logRequest(themeId: string, startTime: number, status: number) {
+  const duration = Date.now() - startTime;
+  console.log(`[export_theme] themeId=${themeId}, duration_ms=${duration}, status=${status}`);
+}
+
 Deno.serve(async (req) => {
+  const startTime = Date.now();
+  let themeId = '';
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { 
-        status: 405, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
   }
 
   try {
     // Get environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    // Parse request body
-    const { themeId }: ExportThemeRequest = await req.json();
-
-    if (!themeId) {
-      return new Response(
-        JSON.stringify({ error: 'themeId is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
 
     // Get authorization header for RLS
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
+      logRequest(themeId || 'unknown', startTime, 401);
       return new Response(
         JSON.stringify({ error: 'Authorization header required' }),
         { 
@@ -72,10 +63,125 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Create service role client for storage operations
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+    // Handle GET request - direct JSON response
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      themeId = url.searchParams.get('themeId') || '';
 
-    console.log('Fetching theme:', themeId);
+      if (!themeId) {
+        logRequest('', startTime, 400);
+        return new Response(
+          JSON.stringify({ error: 'themeId parameter is required' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      // Validate UUID format
+      if (!validateUUID(themeId)) {
+        logRequest(themeId, startTime, 400);
+        return new Response(
+          JSON.stringify({ error: 'Invalid themeId format. Must be a valid UUID.' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      console.log(`[GET] Fetching theme: ${themeId}`);
+
+      // Fetch theme with RLS (user can only access their own themes)
+      const { data: theme, error: themeError } = await supabaseClient
+        .from('themes')
+        .select('current_theme')
+        .eq('id', themeId)
+        .single();
+
+      if (themeError) {
+        console.error('Theme fetch error:', themeError);
+        const status = themeError.code === 'PGRST116' ? 404 : 403;
+        const errorMessage = themeError.code === 'PGRST116' ? 'Theme not found' : 'Theme not found or access denied';
+        
+        logRequest(themeId, startTime, status);
+        return new Response(
+          JSON.stringify({ error: errorMessage }),
+          { 
+            status, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      if (!theme || !theme.current_theme) {
+        logRequest(themeId, startTime, 404);
+        return new Response(
+          JSON.stringify({ error: 'Theme not found' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      logRequest(themeId, startTime, 200);
+      
+      // Return current_theme directly as JSON
+      return new Response(
+        JSON.stringify(theme.current_theme),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Handle POST request - existing behavior (unchanged)
+    if (req.method !== 'POST') {
+      logRequest(themeId, startTime, 405);
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }),
+        { 
+          status: 405, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Parse request body for POST
+    const { themeId: postThemeId }: ExportThemeRequest = await req.json();
+    themeId = postThemeId;
+
+    if (!themeId) {
+      logRequest('', startTime, 400);
+      return new Response(
+        JSON.stringify({ error: 'themeId is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Validate UUID format for POST as well
+    if (!validateUUID(themeId)) {
+      logRequest(themeId, startTime, 400);
+      return new Response(
+        JSON.stringify({ error: 'Invalid themeId format. Must be a valid UUID.' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log(`[POST] Fetching theme: ${themeId}`);
+
+    // Create service role client for storage operations
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch theme with RLS (user can only access their own themes)
     const { data: theme, error: themeError } = await supabaseClient
@@ -86,6 +192,7 @@ Deno.serve(async (req) => {
 
     if (themeError) {
       console.error('Theme fetch error:', themeError);
+      logRequest(themeId, startTime, 404);
       return new Response(
         JSON.stringify({ error: 'Theme not found or access denied' }),
         { 
@@ -96,6 +203,7 @@ Deno.serve(async (req) => {
     }
 
     if (!theme) {
+      logRequest(themeId, startTime, 404);
       return new Response(
         JSON.stringify({ error: 'Theme not found' }),
         { 
@@ -123,6 +231,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
       console.error('User auth error:', userError);
+      logRequest(themeId, startTime, 401);
       return new Response(
         JSON.stringify({ error: 'Authentication failed' }),
         { 
@@ -147,6 +256,7 @@ Deno.serve(async (req) => {
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError);
+      logRequest(themeId, startTime, 500);
       return new Response(
         JSON.stringify({ error: 'Failed to save export file' }),
         { 
@@ -163,6 +273,7 @@ Deno.serve(async (req) => {
 
     if (signedUrlError) {
       console.error('Signed URL error:', signedUrlError);
+      logRequest(themeId, startTime, 500);
       return new Response(
         JSON.stringify({ error: 'Failed to generate download URL' }),
         { 
@@ -180,6 +291,8 @@ Deno.serve(async (req) => {
 
     console.log('Export successful for theme:', themeId, 'wallet target:', walletTarget);
 
+    logRequest(themeId, startTime, 200);
+
     return new Response(
       JSON.stringify(response),
       { 
@@ -190,6 +303,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Export theme error:', error);
+    logRequest(themeId || 'unknown', startTime, 500);
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
