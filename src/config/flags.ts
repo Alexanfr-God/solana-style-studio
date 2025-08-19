@@ -1,10 +1,6 @@
 
-// Feature flags for theme system migration
+// Реэкспорт из единого источника для обратной совместимости
+export { FLAGS, isAssetsEnabled, isIconLibEnabled, isAiLogsEnabled } from './featureFlags';
+
+// Сохраняем существующие флаги
 export const THEME_SOT_IS_ZUSTAND = true;
-
-// Feature flags for disabling asset/icon functionality
-export const ASSETS_ENABLED = false;
-export const ICON_LIB_ENABLED = false;
-
-// Feature flag for AI request telemetry
-export const AI_LOGS_ENABLED = false; // Default false, override via env

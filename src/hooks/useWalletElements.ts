@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
+import { FLAGS } from '@/config/featureFlags';
 
 export interface WalletElement {
   id: string;
@@ -41,6 +42,20 @@ export const useWalletElements = () => {
   const [categories, setCategories] = useState<ElementCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Ранний возврат если флаг отключен
+  if (!FLAGS.ICON_LIB_ENABLED) {
+    return {
+      elements: [],
+      categories: [],
+      loading: false,
+      error: null,
+      getElementsByCategory: () => [],
+      getCategoryById: () => undefined,
+      getCategoryCustomizationTypes: () => [],
+      parseCustomizationTypes
+    };
+  }
 
   useEffect(() => {
     const loadWalletElements = async () => {

@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { FLAGS } from '@/config/featureFlags';
 
 export interface IconElement {
   id: string;
@@ -38,6 +39,23 @@ export const useIconManager = () => {
   const [variants, setVariants] = useState<IconVariant[]>([]);
   const [userCustomIcons, setUserCustomIcons] = useState<UserCustomIcon[]>([]);
   const { toast } = useToast();
+
+  // Ранний возврат если флаг отключен
+  if (!FLAGS.ICON_LIB_ENABLED) {
+    return {
+      loading: false,
+      icons: {},
+      variants: [],
+      userCustomIcons: [],
+      loadIconsByCategory: () => Promise.resolve(),
+      loadIconVariants: () => Promise.resolve(),
+      loadUserCustomIcons: () => Promise.resolve(),
+      getFinalIconPath: () => Promise.resolve('wallet-icons/default.svg'),
+      getIconPublicUrl: () => '',
+      replaceIconThroughChat: () => Promise.resolve(false),
+      getStorageStructure: () => ({})
+    };
+  }
 
   // Загрузить иконки по категориям
   const loadIconsByCategory = useCallback(async () => {

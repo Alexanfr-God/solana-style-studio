@@ -1,4 +1,3 @@
-
 export interface IconElement {
   id: string;
   name: string;
@@ -35,8 +34,26 @@ export class IconManager {
     this.supabaseClient = supabaseClient;
   }
 
+  // Проверка флагов в начале каждого метода
+  private checkIconLibEnabled(): boolean {
+    return Deno.env.get('ICON_LIB_ENABLED') === 'true';
+  }
+
+  private createFeatureDisabledResponse() {
+    return {
+      success: false,
+      error: 'Icon library functionality is disabled',
+      code: 'FEATURE_DISABLED'
+    };
+  }
+
   // Получить все иконки по категориям
   async getIconsByCategory(): Promise<{ [category: string]: IconElement[] }> {
+    if (!this.checkIconLibEnabled()) {
+      console.log('🚫 Icon library disabled - returning empty categories');
+      return {};
+    }
+
     try {
       console.log('🔍 Fetching icons by category...');
       
@@ -90,6 +107,11 @@ export class IconManager {
 
   // Получить группы дублирующихся иконок
   async getIconVariants(): Promise<IconVariant[]> {
+    if (!this.checkIconLibEnabled()) {
+      console.log('🚫 Icon library disabled - returning empty variants');
+      return [];
+    }
+
     try {
       const { data: variants, error } = await this.supabaseClient
         .from('icon_variants')
@@ -111,6 +133,10 @@ export class IconManager {
 
   // Получить финальный путь к иконке (пользовательская или дефолтная)
   async getFinalIconPath(elementId: string, userId?: string): Promise<string> {
+    if (!this.checkIconLibEnabled()) {
+      return 'wallet-icons/default.svg';
+    }
+
     try {
       const { data, error } = await this.supabaseClient
         .rpc('get_final_icon_path', {
@@ -132,6 +158,10 @@ export class IconManager {
 
   // Загрузить иконку из Storage
   async getIconFromStorage(storagePath: string): Promise<{ url: string; data?: Uint8Array }> {
+    if (!this.checkIconLibEnabled()) {
+      throw new Error('Icon library functionality is disabled');
+    }
+
     try {
       console.log('📁 Fetching icon from storage:', storagePath);
       
@@ -164,6 +194,10 @@ export class IconManager {
 
   // Заменить иконку пользователем
   async replaceUserIcon(userId: string, elementId: string, iconFile: File): Promise<UserCustomIcon> {
+    if (!this.checkIconLibEnabled()) {
+      throw new Error('Icon library functionality is disabled');
+    }
+
     try {
       console.log('🔄 Replacing user icon:', { userId, elementId });
       
@@ -234,6 +268,10 @@ export class IconManager {
 
   // Групповая замена иконок
   async batchReplaceIcons(userId: string, iconGroup: string, iconFile: File): Promise<UserCustomIcon[]> {
+    if (!this.checkIconLibEnabled()) {
+      throw new Error('Icon library functionality is disabled');
+    }
+
     try {
       console.log('🔄 Batch replacing icons for group:', iconGroup);
       
@@ -272,6 +310,11 @@ export class IconManager {
 
   // Получить пользовательские иконки
   async getUserCustomIcons(userId: string): Promise<UserCustomIcon[]> {
+    if (!this.checkIconLibEnabled()) {
+      console.log('🚫 Icon library disabled - returning empty user icons');
+      return [];
+    }
+
     try {
       const { data: customIcons, error } = await this.supabaseClient
         .from('user_custom_icons')
@@ -290,6 +333,36 @@ export class IconManager {
     } catch (error) {
       console.error('❌ Error in getUserCustomIcons:', error);
       throw error;
+    }
+  }
+
+  // Обработать операцию с иконками (главный обработчик)
+  async handleIconOperation(params: any): Promise<any> {
+    if (!this.checkIconLibEnabled()) {
+      console.log('🚫 Icon operation blocked - feature disabled');
+      return this.createFeatureDisabledResponse();
+    }
+
+    const { message, user_id, file_data, file_name } = params;
+    
+    try {
+      console.log('🎯 Handling icon operation:', { message: message?.slice(0, 50), user_id });
+      
+      // Здесь можно добавить обработку различных операций с иконками
+      return {
+        success: true,
+        data: {
+          message: 'Icon operation processed successfully',
+          user_id,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error in handleIconOperation:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 

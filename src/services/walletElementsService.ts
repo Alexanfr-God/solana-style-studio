@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import { FLAGS } from '@/config/featureFlags';
 
 export interface WalletElement {
   id: string;
@@ -46,6 +47,16 @@ class WalletElementsService {
    * Get all wallet elements with enhanced hierarchy support
    */
   async getAllElements(): Promise<WalletElementsResponse> {
+    // Ранняя проверка флага
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      console.log('🚫 Icon library disabled - returning empty elements');
+      return {
+        success: true,
+        elements: [],
+        count: 0
+      };
+    }
+
     try {
       console.log('📊 Fetching all wallet elements with hierarchy...');
 
@@ -103,6 +114,16 @@ class WalletElementsService {
    * Get all elements grouped by screen with hierarchy
    */
   async getAllGrouped(): Promise<{ success: boolean; grouped: GroupedElements; screens: string[]; error?: string }> {
+    // Ранняя проверка флага
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      console.log('🚫 Icon library disabled - returning empty grouped elements');
+      return {
+        success: true,
+        grouped: {},
+        screens: []
+      };
+    }
+
     try {
       const response = await this.getAllElements();
       
@@ -174,6 +195,24 @@ class WalletElementsService {
    * Get statistics about wallet elements
    */
   async getStatistics(): Promise<{ success: boolean; statistics?: any; error?: string }> {
+    // Ранняя проверка флага
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      console.log('🚫 Icon library disabled - returning empty statistics');
+      return {
+        success: true,
+        statistics: {
+          total: 0,
+          customizable: 0,
+          customizationPercentage: 0,
+          hierarchical: 0,
+          topLevel: 0,
+          maxZIndex: 0,
+          screens: { count: 0, list: [], details: {} },
+          types: { count: 0, list: [], details: {} }
+        }
+      };
+    }
+
     try {
       const response = await this.getAllElements();
       
@@ -242,6 +281,16 @@ class WalletElementsService {
    * Get elements by screen
    */
   async getElementsByScreen(screen: string): Promise<WalletElementsResponse> {
+    // Ранняя проверка флага
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      console.log('🚫 Icon library disabled - returning empty elements for screen');
+      return {
+        success: true,
+        elements: [],
+        count: 0
+      };
+    }
+
     try {
       console.log('📊 Fetching elements for screen:', screen);
 
@@ -294,6 +343,16 @@ class WalletElementsService {
    * Get customizable elements only
    */
   async getCustomizableElements(): Promise<WalletElementsResponse> {
+    // Ранняя проверка флага
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      console.log('🚫 Icon library disabled - returning empty customizable elements');
+      return {
+        success: true,
+        elements: [],
+        count: 0
+      };
+    }
+
     try {
       console.log('📊 Fetching customizable elements...');
 
@@ -346,6 +405,12 @@ class WalletElementsService {
    * Search elements by query
    */
   async searchElements(query: string): Promise<WalletElement[]> {
+    // Ранняя проверка флага
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      console.log('🚫 Icon library disabled - returning empty search results');
+      return [];
+    }
+
     try {
       console.log('🔍 Searching elements with query:', query);
 
@@ -390,6 +455,10 @@ class WalletElementsService {
    * Update element with new fields support
    */
   async updateElement(id: string, updates: Partial<WalletElement>): Promise<{ success: boolean; error?: string }> {
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      return { success: false, error: 'Icon library feature disabled' };
+    }
+
     try {
       console.log('📝 Updating element:', id);
 
@@ -429,6 +498,10 @@ class WalletElementsService {
    * Create element with hierarchy support
    */
   async createElement(element: Omit<WalletElement, 'created_at' | 'updated_at'>): Promise<{ success: boolean; element?: WalletElement; error?: string }> {
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      return { success: false, error: 'Icon library feature disabled' };
+    }
+
     try {
       console.log('➕ Creating new element:', element.name);
 
@@ -512,6 +585,10 @@ class WalletElementsService {
    * Get elements by parent with hierarchy
    */
   async getElementsByParent(parentId: string): Promise<WalletElementsResponse> {
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      return { success: true, elements: [], count: 0 };
+    }
+
     try {
       console.log('👨‍👧‍👦 Fetching child elements for parent:', parentId);
 
@@ -565,6 +642,10 @@ class WalletElementsService {
    * Get elements sorted by z-index
    */
   async getElementsByZIndex(screen?: string): Promise<WalletElementsResponse> {
+    if (!FLAGS.ICON_LIB_ENABLED) {
+      return { success: true, elements: [], count: 0 };
+    }
+
     try {
       console.log('🔢 Fetching elements sorted by z-index...');
 

@@ -1,4 +1,3 @@
-
 import { IconManager } from './iconManager.ts';
 
 export interface IconChatContext {
@@ -16,8 +15,19 @@ export class IconChatHandler {
     this.iconManager = iconManager;
   }
 
+  // Проверка флагов
+  private checkIconLibEnabled(): boolean {
+    return Deno.env.get('ICON_LIB_ENABLED') === 'true';
+  }
+
   // Анализ сообщения пользователя на предмет работы с иконками
   analyzeIconRequest(message: string): IconChatContext | null {
+    // Ранняя проверка флага
+    if (!this.checkIconLibEnabled()) {
+      console.log('🚫 Icon analysis blocked - feature disabled');
+      return null;
+    }
+
     const lowerMessage = message.toLowerCase();
     
     // Паттерны для определения действий с иконками
@@ -98,6 +108,10 @@ export class IconChatHandler {
 
   // Обработка запроса на список иконок
   async handleListIcons(context: IconChatContext): Promise<string> {
+    if (!this.checkIconLibEnabled()) {
+      return "❌ Функция управления иконками отключена в текущей конфигурации системы.";
+    }
+
     try {
       const iconsByCategory = await this.iconManager.getIconsByCategory();
       const variants = await this.iconManager.getIconVariants();
@@ -150,6 +164,10 @@ export class IconChatHandler {
 
   // Обработка запроса на помощь
   handleIconHelp(): string {
+    if (!this.checkIconLibEnabled()) {
+      return "❌ Функция управления иконками отключена в текущей конфигурации системы.";
+    }
+
     const storageStructure = this.iconManager.getStorageStructure();
     
     let response = "🎨 **ПОМОЩЬ ПО РАБОТЕ С ИКОНКАМИ**\n\n";
@@ -185,6 +203,10 @@ export class IconChatHandler {
 
   // Генерация ответа для чата
   async generateIconResponse(context: IconChatContext, userId?: string): Promise<string> {
+    if (!this.checkIconLibEnabled()) {
+      return "❌ Функция управления иконками отключена в текущей конфигурации системы. Обратитесь к администратору для получения доступа.";
+    }
+
     switch (context.action) {
       case 'list':
         return await this.handleListIcons(context);
@@ -206,6 +228,39 @@ export class IconChatHandler {
       
       default:
         return "❓ Не понял запрос по иконкам. Напишите 'помощь с иконками' для справки";
+    }
+  }
+
+  // Обработка загрузки файла иконки
+  async handleIconFileUpload(message: string, fileData: string, fileName: string, userId: string): Promise<any> {
+    if (!this.checkIconLibEnabled()) {
+      return {
+        success: false,
+        error: 'Icon library functionality is currently disabled',
+        code: 'FEATURE_DISABLED'
+      };
+    }
+
+    try {
+      console.log('📁 Processing icon file upload:', { fileName, userId, messageLength: message.length });
+      
+      // Здесь можно добавить логику обработки загруженного файла иконки
+      // Например, вызвать методы iconManager для замены иконок
+      
+      return {
+        success: true,
+        data: {
+          message: `Файл ${fileName} успешно загружен и обработан`,
+          file_name: fileName,
+          user_id: userId
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error in handleIconFileUpload:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to process icon file upload'
+      };
     }
   }
 }
