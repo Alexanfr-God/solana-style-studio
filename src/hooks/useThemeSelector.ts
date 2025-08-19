@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/state/themeStore';
 import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
 
@@ -56,6 +55,7 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
 export const useThemeSelector = () => {
   const { presets: loadedPresets, isLoading: presetsLoading, source } = usePresetsLoader();
   const [themes, setThemes] = useState<ThemeItem[]>([]);
+  const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Преобразуем пресеты в формат тем
@@ -76,8 +76,14 @@ export const useThemeSelector = () => {
     }));
     
     setThemes(convertedThemes);
-    console.log('🎯 Themes converted successfully');
-  }, [loadedPresets, source]);
+    
+    // Устанавливаем первую тему как активную по умолчанию
+    if (!activeThemeId && convertedThemes.length > 0) {
+      const defaultTheme = convertedThemes.find(t => t.id === 'luxuryTheme') || convertedThemes[0];
+      setActiveThemeId(defaultTheme.id);
+      console.log('🎯 Set default active theme:', defaultTheme.id);
+    }
+  }, [loadedPresets, source, activeThemeId]);
 
   // Load theme data when themes are first loaded - NO auto-apply
   useEffect(() => {
@@ -142,6 +148,26 @@ export const useThemeSelector = () => {
     }
   };
 
+  // EXPLICIT theme selection - only sets active, does NOT auto-apply
+  const selectTheme = (themeId: string) => {
+    console.log('👆 Theme selection (no auto-apply):', themeId);
+    
+    const selectedTheme = themes.find(t => t.id === themeId);
+    if (!selectedTheme) {
+      console.error('🚫 Theme not found:', themeId);
+      return;
+    }
+    
+    // ONLY set active - NO automatic application
+    setActiveThemeId(themeId);
+    console.log('✅ Theme selected as active:', themeId);
+  };
+
+  const getActiveTheme = () => {
+    if (!activeThemeId) return null;
+    return themes.find(t => t.id === activeThemeId);
+  };
+
   const applyThemeById = (themeId: string) => {
     const selectedTheme = themes.find(t => t.id === themeId);
     if (selectedTheme) {
@@ -149,44 +175,14 @@ export const useThemeSelector = () => {
     }
   };
 
-  // Back-compatibility methods - now using pure functions without Zustand selectors
-  const getDisplayTheme = useMemo(() => {
-    // Get current display theme from store synchronously
-    const displayTheme = useThemeStore.getState().getDisplayTheme();
-    
-    // Try to find matching theme by comparing data
-    const matchingTheme = themes.find(theme => {
-      if (theme.themeData && theme.themeData !== 'preset') {
-        try {
-          return JSON.stringify(theme.themeData) === JSON.stringify(displayTheme);
-        } catch {
-          return false;
-        }
-      }
-      return false;
-    });
-    
-    // Return the matching theme or create a fallback object
-    return matchingTheme || {
-      id: 'current-theme',
-      name: 'Current Theme',
-      description: 'Currently active theme',
-      previewImage: '',
-      coverUrl: '',
-      themeData: displayTheme
-    };
-  }, [themes]); // Remove displayTheme dependency to prevent loops
-
-  // Alias for backward compatibility
-  const getActiveTheme = useMemo(() => getDisplayTheme, [getDisplayTheme]);
-
   return {
     themes,
+    activeThemeId,
     isLoading: presetsLoading || isLoading,
+    selectTheme,
+    getActiveTheme,
     applyTheme,
     applyThemeById,
-    source,
-    getDisplayTheme: () => getDisplayTheme,
-    getActiveTheme: () => getActiveTheme
+    source // Добавляем источник данных для отладки
   };
 };
