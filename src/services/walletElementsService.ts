@@ -1,361 +1,73 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { Json } from '@/integrations/supabase/types';
 import { FLAGS } from '@/config/featureFlags';
 
 export interface WalletElement {
   id: string;
   name: string;
-  type: string;
+  selector: string;
   screen: string;
+  type: string;
   description: string;
   customizable: boolean;
   position?: string;
-  selector?: string;
   parent_element?: string;
-  z_index?: number;
-  responsive_settings?: any;
-  custom_props: Json[];
-  created_at: string;
-  updated_at: string;
+  category?: string;
+  asset_library_path?: string;
 }
 
-export interface WalletElementsResponse {
-  success: boolean;
-  elements?: WalletElement[];
-  error?: string;
-  count?: number;
+export interface ElementCategory {
+  id: string;
+  name: string;
+  description: string;
+  customization_types: any;
+  default_library_path: string;
+  icon_color: string;
+  sort_order: number;
+  is_active: boolean;
 }
 
-export interface GroupedElements {
-  [screen: string]: {
-    screen: string;
-    elements: WalletElement[];
-    counts: {
-      total: number;
-      customizable: number;
-      byType: { [type: string]: number };
-    };
-    hierarchy: {
-      [elementId: string]: WalletElement[];
-    };
-  };
-}
+// Ранний возврат если флаг отключен
+const checkFeatureEnabled = () => {
+  if (!FLAGS.ICON_LIB_ENABLED) {
+    console.log('🚫 Icon library disabled - returning empty data');
+    return false;
+  }
+  return true;
+};
 
-class WalletElementsService {
-  
-  /**
-   * Get all wallet elements with enhanced hierarchy support
-   */
-  async getAllElements(): Promise<WalletElementsResponse> {
-    // Ранняя проверка флага
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      console.log('🚫 Icon library disabled - returning empty elements');
-      return {
-        success: true,
-        elements: [],
-        count: 0
-      };
+export const walletElementsService = {
+  // Получить все элементы кошелька
+  async getAllElements(): Promise<{ success: boolean; elements: WalletElement[] }> {
+    if (!checkFeatureEnabled()) {
+      return { success: true, elements: [] };
     }
 
     try {
-      console.log('📊 Fetching all wallet elements with hierarchy...');
-
       const { data, error } = await supabase
         .from('wallet_elements')
         .select('*')
-        .order('screen', { ascending: true })
-        .order('z_index', { ascending: false })
-        .order('name', { ascending: true });
+        .order('screen', { ascending: true });
 
       if (error) {
         console.error('❌ Error fetching wallet elements:', error);
-        throw new Error(`Failed to fetch elements: ${error.message}`);
+        return { success: false, elements: [] };
       }
 
-      const elements: WalletElement[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        screen: item.screen,
-        description: item.description,
-        customizable: item.customizable,
-        position: item.position || undefined,
-        selector: item.selector || undefined,
-        parent_element: item.parent_element || undefined,
-        z_index: item.z_index || 0,
-        responsive_settings: item.responsive_settings || {},
-        custom_props: item.custom_props as Json[],
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      console.log('✅ Wallet elements fetched successfully:', {
-        count: elements.length,
-        screens: [...new Set(elements.map(e => e.screen))].length,
-        hierarchical: elements.filter(e => e.parent_element).length
-      });
-
-      return {
-        success: true,
-        elements,
-        count: elements.length
-      };
-
+      return { success: true, elements: data || [] };
     } catch (error) {
-      console.error('💥 Error in getAllElements:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      console.error('❌ Exception in getAllElements:', error);
+      return { success: false, elements: [] };
     }
-  }
+  },
 
-  /**
-   * Get all elements grouped by screen with hierarchy
-   */
-  async getAllGrouped(): Promise<{ success: boolean; grouped: GroupedElements; screens: string[]; error?: string }> {
-    // Ранняя проверка флага
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      console.log('🚫 Icon library disabled - returning empty grouped elements');
-      return {
-        success: true,
-        grouped: {},
-        screens: []
-      };
+  // Получить кастомизируемые элементы
+  async getCustomizableElements(): Promise<{ success: boolean; elements: WalletElement[] }> {
+    if (!checkFeatureEnabled()) {
+      return { success: true, elements: [] };
     }
 
     try {
-      const response = await this.getAllElements();
-      
-      if (!response.success || !response.elements) {
-        return {
-          success: false,
-          grouped: {},
-          screens: [],
-          error: response.error
-        };
-      }
-
-      const grouped: GroupedElements = {};
-      const screens: string[] = [];
-
-      response.elements.forEach(element => {
-        if (!grouped[element.screen]) {
-          grouped[element.screen] = {
-            screen: element.screen,
-            elements: [],
-            counts: {
-              total: 0,
-              customizable: 0,
-              byType: {}
-            },
-            hierarchy: {}
-          };
-          screens.push(element.screen);
-        }
-
-        grouped[element.screen].elements.push(element);
-        grouped[element.screen].counts.total++;
-
-        if (element.customizable) {
-          grouped[element.screen].counts.customizable++;
-        }
-
-        if (!grouped[element.screen].counts.byType[element.type]) {
-          grouped[element.screen].counts.byType[element.type] = 0;
-        }
-        grouped[element.screen].counts.byType[element.type]++;
-
-        // Build hierarchy
-        if (element.parent_element) {
-          if (!grouped[element.screen].hierarchy[element.parent_element]) {
-            grouped[element.screen].hierarchy[element.parent_element] = [];
-          }
-          grouped[element.screen].hierarchy[element.parent_element].push(element);
-        }
-      });
-
-      return {
-        success: true,
-        grouped,
-        screens
-      };
-    } catch (error) {
-      console.error('💥 Error in getAllGrouped:', error);
-      return {
-        success: false,
-        grouped: {},
-        screens: [],
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Get statistics about wallet elements
-   */
-  async getStatistics(): Promise<{ success: boolean; statistics?: any; error?: string }> {
-    // Ранняя проверка флага
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      console.log('🚫 Icon library disabled - returning empty statistics');
-      return {
-        success: true,
-        statistics: {
-          total: 0,
-          customizable: 0,
-          customizationPercentage: 0,
-          hierarchical: 0,
-          topLevel: 0,
-          maxZIndex: 0,
-          screens: { count: 0, list: [], details: {} },
-          types: { count: 0, list: [], details: {} }
-        }
-      };
-    }
-
-    try {
-      const response = await this.getAllElements();
-      
-      if (!response.success || !response.elements) {
-        return {
-          success: false,
-          error: response.error
-        };
-      }
-
-      const elements = response.elements;
-      const screens = [...new Set(elements.map(e => e.screen))];
-      const types = [...new Set(elements.map(e => e.type))];
-      const customizable = elements.filter(e => e.customizable).length;
-      const hierarchical = elements.filter(e => e.parent_element).length;
-      const topLevel = elements.filter(e => !e.parent_element).length;
-
-      const statistics = {
-        total: elements.length,
-        customizable,
-        customizationPercentage: Math.round((customizable / elements.length) * 100),
-        hierarchical,
-        topLevel,
-        maxZIndex: Math.max(...elements.map(e => e.z_index || 0)),
-        screens: {
-          count: screens.length,
-          list: screens,
-          details: screens.reduce((acc, screen) => {
-            const screenElements = elements.filter(e => e.screen === screen);
-            acc[screen] = {
-              total: screenElements.length,
-              customizable: screenElements.filter(e => e.customizable).length,
-              hierarchical: screenElements.filter(e => e.parent_element).length
-            };
-            return acc;
-          }, {} as Record<string, any>)
-        },
-        types: {
-          count: types.length,
-          list: types,
-          details: types.reduce((acc, type) => {
-            const typeElements = elements.filter(e => e.type === type);
-            acc[type] = {
-              total: typeElements.length,
-              customizable: typeElements.filter(e => e.customizable).length
-            };
-            return acc;
-          }, {} as Record<string, any>)
-        }
-      };
-
-      return {
-        success: true,
-        statistics
-      };
-    } catch (error) {
-      console.error('💥 Error in getStatistics:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Get elements by screen
-   */
-  async getElementsByScreen(screen: string): Promise<WalletElementsResponse> {
-    // Ранняя проверка флага
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      console.log('🚫 Icon library disabled - returning empty elements for screen');
-      return {
-        success: true,
-        elements: [],
-        count: 0
-      };
-    }
-
-    try {
-      console.log('📊 Fetching elements for screen:', screen);
-
-      const { data, error } = await supabase
-        .from('wallet_elements')
-        .select('*')
-        .eq('screen', screen)
-        .order('name', { ascending: true });
-
-      if (error) {
-        console.error('❌ Error fetching elements by screen:', error);
-        throw new Error(`Failed to fetch elements: ${error.message}`);
-      }
-
-      const elements: WalletElement[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        screen: item.screen,
-        description: item.description,
-        customizable: item.customizable,
-        position: item.position || undefined,
-        selector: item.selector || undefined,
-        parent_element: item.parent_element || undefined,
-        z_index: item.z_index || 0,
-        responsive_settings: item.responsive_settings || {},
-        custom_props: item.custom_props as Json[],
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      console.log(`✅ Elements for screen "${screen}" fetched:`, elements.length);
-
-      return {
-        success: true,
-        elements,
-        count: elements.length
-      };
-
-    } catch (error) {
-      console.error('💥 Error in getElementsByScreen:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Get customizable elements only
-   */
-  async getCustomizableElements(): Promise<WalletElementsResponse> {
-    // Ранняя проверка флага
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      console.log('🚫 Icon library disabled - returning empty customizable elements');
-      return {
-        success: true,
-        elements: [],
-        count: 0
-      };
-    }
-
-    try {
-      console.log('📊 Fetching customizable elements...');
-
       const { data, error } = await supabase
         .from('wallet_elements')
         .select('*')
@@ -364,342 +76,90 @@ class WalletElementsService {
 
       if (error) {
         console.error('❌ Error fetching customizable elements:', error);
-        throw new Error(`Failed to fetch elements: ${error.message}`);
+        return { success: false, elements: [] };
       }
 
-      const elements: WalletElement[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        screen: item.screen,
-        description: item.description,
-        customizable: item.customizable,
-        position: item.position || undefined,
-        selector: item.selector || undefined,
-        parent_element: item.parent_element || undefined,
-        z_index: item.z_index || 0,
-        responsive_settings: item.responsive_settings || {},
-        custom_props: item.custom_props as Json[],
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      console.log('✅ Customizable elements fetched:', elements.length);
-
-      return {
-        success: true,
-        elements,
-        count: elements.length
-      };
-
+      return { success: true, elements: data || [] };
     } catch (error) {
-      console.error('💥 Error in getCustomizableElements:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      console.error('❌ Exception in getCustomizableElements:', error);
+      return { success: false, elements: [] };
     }
-  }
+  },
 
-  /**
-   * Search elements by query
-   */
-  async searchElements(query: string): Promise<WalletElement[]> {
-    // Ранняя проверка флага
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      console.log('🚫 Icon library disabled - returning empty search results');
-      return [];
+  // Получить категории элементов
+  async getElementCategories(): Promise<{ success: boolean; categories: ElementCategory[] }> {
+    if (!checkFeatureEnabled()) {
+      return { success: true, categories: [] };
     }
 
     try {
-      console.log('🔍 Searching elements with query:', query);
+      const { data, error } = await supabase
+        .from('element_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
 
+      if (error) {
+        console.error('❌ Error fetching element categories:', error);
+        return { success: false, categories: [] };
+      }
+
+      return { success: true, categories: data || [] };
+    } catch (error) {
+      console.error('❌ Exception in getElementCategories:', error);
+      return { success: false, categories: [] };
+    }
+  },
+
+  // Получить элементы по экрану
+  async getElementsByScreen(screen: string): Promise<{ success: boolean; elements: WalletElement[] }> {
+    if (!checkFeatureEnabled()) {
+      return { success: true, elements: [] };
+    }
+
+    try {
       const { data, error } = await supabase
         .from('wallet_elements')
         .select('*')
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%,type.ilike.%${query}%`)
-        .order('name', { ascending: true });
+        .eq('screen', screen)
+        .order('position', { ascending: true });
 
       if (error) {
-        console.error('❌ Error searching elements:', error);
-        throw new Error(`Failed to search elements: ${error.message}`);
+        console.error('❌ Error fetching elements by screen:', error);
+        return { success: false, elements: [] };
       }
 
-      const elements: WalletElement[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        screen: item.screen,
-        description: item.description,
-        customizable: item.customizable,
-        position: item.position || undefined,
-        selector: item.selector || undefined,
-        parent_element: item.parent_element || undefined,
-        z_index: item.z_index || 0,
-        responsive_settings: item.responsive_settings || {},
-        custom_props: item.custom_props as Json[],
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      console.log(`✅ Search completed, found ${elements.length} elements`);
-      return elements;
-
+      return { success: true, elements: data || [] };
     } catch (error) {
-      console.error('💥 Error in searchElements:', error);
-      return [];
+      console.error('❌ Exception in getElementsByScreen:', error);
+      return { success: false, elements: [] };
     }
-  }
+  },
 
-  /**
-   * Update element with new fields support
-   */
-  async updateElement(id: string, updates: Partial<WalletElement>): Promise<{ success: boolean; error?: string }> {
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      return { success: false, error: 'Icon library feature disabled' };
+  // Получить элементы по категории
+  async getElementsByCategory(category: string): Promise<{ success: boolean; elements: WalletElement[] }> {
+    if (!checkFeatureEnabled()) {
+      return { success: true, elements: [] };
     }
 
     try {
-      console.log('📝 Updating element:', id);
-
-      const { error } = await supabase
-        .from('wallet_elements')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          customizable: updates.customizable,
-          position: updates.position,
-          selector: updates.selector,
-          parent_element: updates.parent_element,
-          z_index: updates.z_index,
-          responsive_settings: updates.responsive_settings,
-          custom_props: updates.custom_props as Json[]
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('❌ Error updating element:', error);
-        throw new Error(`Failed to update element: ${error.message}`);
-      }
-
-      console.log('✅ Element updated successfully');
-      return { success: true };
-
-    } catch (error) {
-      console.error('💥 Error in updateElement:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Create element with hierarchy support
-   */
-  async createElement(element: Omit<WalletElement, 'created_at' | 'updated_at'>): Promise<{ success: boolean; element?: WalletElement; error?: string }> {
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      return { success: false, error: 'Icon library feature disabled' };
-    }
-
-    try {
-      console.log('➕ Creating new element:', element.name);
-
-      const { data, error } = await supabase
-        .from('wallet_elements')
-        .insert({
-          id: element.id,
-          name: element.name,
-          type: element.type,
-          screen: element.screen,
-          description: element.description,
-          customizable: element.customizable,
-          position: element.position,
-          selector: element.selector,
-          parent_element: element.parent_element,
-          z_index: element.z_index || 0,
-          responsive_settings: element.responsive_settings || {},
-          custom_props: element.custom_props as Json[]
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Error creating element:', error);
-        throw new Error(`Failed to create element: ${error.message}`);
-      }
-
-      const newElement: WalletElement = {
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        screen: data.screen,
-        description: data.description,
-        customizable: data.customizable,
-        position: data.position || undefined,
-        selector: data.selector || undefined,
-        parent_element: data.parent_element || undefined,
-        z_index: data.z_index || 0,
-        responsive_settings: data.responsive_settings || {},
-        custom_props: data.custom_props as Json[],
-        created_at: data.created_at,
-        updated_at: data.updated_at
-      };
-
-      console.log('✅ Element created successfully:', newElement.id);
-      return { success: true, element: newElement };
-
-    } catch (error) {
-      console.error('💥 Error in createElement:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Get hierarchy tree for elements
-   */
-  buildHierarchyTree(elements: WalletElement[]): { [elementId: string]: WalletElement[] } {
-    const hierarchy: { [elementId: string]: WalletElement[] } = {};
-    
-    elements.forEach(element => {
-      if (element.parent_element) {
-        if (!hierarchy[element.parent_element]) {
-          hierarchy[element.parent_element] = [];
-        }
-        hierarchy[element.parent_element].push(element);
-      }
-    });
-
-    // Sort children by z_index
-    Object.keys(hierarchy).forEach(parentId => {
-      hierarchy[parentId].sort((a, b) => (b.z_index || 0) - (a.z_index || 0));
-    });
-
-    return hierarchy;
-  }
-
-  /**
-   * Get elements by parent with hierarchy
-   */
-  async getElementsByParent(parentId: string): Promise<WalletElementsResponse> {
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      return { success: true, elements: [], count: 0 };
-    }
-
-    try {
-      console.log('👨‍👧‍👦 Fetching child elements for parent:', parentId);
-
       const { data, error } = await supabase
         .from('wallet_elements')
         .select('*')
-        .eq('parent_element', parentId)
-        .order('z_index', { ascending: false })
+        .eq('category', category)
         .order('name', { ascending: true });
 
       if (error) {
-        console.error('❌ Error fetching child elements:', error);
-        throw new Error(`Failed to fetch child elements: ${error.message}`);
+        console.error('❌ Error fetching elements by category:', error);
+        return { success: false, elements: [] };
       }
 
-      const elements: WalletElement[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        screen: item.screen,
-        description: item.description,
-        customizable: item.customizable,
-        position: item.position || undefined,
-        selector: item.selector || undefined,
-        parent_element: item.parent_element || undefined,
-        z_index: item.z_index || 0,
-        responsive_settings: item.responsive_settings || {},
-        custom_props: item.custom_props as Json[],
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      console.log(`✅ Child elements for parent "${parentId}" fetched:`, elements.length);
-
-      return {
-        success: true,
-        elements,
-        count: elements.length
-      };
-
+      return { success: true, elements: data || [] };
     } catch (error) {
-      console.error('💥 Error in getElementsByParent:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+      console.error('❌ Exception in getElementsByCategory:', error);
+      return { success: false, elements: [] };
     }
   }
+};
 
-  /**
-   * Get elements sorted by z-index
-   */
-  async getElementsByZIndex(screen?: string): Promise<WalletElementsResponse> {
-    if (!FLAGS.ICON_LIB_ENABLED) {
-      return { success: true, elements: [], count: 0 };
-    }
-
-    try {
-      console.log('🔢 Fetching elements sorted by z-index...');
-
-      let query = supabase
-        .from('wallet_elements')
-        .select('*')
-        .order('z_index', { ascending: false })
-        .order('name', { ascending: true });
-
-      if (screen) {
-        query = query.eq('screen', screen);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('❌ Error fetching elements by z-index:', error);
-        throw new Error(`Failed to fetch elements: ${error.message}`);
-      }
-
-      const elements: WalletElement[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        screen: item.screen,
-        description: item.description,
-        customizable: item.customizable,
-        position: item.position || undefined,
-        selector: item.selector || undefined,
-        parent_element: item.parent_element || undefined,
-        z_index: item.z_index || 0,
-        responsive_settings: item.responsive_settings || {},
-        custom_props: item.custom_props as Json[],
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
-
-      console.log(`✅ Elements sorted by z-index fetched:`, elements.length);
-
-      return {
-        success: true,
-        elements,
-        count: elements.length
-      };
-
-    } catch (error) {
-      console.error('💥 Error in getElementsByZIndex:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-}
-
-// Create and export service instance
-export const walletElementsService = new WalletElementsService();
+export default walletElementsService;

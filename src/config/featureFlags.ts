@@ -2,16 +2,20 @@
 // Единый источник правды для фичефлагов (клиент + сервер)
 // Читает переменные окружения и возвращает валидированные boolean значения
 
-// Определяем среду выполнения
-const isServer = typeof Deno !== 'undefined';
+// Определяем среду выполнения с безопасной проверкой типов
+const isServer = typeof globalThis !== 'undefined' && 'Deno' in globalThis;
 const isClient = typeof window !== 'undefined';
 
 // Функция для безопасного чтения переменных окружения
 const getEnvFlag = (clientKey: string, serverKey: string, defaultValue: boolean = false): boolean => {
   if (isServer) {
     // Серверная среда (Deno/Edge Functions)
-    const value = Deno.env.get(serverKey);
-    return value === 'true';
+    try {
+      const value = (globalThis as any).Deno.env.get(serverKey);
+      return value === 'true';
+    } catch {
+      return defaultValue;
+    }
   } else if (isClient) {
     // Клиентская среда (Vite)
     const value = import.meta.env[clientKey];
@@ -39,6 +43,3 @@ export const isAiLogsEnabled = (): boolean => FLAGS.AI_LOGS_ENABLED;
 if (isClient && import.meta.env.DEV) {
   console.log('🎛️ Feature Flags:', FLAGS);
 }
-
-// Экспорт для обратной совместимости
-export const THEME_SOT_IS_ZUSTAND = true;

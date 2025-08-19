@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Brain, MessageSquare, Palette, Settings, Sparkles, Image, X, GitCompare } from 'lucide-react';
 import { useChatStore, ChatMode } from '@/stores/chatStore';
 import { WALLET_ELEMENTS_REGISTRY } from '@/components/wallet/WalletElementsRegistry';
-import { ASSETS_ENABLED, ICON_LIB_ENABLED } from '@/config/flags';
+import { FLAGS } from '@/config/featureFlags';
 import MessageInput from './MessageInput';
 import MessageHistory from './MessageHistory';
 import ModeSelector from './ModeSelector';
@@ -42,7 +42,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [selectedElement, setSelectedElement] = useState('');
   const [isElementSelectorOpen, setIsElementSelectorOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivider>(null);
   
   const { 
     messages, 
@@ -93,7 +93,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     // Add image generation modes based on feature flags
-    if (ASSETS_ENABLED) {
+    if (FLAGS.ASSETS_ENABLED) {
       baseModes.push(
         {
           mode: 'leonardo' as ChatMode,
@@ -183,7 +183,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <Separator className="bg-white/10" />
 
         {/* Element Selector - only show for non-theme-patch modes and when ICON_LIB_ENABLED */}
-        {chatMode !== 'theme-patch' && ICON_LIB_ENABLED && (
+        {chatMode !== 'theme-patch' && FLAGS.ICON_LIB_ENABLED && (
           <>
             <ElementSelector
               selectedElement={selectedElement}
