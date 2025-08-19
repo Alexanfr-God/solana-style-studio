@@ -1,52 +1,56 @@
 
-# Presets Seeding
+# Presets System
 
-## Overview
-This document explains how to populate the `presets` table with theme data from the file system.
+This project uses a hybrid approach for loading presets - it attempts to load from Supabase first, then falls back to the file system if needed.
 
-## Prerequisites
-- Supabase service role key
-- Theme files in `public/themes/` directory
-- `fast-json-patch` package installed
+## Database Schema
 
-## Running the Seed Script
+The `presets` table has the following structure:
+- `id`: UUID primary key
+- `slug`: Unique text identifier (matches theme file names)  
+- `title`: Human-readable name
+- `cover_url`: URL to preview image
+- `tags`: JSONB array of tags
+- `payload`: JSONB object containing:
+  - `patch`: JSON patch operations to transform default theme
+  - `sample_context`: Description for AI context
 
-1. **Set the service role key**:
-   ```bash
-   export SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
-   ```
+## Seeding Presets
 
-2. **Run the seed script**:
-   ```bash
-   node scripts/seed-presets.js
-   ```
+To populate the database with presets from theme files:
 
-## What the Script Does
+1. Set the service role key:
+```bash
+export SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+```
 
-The seed script:
-1. Loads `public/themes/defaultTheme.json` as the base theme
-2. Reads `public/themes/manifest.json` to get the list of available themes
-3. For each theme file:
-   - Loads the theme JSON data
-   - Generates a JSON patch using `fast-json-patch.compare()`
-   - Creates metadata (title, tags, sample_context) from known presets
-   - Inserts/updates the preset in the database
+2. Run the seed script:
+```bash
+node scripts/seed-presets.js
+```
 
-## Expected Output
+The script will:
+- Read all theme files from `public/themes/`
+- Generate JSON patches by comparing each theme to `defaultTheme.json`
+- Insert/update records in the `presets` table
+- Include metadata like titles, tags, and sample contexts
 
-The script will output:
-- Number of themes processed
-- Any errors encountered
-- Final list of seeded presets by slug
-- Total count of successfully seeded presets
+## How it Works
 
-## Troubleshooting
+1. **Primary**: Load presets from Supabase `presets` table
+2. **Fallback**: Load from `public/themes/manifest.json` if DB fails
+3. **Theme Application**: Apply JSON patches locally using `fast-json-patch`
 
-- **Missing service role key**: Ensure `SUPABASE_SERVICE_ROLE_KEY` is set
-- **Theme files not found**: Check that `public/themes/` contains the theme JSON files
-- **Database connection issues**: Verify Supabase URL and credentials
-- **Permission errors**: Ensure the service role key has the necessary permissions
+The system is designed to be resilient - if Supabase is unavailable, it gracefully falls back to the file-based system that was used previously.
 
-## Fallback Behavior
+## Available Presets
 
-If the database is empty or unavailable, the frontend will automatically fall back to loading themes from the file system at `public/themes/manifest.json`.
+The system includes 20+ presets covering various styles:
+- Luxury themes (Wolf of Wall Street, Gucci Cat)  
+- Tech themes (CZ Minimalist, Elon Musk)
+- Cultural themes (China, Mexico)
+- Entertainment themes (Superman, Simpsons, Nirvana)
+- Meme themes (Pepe, WIF)
+- And more...
+
+Each preset includes appropriate tags and AI context for intelligent theme application.

@@ -44,17 +44,22 @@ const loadPresetsFromSupabase = async (): Promise<PresetItem[]> => {
 
   console.log(`✅ Loaded ${data.length} presets from Supabase`);
 
-  return data.map((preset: SupabasePreset) => ({
-    id: preset.slug,
-    slug: preset.slug,
-    name: preset.title,
-    description: `Preset: ${preset.title}`,
-    previewImage: preset.cover_url || '',
-    coverUrl: preset.cover_url || '',
-    tags: Array.isArray(preset.tags) ? preset.tags : [],
-    patch: preset.payload?.patch || [],
-    sampleContext: preset.payload?.sample_context || ''
-  }));
+  return data.map((preset: any) => {
+    // Ensure we have the correct structure
+    const safePreset = preset as SupabasePreset;
+    
+    return {
+      id: safePreset.slug,
+      slug: safePreset.slug,
+      name: safePreset.title,
+      description: `Preset: ${safePreset.title}`,
+      previewImage: safePreset.cover_url || '',
+      coverUrl: safePreset.cover_url || '',
+      tags: Array.isArray(safePreset.tags) ? safePreset.tags : (safePreset.tags ? [safePreset.tags] : []),
+      patch: safePreset.payload?.patch || [],
+      sampleContext: safePreset.payload?.sample_context || ''
+    };
+  });
 };
 
 const loadPresetsFromFiles = async (): Promise<PresetItem[]> => {
@@ -74,8 +79,8 @@ const loadPresetsFromFiles = async (): Promise<PresetItem[]> => {
       slug: item.id,
       name: item.name,
       description: item.description || `Preset: ${item.name}`,
-      previewImage: item.coverUrl,
-      coverUrl: item.coverUrl,
+      previewImage: item.coverUrl || '',
+      coverUrl: item.coverUrl || '',
       tags: item.tags || [],
       patch: [], // Will be loaded separately when needed
       sampleContext: `Style: ${item.name}`
