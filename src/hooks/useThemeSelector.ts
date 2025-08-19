@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/state/themeStore';
-import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { THEME_SOT_IS_ZUSTAND } from '@/config/flags';
+import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
 
+// Оставляем старый интерфейс для совместимости
 export interface ThemeItem {
   id: string;
   name: string;
@@ -11,76 +11,13 @@ export interface ThemeItem {
   previewImage: string;
   coverUrl: string;
   themeData: any;
+  // Новые поля для пресетов
+  patch?: any[];
+  sampleContext?: string;
 }
 
-const loadThemeManifest = async (): Promise<ThemeItem[]> => {
-  try {
-    console.log('📋 Loading theme manifest...');
-    const response = await fetch('/themes/manifest.json');
-    
-    if (response.ok) {
-      const manifest = await response.json();
-      console.log('✅ Theme manifest loaded:', manifest);
-      
-      return manifest.map((item: any) => ({
-        ...item,
-        previewImage: item.coverUrl,
-        themeData: null
-      }));
-    } else {
-      console.warn('⚠️ Failed to load manifest, falling back to default themes');
-      throw new Error('Manifest not found');
-    }
-  } catch (error) {
-    console.error('💥 Error loading theme manifest:', error);
-    
-    return [
-      {
-        id: 'luxury',
-        name: 'Luxury Gold',
-        description: 'Premium golden wallet interface',
-        previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png',
-        coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png',
-        themeData: null
-      },
-      {
-        id: 'wif',
-        name: 'WIF',
-        description: 'WIF themed wallet design',
-        previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png',
-        coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png',
-        themeData: null
-      },
-      {
-        id: 'pepe',
-        name: 'Pepe Theme',
-        description: 'Pepe themed wallet design',
-        previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_3/image_3.png',
-        coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_3/image_3.png',
-        themeData: null
-      },
-      {
-        id: 'elonmusk',
-        name: 'Elon Musk',
-        description: 'Elon Musk themed wallet design',
-        previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_4/image_4.png',
-        coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_4/image_4.png',
-        themeData: null
-      },
-      {
-        id: 'trump',
-        name: 'TRUMP',
-        description: 'Bold patriotic theme with red, white and blue American styling',
-        previewImage: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_8/image_8.png',
-        coverUrl: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_8/image_8.png',
-        themeData: null
-      }
-    ];
-  }
-};
-
 const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
-  if (theme.themeData) return theme;
+  if (theme.themeData || theme.patch) return theme;
   
   console.log(`🎨 Attempting to load theme data for: ${theme.id}`);
   
@@ -117,49 +54,48 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
 };
 
 export const useThemeSelector = () => {
+  const { presets: loadedPresets, isLoading: presetsLoading, source } = usePresetsLoader();
   const [themes, setThemes] = useState<ThemeItem[]>([]);
-  // Убираем хардкод и делаем начальное значение null
   const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load themes from manifest on mount ONLY
+  // Преобразуем пресеты в формат тем
   useEffect(() => {
-    const initializeThemes = async () => {
-      setIsLoading(true);
-      console.log('🚀 Initializing themes from manifest');
-      
-      try {
-        const manifestThemes = await loadThemeManifest();
-        setThemes(manifestThemes);
-        
-        // Устанавливаем первую тему как активную по умолчанию, если activeThemeId не задан
-        if (!activeThemeId && manifestThemes.length > 0) {
-          const defaultTheme = manifestThemes.find(t => t.id === 'luxury') || manifestThemes[0];
-          setActiveThemeId(defaultTheme.id);
-          console.log('🎯 Set default active theme:', defaultTheme.id);
-        }
-        
-        console.log('📦 Themes initialized from manifest:', manifestThemes.length);
-      } catch (error) {
-        console.error('💥 Error initializing themes:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeThemes();
-  }, []); // Only load once on mount
+    if (loadedPresets.length === 0) return;
+    
+    console.log(`🔄 Converting ${loadedPresets.length} presets to themes (source: ${source})`);
+    
+    const convertedThemes: ThemeItem[] = loadedPresets.map((preset: PresetItem) => ({
+      id: preset.id,
+      name: preset.name,
+      description: preset.description,
+      previewImage: preset.previewImage,
+      coverUrl: preset.coverUrl,
+      themeData: source === 'supabase' ? 'preset' : null, // Marker for preset vs theme
+      patch: preset.patch,
+      sampleContext: preset.sampleContext
+    }));
+    
+    setThemes(convertedThemes);
+    
+    // Устанавливаем первую тему как активную по умолчанию
+    if (!activeThemeId && convertedThemes.length > 0) {
+      const defaultTheme = convertedThemes.find(t => t.id === 'luxuryTheme') || convertedThemes[0];
+      setActiveThemeId(defaultTheme.id);
+      console.log('🎯 Set default active theme:', defaultTheme.id);
+    }
+  }, [loadedPresets, source, activeThemeId]);
 
   // Load theme data when themes are first loaded - NO auto-apply
   useEffect(() => {
-    if (themes.length === 0) return;
+    if (themes.length === 0 || source === 'supabase') return; // Skip for Supabase presets
     
-    const needsDataLoad = themes.some(theme => !theme.themeData);
+    const needsDataLoad = themes.some(theme => !theme.themeData && !theme.patch);
     if (!needsDataLoad) return;
     
     const loadThemeData = async () => {
       setIsLoading(true);
-      console.log('🔄 Loading theme data (NO AUTO-APPLY)');
+      console.log('🔄 Loading theme data for file-based themes (NO AUTO-APPLY)');
       
       try {
         const updatedThemes = await Promise.all(
@@ -168,7 +104,7 @@ export const useThemeSelector = () => {
         
         console.log('📦 All themes processed:', updatedThemes.map(t => ({ 
           id: t.id, 
-          hasData: !!t.themeData 
+          hasData: !!(t.themeData || t.patch)
         })));
         
         setThemes(updatedThemes);
@@ -182,32 +118,35 @@ export const useThemeSelector = () => {
     };
 
     loadThemeData();
-  }, [themes.length]); // Only when themes count changes
+  }, [themes.length, source]);
 
   // EXPLICIT theme application - only called by user action
   const applyTheme = (selectedTheme: ThemeItem) => {
-    if (!selectedTheme.themeData) {
-      console.warn('⚠️ Cannot apply theme without data:', selectedTheme.name);
-      return;
-    }
+    console.log(`🎨 Applying theme: ${selectedTheme.name}`);
     
-    // Use only useThemeStore as single source of truth
-    const setTheme = useThemeStore.getState().setTheme;
-    const next = selectedTheme.themeData;
-    
-    // Simple protection against "same theme overwrite"
-    const curr = useThemeStore.getState().theme;
-    try {
-      if (JSON.stringify(curr) === JSON.stringify(next)) {
-        console.log('🔄 Theme already applied, skipping:', selectedTheme.name);
-        return;
+    // Для пресетов используем patch, для обычных тем - themeData
+    if (selectedTheme.patch && selectedTheme.patch.length > 0) {
+      // Это preset из Supabase - применяем patch локально
+      const setTheme = useThemeStore.getState().setTheme;
+      const currentTheme = useThemeStore.getState().theme;
+      
+      try {
+        // Применяем patch к текущей теме
+        const { applyPatch } = require('fast-json-patch');
+        const newTheme = applyPatch(currentTheme, selectedTheme.patch, false, false).newDocument;
+        setTheme(newTheme);
+        console.log('🎨 Applied preset patch locally:', selectedTheme.name);
+      } catch (error) {
+        console.error('💥 Error applying preset patch:', error);
       }
-    } catch (error) {
-      console.warn('Theme comparison failed, proceeding with apply');
+    } else if (selectedTheme.themeData && selectedTheme.themeData !== 'preset') {
+      // Это обычная тема - применяем themeData
+      const setTheme = useThemeStore.getState().setTheme;
+      setTheme(selectedTheme.themeData);
+      console.log('🎨 Applied theme data:', selectedTheme.name);
+    } else {
+      console.warn('⚠️ Cannot apply theme without data or patch:', selectedTheme.name);
     }
-    
-    setTheme(next);
-    console.log('🎨 Theme applied to useThemeStore (SoT):', selectedTheme.name);
   };
 
   // EXPLICIT theme selection - only sets active, does NOT auto-apply
@@ -232,7 +171,7 @@ export const useThemeSelector = () => {
 
   const applyThemeById = (themeId: string) => {
     const selectedTheme = themes.find(t => t.id === themeId);
-    if (selectedTheme && selectedTheme.themeData) {
+    if (selectedTheme) {
       applyTheme(selectedTheme);
     }
   };
@@ -240,10 +179,11 @@ export const useThemeSelector = () => {
   return {
     themes,
     activeThemeId,
-    isLoading,
+    isLoading: presetsLoading || isLoading,
     selectTheme,
     getActiveTheme,
     applyTheme,
-    applyThemeById
+    applyThemeById,
+    source // Добавляем источник данных для отладки
   };
 };

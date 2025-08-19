@@ -21,7 +21,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     import("@/utils/reactDiag").then(m => m.logReactIdentity("Coverflow"));
   }
 
-  const { themes, activeThemeId, getActiveTheme, isLoading, applyTheme, selectTheme } = useThemeSelector();
+  const { themes, activeThemeId, getActiveTheme, isLoading, applyTheme, selectTheme, source } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
@@ -38,7 +38,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
 
   // Use only useThemeStore actions
   const applyPatch = useThemeStore(s => s.applyPatch);
-  const setTheme = useThemeStore(s => s.setTheme);
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -105,15 +104,19 @@ const ThemeSelectorCoverflow: React.FC = () => {
     
     try {
       setSelectedId(theme.id);
-      console.log(`👆 Theme click: ${theme.name} (mode: ${mode}) - attempt ${clickCountRef.current}`);
+      console.log(`👆 Theme click: ${theme.name} (mode: ${mode}, source: ${source}) - attempt ${clickCountRef.current}`);
       
       if (mode === "apply") {
-        if (!theme.themeData) {
-          toast.error('Theme data not loaded. Try switching to "Inspire AI" mode.');
+        // Проверяем, есть ли данные для применения
+        const hasPresetPatch = theme.patch && theme.patch.length > 0;
+        const hasThemeData = theme.themeData && theme.themeData !== 'preset';
+        
+        if (!hasPresetPatch && !hasThemeData) {
+          toast.error('Theme data not loaded. Try switching to "Inspire AI" mode or wait for loading.');
           return;
         }
         
-        console.log('🎨 Applying theme via SoT:', theme.name);
+        console.log(`🎨 Applying ${hasPresetPatch ? 'preset patch' : 'theme data'} via SoT:`, theme.name);
         applyTheme(theme);
         toast.success(`🎨 Applied theme: ${theme.name}`);
         
@@ -123,11 +126,17 @@ const ThemeSelectorCoverflow: React.FC = () => {
       } else {
         try {
           console.log('✨ Inspiring from theme:', theme.name);
+          
+          // Подготавливаем промпт с контекстом
+          const sampleContext = theme.sampleContext || `Style inspiration from ${theme.name}`;
+          const basePrompt = `Apply the style inspiration from ${theme.name} preset`;
+          const finalPrompt = `${basePrompt}\n\n[PRESET CONTEXT]\n${sampleContext}`;
+          
           const response = await callPatch({
             themeId: activeThemeId || 'default',
             pageId: 'home',
             presetId: theme.id,
-            userPrompt: `Apply the style inspiration from ${theme.name} preset`
+            userPrompt: finalPrompt
           });
 
           if (response.success) {
@@ -214,6 +223,12 @@ const ThemeSelectorCoverflow: React.FC = () => {
             </p>
           </div>
         )}
+        
+        {source && (
+          <div className="text-xs text-white/40">
+            Data source: {source === 'supabase' ? 'Database' : 'Files (fallback)'}
+          </div>
+        )}
       </div>
 
       <div className="relative">
@@ -242,6 +257,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
             {themes.map((theme) => {
               const isActive = theme.id === activeThemeId;
               const isSelected = theme.id === selectedId;
+              const hasData = (theme.patch && theme.patch.length > 0) || (theme.themeData && theme.themeData !== 'preset');
               
               return (
                 <div
@@ -297,6 +313,12 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         {mode === "apply" ? "Apply" : "Inspire"}
                       </div>
 
+                      {!hasData && mode === "apply" && (
+                        <div className="absolute bottom-2 left-2 bg-yellow-500/80 text-black text-xs px-2 py-1 rounded-full">
+                          Loading...
+                        </div>
+                      )}
+
                       {isProcessingRef.current && isSelected && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-400 border-t-transparent"></div>
@@ -340,8 +362,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
       </div>
       
       {import.meta.env.DEV && (
-        <div className="text-xs text-white/40 text-center">
-          Active: {activeThemeId} | Selected: {selectedId} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}
+        <div className="text-xs text-white/40 text-center space-y-1">
+          <div>Active: {activeThemeId} | Selected: {selectedId} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}</div>
+          <div>Source: {source} | Themes: {themes.length}</div>
         </div>
       )}
     </div>

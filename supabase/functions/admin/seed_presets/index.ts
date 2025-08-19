@@ -8,123 +8,207 @@ const corsHeaders = {
 };
 
 interface PresetData {
+  slug: string;
   title: string;
   tags: string[];
   cover_url: string | null;
-  sample_context: {
-    styleSummary: string;
-    palette: Record<string, string>;
-    typography: Record<string, any>;
-    components: Record<string, string>;
+  payload: {
+    patch: any[];
+    sample_context: string;
   };
-  sample_patch: any[];
 }
 
-function validatePresets(titles: string[]): void {
-  if (titles.length !== 12) {
-    throw new Error(`Expected exactly 12 presets, got ${titles.length}`);
+function validatePresets(presets: PresetData[]): void {
+  if (presets.length === 0) {
+    throw new Error('No presets to validate');
   }
 
-  const emptyTitles = titles.filter(title => !title || title.trim() === '');
+  const emptyTitles = presets.filter(p => !p.title || p.title.trim() === '');
   if (emptyTitles.length > 0) {
-    throw new Error(`Found ${emptyTitles.length} empty preset titles`);
+    throw new Error(`Found ${emptyTitles.length} presets with empty titles`);
   }
 
-  const uniqueTitles = new Set(titles);
-  if (uniqueTitles.size !== titles.length) {
-    throw new Error(`Found duplicate preset titles. Unique: ${uniqueTitles.size}, Total: ${titles.length}`);
+  const uniqueSlugs = new Set(presets.map(p => p.slug));
+  if (uniqueSlugs.size !== presets.length) {
+    throw new Error(`Found duplicate preset slugs. Unique: ${uniqueSlugs.size}, Total: ${presets.length}`);
   }
 }
 
-function createPresetData(title: string): PresetData {
+function createPresetData(slug: string): PresetData {
   const knownPresets: Record<string, Partial<PresetData>> = {
-    "wolf of wall street": {
+    "wolf": {
+      title: "Wolf of Wall Street",
       tags: ["luxury", "finance", "dark", "gold"],
-      sample_context: {
-        styleSummary: "luxury finance, black/gold, glossy accents (inspired, no logos)",
-        palette: { primary: "#D4AF37", background: "#0B0B0F", surface: "#1B1B23" },
-        typography: { fontFamily: "Playfair Display|Inter", weights: ["600", "700", "400"] },
-        components: { buttons: "rounded-16 md shadow", card: "dark surface with subtle glow" }
+      payload: {
+        patch: [],
+        sample_context: "luxury finance aesthetic, black/gold color scheme, glossy accents, professional trading interface (inspired, no logos)"
       }
     },
     "cz": {
+      title: "CZ Minimalist",
       tags: ["minimal", "tech", "blue", "clean"],
-      sample_context: {
-        styleSummary: "clean minimal tech, cool blues, high contrast on CTAs",
-        palette: { primary: "#2563EB", background: "#0B1220", surface: "#121A2A" },
-        typography: { fontFamily: "Inter", weights: ["400", "600"] },
-        components: { buttons: "flat md radius-12", chip: "outline" }
+      payload: {
+        patch: [],
+        sample_context: "clean minimal tech aesthetic, cool blues, high contrast on CTAs, modern simplicity"
       }
     },
     "superman": {
+      title: "Superman",
       tags: ["heroic", "comic", "red", "blue"],
-      sample_context: {
-        styleSummary: "heroic comic energy, red/blue highlights, bold headings (inspired, generic)",
-        palette: { primary: "#E11D48", secondary: "#1D4ED8", background: "#0A0A0F" },
-        typography: { fontFamily: "Bebas Neue|Inter", weights: ["700", "400"] },
-        components: { cta: "bold radius-16 shadow-lg" }
+      payload: {
+        patch: [],
+        sample_context: "heroic comic energy, red/blue highlights, bold headings, dynamic superhero styling (inspired, generic)"
       }
     },
-    "snoop dogg": {
+    "snoopdogg": {
+      title: "Snoop Dogg",
       tags: ["urban", "neon", "purple", "chill"],
-      sample_context: {
-        styleSummary: "urban neon-chill, purple accents, vibey gradients (inspired, generic)",
-        palette: { primary: "#9333EA", secondary: "#22D3EE", background: "#0B0B0F" },
-        typography: { fontFamily: "Poppins|Inter", weights: ["500", "700"] },
-        components: { card: "soft glow", button: "subtle gradient" }
+      payload: {
+        patch: [],
+        sample_context: "urban neon-chill vibes, purple accents, vibey gradients, west coast hip-hop styling (inspired, generic)"
       }
     },
     "pepe": {
+      title: "Pepe",
       tags: ["meme", "green", "playful"],
-      sample_context: {
-        styleSummary: "playful meme-inspired, green accents, fun gradients",
-        palette: { primary: "#22C55E", secondary: "#84CC16", background: "#0A0A0F" },
-        typography: { fontFamily: "Comic Neue|Inter", weights: ["400", "700"] },
-        components: { button: "rounded-full", card: "playful shadows" }
+      payload: {
+        patch: [],
+        sample_context: "playful meme-inspired styling, green accents, fun gradients, internet culture vibes"
       }
     },
     "elonmusk": {
+      title: "Elon Musk",
       tags: ["tech", "space", "minimal", "futuristic"],
-      sample_context: {
-        styleSummary: "futuristic tech aesthetic, space-inspired colors, minimal design",
-        palette: { primary: "#6366F1", secondary: "#8B5CF6", background: "#030712" },
-        typography: { fontFamily: "Space Mono|Inter", weights: ["400", "700"] },
-        components: { button: "geometric", card: "tech borders" }
+      payload: {
+        patch: [],
+        sample_context: "futuristic tech aesthetic, space-inspired colors, minimal design, innovation-focused styling"
       }
     },
     "gorillaz": {
+      title: "Gorillaz",
       tags: ["artistic", "colorful", "creative"],
-      sample_context: {
-        styleSummary: "artistic creative vibes, colorful palette, expressive design",
-        palette: { primary: "#F59E0B", secondary: "#EF4444", background: "#111827" },
-        typography: { fontFamily: "Fredoka One|Inter", weights: ["400", "600"] },
-        components: { button: "artistic curves", card: "creative shadows" }
+      payload: {
+        patch: [],
+        sample_context: "artistic creative vibes, colorful palette, expressive design, alternative music aesthetic"
       }
     },
     "mia": {
+      title: "Mia",
       tags: ["elegant", "minimal", "pink"],
-      sample_context: {
-        styleSummary: "elegant feminine aesthetic, soft pink tones, refined design",
-        palette: { primary: "#EC4899", secondary: "#F472B6", background: "#0F0F0F" },
-        typography: { fontFamily: "Playfair Display|Inter", weights: ["400", "600"] },
-        components: { button: "soft curves", card: "elegant borders" }
+      payload: {
+        patch: [],
+        sample_context: "elegant feminine aesthetic, soft pink tones, refined design, sophisticated styling"
+      }
+    },
+    "wifTheme": {
+      title: "WIF Theme",
+      tags: ["meme", "crypto", "dog"],
+      payload: {
+        patch: [],
+        sample_context: "WIF-inspired crypto meme styling, playful dog theme, community-focused design"
+      }
+    },
+    "guccicatluxurytheme": {
+      title: "Gucci Cat Luxury",
+      tags: ["luxury", "fashion", "cat", "premium"],
+      payload: {
+        patch: [],
+        sample_context: "luxury fashion aesthetic with cat motifs, premium styling, high-end fashion vibes"
+      }
+    },
+    "luxuryTheme": {
+      title: "Luxury Theme",
+      tags: ["luxury", "premium", "gold", "elegant"],
+      payload: {
+        patch: [],
+        sample_context: "premium luxury styling, gold accents, elegant typography, high-end aesthetic"
+      }
+    },
+    "defaultTheme": {
+      title: "Default Theme",
+      tags: ["default", "balanced", "neutral"],
+      payload: {
+        patch: [],
+        sample_context: "balanced default styling, neutral colors, versatile design suitable for all use cases"
+      }
+    },
+    "trump": {
+      title: "TRUMP",
+      tags: ["patriotic", "bold", "american", "red"],
+      payload: {
+        patch: [],
+        sample_context: "bold patriotic theme with red, white and blue American styling, presidential aesthetic"
+      }
+    },
+    "wcc": {
+      title: "WCC",
+      tags: ["custom", "community", "branded"],
+      payload: {
+        patch: [],
+        sample_context: "West Coast Customs inspired styling, automotive culture, custom design aesthetic"
+      }
+    },
+    "simpsons": {
+      title: "Simpsons",
+      tags: ["cartoon", "yellow", "fun", "family"],
+      payload: {
+        patch: [],
+        sample_context: "cartoon-inspired Simpsons styling, yellow color scheme, fun family-friendly design"
+      }
+    },
+    "space": {
+      title: "Space",
+      tags: ["cosmic", "dark", "futuristic", "stars"],
+      payload: {
+        patch: [],
+        sample_context: "cosmic space theme, dark starry backgrounds, futuristic elements, galaxy aesthetics"
+      }
+    },
+    "mexico": {
+      title: "Mexico",
+      tags: ["cultural", "vibrant", "traditional", "colorful"],
+      payload: {
+        patch: [],
+        sample_context: "vibrant Mexican cultural styling, traditional colors, festive design elements"
+      }
+    },
+    "china": {
+      title: "China",
+      tags: ["cultural", "red", "traditional", "elegant"],
+      payload: {
+        patch: [],
+        sample_context: "traditional Chinese aesthetic, red and gold colors, elegant cultural elements"
+      }
+    },
+    "nirvana": {
+      title: "Nirvana",
+      tags: ["grunge", "alternative", "music", "dark"],
+      payload: {
+        patch: [],
+        sample_context: "grunge alternative music aesthetic, dark moody styling, 90s music culture vibes"
+      }
+    },
+    "football": {
+      title: "Football",
+      tags: ["sports", "green", "athletic", "competitive"],
+      payload: {
+        patch: [],
+        sample_context: "football sports theme, green field colors, athletic competitive styling"
       }
     }
   };
 
-  const known = knownPresets[title];
+  const known = knownPresets[slug] || {};
   
   return {
-    title,
-    tags: known?.tags || [],
-    cover_url: null,
-    sample_context: known?.sample_context || {
-      styleSummary: "",
-      palette: {},
-      typography: {},
-      components: {}
-    },
-    sample_patch: []
+    slug,
+    title: known.title || slug,
+    tags: known.tags || [],
+    cover_url: `https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_${Math.floor(Math.random() * 8) + 1}/image_${Math.floor(Math.random() * 8) + 1}.png`,
+    payload: known.payload || {
+      patch: [],
+      sample_context: `Style: ${slug}`
+    }
   };
 }
 
@@ -147,51 +231,37 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get preset titles
-    const presetTitles = [
-      "wolf of wall street",
-      "cz", 
-      "superman",
-      "snoop dogg",
-      "pepe",
-      "elonmusk",
-      "gorillaz",
-      "mia",
-      "wifTheme",
-      "guccicatluxurytheme",
-      "luxuryTheme",
-      "defaultTheme"
+    // Get preset slugs
+    const presetSlugs = [
+      "wolf", "cz", "superman", "snoopdogg", "pepe", "elonmusk", 
+      "gorillaz", "mia", "wifTheme", "guccicatluxurytheme", 
+      "luxuryTheme", "defaultTheme", "trump", "wcc", "simpsons",
+      "space", "mexico", "china", "nirvana", "football"
     ];
 
-    console.log('📋 Validating preset list...');
-    validatePresets(presetTitles);
+    console.log('🔄 Creating preset data...');
+    const presets = presetSlugs.map(slug => createPresetData(slug));
+
+    console.log('📋 Validating preset data...');
+    validatePresets(presets);
 
     console.log('🔄 Upserting presets...');
-    const results = [];
+    const { data, error } = await supabase
+      .from('presets')
+      .upsert(presets, { onConflict: 'slug' })
+      .select();
 
-    for (const title of presetTitles) {
-      const presetData = createPresetData(title);
-      
-      const { data, error } = await supabase
-        .from('presets')
-        .upsert(presetData, { onConflict: 'title' })
-        .select();
-
-      if (error) {
-        console.error(`❌ Failed to upsert preset "${title}":`, error);
-        throw error;
-      }
-
-      results.push({ title, action: 'upserted', data });
-      console.log(`✅ Upserted preset: ${title}`);
+    if (error) {
+      console.error('❌ Failed to upsert presets:', error);
+      throw error;
     }
 
     console.log('🎉 Seed completed successfully');
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Successfully seeded ${results.length} presets`,
-      results
+      message: `Successfully seeded ${presets.length} presets`,
+      data
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
