@@ -17,32 +17,56 @@ export type Database = {
       ai_requests: {
         Row: {
           created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
           id: string
           image_url: string | null
           layer_type: string | null
+          page_id: string | null
+          patch_len: number | null
+          patch_preview: string | null
           prompt: string | null
+          prompt_len: number | null
+          request_type: string | null
           status: string | null
           style_result: Json | null
+          theme_id: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
           id?: string
           image_url?: string | null
           layer_type?: string | null
+          page_id?: string | null
+          patch_len?: number | null
+          patch_preview?: string | null
           prompt?: string | null
+          prompt_len?: number | null
+          request_type?: string | null
           status?: string | null
           style_result?: Json | null
+          theme_id?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
           id?: string
           image_url?: string | null
           layer_type?: string | null
+          page_id?: string | null
+          patch_len?: number | null
+          patch_preview?: string | null
           prompt?: string | null
+          prompt_len?: number | null
+          request_type?: string | null
           status?: string | null
           style_result?: Json | null
+          theme_id?: string | null
           user_id?: string | null
         }
         Relationships: []

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { applyPatch, Operation } from 'https://esm.sh/fast-json-patch@3.1.1';
@@ -105,8 +104,54 @@ async function callOpenAI(systemPrompt: string, userContext: string): Promise<Op
   return parsed.patch || [];
 }
 
+/**
+ * Fire-and-forget telemetry logging for llm-patch requests
+ * IMPORTANT: Never logs the full prompt text for privacy/security
+ * Only logs prompt_len (string length) and patch_preview (truncated JSON)
+ */
+function logLlmPatchTelemetry(
+  supabase: any,
+  userId: string,
+  themeId: string,
+  pageId: string,
+  userPrompt: string,
+  patch: Operation[],
+  durationMs: number,
+  status: 'ok' | 'error',
+  errorMessage?: string
+) {
+  // Only log if AI_LOGS_ENABLED is explicitly set to 'true'
+  if (Deno.env.get('AI_LOGS_ENABLED') !== 'true') {
+    return;
+  }
+
+  // Ensure patch is an array for length calculation
+  const patchArray = Array.isArray(patch) ? patch : [];
+  
+  // Create telemetry payload - NEVER include full prompt text
+  const payload = {
+    request_type: 'llm-patch',
+    user_id: userId,
+    theme_id: themeId,
+    page_id: pageId || null,
+    prompt_len: userPrompt?.length || 0, // String length only, not the actual text
+    patch_len: patchArray.length, // Number of operations in patch array
+    duration_ms: Math.round(durationMs),
+    status,
+    error_message: status === 'error' ? (errorMessage || 'Unknown error') : null,
+    patch_preview: JSON.stringify(patchArray).slice(0, 2000) // First 2000 chars only
+  };
+
+  // Fire-and-forget: don't await, don't block main thread, ignore errors
+  queueMicrotask(() => {
+    supabase.from('ai_requests').insert(payload).catch(() => {
+      // Silently ignore telemetry errors - they should never affect main functionality
+    });
+  });
+}
+
 serve(async (req) => {
-  const startTime = performance.now();
+  const startTime = performance.now(); // Start telemetry timer
   console.log(`🚀 LLM Patch Request received: ${req.method}`);
   
   if (req.method === 'OPTIONS') {
@@ -169,6 +214,14 @@ serve(async (req) => {
 
     if (themeError || !themeData) {
       console.error('❌ Theme not found:', themeError);
+      const durationMs = performance.now() - startTime;
+      
+      // Log error telemetry
+      logLlmPatchTelemetry(
+        supabase, user.id, themeId, pageId, userPrompt, 
+        [], durationMs, 'error', 'Theme not found or access denied'
+      );
+      
       return jsonResponse({ 
         valid: false,
         errors: [{ path: 'theme', message: 'Theme not found or access denied' }]
@@ -185,6 +238,14 @@ serve(async (req) => {
 
       if (schemaError || !schemaData) {
         console.error('❌ Schema not found:', schemaError);
+        const durationMs = performance.now() - startTime;
+        
+        // Log error telemetry
+        logLlmPatchTelemetry(
+          supabase, user.id, themeId, pageId, userPrompt, 
+          [], durationMs, 'error', 'Schema version not found'
+        );
+        
         return jsonResponse({ 
           valid: false,
           errors: [{ path: 'schema', message: 'Schema version not found' }]
@@ -248,6 +309,14 @@ ${JSON.stringify(presetData.sample_patch, null, 2)}
     const pageData = currentTheme.pages?.[pageId];
     
     if (!pageData) {
+      const durationMs = performance.now() - startTime;
+      
+      // Log error telemetry
+      logLlmPatchTelemetry(
+        supabase, user.id, themeId, pageId, userPrompt, 
+        [], durationMs, 'error', `Page '${pageId}' not found in theme`
+      );
+      
       return jsonResponse({ 
         valid: false,
         errors: [{ path: 'page', message: `Page '${pageId}' not found in theme` }]
@@ -316,6 +385,14 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
     } catch (patchError) {
       console.error('❌ Invalid patch operations:', patchError);
       const validationEndTime = performance.now();
+      const durationMs = validationEndTime - startTime;
+      
+      // Log error telemetry
+      logLlmPatchTelemetry(
+        supabase, user.id, themeId, pageId, userPrompt, 
+        patchOperations, durationMs, 'error', 'Generated patch is invalid'
+      );
+      
       return jsonResponse({ 
         valid: false,
         errors: [{ 
@@ -323,7 +400,7 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
           message: 'Generated patch is invalid', 
           actual: patchError.message 
         }],
-        executionTime: validationEndTime - startTime
+        executionTime: durationMs
       }, 400);
     }
 
@@ -336,11 +413,18 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
       const validationErrors = formatValidationErrors(compiledSchema.errors || []);
       console.error('❌ Theme validation failed:', validationErrors);
       
-      const endTime = performance.now();
+      const durationMs = validationEndTime - startTime;
+      
+      // Log error telemetry
+      logLlmPatchTelemetry(
+        supabase, user.id, themeId, pageId, userPrompt, 
+        patchOperations, durationMs, 'error', 'Theme validation failed'
+      );
+      
       return jsonResponse({ 
         valid: false,
         errors: validationErrors,
-        executionTime: endTime - startTime
+        executionTime: durationMs
       }, 400);
     }
 
@@ -357,11 +441,18 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
 
     if (patchError) {
       console.error('❌ Failed to save patch:', patchError);
-      const endTime = performance.now();
+      const durationMs = performance.now() - startTime;
+      
+      // Log error telemetry
+      logLlmPatchTelemetry(
+        supabase, user.id, themeId, pageId, userPrompt, 
+        patchOperations, durationMs, 'error', 'Failed to save patch'
+      );
+      
       return jsonResponse({ 
         valid: false,
         errors: [{ path: 'database', message: 'Failed to save patch' }],
-        executionTime: endTime - startTime
+        executionTime: durationMs
       }, 500);
     }
 
@@ -372,11 +463,18 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
 
     if (updateError) {
       console.error('❌ Failed to update theme:', updateError);
-      const endTime = performance.now();
+      const durationMs = performance.now() - startTime;
+      
+      // Log error telemetry
+      logLlmPatchTelemetry(
+        supabase, user.id, themeId, pageId, userPrompt, 
+        patchOperations, durationMs, 'error', 'Failed to update theme'
+      );
+      
       return jsonResponse({ 
         valid: false,
         errors: [{ path: 'database', message: 'Failed to update theme' }],
-        executionTime: endTime - startTime
+        executionTime: durationMs
       }, 500);
     }
 
@@ -389,7 +487,13 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
     console.log(`✅ Patch applied successfully in ${totalTime.toFixed(2)}ms`);
     console.log(`📊 Performance: AI=${(aiEndTime - aiStartTime).toFixed(2)}ms, Validation=${(validationEndTime - validationStartTime).toFixed(2)}ms, DB=${(dbEndTime - dbStartTime).toFixed(2)}ms`);
 
-    // 10. Return success response
+    // 10. Log successful telemetry
+    logLlmPatchTelemetry(
+      supabase, user.id, themeId, pageId, userPrompt, 
+      patchOperations, totalTime, 'ok'
+    );
+
+    // 11. Return success response
     const response: PatchResponse = {
       valid: true,
       patch: patchOperations,
@@ -404,6 +508,33 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
     const totalTime = endTime - startTime;
     
     console.error('💥 LLM Patch Error:', error);
+    
+    // Try to log error telemetry if we have basic info
+    try {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const { data: { user } } = await supabase.auth.getUser(
+          authHeader.replace('Bearer ', '')
+        );
+        
+        if (user) {
+          // Try to get request info for telemetry
+          const requestBody = await req.json().catch(() => ({}));
+          logLlmPatchTelemetry(
+            supabase, user.id, requestBody.themeId || 'unknown', 
+            requestBody.pageId || 'unknown', requestBody.userPrompt || '', 
+            [], totalTime, 'error', error.message
+          );
+        }
+      }
+    } catch {
+      // Ignore telemetry errors in error handling
+    }
+    
     return jsonResponse({
       valid: false,
       errors: [{ 

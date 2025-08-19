@@ -1,86 +1,110 @@
-# 💼 Wallet Style Studio — Custom Phantom UI Generator
 
-This is the official repository for **Wallet Style Studio**, a frontend app that allows users to **generate fully custom Phantom wallet UI styles** using AI and visual prompts.
+# WCC Wallet Customization Studio
 
-🌐 Live Preview: (https://www.wacocu.app/)
+Studio for customizing web3 wallet themes through AI-powered chat interface.
 
----
+## Features
 
-## 🧠 About the Project
+- 🎨 AI-powered theme customization via chat
+- 🔧 JSON Patch-based theme modifications
+- 🛡️ Schema validation and RLS security
+- 📊 Built-in telemetry and analytics
+- 🚀 Edge Functions for serverless processing
 
-Wallet Style Studio was built with a clear goal:  
-**Let anyone create a beautifully customized wallet interface in seconds**, using AI-powered background generation, dynamic color extraction, and live UI component styling — with the option to mint the design as an NFT.
+## Telemetry
 
-This project combines solid frontend engineering with creative automation. The development, logic, design, and UX architecture were created and curated by me. AI tools (such as Lovable) are used to accelerate iteration — not replace real product thinking.
+### AI Request Analytics
 
----
+Basic telemetry is collected for `llm-patch` requests when `AI_LOGS_ENABLED=true`. This helps monitor system performance and usage patterns.
 
-## 🛠️ Tech Stack
+#### Collected Metrics
 
-This project is built using:
+- `prompt_len`: Length of user prompt in characters (text content is never stored)
+- `patch_len`: Number of operations in generated JSON Patch
+- `duration_ms`: Total processing time in milliseconds  
+- `status`: Request outcome ('ok' or 'error')
+- `patch_preview`: First 2000 characters of generated patch (for debugging)
 
-- ⚡ **Vite** – Lightning-fast frontend tooling
-- ⚛️ **React** + **TypeScript** – Modular and typed UI framework
-- 🎨 **Tailwind CSS** – Utility-first styling
-- 🧱 **shadcn/ui** – Clean, accessible component library
-- ☁️ **Supabase** – Database and Edge Functions for theme storage and minting logic
-- 🧠 **OpenAI + Edge AI** – Used for background generation and style extraction
+#### Sample Analytics Queries
 
----
+**Average performance and success rate (last 24 hours):**
+```sql
+SELECT
+  count(*) as total_requests,
+  avg(duration_ms)::int as avg_duration_ms,
+  sum((status='ok')::int)::int as successful_requests,
+  round(100.0 * sum((status='ok')::int) / count(*), 2) as success_rate_pct
+FROM ai_requests
+WHERE request_type='llm-patch' 
+  AND created_at > now() - interval '24 hours';
+```
 
-## ✏️ How to Edit the Code
+**Top pages by response time:**
+```sql
+SELECT 
+  page_id,
+  count(*) as request_count,
+  avg(duration_ms)::int as avg_duration_ms,
+  max(duration_ms) as max_duration_ms
+FROM ai_requests
+WHERE request_type='llm-patch' 
+  AND status='ok'
+  AND created_at > now() - interval '7 days'
+GROUP BY page_id
+ORDER BY avg_duration_ms DESC
+LIMIT 10;
+```
 
-You can work on this project in two ways:
+**Error analysis:**
+```sql
+SELECT 
+  error_message,
+  count(*) as error_count,
+  avg(duration_ms)::int as avg_duration_ms
+FROM ai_requests
+WHERE request_type='llm-patch' 
+  AND status='error'
+  AND created_at > now() - interval '7 days'
+GROUP BY error_message
+ORDER BY error_count DESC;
+```
 
-### Option 1: Use Lovable (Fastest way to iterate)
+**User activity patterns:**
+```sql
+SELECT 
+  date_trunc('hour', created_at) as hour,
+  count(*) as requests_per_hour,
+  avg(duration_ms)::int as avg_duration_ms
+FROM ai_requests
+WHERE request_type='llm-patch'
+  AND created_at > now() - interval '7 days'
+GROUP BY date_trunc('hour', created_at)
+ORDER BY hour DESC
+LIMIT 24;
+```
 
-Just open the project in [Lovable](https://lovable.dev/projects/9431a51c-2ffc-4f3e-8eb5-115819bf2c10), prompt AI for help, and let it update your codebase.  
-Changes made here are automatically committed back to GitHub.
+### Privacy & Security
 
-> This method is useful for quickly iterating on components, layouts, styles, and logic.
+- User prompts are **never** stored in full, only their character length
+- Patch previews are truncated to 2000 characters maximum
+- All telemetry respects RLS policies - users only see their own data
+- Telemetry collection can be disabled by setting `AI_LOGS_ENABLED=false`
 
----
+## Development
 
-### Option 2: Work locally with your IDE
-
-You retain full control over the codebase. Here's how to run the project locally:
+Set up environment variables:
 
 ```bash
-# Step 1: Clone the repo
-git clone https://github.com/<your_username>/wallet-style-studio.git
+# Required for AI functionality
+OPENAI_API_KEY=your_openai_key
 
-# Step 2: Navigate to the project directory
-cd wallet-style-studio
+# Optional telemetry (default: false)
+AI_LOGS_ENABLED=true
+```
 
-# Step 3: Install dependencies
-npm install
+## Architecture
 
-# Step 4: Start the dev server
-npm run dev
-Option 3: GitHub UI or Codespaces
-You can edit any file directly on GitHub and commit changes.
-
-You can also launch a GitHub Codespace (browser-based IDE) and start editing immediately.
-
-🚀 Deployment
-To deploy or share a preview, open the project in Lovable and click Share → Publish.
-Alternatively, the build output can be exported and deployed via any static hosting provider (e.g. Vercel, Netlify).
-
-🌐 Custom Domains
-You can connect a custom domain to your Lovable-hosted preview:
-
-Go to Project > Settings > Domains
-
-Click Connect Domain
-
-Follow the instructions for DNS setup.
-
-More details: Lovable Docs – Setting up a custom domain
-
-🧩 NFT Minting Logic
-Note: Themes are not saved permanently unless the user mints them as an NFT.
-This preserves uniqueness and keeps the interface clean. All styles are stored via Supabase and linked to wallet addresses for ownership tracking.
-
-👨‍💻 Author
-Created & developed by [Alexanfr-God]
-Custom AI wallet UI builder, idea-to-product executor, and crypto UX enthusiast.
+- **Frontend**: React + TypeScript + Tailwind CSS
+- **Backend**: Supabase Edge Functions + PostgreSQL
+- **AI**: OpenAI GPT-4 for theme generation
+- **Schema**: JSON Schema validation for theme consistency
