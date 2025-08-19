@@ -149,11 +149,44 @@ export const useThemeSelector = () => {
     }
   };
 
+  // Back-compatibility methods for getActiveTheme/getDisplayTheme
+  const getDisplayTheme = () => {
+    const displayTheme = useThemeStore.getState().getDisplayTheme();
+    
+    // Return a theme-like object with id for backward compatibility
+    // If we have themes loaded, try to find matching theme by comparing data
+    const matchingTheme = themes.find(theme => {
+      if (theme.themeData && theme.themeData !== 'preset') {
+        try {
+          return JSON.stringify(theme.themeData) === JSON.stringify(displayTheme);
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    });
+    
+    // Return the matching theme or create a fallback object
+    return matchingTheme || {
+      id: 'current-theme',
+      name: 'Current Theme',
+      description: 'Currently active theme',
+      previewImage: '',
+      coverUrl: '',
+      themeData: displayTheme
+    };
+  };
+
+  // Alias for backward compatibility
+  const getActiveTheme = getDisplayTheme;
+
   return {
     themes,
     isLoading: presetsLoading || isLoading,
     applyTheme,
     applyThemeById,
-    source // Добавляем источник данных для отладки
+    source, // Добавляем источник данных для отладки
+    getDisplayTheme,
+    getActiveTheme // Back-compatibility alias
   };
 };
