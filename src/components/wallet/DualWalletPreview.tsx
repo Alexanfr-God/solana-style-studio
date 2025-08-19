@@ -1,16 +1,22 @@
 
 import React, { useRef } from 'react';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import { useThemeSelector } from '@/hooks/useThemeSelector';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import MintNftButton from './ExportToIpfsButton';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
-  const { getActiveTheme } = useThemeSelector();
-  const activeTheme = getActiveTheme();
+  // Use useWalletTheme directly instead of getActiveTheme to avoid render loops
+  const { theme } = useWalletTheme();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
+  
+  // Create a theme-like object for MintNftButton compatibility
+  const currentThemeForMint = {
+    id: 'current-theme',
+    themeData: theme
+  };
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -48,7 +54,7 @@ const DualWalletPreview = () => {
         <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3">
           <MintNftButton 
             targetRef={dualPreviewRef} 
-            themeId={activeTheme?.id}
+            themeId={currentThemeForMint?.id}
           />
         </div>
       </div>

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useThemeStore } from '@/state/themeStore';
 import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
 
@@ -57,6 +57,11 @@ export const useThemeSelector = () => {
   const { presets: loadedPresets, isLoading: presetsLoading, source } = usePresetsLoader();
   const [themes, setThemes] = useState<ThemeItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get theme data from store using Zustand selectors (safe for React)
+  const currentTheme = useThemeStore(state => state.theme);
+  const previewTheme = useThemeStore(state => state.previewTheme);
+  const displayTheme = useThemeStore(state => state.getDisplayTheme());
 
   // Преобразуем пресеты в формат тем
   useEffect(() => {
@@ -149,12 +154,9 @@ export const useThemeSelector = () => {
     }
   };
 
-  // Back-compatibility methods for getActiveTheme/getDisplayTheme
-  const getDisplayTheme = () => {
-    const displayTheme = useThemeStore.getState().getDisplayTheme();
-    
-    // Return a theme-like object with id for backward compatibility
-    // If we have themes loaded, try to find matching theme by comparing data
+  // Back-compatibility methods using useMemo to prevent re-render loops
+  const getDisplayTheme = useMemo(() => {
+    // Try to find matching theme by comparing data
     const matchingTheme = themes.find(theme => {
       if (theme.themeData && theme.themeData !== 'preset') {
         try {
@@ -175,18 +177,18 @@ export const useThemeSelector = () => {
       coverUrl: '',
       themeData: displayTheme
     };
-  };
+  }, [themes, displayTheme]);
 
   // Alias for backward compatibility
-  const getActiveTheme = getDisplayTheme;
+  const getActiveTheme = useMemo(() => getDisplayTheme, [getDisplayTheme]);
 
   return {
     themes,
     isLoading: presetsLoading || isLoading,
     applyTheme,
     applyThemeById,
-    source, // Добавляем источник данных для отладки
-    getDisplayTheme,
-    getActiveTheme // Back-compatibility alias
+    source,
+    getDisplayTheme: () => getDisplayTheme,
+    getActiveTheme: () => getActiveTheme
   };
 };
