@@ -98,7 +98,7 @@ export const usePresetsLoader = () => {
       setError(null);
       
       try {
-        // Сначала пробуем загрузить из Supabase
+        // Try loading from Supabase first
         const supabasePresets = await loadPresetsFromSupabase();
         setPresets(supabasePresets);
         setSource('supabase');
@@ -107,7 +107,7 @@ export const usePresetsLoader = () => {
         console.warn('⚠️ Supabase failed, trying file fallback...');
         
         try {
-          // Fallback на файлы
+          // Fallback to files
           const filePresets = await loadPresetsFromFiles();
           setPresets(filePresets);
           setSource('files');

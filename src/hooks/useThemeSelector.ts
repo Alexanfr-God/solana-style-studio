@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/state/themeStore';
 import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
@@ -36,7 +35,7 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
         
         if (contentType && contentType.includes('application/json')) {
           const themeData = await response.json();
-          console.log(`✅ Successfully loaded theme data from: ${path}`, themeData);
+          console.log(`✅ Successfully loaded theme data from: ${path}`);
           return { ...theme, themeData };
         } else {
           console.warn(`⚠️ Invalid content type for ${path}: ${contentType}`);
