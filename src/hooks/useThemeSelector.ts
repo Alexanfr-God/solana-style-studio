@@ -58,11 +58,6 @@ export const useThemeSelector = () => {
   const [themes, setThemes] = useState<ThemeItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get theme data from store using Zustand selectors (safe for React)
-  const currentTheme = useThemeStore(state => state.theme);
-  const previewTheme = useThemeStore(state => state.previewTheme);
-  const displayTheme = useThemeStore(state => state.getDisplayTheme());
-
   // Преобразуем пресеты в формат тем
   useEffect(() => {
     if (loadedPresets.length === 0) return;
@@ -154,8 +149,11 @@ export const useThemeSelector = () => {
     }
   };
 
-  // Back-compatibility methods using useMemo to prevent re-render loops
+  // Back-compatibility methods - now using pure functions without Zustand selectors
   const getDisplayTheme = useMemo(() => {
+    // Get current display theme from store synchronously
+    const displayTheme = useThemeStore.getState().getDisplayTheme();
+    
     // Try to find matching theme by comparing data
     const matchingTheme = themes.find(theme => {
       if (theme.themeData && theme.themeData !== 'preset') {
@@ -177,7 +175,7 @@ export const useThemeSelector = () => {
       coverUrl: '',
       themeData: displayTheme
     };
-  }, [themes, displayTheme]);
+  }, [themes]); // Remove displayTheme dependency to prevent loops
 
   // Alias for backward compatibility
   const getActiveTheme = useMemo(() => getDisplayTheme, [getDisplayTheme]);
