@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { getLLMFunctionName } from '@/config/api';
 import type { Operation } from 'fast-json-patch';
 
 export interface PatchRequest {
@@ -7,6 +8,11 @@ export interface PatchRequest {
   pageId: string;
   presetId?: string;
   userPrompt: string;
+  mode?: string; // Added to support different chat modes
+  content?: string; // Alias for userPrompt for backward compatibility
+  imageUrl?: string; // Support for image-based requests
+  walletContext?: any; // Support for wallet context
+  sessionId?: string; // Support for session tracking
 }
 
 export interface PatchResponse {
@@ -14,6 +20,12 @@ export interface PatchResponse {
   theme: any;
   success: boolean;
   error?: string;
+  // Legacy response fields for backward compatibility
+  response?: string;
+  styleChanges?: any;
+  imageUrl?: string;
+  userText?: string;
+  analysis?: string;
 }
 
 /**
@@ -59,19 +71,35 @@ export async function prepareMint(themeId: string): Promise<{
 }
 
 /**
- * Call the LLM patch service to generate theme modifications
+ * Unified LLM patch service - now handles all chat modes
  * Enhanced with better error handling and success/failure responses
  */
 export async function callPatch(request: PatchRequest): Promise<PatchResponse> {
-  console.log('🎨 Calling LLM patch service:', request);
+  const functionName = getLLMFunctionName();
+  console.log('🎨 Calling unified LLM service:', functionName, request);
   
   try {
-    const { data, error } = await supabase.functions.invoke('llm-patch', {
-      body: request
+    // Prepare request body with backward compatibility
+    const requestBody = {
+      themeId: request.themeId,
+      pageId: request.pageId,
+      presetId: request.presetId,
+      userPrompt: request.userPrompt || request.content,
+      mode: request.mode || 'theme-patch',
+      content: request.content || request.userPrompt,
+      imageUrl: request.imageUrl,
+      walletContext: request.walletContext,
+      sessionId: request.sessionId,
+      // Add debugging flag
+      debugMode: true
+    };
+
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      body: requestBody
     });
 
     if (error) {
-      console.error('❌ LLM patch service error:', error);
+      console.error('❌ LLM service error:', error);
       return {
         patch: [],
         theme: null,
@@ -85,12 +113,12 @@ export async function callPatch(request: PatchRequest): Promise<PatchResponse> {
         patch: [],
         theme: null,
         success: false,
-        error: 'No response from LLM patch service'
+        error: 'No response from LLM service'
       };
     }
 
     if (data.error) {
-      console.error('❌ LLM patch data error:', data.error);
+      console.error('❌ LLM data error:', data.error);
       return {
         patch: [],
         theme: null,
@@ -99,8 +127,21 @@ export async function callPatch(request: PatchRequest): Promise<PatchResponse> {
       };
     }
 
-    // Validate that we have a proper patch response
-    if (!Array.isArray(data.patch)) {
+    // Handle different response formats for backward compatibility
+    let patch = data.patch || [];
+    let theme = data.theme;
+    let success = data.success !== false;
+
+    // Legacy wallet-chat-gpt response format support
+    if (data.styleChanges && !patch.length) {
+      // Convert styleChanges to patch format if needed
+      console.log('🔄 Converting legacy styleChanges to patch format');
+      // For now, just mark as successful without patch
+      success = true;
+    }
+
+    // Validate that we have a proper patch response for patch modes
+    if (request.mode === 'theme-patch' && !Array.isArray(patch)) {
       console.warn('⚠️ Invalid patch format received:', data);
       return {
         patch: [],
@@ -110,19 +151,26 @@ export async function callPatch(request: PatchRequest): Promise<PatchResponse> {
       };
     }
 
-    console.log('✅ LLM patch service success:', {
-      patchOperations: data.patch.length,
-      hasTheme: !!data.theme
+    console.log('✅ LLM service success:', {
+      patchOperations: patch.length,
+      hasTheme: !!theme,
+      mode: request.mode
     });
     
     return {
-      patch: data.patch,
-      theme: data.theme,
-      success: true
+      patch,
+      theme,
+      success,
+      // Include legacy fields for backward compatibility
+      response: data.response || data.userText,
+      styleChanges: data.styleChanges,
+      imageUrl: data.imageUrl,
+      userText: data.userText,
+      analysis: data.analysis
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('❌ LLM patch call failed:', error);
+    console.error('❌ LLM call failed:', error);
     
     return {
       patch: [],

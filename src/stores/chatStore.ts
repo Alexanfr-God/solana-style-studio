@@ -1,27 +1,21 @@
 import { create } from 'zustand';
 import { ChatMessage } from '@/components/chat/ChatInterface';
-import { supabase } from '@/integrations/supabase/client';
 import { useWalletCustomizationStore } from './walletCustomizationStore';
 import { WALLET_ELEMENTS_REGISTRY, getAllCategories } from '@/components/wallet/WalletElementsRegistry';
 import { walletStructureService } from '@/services/walletStructureService';
 import { toast } from 'sonner';
 import { callPatch, type PatchRequest } from '@/lib/api/client';
 import { applyPatch, type Operation } from 'fast-json-patch';
+import type { ChatMode } from '@/config/api';
 
 function detectLanguage(text: string): 'ru' | 'en' {
   return /[\u0400-\u04FF]/.test(text) ? 'ru' : 'en';
 }
 
-// ✅ ИСПРАВЛЕНИЕ ЭТАП 1: Унифицируем режимы - добавляем theme-patch
-export type ChatMode = 'analysis' | 'leonardo' | 'replicate' | 'theme-patch';
-
 interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
-  
-  // ✅ ИСПРАВЛЕНИЕ ЭТАП 1: Унифицированный режим
   chatMode: ChatMode;
-  
   sessionId: string;
   userId: string | null;
   chatHistory: Record<string, ChatMessage[]>;
@@ -32,17 +26,17 @@ interface ChatState {
     description: string;
   }>;
 
-  // New theme patch states
+  // Theme patch states
   lastPatch: Operation[] | null;
   isPreviewMode: boolean;
   previewTheme: any;
   originalTheme: any;
   
-  // ✅ УБИРАЕМ imageGenerationMode - используем только chatMode
   setChatMode: (mode: ChatMode) => void;
   setSessionId: (sessionId: string) => void;
   setUserId: (userId: string | null) => void;
   
+  // Unified send message method - now routes everything through callPatch
   sendMessage: (message: {
     content: string;
     imageUrl?: string | null;
@@ -60,7 +54,6 @@ interface ChatState {
     analysisDepth?: 'basic' | 'detailed' | 'comprehensive';
   }) => Promise<void>;
 
-  // New theme patch methods
   sendThemePatchMessage: (message: {
     content: string;
     themeId: string;
@@ -130,49 +123,12 @@ function createEnhancedWalletContext() {
   };
 }
 
-// ✅ ЭТАП 2: Улучшенная функция извлечения imageUrl
-function extractImageUrl(response: any, mode: string): string | null {
-  console.log('🔍 [ЭТАП 2] Извлечение imageUrl для режима:', mode);
-  console.log('🔍 [ЭТАП 2] Структура ответа:', JSON.stringify(response, null, 2));
+// Convert legacy response formats to style changes
+function convertResponseToStyleChanges(response: any): any {
+  console.log('🔄 Converting response to style changes:', response);
   
-  // ✅ Проверяем data.imageUrl (основной путь после исправления Edge Function)
-  if (response?.data?.imageUrl) {
-    console.log('✅ [ЭТАП 2] Найден imageUrl в data:', response.data.imageUrl);
-    return response.data.imageUrl;
-  }
-  
-  // ✅ Проверяем прямой imageUrl на верхнем уровне
-  if (response?.imageUrl) {
-    console.log('✅ [ЭТАП 2] Найден imageUrl на верхнем уровне:', response.imageUrl);
-    return response.imageUrl;
-  }
-  
-  // Дополнительные пути для надежности
-  if (mode === 'leonardo') {
-    if (response?.data?.data?.imageUrl) {
-      console.log('✅ [ЭТАП 2] Leonardo nested format:', response.data.data.imageUrl);
-      return response.data.data.imageUrl;
-    }
-  }
-  
-  if (mode === 'replicate') {
-    if (response?.data?.output && Array.isArray(response.data.output) && response.data.output.length > 0) {
-      console.log('✅ [ЭТАП 2] Replicate output array:', response.data.output[0]);
-      return response.data.output[0];
-    }
-  }
-  
-  console.warn('⚠️ [ЭТАП 2] imageUrl НЕ НАЙДЕН в ответе для режима:', mode);
-  console.warn('⚠️ [ЭТАП 2] Доступные ключи:', Object.keys(response || {}));
-  return null;
-}
-
-// Convert GPT responses to style changes
-function convertGPTResponseToStyleChanges(gptResponse: any): any {
-  console.log('🔄 Converting GPT response to style changes:', gptResponse);
-  
-  if (gptResponse.styleChanges) {
-    const styleChanges = gptResponse.styleChanges;
+  if (response.styleChanges) {
+    const styleChanges = response.styleChanges;
     console.log('✅ Found direct styleChanges format');
     
     return {
@@ -188,14 +144,14 @@ function convertGPTResponseToStyleChanges(gptResponse: any): any {
       primaryColor: styleChanges.accentColor || styleChanges.buttonColor,
       font: styleChanges.fontFamily,
       gradient: styleChanges.gradient,
-      styleNotes: styleChanges.styleNotes || gptResponse.userText || 'AI style analysis applied'
+      styleNotes: styleChanges.styleNotes || response.userText || 'AI style analysis applied'
     };
   }
 
-  if (gptResponse.elements && gptResponse.elements.colors) {
-    const colors = gptResponse.elements.colors;
-    const typography = gptResponse.elements.typography || {};
-    const effects = gptResponse.elements.effects || {};
+  if (response.elements && response.elements.colors) {
+    const colors = response.elements.colors;
+    const typography = response.elements.typography || {};
+    const effects = response.elements.effects || {};
     
     console.log('✅ Found enhanced format with elements.colors');
     
@@ -205,39 +161,35 @@ function convertGPTResponseToStyleChanges(gptResponse: any): any {
       accentColor: colors.accent || colors.primary,
       buttonColor: colors.primary,
       buttonTextColor: colors.secondary || colors.text,
-      borderRadius: gptResponse.elements.spacing?.borderRadius || '12px',
+      borderRadius: response.elements.spacing?.borderRadius || '12px',
       fontFamily: typography.fontFamily || 'Inter, sans-serif',
       boxShadow: effects.boxShadow,
       gradient: effects.gradient,
-      styleNotes: gptResponse.metadata?.style_reasoning || 'GPT style analysis applied'
+      styleNotes: response.metadata?.style_reasoning || 'AI style analysis applied'
     };
   }
   
-  console.warn('⚠️ Unknown GPT response format, using fallback');
+  console.warn('⚠️ Unknown response format, using fallback');
   return null;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isLoading: false,
-  
-  // ✅ ИСПРАВЛЕНИЕ ЭТАП 1: Унифицированный режим
   chatMode: 'analysis',
-  
   sessionId: `session_${Date.now()}`,
   userId: null,
   chatHistory: {},
-  
   styleHistory: [],
 
-  // New theme patch states
+  // Theme patch states
   lastPatch: null,
   isPreviewMode: false,
   previewTheme: null,
   originalTheme: null,
   
   setChatMode: (mode) => {
-    console.log('🔄 [УНИФИЦИРОВАННЫЙ РЕЖИМ] Switching to:', mode);
+    console.log('🔄 [UNIFIED] Switching chat mode to:', mode);
     set({ chatMode: mode });
   },
 
@@ -251,7 +203,165 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ userId });
   },
 
-  // New theme patch message handler
+  // Unified send message - now routes through callPatch for all modes
+  sendMessage: async (messageData) => {
+    const { messages, sessionId, chatMode } = get();
+    
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: messageData.content,
+      timestamp: new Date(),
+      imageUrl: messageData.imageUrl || undefined,
+      walletElement: messageData.walletElement || undefined,
+    };
+
+    set({ 
+      messages: [...messages, userMessage],
+      isLoading: true 
+    });
+
+    try {
+      console.log('🚀 [UNIFIED] Sending message via callPatch:', {
+        content: messageData.content,
+        hasImage: !!messageData.imageUrl,
+        element: messageData.walletElement,
+        mode: chatMode,
+        sessionId
+      });
+
+      const enhancedWalletContext = createEnhancedWalletContext();
+      
+      const patchRequest: PatchRequest = {
+        themeId: 'demo-theme', // Default theme ID for analysis
+        pageId: 'global',
+        userPrompt: messageData.content,
+        mode: chatMode,
+        imageUrl: messageData.imageUrl || undefined,
+        walletContext: enhancedWalletContext,
+        sessionId
+      };
+
+      const response = await callPatch(patchRequest);
+
+      if (!response.success) {
+        console.error('❌ LLM service error:', response.error);
+        throw new Error(response.error || 'Failed to get AI response');
+      }
+
+      console.log('📊 [UNIFIED] Full LLM response:', response);
+
+      const lang = detectLanguage(messageData.content);
+      const fallback = lang === 'ru'
+        ? 'Я проанализировал ваш кошелек и применил запрошенные изменения.'
+        : 'I analyzed your wallet and applied the requested changes.';
+      
+      const friendlyResponse = response.userText || response.response || fallback;
+      
+      // Handle style changes for analysis mode
+      if (chatMode === 'analysis' && response.styleChanges) {
+        console.log('🎨 Processing style changes from unified LLM:', response.styleChanges);
+        
+        const convertedChanges = convertResponseToStyleChanges(response);
+        
+        if (convertedChanges) {
+          const preservedChanges = get().preserveAndMergeStyles(convertedChanges);
+          console.log('✅ Successfully converted and preserved style changes:', preservedChanges);
+          
+          const walletStore = useWalletCustomizationStore.getState();
+          walletStore.applyUniversalStyle(preservedChanges);
+        }
+      }
+
+      // Handle image generation response
+      if ((chatMode === 'leonardo' || chatMode === 'replicate') && response.imageUrl) {
+        console.log('🖼️ [UNIFIED] Processing generated image:', response.imageUrl);
+        get().applyGeneratedImage(response.imageUrl);
+        
+        toast.success(`🎨 Generated image automatically applied as wallet background!`, {
+          description: `Mode: ${chatMode} | Time: ${new Date().toLocaleTimeString()}`,
+          duration: 4000
+        });
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        type: 'assistant',
+        content: friendlyResponse,
+        timestamp: new Date(),
+        imageUrl: response.imageUrl,
+        isGenerated: !!(chatMode === 'leonardo' || chatMode === 'replicate'),
+        autoApplied: !!(response.imageUrl || response.styleChanges),
+      };
+
+      set(state => ({
+        messages: [...state.messages, assistantMessage],
+        isLoading: false
+      }));
+
+      console.log('✅ [UNIFIED] Message processed successfully');
+
+    } catch (error) {
+      console.error('❌ [UNIFIED] Error sending message:', error);
+      
+      set(state => ({
+        messages: [...state.messages, {
+          id: `error-${Date.now()}`,
+          type: 'assistant',
+          content: 'Sorry, there was an error connecting to AI. Please try again later.',
+          timestamp: new Date(),
+        }],
+        isLoading: false
+      }));
+    }
+  },
+
+  // Legacy image generation method - now routes through unified sendMessage
+  sendImageGenerationMessage: async (messageData) => {
+    const { setChatMode, sendMessage } = get();
+    
+    console.log('🖼️ [LEGACY] Image generation request - routing through unified method');
+    
+    // Temporarily switch mode and send through unified method
+    const currentMode = get().chatMode;
+    setChatMode(messageData.mode);
+    
+    try {
+      await sendMessage({
+        content: messageData.content
+      });
+    } finally {
+      // Restore previous mode if needed
+      if (currentMode !== messageData.mode) {
+        setChatMode(currentMode);
+      }
+    }
+  },
+
+  // Legacy style analysis method - now routes through unified sendMessage  
+  sendStyleAnalysis: async (messageData) => {
+    const { setChatMode, sendMessage } = get();
+    
+    console.log('🎨 [LEGACY] Style analysis request - routing through unified method');
+    
+    // Temporarily switch to analysis mode
+    const currentMode = get().chatMode;
+    setChatMode('analysis');
+    
+    try {
+      await sendMessage({
+        content: messageData.content,
+        imageUrl: messageData.imageUrl
+      });
+    } finally {
+      // Restore previous mode if needed
+      if (currentMode !== 'analysis') {
+        setChatMode(currentMode);
+      }
+    }
+  },
+
+  // Theme patch method - unchanged, already using callPatch correctly
   sendThemePatchMessage: async (messageData) => {
     const { messages, sessionId } = get();
     
@@ -268,13 +378,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      console.log('🎨 Sending theme patch request:', messageData);
+      console.log('🎨 [THEME-PATCH] Sending theme patch request:', messageData);
 
       const patchRequest: PatchRequest = {
         themeId: messageData.themeId,
         pageId: messageData.pageId,
         presetId: messageData.presetId,
-        userPrompt: messageData.content
+        userPrompt: messageData.content,
+        mode: 'theme-patch'
       };
 
       const response = await callPatch(patchRequest);
@@ -372,13 +483,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       console.log('💾 Committing patch to database:', themeId);
       
-      // The patch is already applied locally, we just need to save it
-      // Using the same llm-patch endpoint to ensure consistency
       const response = await callPatch({
         themeId,
-        pageId: 'global', // Use global for commit
+        pageId: 'global',
         userPrompt: 'Commit current changes',
-        presetId: undefined
+        mode: 'theme-patch'
       });
 
       if (response.success) {
@@ -436,12 +545,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const walletStore = useWalletCustomizationStore.getState();
     const currentStyle = walletStore.walletStyle;
     
-    console.log('🔄 [ЭТАП 4] Текущий стиль перед слиянием:', currentStyle);
-    console.log('🔄 [ЭТАП 4] Новые изменения:', newChanges);
+    console.log('🔄 Preserving current styles and merging:', currentStyle);
+    console.log('🔄 New changes to merge:', newChanges);
     
-    // ✅ Сохраняем ВСЕ существующие стили + добавляем новые
     const mergedChanges = {
-      // Сначала берем все текущие стили
       backgroundColor: currentStyle.backgroundColor,
       primaryColor: currentStyle.primaryColor,
       font: currentStyle.font,
@@ -452,12 +559,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       backgroundImage: currentStyle.backgroundImage,
       boxShadow: currentStyle.boxShadow,
       fontFamily: currentStyle.fontFamily,
-      
-      // Затем применяем новые изменения (перезаписывают только те поля, которые указаны)
       ...newChanges
     };
     
-    console.log('✅ [ЭТАП 4] Накопительный результат слияния:', mergedChanges);
+    console.log('✅ Merged style result:', mergedChanges);
     return mergedChanges;
   },
 
@@ -468,10 +573,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       description
     };
     
-    console.log('📝 [ЭТАП 4] Добавляем в историю стилей:', historyEntry);
+    console.log('📝 Adding to style history:', historyEntry);
     
     set(state => ({
-      styleHistory: [...state.styleHistory, historyEntry].slice(-50) // Сохраняем последние 50 изменений
+      styleHistory: [...state.styleHistory, historyEntry].slice(-50)
     }));
   },
 
@@ -479,317 +584,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return get().styleHistory;
   },
 
-  sendMessage: async (messageData) => {
-    const { messages, sessionId } = get();
-    
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: messageData.content,
-      timestamp: new Date(),
-      imageUrl: messageData.imageUrl || undefined,
-      walletElement: messageData.walletElement || undefined,
-    };
-
-    set({ 
-      messages: [...messages, userMessage],
-      isLoading: true 
-    });
-
-    try {
-      console.log('🚀 Sending analysis message to Edge Function:', {
-        content: messageData.content,
-        hasImage: !!messageData.imageUrl,
-        element: messageData.walletElement,
-        sessionId
-      });
-
-      const enhancedWalletContext = createEnhancedWalletContext();
-      
-      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
-        body: {
-          content: messageData.content,
-          imageUrl: messageData.imageUrl,
-          walletElement: messageData.walletElement,
-          walletContext: enhancedWalletContext,
-          mode: 'analysis',
-          sessionId
-        }
-      });
-
-      if (error) {
-        console.error('❌ Supabase function error:', error);
-        throw new Error(`Edge function error: ${error.message}`);
-      }
-
-      if (!data?.success) {
-        console.error('❌ GPT API error:', data?.error);
-        throw new Error(data?.error || 'Failed to get AI response');
-      }
-
-      console.log('📊 Full GPT response data:', data);
-
-      const lang = detectLanguage(messageData.content);
-      const fallback = lang === 'ru'
-        ? 'Я проанализировал ваш кошелек и применил запрошенные изменения.'
-        : 'I analyzed your wallet and applied the requested changes.';
-      const friendlyResponse = data.userText || data.response || fallback;
-      
-      if (data.styleChanges) {
-        console.log('🎨 Processing style changes from GPT with PRESERVATION:', data.styleChanges);
-        
-        const convertedChanges = convertGPTResponseToStyleChanges(data);
-        
-        if (convertedChanges) {
-          const preservedChanges = get().preserveAndMergeStyles(convertedChanges);
-          console.log('✅ Successfully converted and preserved style changes:', preservedChanges);
-          
-          const walletStore = useWalletCustomizationStore.getState();
-          walletStore.applyUniversalStyle(preservedChanges);
-        }
-      }
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        type: 'assistant',
-        content: friendlyResponse,
-        timestamp: new Date(),
-      };
-
-      set(state => ({
-        messages: [...state.messages, assistantMessage],
-        isLoading: false
-      }));
-
-      console.log('✅ Analysis response processed successfully');
-
-    } catch (error) {
-      console.error('❌ Error sending analysis message:', error);
-      
-      set(state => ({
-        messages: [...state.messages, {
-          id: `error-${Date.now()}`,
-          type: 'assistant',
-          content: 'Sorry, there was an error connecting to AI. Please try again later.',
-          timestamp: new Date(),
-        }],
-        isLoading: false
-      }));
-    }
-  },
-
-  sendImageGenerationMessage: async (messageData) => {
-    const { messages, sessionId, chatMode } = get();
-    
-    // ✅ ИСПРАВЛЕНИЕ ЭТАП 3: Используем chatMode как единственный источник истины
-    console.log('🖼️ [ИСПРАВЛЕНИЕ] sendImageGenerationMessage старт:');
-    console.log('🔍 [ИСПРАВЛЕНИЕ] chatMode из store:', chatMode);
-    console.log('🔍 [ИСПРАВЛЕНИЕ] messageData.mode:', messageData.mode);
-    
-    // ✅ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: НЕ перезаписываем режим, используем chatMode
-    const actualMode = chatMode === 'analysis' ? 'leonardo' : chatMode; // fallback только если analysis
-    
-    console.log('✅ [ИСПРАВЛЕНИЕ] Финальный режим для отправки:', actualMode);
-    
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: messageData.content,
-      timestamp: new Date(),
-    };
-
-    set({ 
-      messages: [...messages, userMessage],
-      isLoading: true 
-    });
-
-    try {
-      console.log('🚀 [ИСПРАВЛЕНИЕ] Отправляем запрос генерации изображения');
-      console.log('📋 [ИСПРАВЛЕНИЕ] Режим передается на бэкенд:', actualMode);
-
-      const requestBody = { 
-        content: messageData.content, 
-        mode: actualMode, // ✅ Передаем реальный режим из chatMode
-        sessionId,
-        isImageGeneration: true,
-        debugMode: true
-      };
-      
-      console.log('📤 [ИСПРАВЛЕНИЕ] Финальное тело запроса:', JSON.stringify(requestBody, null, 2));
-
-      const response = await supabase.functions.invoke('wallet-chat-gpt', {
-        body: requestBody
-      });
-
-      console.log('📥 [ИСПРАВЛЕНИЕ] Полный ответ Edge Function:', JSON.stringify(response, null, 2));
-
-      if (response?.error) {
-        console.error('❌ [ИСПРАВЛЕНИЕ] Ошибка Edge Function:', response.error);
-        throw new Error(`Image generation error: ${response.error.message}`);
-      }
-
-      let generatedImageUrl = null;
-      
-      if (response?.data?.imageUrl) {
-        generatedImageUrl = response.data.imageUrl;
-        console.log('✅ [ИСПРАВЛЕНИЕ] Найден imageUrl в data:', generatedImageUrl);
-      } else if (response?.data?.data?.imageUrl) {
-        generatedImageUrl = response.data.data.imageUrl;
-        console.log('✅ [ИСПРАВЛЕНИЕ] Найден imageUrl в data.data:', generatedImageUrl);
-      } else if (response?.data?.output && Array.isArray(response.data.output)) {
-        generatedImageUrl = response.data.output[0];
-        console.log('✅ [ИСПРАВЛЕНИЕ] Найден imageUrl в output:', generatedImageUrl);
-      }
-      
-      if (generatedImageUrl && (generatedImageUrl.startsWith('http') || generatedImageUrl.startsWith('data:image'))) {
-        console.log('🎨 [ИСПРАВЛЕНИЕ] Применяем сгенерированное изображение:', generatedImageUrl);
-        
-        get().applyGeneratedImage(generatedImageUrl);
-        
-        toast.success(`🎨 Generated image automatically applied as wallet background!`, {
-          description: `Mode: ${actualMode} | Time: ${new Date().toLocaleTimeString()}`,
-          duration: 4000
-        });
-        
-        const assistantMessage: ChatMessage = {
-          id: `assistant-${Date.now()}`,
-          type: 'assistant',
-          content: `✨ I've generated and automatically applied a custom background image based on your description: "${messageData.content}". The new background is now active on your wallet while preserving your existing styling!`,
-          timestamp: new Date(),
-          imageUrl: generatedImageUrl,
-          isGenerated: true,
-          autoApplied: true,
-        };
-
-        set(state => ({
-          messages: [...state.messages, assistantMessage],
-          isLoading: false
-        }));
-        
-        console.log('✅ [ИСПРАВЛЕНИЕ] Генерация изображения и авто-применение завершены успешно');
-      } else {
-        console.error('❌ [ИСПРАВЛЕНИЕ] Не удалось извлечь действительный imageUrl');
-        console.error('❌ [ИСПРАВЛЕНИЕ] generatedImageUrl:', generatedImageUrl);
-        console.error('❌ [ИСПРАВЛЕНИЕ] response.data:', response?.data);
-        throw new Error('No valid image returned from generation service');
-      }
-
-    } catch (error) {
-      console.error('💥 [ИСПРАВЛЕНИЕ] Ошибка генерации изображения:', error);
-      
-      toast.error(`❌ Image generation failed: ${error.message}`, {
-        description: `Mode: ${actualMode} | Check console for details`,
-        duration: 6000
-      });
-      
-      set(state => ({
-        messages: [...state.messages, {
-          id: `error-${Date.now()}`,
-          type: 'assistant',
-          content: `Sorry, there was an error generating the image: ${error.message}. Please check the console logs for more details.`,
-          timestamp: new Date(),
-        }],
-        isLoading: false
-      }));
-    }
-  },
-
-  sendStyleAnalysis: async (messageData) => {
-    const { messages, sessionId } = get();
-    
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: messageData.content,
-      timestamp: new Date(),
-      imageUrl: messageData.imageUrl,
-    };
-
-    set({ 
-      messages: [...messages, userMessage],
-      isLoading: true 
-    });
-
-    try {
-      console.log('🎨 Sending style analysis to Edge Function');
-
-      const enhancedWalletContext = createEnhancedWalletContext();
-
-      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
-        body: {
-          content: messageData.content,
-          mode: 'analysis',
-          sessionId,
-          imageUrl: messageData.imageUrl,
-          analysisDepth: messageData.analysisDepth || 'detailed',
-          walletContext: enhancedWalletContext
-        }
-      });
-
-      if (error) {
-        throw new Error(`Style analysis failed: ${error.message}`);
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to analyze style');
-      }
-
-      if (data.styleChanges) {
-        const convertedChanges = convertGPTResponseToStyleChanges(data);
-        if (convertedChanges) {
-          const preservedChanges = get().preserveAndMergeStyles(convertedChanges);
-          const walletStore = useWalletCustomizationStore.getState();
-          walletStore.applyUniversalStyle(preservedChanges);
-        }
-      }
-
-      const lang = detectLanguage(messageData.content);
-      const fallback = lang === 'ru'
-        ? 'Я проанализировал стиль вашего кошелька и применил улучшения.'
-        : 'I analyzed your wallet style and applied improvements.';
-
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        type: 'assistant',
-        content: data.userText || data.analysis || fallback,
-        timestamp: new Date(),
-      };
-
-      set(state => ({
-        messages: [...state.messages, assistantMessage],
-        isLoading: false
-      }));
-
-      console.log('✅ Style analysis completed');
-
-    } catch (error) {
-      console.error('❌ Style analysis error:', error);
-      
-      set(state => ({
-        messages: [...state.messages, {
-          id: `error-${Date.now()}`,
-          type: 'assistant',
-          content: `Style analysis failed: ${error.message}`,
-          timestamp: new Date(),
-        }],
-        isLoading: false
-      }));
-    }
-  },
-
   applyGeneratedImage: (imageUrl: string) => {
-    console.log('🖼️ [ЭТАП 4] Применяем сгенерированное изображение с накопительным сохранением:', imageUrl);
+    console.log('🖼️ [UNIFIED] Applying generated image with style preservation:', imageUrl);
     
     const walletStore = useWalletCustomizationStore.getState();
     
-    // ✅ ЭТАП 4: Накопительное слияние - сохраняем ВСЕ текущие стили
     const preservedChanges = get().preserveAndMergeStyles({
       backgroundImage: `url(${imageUrl})`,
     });
     
-    console.log('🎨 [ЭТАП 4] Накопительное применение стилей:', preservedChanges);
+    console.log('🎨 [UNIFIED] Applying preserved changes:', preservedChanges);
     
-    // ✅ ЭТАП 4: Сохраняем в историю изменений
     get().addToStyleHistory(
       { backgroundImage: `url(${imageUrl})` },
       `Generated background image applied at ${new Date().toLocaleTimeString()}`
@@ -797,7 +602,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     
     walletStore.applyUniversalStyle(preservedChanges);
     
-    console.log('✅ [ЭТАП 4] Изображение применено с сохранением всех предыдущих стилей');
+    console.log('✅ [UNIFIED] Image applied with full style preservation');
   },
 
   applyStyleChanges: (changes) => {
@@ -808,7 +613,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const walletStore = useWalletCustomizationStore.getState();
       walletStore.applyUniversalStyle(preservedChanges);
       
-      // ✅ ЭТАП 4: Добавляем в историю
       get().addToStyleHistory(changes.changes, 'Style changes applied via chat');
     }
   },
