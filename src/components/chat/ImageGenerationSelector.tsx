@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useChatStore, ChatMode } from '@/stores/chatStore';
+import { useChatStore } from '@/stores/chatStore';
+import { ChatMode } from '@/config/api';
 import { Brain, Image, Sparkles } from 'lucide-react';
 
 const ImageGenerationSelector = () => {

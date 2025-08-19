@@ -1,8 +1,10 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Loader2, Image, Brain, Sparkles, Upload, X, Palette, Check, Undo } from 'lucide-react';
-import { useChatStore, ChatMode } from '@/stores/chatStore';
+import { useChatStore } from '@/stores/chatStore';
+import { ChatMode } from '@/config/api';
 import { toast } from 'sonner';
 
 interface MessageInputProps {

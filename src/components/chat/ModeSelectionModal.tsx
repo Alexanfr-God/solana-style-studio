@@ -8,7 +8,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useChatStore, ChatMode } from '@/stores/chatStore';
+import { useChatStore } from '@/stores/chatStore';
+import { ChatMode } from '@/config/api';
 import { 
   Brain, 
   Image, 

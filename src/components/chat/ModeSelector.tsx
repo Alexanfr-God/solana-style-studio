@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ChatMode } from '@/stores/chatStore';
+import { ChatMode } from '@/config/api';
 
 interface ModeSelectorProps {
   currentMode: ChatMode;
