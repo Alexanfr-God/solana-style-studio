@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [selectedElement, setSelectedElement] = useState('');
   const [isElementSelectorOpen, setIsElementSelectorOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivider>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { 
     messages, 
