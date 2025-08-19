@@ -17,6 +17,10 @@ interface ThemeState {
   // Current theme data
   theme: any;
   
+  // Preview theme (for local preview without commit)
+  previewTheme: any | null;
+  previewPresetId: string | null;
+  
   // History management
   history: ThemePatch[];
   currentIndex: number;
@@ -31,6 +35,9 @@ interface ThemeState {
   // Actions
   setTheme: (theme: any) => void;
   applyPatch: (patch: ThemePatch) => void;
+  applyPreviewPatch: (patch: Operation[], presetId: string) => void;
+  clearPreview: () => void;
+  commitPreview: () => void;
   undo: () => boolean;
   redo: () => boolean;
   clearHistory: () => void;
@@ -41,6 +48,7 @@ interface ThemeState {
   canUndo: () => boolean;
   canRedo: () => boolean;
   getCurrentPatch: () => ThemePatch | null;
+  getDisplayTheme: () => any; // Returns preview or current theme
 }
 
 let updateCounter = 0;
@@ -48,6 +56,8 @@ let updateCounter = 0;
 export const useThemeStore = create<ThemeState>()((set, get) => ({
   // Initial state
   theme: {},
+  previewTheme: null,
+  previewPresetId: null,
   history: [],
   currentIndex: -1,
   isLoading: false,
@@ -85,7 +95,10 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     set({
       _busy: true,
       theme,
-      error: null
+      error: null,
+      // Clear any preview when setting new base theme
+      previewTheme: null,
+      previewPresetId: null
     });
     
     // Release busy flag after update
@@ -94,6 +107,80 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }, 0);
     
     console.log(`✅ Theme set successfully (#${updateCounter})`);
+  },
+
+  // Apply preview patch locally without committing
+  applyPreviewPatch: (patch: Operation[], presetId: string) => {
+    const state = get();
+    
+    if (state._busy) {
+      console.warn('🚫 applyPreviewPatch blocked - already busy');
+      return;
+    }
+    
+    try {
+      const baseTheme = state.theme;
+      const previewTheme = applyJsonPatch(baseTheme, patch);
+      
+      set({
+        previewTheme,
+        previewPresetId: presetId,
+        error: null
+      });
+      
+      console.log('👀 Preview patch applied for preset:', presetId);
+    } catch (error) {
+      console.error('💥 Error applying preview patch:', error);
+      set({
+        error: error instanceof Error ? error.message : 'Failed to apply preview patch'
+      });
+    }
+  },
+
+  // Clear preview and return to base theme
+  clearPreview: () => {
+    set({
+      previewTheme: null,
+      previewPresetId: null,
+      error: null
+    });
+    console.log('🗑️ Preview cleared');
+  },
+
+  // Commit current preview as a patch in history
+  commitPreview: () => {
+    const state = get();
+    
+    if (!state.previewTheme || !state.previewPresetId) {
+      console.warn('⚠️ No preview to commit');
+      return;
+    }
+    
+    // Create a patch entry for the committed preview
+    const patchEntry: ThemePatch = {
+      id: `preset-${state.previewPresetId}-${Date.now()}`,
+      operations: [], // We don't store the actual operations here, just the result
+      userPrompt: `Applied preset: ${state.previewPresetId}`,
+      pageId: 'home',
+      presetId: state.previewPresetId,
+      timestamp: new Date(),
+      theme: state.previewTheme
+    };
+    
+    // Add to history and update current theme
+    const newHistory = state.history.slice(0, state.currentIndex + 1);
+    newHistory.push(patchEntry);
+    
+    set({
+      theme: state.previewTheme,
+      previewTheme: null,
+      previewPresetId: null,
+      history: newHistory,
+      currentIndex: newHistory.length - 1,
+      error: null
+    });
+    
+    console.log('✅ Preview committed to theme history');
   },
 
   // Apply patch and add to history
@@ -118,6 +205,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
         history: newHistory,
         currentIndex: newHistory.length - 1,
         error: null,
+        previewTheme: null,
+        previewPresetId: null,
         _busy: false
       });
       
@@ -148,6 +237,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
         theme: targetTheme,
         currentIndex: newIndex,
         error: null,
+        previewTheme: null,
+        previewPresetId: null,
         _busy: false
       });
       
@@ -163,7 +254,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
   },
 
-  // Redo next patch
   redo: () => {
     const state = get();
     if (state.currentIndex >= state.history.length - 1 || state._busy) return false;
@@ -178,6 +268,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
         theme: targetTheme,
         currentIndex: newIndex,
         error: null,
+        previewTheme: null,
+        previewPresetId: null,
         _busy: false
       });
       
@@ -193,22 +285,21 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
   },
 
-  // Clear all history
   clearHistory: () => {
     set({
       history: [],
       currentIndex: -1,
-      error: null
+      error: null,
+      previewTheme: null,
+      previewPresetId: null
     });
     console.log('🗑️ Theme history cleared');
   },
 
-  // Set loading state
   setLoading: (loading: boolean) => {
     set({ isLoading: loading });
   },
 
-  // Set error state  
   setError: (error: string | null) => {
     set({ error });
   },
@@ -227,10 +318,16 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   getCurrentPatch: () => {
     const state = get();
     return state.currentIndex >= 0 ? state.history[state.currentIndex] : null;
+  },
+
+  // New getter: returns preview theme if available, otherwise current theme
+  getDisplayTheme: () => {
+    const state = get();
+    return state.previewTheme || state.theme;
   }
 }));
 
-export const useWalletTheme = () => useThemeStore(state => state.theme);
+export const useWalletTheme = () => useThemeStore(state => state.getDisplayTheme());
 export const useThemeHistory = () => useThemeStore(state => ({
   history: state.history,
   currentIndex: state.currentIndex,
@@ -239,8 +336,16 @@ export const useThemeHistory = () => useThemeStore(state => ({
 }));
 export const useThemeActions = () => useThemeStore(state => ({
   applyPatch: state.applyPatch,
+  applyPreviewPatch: state.applyPreviewPatch,
+  clearPreview: state.clearPreview,
+  commitPreview: state.commitPreview,
   undo: state.undo,
   redo: state.redo,
   setTheme: state.setTheme,
   clearHistory: state.clearHistory
+}));
+export const usePreviewState = () => useThemeStore(state => ({
+  previewTheme: state.previewTheme,
+  previewPresetId: state.previewPresetId,
+  hasPreview: !!state.previewTheme
 }));

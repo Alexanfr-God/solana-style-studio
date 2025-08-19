@@ -8,7 +8,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { callPatch } from '@/lib/api/client';
-import { useThemeStore } from '@/state/themeStore';
+import { useThemeStore, usePreviewState } from '@/state/themeStore';
 import { toast } from 'sonner';
 import { withRenderGuard, once } from '@/utils/guard';
 
@@ -21,7 +21,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     import("@/utils/reactDiag").then(m => m.logReactIdentity("Coverflow"));
   }
 
-  const { themes, activeThemeId, getActiveTheme, isLoading, applyTheme, selectTheme, source } = useThemeSelector();
+  const { themes, isLoading, source } = useThemeSelector();
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
@@ -36,8 +36,15 @@ const ThemeSelectorCoverflow: React.FC = () => {
     dragFree: false
   });
 
-  // Use only useThemeStore actions
-  const applyPatch = useThemeStore(s => s.applyPatch);
+  // Use theme store actions for preview functionality
+  const { applyPreviewPatch, clearPreview, commitPreview, applyPatch } = useThemeStore(s => ({
+    applyPreviewPatch: s.applyPreviewPatch,
+    clearPreview: s.clearPreview,
+    commitPreview: s.commitPreview,
+    applyPatch: s.applyPatch
+  }));
+  
+  const { previewPresetId, hasPreview } = usePreviewState();
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -47,24 +54,14 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Функция сброса выделения после успешного применения
+  // Clear selection and preview
   const resetSelection = useCallback(() => {
     setTimeout(() => {
       setSelectedId(null);
-      console.log('🔄 Selection reset after successful apply');
+      clearPreview();
+      console.log('🔄 Selection and preview reset');
     }, 1500);
-  }, []);
-
-  // Функция обработки успешного применения темы
-  const handleSuccessfulApply = useCallback((themeId: string, themeName: string) => {
-    console.log(`✅ Theme successfully applied: ${themeName} (${themeId})`);
-    // В режиме "apply" делаем тему активной
-    if (mode === "apply") {
-      selectTheme(themeId);
-      console.log(`🎯 Theme ${themeId} set as active`);
-    }
-    resetSelection();
-  }, [mode, selectTheme, resetSelection]);
+  }, [clearPreview]);
 
   const handleThemeClick = once(async (theme: any) => {
     const now = Date.now();
@@ -81,13 +78,13 @@ const ThemeSelectorCoverflow: React.FC = () => {
       return;
     }
     
-    // В режиме apply: не обрабатывать клик по уже активной теме
-    if (theme.id === activeThemeId && mode === "apply") {
-      console.log('🚫 Click ignored - theme already active in apply mode');
+    // In apply mode: don't handle click on already selected theme
+    if (theme.id === selectedId && mode === "apply") {
+      console.log('🚫 Click ignored - theme already selected in apply mode');
       return;
     }
     
-    // В режиме inspire: можно кликать по любой теме
+    // In inspire mode: allow clicking on any theme
     if (theme.id === selectedId && mode === "inspire") {
       console.log('🚫 Click ignored - same theme already selected in inspire mode');
       return;
@@ -107,7 +104,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
       console.log(`👆 Theme click: ${theme.name} (mode: ${mode}, source: ${source}) - attempt ${clickCountRef.current}`);
       
       if (mode === "apply") {
-        // Проверяем, есть ли данные для применения
+        // Check if we have patch data for preview
         const hasPresetPatch = theme.patch && theme.patch.length > 0;
         const hasThemeData = theme.themeData && theme.themeData !== 'preset';
         
@@ -116,24 +113,29 @@ const ThemeSelectorCoverflow: React.FC = () => {
           return;
         }
         
-        console.log(`🎨 Applying ${hasPresetPatch ? 'preset patch' : 'theme data'} via SoT:`, theme.name);
-        applyTheme(theme);
-        toast.success(`🎨 Applied theme: ${theme.name}`);
+        console.log(`🔍 Applying local preview for: ${theme.name}`);
         
-        // Обработка успешного применения
-        handleSuccessfulApply(theme.id, theme.name);
+        if (hasPresetPatch) {
+          // Apply preset patch locally for preview
+          applyPreviewPatch(theme.patch, theme.id);
+          toast.success(`🔍 Preview: ${theme.name} (Click Apply to save)`);
+        } else if (hasThemeData) {
+          // For theme data, we need to convert it to a patch-like preview
+          // For now, just show message that this is not a preset
+          toast.info(`This is a full theme, not a preset. Use Inspire mode for AI customization.`);
+        }
         
       } else {
+        // Inspire mode - send to AI
         try {
           console.log('✨ Inspiring from theme:', theme.name);
           
-          // Подготавливаем промпт с контекстом
           const sampleContext = theme.sampleContext || `Style inspiration from ${theme.name}`;
           const basePrompt = `Apply the style inspiration from ${theme.name} preset`;
           const finalPrompt = `${basePrompt}\n\n[PRESET CONTEXT]\n${sampleContext}`;
           
           const response = await callPatch({
-            themeId: activeThemeId || 'default',
+            themeId: 'current',
             pageId: 'home',
             presetId: theme.id,
             userPrompt: finalPrompt
@@ -152,8 +154,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
             
             applyPatch(patchEntry);
             toast.success(`✨ Applied inspiration from: ${theme.name}`);
-            
-            // В режиме inspiration сбрасываем выделение, но не меняем активную тему
             resetSelection();
           } else {
             toast.error(`Failed to apply inspiration: ${response.error}`);
@@ -172,7 +172,21 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   });
 
-  const activeTheme = getActiveTheme();
+  // Apply the current preview
+  const handleApplyPreview = () => {
+    if (hasPreview) {
+      commitPreview();
+      toast.success('🎨 Theme applied successfully!');
+      resetSelection();
+    }
+  };
+
+  // Clear the current preview
+  const handleClearPreview = () => {
+    clearPreview();
+    setSelectedId(null);
+    toast.info('Preview cleared');
+  };
 
   if (isLoading) {
     return (
@@ -198,7 +212,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
             checked={mode === "inspire"}
             onCheckedChange={(checked) => {
               setMode(checked ? "inspire" : "apply");
-              setSelectedId(null); // Сброс выделения при смене режима
+              setSelectedId(null);
+              clearPreview();
             }}
           />
           <Label htmlFor="mode-toggle" className="text-white/80">
@@ -208,19 +223,32 @@ const ThemeSelectorCoverflow: React.FC = () => {
         
         <p className="text-sm text-white/60 max-w-md mx-auto">
           {mode === "apply" 
-            ? "Directly apply theme styles and set as active" 
+            ? "Preview and apply preset styles directly" 
             : "Use theme as style inspiration for AI generation"
           }
         </p>
         
-        {activeTheme && (
-          <div className="space-y-1">
-            <h4 className="text-lg font-medium bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              {activeTheme.name}
-            </h4>
-            <p className="text-sm text-white/70 max-w-md mx-auto">
-              {activeTheme.description}
+        {hasPreview && (
+          <div className="space-y-2">
+            <p className="text-sm text-purple-400">
+              🔍 Preview active - Click Apply to save changes
             </p>
+            <div className="flex justify-center gap-2">
+              <Button 
+                onClick={handleApplyPreview}
+                className="bg-purple-600 hover:bg-purple-700"
+                size="sm"
+              >
+                Apply Changes
+              </Button>
+              <Button 
+                onClick={handleClearPreview}
+                variant="outline"
+                size="sm"
+              >
+                Clear Preview
+              </Button>
+            </div>
           </div>
         )}
         
@@ -255,18 +283,16 @@ const ThemeSelectorCoverflow: React.FC = () => {
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex items-center gap-4 px-16">
             {themes.map((theme) => {
-              const isActive = theme.id === activeThemeId;
               const isSelected = theme.id === selectedId;
-              const hasData = (theme.patch && theme.patch.length > 0) || (theme.themeData && theme.themeData !== 'preset');
+              const isPreviewActive = theme.id === previewPresetId;
+              const hasData = !!(theme.patch && theme.patch.length > 0) || (theme.themeData && theme.themeData !== 'preset');
               
               return (
                 <div
                   key={theme.id}
                   className={`flex-shrink-0 w-48 transition-all duration-500 ease-out cursor-pointer ${
-                    isActive 
+                    isSelected || isPreviewActive
                       ? 'scale-110 z-10' 
-                      : isSelected
-                      ? 'scale-105 z-5'
                       : 'scale-90 opacity-60 hover:opacity-80 hover:scale-95'
                   } ${isProcessingRef.current ? 'pointer-events-none' : ''}`}
                   onClick={() => handleThemeClick(theme)}
@@ -275,10 +301,10 @@ const ThemeSelectorCoverflow: React.FC = () => {
                   <Card className={`
                     relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900
                     border transition-all duration-300 group
-                    ${isActive 
-                      ? 'border-purple-500/50 shadow-lg shadow-purple-500/20' 
-                      : isSelected
+                    ${isSelected
                       ? 'border-blue-500/50 shadow-lg shadow-blue-500/20'
+                      : isPreviewActive
+                      ? 'border-purple-500/50 shadow-lg shadow-purple-500/20' 
                       : 'border-white/10 hover:border-white/30'
                     }
                   `}>
@@ -293,15 +319,15 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         }}
                       />
 
-                      {isActive && (
+                      {isPreviewActive && (
                         <div className="absolute inset-0 border-2 border-purple-400 rounded-lg animate-pulse">
                           <div className="absolute top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
-                            Active
+                            Preview
                           </div>
                         </div>
                       )}
 
-                      {isSelected && !isActive && (
+                      {isSelected && !isPreviewActive && (
                         <div className="absolute inset-0 border-2 border-blue-400 rounded-lg">
                           <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                             Selected
@@ -349,7 +375,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <button
             key={theme.id}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              theme.id === activeThemeId 
+              theme.id === previewPresetId
                 ? 'bg-purple-400 w-6' 
                 : theme.id === selectedId
                 ? 'bg-blue-400 w-4'
@@ -363,7 +389,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
       
       {import.meta.env.DEV && (
         <div className="text-xs text-white/40 text-center space-y-1">
-          <div>Active: {activeThemeId} | Selected: {selectedId} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}</div>
+          <div>Selected: {selectedId} | Preview: {previewPresetId} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
         </div>
       )}

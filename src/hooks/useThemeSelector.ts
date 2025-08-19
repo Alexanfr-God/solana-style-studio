@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/state/themeStore';
 import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
@@ -55,7 +56,6 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
 export const useThemeSelector = () => {
   const { presets: loadedPresets, isLoading: presetsLoading, source } = usePresetsLoader();
   const [themes, setThemes] = useState<ThemeItem[]>([]);
-  const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Преобразуем пресеты в формат тем
@@ -76,14 +76,8 @@ export const useThemeSelector = () => {
     }));
     
     setThemes(convertedThemes);
-    
-    // Устанавливаем первую тему как активную по умолчанию
-    if (!activeThemeId && convertedThemes.length > 0) {
-      const defaultTheme = convertedThemes.find(t => t.id === 'luxuryTheme') || convertedThemes[0];
-      setActiveThemeId(defaultTheme.id);
-      console.log('🎯 Set default active theme:', defaultTheme.id);
-    }
-  }, [loadedPresets, source, activeThemeId]);
+    console.log('🎯 Themes converted successfully');
+  }, [loadedPresets, source]);
 
   // Load theme data when themes are first loaded - NO auto-apply
   useEffect(() => {
@@ -148,26 +142,6 @@ export const useThemeSelector = () => {
     }
   };
 
-  // EXPLICIT theme selection - only sets active, does NOT auto-apply
-  const selectTheme = (themeId: string) => {
-    console.log('👆 Theme selection (no auto-apply):', themeId);
-    
-    const selectedTheme = themes.find(t => t.id === themeId);
-    if (!selectedTheme) {
-      console.error('🚫 Theme not found:', themeId);
-      return;
-    }
-    
-    // ONLY set active - NO automatic application
-    setActiveThemeId(themeId);
-    console.log('✅ Theme selected as active:', themeId);
-  };
-
-  const getActiveTheme = () => {
-    if (!activeThemeId) return null;
-    return themes.find(t => t.id === activeThemeId);
-  };
-
   const applyThemeById = (themeId: string) => {
     const selectedTheme = themes.find(t => t.id === themeId);
     if (selectedTheme) {
@@ -177,10 +151,7 @@ export const useThemeSelector = () => {
 
   return {
     themes,
-    activeThemeId,
     isLoading: presetsLoading || isLoading,
-    selectTheme,
-    getActiveTheme,
     applyTheme,
     applyThemeById,
     source // Добавляем источник данных для отладки
