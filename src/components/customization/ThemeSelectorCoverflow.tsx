@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
 import { useCustomizationStore } from '@/stores/customizationStore';
+import { useThemeStore } from '@/state/themeStore';
 import { mapThemeToWalletStyle } from '@/utils/themeMapper';
 import { toast } from 'sonner';
 import { withRenderGuard } from '@/utils/guard';
@@ -24,6 +24,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
   } = useThemeSelector();
   
   const { setStyleForLayer } = useCustomizationStore();
+  const { setTheme } = useThemeStore();
   const [loadingThemes, setLoadingThemes] = useState<Set<string>>(new Set());
   
   const isProcessingRef = useRef(false);
@@ -74,24 +75,27 @@ const ThemeSelectorCoverflow: React.FC = () => {
     throw new Error(`Failed to load theme data for ${theme.id}`);
   }, []);
 
-  // Function to apply theme to wallet
+  // Function to apply theme to wallet - ИСПРАВЛЕНО: применяет в ОБА store
   const applyThemeToWallet = useCallback((themeData: any) => {
-    console.log('🎨 Applying theme to wallet:', themeData);
+    console.log('🎨 Applying theme to wallet AND themeStore:', themeData);
     
     try {
       const { loginStyle, walletStyle } = mapThemeToWalletStyle(themeData);
       
-      // Apply styles to both layers
+      // Apply styles to customization store (для DualWalletPreview)
       setStyleForLayer('login', loginStyle);
       setStyleForLayer('wallet', walletStyle);
       
-      console.log('✅ Theme applied successfully to wallet');
+      // ИСПРАВЛЕНИЕ: Apply raw theme data to themeStore (для WalletPreviewContainer)
+      setTheme(themeData);
+      
+      console.log('✅ Theme applied successfully to BOTH stores');
       
     } catch (error) {
       console.error('💥 Error applying theme:', error);
       toast.error('Failed to apply theme');
     }
-  }, [setStyleForLayer]);
+  }, [setStyleForLayer, setTheme]);
 
   // Apply active theme when initialized
   useEffect(() => {
@@ -104,6 +108,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           applyThemeToWallet(activeTheme.themeData);
         } else if (activeTheme.patch) {
           console.log('⚠️ Active theme is a preset, will be handled by themeStore');
+          applyTheme(activeTheme);
         } else if (source === 'files') {
           // Load theme data on demand for file-based themes
           setLoadingThemes(prev => new Set([...prev, activeTheme.id]));
@@ -127,9 +132,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
         }
       }
     }
-  }, [activeThemeId, themes, isLoading, applyThemeToWallet, source, loadThemeData]);
+  }, [activeThemeId, themes, isLoading, applyThemeToWallet, source, loadThemeData, applyTheme]);
 
-  // SIMPLIFIED: Direct theme application (no preview/apply states)
+  // SIMPLIFIED: Direct theme application - ИСПРАВЛЕНО
   const handleThemeClick = useCallback(async (theme: any) => {
     if (isProcessingRef.current) {
       console.log('🚫 Click ignored - already processing');
@@ -148,21 +153,19 @@ const ThemeSelectorCoverflow: React.FC = () => {
     
     try {
       if (theme.themeData) {
-        // Theme already has data - apply directly
+        // Theme already has data - apply to BOTH stores
         applyThemeToWallet(theme.themeData);
-        applyTheme(theme); // Update themeStore
         selectTheme(theme.id); // Set as active
         toast.success(`✅ Applied: ${theme.name}`);
       } else if (theme.patch) {
-        // Supabase preset - apply through themeStore
+        // Supabase preset - apply through themeStore only
         applyTheme(theme);
         selectTheme(theme.id);
         toast.success(`✅ Applied: ${theme.name}`);
       } else if (source === 'files') {
-        // File-based theme - load and apply
+        // File-based theme - load and apply to BOTH stores
         const loadedTheme = await loadThemeData(theme);
         applyThemeToWallet(loadedTheme.themeData);
-        applyTheme(loadedTheme);
         selectTheme(theme.id);
         toast.success(`✅ Applied: ${theme.name}`);
       } else {
@@ -330,7 +333,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <div>Active: {activeThemeId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
           <div>Loading: {Array.from(loadingThemes).join(', ') || 'none'}</div>
-          <div>✅ SIMPLIFIED: Click to apply immediately</div>
+          <div>✅ ИСПРАВЛЕНО: JSON темы теперь попадают в ОБА store</div>
         </div>
       )}
     </div>
