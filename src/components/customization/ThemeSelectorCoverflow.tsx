@@ -64,7 +64,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         
         if (response.ok) {
           const themeData = await response.json();
-          console.log(`✅ Successfully loaded theme data from: ${path}`);
+          console.log(`✅ Successfully loaded theme data from: ${path}`, themeData);
           return { ...theme, themeData };
         }
       } catch (error) {
@@ -75,27 +75,31 @@ const ThemeSelectorCoverflow: React.FC = () => {
     throw new Error(`Failed to load theme data for ${theme.id}`);
   }, []);
 
-  // Function to apply theme to wallet - ИСПРАВЛЕНО: применяет в ОБА store
-  const applyThemeToWallet = useCallback((themeData: any) => {
-    console.log('🎨 Applying theme to wallet AND themeStore:', themeData);
+  // ИСПРАВЛЕНО: Упрощенная функция применения JSON тем
+  const applyJsonTheme = useCallback((themeData: any, themeId: string) => {
+    console.log('🎯 DIRECT JSON THEME APPLICATION:', themeId, themeData);
     
     try {
+      // 1. Применить в customizationStore для DualWalletPreview
       const { loginStyle, walletStyle } = mapThemeToWalletStyle(themeData);
-      
-      // Apply styles to customization store (для DualWalletPreview)
       setStyleForLayer('login', loginStyle);
       setStyleForLayer('wallet', walletStyle);
       
-      // ИСПРАВЛЕНИЕ: Apply raw theme data to themeStore (для WalletPreviewContainer)
+      // 2. ГЛАВНОЕ: Применить RAW данные в themeStore для WalletPreviewContainer
       setTheme(themeData);
       
-      console.log('✅ Theme applied successfully to BOTH stores');
+      // 3. Установить как активную тему
+      selectTheme(themeId);
+      
+      console.log('✅ JSON Theme applied to BOTH stores successfully');
+      console.log('   - CustomizationStore: loginStyle + walletStyle');
+      console.log('   - ThemeStore: raw themeData =', themeData);
       
     } catch (error) {
-      console.error('💥 Error applying theme:', error);
-      toast.error('Failed to apply theme');
+      console.error('💥 Error applying JSON theme:', error);
+      throw error;
     }
-  }, [setStyleForLayer, setTheme]);
+  }, [setStyleForLayer, setTheme, selectTheme]);
 
   // Apply active theme when initialized
   useEffect(() => {
@@ -105,7 +109,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         console.log('🎯 Applying initial active theme:', activeTheme.name);
         
         if (activeTheme.themeData) {
-          applyThemeToWallet(activeTheme.themeData);
+          applyJsonTheme(activeTheme.themeData, activeTheme.id);
         } else if (activeTheme.patch) {
           console.log('⚠️ Active theme is a preset, will be handled by themeStore');
           applyTheme(activeTheme);
@@ -114,7 +118,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           setLoadingThemes(prev => new Set([...prev, activeTheme.id]));
           loadThemeData(activeTheme)
             .then(loadedTheme => {
-              applyThemeToWallet(loadedTheme.themeData);
+              applyJsonTheme(loadedTheme.themeData, activeTheme.id);
               setLoadingThemes(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(activeTheme.id);
@@ -132,9 +136,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
         }
       }
     }
-  }, [activeThemeId, themes, isLoading, applyThemeToWallet, source, loadThemeData, applyTheme]);
+  }, [activeThemeId, themes, isLoading, applyJsonTheme, source, loadThemeData, applyTheme]);
 
-  // SIMPLIFIED: Direct theme application - ИСПРАВЛЕНО
+  // ИСПРАВЛЕНО: Упрощенная обработка клика по теме
   const handleThemeClick = useCallback(async (theme: any) => {
     if (isProcessingRef.current) {
       console.log('🚫 Click ignored - already processing');
@@ -146,28 +150,33 @@ const ThemeSelectorCoverflow: React.FC = () => {
       return;
     }
     
-    console.log(`🎯 DIRECT THEME APPLICATION: ${theme.name}`);
+    console.log(`🎯 THEME CLICK: ${theme.name}`, theme);
     
     isProcessingRef.current = true;
     setLoadingThemes(prev => new Set([...prev, theme.id]));
     
     try {
       if (theme.themeData) {
-        // Theme already has data - apply to BOTH stores
-        applyThemeToWallet(theme.themeData);
-        selectTheme(theme.id); // Set as active
+        // Тема уже имеет JSON данные
+        console.log('📦 Theme has JSON data, applying directly');
+        applyJsonTheme(theme.themeData, theme.id);
         toast.success(`✅ Applied: ${theme.name}`);
+        
       } else if (theme.patch) {
-        // Supabase preset - apply through themeStore only
+        // Supabase preset - применить через themeStore
+        console.log('🗃️ Theme is Supabase preset, applying patch');
         applyTheme(theme);
         selectTheme(theme.id);
         toast.success(`✅ Applied: ${theme.name}`);
+        
       } else if (source === 'files') {
-        // File-based theme - load and apply to BOTH stores
+        // File-based тема - загрузить JSON и применить
+        console.log('📁 Loading file-based theme JSON');
         const loadedTheme = await loadThemeData(theme);
-        applyThemeToWallet(loadedTheme.themeData);
-        selectTheme(theme.id);
+        console.log('📦 Loaded theme data:', loadedTheme.themeData);
+        applyJsonTheme(loadedTheme.themeData, theme.id);
         toast.success(`✅ Applied: ${theme.name}`);
+        
       } else {
         throw new Error('No theme data available');
       }
@@ -182,7 +191,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
       });
       isProcessingRef.current = false;
     }
-  }, [activeThemeId, applyThemeToWallet, applyTheme, selectTheme, source, loadThemeData]);
+  }, [activeThemeId, applyJsonTheme, applyTheme, selectTheme, source, loadThemeData]);
 
   const activeTheme = themes.find(t => t.id === activeThemeId);
 
@@ -333,7 +342,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <div>Active: {activeThemeId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
           <div>Loading: {Array.from(loadingThemes).join(', ') || 'none'}</div>
-          <div>✅ ИСПРАВЛЕНО: JSON темы теперь попадают в ОБА store</div>
+          <div>🔧 ИСПРАВЛЕНО: JSON темы теперь корректно применяются</div>
         </div>
       )}
     </div>
