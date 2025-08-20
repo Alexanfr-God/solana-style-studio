@@ -4,6 +4,12 @@ import { WalletStyle } from '@/stores/customizationStore';
 export const mapThemeToWalletStyle = (theme: any): { loginStyle: WalletStyle; walletStyle: WalletStyle } => {
   console.log('🗺️ Mapping theme to wallet styles:', theme);
 
+  // Защита от пустых или некорректных данных
+  if (!theme || typeof theme !== 'object') {
+    console.warn('⚠️ Invalid theme data, using defaults');
+    theme = {};
+  }
+
   // Извлекаем данные из lockLayer для login стиля
   const lockLayer = theme.lockLayer || {};
   const unlockButton = lockLayer.unlockButton || {};

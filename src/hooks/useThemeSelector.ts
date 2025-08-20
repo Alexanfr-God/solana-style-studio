@@ -18,9 +18,10 @@ export interface ThemeItem {
 }
 
 const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
-  if (theme.themeData || theme.patch) return theme;
+  if (theme.themeData && theme.themeData !== 'preset') return theme;
+  if (theme.patch) return theme; // Preset with patch
   
-  console.log(`🎨 Attempting to load theme data for: ${theme.id}`);
+  console.log(`🎨 Loading theme data for: ${theme.id}`);
   
   const possiblePaths = [
     `/themes/${theme.id}.json`,
@@ -79,7 +80,7 @@ export const useThemeSelector = () => {
       description: preset.description,
       previewImage: preset.previewImage,
       coverUrl: preset.coverUrl,
-      themeData: source === 'supabase' ? 'preset' : null, // Marker for preset vs theme
+      themeData: source === 'supabase' ? undefined : undefined, // Don't set to 'preset' or null
       patch: preset.patch,
       sampleContext: preset.sampleContext
     }));
@@ -94,7 +95,7 @@ export const useThemeSelector = () => {
     }
   }, [loadedPresets, source, activeThemeId, setActiveThemeId]);
 
-  // Load theme data when themes are first loaded - NO auto-apply
+  // Load theme data when themes are first loaded
   useEffect(() => {
     if (themes.length === 0 || source === 'supabase') return; // Skip for Supabase presets
     
@@ -103,7 +104,7 @@ export const useThemeSelector = () => {
     
     const loadThemeData = async () => {
       setIsLoading(true);
-      console.log('🔄 Loading theme data for file-based themes (NO AUTO-APPLY)');
+      console.log('🔄 Loading theme data for file-based themes');
       
       try {
         const updatedThemes = await Promise.all(
@@ -116,7 +117,6 @@ export const useThemeSelector = () => {
         })));
         
         setThemes(updatedThemes);
-        console.log('🚫 Theme data loaded but NOT applied - awaiting explicit user action');
         
       } catch (error) {
         console.error('💥 Error loading themes:', error);
@@ -140,7 +140,7 @@ export const useThemeSelector = () => {
       } catch (error) {
         console.error('💥 Error applying preset preview:', error);
       }
-    } else if (selectedTheme.themeData && selectedTheme.themeData !== 'preset') {
+    } else if (selectedTheme.themeData) {
       // Это обычная тема - применяем themeData как preview через setTheme
       try {
         setTheme(selectedTheme.themeData);
@@ -174,7 +174,7 @@ export const useThemeSelector = () => {
       } catch (error) {
         console.error('💥 Error applying preset patch:', error);
       }
-    } else if (selectedTheme.themeData && selectedTheme.themeData !== 'preset') {
+    } else if (selectedTheme.themeData) {
       // Это обычная тема - применяем themeData
       console.log('🎨 Applying theme data:', selectedTheme.themeData);
       setTheme(selectedTheme.themeData);
