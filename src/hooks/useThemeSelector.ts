@@ -1,64 +1,24 @@
-
 import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/state/themeStore';
 import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
 import { applyPatch, type Operation } from 'fast-json-patch';
 
-// Оставляем старый интерфейс для совместимости
+// Keep old interface for compatibility
 export interface ThemeItem {
   id: string;
   name: string;
   description: string;
   previewImage: string;
   coverUrl: string;
-  themeData: any;
-  // Новые поля для пресетов
+  themeData?: any;
+  // New fields for presets
   patch?: any[];
   sampleContext?: string;
 }
 
-const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
-  if (theme.themeData && theme.themeData !== 'preset') return theme;
-  if (theme.patch) return theme; // Preset with patch
-  
-  console.log(`🎨 Loading theme data for: ${theme.id}`);
-  
-  const possiblePaths = [
-    `/themes/${theme.id}.json`,
-    `/themes/${theme.id}Theme.json`
-  ];
-  
-  for (const path of possiblePaths) {
-    try {
-      console.log(`📁 Trying to load: ${path}`);
-      const response = await fetch(path);
-      
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-          const themeData = await response.json();
-          console.log(`✅ Successfully loaded theme data from: ${path}`);
-          return { ...theme, themeData };
-        } else {
-          console.warn(`⚠️ Invalid content type for ${path}: ${contentType}`);
-        }
-      } else {
-        console.warn(`❌ Failed to fetch ${path}: ${response.status} ${response.statusText}`);
-      }
-    } catch (error) {
-      console.warn(`💥 Error loading ${path}:`, error);
-    }
-  }
-  
-  console.error(`🚫 Failed to load theme data for ${theme.id} from any path`);
-  return theme;
-};
-
 export const useThemeSelector = () => {
   const { presets: loadedPresets, isLoading: presetsLoading, source } = usePresetsLoader();
   const [themes, setThemes] = useState<ThemeItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Get unified theme store state and actions - SINGLE SOURCE OF TRUTH
   const activeThemeId = useThemeStore(state => state.activeThemeId);
@@ -68,7 +28,7 @@ export const useThemeSelector = () => {
   const commitPreview = useThemeStore(state => state.commitPreview);
   const getDisplayTheme = useThemeStore(state => state.getDisplayTheme);
 
-  // Преобразуем пресеты в формат тем
+  // Convert presets to themes format
   useEffect(() => {
     if (loadedPresets.length === 0) return;
     
@@ -80,14 +40,15 @@ export const useThemeSelector = () => {
       description: preset.description,
       previewImage: preset.previewImage,
       coverUrl: preset.coverUrl,
-      themeData: source === 'supabase' ? undefined : undefined, // Don't set to 'preset' or null
+      // Don't set themeData initially - load on demand for file-based themes
+      themeData: undefined,
       patch: preset.patch,
       sampleContext: preset.sampleContext
     }));
     
     setThemes(convertedThemes);
     
-    // Устанавливаем первую тему как активную по умолчанию если нет активной
+    // Set first theme as active if no active theme
     if (!activeThemeId && convertedThemes.length > 0) {
       const defaultTheme = convertedThemes.find(t => t.id === 'luxuryTheme') || convertedThemes[0];
       setActiveThemeId(defaultTheme.id);
@@ -95,45 +56,12 @@ export const useThemeSelector = () => {
     }
   }, [loadedPresets, source, activeThemeId, setActiveThemeId]);
 
-  // Load theme data when themes are first loaded
-  useEffect(() => {
-    if (themes.length === 0 || source === 'supabase') return; // Skip for Supabase presets
-    
-    const needsDataLoad = themes.some(theme => !theme.themeData && !theme.patch);
-    if (!needsDataLoad) return;
-    
-    const loadThemeData = async () => {
-      setIsLoading(true);
-      console.log('🔄 Loading theme data for file-based themes');
-      
-      try {
-        const updatedThemes = await Promise.all(
-          themes.map(theme => loadThemeDataForTheme(theme))
-        );
-        
-        console.log('📦 All themes processed:', updatedThemes.map(t => ({ 
-          id: t.id, 
-          hasData: !!(t.themeData || t.patch)
-        })));
-        
-        setThemes(updatedThemes);
-        
-      } catch (error) {
-        console.error('💥 Error loading themes:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadThemeData();
-  }, [themes.length, source]);
-
   // Apply preview patch for theme (temporary preview)
   const applyThemePreview = (selectedTheme: ThemeItem) => {
     console.log(`👁️ Applying theme preview: ${selectedTheme.name}`);
     
     if (selectedTheme.patch && selectedTheme.patch.length > 0) {
-      // Это preset из Supabase - применяем patch как preview
+      // This is a preset from Supabase - apply patch as preview
       try {
         applyPreviewPatch(selectedTheme.patch as Operation[]);
         console.log('👁️ Applied preset patch as preview:', selectedTheme.name);
@@ -141,7 +69,7 @@ export const useThemeSelector = () => {
         console.error('💥 Error applying preset preview:', error);
       }
     } else if (selectedTheme.themeData) {
-      // Это обычная тема - применяем themeData как preview через setTheme
+      // This is a regular theme - apply themeData as preview through setTheme
       try {
         setTheme(selectedTheme.themeData);
         console.log('👁️ Applied theme data directly:', selectedTheme.name);
@@ -158,14 +86,14 @@ export const useThemeSelector = () => {
     console.log(`🎨 APPLY THEME CLICKED: ${selectedTheme.name}`);
     console.log('🎨 Theme data:', selectedTheme);
     
-    // Для пресетов используем patch, для обычных тем - themeData
+    // For presets use patch, for regular themes use themeData
     if (selectedTheme.patch && selectedTheme.patch.length > 0) {
-      // Это preset из Supabase - применяем patch локально
+      // This is a preset from Supabase - apply patch locally
       const currentTheme = getDisplayTheme();
       console.log('🎨 Current theme before patch:', currentTheme);
       
       try {
-        // Применяем patch к текущей теме
+        // Apply patch to current theme
         const newTheme = applyPatch(currentTheme, selectedTheme.patch as Operation[], false, false).newDocument;
         console.log('🎨 New theme after patch:', newTheme);
         setTheme(newTheme);
@@ -175,7 +103,7 @@ export const useThemeSelector = () => {
         console.error('💥 Error applying preset patch:', error);
       }
     } else if (selectedTheme.themeData) {
-      // Это обычная тема - применяем themeData
+      // This is a regular theme - apply themeData
       console.log('🎨 Applying theme data:', selectedTheme.themeData);
       setTheme(selectedTheme.themeData);
       setActiveThemeId(selectedTheme.id);
@@ -230,13 +158,13 @@ export const useThemeSelector = () => {
   return {
     themes,
     activeThemeId, // Now reads from unified themeStore
-    isLoading: presetsLoading || isLoading,
+    isLoading: presetsLoading, // Removed the blocking loading state
     selectTheme,
     getActiveTheme, // Deprecated but kept for compatibility
     applyTheme,
     applyThemePreview,
     commitCurrentPreview,
     applyThemeById,
-    source // Добавляем источник данных для отладки
+    source // Add data source for debugging
   };
 };

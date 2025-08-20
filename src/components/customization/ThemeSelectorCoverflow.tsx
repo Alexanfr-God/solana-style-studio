@@ -25,6 +25,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
   
   const { setStyleForLayer } = useCustomizationStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loadingThemes, setLoadingThemes] = useState<Set<string>>(new Set());
   
   const isProcessingRef = useRef(false);
   
@@ -43,14 +44,45 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Функция применения темы к кошельку
+  // Load theme data on demand
+  const loadThemeData = useCallback(async (theme: any) => {
+    if (theme.themeData || theme.patch) {
+      return theme; // Already has data
+    }
+
+    console.log(`🔄 Loading theme data on demand for: ${theme.name}`);
+    
+    const possiblePaths = [
+      `/themes/${theme.id}.json`,
+      `/themes/${theme.id}Theme.json`
+    ];
+    
+    for (const path of possiblePaths) {
+      try {
+        console.log(`📁 Trying to load: ${path}`);
+        const response = await fetch(path);
+        
+        if (response.ok) {
+          const themeData = await response.json();
+          console.log(`✅ Successfully loaded theme data from: ${path}`);
+          return { ...theme, themeData };
+        }
+      } catch (error) {
+        console.warn(`💥 Error loading ${path}:`, error);
+      }
+    }
+    
+    throw new Error(`Failed to load theme data for ${theme.id}`);
+  }, []);
+
+  // Function to apply theme to wallet
   const applyThemeToWallet = useCallback((themeData: any) => {
     console.log('🎨 Applying theme to wallet:', themeData);
     
     try {
       const { loginStyle, walletStyle } = mapThemeToWalletStyle(themeData);
       
-      // Применяем стили к обеим слоям
+      // Apply styles to both layers
       setStyleForLayer('login', loginStyle);
       setStyleForLayer('wallet', walletStyle);
       
@@ -62,40 +94,64 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   }, [setStyleForLayer]);
 
-  // Применить активную тему при инициализации
+  // Apply active theme when initialized
   useEffect(() => {
     if (activeThemeId && themes.length > 0 && !isLoading) {
       const activeTheme = themes.find(t => t.id === activeThemeId);
       if (activeTheme) {
         console.log('🎯 Applying initial active theme:', activeTheme.name);
         
-        // Проверяем есть ли данные темы или patch
         if (activeTheme.themeData) {
           applyThemeToWallet(activeTheme.themeData);
         } else if (activeTheme.patch) {
           console.log('⚠️ Active theme is a preset, will be handled by themeStore');
+        } else if (source === 'files') {
+          // Load theme data on demand for file-based themes
+          setLoadingThemes(prev => new Set([...prev, activeTheme.id]));
+          loadThemeData(activeTheme)
+            .then(loadedTheme => {
+              applyThemeToWallet(loadedTheme.themeData);
+              setLoadingThemes(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(activeTheme.id);
+                return newSet;
+              });
+            })
+            .catch(error => {
+              console.error('💥 Error loading active theme:', error);
+              setLoadingThemes(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(activeTheme.id);
+                return newSet;
+              });
+            });
         }
       }
     }
-  }, [activeThemeId, themes, isLoading, applyThemeToWallet]);
+  }, [activeThemeId, themes, isLoading, applyThemeToWallet, source, loadThemeData]);
 
-  // Проверка доступности темы для применения
+  // Simplified theme readiness check
   const isThemeReady = useCallback((theme: any) => {
-    // Для Supabase пресетов всегда готов (используется patch)
+    // For Supabase presets - check for patch
     if (source === 'supabase' && theme.patch) {
       return true;
     }
     
-    // Для файловых тем нужны загруженные данные
-    if (source === 'files' && theme.themeData) {
+    // For file-based themes - always ready (load on demand)
+    if (source === 'files') {
+      return true;
+    }
+    
+    // For themes with loaded data
+    if (theme.themeData) {
       return true;
     }
     
     return false;
   }, [source]);
 
-  // Обработка клика на тему (preview)
-  const handleThemeClick = useCallback((theme: any) => {
+  // Handle theme click (preview)
+  const handleThemeClick = useCallback(async (theme: any) => {
     if (isProcessingRef.current) {
       console.log('🚫 Click ignored - already processing');
       return;
@@ -108,33 +164,43 @@ const ThemeSelectorCoverflow: React.FC = () => {
     
     console.log(`👆 Theme clicked for preview: ${theme.name}`);
     
-    if (!isThemeReady(theme)) {
-      toast.error('Theme is still loading, please wait...');
-      return;
-    }
+    isProcessingRef.current = true;
+    setLoadingThemes(prev => new Set([...prev, theme.id]));
     
-    // Для preview - применяем тему к кошельку
-    if (theme.themeData) {
-      applyThemeToWallet(theme.themeData);
-      setSelectedId(theme.id);
-      toast.success(`👁️ Previewing: ${theme.name}`);
-    } else if (theme.patch) {
-      // Для пресетов вызываем applyTheme из useThemeSelector
-      try {
+    try {
+      if (theme.themeData) {
+        // Theme already has data
+        applyThemeToWallet(theme.themeData);
+        setSelectedId(theme.id);
+        toast.success(`👁️ Previewing: ${theme.name}`);
+      } else if (theme.patch) {
+        // Supabase preset
         applyTheme(theme);
         setSelectedId(theme.id);
         toast.success(`👁️ Previewing: ${theme.name}`);
-      } catch (error) {
-        console.error('💥 Error applying preset preview:', error);
-        toast.error('Failed to preview theme');
+      } else if (source === 'files') {
+        // File-based theme - load on demand
+        const loadedTheme = await loadThemeData(theme);
+        applyThemeToWallet(loadedTheme.themeData);
+        setSelectedId(theme.id);
+        toast.success(`👁️ Previewing: ${theme.name}`);
+      } else {
+        throw new Error('No theme data available');
       }
-    } else {
-      console.warn('⚠️ No theme data available for:', theme.name);
-      toast.error('Theme data not available');
+    } catch (error) {
+      console.error('💥 Error applying theme preview:', error);
+      toast.error(`Failed to preview ${theme.name}`);
+    } finally {
+      setLoadingThemes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(theme.id);
+        return newSet;
+      });
+      isProcessingRef.current = false;
     }
-  }, [activeThemeId, isThemeReady, applyThemeToWallet, applyTheme]);
+  }, [activeThemeId, applyThemeToWallet, applyTheme, source, loadThemeData]);
 
-  // Обработка кнопки Apply (commit)
+  // Handle Apply button (commit)
   const handleApplyClick = useCallback(() => {
     if (!selectedId) return;
     
@@ -143,22 +209,17 @@ const ThemeSelectorCoverflow: React.FC = () => {
     
     console.log('🎯 Apply button clicked:', selectedTheme.name);
     
-    // Применяем тему через useThemeSelector (это обновит themeStore)
+    // Apply theme through useThemeSelector (this updates themeStore)
     applyTheme(selectedTheme);
     
-    // Устанавливаем как активную тему
+    // Set as active theme
     selectTheme(selectedId);
     
-    // Еще раз применяем к кошельку для уверенности
-    if (selectedTheme.themeData) {
-      applyThemeToWallet(selectedTheme.themeData);
-    }
-    
-    // Сбрасываем выделение
+    // Reset selection
     setSelectedId(null);
     
     toast.success(`✅ Theme applied: ${selectedTheme.name}`);
-  }, [selectedId, themes, applyTheme, selectTheme, applyThemeToWallet]);
+  }, [selectedId, themes, applyTheme, selectTheme]);
 
   const activeTheme = themes.find(t => t.id === activeThemeId);
 
@@ -236,7 +297,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
             {themes.map((theme) => {
               const isActive = theme.id === activeThemeId;
               const isSelected = theme.id === selectedId;
-              const isReady = isThemeReady(theme);
+              const isThemeLoading = loadingThemes.has(theme.id);
               
               return (
                 <div
@@ -288,8 +349,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         </div>
                       )}
 
-                      {!isReady && (
-                        <div className="absolute bottom-2 left-2 bg-yellow-500/80 text-black text-xs px-2 py-1 rounded-full">
+                      {isThemeLoading && (
+                        <div className="absolute bottom-2 left-2 bg-yellow-500/80 text-black text-xs px-2 py-1 rounded-full animate-pulse">
                           Loading...
                         </div>
                       )}
@@ -334,8 +395,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
         <div className="text-xs text-white/40 text-center space-y-1">
           <div>Active: {activeThemeId} | Selected: {selectedId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
-          <div>Ready themes: {themes.filter(t => isThemeReady(t)).length}</div>
-          <div>✅ Fixed theme loading and application system</div>
+          <div>Loading: {Array.from(loadingThemes).join(', ') || 'none'}</div>
+          <div>✅ Simplified theme loading - click to apply immediately</div>
         </div>
       )}
     </div>
