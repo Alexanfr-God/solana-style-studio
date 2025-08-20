@@ -23,7 +23,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
   const { 
     themes, 
     activeThemeId, 
-    getActiveTheme, 
     isLoading, 
     applyTheme, 
     applyThemePreview,
@@ -120,7 +119,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
       console.log(`👆 Theme click: ${theme.name} (mode: ${mode}, source: ${source}) - attempt ${clickCountRef.current}`);
       
       if (mode === "apply") {
-        // Check if we have data for application - improved logic for CF-2
+        // Improved hasData check for CF-2 unified with theme store
         const hasSupabasePatch = source === 'supabase' && theme.patch && theme.patch.length > 0;
         const hasFileThemeData = source === 'files' && theme.themeData && theme.themeData !== 'preset';
         
@@ -140,7 +139,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         
         console.log(`👁️ Applying preview for ${hasSupabasePatch ? 'Supabase preset patch' : 'file theme data'}:`, theme.name);
         
-        // Apply preview first
+        // Apply preview first - using unified theme store
         applyThemePreview(theme);
         toast.success(`👁️ Preview applied: ${theme.name} (click Apply to confirm)`);
         
@@ -193,7 +192,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   });
 
-  // Handle apply button click
+  // Handle apply button click - unified with theme store
   const handleApplyClick = useCallback(() => {
     if (!selectedId) return;
     
@@ -202,7 +201,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     
     console.log('🎨 Applying theme via Apply button:', selectedTheme.name);
     
-    // Commit the preview and make it active
+    // Commit the preview and make it active using unified store
     commitCurrentPreview();
     selectTheme(selectedId);
     
@@ -210,7 +209,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
     handleSuccessfulApply(selectedId, selectedTheme.name);
   }, [selectedId, themes, commitCurrentPreview, selectTheme, handleSuccessfulApply]);
 
-  const activeTheme = getActiveTheme();
+  // Find active theme from unified state
+  const activeTheme = themes.find(t => t.id === activeThemeId);
 
   if (isLoading) {
     return (
@@ -307,7 +307,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
             {themes.map((theme) => {
               const isActive = theme.id === activeThemeId;
               const isSelected = theme.id === selectedId;
-              // Improved hasData logic for CF-2
+              // Improved hasData logic unified with theme store
               const hasSupabasePatch = source === 'supabase' && theme.patch && theme.patch.length > 0;
               const hasFileThemeData = source === 'files' && theme.themeData && theme.themeData !== 'preset';
               const hasData = hasSupabasePatch || hasFileThemeData;
@@ -402,7 +402,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <button
             key={theme.id}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              theme.id === activeThemeId 
+              theme.id === activeThemeId
                 ? 'bg-purple-400 w-6' 
                 : theme.id === selectedId
                 ? 'bg-blue-400 w-4'
@@ -419,6 +419,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <div>Active: {activeThemeId} | Selected: {selectedId} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
           <div>Data diagnostic: {themes.map(t => `${t.id}=${source === 'supabase' ? (t.patch?.length || 0) : (t.themeData ? 'Y' : 'N')}`).join(', ')}</div>
+          <div className="text-yellow-400">✅ CF-3: Unified theme state active</div>
         </div>
       )}
     </div>

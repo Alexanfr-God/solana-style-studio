@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { Operation } from 'fast-json-patch';
 import { applyJsonPatch } from '@/services/llmPatchService';
@@ -66,17 +65,14 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   error: null,
   _busy: false,
 
-  // Set active theme id
   setActiveThemeId: (themeId: string | null) => {
     set({ activeThemeId: themeId });
     console.log('🎯 Active theme ID set to:', themeId);
   },
 
-  // Set base theme with circuit breaker protection
   setTheme: (theme: any) => {
     const state = get();
     
-    // Circuit breaker - prevent re-entry
     if (state._busy) {
       console.warn('🚫 setTheme blocked - already busy');
       return;
@@ -86,7 +82,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     const callStack = new Error().stack;
     console.log(`🎨 setTheme called (#${updateCounter}) from:`, callStack?.split('\n')[2]);
     
-    // Enhanced comparison to prevent redundant updates
     try {
       const currentThemeStr = JSON.stringify(state.theme);
       const newThemeStr = JSON.stringify(theme);
@@ -99,14 +94,12 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       console.warn(`Theme comparison failed (#${updateCounter}), proceeding with update`);
     }
     
-    // Single atomic update with busy flag
     set({
       _busy: true,
       theme,
       error: null
     });
     
-    // Release busy flag after update
     setTimeout(() => {
       set({ _busy: false });
     }, 0);
@@ -114,7 +107,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     console.log(`✅ Theme set successfully (#${updateCounter})`);
   },
 
-  // Apply preview patch (temporary preview)
   applyPreviewPatch: (operations: Operation[]) => {
     const state = get();
     
@@ -144,7 +136,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
   },
 
-  // Commit preview to main theme
   commitPreview: () => {
     const state = get();
     
@@ -178,13 +169,11 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
   },
 
-  // Clear preview
   clearPreview: () => {
     set({ previewTheme: null });
     console.log('🗑️ Preview cleared');
   },
 
-  // Apply patch and add to history
   applyPatch: (patch: ThemePatch) => {
     const state = get();
     
@@ -219,7 +208,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
   },
 
-  // Undo last patch
   undo: () => {
     const state = get();
     if (state.currentIndex < 0 || state._busy) return false;
@@ -251,7 +239,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
   },
 
-  // Redo next patch
   redo: () => {
     const state = get();
     if (state.currentIndex >= state.history.length - 1 || state._busy) return false;
@@ -281,7 +268,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
   },
 
-  // Clear all history
   clearHistory: () => {
     set({
       history: [],
@@ -291,17 +277,14 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     console.log('🗑️ Theme history cleared');
   },
 
-  // Set loading state
   setLoading: (loading: boolean) => {
     set({ isLoading: loading });
   },
 
-  // Set error state  
   setError: (error: string | null) => {
     set({ error });
   },
 
-  // Pure getters - no side effects
   canUndo: () => {
     const state = get();
     return state.currentIndex >= 0;
@@ -317,19 +300,25 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     return state.currentIndex >= 0 ? state.history[state.currentIndex] : null;
   },
 
-  // Get display theme (preview or main)
   getDisplayTheme: () => {
     const state = get();
     return state.previewTheme || state.theme;
   },
 
-  // Compatibility adapter for old getActiveTheme calls
+  /**
+   * @deprecated Use getDisplayTheme() instead. This method will be removed in v2.0
+   * Legacy compatibility adapter for old getActiveTheme() calls
+   */
   getActiveTheme: () => {
     const state = get();
+    if (import.meta.env.DEV) {
+      console.warn('⚠️ DEPRECATED: getActiveTheme() is deprecated, use getDisplayTheme() instead');
+    }
     return state.previewTheme || state.theme;
   }
 }));
 
+// Unified theme selectors with compatibility
 export const useWalletTheme = () => useThemeStore(state => state.getDisplayTheme());
 export const useThemeHistory = () => useThemeStore(state => ({
   history: state.history,
@@ -347,4 +336,12 @@ export const useThemeActions = () => useThemeStore(state => ({
   setTheme: state.setTheme,
   setActiveThemeId: state.setActiveThemeId,
   clearHistory: state.clearHistory
+}));
+
+// Unified theme state selectors
+export const useThemeState = () => useThemeStore(state => ({
+  activeThemeId: state.activeThemeId,
+  hasPreview: !!state.previewTheme,
+  isLoading: state.isLoading,
+  error: state.error
 }));

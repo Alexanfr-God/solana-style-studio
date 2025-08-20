@@ -1,15 +1,14 @@
 
 import React, { useRef } from 'react';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import { useThemeSelector } from '@/hooks/useThemeSelector';
+import { useThemeState } from '@/state/themeStore'; // Use unified theme state
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import MintNftButton from './ExportToIpfsButton';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
-  const { getActiveTheme } = useThemeSelector();
-  const activeTheme = getActiveTheme();
+  const { activeThemeId } = useThemeState(); // Use unified theme state
   const dualPreviewRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -48,7 +47,7 @@ const DualWalletPreview = () => {
         <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3">
           <MintNftButton 
             targetRef={dualPreviewRef} 
-            themeId={activeTheme?.id}
+            themeId={activeThemeId}
           />
         </div>
       </div>

@@ -59,7 +59,7 @@ export const useThemeSelector = () => {
   const [themes, setThemes] = useState<ThemeItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get theme store state and actions
+  // Get unified theme store state and actions - SINGLE SOURCE OF TRUTH
   const activeThemeId = useThemeStore(state => state.activeThemeId);
   const setActiveThemeId = useThemeStore(state => state.setActiveThemeId);
   const setTheme = useThemeStore(state => state.setTheme);
@@ -202,7 +202,15 @@ export const useThemeSelector = () => {
     console.log('✅ Theme selected as active:', themeId);
   };
 
+  /**
+   * @deprecated Use useThemeStore().getDisplayTheme() directly instead
+   * Legacy compatibility for components still using this method
+   */
   const getActiveTheme = () => {
+    if (import.meta.env.DEV) {
+      console.warn('⚠️ DEPRECATED: useThemeSelector.getActiveTheme() is deprecated, use useWalletTheme() hook instead');
+    }
+    
     if (!activeThemeId) return null;
     return themes.find(t => t.id === activeThemeId);
   };
@@ -216,10 +224,10 @@ export const useThemeSelector = () => {
 
   return {
     themes,
-    activeThemeId,
+    activeThemeId, // Now reads from unified themeStore
     isLoading: presetsLoading || isLoading,
     selectTheme,
-    getActiveTheme,
+    getActiveTheme, // Deprecated but kept for compatibility
     applyTheme,
     applyThemePreview,
     commitCurrentPreview,
