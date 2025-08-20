@@ -1,15 +1,19 @@
 
 import React, { useRef } from 'react';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import { useThemeState } from '@/state/themeStore'; // Use unified theme state
+import { useThemeState } from '@/state/themeStore';
+import { useThemeSynchronizer } from '@/hooks/useThemeSynchronizer';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import MintNftButton from './ExportToIpfsButton';
 
 const DualWalletPreview = () => {
   const { loginStyle, walletStyle } = useCustomizationStore();
-  const { activeThemeId } = useThemeState(); // Use unified theme state
+  const { activeThemeId } = useThemeState();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
+
+  // Синхронизируем изменения между themeStore и customizationStore
+  useThemeSynchronizer();
 
   return (
     <div className="flex flex-col h-full w-full">

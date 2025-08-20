@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { defaultLoginStyle, defaultWalletStyle } from '../constants/defaultWalletStyles';
 
@@ -142,14 +141,22 @@ export const useCustomizationStore = create<CustomizationState>((set, get) => ({
   
   setActiveLayer: (layer) => set({ activeLayer: layer }),
   
-  setStyleForLayer: (layer, style) => set((state) => ({
-    ...(layer === 'login' 
+  setStyleForLayer: (layer, style) => set((state) => {
+    console.log(`🎨 CustomizationStore: Updating ${layer} style:`, style);
+    
+    const newState = layer === 'login' 
       ? { loginStyle: { ...state.loginStyle, ...style }, isGenerating: false } 
-      : { walletStyle: { ...state.walletStyle, ...style }, isGenerating: false }),
-    // Сбросить анализ при изменении стиля
-    walletAnalysis: null,
-    analysisTimestamp: null
-  })),
+      : { walletStyle: { ...state.walletStyle, ...style }, isGenerating: false };
+    
+    console.log(`✅ CustomizationStore: ${layer} style updated`, newState);
+    
+    return {
+      ...newState,
+      // Сбросить анализ при изменении стиля
+      walletAnalysis: null,
+      analysisTimestamp: null
+    };
+  }),
   
   resetLayer: (layer) => set((state) => ({
     ...(layer === 'login' 

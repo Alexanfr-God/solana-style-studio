@@ -155,27 +155,31 @@ export const useThemeSelector = () => {
 
   // EXPLICIT theme application - commits preview to main theme
   const applyTheme = (selectedTheme: ThemeItem) => {
-    console.log(`🎨 Applying theme: ${selectedTheme.name}`);
+    console.log(`🎨 APPLY THEME CLICKED: ${selectedTheme.name}`);
+    console.log('🎨 Theme data:', selectedTheme);
     
     // Для пресетов используем patch, для обычных тем - themeData
     if (selectedTheme.patch && selectedTheme.patch.length > 0) {
       // Это preset из Supabase - применяем patch локально
       const currentTheme = getDisplayTheme();
+      console.log('🎨 Current theme before patch:', currentTheme);
       
       try {
         // Применяем patch к текущей теме
         const newTheme = applyPatch(currentTheme, selectedTheme.patch as Operation[], false, false).newDocument;
+        console.log('🎨 New theme after patch:', newTheme);
         setTheme(newTheme);
         setActiveThemeId(selectedTheme.id);
-        console.log('🎨 Applied preset patch locally:', selectedTheme.name);
+        console.log('✅ Applied preset patch locally:', selectedTheme.name);
       } catch (error) {
         console.error('💥 Error applying preset patch:', error);
       }
     } else if (selectedTheme.themeData && selectedTheme.themeData !== 'preset') {
       // Это обычная тема - применяем themeData
+      console.log('🎨 Applying theme data:', selectedTheme.themeData);
       setTheme(selectedTheme.themeData);
       setActiveThemeId(selectedTheme.id);
-      console.log('🎨 Applied theme data:', selectedTheme.name);
+      console.log('✅ Applied theme data:', selectedTheme.name);
     } else {
       console.warn('⚠️ Cannot apply theme without data or patch:', selectedTheme.name);
     }
@@ -183,6 +187,7 @@ export const useThemeSelector = () => {
 
   // Commit current preview to main theme
   const commitCurrentPreview = () => {
+    console.log('✅ COMMITTING PREVIEW to main theme');
     commitPreview();
     console.log('✅ Preview committed to main theme');
   };
