@@ -1,15 +1,14 @@
 
 import React, { useRef } from 'react';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import { useThemeStore } from '@/state/themeStore';
+import { useThemeState } from '@/state/themeStore';
 import { LoginScreen, WalletScreen } from './WalletScreens';
 import { Badge } from '@/components/ui/badge';
 import MintNftButton from './ExportToIpfsButton';
 
 const DualWalletPreview = () => {
-  // Read styles directly from customizationStore
   const { loginStyle, walletStyle } = useCustomizationStore();
-  const { activeThemeId } = useThemeStore();
+  const { activeThemeId } = useThemeState();
   const dualPreviewRef = useRef<HTMLDivElement>(null);
 
   return (
