@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/state/themeStore';
 import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
-import { applyPatch } from 'fast-json-patch';
+import { applyPatch, type Operation } from 'fast-json-patch';
 
 // Оставляем старый интерфейс для совместимости
 export interface ThemeItem {
@@ -135,19 +135,16 @@ export const useThemeSelector = () => {
     if (selectedTheme.patch && selectedTheme.patch.length > 0) {
       // Это preset из Supabase - применяем patch как preview
       try {
-        applyPreviewPatch(selectedTheme.patch);
+        applyPreviewPatch(selectedTheme.patch as Operation[]);
         console.log('👁️ Applied preset patch as preview:', selectedTheme.name);
       } catch (error) {
         console.error('💥 Error applying preset preview:', error);
       }
     } else if (selectedTheme.themeData && selectedTheme.themeData !== 'preset') {
-      // Это обычная тема - применяем themeData как preview
-      const currentTheme = getDisplayTheme();
+      // Это обычная тема - применяем themeData как preview через setTheme
       try {
-        // Create a simple patch to replace the theme
-        const replacePatch = [{ op: 'replace', path: '', value: selectedTheme.themeData }];
-        applyPreviewPatch(replacePatch);
-        console.log('👁️ Applied theme data as preview:', selectedTheme.name);
+        setTheme(selectedTheme.themeData);
+        console.log('👁️ Applied theme data directly:', selectedTheme.name);
       } catch (error) {
         console.error('💥 Error applying theme preview:', error);
       }
@@ -167,7 +164,7 @@ export const useThemeSelector = () => {
       
       try {
         // Применяем patch к текущей теме
-        const newTheme = applyPatch(currentTheme, selectedTheme.patch, false, false).newDocument;
+        const newTheme = applyPatch(currentTheme, selectedTheme.patch as Operation[], false, false).newDocument;
         setTheme(newTheme);
         setActiveThemeId(selectedTheme.id);
         console.log('🎨 Applied preset patch locally:', selectedTheme.name);
