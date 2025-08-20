@@ -1,5 +1,5 @@
 
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -42,7 +42,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Простая функция применения темы
+  // Функция применения темы к кошельку
   const applyThemeToWallet = useCallback((theme: any) => {
     console.log('🎨 Applying theme to wallet:', theme.name);
     
@@ -54,7 +54,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
       setStyleForLayer('wallet', walletStyle);
       
       console.log('✅ Theme applied successfully:', theme.name);
-      toast.success(`🎨 Applied theme: ${theme.name}`);
       
     } catch (error) {
       console.error('💥 Error applying theme:', error);
@@ -62,8 +61,28 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   }, [setStyleForLayer]);
 
-  // Обработка клика на тему
-  const handleThemeClick = useCallback(async (theme: any) => {
+  // Применить активную тему при инициализации
+  useEffect(() => {
+    if (activeThemeId && themes.length > 0) {
+      const activeTheme = themes.find(t => t.id === activeThemeId);
+      if (activeTheme) {
+        console.log('🎯 Applying initial active theme:', activeTheme.name);
+        
+        // Проверяем есть ли данные темы
+        const hasThemeData = activeTheme.themeData && activeTheme.themeData !== 'preset';
+        
+        if (hasThemeData) {
+          applyThemeToWallet(activeTheme.themeData);
+        } else if (activeTheme.patch) {
+          // Для пресетов нужно получить результат после применения patch
+          console.log('⚠️ Active theme is a preset, cannot apply directly');
+        }
+      }
+    }
+  }, [activeThemeId, themes, applyThemeToWallet]);
+
+  // Обработка клика на тему (preview)
+  const handleThemeClick = useCallback((theme: any) => {
     if (isProcessingRef.current) {
       console.log('🚫 Click ignored - already processing');
       return;
@@ -74,37 +93,28 @@ const ThemeSelectorCoverflow: React.FC = () => {
       return;
     }
     
-    isProcessingRef.current = true;
+    console.log(`👆 Theme clicked for preview: ${theme.name}`);
     
-    try {
-      console.log(`👆 Theme clicked: ${theme.name}`);
-      
-      // Проверяем есть ли данные темы
-      const hasThemeData = theme.themeData && theme.themeData !== 'preset';
-      
-      if (!hasThemeData && source === 'files') {
-        toast.error('Theme data not loaded yet');
-        return;
-      }
-      
-      // Для preview - сразу применяем тему
-      if (hasThemeData) {
-        applyThemeToWallet(theme.themeData);
-        setSelectedId(theme.id);
-      } else {
-        console.warn('⚠️ No theme data available for:', theme.name);
-        toast.error('Theme data not available');
-      }
-      
-    } catch (error) {
-      console.error('💥 Theme click error:', error);
-      toast.error('Error processing theme');
-    } finally {
-      isProcessingRef.current = false;
+    // Проверяем есть ли данные темы
+    const hasThemeData = theme.themeData && theme.themeData !== 'preset';
+    
+    if (!hasThemeData && source === 'files') {
+      toast.error('Theme data not loaded yet');
+      return;
+    }
+    
+    // Для preview - сразу применяем тему к кошельку
+    if (hasThemeData) {
+      applyThemeToWallet(theme.themeData);
+      setSelectedId(theme.id);
+      toast.success(`👁️ Previewing: ${theme.name}`);
+    } else {
+      console.warn('⚠️ No theme data available for:', theme.name);
+      toast.error('Theme data not available');
     }
   }, [activeThemeId, source, applyThemeToWallet]);
 
-  // Обработка кнопки Apply
+  // Обработка кнопки Apply (commit)
   const handleApplyClick = useCallback(() => {
     if (!selectedId) return;
     
@@ -116,13 +126,17 @@ const ThemeSelectorCoverflow: React.FC = () => {
     // Устанавливаем как активную тему
     selectTheme(selectedId);
     
-    // Сбрасываем выделение
-    setTimeout(() => {
-      setSelectedId(null);
-    }, 1500);
+    // Еще раз применяем к кошельку для уверенности
+    const hasThemeData = selectedTheme.themeData && selectedTheme.themeData !== 'preset';
+    if (hasThemeData) {
+      applyThemeToWallet(selectedTheme.themeData);
+    }
     
-    toast.success(`✅ Theme set as active: ${selectedTheme.name}`);
-  }, [selectedId, themes, selectTheme]);
+    // Сбрасываем выделение
+    setSelectedId(null);
+    
+    toast.success(`✅ Theme applied: ${selectedTheme.name}`);
+  }, [selectedId, themes, selectTheme, applyThemeToWallet]);
 
   const activeTheme = themes.find(t => t.id === activeThemeId);
 
@@ -148,7 +162,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         {activeTheme && (
           <div className="space-y-1">
             <h4 className="text-lg font-medium bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              {activeTheme.name}
+              Active: {activeTheme.name}
             </h4>
             <p className="text-sm text-white/70 max-w-md mx-auto">
               {activeTheme.description}
@@ -258,12 +272,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         </div>
                       )}
 
-                      {isProcessingRef.current && isSelected && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-400 border-t-transparent"></div>
-                        </div>
-                      )}
-
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
 
@@ -304,7 +312,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         <div className="text-xs text-white/40 text-center space-y-1">
           <div>Active: {activeThemeId} | Selected: {selectedId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
-          <div>✅ Simplified theme system active</div>
+          <div>✅ Direct theme application system</div>
         </div>
       )}
     </div>
