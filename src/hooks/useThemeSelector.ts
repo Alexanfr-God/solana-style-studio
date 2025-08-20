@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/state/themeStore';
 import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
+import { applyPatch } from 'fast-json-patch';
 
 // Оставляем старый интерфейс для совместимости
 export interface ThemeItem {
@@ -55,8 +57,15 @@ const loadThemeDataForTheme = async (theme: ThemeItem): Promise<ThemeItem> => {
 export const useThemeSelector = () => {
   const { presets: loadedPresets, isLoading: presetsLoading, source } = usePresetsLoader();
   const [themes, setThemes] = useState<ThemeItem[]>([]);
-  const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get theme store state and actions
+  const activeThemeId = useThemeStore(state => state.activeThemeId);
+  const setActiveThemeId = useThemeStore(state => state.setActiveThemeId);
+  const setTheme = useThemeStore(state => state.setTheme);
+  const applyPreviewPatch = useThemeStore(state => state.applyPreviewPatch);
+  const commitPreview = useThemeStore(state => state.commitPreview);
+  const getDisplayTheme = useThemeStore(state => state.getDisplayTheme);
 
   // Преобразуем пресеты в формат тем
   useEffect(() => {
@@ -77,13 +86,13 @@ export const useThemeSelector = () => {
     
     setThemes(convertedThemes);
     
-    // Устанавливаем первую тему как активную по умолчанию
+    // Устанавливаем первую тему как активную по умолчанию если нет активной
     if (!activeThemeId && convertedThemes.length > 0) {
       const defaultTheme = convertedThemes.find(t => t.id === 'luxuryTheme') || convertedThemes[0];
       setActiveThemeId(defaultTheme.id);
       console.log('🎯 Set default active theme:', defaultTheme.id);
     }
-  }, [loadedPresets, source, activeThemeId]);
+  }, [loadedPresets, source, activeThemeId, setActiveThemeId]);
 
   // Load theme data when themes are first loaded - NO auto-apply
   useEffect(() => {
@@ -119,33 +128,66 @@ export const useThemeSelector = () => {
     loadThemeData();
   }, [themes.length, source]);
 
-  // EXPLICIT theme application - only called by user action
+  // Apply preview patch for theme (temporary preview)
+  const applyThemePreview = (selectedTheme: ThemeItem) => {
+    console.log(`👁️ Applying theme preview: ${selectedTheme.name}`);
+    
+    if (selectedTheme.patch && selectedTheme.patch.length > 0) {
+      // Это preset из Supabase - применяем patch как preview
+      try {
+        applyPreviewPatch(selectedTheme.patch);
+        console.log('👁️ Applied preset patch as preview:', selectedTheme.name);
+      } catch (error) {
+        console.error('💥 Error applying preset preview:', error);
+      }
+    } else if (selectedTheme.themeData && selectedTheme.themeData !== 'preset') {
+      // Это обычная тема - применяем themeData как preview
+      const currentTheme = getDisplayTheme();
+      try {
+        // Create a simple patch to replace the theme
+        const replacePatch = [{ op: 'replace', path: '', value: selectedTheme.themeData }];
+        applyPreviewPatch(replacePatch);
+        console.log('👁️ Applied theme data as preview:', selectedTheme.name);
+      } catch (error) {
+        console.error('💥 Error applying theme preview:', error);
+      }
+    } else {
+      console.warn('⚠️ Cannot preview theme without data or patch:', selectedTheme.name);
+    }
+  };
+
+  // EXPLICIT theme application - commits preview to main theme
   const applyTheme = (selectedTheme: ThemeItem) => {
     console.log(`🎨 Applying theme: ${selectedTheme.name}`);
     
     // Для пресетов используем patch, для обычных тем - themeData
     if (selectedTheme.patch && selectedTheme.patch.length > 0) {
       // Это preset из Supabase - применяем patch локально
-      const setTheme = useThemeStore.getState().setTheme;
-      const currentTheme = useThemeStore.getState().theme;
+      const currentTheme = getDisplayTheme();
       
       try {
         // Применяем patch к текущей теме
-        const { applyPatch } = require('fast-json-patch');
         const newTheme = applyPatch(currentTheme, selectedTheme.patch, false, false).newDocument;
         setTheme(newTheme);
+        setActiveThemeId(selectedTheme.id);
         console.log('🎨 Applied preset patch locally:', selectedTheme.name);
       } catch (error) {
         console.error('💥 Error applying preset patch:', error);
       }
     } else if (selectedTheme.themeData && selectedTheme.themeData !== 'preset') {
       // Это обычная тема - применяем themeData
-      const setTheme = useThemeStore.getState().setTheme;
       setTheme(selectedTheme.themeData);
+      setActiveThemeId(selectedTheme.id);
       console.log('🎨 Applied theme data:', selectedTheme.name);
     } else {
       console.warn('⚠️ Cannot apply theme without data or patch:', selectedTheme.name);
     }
+  };
+
+  // Commit current preview to main theme
+  const commitCurrentPreview = () => {
+    commitPreview();
+    console.log('✅ Preview committed to main theme');
   };
 
   // EXPLICIT theme selection - only sets active, does NOT auto-apply
@@ -182,6 +224,8 @@ export const useThemeSelector = () => {
     selectTheme,
     getActiveTheme,
     applyTheme,
+    applyThemePreview,
+    commitCurrentPreview,
     applyThemeById,
     source // Добавляем источник данных для отладки
   };

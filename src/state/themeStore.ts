@@ -17,6 +17,10 @@ interface ThemeState {
   // Current theme data
   theme: any;
   
+  // Preview system
+  previewTheme: any | null;
+  activeThemeId: string | null;
+  
   // History management
   history: ThemePatch[];
   currentIndex: number;
@@ -30,7 +34,11 @@ interface ThemeState {
   
   // Actions
   setTheme: (theme: any) => void;
+  setActiveThemeId: (themeId: string | null) => void;
   applyPatch: (patch: ThemePatch) => void;
+  applyPreviewPatch: (patch: Operation[]) => void;
+  commitPreview: () => void;
+  clearPreview: () => void;
   undo: () => boolean;
   redo: () => boolean;
   clearHistory: () => void;
@@ -41,6 +49,8 @@ interface ThemeState {
   canUndo: () => boolean;
   canRedo: () => boolean;
   getCurrentPatch: () => ThemePatch | null;
+  getDisplayTheme: () => any;
+  getActiveTheme: () => any; // Compatibility adapter
 }
 
 let updateCounter = 0;
@@ -48,11 +58,19 @@ let updateCounter = 0;
 export const useThemeStore = create<ThemeState>()((set, get) => ({
   // Initial state
   theme: {},
+  previewTheme: null,
+  activeThemeId: null,
   history: [],
   currentIndex: -1,
   isLoading: false,
   error: null,
   _busy: false,
+
+  // Set active theme id
+  setActiveThemeId: (themeId: string | null) => {
+    set({ activeThemeId: themeId });
+    console.log('🎯 Active theme ID set to:', themeId);
+  },
 
   // Set base theme with circuit breaker protection
   setTheme: (theme: any) => {
@@ -94,6 +112,76 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }, 0);
     
     console.log(`✅ Theme set successfully (#${updateCounter})`);
+  },
+
+  // Apply preview patch (temporary preview)
+  applyPreviewPatch: (operations: Operation[]) => {
+    const state = get();
+    
+    if (state._busy) {
+      console.warn('🚫 applyPreviewPatch blocked - already busy');
+      return;
+    }
+    
+    try {
+      set({ _busy: true });
+      
+      const previewTheme = applyJsonPatch(state.theme, operations);
+      
+      set({
+        previewTheme,
+        error: null,
+        _busy: false
+      });
+      
+      console.log('👁️ Preview patch applied');
+    } catch (error) {
+      console.error('💥 Error applying preview patch:', error);
+      set({
+        error: error instanceof Error ? error.message : 'Failed to apply preview patch',
+        _busy: false
+      });
+    }
+  },
+
+  // Commit preview to main theme
+  commitPreview: () => {
+    const state = get();
+    
+    if (!state.previewTheme) {
+      console.warn('⚠️ No preview to commit');
+      return;
+    }
+    
+    if (state._busy) {
+      console.warn('🚫 commitPreview blocked - already busy');
+      return;
+    }
+    
+    try {
+      set({ _busy: true });
+      
+      set({
+        theme: state.previewTheme,
+        previewTheme: null,
+        error: null,
+        _busy: false
+      });
+      
+      console.log('✅ Preview committed to main theme');
+    } catch (error) {
+      console.error('💥 Error committing preview:', error);
+      set({
+        error: error instanceof Error ? error.message : 'Failed to commit preview',
+        _busy: false
+      });
+    }
+  },
+
+  // Clear preview
+  clearPreview: () => {
+    set({ previewTheme: null });
+    console.log('🗑️ Preview cleared');
   },
 
   // Apply patch and add to history
@@ -227,10 +315,22 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   getCurrentPatch: () => {
     const state = get();
     return state.currentIndex >= 0 ? state.history[state.currentIndex] : null;
+  },
+
+  // Get display theme (preview or main)
+  getDisplayTheme: () => {
+    const state = get();
+    return state.previewTheme || state.theme;
+  },
+
+  // Compatibility adapter for old getActiveTheme calls
+  getActiveTheme: () => {
+    const state = get();
+    return state.previewTheme || state.theme;
   }
 }));
 
-export const useWalletTheme = () => useThemeStore(state => state.theme);
+export const useWalletTheme = () => useThemeStore(state => state.getDisplayTheme());
 export const useThemeHistory = () => useThemeStore(state => ({
   history: state.history,
   currentIndex: state.currentIndex,
@@ -239,8 +339,12 @@ export const useThemeHistory = () => useThemeStore(state => ({
 }));
 export const useThemeActions = () => useThemeStore(state => ({
   applyPatch: state.applyPatch,
+  applyPreviewPatch: state.applyPreviewPatch,
+  commitPreview: state.commitPreview,
+  clearPreview: state.clearPreview,
   undo: state.undo,
   redo: state.redo,
   setTheme: state.setTheme,
+  setActiveThemeId: state.setActiveThemeId,
   clearHistory: state.clearHistory
 }));

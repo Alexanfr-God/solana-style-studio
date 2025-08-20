@@ -21,7 +21,18 @@ const ThemeSelectorCoverflow: React.FC = () => {
     import("@/utils/reactDiag").then(m => m.logReactIdentity("Coverflow"));
   }
 
-  const { themes, activeThemeId, getActiveTheme, isLoading, applyTheme, selectTheme, source } = useThemeSelector();
+  const { 
+    themes, 
+    activeThemeId, 
+    getActiveTheme, 
+    isLoading, 
+    applyTheme, 
+    applyThemePreview,
+    commitCurrentPreview,
+    selectTheme, 
+    source 
+  } = useThemeSelector();
+  
   const [mode, setMode] = useState<"apply" | "inspire">("apply");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
@@ -36,8 +47,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
     dragFree: false
   });
 
-  // Use only useThemeStore actions
+  // Use theme store actions
   const applyPatch = useThemeStore(s => s.applyPatch);
+  const clearPreview = useThemeStore(s => s.clearPreview);
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -51,9 +63,10 @@ const ThemeSelectorCoverflow: React.FC = () => {
   const resetSelection = useCallback(() => {
     setTimeout(() => {
       setSelectedId(null);
+      clearPreview(); // Clear any preview when resetting
       console.log('🔄 Selection reset after successful apply');
     }, 1500);
-  }, []);
+  }, [clearPreview]);
 
   // Функция обработки успешного применения темы
   const handleSuccessfulApply = useCallback((themeId: string, themeName: string) => {
@@ -66,6 +79,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     resetSelection();
   }, [mode, selectTheme, resetSelection]);
 
+  // Handle theme click for preview
   const handleThemeClick = once(async (theme: any) => {
     const now = Date.now();
     
@@ -116,12 +130,11 @@ const ThemeSelectorCoverflow: React.FC = () => {
           return;
         }
         
-        console.log(`🎨 Applying ${hasPresetPatch ? 'preset patch' : 'theme data'} via SoT:`, theme.name);
-        applyTheme(theme);
-        toast.success(`🎨 Applied theme: ${theme.name}`);
+        console.log(`👁️ Applying preview for ${hasPresetPatch ? 'preset patch' : 'theme data'}:`, theme.name);
         
-        // Обработка успешного применения
-        handleSuccessfulApply(theme.id, theme.name);
+        // Apply preview first
+        applyThemePreview(theme);
+        toast.success(`👁️ Preview applied: ${theme.name} (click Apply to confirm)`);
         
       } else {
         try {
@@ -172,6 +185,23 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   });
 
+  // Handle apply button click
+  const handleApplyClick = useCallback(() => {
+    if (!selectedId) return;
+    
+    const selectedTheme = themes.find(t => t.id === selectedId);
+    if (!selectedTheme) return;
+    
+    console.log('🎨 Applying theme via Apply button:', selectedTheme.name);
+    
+    // Commit the preview and make it active
+    commitCurrentPreview();
+    selectTheme(selectedId);
+    
+    toast.success(`🎨 Applied theme: ${selectedTheme.name}`);
+    handleSuccessfulApply(selectedId, selectedTheme.name);
+  }, [selectedId, themes, commitCurrentPreview, selectTheme, handleSuccessfulApply]);
+
   const activeTheme = getActiveTheme();
 
   if (isLoading) {
@@ -199,6 +229,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
             onCheckedChange={(checked) => {
               setMode(checked ? "inspire" : "apply");
               setSelectedId(null); // Сброс выделения при смене режима
+              clearPreview(); // Clear preview when switching modes
             }}
           />
           <Label htmlFor="mode-toggle" className="text-white/80">
@@ -208,7 +239,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         
         <p className="text-sm text-white/60 max-w-md mx-auto">
           {mode === "apply" 
-            ? "Directly apply theme styles and set as active" 
+            ? "Click to preview, then Apply to set as active theme" 
             : "Use theme as style inspiration for AI generation"
           }
         </p>
@@ -222,6 +253,17 @@ const ThemeSelectorCoverflow: React.FC = () => {
               {activeTheme.description}
             </p>
           </div>
+        )}
+        
+        {/* Apply button for preview mode */}
+        {mode === "apply" && selectedId && selectedId !== activeThemeId && (
+          <Button
+            onClick={handleApplyClick}
+            className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-6 py-2 rounded-lg font-medium shadow-lg"
+            disabled={isProcessingRef.current}
+          >
+            Apply Theme
+          </Button>
         )}
         
         {source && (
@@ -304,7 +346,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                       {isSelected && !isActive && (
                         <div className="absolute inset-0 border-2 border-blue-400 rounded-lg">
                           <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                            Selected
+                            Preview
                           </div>
                         </div>
                       )}
