@@ -1,42 +1,31 @@
+
 import React, { useCallback, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { callPatch } from '@/lib/api/client';
-import { useThemeStore } from '@/state/themeStore';
+import { useCustomizationStore } from '@/stores/customizationStore';
+import { mapThemeToWalletStyle } from '@/utils/themeMapper';
 import { toast } from 'sonner';
-import { withRenderGuard, once } from '@/utils/guard';
+import { withRenderGuard } from '@/utils/guard';
 
 const ThemeSelectorCoverflow: React.FC = () => {
   const guard = withRenderGuard("ThemeSelectorCoverflow");
   guard();
 
-  if (import.meta.env.DEV) { 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    import("@/utils/reactDiag").then(m => m.logReactIdentity("Coverflow"));
-  }
-
   const { 
     themes, 
     activeThemeId, 
     isLoading, 
-    applyTheme, 
-    applyThemePreview,
-    commitCurrentPreview,
     selectTheme, 
     source 
   } = useThemeSelector();
   
-  const [mode, setMode] = useState<"apply" | "inspire">("apply");
+  const { setStyleForLayer } = useCustomizationStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
   const isProcessingRef = useRef(false);
-  const lastClickTimeRef = useRef(0);
-  const clickCountRef = useRef(0);
   
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
@@ -44,10 +33,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
     skipSnaps: false,
     dragFree: false
   });
-
-  // Use theme store actions
-  const applyPatch = useThemeStore(s => s.applyPatch);
-  const clearPreview = useThemeStore(s => s.clearPreview);
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -57,159 +42,88 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Function to reset selection after successful apply
-  const resetSelection = useCallback(() => {
-    setTimeout(() => {
-      setSelectedId(null);
-      clearPreview(); // Clear any preview when resetting
-      console.log('🔄 Selection reset after successful apply');
-    }, 1500);
-  }, [clearPreview]);
-
-  // Function to handle successful theme application
-  const handleSuccessfulApply = useCallback((themeId: string, themeName: string) => {
-    console.log(`✅ Theme successfully applied: ${themeName} (${themeId})`);
-    // In apply mode make theme active
-    if (mode === "apply") {
-      selectTheme(themeId);
-      console.log(`🎯 Theme ${themeId} set as active`);
+  // Простая функция применения темы
+  const applyThemeToWallet = useCallback((theme: any) => {
+    console.log('🎨 Applying theme to wallet:', theme.name);
+    
+    try {
+      const { loginStyle, walletStyle } = mapThemeToWalletStyle(theme);
+      
+      // Применяем стили к обеим слоям
+      setStyleForLayer('login', loginStyle);
+      setStyleForLayer('wallet', walletStyle);
+      
+      console.log('✅ Theme applied successfully:', theme.name);
+      toast.success(`🎨 Applied theme: ${theme.name}`);
+      
+    } catch (error) {
+      console.error('💥 Error applying theme:', error);
+      toast.error('Failed to apply theme');
     }
-    resetSelection();
-  }, [mode, selectTheme, resetSelection]);
+  }, [setStyleForLayer]);
 
-  // Handle theme click for preview
-  const handleThemeClick = once(async (theme: any) => {
-    const now = Date.now();
-    
-    if (now - lastClickTimeRef.current < 500) {
-      console.log('🚫 Click ignored - rate limited');
-      return;
-    }
-    
-    lastClickTimeRef.current = now;
-    
+  // Обработка клика на тему
+  const handleThemeClick = useCallback(async (theme: any) => {
     if (isProcessingRef.current) {
       console.log('🚫 Click ignored - already processing');
       return;
     }
     
-    // In apply mode: don't handle click on already active theme
-    if (theme.id === activeThemeId && mode === "apply") {
-      console.log('🚫 Click ignored - theme already active in apply mode');
-      return;
-    }
-    
-    // In inspire mode: can click any theme
-    if (theme.id === selectedId && mode === "inspire") {
-      console.log('🚫 Click ignored - same theme already selected in inspire mode');
-      return;
-    }
-    
-    clickCountRef.current++;
-    if (clickCountRef.current > 10) {
-      console.error('🚨 Too many clicks detected, cooling down...');
-      setTimeout(() => { clickCountRef.current = 0; }, 5000);
+    if (theme.id === activeThemeId) {
+      console.log('🚫 Click ignored - theme already active');
       return;
     }
     
     isProcessingRef.current = true;
     
     try {
-      setSelectedId(theme.id);
-      console.log(`👆 Theme click: ${theme.name} (mode: ${mode}, source: ${source}) - attempt ${clickCountRef.current}`);
+      console.log(`👆 Theme clicked: ${theme.name}`);
       
-      if (mode === "apply") {
-        // Improved hasData check for CF-2 unified with theme store
-        const hasSupabasePatch = source === 'supabase' && theme.patch && theme.patch.length > 0;
-        const hasFileThemeData = source === 'files' && theme.themeData && theme.themeData !== 'preset';
-        
-        if (!hasSupabasePatch && !hasFileThemeData) {
-          const dataSource = source === 'supabase' ? 'preset patch data' : 'theme file data';
-          const suggestion = source === 'supabase' ? 'database might be empty - try switching to "Inspire AI" mode' : 'theme files might be loading';
-          toast.error(`Theme data not loaded (missing ${dataSource}). ${suggestion}`);
-          console.warn(`⚠️ hasData check failed:`, {
-            source,
-            hasSupabasePatch,
-            hasFileThemeData,
-            patchLength: theme.patch?.length,
-            themeData: !!theme.themeData
-          });
-          return;
-        }
-        
-        console.log(`👁️ Applying preview for ${hasSupabasePatch ? 'Supabase preset patch' : 'file theme data'}:`, theme.name);
-        
-        // Apply preview first - using unified theme store
-        applyThemePreview(theme);
-        toast.success(`👁️ Preview applied: ${theme.name} (click Apply to confirm)`);
-        
-      } else {
-        try {
-          console.log('✨ Inspiring from theme:', theme.name);
-          
-          // Prepare prompt with context
-          const sampleContext = theme.sampleContext || `Style inspiration from ${theme.name}`;
-          const basePrompt = `Apply the style inspiration from ${theme.name} preset`;
-          const finalPrompt = `${basePrompt}\n\n[PRESET CONTEXT]\n${sampleContext}`;
-          
-          const response = await callPatch({
-            themeId: activeThemeId || 'default',
-            pageId: 'home',
-            presetId: theme.id,
-            userPrompt: finalPrompt
-          });
-
-          if (response.success) {
-            const patchEntry = {
-              id: `inspire-${theme.id}`,
-              operations: response.patch,
-              userPrompt: `Inspired by preset: ${theme.name}`,
-              pageId: 'home',
-              presetId: theme.id,
-              timestamp: new Date(),
-              theme: response.theme
-            };
-            
-            applyPatch(patchEntry);
-            toast.success(`✨ Applied inspiration from: ${theme.name}`);
-            
-            // In inspiration mode reset selection but don't change active theme
-            resetSelection();
-          } else {
-            toast.error(`Failed to apply inspiration: ${response.error}`);
-          }
-        } catch (error) {
-          console.error('💥 Inspiration error:', error);
-          toast.error(`Error applying inspiration: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
+      // Проверяем есть ли данные темы
+      const hasThemeData = theme.themeData && theme.themeData !== 'preset';
+      
+      if (!hasThemeData && source === 'files') {
+        toast.error('Theme data not loaded yet');
+        return;
       }
+      
+      // Для preview - сразу применяем тему
+      if (hasThemeData) {
+        applyThemeToWallet(theme.themeData);
+        setSelectedId(theme.id);
+      } else {
+        console.warn('⚠️ No theme data available for:', theme.name);
+        toast.error('Theme data not available');
+      }
+      
     } catch (error) {
-      console.error('💥 Theme processing error:', error);
-      toast.error(`Error processing theme: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('💥 Theme click error:', error);
+      toast.error('Error processing theme');
     } finally {
       isProcessingRef.current = false;
-      setTimeout(() => { clickCountRef.current = Math.max(0, clickCountRef.current - 1); }, 1000);
     }
-  });
+  }, [activeThemeId, source, applyThemeToWallet]);
 
-  // Handle apply button click - unified with theme store
+  // Обработка кнопки Apply
   const handleApplyClick = useCallback(() => {
     if (!selectedId) return;
     
     const selectedTheme = themes.find(t => t.id === selectedId);
     if (!selectedTheme) return;
     
-    console.log('🎨 Applying theme via Apply button:', selectedTheme.name);
+    console.log('🎯 Apply button clicked:', selectedTheme.name);
     
-    // Commit the preview and make it active using unified store
-    commitCurrentPreview();
+    // Устанавливаем как активную тему
     selectTheme(selectedId);
     
-    toast.success(`🎨 Applied theme: ${selectedTheme.name}`);
-    handleSuccessfulApply(selectedId, selectedTheme.name);
-  }, [selectedId, themes, commitCurrentPreview, selectTheme, handleSuccessfulApply]);
+    // Сбрасываем выделение
+    setTimeout(() => {
+      setSelectedId(null);
+    }, 1500);
+    
+    toast.success(`✅ Theme set as active: ${selectedTheme.name}`);
+  }, [selectedId, themes, selectTheme]);
 
-  // Find active theme from unified state
   const activeTheme = themes.find(t => t.id === activeThemeId);
 
   if (isLoading) {
@@ -227,29 +141,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
           Choose Your Theme
         </h3>
         
-        <div className="flex items-center justify-center gap-4">
-          <Label htmlFor="mode-toggle" className="text-white/80">
-            Apply preset
-          </Label>
-          <Switch
-            id="mode-toggle"
-            checked={mode === "inspire"}
-            onCheckedChange={(checked) => {
-              setMode(checked ? "inspire" : "apply");
-              setSelectedId(null); // Reset selection when switching modes
-              clearPreview(); // Clear preview when switching modes
-            }}
-          />
-          <Label htmlFor="mode-toggle" className="text-white/80">
-            Inspire AI
-          </Label>
-        </div>
-        
         <p className="text-sm text-white/60 max-w-md mx-auto">
-          {mode === "apply" 
-            ? "Click to preview, then Apply to set as active theme" 
-            : "Use theme as style inspiration for AI generation"
-          }
+          Click to preview theme, then Apply to set as active
         </p>
         
         {activeTheme && (
@@ -263,8 +156,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
           </div>
         )}
         
-        {/* Apply button for preview mode */}
-        {mode === "apply" && selectedId && selectedId !== activeThemeId && (
+        {/* Apply button */}
+        {selectedId && selectedId !== activeThemeId && (
           <Button
             onClick={handleApplyClick}
             className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-6 py-2 rounded-lg font-medium shadow-lg"
@@ -307,10 +200,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
             {themes.map((theme) => {
               const isActive = theme.id === activeThemeId;
               const isSelected = theme.id === selectedId;
-              // Improved hasData logic unified with theme store
-              const hasSupabasePatch = source === 'supabase' && theme.patch && theme.patch.length > 0;
-              const hasFileThemeData = source === 'files' && theme.themeData && theme.themeData !== 'preset';
-              const hasData = hasSupabasePatch || hasFileThemeData;
+              const hasThemeData = theme.themeData && theme.themeData !== 'preset';
               
               return (
                 <div
@@ -362,13 +252,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         </div>
                       )}
 
-                      <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-                        {mode === "apply" ? "Apply" : "Inspire"}
-                      </div>
-
-                      {!hasData && mode === "apply" && (
+                      {!hasThemeData && source === 'files' && (
                         <div className="absolute bottom-2 left-2 bg-yellow-500/80 text-black text-xs px-2 py-1 rounded-full">
-                          {source === 'supabase' ? 'Empty DB' : 'Loading...'}
+                          Loading...
                         </div>
                       )}
 
@@ -416,10 +302,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
       
       {import.meta.env.DEV && (
         <div className="text-xs text-white/40 text-center space-y-1">
-          <div>Active: {activeThemeId} | Selected: {selectedId} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}</div>
+          <div>Active: {activeThemeId} | Selected: {selectedId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
-          <div>Data diagnostic: {themes.map(t => `${t.id}=${source === 'supabase' ? (t.patch?.length || 0) : (t.themeData ? 'Y' : 'N')}`).join(', ')}</div>
-          <div className="text-yellow-400">✅ CF-3: Unified theme state active</div>
+          <div>✅ Simplified theme system active</div>
         </div>
       )}
     </div>
