@@ -24,7 +24,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
   } = useThemeSelector();
   
   const { setStyleForLayer } = useCustomizationStore();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingThemes, setLoadingThemes] = useState<Set<string>>(new Set());
   
   const isProcessingRef = useRef(false);
@@ -130,27 +129,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   }, [activeThemeId, themes, isLoading, applyThemeToWallet, source, loadThemeData]);
 
-  // Simplified theme readiness check
-  const isThemeReady = useCallback((theme: any) => {
-    // For Supabase presets - check for patch
-    if (source === 'supabase' && theme.patch) {
-      return true;
-    }
-    
-    // For file-based themes - always ready (load on demand)
-    if (source === 'files') {
-      return true;
-    }
-    
-    // For themes with loaded data
-    if (theme.themeData) {
-      return true;
-    }
-    
-    return false;
-  }, [source]);
-
-  // Handle theme click (preview)
+  // SIMPLIFIED: Direct theme application (no preview/apply states)
   const handleThemeClick = useCallback(async (theme: any) => {
     if (isProcessingRef.current) {
       console.log('🚫 Click ignored - already processing');
@@ -162,34 +141,36 @@ const ThemeSelectorCoverflow: React.FC = () => {
       return;
     }
     
-    console.log(`👆 Theme clicked for preview: ${theme.name}`);
+    console.log(`🎯 DIRECT THEME APPLICATION: ${theme.name}`);
     
     isProcessingRef.current = true;
     setLoadingThemes(prev => new Set([...prev, theme.id]));
     
     try {
       if (theme.themeData) {
-        // Theme already has data
+        // Theme already has data - apply directly
         applyThemeToWallet(theme.themeData);
-        setSelectedId(theme.id);
-        toast.success(`👁️ Previewing: ${theme.name}`);
+        applyTheme(theme); // Update themeStore
+        selectTheme(theme.id); // Set as active
+        toast.success(`✅ Applied: ${theme.name}`);
       } else if (theme.patch) {
-        // Supabase preset
+        // Supabase preset - apply through themeStore
         applyTheme(theme);
-        setSelectedId(theme.id);
-        toast.success(`👁️ Previewing: ${theme.name}`);
+        selectTheme(theme.id);
+        toast.success(`✅ Applied: ${theme.name}`);
       } else if (source === 'files') {
-        // File-based theme - load on demand
+        // File-based theme - load and apply
         const loadedTheme = await loadThemeData(theme);
         applyThemeToWallet(loadedTheme.themeData);
-        setSelectedId(theme.id);
-        toast.success(`👁️ Previewing: ${theme.name}`);
+        applyTheme(loadedTheme);
+        selectTheme(theme.id);
+        toast.success(`✅ Applied: ${theme.name}`);
       } else {
         throw new Error('No theme data available');
       }
     } catch (error) {
-      console.error('💥 Error applying theme preview:', error);
-      toast.error(`Failed to preview ${theme.name}`);
+      console.error('💥 Error applying theme:', error);
+      toast.error(`Failed to apply ${theme.name}`);
     } finally {
       setLoadingThemes(prev => {
         const newSet = new Set(prev);
@@ -198,28 +179,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
       });
       isProcessingRef.current = false;
     }
-  }, [activeThemeId, applyThemeToWallet, applyTheme, source, loadThemeData]);
-
-  // Handle Apply button (commit)
-  const handleApplyClick = useCallback(() => {
-    if (!selectedId) return;
-    
-    const selectedTheme = themes.find(t => t.id === selectedId);
-    if (!selectedTheme) return;
-    
-    console.log('🎯 Apply button clicked:', selectedTheme.name);
-    
-    // Apply theme through useThemeSelector (this updates themeStore)
-    applyTheme(selectedTheme);
-    
-    // Set as active theme
-    selectTheme(selectedId);
-    
-    // Reset selection
-    setSelectedId(null);
-    
-    toast.success(`✅ Theme applied: ${selectedTheme.name}`);
-  }, [selectedId, themes, applyTheme, selectTheme]);
+  }, [activeThemeId, applyThemeToWallet, applyTheme, selectTheme, source, loadThemeData]);
 
   const activeTheme = themes.find(t => t.id === activeThemeId);
 
@@ -239,7 +199,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
         </h3>
         
         <p className="text-sm text-white/60 max-w-md mx-auto">
-          Click to preview theme, then Apply to set as active
+          Click any theme to apply it immediately
         </p>
         
         {activeTheme && (
@@ -251,17 +211,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
               {activeTheme.description}
             </p>
           </div>
-        )}
-        
-        {/* Apply button */}
-        {selectedId && selectedId !== activeThemeId && (
-          <Button
-            onClick={handleApplyClick}
-            className="bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white px-6 py-2 rounded-lg font-medium shadow-lg"
-            disabled={isProcessingRef.current}
-          >
-            Apply Theme
-          </Button>
         )}
         
         {source && (
@@ -296,7 +245,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <div className="flex items-center gap-4 px-16">
             {themes.map((theme) => {
               const isActive = theme.id === activeThemeId;
-              const isSelected = theme.id === selectedId;
               const isThemeLoading = loadingThemes.has(theme.id);
               
               return (
@@ -305,8 +253,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
                   className={`flex-shrink-0 w-48 transition-all duration-500 ease-out cursor-pointer ${
                     isActive 
                       ? 'scale-110 z-10' 
-                      : isSelected
-                      ? 'scale-105 z-5'
                       : 'scale-90 opacity-60 hover:opacity-80 hover:scale-95'
                   } ${isProcessingRef.current ? 'pointer-events-none' : ''}`}
                   onClick={() => handleThemeClick(theme)}
@@ -317,8 +263,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     border transition-all duration-300 group
                     ${isActive 
                       ? 'border-purple-500/50 shadow-lg shadow-purple-500/20' 
-                      : isSelected
-                      ? 'border-blue-500/50 shadow-lg shadow-blue-500/20'
                       : 'border-white/10 hover:border-white/30'
                     }
                   `}>
@@ -337,14 +281,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         <div className="absolute inset-0 border-2 border-purple-400 rounded-lg animate-pulse">
                           <div className="absolute top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
                             Active
-                          </div>
-                        </div>
-                      )}
-
-                      {isSelected && !isActive && (
-                        <div className="absolute inset-0 border-2 border-blue-400 rounded-lg">
-                          <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                            Preview
                           </div>
                         </div>
                       )}
@@ -381,8 +317,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
               theme.id === activeThemeId
                 ? 'bg-purple-400 w-6' 
-                : theme.id === selectedId
-                ? 'bg-blue-400 w-4'
                 : 'bg-white/30 hover:bg-white/50'
             }`}
             onClick={() => !isProcessingRef.current && handleThemeClick(theme)}
@@ -393,10 +327,10 @@ const ThemeSelectorCoverflow: React.FC = () => {
       
       {import.meta.env.DEV && (
         <div className="text-xs text-white/40 text-center space-y-1">
-          <div>Active: {activeThemeId} | Selected: {selectedId}</div>
+          <div>Active: {activeThemeId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
           <div>Loading: {Array.from(loadingThemes).join(', ') || 'none'}</div>
-          <div>✅ Simplified theme loading - click to apply immediately</div>
+          <div>✅ SIMPLIFIED: Click to apply immediately</div>
         </div>
       )}
     </div>
