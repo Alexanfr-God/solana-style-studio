@@ -21,37 +21,10 @@ function detectLang(text: string): 'en' | 'ru' {
   return 'en';
 }
 
-// Localization dictionary
-const DICT = {
-  en: {
-    placeholder: 'Describe your change (e.g., "Make swap button #FF5C00")',
-    help: `I can change colors, backgrounds (images), and font. Try:
-• "Make swap button #FF5C00"
-• "Home background: https://.../bg.jpg"  
-• "Font: Sora"
-• Available layers: home, lock, swap, send, receive, buy, search, dropdown`,
-    processing: 'Processing command...',
-    error: 'An error occurred while processing the command. Please try again.',
-    examples: '💡 Examples: "home background #0A0C10", "swap button orange #FF5C00", "header text #FFFFFF"'
-  },
-  ru: {
-    placeholder: 'Например: кнопка swap #FF5C00',
-    help: `Я могу менять цвета, фон (картинки) и шрифт. Примеры:
-• "Сделай кнопку swap #FF5C00"
-• "Фон home: https://.../bg.jpg"
-• "Шрифт: Sora"
-• Доступные слои: home, lock, swap, send, receive, buy, search, dropdown`,
-    processing: 'Обрабатываю команду...',
-    error: 'Произошла ошибка при обработке команды. Попробуйте ещё раз.',
-    examples: '💡 Примеры: "фон home #0A0C10", "кнопка swap оранжевая #FF5C00", "текст заголовка #FFFFFF"'
-  }
-};
-
 export default function ThemeChat() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentLang, setCurrentLang] = useState<'en' | 'ru'>('en');
   const applyPatch = useThemeStore(s => s.applyPatch);
   const theme = useThemeStore(s => s.theme);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -73,7 +46,6 @@ export default function ThemeChat() {
 
     // Detect language from user input
     const detectedLang = detectLang(message);
-    setCurrentLang(detectedLang);
 
     // Добавляем сообщение пользователя
     const userMessage: Message = {
@@ -87,7 +59,7 @@ export default function ThemeChat() {
 
     try {
       console.log('[AI] processing command:', message);
-      const result = await handleUserMessage(message);
+      const result = await handleUserMessage(message, detectedLang);
       console.log('[AI] patch result:', result.patch);
 
       // Применяем патч локально (оптимистично)
@@ -113,17 +85,10 @@ export default function ThemeChat() {
         });
       }
 
-      // Localize response message
-      const humanText = (() => {
-        if (!result.patch.length) return DICT[detectedLang].help;
-        if (detectedLang === 'ru') return `Готово: ${result.message}`;
-        return `Done: ${result.message}`;
-      })();
-
-      // Добавляем ответ AI
+      // Добавляем ответ AI (agent now handles localization)
       const aiMessage: Message = {
         role: 'ai',
-        text: humanText,
+        text: result.message,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiMessage]);
@@ -132,7 +97,9 @@ export default function ThemeChat() {
       console.error('[AI] processing error:', error);
       const errorMessage: Message = {
         role: 'ai',
-        text: DICT[detectedLang].error,
+        text: detectedLang === 'ru' 
+          ? 'Произошла ошибка при обработке команды. Попробуйте ещё раз.'
+          : 'An error occurred while processing the command. Please try again.',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -156,7 +123,7 @@ export default function ThemeChat() {
           AI Theme Chat
         </CardTitle>
         <p className="text-sm text-white/70">
-          {currentLang === 'ru' ? 'Изменяйте тему кошелька простыми командами' : 'Modify wallet theme with simple commands'}
+          Modify wallet theme with simple commands
         </p>
       </CardHeader>
 
@@ -168,7 +135,7 @@ export default function ThemeChat() {
         >
           {messages.length === 0 ? (
             <div className="text-white/50 text-sm">
-              {currentLang === 'ru' ? 'Напишите команду для изменения темы...' : 'Write a command to change the theme...'}
+              Write a command to change the theme...
             </div>
           ) : (
             <div className="space-y-3">
@@ -188,7 +155,7 @@ export default function ThemeChat() {
           )}
           {isProcessing && (
             <div className="text-sm text-purple-300 animate-pulse">
-              {DICT[currentLang].processing}
+              Processing command...
             </div>
           )}
         </div>
@@ -200,7 +167,7 @@ export default function ThemeChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={DICT[currentLang].placeholder}
+              placeholder="Describe your change (e.g., 'Make swap button #FF5C00')"
               className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/40"
               disabled={isProcessing}
             />
@@ -214,7 +181,7 @@ export default function ThemeChat() {
           </div>
 
           <div className="text-xs text-white/40">
-            {DICT[currentLang].examples}
+            💡 Examples: "home background #0A0C10", "swap button orange #FF5C00", "header text #FFFFFF"
           </div>
         </div>
       </CardContent>
