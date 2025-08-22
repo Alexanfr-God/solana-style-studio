@@ -28,8 +28,15 @@ const WalletAlivePlayground = () => {
         {/* Header */}
         <Header />
         
-        {/* Main Content - flex-grow to push footer down */}
-        <main className="flex-grow pt-20 pb-6 px-6">
+        {/* Fixed Chat Panel - Right Side */}
+        <div className="fixed right-4 top-20 bottom-4 w-[360px] z-40">
+          <div className="h-full rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm shadow-xl overflow-hidden">
+            <ThemeChat />
+          </div>
+        </div>
+        
+        {/* Main Content - with right padding to avoid chat overlap */}
+        <main className="flex-grow pt-20 pb-6 px-6 pr-[392px]">
           <div className="max-w-full mx-auto">
             {/* Title Section */}
             <div className="text-center mb-8">
@@ -46,28 +53,15 @@ const WalletAlivePlayground = () => {
               </div>
             </div>
 
-            {/* Main Layout Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-6 mb-8">
-              {/* Left Column - AI Theme Chat только */}
-              <div className="xl:col-span-1 lg:col-span-1 space-y-6">
-                {/* Старый ChatInterface временно закомментирован */}
-                {/* <ChatInterface /> */}
-                
-                {/* AI Theme Chat - новый компонент */}
-                <div className="h-96">
-                  <ThemeChat />
-                </div>
-              </div>
-              
-              {/* Right Column - Wallet Preview */}
-              <div className="xl:col-span-3 lg:col-span-2">
-                <WalletPreviewContainer 
-                  onElementSelect={handleElementSelectFromPreview}
-                />
-              </div>
+            {/* Main Layout - Single Column (chat is now fixed) */}
+            <div className="mb-8">
+              {/* Wallet Preview */}
+              <WalletPreviewContainer 
+                onElementSelect={handleElementSelectFromPreview}
+              />
             </div>
 
-            {/* MINT NFT Button - Moved outside grid, between Preview and Coverflow */}
+            {/* MINT NFT Button - Between Preview and Coverflow */}
             <div className="flex justify-center mb-8">
               <Button
                 onClick={handleMintClick}
