@@ -20,11 +20,11 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    // Only use dedupe, no React aliases to avoid jsx-runtime issues
-    dedupe: ["react", "react-dom"]
+    // Force single React version resolution
+    dedupe: ["react", "react-dom", "use-sync-external-store"]
   },
   optimizeDeps: {
-    exclude: ["@radix-ui/react-switch"], // чтобы не тянуть в отдельный бандл
+    exclude: ["@radix-ui/react-switch"],
     include: [
       'react',
       'react-dom',
@@ -42,7 +42,9 @@ export default defineConfig(({ mode }) => ({
       define: {
         global: 'globalThis',
       },
-    }
+    },
+    // Force Vite to pre-bundle these packages
+    force: true
   },
   build: {
     sourcemap: true,
