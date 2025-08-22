@@ -19,6 +19,11 @@ const ThemeSelectorCoverflow: React.FC = () => {
   console.log('[WHO_USES_THEME_STORE] ThemeSelectorCoverflow:', THEME_STORE_INSTANCE_ID);
   console.log('[WHO_USES_CUST_STORE] ThemeSelectorCoverflow:', CUST_STORE_INSTANCE_ID);
 
+  // Диагностический маркер: no-touch mode
+  useEffect(() => { 
+    console.log('[CF] no-touch mode: Coverflow is read-only'); 
+  }, []);
+
   const { 
     themes, 
     activeThemeId, 

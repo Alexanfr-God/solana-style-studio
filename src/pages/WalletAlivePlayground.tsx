@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 import ChatInterface from '@/components/chat/ChatInterface';
@@ -7,6 +6,7 @@ import { WalletChatProvider } from '@/contexts/WalletChatContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ThemeSelectorCoverflow from '@/components/customization/ThemeSelectorCoverflow';
+import ThemeChat from '@/components/ai/ThemeChat';
 
 const WalletAlivePlayground = () => {
   const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
@@ -47,9 +47,14 @@ const WalletAlivePlayground = () => {
 
             {/* Main Layout Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-6 mb-8">
-              {/* Left Column - Chat Interface */}
+              {/* Left Column - Chat Interfaces */}
               <div className="xl:col-span-1 lg:col-span-1 space-y-6">
                 <ChatInterface />
+                
+                {/* AI Theme Chat - новый компонент */}
+                <div className="h-96">
+                  <ThemeChat />
+                </div>
               </div>
               
               {/* Right Column - Wallet Preview */}
