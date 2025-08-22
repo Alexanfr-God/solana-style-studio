@@ -1,36 +1,30 @@
 
-import { useEffect } from 'react';
-
-// Safe theme store access with fallback
-let useThemeStoreSafe: any = null;
-let THEME_STORE_INSTANCE_ID_SAFE: string = 'fallback';
-
-try {
-  const themeStoreModule = await import('@/state/themeStore');
-  useThemeStoreSafe = themeStoreModule.useThemeStore;
-  THEME_STORE_INSTANCE_ID_SAFE = themeStoreModule.THEME_STORE_INSTANCE_ID;
-} catch (error) {
-  console.error('[Bootstrap] Failed to import theme store:', error);
-}
+import { useEffect, useState } from 'react';
 
 // Компонент для инициализации темы по умолчанию
 export default function AppBootstrap() {
-  // Safe store access - return early if store isn't available
-  if (!useThemeStoreSafe) {
-    console.warn('[Bootstrap] Theme store not available, skipping initialization');
-    return null;
-  }
+  const [themeStore, setThemeStore] = useState<any>(null);
+  const [storeInstanceId, setStoreInstanceId] = useState<string>('loading');
 
-  let setTheme: any = null;
-  
-  try {
-    setTheme = useThemeStoreSafe((s: any) => s.setTheme);
-    // Диагностика store instance при монтировании
-    console.log('[Bootstrap] Theme store instance ID:', THEME_STORE_INSTANCE_ID_SAFE);
-  } catch (error) {
-    console.error('[Bootstrap] Error accessing theme store:', error);
-    return null;
-  }
+  useEffect(() => {
+    // Динамический импорт store внутри useEffect
+    const loadThemeStore = async () => {
+      try {
+        const themeStoreModule = await import('@/state/themeStore');
+        setThemeStore(themeStoreModule.useThemeStore);
+        setStoreInstanceId(themeStoreModule.THEME_STORE_INSTANCE_ID);
+        console.log('[Bootstrap] Theme store loaded, instance ID:', themeStoreModule.THEME_STORE_INSTANCE_ID);
+      } catch (error) {
+        console.error('[Bootstrap] Failed to import theme store:', error);
+        setStoreInstanceId('error');
+      }
+    };
+
+    loadThemeStore();
+  }, []);
+
+  // Используем store только после успешной загрузки
+  const setTheme = themeStore ? themeStore((s: any) => s.setTheme) : null;
 
   useEffect(() => {
     if (!setTheme) return;
@@ -54,6 +48,13 @@ export default function AppBootstrap() {
 
     loadDefaultTheme();
   }, [setTheme]);
+
+  // Диагностический лог
+  useEffect(() => {
+    if (storeInstanceId !== 'loading' && storeInstanceId !== 'error') {
+      console.log('[Bootstrap] Theme store instance ID:', storeInstanceId);
+    }
+  }, [storeInstanceId]);
 
   return null; // Этот компонент не рендерит UI
 }
