@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
 import { useCustomizationStore } from '@/stores/customizationStore';
-import { useThemeStore } from '@/state/themeStore';
+import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
+import { CUST_STORE_INSTANCE_ID } from '@/stores/customizationStore';
 import { mapThemeToWalletStyle } from '@/utils/themeMapper';
 import { toast } from 'sonner';
 import { withRenderGuard } from '@/utils/guard';
@@ -14,6 +15,10 @@ import { withRenderGuard } from '@/utils/guard';
 const ThemeSelectorCoverflow: React.FC = () => {
   const guard = withRenderGuard("ThemeSelectorCoverflow");
   guard();
+
+  // Diagnostic logging for store instances
+  console.log('[WHO_USES_THEME_STORE] ThemeSelectorCoverflow:', THEME_STORE_INSTANCE_ID);
+  console.log('[WHO_USES_CUST_STORE] ThemeSelectorCoverflow:', CUST_STORE_INSTANCE_ID);
 
   const { 
     themes, 
@@ -27,7 +32,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
   const { setTheme, setActiveThemeId } = useThemeStore();
   const [loadingThemes, setLoadingThemes] = useState<Set<string>>(new Set());
   
-  const isProcessingRef = useRef(false);
+  const [isApplying, setIsApplying] = useState(false);
   
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
@@ -44,7 +49,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Улучшенная загрузка JSON тем с валидацией
+  // Improved JSON theme loading with validation
   const loadThemeData = useCallback(async (theme: any) => {
     console.log('[CF] loadThemeData START', { id: theme.id, hasThemeData: !!theme.themeData, source });
     
@@ -68,9 +73,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
         if (response.ok) {
           const themeData = await response.json();
           console.log(`[CF] Successfully loaded theme data from: ${path}`);
-          console.log('[CF] loaded JSON keys:', themeData ? Object.keys(themeData) : []);
+          console.log('[STEP1 loaded]', !!themeData, Object.keys(themeData || {}));
           
-          // Валидация схемы JSON
+          // Schema validation
           const hasLockLayer = !!themeData.lockLayer;
           const hasHomeLayer = !!themeData.homeLayer;
           console.log('[CF] Schema validation:', { hasLockLayer, hasHomeLayer });
@@ -89,28 +94,25 @@ const ThemeSelectorCoverflow: React.FC = () => {
     throw new Error(`Failed to load theme data for ${theme.id}`);
   }, [source]);
 
-  // ИСПРАВЛЕННАЯ функция применения JSON тем с правильным порядком
+  // FIXED: Correct order - themeStore first, then customizationStore
   const applyJsonTheme = useCallback((themeData: any, themeId: string) => {
     console.log('[CF] applyJsonTheme START', { themeId, hasData: !!themeData });
     console.log('[CF] themeData keys:', themeData ? Object.keys(themeData) : []);
     
     try {
-      // 1. ГЛАВНОЕ: Сначала применить RAW данные в themeStore
-      console.log('[CF] Step 1: setTheme(themeData) for themeStore');
+      // STEP 1: Apply RAW JSON data to themeStore (MAIN STORE)
+      console.log('[STEP2 setTheme done] Applying to themeStore with raw JSON');
       setTheme(themeData);
-      console.log('[CF] themeStore updated with raw data');
       
-      // 2. Установить activeThemeId
-      console.log('[CF] Step 2: setActiveThemeId');
+      // STEP 2: Set activeThemeId
+      console.log('[STEP3 active set]', themeId);
       setActiveThemeId(themeId);
-      console.log('[CF] activeThemeId set to:', themeId);
       
-      // 3. Применить в customizationStore для DualWalletPreview совместимости
-      console.log('[CF] Step 3: apply to customizationStore');
+      // STEP 3: Apply to customizationStore for compatibility
+      console.log('[STEP4 applied to customizationStore] Mapping for compatibility');
       const { loginStyle, walletStyle } = mapThemeToWalletStyle(themeData);
       setStyleForLayer('login', loginStyle);
       setStyleForLayer('wallet', walletStyle);
-      console.log('[CF] customizationStore updated');
       
       console.log('[CF] ✅ JSON Theme applied successfully to BOTH stores');
       console.log('[CF] Final state - themeStore has raw data, customizationStore has mapped styles');
@@ -159,43 +161,50 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   }, [activeThemeId, themes, isLoading, applyJsonTheme, source, loadThemeData, selectTheme]);
 
-  // ИСПРАВЛЕННАЯ обработка клика по теме
+  // FIXED: Click handler with proper race condition prevention
   const handleThemeClick = useCallback(async (theme: any) => {
-    if (isProcessingRef.current) {
+    if (isApplying) {
       console.log('[CF] 🚫 Click ignored - already processing');
       return;
     }
     
-    if (theme.id === activeThemeId) {
+    // Type comparison fix
+    console.log('[ACTIVE_COMPARE]', { 
+      activeThemeId, 
+      clickedId: theme.id, 
+      eq: String(activeThemeId) === String(theme.id) 
+    });
+    
+    if (String(theme.id) === String(activeThemeId)) {
       console.log('[CF] 🚫 Click ignored - theme already active');
       return;
     }
     
     console.log(`[CF] 🎯 THEME CLICK: ${theme.name}`, { id: theme.id, source });
     
-    isProcessingRef.current = true;
+    setIsApplying(true);
     setLoadingThemes(prev => new Set([...prev, theme.id]));
     
     try {
       if (theme.themeData) {
-        // Тема уже имеет JSON данные
+        // Theme already has JSON data
         console.log('[CF] Theme has JSON data, applying directly');
         applyJsonTheme(theme.themeData, theme.id);
         toast.success(`✅ Applied: ${theme.name}`);
         
       } else if (theme.patch) {
-        // Supabase preset - применить через useThemeSelector
+        // Supabase preset - apply through useThemeSelector
         console.log('[CF] Theme is Supabase preset, using selectTheme');
         selectTheme(theme.id);
         toast.success(`✅ Applied: ${theme.name}`);
         
       } else if (source === 'files') {
-        // File-based тема - загрузить JSON и применить
+        // File-based theme - load JSON and apply
         console.log('[CF] Loading file-based theme JSON');
         const loaded = await loadThemeData(theme);
         console.log('[CF] loaded', { hasThemeData: !!loaded?.themeData, keys: loaded?.themeData ? Object.keys(loaded.themeData) : [] });
         
-        // Применяем загруженную тему
+        // Apply loaded theme
         applyJsonTheme(loaded.themeData, theme.id);
         console.log('[CF] applied to stores', loaded.themeData?.lockLayer ? 'has lockLayer' : 'no lockLayer');
         
@@ -213,9 +222,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
         newSet.delete(theme.id);
         return newSet;
       });
-      isProcessingRef.current = false;
+      setIsApplying(false);
     }
-  }, [activeThemeId, applyJsonTheme, selectTheme, source, loadThemeData]);
+  }, [activeThemeId, applyJsonTheme, selectTheme, source, loadThemeData, isApplying]);
 
   const activeTheme = themes.find(t => t.id === activeThemeId);
 
@@ -262,7 +271,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           size="icon"
           className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           onClick={scrollPrev}
-          disabled={isProcessingRef.current}
+          disabled={isApplying}
         >
           <ChevronLeft className="h-5 w-5 text-white" />
         </Button>
@@ -272,7 +281,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           size="icon"
           className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           onClick={scrollNext}
-          disabled={isProcessingRef.current}
+          disabled={isApplying}
         >
           <ChevronRight className="h-5 w-5 text-white" />
         </Button>
@@ -280,8 +289,10 @@ const ThemeSelectorCoverflow: React.FC = () => {
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex items-center gap-4 px-16">
             {themes.map((theme) => {
-              const isActive = theme.id === activeThemeId;
+              const isActive = String(theme.id) === String(activeThemeId);
               const isThemeLoading = loadingThemes.has(theme.id);
+              
+              console.log('[RENDER CoverflowItem]', { id: theme.id, isActive: isActive });
               
               return (
                 <div
@@ -290,7 +301,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     isActive 
                       ? 'scale-110 z-10' 
                       : 'scale-90 opacity-60 hover:opacity-80 hover:scale-95'
-                  } ${isProcessingRef.current ? 'pointer-events-none' : ''}`}
+                  } ${isApplying ? 'pointer-events-none' : ''}`}
                   onClick={() => handleThemeClick(theme)}
                   data-theme-id={theme.id}
                 >
@@ -351,12 +362,12 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <button
             key={theme.id}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              theme.id === activeThemeId
+              String(theme.id) === String(activeThemeId)
                 ? 'bg-purple-400 w-6' 
                 : 'bg-white/30 hover:bg-white/50'
             }`}
-            onClick={() => !isProcessingRef.current && handleThemeClick(theme)}
-            disabled={isProcessingRef.current}
+            onClick={() => !isApplying && handleThemeClick(theme)}
+            disabled={isApplying}
           />
         ))}
       </div>
@@ -366,7 +377,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <div>Active: {activeThemeId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
           <div>Loading: {Array.from(loadingThemes).join(', ') || 'none'}</div>
-          <div>🔧 ИСПРАВЛЕНО: Правильный порядок применения - themeStore → customizationStore</div>
+          <div>🔧 FIXED: Priority themeData > patch, race condition prevention</div>
+          <div>[CF RENDER LIST] {themes.map(t=>t.id).join(', ')}</div>
         </div>
       )}
     </div>

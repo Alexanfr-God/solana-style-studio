@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/state/themeStore';
 import { usePresetsLoader, type PresetItem } from './usePresetsLoader';
@@ -83,13 +84,21 @@ export const useThemeSelector = () => {
     }
   };
 
-  // EXPLICIT theme application - commits preview to main theme
+  // FIXED: Priority for themeData over patch for JSON themes
   const applyTheme = (selectedTheme: ThemeItem) => {
     console.log(`[TS] 🎨 APPLY THEME CLICKED: ${selectedTheme.name}`);
     console.log('[TS] Theme data:', selectedTheme);
     
-    // For presets use patch, for regular themes use themeData
-    if (selectedTheme.patch && selectedTheme.patch.length > 0) {
+    // FIXED: Check themeData FIRST for JSON themes (this was the main bug)
+    if (selectedTheme.themeData) {
+      // This is a JSON theme - apply themeData DIRECTLY to themeStore
+      console.log('[TS] Applying JSON theme data:', selectedTheme.themeData);
+      console.log('[TS] setTheme (direct JSON)', typeof selectedTheme.themeData, selectedTheme.themeData && Object.keys(selectedTheme.themeData));
+      setTheme(selectedTheme.themeData);
+      console.log('[TS] setActiveThemeId (direct JSON):', selectedTheme.id);
+      setActiveThemeId(selectedTheme.id);
+      console.log('[TS] ✅ Applied JSON theme data:', selectedTheme.name);
+    } else if (selectedTheme.patch && selectedTheme.patch.length > 0) {
       // This is a preset from Supabase - apply patch locally
       const currentTheme = getDisplayTheme();
       console.log('[TS] Current theme before patch:', currentTheme);
@@ -106,14 +115,6 @@ export const useThemeSelector = () => {
       } catch (error) {
         console.error('[TS] 💥 Error applying preset patch:', error);
       }
-    } else if (selectedTheme.themeData) {
-      // This is a regular theme - apply themeData
-      console.log('[TS] Applying theme data:', selectedTheme.themeData);
-      console.log('[TS] setTheme (direct)', typeof selectedTheme.themeData, selectedTheme.themeData && Object.keys(selectedTheme.themeData));
-      setTheme(selectedTheme.themeData);
-      console.log('[TS] setActiveThemeId (direct):', selectedTheme.id);
-      setActiveThemeId(selectedTheme.id);
-      console.log('[TS] ✅ Applied theme data:', selectedTheme.name);
     } else {
       console.warn('[TS] ⚠️ Cannot apply theme without data or patch:', selectedTheme.name);
     }

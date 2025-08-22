@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import type { Operation } from 'fast-json-patch';
 import { applyJsonPatch } from '@/services/llmPatchService';
 
+// Diagnostic marker for store instance tracking
+export const THEME_STORE_INSTANCE_ID = 'themeStore#A42F';
+
 interface ThemePatch {
   id: string;
   operations: Operation[];
@@ -66,7 +69,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   _busy: false,
 
   setActiveThemeId: (themeId: string | null) => {
-    console.log('[STORE:theme] setActiveThemeId:', themeId);
+    console.log('[STORE:theme setActive]', themeId, 'instanceId:', THEME_STORE_INSTANCE_ID);
     set({ activeThemeId: themeId });
     console.log('[STORE:theme] 🎯 Active theme ID set to:', themeId);
   },
@@ -81,8 +84,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     
     updateCounter++;
     const callStack = new Error().stack;
-    console.log(`[STORE:theme] setTheme called (#${updateCounter}) from:`, callStack?.split('\n')[2]);
-    console.log('[STORE:theme] new theme keys', theme && Object.keys(theme));
+    console.log(`[STORE:theme setTheme] (#${updateCounter}) instanceId:`, THEME_STORE_INSTANCE_ID, 'from:', callStack?.split('\n')[2]);
+    console.log('[STORE:theme setTheme]', theme && Object.keys(theme));
     
     try {
       const currentThemeStr = JSON.stringify(state.theme);

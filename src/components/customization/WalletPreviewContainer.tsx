@@ -3,7 +3,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
-import { useThemeStore } from '@/state/themeStore';
+import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
 import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import WalletContainer from '@/components/wallet/WalletContainer';
 import { useWalletElements } from '@/hooks/useWalletElements';
@@ -16,6 +16,9 @@ interface WalletPreviewContainerProps {
 const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   onElementSelect
 }) => {
+  // Diagnostic logging for store instances
+  console.log('[WHO_USES_THEME_STORE] WalletPreviewContainer:', THEME_STORE_INSTANCE_ID);
+
   const {
     selectedWallet,
     setSelectedWallet,
@@ -31,6 +34,12 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
 
   // Read theme from SoT without writing back
   const theme = useThemeStore(state => state.theme);
+  const activeThemeId = useThemeStore(state => state.activeThemeId);
+
+  console.log('[RENDER WalletPreviewContainer]', { 
+    activeThemeId, 
+    themeKeys: theme ? Object.keys(theme) : [] 
+  });
 
   // Derive preview data from theme using useMemo (no side effects)
   const previewData = useMemo(() => {

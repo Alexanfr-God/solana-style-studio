@@ -1,6 +1,8 @@
-
 import { create } from 'zustand';
 import { defaultLoginStyle, defaultWalletStyle } from '../constants/defaultWalletStyles';
+
+// Diagnostic marker for store instance tracking  
+export const CUST_STORE_INSTANCE_ID = 'custStore#C91K';
 
 export type LayerType = 'login' | 'wallet';
 export type EditorModeType = 'create-style' | 'fine-tune' | 'decorate';
@@ -143,8 +145,8 @@ export const useCustomizationStore = create<CustomizationState>((set, get) => ({
   setActiveLayer: (layer) => set({ activeLayer: layer }),
   
   setStyleForLayer: (layer, style) => set((state) => {
-    console.log(`[STORE:cust] 🎨 Updating ${layer} style:`, Object.keys(style));
-    console.log('[STORE:cust] loginStyle?', layer === 'login' ? 'updating' : !!state.loginStyle, 'walletStyle?', layer === 'wallet' ? 'updating' : !!state.walletStyle);
+    console.log(`[STORE:cust apply] ${layer} style instanceId:`, CUST_STORE_INSTANCE_ID, Object.keys(style));
+    console.log('[STORE:cust apply]', { hasLogin: layer === 'login' ? 'updating' : !!state.loginStyle, hasWallet: layer === 'wallet' ? 'updating' : !!state.walletStyle });
     
     const newState = layer === 'login' 
       ? { loginStyle: { ...state.loginStyle, ...style }, isGenerating: false } 
