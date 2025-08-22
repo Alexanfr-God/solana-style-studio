@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => ({
     include: [
       'react',
       'react-dom',
+      'zustand',
+      'use-sync-external-store',
+      '@tanstack/react-query',
       '@solana/wallet-adapter-wallets',
       '@solana/wallet-adapter-react',
       '@solana/wallet-adapter-base',

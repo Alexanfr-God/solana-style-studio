@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
-import ChatInterface from '@/components/chat/ChatInterface';
+// import ChatInterface from '@/components/chat/ChatInterface'; // Временно закомментировано
 import { Button } from '@/components/ui/button';
 import { WalletChatProvider } from '@/contexts/WalletChatContext';
 import Header from '@/components/layout/Header';
@@ -47,9 +48,10 @@ const WalletAlivePlayground = () => {
 
             {/* Main Layout Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-6 mb-8">
-              {/* Left Column - Chat Interfaces */}
+              {/* Left Column - AI Theme Chat только */}
               <div className="xl:col-span-1 lg:col-span-1 space-y-6">
-                <ChatInterface />
+                {/* Старый ChatInterface временно закомментирован */}
+                {/* <ChatInterface /> */}
                 
                 {/* AI Theme Chat - новый компонент */}
                 <div className="h-96">
