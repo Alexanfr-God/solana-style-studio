@@ -41,8 +41,7 @@ export const useThemeSelector = () => {
       description: preset.description,
       previewImage: preset.previewImage,
       coverUrl: preset.coverUrl,
-      // Don't set themeData initially - load on demand for file-based themes
-      themeData: undefined,
+      themeData: (preset as any).themeData, // Include loaded theme data
       patch: preset.patch,
       sampleContext: preset.sampleContext
     }));
@@ -84,40 +83,59 @@ export const useThemeSelector = () => {
     }
   };
 
-  // FIXED: Priority for themeData over patch for JSON themes
-  const applyTheme = (selectedTheme: ThemeItem) => {
+  // FIXED: Improved applyTheme with better validation and loading
+  const applyTheme = async (selectedTheme: ThemeItem) => {
     console.log(`[TS] 🎨 APPLY THEME CLICKED: ${selectedTheme.name}`);
-    console.log('[TS] Theme data:', selectedTheme);
+    console.log('[TS] Theme data available:', {
+      hasThemeData: !!selectedTheme.themeData,
+      hasPatch: !!(selectedTheme.patch && selectedTheme.patch.length > 0),
+      themeDataKeys: selectedTheme.themeData ? Object.keys(selectedTheme.themeData) : []
+    });
     
-    // FIXED: Check themeData FIRST for JSON themes (this was the main bug)
+    // Priority 1: Direct theme data (JSON themes)
     if (selectedTheme.themeData) {
-      // This is a JSON theme - apply themeData DIRECTLY to themeStore
-      console.log('[TS] Applying JSON theme data:', selectedTheme.themeData);
-      console.log('[TS] setTheme (direct JSON)', typeof selectedTheme.themeData, selectedTheme.themeData && Object.keys(selectedTheme.themeData));
+      console.log('[TS] ✅ Applying JSON theme data directly');
       setTheme(selectedTheme.themeData);
-      console.log('[TS] setActiveThemeId (direct JSON):', selectedTheme.id);
       setActiveThemeId(selectedTheme.id);
-      console.log('[TS] ✅ Applied JSON theme data:', selectedTheme.name);
-    } else if (selectedTheme.patch && selectedTheme.patch.length > 0) {
-      // This is a preset from Supabase - apply patch locally
+      console.log('[TS] ✅ JSON theme applied:', selectedTheme.name);
+      return;
+    }
+    
+    // Priority 2: Load theme data from file if not available
+    if (source === 'files' && !selectedTheme.themeData) {
+      console.log('[TS] 🔄 Loading theme data from file...');
+      try {
+        const response = await fetch(`/themes/${selectedTheme.id}.json`);
+        if (response.ok) {
+          const themeData = await response.json();
+          console.log('[TS] ✅ Loaded theme data from file:', Object.keys(themeData));
+          setTheme(themeData);
+          setActiveThemeId(selectedTheme.id);
+          console.log('[TS] ✅ File theme applied:', selectedTheme.name);
+          return;
+        }
+      } catch (error) {
+        console.error('[TS] 💥 Error loading theme file:', error);
+      }
+    }
+    
+    // Priority 3: Supabase presets with patches
+    if (selectedTheme.patch && selectedTheme.patch.length > 0) {
+      console.log('[TS] ✅ Applying Supabase preset patch');
       const currentTheme = getDisplayTheme();
-      console.log('[TS] Current theme before patch:', currentTheme);
       
       try {
-        // Apply patch to current theme
         const newTheme = applyPatch(currentTheme, selectedTheme.patch as Operation[], false, false).newDocument;
-        console.log('[TS] New theme after patch:', newTheme);
-        console.log('[TS] setTheme (patch result)', typeof newTheme, newTheme && Object.keys(newTheme));
         setTheme(newTheme);
-        console.log('[TS] setActiveThemeId (patch):', selectedTheme.id);
         setActiveThemeId(selectedTheme.id);
-        console.log('[TS] ✅ Applied preset patch locally:', selectedTheme.name);
+        console.log('[TS] ✅ Preset patch applied:', selectedTheme.name);
+        return;
       } catch (error) {
         console.error('[TS] 💥 Error applying preset patch:', error);
       }
-    } else {
-      console.warn('[TS] ⚠️ Cannot apply theme without data or patch:', selectedTheme.name);
     }
+    
+    console.error('[TS] 💥 Cannot apply theme - no valid data source:', selectedTheme.name);
   };
 
   // Commit current preview to main theme
@@ -127,8 +145,8 @@ export const useThemeSelector = () => {
     console.log('[TS] ✅ Preview committed to main theme');
   };
 
-  // EXPLICIT theme selection - only sets active, does NOT auto-apply
-  const selectTheme = (themeId: string) => {
+  // EXPLICIT theme selection - applies theme immediately
+  const selectTheme = async (themeId: string) => {
     console.log('[TS] 👆 Theme selection (with auto-apply):', themeId);
     
     const selectedTheme = themes.find(t => t.id === themeId);
@@ -137,8 +155,8 @@ export const useThemeSelector = () => {
       return;
     }
     
-    // Apply the theme (for Supabase presets)
-    applyTheme(selectedTheme);
+    // Apply the theme
+    await applyTheme(selectedTheme);
     console.log('[TS] ✅ Theme selected and applied:', themeId);
   };
 
@@ -155,35 +173,23 @@ export const useThemeSelector = () => {
     return themes.find(t => t.id === activeThemeId);
   };
 
-  const applyThemeById = (themeId: string) => {
+  const applyThemeById = async (themeId: string) => {
     const selectedTheme = themes.find(t => t.id === themeId);
     if (selectedTheme) {
-      applyTheme(selectedTheme);
+      await applyTheme(selectedTheme);
     }
   };
 
   return {
     themes,
-    activeThemeId, // Now reads from unified themeStore
-    isLoading: presetsLoading, // Removed the blocking loading state
+    activeThemeId,
+    isLoading: presetsLoading,
     selectTheme,
-    getActiveTheme: () => {
-      if (import.meta.env.DEV) {
-        console.warn('[TS] ⚠️ DEPRECATED: useThemeSelector.getActiveTheme() is deprecated, use useWalletTheme() hook instead');
-      }
-      
-      if (!activeThemeId) return null;
-      return themes.find(t => t.id === activeThemeId);
-    },
+    getActiveTheme,
     applyTheme,
     applyThemePreview,
     commitCurrentPreview,
-    applyThemeById: (themeId: string) => {
-      const selectedTheme = themes.find(t => t.id === themeId);
-      if (selectedTheme) {
-        applyTheme(selectedTheme);
-      }
-    },
-    source // Add data source for debugging
+    applyThemeById,
+    source
   };
 };

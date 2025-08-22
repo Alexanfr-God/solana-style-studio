@@ -48,76 +48,35 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Improved JSON theme loading with validation
-  const loadThemeData = useCallback(async (theme: any) => {
-    console.log('[CF] loadThemeData START', { id: theme.id, hasThemeData: !!theme.themeData, source });
-    
-    if (theme.themeData || theme.patch) {
-      console.log('[CF] theme already has data, returning as-is');
-      return theme;
-    }
-
-    console.log(`[CF] Loading JSON theme data for: ${theme.name}`);
-    
-    const possiblePaths = [
-      `/themes/${theme.id}.json`,
-      `/themes/${theme.id}Theme.json`
-    ];
-    
-    for (const path of possiblePaths) {
-      try {
-        console.log(`[CF] Trying to load: ${path}`);
-        const response = await fetch(path);
-        
-        if (response.ok) {
-          const themeData = await response.json();
-          console.log(`[CF] Successfully loaded theme data from: ${path}`);
-          console.log('[STEP1 loaded]', !!themeData, Object.keys(themeData || {}));
-          
-          // Schema validation
-          const hasLockLayer = !!themeData.lockLayer;
-          const hasHomeLayer = !!themeData.homeLayer;
-          console.log('[CF] Schema validation:', { hasLockLayer, hasHomeLayer });
-          
-          if (!hasLockLayer && !hasHomeLayer) {
-            console.warn('[CF] Invalid theme schema - missing lockLayer and homeLayer');
-          }
-          
-          return { ...theme, themeData };
-        }
-      } catch (error) {
-        console.warn(`[CF] Error loading ${path}:`, error);
-      }
-    }
-    
-    throw new Error(`Failed to load theme data for ${theme.id}`);
-  }, [source]);
-
-  // FIXED: Correct order - themeStore first, then customizationStore
+  // FIXED: Simplified theme application with proper error handling
   const applyJsonTheme = useCallback((themeData: any, themeId: string) => {
     console.log('[CF] applyJsonTheme START', { themeId, hasData: !!themeData });
-    console.log('[CF] themeData keys:', themeData ? Object.keys(themeData) : []);
+    
+    if (!themeData || typeof themeData !== 'object') {
+      console.error('[CF] 💥 Invalid theme data:', themeData);
+      throw new Error('Invalid theme data');
+    }
+    
+    console.log('[CF] themeData structure:', {
+      keys: Object.keys(themeData),
+      hasLockLayer: !!themeData.lockLayer,
+      hasHomeLayer: !!themeData.homeLayer
+    });
     
     try {
-      // STEP 1: Apply RAW JSON data to themeStore (MAIN STORE)
-      console.log('[STEP2 setTheme done] Applying to themeStore with raw JSON');
+      // Apply to themeStore (main source of truth)
       setTheme(themeData);
-      
-      // STEP 2: Set activeThemeId
-      console.log('[STEP3 active set]', themeId);
       setActiveThemeId(themeId);
       
-      // STEP 3: Apply to customizationStore for compatibility
-      console.log('[STEP4 applied to customizationStore] Mapping for compatibility');
+      // Apply to customizationStore for compatibility
       const { loginStyle, walletStyle } = mapThemeToWalletStyle(themeData);
       setStyleForLayer('login', loginStyle);
       setStyleForLayer('wallet', walletStyle);
       
-      console.log('[CF] ✅ JSON Theme applied successfully to BOTH stores');
-      console.log('[CF] Final state - themeStore has raw data, customizationStore has mapped styles');
+      console.log('[CF] ✅ Theme applied successfully to both stores');
       
     } catch (error) {
-      console.error('[CF] 💥 Error applying JSON theme:', error);
+      console.error('[CF] 💥 Error applying theme:', error);
       throw error;
     }
   }, [setStyleForLayer, setTheme, setActiveThemeId]);
@@ -126,92 +85,43 @@ const ThemeSelectorCoverflow: React.FC = () => {
   useEffect(() => {
     if (activeThemeId && themes.length > 0 && !isLoading) {
       const activeTheme = themes.find(t => t.id === activeThemeId);
-      if (activeTheme) {
-        console.log('[CF] Applying initial active theme:', activeTheme.name);
-        
-        if (activeTheme.themeData) {
+      if (activeTheme && activeTheme.themeData) {
+        console.log('[CF] Applying initial active theme with data:', activeTheme.name);
+        try {
           applyJsonTheme(activeTheme.themeData, activeTheme.id);
-        } else if (activeTheme.patch) {
-          console.log('[CF] Active theme is a preset, handled by themeStore');
-          // Для Supabase preset'ов используем selectTheme из useThemeSelector
-          selectTheme(activeTheme.id);
-        } else if (source === 'files') {
-          // Load theme data on demand for file-based themes
-          setLoadingThemes(prev => new Set([...prev, activeTheme.id]));
-          loadThemeData(activeTheme)
-            .then(loadedTheme => {
-              applyJsonTheme(loadedTheme.themeData, activeTheme.id);
-              setLoadingThemes(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(activeTheme.id);
-                return newSet;
-              });
-            })
-            .catch(error => {
-              console.error('[CF] 💥 Error loading initial active theme:', error);
-              setLoadingThemes(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(activeTheme.id);
-                return newSet;
-              });
-            });
+        } catch (error) {
+          console.error('[CF] 💥 Error applying initial theme:', error);
         }
       }
     }
-  }, [activeThemeId, themes, isLoading, applyJsonTheme, source, loadThemeData, selectTheme]);
+  }, [activeThemeId, themes, isLoading, applyJsonTheme]);
 
-  // FIXED: Click handler with proper race condition prevention
+  // FIXED: Simplified click handler with race condition prevention
   const handleThemeClick = useCallback(async (theme: any) => {
     if (isApplying) {
       console.log('[CF] 🚫 Click ignored - already processing');
       return;
     }
     
-    // Type comparison fix
-    console.log('[ACTIVE_COMPARE]', { 
-      activeThemeId, 
-      clickedId: theme.id, 
-      eq: String(activeThemeId) === String(theme.id) 
-    });
-    
+    // Prevent clicking same theme
     if (String(theme.id) === String(activeThemeId)) {
       console.log('[CF] 🚫 Click ignored - theme already active');
       return;
     }
     
-    console.log(`[CF] 🎯 THEME CLICK: ${theme.name}`, { id: theme.id, source });
+    console.log(`[CF] 🎯 THEME CLICK: ${theme.name}`, { 
+      id: theme.id,
+      hasThemeData: !!theme.themeData,
+      source 
+    });
     
     setIsApplying(true);
     setLoadingThemes(prev => new Set([...prev, theme.id]));
     
     try {
-      if (theme.themeData) {
-        // Theme already has JSON data
-        console.log('[CF] Theme has JSON data, applying directly');
-        applyJsonTheme(theme.themeData, theme.id);
-        toast.success(`✅ Applied: ${theme.name}`);
-        
-      } else if (theme.patch) {
-        // Supabase preset - apply through useThemeSelector
-        console.log('[CF] Theme is Supabase preset, using selectTheme');
-        selectTheme(theme.id);
-        toast.success(`✅ Applied: ${theme.name}`);
-        
-      } else if (source === 'files') {
-        // File-based theme - load JSON and apply
-        console.log('[CF] Loading file-based theme JSON');
-        const loaded = await loadThemeData(theme);
-        console.log('[CF] loaded', { hasThemeData: !!loaded?.themeData, keys: loaded?.themeData ? Object.keys(loaded.themeData) : [] });
-        
-        // Apply loaded theme
-        applyJsonTheme(loaded.themeData, theme.id);
-        console.log('[CF] applied to stores', loaded.themeData?.lockLayer ? 'has lockLayer' : 'no lockLayer');
-        
-        toast.success(`✅ Applied: ${theme.name}`);
-        
-      } else {
-        throw new Error('No theme data available');
-      }
+      // Use selectTheme from useThemeSelector which handles all cases
+      await selectTheme(theme.id);
+      toast.success(`✅ Applied: ${theme.name}`);
     } catch (error) {
       console.error('[CF] 💥 Error applying theme:', error);
       toast.error(`Failed to apply ${theme.name}`);
@@ -223,7 +133,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
       });
       setIsApplying(false);
     }
-  }, [activeThemeId, applyJsonTheme, selectTheme, source, loadThemeData, isApplying]);
+  }, [activeThemeId, selectTheme, source, isApplying]);
 
   const activeTheme = themes.find(t => t.id === activeThemeId);
 
@@ -376,8 +286,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <div>Active: {activeThemeId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
           <div>Loading: {Array.from(loadingThemes).join(', ') || 'none'}</div>
-          <div>🔧 FIXED: Priority themeData → patch, race condition prevention</div>
-          <div>[CF RENDER LIST] {themes.map(t=>t.id).join(', ')}</div>
+          <div>🔧 FIXED: Simplified theme application + validation</div>
         </div>
       )}
     </div>

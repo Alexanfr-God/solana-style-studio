@@ -44,7 +44,7 @@ const loadPresetsFromSupabase = async (): Promise<PresetItem[]> => {
 
   return data.map((preset: SupabasePreset) => ({
     id: preset.id,
-    slug: preset.id, // Use id as slug for Supabase presets
+    slug: preset.id,
     name: preset.title,
     description: `Preset: ${preset.title}`,
     previewImage: preset.cover_url || '',
@@ -65,24 +65,63 @@ const loadPresetsFromFiles = async (): Promise<PresetItem[]> => {
     }
     
     const manifest = await response.json();
-    console.log(`[PL] 📦 Loaded ${manifest.length} presets from files`);
-    console.log('[PL] source=files count', manifest.length, manifest.map((p: any) => ({
-      id: p.id, 
-      patchLen: p.patch?.length || 0, 
-      hasData: !!p.themeData
-    })));
+    console.log(`[PL] 📦 Loaded ${manifest.length} presets from manifest`);
     
-    return manifest.map((item: any) => ({
-      id: item.id,
-      slug: item.id,
-      name: item.name,
-      description: item.description || `Preset: ${item.name}`,
-      previewImage: item.coverUrl || '',
-      coverUrl: item.coverUrl || '',
-      tags: item.tags || [],
-      patch: [], // Will be loaded separately when needed from theme files
-      sampleContext: `Style: ${item.name}`
-    }));
+    // Load actual theme data for each preset
+    const presetsWithData = await Promise.all(
+      manifest.map(async (item: any) => {
+        try {
+          // Try to load theme data from JSON file
+          const themeResponse = await fetch(`/themes/${item.id}.json`);
+          if (themeResponse.ok) {
+            const themeData = await themeResponse.json();
+            console.log(`[PL] ✅ Loaded theme data for ${item.id}`);
+            
+            return {
+              id: item.id,
+              slug: item.id,
+              name: item.name,
+              description: item.description || `Preset: ${item.name}`,
+              previewImage: item.coverUrl || '',
+              coverUrl: item.coverUrl || '',
+              tags: item.tags || [],
+              patch: [], // File-based themes use themeData, not patches
+              sampleContext: `Style: ${item.name}`,
+              themeData // Add the loaded theme data
+            };
+          } else {
+            console.warn(`[PL] ⚠️ No theme file found for ${item.id}`);
+            return {
+              id: item.id,
+              slug: item.id,
+              name: item.name,
+              description: item.description || `Preset: ${item.name}`,
+              previewImage: item.coverUrl || '',
+              coverUrl: item.coverUrl || '',
+              tags: item.tags || [],
+              patch: [],
+              sampleContext: `Style: ${item.name}`
+            };
+          }
+        } catch (error) {
+          console.error(`[PL] 💥 Error loading theme ${item.id}:`, error);
+          return {
+            id: item.id,
+            slug: item.id,
+            name: item.name,
+            description: item.description || `Preset: ${item.name}`,
+            previewImage: item.coverUrl || '',
+            coverUrl: item.coverUrl || '',
+            tags: item.tags || [],
+            patch: [],
+            sampleContext: `Style: ${item.name}`
+          };
+        }
+      })
+    );
+    
+    console.log('[PL] 🎯 File presets loaded with theme data');
+    return presetsWithData;
   } catch (error) {
     console.error('[PL] 💥 File fallback failed:', error);
     return [];
@@ -117,7 +156,7 @@ export const usePresetsLoader = () => {
             setPresets(filePresets);
             setSource('files');
             console.log('[PL] 🎯 Using file fallback presets (manifest source)');
-            console.log(`[PL]   Successfully loaded ${filePresets.length} themes from /themes/manifest.json`);
+            console.log(`[PL]   Successfully loaded ${filePresets.length} themes with data`);
           } else {
             throw new Error('No presets available from files either');
           }
