@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Wand2, Send } from 'lucide-react';
 import { handleUserMessage } from '@/ai/agent';
 import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
@@ -163,18 +163,19 @@ export default function ThemeChat() {
         {/* Input Section - Fixed at bottom */}
         <div className="flex-shrink-0 space-y-2">
           <div className="flex gap-2">
-            <Input
+            <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Describe your change (e.g., 'Make swap button #FF5C00')"
-              className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/40"
+              className="flex-1 min-h-[100px] max-h-[200px] resize-none overflow-y-auto bg-white/10 border-white/20 text-white placeholder:text-white/40"
               disabled={isProcessing}
+              rows={3}
             />
             <Button
               onClick={handleSend}
               disabled={isProcessing || !input.trim()}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 self-end"
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -182,6 +183,8 @@ export default function ThemeChat() {
 
           <div className="text-xs text-white/40">
             💡 Examples: "home background #0A0C10", "swap button orange #FF5C00", "header text #FFFFFF"
+            <br />
+            ⌨️ Tip: Press Shift+Enter for new line, Enter to send
           </div>
         </div>
       </CardContent>
