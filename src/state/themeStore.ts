@@ -66,32 +66,34 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   _busy: false,
 
   setActiveThemeId: (themeId: string | null) => {
+    console.log('[STORE:theme] setActiveThemeId:', themeId);
     set({ activeThemeId: themeId });
-    console.log('🎯 Active theme ID set to:', themeId);
+    console.log('[STORE:theme] 🎯 Active theme ID set to:', themeId);
   },
 
   setTheme: (theme: any) => {
     const state = get();
     
     if (state._busy) {
-      console.warn('🚫 setTheme blocked - already busy');
+      console.warn('[STORE:theme] 🚫 setTheme blocked - already busy');
       return;
     }
     
     updateCounter++;
     const callStack = new Error().stack;
-    console.log(`🎨 setTheme called (#${updateCounter}) from:`, callStack?.split('\n')[2]);
+    console.log(`[STORE:theme] setTheme called (#${updateCounter}) from:`, callStack?.split('\n')[2]);
+    console.log('[STORE:theme] new theme keys', theme && Object.keys(theme));
     
     try {
       const currentThemeStr = JSON.stringify(state.theme);
       const newThemeStr = JSON.stringify(theme);
       
       if (currentThemeStr === newThemeStr) {
-        console.log(`🔄 Theme unchanged (#${updateCounter}), skipping update`);
+        console.log(`[STORE:theme] 🔄 Theme unchanged (#${updateCounter}), skipping update`);
         return;
       }
     } catch (error) {
-      console.warn(`Theme comparison failed (#${updateCounter}), proceeding with update`);
+      console.warn(`[STORE:theme] Theme comparison failed (#${updateCounter}), proceeding with update`);
     }
     
     set({
@@ -104,7 +106,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       set({ _busy: false });
     }, 0);
     
-    console.log(`✅ Theme set successfully (#${updateCounter})`);
+    console.log(`[STORE:theme] ✅ Theme set successfully (#${updateCounter})`);
+    console.log('[STORE:theme] Theme preview keys:', theme ? Object.keys(theme).slice(0, 5) : []);
   },
 
   applyPreviewPatch: (operations: Operation[]) => {

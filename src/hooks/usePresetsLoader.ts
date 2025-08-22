@@ -24,23 +24,23 @@ interface SupabasePreset {
 }
 
 const loadPresetsFromSupabase = async (): Promise<PresetItem[]> => {
-  console.log('📋 Loading presets from Supabase...');
+  console.log('[PL] Loading presets from Supabase...');
   
   const { data, error } = await supabase
     .from('presets')
     .select('id, title, cover_url, tags, sample_patch, sample_context');
 
   if (error) {
-    console.error('💥 Supabase error:', error);
+    console.error('[PL] 💥 Supabase error:', error);
     throw error;
   }
 
   if (!data || data.length === 0) {
-    console.warn('⚠️ No presets found in database - table is empty');
+    console.warn('[PL] ⚠️ No presets found in database - table is empty');
     throw new Error('No presets found');
   }
 
-  console.log(`✅ Loaded ${data.length} presets from Supabase`);
+  console.log(`[PL] ✅ Loaded ${data.length} presets from Supabase`);
 
   return data.map((preset: SupabasePreset) => ({
     id: preset.id,
@@ -56,7 +56,7 @@ const loadPresetsFromSupabase = async (): Promise<PresetItem[]> => {
 };
 
 const loadPresetsFromFiles = async (): Promise<PresetItem[]> => {
-  console.log('📁 Loading presets from files (fallback mode)...');
+  console.log('[PL] Loading presets from files (fallback mode)...');
   
   try {
     const response = await fetch('/themes/manifest.json');
@@ -65,7 +65,12 @@ const loadPresetsFromFiles = async (): Promise<PresetItem[]> => {
     }
     
     const manifest = await response.json();
-    console.log(`📦 Loaded ${manifest.length} presets from files`);
+    console.log(`[PL] 📦 Loaded ${manifest.length} presets from files`);
+    console.log('[PL] source=files count', manifest.length, manifest.map((p: any) => ({
+      id: p.id, 
+      patchLen: p.patch?.length || 0, 
+      hasData: !!p.themeData
+    })));
     
     return manifest.map((item: any) => ({
       id: item.id,
@@ -79,7 +84,7 @@ const loadPresetsFromFiles = async (): Promise<PresetItem[]> => {
       sampleContext: `Style: ${item.name}`
     }));
   } catch (error) {
-    console.error('💥 File fallback failed:', error);
+    console.error('[PL] 💥 File fallback failed:', error);
     return [];
   }
 };
@@ -100,10 +105,10 @@ export const usePresetsLoader = () => {
         const supabasePresets = await loadPresetsFromSupabase();
         setPresets(supabasePresets);
         setSource('supabase');
-        console.log('🎯 Using Supabase presets (database source)');
+        console.log('[PL] 🎯 Using Supabase presets (database source)');
       } catch (supabaseError) {
-        console.warn('⚠️ Supabase failed, automatically falling back to files...');
-        console.warn('   Reason:', supabaseError instanceof Error ? supabaseError.message : 'Unknown error');
+        console.warn('[PL] ⚠️ Supabase failed, automatically falling back to files...');
+        console.warn('[PL]   Reason:', supabaseError instanceof Error ? supabaseError.message : 'Unknown error');
         
         try {
           // Automatic fallback to files
@@ -111,15 +116,15 @@ export const usePresetsLoader = () => {
           if (filePresets.length > 0) {
             setPresets(filePresets);
             setSource('files');
-            console.log('🎯 Using file fallback presets (manifest source)');
-            console.log(`   Successfully loaded ${filePresets.length} themes from /themes/manifest.json`);
+            console.log('[PL] 🎯 Using file fallback presets (manifest source)');
+            console.log(`[PL]   Successfully loaded ${filePresets.length} themes from /themes/manifest.json`);
           } else {
             throw new Error('No presets available from files either');
           }
         } catch (fileError) {
-          console.error('💥 Both sources failed - no presets available');
-          console.error('   Supabase:', supabaseError instanceof Error ? supabaseError.message : 'Unknown');
-          console.error('   Files:', fileError instanceof Error ? fileError.message : 'Unknown');
+          console.error('[PL] 💥 Both sources failed - no presets available');
+          console.error('[PL]   Supabase:', supabaseError instanceof Error ? supabaseError.message : 'Unknown');
+          console.error('[PL]   Files:', fileError instanceof Error ? fileError.message : 'Unknown');
           setError('Failed to load presets from both database and files');
           setPresets([]);
           setSource(null);

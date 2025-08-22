@@ -32,7 +32,7 @@ export const useThemeSelector = () => {
   useEffect(() => {
     if (loadedPresets.length === 0) return;
     
-    console.log(`🔄 Converting ${loadedPresets.length} presets to themes (source: ${source})`);
+    console.log(`[TS] Converting ${loadedPresets.length} presets to themes (source: ${source})`);
     
     const convertedThemes: ThemeItem[] = loadedPresets.map((preset: PresetItem) => ({
       id: preset.id,
@@ -51,88 +51,94 @@ export const useThemeSelector = () => {
     // Set first theme as active if no active theme
     if (!activeThemeId && convertedThemes.length > 0) {
       const defaultTheme = convertedThemes.find(t => t.id === 'luxuryTheme') || convertedThemes[0];
+      console.log('[TS] setActiveThemeId (default):', defaultTheme.id);
       setActiveThemeId(defaultTheme.id);
-      console.log('🎯 Set default active theme:', defaultTheme.id);
+      console.log('[TS] Set default active theme:', defaultTheme.id);
     }
   }, [loadedPresets, source, activeThemeId, setActiveThemeId]);
 
   // Apply preview patch for theme (temporary preview)
   const applyThemePreview = (selectedTheme: ThemeItem) => {
-    console.log(`👁️ Applying theme preview: ${selectedTheme.name}`);
+    console.log(`[TS] 👁️ Applying theme preview: ${selectedTheme.name}`);
     
     if (selectedTheme.patch && selectedTheme.patch.length > 0) {
       // This is a preset from Supabase - apply patch as preview
       try {
         applyPreviewPatch(selectedTheme.patch as Operation[]);
-        console.log('👁️ Applied preset patch as preview:', selectedTheme.name);
+        console.log('[TS] 👁️ Applied preset patch as preview:', selectedTheme.name);
       } catch (error) {
-        console.error('💥 Error applying preset preview:', error);
+        console.error('[TS] 💥 Error applying preset preview:', error);
       }
     } else if (selectedTheme.themeData) {
       // This is a regular theme - apply themeData as preview through setTheme
       try {
+        console.log('[TS] setTheme (preview)', typeof selectedTheme.themeData, selectedTheme.themeData && Object.keys(selectedTheme.themeData));
         setTheme(selectedTheme.themeData);
-        console.log('👁️ Applied theme data directly:', selectedTheme.name);
+        console.log('[TS] 👁️ Applied theme data directly:', selectedTheme.name);
       } catch (error) {
-        console.error('💥 Error applying theme preview:', error);
+        console.error('[TS] 💥 Error applying theme preview:', error);
       }
     } else {
-      console.warn('⚠️ Cannot preview theme without data or patch:', selectedTheme.name);
+      console.warn('[TS] ⚠️ Cannot preview theme without data or patch:', selectedTheme.name);
     }
   };
 
   // EXPLICIT theme application - commits preview to main theme
   const applyTheme = (selectedTheme: ThemeItem) => {
-    console.log(`🎨 APPLY THEME CLICKED: ${selectedTheme.name}`);
-    console.log('🎨 Theme data:', selectedTheme);
+    console.log(`[TS] 🎨 APPLY THEME CLICKED: ${selectedTheme.name}`);
+    console.log('[TS] Theme data:', selectedTheme);
     
     // For presets use patch, for regular themes use themeData
     if (selectedTheme.patch && selectedTheme.patch.length > 0) {
       // This is a preset from Supabase - apply patch locally
       const currentTheme = getDisplayTheme();
-      console.log('🎨 Current theme before patch:', currentTheme);
+      console.log('[TS] Current theme before patch:', currentTheme);
       
       try {
         // Apply patch to current theme
         const newTheme = applyPatch(currentTheme, selectedTheme.patch as Operation[], false, false).newDocument;
-        console.log('🎨 New theme after patch:', newTheme);
+        console.log('[TS] New theme after patch:', newTheme);
+        console.log('[TS] setTheme (patch result)', typeof newTheme, newTheme && Object.keys(newTheme));
         setTheme(newTheme);
+        console.log('[TS] setActiveThemeId (patch):', selectedTheme.id);
         setActiveThemeId(selectedTheme.id);
-        console.log('✅ Applied preset patch locally:', selectedTheme.name);
+        console.log('[TS] ✅ Applied preset patch locally:', selectedTheme.name);
       } catch (error) {
-        console.error('💥 Error applying preset patch:', error);
+        console.error('[TS] 💥 Error applying preset patch:', error);
       }
     } else if (selectedTheme.themeData) {
       // This is a regular theme - apply themeData
-      console.log('🎨 Applying theme data:', selectedTheme.themeData);
+      console.log('[TS] Applying theme data:', selectedTheme.themeData);
+      console.log('[TS] setTheme (direct)', typeof selectedTheme.themeData, selectedTheme.themeData && Object.keys(selectedTheme.themeData));
       setTheme(selectedTheme.themeData);
+      console.log('[TS] setActiveThemeId (direct):', selectedTheme.id);
       setActiveThemeId(selectedTheme.id);
-      console.log('✅ Applied theme data:', selectedTheme.name);
+      console.log('[TS] ✅ Applied theme data:', selectedTheme.name);
     } else {
-      console.warn('⚠️ Cannot apply theme without data or patch:', selectedTheme.name);
+      console.warn('[TS] ⚠️ Cannot apply theme without data or patch:', selectedTheme.name);
     }
   };
 
   // Commit current preview to main theme
   const commitCurrentPreview = () => {
-    console.log('✅ COMMITTING PREVIEW to main theme');
+    console.log('[TS] ✅ COMMITTING PREVIEW to main theme');
     commitPreview();
-    console.log('✅ Preview committed to main theme');
+    console.log('[TS] ✅ Preview committed to main theme');
   };
 
   // EXPLICIT theme selection - only sets active, does NOT auto-apply
   const selectTheme = (themeId: string) => {
-    console.log('👆 Theme selection (no auto-apply):', themeId);
+    console.log('[TS] 👆 Theme selection (with auto-apply):', themeId);
     
     const selectedTheme = themes.find(t => t.id === themeId);
     if (!selectedTheme) {
-      console.error('🚫 Theme not found:', themeId);
+      console.error('[TS] 🚫 Theme not found:', themeId);
       return;
     }
     
-    // ONLY set active - NO automatic application
-    setActiveThemeId(themeId);
-    console.log('✅ Theme selected as active:', themeId);
+    // Apply the theme (for Supabase presets)
+    applyTheme(selectedTheme);
+    console.log('[TS] ✅ Theme selected and applied:', themeId);
   };
 
   /**
@@ -141,7 +147,7 @@ export const useThemeSelector = () => {
    */
   const getActiveTheme = () => {
     if (import.meta.env.DEV) {
-      console.warn('⚠️ DEPRECATED: useThemeSelector.getActiveTheme() is deprecated, use useWalletTheme() hook instead');
+      console.warn('[TS] ⚠️ DEPRECATED: useThemeSelector.getActiveTheme() is deprecated, use useWalletTheme() hook instead');
     }
     
     if (!activeThemeId) return null;
@@ -160,11 +166,23 @@ export const useThemeSelector = () => {
     activeThemeId, // Now reads from unified themeStore
     isLoading: presetsLoading, // Removed the blocking loading state
     selectTheme,
-    getActiveTheme, // Deprecated but kept for compatibility
+    getActiveTheme: () => {
+      if (import.meta.env.DEV) {
+        console.warn('[TS] ⚠️ DEPRECATED: useThemeSelector.getActiveTheme() is deprecated, use useWalletTheme() hook instead');
+      }
+      
+      if (!activeThemeId) return null;
+      return themes.find(t => t.id === activeThemeId);
+    },
     applyTheme,
     applyThemePreview,
     commitCurrentPreview,
-    applyThemeById,
+    applyThemeById: (themeId: string) => {
+      const selectedTheme = themes.find(t => t.id === themeId);
+      if (selectedTheme) {
+        applyTheme(selectedTheme);
+      }
+    },
     source // Add data source for debugging
   };
 };
