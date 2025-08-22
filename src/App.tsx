@@ -1,16 +1,17 @@
+
 import React from 'react';
 import {
   BrowserRouter as Router,
   Route,
   Routes,
 } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
 import WalletAlivePlayground from '@/pages/WalletAlivePlayground';
 import Documentation from '@/pages/Documentation';
 import NotFound from '@/pages/NotFound';
-import EffectsProvider from '@/components/EffectsProvider';
+import { EffectsProvider } from '@/contexts/EffectsContext';
 import AppBootstrap from '@/components/AppBootstrap';
 
 function App() {

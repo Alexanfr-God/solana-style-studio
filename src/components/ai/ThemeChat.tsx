@@ -7,6 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Wand2, Send } from 'lucide-react';
 import { handleUserMessage } from '@/ai/agent';
 import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
+import type { ThemePatch } from '@/state/themeStore';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Message {
   role: 'user' | 'ai';
@@ -19,6 +21,7 @@ export default function ThemeChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const applyPatch = useThemeStore(s => s.applyPatch);
+  const theme = useThemeStore(s => s.theme);
 
   // Диагностика store instance
   console.log('[AI] theme store id', THEME_STORE_INSTANCE_ID);
@@ -44,7 +47,16 @@ export default function ThemeChat() {
 
       // Применяем патч локально (оптимистично)
       if (result.patch.length > 0) {
-        applyPatch(result.patch);
+        const patchEntry: ThemePatch = {
+          id: uuidv4(),
+          operations: result.patch,
+          userPrompt: message,
+          pageId: 'global', // Default page
+          timestamp: new Date(),
+          theme: theme // Current theme state
+        };
+        
+        applyPatch(patchEntry);
         
         // Отправляем на backend (fire-and-forget)
         fetch('/api/theme/apply', {

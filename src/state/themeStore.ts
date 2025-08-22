@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import type { Operation } from 'fast-json-patch';
 import { applyJsonPatch } from '@/services/llmPatchService';
@@ -5,7 +6,7 @@ import { applyJsonPatch } from '@/services/llmPatchService';
 // Diagnostic marker for store instance tracking
 export const THEME_STORE_INSTANCE_ID = 'themeStore#A42F';
 
-interface ThemePatch {
+export interface ThemePatch {
   id: string;
   operations: Operation[];
   userPrompt: string;
