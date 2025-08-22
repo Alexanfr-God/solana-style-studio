@@ -1,17 +1,19 @@
 
+
 import { useEffect, useState } from 'react';
 
 // Компонент для инициализации темы по умолчанию
 export default function AppBootstrap() {
-  const [themeStore, setThemeStore] = useState<any>(null);
+  const [useThemeStore, setUseThemeStore] = useState<any>(null);
   const [storeInstanceId, setStoreInstanceId] = useState<string>('loading');
+  const [setTheme, setSetTheme] = useState<any>(null);
 
   useEffect(() => {
     // Динамический импорт store внутри useEffect
     const loadThemeStore = async () => {
       try {
         const themeStoreModule = await import('@/state/themeStore');
-        setThemeStore(themeStoreModule.useThemeStore);
+        setUseThemeStore(() => themeStoreModule.useThemeStore);
         setStoreInstanceId(themeStoreModule.THEME_STORE_INSTANCE_ID);
         console.log('[Bootstrap] Theme store loaded, instance ID:', themeStoreModule.THEME_STORE_INSTANCE_ID);
       } catch (error) {
@@ -23,8 +25,19 @@ export default function AppBootstrap() {
     loadThemeStore();
   }, []);
 
-  // Используем store только после успешной загрузки
-  const setTheme = themeStore ? themeStore((s: any) => s.setTheme) : null;
+  // Extract setTheme from the store once it's loaded
+  useEffect(() => {
+    if (!useThemeStore) return;
+    
+    try {
+      // Use the store hook properly with a selector function
+      const themeSetterFunction = useThemeStore((state: any) => state.setTheme);
+      setSetTheme(() => themeSetterFunction);
+      console.log('[Bootstrap] Theme setter extracted successfully');
+    } catch (error) {
+      console.error('[Bootstrap] Error extracting theme setter:', error);
+    }
+  }, [useThemeStore]);
 
   useEffect(() => {
     if (!setTheme) return;
@@ -58,3 +71,4 @@ export default function AppBootstrap() {
 
   return null; // Этот компонент не рендерит UI
 }
+
