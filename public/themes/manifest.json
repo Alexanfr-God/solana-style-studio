@@ -1,24 +1,17 @@
 
 [
   {
+    "id": "defaultTheme",
+    "name": "Simple Gray Theme",
+    "description": "Clean minimal gray theme with white text and transparent containers",
+    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_grey/RAL-7024-Grafitovii-serii.png",
+    "sample_patch": []
+  },
+  {
     "id": "luxuryTheme",
     "name": "Luxury Gold Theme",
     "description": "Premium golden luxury wallet interface design",
     "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
-    "sample_patch": []
-  },
-  {
-    "id": "defaultTheme",
-    "name": "Simple Gray Theme",
-    "description": "Clean minimal gray theme with white text and transparent containers",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
-    "sample_patch": []
-  },
-  {
-    "id": "wif",
-    "name": "WIF",
-    "description": "WIF themed wallet design with vibrant colors",
-    "coverUrl": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_2/image_2.png",
     "sample_patch": []
   },
   {
