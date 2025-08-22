@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -377,7 +376,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <div>Active: {activeThemeId}</div>
           <div>Source: {source} | Themes: {themes.length}</div>
           <div>Loading: {Array.from(loadingThemes).join(', ') || 'none'}</div>
-          <div>🔧 FIXED: Priority themeData > patch, race condition prevention</div>
+          <div>🔧 FIXED: Priority themeData → patch, race condition prevention</div>
           <div>[CF RENDER LIST] {themes.map(t=>t.id).join(', ')}</div>
         </div>
       )}
