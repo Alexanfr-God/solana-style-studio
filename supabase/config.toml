@@ -56,3 +56,6 @@ verify_jwt = true
 
 [functions.seed-schema]
 verify_jwt = true
+
+[functions.generate-background]
+verify_jwt = false
