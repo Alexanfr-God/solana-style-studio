@@ -62,6 +62,11 @@ export default function ThemeChat() {
       const result = await handleUserMessage(message, detectedLang);
       console.log('[AI] patch result:', result.patch);
 
+      // Log patch operations count for mass operations
+      if (result.patch.length > 0) {
+        console.log(`[STORE] AI patch ops ${result.patch.length}`);
+      }
+
       // Применяем патч локально (оптимистично)
       if (result.patch.length > 0) {
         const patchEntry: ThemePatch = {
@@ -167,7 +172,7 @@ export default function ThemeChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Describe your change (e.g., 'Make swap button #FF5C00')"
+              placeholder="Try: Make all buttons #FF5C00 · Dark theme for the whole wallet · Font: Sora"
               className="flex-1 min-h-[100px] max-h-[200px] resize-none overflow-y-auto bg-white/10 border-white/20 text-white placeholder:text-white/40"
               disabled={isProcessing}
               rows={3}
@@ -182,9 +187,9 @@ export default function ThemeChat() {
           </div>
 
           <div className="text-xs text-white/40">
-            💡 Examples: "home background #0A0C10", "swap button orange #FF5C00", "header text #FFFFFF"
+            💡 Examples: "Make all buttons #FF5C00", "Dark theme for the whole wallet", "Font: Sora"
             <br />
-            ⌨️ Tip: Press Shift+Enter for new line, Enter to send
+            ⌨️ Tip: Press Shift+Enter for new line, Enter to send, type "help" for more commands
           </div>
         </div>
       </CardContent>

@@ -34,6 +34,13 @@ function isGlobalCommand(text: string): boolean {
   return [...enMarkers, ...ruMarkers].some(marker => lower.includes(marker));
 }
 
+// Help command detection
+function isHelpCommand(text: string): boolean {
+  const lower = text.toLowerCase();
+  const helpMarkers = ['help', 'what can you do', 'помощь', 'что ты умеешь', 'commands', 'команды'];
+  return helpMarkers.some(marker => lower.includes(marker));
+}
+
 // Simple localization function
 function getLocalizedMessage(key: string, lang: 'en' | 'ru' = 'en', params?: Record<string, string>): string {
   const messages = {
@@ -51,15 +58,23 @@ function getLocalizedMessage(key: string, lang: 'en' | 'ru' = 'en', params?: Rec
       allBackgroundsUpdated: `All wallet backgrounds are now ${params?.color}`,
       allFontsUpdated: `All wallet fonts changed to ${params?.font}`,
       darkThemeApplied: `Dark theme applied: backgrounds ${params?.bg}, text ${params?.text}`,
-      helpMessage: `What would you like to change? Command examples:
-• "swap button #FF5C00" - button color
-• "home background #0A0C10" - background color
-• "lock background https://site.com/bg.jpg" - background image
-• "home text #FFFFFF" - text color
-• "font: Sora" - font family
-• "Make ALL buttons #FF5C00" - all buttons
-• "Change ALL text to white" - all text
-• Available layers: home, lock, swap, send, receive, buy, search, dropdown`
+      helpMessage: `🎨 **AI Theme Commands**
+
+**Colors & Styling:**
+• "Make all buttons #FF5C00" - change all button colors
+• "Change all text to white" - change all text colors  
+• "Dark theme for the whole wallet: background #0B0D12, text #FFFFFF" - apply dark theme
+• "swap button orange" - change specific layer button
+• "home background #1A1A1A" - change layer background
+• "lock text #FFFFFF" - change layer text color
+
+**Typography:**
+• "Font: Sora" - change global font family
+• "All fonts: Inter" - apply font everywhere
+
+**Layers available:** home, lock, swap, send, receive, buy, search, dropdown
+
+**Examples:** Try "Make all buttons #FF5C00" or "Font: Roboto"`
     },
     ru: {
       backgroundUpdated: `Обновил фон слоя ${params?.layer}${params?.type === 'image' ? ' (картинка)' : ` на ${params?.color}`}`,
@@ -75,15 +90,23 @@ function getLocalizedMessage(key: string, lang: 'en' | 'ru' = 'en', params?: Rec
       allBackgroundsUpdated: `Все фоны кошелька теперь ${params?.color}`,
       allFontsUpdated: `Все шрифты изменены на ${params?.font}`,
       darkThemeApplied: `Тёмная тема применена: фоны ${params?.bg}, текст ${params?.text}`,
-      helpMessage: `Что изменить? Примеры команд:
-• "кнопка swap #FF5C00" - цвет кнопки
-• "фон home #0A0C10" - цвет фона
-• "фон lock https://site.com/bg.jpg" - картинка фона  
-• "текст home #FFFFFF" - цвет текста
-• "шрифт: Sora" - семейство шрифта
-• "ВСЕ кнопки #FF5C00" - все кнопки
-• "ВЕСЬ текст белый" - весь текст
-• Доступные слои: home, lock, swap, send, receive, buy, search, dropdown`
+      helpMessage: `🎨 **Команды AI темизации**
+
+**Цвета и стиль:**
+• "Сделай все кнопки #FF5C00" - изменить все кнопки
+• "Весь текст белым" - изменить весь текст
+• "Тёмная тема: фон #0B0D12, текст #FFFFFF" - применить тёмную тему
+• "кнопка swap оранжевая" - изменить кнопку слоя
+• "фон home #1A1A1A" - изменить фон слоя
+• "текст lock #FFFFFF" - изменить текст слоя
+
+**Типографика:**
+• "Шрифт: Sora" - изменить глобальный шрифт
+• "Все шрифты: Inter" - применить шрифт везде
+
+**Доступные слои:** home, lock, swap, send, receive, buy, search, dropdown
+
+**Примеры:** Попробуй "Сделай все кнопки #FF5C00" или "Шрифт: Roboto"`
     }
   };
 
@@ -94,6 +117,14 @@ export async function handleUserMessage(input: string, lang: 'en' | 'ru' = 'en')
   const theme = useThemeStore.getState().theme;
   const text = input.trim();
   const lower = text.toLowerCase();
+
+  // Help command - highest priority
+  if (isHelpCommand(lower)) {
+    return { 
+      message: getLocalizedMessage('helpMessage', lang), 
+      patch: [] 
+    };
+  }
 
   const hex = lower.match(/#([0-9a-f]{6})\b/i)?.[0] || null;
   const urlMatch = lower.match(/https?:\/\/\S+\.(png|jpg|jpeg|webp|gif)/i)?.[0];
