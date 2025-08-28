@@ -3,6 +3,8 @@
 import { tools, setAllLayersPrimaryButtons, setAllLayersTextColor, setAllLayersBackground, setAllFonts } from './tools';
 import { LAYER_ALIASES, UILayer } from './routes';
 import { useThemeStore } from '@/state/themeStore';
+import { captureWalletPreview } from './capture';
+import { extractPaletteLocal } from './palette';
 
 function resolveLayer(text: string): UILayer {
   const lower = text.toLowerCase();
@@ -41,6 +43,15 @@ function isHelpCommand(text: string): boolean {
   return helpMarkers.some(marker => lower.includes(marker));
 }
 
+// Palette extraction command detection
+function isPaletteCommand(text: string): boolean {
+  const lower = text.toLowerCase();
+  const enMarkers = ['match colors', 'extract palette', 'current preview', 'analyze colors', 'colors from preview'];
+  const ruMarkers = ['подбери цвета', 'подобрать палитру', 'из превью', 'анализ цветов', 'цвета из превью', 'палитра превью'];
+  
+  return [...enMarkers, ...ruMarkers].some(marker => lower.includes(marker));
+}
+
 // Simple localization function
 function getLocalizedMessage(key: string, lang: 'en' | 'ru' = 'en', params?: Record<string, string>): string {
   const messages = {
@@ -58,6 +69,10 @@ function getLocalizedMessage(key: string, lang: 'en' | 'ru' = 'en', params?: Rec
       allBackgroundsUpdated: `All wallet backgrounds are now ${params?.color}`,
       allFontsUpdated: `All wallet fonts changed to ${params?.font}`,
       darkThemeApplied: `Dark theme applied: backgrounds ${params?.bg}, text ${params?.text}`,
+      // Palette extraction
+      paletteExtracted: `🎨 Colors extracted from preview: background ${params?.bg}, text ${params?.text}, buttons ${params?.primary}`,
+      paletteExtractionFailed: `❌ Failed to extract colors from preview: ${params?.error}`,
+      paletteProcessing: `🖼️ Analyzing current wallet preview...`,
       helpMessage: `🎨 **AI Theme Commands**
 
 **Colors & Styling:**
@@ -68,13 +83,17 @@ function getLocalizedMessage(key: string, lang: 'en' | 'ru' = 'en', params?: Rec
 • "home background #1A1A1A" - change layer background
 • "lock text #FFFFFF" - change layer text color
 
+**Vision & Palette:**
+• "Match colors to current preview" - extract and apply colors from wallet screenshot
+• "Analyze colors from preview" - extract palette from current design
+
 **Typography:**
 • "Font: Sora" - change global font family
 • "All fonts: Inter" - apply font everywhere
 
 **Layers available:** home, lock, swap, send, receive, buy, search, dropdown
 
-**Examples:** Try "Make all buttons #FF5C00" or "Font: Roboto"`
+**Examples:** Try "Make all buttons #FF5C00" or "Match colors to current preview"`
     },
     ru: {
       backgroundUpdated: `Обновил фон слоя ${params?.layer}${params?.type === 'image' ? ' (картинка)' : ` на ${params?.color}`}`,
@@ -90,6 +109,10 @@ function getLocalizedMessage(key: string, lang: 'en' | 'ru' = 'en', params?: Rec
       allBackgroundsUpdated: `Все фоны кошелька теперь ${params?.color}`,
       allFontsUpdated: `Все шрифты изменены на ${params?.font}`,
       darkThemeApplied: `Тёмная тема применена: фоны ${params?.bg}, текст ${params?.text}`,
+      // Palette extraction
+      paletteExtracted: `🎨 Цвета извлечены из превью: фон ${params?.bg}, текст ${params?.text}, кнопки ${params?.primary}`,
+      paletteExtractionFailed: `❌ Не удалось извлечь цвета из превью: ${params?.error}`,
+      paletteProcessing: `🖼️ Анализирую текущий вид кошелька...`,
       helpMessage: `🎨 **Команды AI темизации**
 
 **Цвета и стиль:**
@@ -100,13 +123,17 @@ function getLocalizedMessage(key: string, lang: 'en' | 'ru' = 'en', params?: Rec
 • "фон home #1A1A1A" - изменить фон слоя
 • "текст lock #FFFFFF" - изменить текст слоя
 
+**Видение и палитра:**
+• "Подбери цвета из превью" - извлечь и применить цвета из скриншота
+• "Анализ цветов превью" - извлечь палитру из текущего дизайна
+
 **Типографика:**
 • "Шрифт: Sora" - изменить глобальный шрифт
 • "Все шрифты: Inter" - применить шрифт везде
 
 **Доступные слои:** home, lock, swap, send, receive, buy, search, dropdown
 
-**Примеры:** Попробуй "Сделай все кнопки #FF5C00" или "Шрифт: Roboto"`
+**Примеры:** Попробуй "Сделай все кнопки #FF5C00" или "Подбери цвета из превью"`
     }
   };
 
@@ -124,6 +151,51 @@ export async function handleUserMessage(input: string, lang: 'en' | 'ru' = 'en')
       message: getLocalizedMessage('helpMessage', lang), 
       patch: [] 
     };
+  }
+
+  // Palette extraction command - high priority
+  if (isPaletteCommand(lower)) {
+    try {
+      console.log('🎨 [AI] Processing palette extraction command');
+      
+      // Capture wallet preview
+      const blob = await captureWalletPreview();
+      
+      // Extract palette locally
+      const palette = await extractPaletteLocal(blob);
+      
+      // Create mass operations
+      const bgPatch = setAllLayersBackground(palette.bg, theme);
+      const textPatch = setAllLayersTextColor(palette.text, theme);  
+      const buttonPatch = setAllLayersPrimaryButtons(palette.primary, theme);
+      
+      const patch = [...bgPatch, ...textPatch, ...buttonPatch];
+      
+      console.log(`🔧 [STORE] AI palette patch ops: ${patch.length}`);
+      
+      if (patch.length === 0) {
+        return {
+          message: getLocalizedMessage('paletteExtractionFailed', lang, { error: 'No suitable elements found' }),
+          patch: []
+        };
+      }
+      
+      return {
+        message: getLocalizedMessage('paletteExtracted', lang, { 
+          bg: palette.bg, 
+          text: palette.text, 
+          primary: palette.primary 
+        }),
+        patch
+      };
+      
+    } catch (error) {
+      console.error('❌ [AI] Palette extraction error:', error);
+      return {
+        message: getLocalizedMessage('paletteExtractionFailed', lang, { error: error.message }),
+        patch: []
+      };
+    }
   }
 
   const hex = lower.match(/#([0-9a-f]{6})\b/i)?.[0] || null;
@@ -144,6 +216,8 @@ export async function handleUserMessage(input: string, lang: 'en' | 'ru' = 'en')
       const textPatch = setAllLayersTextColor(textHex, theme);
       const patch = [...bgPatch, ...textPatch];
       
+      console.log(`🔧 [STORE] AI dark theme patch ops: ${patch.length}`);
+      
       if (!patch.length) {
         return { message: 'Could not apply dark theme - no suitable elements found', patch: [] };
       }
@@ -157,6 +231,8 @@ export async function handleUserMessage(input: string, lang: 'en' | 'ru' = 'en')
     // Все кнопки
     if ((/button|кнопк/.test(lower)) && hex) {
       const patch = setAllLayersPrimaryButtons(hex, theme);
+      
+      console.log(`🔧 [STORE] AI all buttons patch ops: ${patch.length}`);
       
       if (!patch.length) {
         return { message: 'No buttons found to update', patch: [] };
@@ -172,6 +248,8 @@ export async function handleUserMessage(input: string, lang: 'en' | 'ru' = 'en')
     if ((/text|текст/.test(lower)) && hex) {
       const patch = setAllLayersTextColor(hex, theme);
       
+      console.log(`🔧 [STORE] AI all text patch ops: ${patch.length}`);
+      
       if (!patch.length) {
         return { message: 'No text elements found to update', patch: [] };
       }
@@ -185,6 +263,8 @@ export async function handleUserMessage(input: string, lang: 'en' | 'ru' = 'en')
     // Все фоны
     if ((/background|фон/.test(lower)) && hex) {
       const patch = setAllLayersBackground(hex, theme);
+      
+      console.log(`🔧 [STORE] AI all backgrounds patch ops: ${patch.length}`);
       
       if (!patch.length) {
         return { message: 'No background elements found to update', patch: [] };

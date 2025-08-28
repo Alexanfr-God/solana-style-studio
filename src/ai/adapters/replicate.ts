@@ -12,5 +12,5 @@ export async function extractPaletteFromImage(imageBlob: Blob): Promise<ColorPal
   // TODO: Отправить imageBlob в Replicate модель палитры
   // ENV: REPLICATE_API_TOKEN
   
-  return Promise.reject('extractPaletteFromImage not implemented yet');
+  return Promise.reject(new Error('extractPaletteFromImage not implemented yet - using local analysis instead'));
 }
