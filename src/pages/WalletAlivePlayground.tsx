@@ -7,7 +7,7 @@ import { WalletChatProvider } from '@/contexts/WalletChatContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ThemeSelectorCoverflow from '@/components/customization/ThemeSelectorCoverflow';
-import ThemeChat from '@/components/ai/ThemeChat';
+import ThemeChat from '@/components/chat/ThemeChat';
 
 const WalletAlivePlayground = () => {
   const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
@@ -31,7 +31,7 @@ const WalletAlivePlayground = () => {
         {/* Fixed Chat Panel - Right Side */}
         <div className="fixed right-4 top-20 bottom-4 w-[360px] z-40">
           <div className="h-full rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm shadow-xl overflow-hidden">
-            <ThemeChat />
+            <ThemeChat themeId="default" />
           </div>
         </div>
         
