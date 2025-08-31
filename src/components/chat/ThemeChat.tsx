@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
   const [userPrompt, setUserPrompt] = useState('');
   const [selectedPageId, setSelectedPageId] = useState('home');
-  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('none');
   const [presets, setPresets] = useState<any[]>([]);
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -100,7 +99,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     const request: PatchRequest = {
       themeId,
       pageId: selectedPageId,
-      presetId: selectedPresetId || undefined,
+      presetId: selectedPresetId === 'none' ? undefined : selectedPresetId,
       userPrompt: userPrompt.trim(),
       uploadedImageUrl: uploadedImageUrl || undefined
     };
@@ -126,7 +125,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
         operations: response.patch,
         userPrompt: userPrompt.trim(),
         pageId: selectedPageId,
-        presetId: selectedPresetId || undefined,
+        presetId: selectedPresetId === 'none' ? undefined : selectedPresetId,
         timestamp: new Date(),
         theme: response.theme
       };
@@ -195,7 +194,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   };
 
   const selectedPage = AVAILABLE_PAGES.find(p => p.id === selectedPageId);
-  const selectedPreset = presets.find(p => p.id === selectedPresetId);
+  const selectedPreset = selectedPresetId !== 'none' ? presets.find(p => p.id === selectedPresetId) : null;
 
   return (
     <Card className="bg-black/30 backdrop-blur-md border-white/10">
@@ -257,7 +256,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
                 <SelectValue placeholder="Choose preset..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No preset</SelectItem>
+                <SelectItem value="none">No preset</SelectItem>
                 {presets.map(preset => (
                   <SelectItem key={preset.id} value={preset.id}>
                     {preset.title}
