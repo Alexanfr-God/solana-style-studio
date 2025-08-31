@@ -61,7 +61,6 @@ export const useCompactImageUpload = () => {
   };
 
   const removeImage = () => {
-    console.log('[UPLOAD] Image removed from state');
     setUploadedImageUrl('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';

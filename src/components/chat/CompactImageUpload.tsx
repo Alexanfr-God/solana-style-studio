@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { Paperclip, X, Loader2, Image } from 'lucide-react';
+import { Paperclip, X, Loader2 } from 'lucide-react';
 import { useCompactImageUpload } from '@/hooks/useCompactImageUpload';
 
 interface CompactImageUploadProps {
@@ -26,16 +26,13 @@ const CompactImageUpload: React.FC<CompactImageUploadProps> = ({
     removeImage
   } = useCompactImageUpload();
 
-  // Direct call when uploadedImageUrl changes, no useEffect to prevent loops
-  React.useLayoutEffect(() => {
+  React.useEffect(() => {
     if (uploadedImageUrl) {
-      console.log('[UPLOAD] Image ready, notifying parent component');
       onImageUploaded(uploadedImageUrl);
     }
-  }, [uploadedImageUrl]); // Only depend on uploadedImageUrl, not onImageUploaded
+  }, [uploadedImageUrl, onImageUploaded]);
 
   const handleRemove = () => {
-    console.log('[UPLOAD] Removing uploaded image');
     removeImage();
     onImageRemoved();
   };
@@ -64,7 +61,7 @@ const CompactImageUpload: React.FC<CompactImageUploadProps> = ({
               {isUploading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Image className="h-4 w-4" />
+                <Paperclip className="h-4 w-4" />
               )}
             </Button>
           </TooltipTrigger>
