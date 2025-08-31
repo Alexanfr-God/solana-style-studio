@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,7 +67,11 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       try {
         const presetsData = await getPresets();
         if (mounted) {
-          setPresets(presetsData);
+          // Filter out any presets with invalid IDs to prevent Select errors
+          const validPresets = presetsData.filter(preset => 
+            preset && preset.id && typeof preset.id === 'string' && preset.id.trim() !== ''
+          );
+          setPresets(validPresets);
         }
       } catch (error) {
         console.error('Failed to load presets:', error);
