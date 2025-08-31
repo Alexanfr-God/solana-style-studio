@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,19 +93,23 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     }
   }, [initialTheme, setTheme, theme]); // Added theme as guard dependency
 
-  // Stabilized callbacks to prevent re-render loops
+  // Memoized callbacks to prevent re-render loops
   const handleImageUploaded = useCallback((imageUrl: string) => {
     console.log('[CHAT] Image uploaded, setting URL:', imageUrl);
     setUploadedImageUrl(imageUrl);
     
-    // Auto-suggest applying the image with guard to prevent repeated hints
-    setUserPrompt(prev => {
-      const suggestion = 'Image uploaded. Apply as background for home or lock layer?';
-      return prev?.includes(suggestion) ? prev : (prev ? `${prev}\n${suggestion}` : suggestion);
-    });
+    // Auto-suggest applying the image based on user language preference
+    const lang = userPrompt ? detectLang(userPrompt) : 'en';
+    const suggestion = lang === 'ru' 
+      ? 'Изображение загружено. Применить как фон для home или lock слоя?'
+      : 'Image uploaded. Apply as background for home or lock layer?';
+    
+    if (!userPrompt.trim()) {
+      setUserPrompt(suggestion);
+    }
     
     toast.success('🖼️ Image uploaded! You can now apply it as a background.');
-  }, []); // Empty deps - stable callback
+  }, [userPrompt]);
 
   const handleImageRemoved = useCallback(() => {
     console.log('[CHAT] Image removed');

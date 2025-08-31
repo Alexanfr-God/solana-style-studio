@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { X, Loader2, Image } from 'lucide-react';
+import { Paperclip, X, Loader2, Image } from 'lucide-react';
 import { useCompactImageUpload } from '@/hooks/useCompactImageUpload';
 
 interface CompactImageUploadProps {
@@ -24,7 +24,15 @@ const CompactImageUpload: React.FC<CompactImageUploadProps> = ({
     handleFileChange,
     openFileDialog,
     removeImage
-  } = useCompactImageUpload(onImageUploaded);
+  } = useCompactImageUpload();
+
+  // Direct call when uploadedImageUrl changes, no useEffect to prevent loops
+  React.useLayoutEffect(() => {
+    if (uploadedImageUrl) {
+      console.log('[UPLOAD] Image ready, notifying parent component');
+      onImageUploaded(uploadedImageUrl);
+    }
+  }, [uploadedImageUrl]); // Only depend on uploadedImageUrl, not onImageUploaded
 
   const handleRemove = () => {
     console.log('[UPLOAD] Removing uploaded image');

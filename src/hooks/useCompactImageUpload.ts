@@ -3,11 +3,10 @@ import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { uploadToStorage } from '@/ai/storage';
 
-export const useCompactImageUpload = (onImageUploaded?: (url: string) => void) => {
+export const useCompactImageUpload = () => {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const notifiedRef = useRef<string | null>(null);
 
   const handleFileSelect = async (file: File) => {
     console.log('[UPLOAD] start', file.name, 'size=', file.size);
@@ -39,12 +38,6 @@ export const useCompactImageUpload = (onImageUploaded?: (url: string) => void) =
       setUploadedImageUrl(publicUrl);
       console.log('[CHAT] uploadedImageUrl set');
       
-      // Call callback directly after successful upload with guard against double calls
-      if (publicUrl && publicUrl !== notifiedRef.current) {
-        notifiedRef.current = publicUrl;
-        onImageUploaded?.(publicUrl);
-      }
-      
       toast.success('🖼️ Image uploaded successfully!');
       return publicUrl;
 
@@ -70,7 +63,6 @@ export const useCompactImageUpload = (onImageUploaded?: (url: string) => void) =
   const removeImage = () => {
     console.log('[UPLOAD] Image removed from state');
     setUploadedImageUrl('');
-    notifiedRef.current = null; // Reset notification guard
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
