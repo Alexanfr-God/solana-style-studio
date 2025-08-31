@@ -48,7 +48,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
   const [userPrompt, setUserPrompt] = useState('');
   const [selectedPageId, setSelectedPageId] = useState('home');
-  const [selectedPresetId, setSelectedPresetId] = useState<string>('none');
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [presets, setPresets] = useState<any[]>([]);
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,11 +67,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       try {
         const presetsData = await getPresets();
         if (mounted) {
-          // Filter out any presets with invalid IDs to prevent Select errors
-          const validPresets = presetsData.filter(preset => 
-            preset && preset.id && typeof preset.id === 'string' && preset.id.trim() !== ''
-          );
-          setPresets(validPresets);
+          setPresets(presetsData);
         }
       } catch (error) {
         console.error('Failed to load presets:', error);
@@ -104,7 +100,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     const request: PatchRequest = {
       themeId,
       pageId: selectedPageId,
-      presetId: selectedPresetId === 'none' ? undefined : selectedPresetId,
+      presetId: selectedPresetId || undefined,
       userPrompt: userPrompt.trim(),
       uploadedImageUrl: uploadedImageUrl || undefined
     };
@@ -130,7 +126,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
         operations: response.patch,
         userPrompt: userPrompt.trim(),
         pageId: selectedPageId,
-        presetId: selectedPresetId === 'none' ? undefined : selectedPresetId,
+        presetId: selectedPresetId || undefined,
         timestamp: new Date(),
         theme: response.theme
       };
@@ -199,7 +195,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   };
 
   const selectedPage = AVAILABLE_PAGES.find(p => p.id === selectedPageId);
-  const selectedPreset = selectedPresetId !== 'none' ? presets.find(p => p.id === selectedPresetId) : null;
+  const selectedPreset = presets.find(p => p.id === selectedPresetId);
 
   return (
     <Card className="bg-black/30 backdrop-blur-md border-white/10">
@@ -261,7 +257,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
                 <SelectValue placeholder="Choose preset..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No preset</SelectItem>
+                <SelectItem value="">No preset</SelectItem>
                 {presets.map(preset => (
                   <SelectItem key={preset.id} value={preset.id}>
                     {preset.title}
