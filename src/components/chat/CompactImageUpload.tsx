@@ -26,12 +26,13 @@ const CompactImageUpload: React.FC<CompactImageUploadProps> = ({
     removeImage
   } = useCompactImageUpload();
 
-  React.useEffect(() => {
+  // Direct call when uploadedImageUrl changes, no useEffect to prevent loops
+  React.useLayoutEffect(() => {
     if (uploadedImageUrl) {
       console.log('[UPLOAD] Image ready, notifying parent component');
       onImageUploaded(uploadedImageUrl);
     }
-  }, [uploadedImageUrl, onImageUploaded]);
+  }, [uploadedImageUrl]); // Only depend on uploadedImageUrl, not onImageUploaded
 
   const handleRemove = () => {
     console.log('[UPLOAD] Removing uploaded image');

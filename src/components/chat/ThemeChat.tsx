@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -85,13 +85,37 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     };
   }, []); // Empty dependency array - load once only
 
-  // Set initial theme only once on mount - NO theme dependency to prevent loops
+  // Set initial theme only once on mount with guard
   useEffect(() => {
-    if (initialTheme) {
+    if (initialTheme && !theme) {
       console.log('🎨 Setting initial theme in ThemeChat (one-time only)');
       setTheme(initialTheme);
     }
-  }, [setTheme]); // Only depend on setTheme function, NOT on theme state
+  }, [initialTheme, setTheme, theme]); // Added theme as guard dependency
+
+  // Memoized callbacks to prevent re-render loops
+  const handleImageUploaded = useCallback((imageUrl: string) => {
+    console.log('[CHAT] Image uploaded, setting URL:', imageUrl);
+    setUploadedImageUrl(imageUrl);
+    
+    // Auto-suggest applying the image based on user language preference
+    const lang = userPrompt ? detectLang(userPrompt) : 'en';
+    const suggestion = lang === 'ru' 
+      ? 'Изображение загружено. Применить как фон для home или lock слоя?'
+      : 'Image uploaded. Apply as background for home or lock layer?';
+    
+    if (!userPrompt.trim()) {
+      setUserPrompt(suggestion);
+    }
+    
+    toast.success('🖼️ Image uploaded! You can now apply it as a background.');
+  }, [userPrompt]);
+
+  const handleImageRemoved = useCallback(() => {
+    console.log('[CHAT] Image removed');
+    setUploadedImageUrl('');
+    toast.success('Image removed');
+  }, []);
 
   const handleApplyPatch = once(async () => {
     if (!userPrompt.trim() || isProcessing) {
@@ -181,28 +205,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       e.preventDefault();
       handleApplyPatch();
     }
-  };
-
-  const handleImageUploaded = (imageUrl: string) => {
-    console.log('[CHAT] uploadedImageUrl set');
-    setUploadedImageUrl(imageUrl);
-    
-    // Auto-suggest applying the image based on user language preference
-    const lang = userPrompt ? detectLang(userPrompt) : 'en';
-    const suggestion = lang === 'ru' 
-      ? 'Изображение загружено. Применить как фон для home или lock слоя?'
-      : 'Image uploaded. Apply as background for home or lock layer?';
-    
-    if (!userPrompt.trim()) {
-      setUserPrompt(suggestion);
-    }
-    
-    toast.success('🖼️ Image uploaded! You can now apply it as a background.');
-  };
-
-  const handleImageRemoved = () => {
-    setUploadedImageUrl('');
-    toast.success('Image removed');
   };
 
   const selectedPage = AVAILABLE_PAGES.find(p => p.id === selectedPageId);
