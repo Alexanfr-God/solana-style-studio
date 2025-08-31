@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { Paperclip, X, Loader2, Image } from 'lucide-react';
+import { X, Loader2, Image } from 'lucide-react';
 import { useCompactImageUpload } from '@/hooks/useCompactImageUpload';
 
 interface CompactImageUploadProps {
@@ -24,15 +24,7 @@ const CompactImageUpload: React.FC<CompactImageUploadProps> = ({
     handleFileChange,
     openFileDialog,
     removeImage
-  } = useCompactImageUpload();
-
-  // Direct call when uploadedImageUrl changes, no useEffect to prevent loops
-  React.useLayoutEffect(() => {
-    if (uploadedImageUrl) {
-      console.log('[UPLOAD] Image ready, notifying parent component');
-      onImageUploaded(uploadedImageUrl);
-    }
-  }, [uploadedImageUrl]); // Only depend on uploadedImageUrl, not onImageUploaded
+  } = useCompactImageUpload(onImageUploaded); // Pass callback directly to hook
 
   const handleRemove = () => {
     console.log('[UPLOAD] Removing uploaded image');
@@ -50,29 +42,27 @@ const CompactImageUpload: React.FC<CompactImageUploadProps> = ({
         className="hidden"
       />
       
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={openFileDialog}
-              disabled={disabled || isUploading}
-              className="border-white/20 text-white/80 hover:text-white w-10 h-10"
-              aria-label="Upload image"
-            >
-              {isUploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Image className="h-4 w-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Upload image (Recommended: 1024×1024)</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={openFileDialog}
+            disabled={disabled || isUploading}
+            className="border-white/20 text-white/80 hover:text-white w-10 h-10"
+            aria-label="Upload image"
+          >
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Image className="h-4 w-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Upload image (Recommended: 1024×1024)</p>
+        </TooltipContent>
+      </Tooltip>
 
       {uploadedImageUrl && (
         <Badge variant="secondary" className="flex items-center gap-1 max-w-32">
