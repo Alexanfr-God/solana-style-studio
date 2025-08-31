@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Undo2, Redo2, Send, GitCompare, Wand2, History } from 'lucide-react';
+import { Loader2, Undo2, Redo2, Send, GitCompare, Wand2, History, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThemeStore, useWalletTheme, useThemeHistory, useThemeActions } from '@/state/themeStore';
 import { callPatch, getPresets, type PatchRequest } from '@/lib/api/client';
@@ -48,7 +48,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
   const [userPrompt, setUserPrompt] = useState('');
   const [selectedPageId, setSelectedPageId] = useState('home');
-  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('none');
   const [presets, setPresets] = useState<any[]>([]);
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,7 +67,11 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       try {
         const presetsData = await getPresets();
         if (mounted) {
-          setPresets(presetsData);
+          // Filter out invalid presets to prevent SelectItem errors
+          const validPresets = presetsData.filter(preset => 
+            preset && preset.id && typeof preset.id === 'string' && preset.id.trim() !== ''
+          );
+          setPresets(validPresets);
         }
       } catch (error) {
         console.error('Failed to load presets:', error);
@@ -100,7 +104,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     const request: PatchRequest = {
       themeId,
       pageId: selectedPageId,
-      presetId: selectedPresetId || undefined,
+      presetId: selectedPresetId !== 'none' ? selectedPresetId : undefined,
       userPrompt: userPrompt.trim(),
       uploadedImageUrl: uploadedImageUrl || undefined
     };
@@ -110,6 +114,8 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
     setError(null);
 
     try {
+      console.log('[CHAT] Processing patch request with uploaded image:', !!uploadedImageUrl);
+      
       const response = await callPatch(request);
 
       if (!response.success) {
@@ -126,7 +132,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
         operations: response.patch,
         userPrompt: userPrompt.trim(),
         pageId: selectedPageId,
-        presetId: selectedPresetId || undefined,
+        presetId: selectedPresetId !== 'none' ? selectedPresetId : undefined,
         timestamp: new Date(),
         theme: response.theme
       };
@@ -134,7 +140,10 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       console.log('[AGENT] apply uploaded image → layer=', selectedPageId, 'ops=', response.patch.length);
       applyPatch(patchEntry);
       toast.success('🎨 Theme updated successfully!');
+      
+      // Clear the prompt and uploaded image after successful application
       setUserPrompt('');
+      setUploadedImageUrl('');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setError(errorMessage);
@@ -175,6 +184,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   };
 
   const handleImageUploaded = (imageUrl: string) => {
+    console.log('[CHAT] uploadedImageUrl set');
     setUploadedImageUrl(imageUrl);
     
     // Auto-suggest applying the image based on user language preference
@@ -192,6 +202,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
   const handleImageRemoved = () => {
     setUploadedImageUrl('');
+    toast.success('Image removed');
   };
 
   const selectedPage = AVAILABLE_PAGES.find(p => p.id === selectedPageId);
@@ -207,7 +218,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               WCC Maestro - Theme Editor
             </CardTitle>
             <p className="text-sm text-white/70 mt-1">
-              AI-powered page-aware theme customization
+              AI-powered page-aware theme customization with image upload
             </p>
           </div>
           
@@ -257,7 +268,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
                 <SelectValue placeholder="Choose preset..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No preset</SelectItem>
+                <SelectItem value="none">No preset</SelectItem>
                 {presets.map(preset => (
                   <SelectItem key={preset.id} value={preset.id}>
                     {preset.title}
@@ -279,6 +290,31 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
         <Separator className="bg-white/10" />
 
+        {/* Uploaded Image Preview */}
+        {uploadedImageUrl && (
+          <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <div className="w-12 h-12 bg-gray-700 rounded-md overflow-hidden flex-shrink-0">
+              <img 
+                src={uploadedImageUrl} 
+                alt="Uploaded image preview" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-green-300 font-medium">Image Ready</p>
+              <p className="text-xs text-green-300/70">Ready to apply to theme</p>
+            </div>
+            <Button
+              onClick={handleImageRemoved}
+              size="sm"
+              variant="ghost"
+              className="p-1 h-auto text-white/60 hover:text-red-400"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label className="text-white text-sm">Theme Modification Request</Label>
           <div className="flex gap-2">
@@ -293,7 +329,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               className="flex-1 min-h-[100px] bg-white/10 border-white/20 text-white placeholder:text-white/40 resize-none"
               disabled={isLoading || isProcessing}
             />
-            <div className="flex flex-col justify-between">
+            <div className="flex flex-col gap-2">
               <CompactImageUpload
                 onImageUploaded={handleImageUploaded}
                 onImageRemoved={handleImageRemoved}
@@ -311,7 +347,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
             </div>
           </div>
           <p className="text-xs text-white/50">
-            Tip: Press Ctrl/Cmd + Enter to apply changes
+            💡 Tip: Upload an image first, then describe how to apply it • Press Ctrl/Cmd + Enter to apply changes
           </p>
         </div>
 
