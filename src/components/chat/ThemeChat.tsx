@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import { useThemeStore, useWalletTheme, useThemeHistory, useThemeActions } from 
 import { callPatch, getPresets, type PatchRequest } from '@/lib/api/client';
 import { v4 as uuidv4 } from 'uuid';
 import { withRenderGuard, once } from '@/utils/guard';
-import CompactImageUpload from './CompactImageUpload';
+import ImageUploadForTheme from './ImageUploadForTheme';
 
 interface ThemeChatProps {
   themeId: string;
@@ -30,12 +29,6 @@ const AVAILABLE_PAGES = [
   { id: 'buy', name: 'Buy', description: 'Buy crypto page' },
   { id: 'global', name: 'Global', description: 'Global theme settings' }
 ];
-
-// Language detection function
-function detectLang(text: string): 'en' | 'ru' {
-  if (/[а-яё]/i.test(text)) return 'ru';
-  return 'en';
-}
 
 const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const guard = withRenderGuard("ThemeChat");
@@ -131,7 +124,6 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
         theme: response.theme
       };
 
-      console.log('[AGENT] apply uploaded image → layer=', selectedPageId, 'ops=', response.patch.length);
       applyPatch(patchEntry);
       toast.success('🎨 Theme updated successfully!');
       setUserPrompt('');
@@ -177,14 +169,9 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const handleImageUploaded = (imageUrl: string) => {
     setUploadedImageUrl(imageUrl);
     
-    // Auto-suggest applying the image based on user language preference
-    const lang = userPrompt ? detectLang(userPrompt) : 'en';
-    const suggestion = lang === 'ru' 
-      ? 'Изображение загружено. Применить как фон для home или lock слоя?'
-      : 'Image uploaded. Apply as background for home or lock layer?';
-    
+    // Auto-suggest applying the image
     if (!userPrompt.trim()) {
-      setUserPrompt(suggestion);
+      setUserPrompt('Apply the uploaded image as background for the home layer');
     }
     
     toast.success('🖼️ Image uploaded! You can now apply it as a background.');
@@ -279,37 +266,31 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
         <Separator className="bg-white/10" />
 
+        {/* Image Upload Section */}
+        <div className="space-y-2">
+          <Label className="text-white text-sm">Upload Custom Image</Label>
+          <ImageUploadForTheme
+            onImageUploaded={handleImageUploaded}
+            uploadedImageUrl={uploadedImageUrl}
+            onImageRemoved={handleImageRemoved}
+          />
+        </div>
+
+        <Separator className="bg-white/10" />
+
         <div className="space-y-2">
           <Label className="text-white text-sm">Theme Modification Request</Label>
-          <div className="flex gap-2">
-            <Textarea
-              value={userPrompt}
-              onChange={(e) => setUserPrompt(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder={uploadedImageUrl 
-                ? "Describe how to apply the uploaded image (e.g., 'Apply as background for home layer', 'Use as lock screen background')" 
-                : "Describe the changes you want to make (e.g., 'Make the background darker', 'Change button colors to blue', 'Add more padding to cards')"
-              }
-              className="flex-1 min-h-[100px] bg-white/10 border-white/20 text-white placeholder:text-white/40 resize-none"
-              disabled={isLoading || isProcessing}
-            />
-            <div className="flex flex-col justify-between">
-              <CompactImageUpload
-                onImageUploaded={handleImageUploaded}
-                onImageRemoved={handleImageRemoved}
-                disabled={isLoading || isProcessing}
-              />
-              <Button
-                onClick={handleApplyPatch}
-                disabled={isLoading || isProcessing || !userPrompt.trim()}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-              >
-                {(isLoading || isProcessing) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                <Send className="h-4 w-4 mr-2" />
-                Apply Changes
-              </Button>
-            </div>
-          </div>
+          <Textarea
+            value={userPrompt}
+            onChange={(e) => setUserPrompt(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder={uploadedImageUrl 
+              ? "Describe how to apply the uploaded image (e.g., 'Apply as background for home layer', 'Use as lock screen background')" 
+              : "Describe the changes you want to make (e.g., 'Make the background darker', 'Change button colors to blue', 'Add more padding to cards')"
+            }
+            className="min-h-[100px] bg-white/10 border-white/20 text-white placeholder:text-white/40 resize-none"
+            disabled={isLoading || isProcessing}
+          />
           <p className="text-xs text-white/50">
             Tip: Press Ctrl/Cmd + Enter to apply changes
           </p>
@@ -350,6 +331,16 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               Compare
             </Button>
           </div>
+
+          <Button
+            onClick={handleApplyPatch}
+            disabled={isLoading || isProcessing || !userPrompt.trim()}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+          >
+            {(isLoading || isProcessing) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Send className="h-4 w-4 mr-2" />
+            Apply Changes
+          </Button>
         </div>
 
         {history.length > 0 && (
