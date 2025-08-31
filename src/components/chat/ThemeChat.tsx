@@ -12,6 +12,7 @@ import { useThemeStore, useWalletTheme, useThemeHistory, useThemeActions } from 
 import { callPatch, getPresets, type PatchRequest } from '@/lib/api/client';
 import { v4 as uuidv4 } from 'uuid';
 import { withRenderGuard, once } from '@/utils/guard';
+import ImageUploadForTheme from './ImageUploadForTheme';
 
 interface ThemeChatProps {
   themeId: string;
@@ -44,6 +45,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
   const [presets, setPresets] = useState<any[]>([]);
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   
   const { isLoading, error, setLoading, setError } = useThemeStore();
   const theme = useWalletTheme();
@@ -92,7 +94,8 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       themeId,
       pageId: selectedPageId,
       presetId: selectedPresetId || undefined,
-      userPrompt: userPrompt.trim()
+      userPrompt: userPrompt.trim(),
+      uploadedImageUrl: uploadedImageUrl || undefined
     };
 
     setIsProcessing(true);
@@ -161,6 +164,21 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       e.preventDefault();
       handleApplyPatch();
     }
+  };
+
+  const handleImageUploaded = (imageUrl: string) => {
+    setUploadedImageUrl(imageUrl);
+    
+    // Auto-suggest applying the image
+    if (!userPrompt.trim()) {
+      setUserPrompt('Apply the uploaded image as background for the home layer');
+    }
+    
+    toast.success('🖼️ Image uploaded! You can now apply it as a background.');
+  };
+
+  const handleImageRemoved = () => {
+    setUploadedImageUrl('');
   };
 
   const selectedPage = AVAILABLE_PAGES.find(p => p.id === selectedPageId);
@@ -248,13 +266,28 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
 
         <Separator className="bg-white/10" />
 
+        {/* Image Upload Section */}
+        <div className="space-y-2">
+          <Label className="text-white text-sm">Upload Custom Image</Label>
+          <ImageUploadForTheme
+            onImageUploaded={handleImageUploaded}
+            uploadedImageUrl={uploadedImageUrl}
+            onImageRemoved={handleImageRemoved}
+          />
+        </div>
+
+        <Separator className="bg-white/10" />
+
         <div className="space-y-2">
           <Label className="text-white text-sm">Theme Modification Request</Label>
           <Textarea
             value={userPrompt}
             onChange={(e) => setUserPrompt(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Describe the changes you want to make (e.g., 'Make the background darker', 'Change button colors to blue', 'Add more padding to cards')"
+            placeholder={uploadedImageUrl 
+              ? "Describe how to apply the uploaded image (e.g., 'Apply as background for home layer', 'Use as lock screen background')" 
+              : "Describe the changes you want to make (e.g., 'Make the background darker', 'Change button colors to blue', 'Add more padding to cards')"
+            }
             className="min-h-[100px] bg-white/10 border-white/20 text-white placeholder:text-white/40 resize-none"
             disabled={isLoading || isProcessing}
           />

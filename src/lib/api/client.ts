@@ -11,6 +11,7 @@ export interface PatchRequest {
   mode?: string; // Added to support different chat modes
   content?: string; // Alias for userPrompt for backward compatibility
   imageUrl?: string; // Support for image-based requests
+  uploadedImageUrl?: string; // Support for uploaded images
   walletContext?: any; // Support for wallet context
   sessionId?: string; // Support for session tracking
 }
