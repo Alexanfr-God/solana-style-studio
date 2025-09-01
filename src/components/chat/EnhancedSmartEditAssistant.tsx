@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { WalletElement } from '@/hooks/useWalletElements';
 import { Card, CardContent } from '@/components/ui/card';
@@ -188,3 +187,5 @@ export const EnhancedSmartEditAssistant: React.FC<EnhancedSmartEditAssistantProp
     </Card>
   );
 };
+
+export default EnhancedSmartEditAssistant;

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { WalletElement } from '@/hooks/useWalletElements';
 import { Badge } from '@/components/ui/badge';
@@ -60,3 +59,5 @@ export const ElementContextDisplay: React.FC<ElementContextDisplayProps> = ({
     </div>
   );
 };
+
+export default ElementContextDisplay;
