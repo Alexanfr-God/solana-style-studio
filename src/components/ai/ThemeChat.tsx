@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,7 +89,7 @@ export default function ThemeChat() {
         // Add system message
         const systemMessage: Message = {
           role: 'ai',
-          text: 'Image uploaded. 1024×1024 recommended. Apply to Home or Lock?',
+          text: 'Image uploaded successfully! Choose where to apply it:',
           timestamp: new Date()
         };
         setMessages(prev => [...prev, systemMessage]);
@@ -99,7 +98,7 @@ export default function ThemeChat() {
       }
     } catch (error) {
       console.error('[UPLOAD] error:', error);
-      toast.error('Failed to upload image');
+      toast.error('Failed to upload image. Please check the connection and try again.');
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -109,19 +108,48 @@ export default function ThemeChat() {
     }
   };
 
-  const applyImageTo = (layer: 'home' | 'lock') => {
+  const applyImageTo = (target: 'home' | 'lock' | 'all' | 'headers') => {
     if (!uploadedImageUrl) return;
 
-    const path = layer === 'home' 
-      ? '/homeLayer/backgroundImage' 
-      : '/lockLayer/backgroundImage';
+    let operations = [];
+    let description = '';
+
+    switch (target) {
+      case 'home':
+        operations = [
+          { op: 'replace', path: '/homeLayer/backgroundImage', value: uploadedImageUrl }
+        ];
+        description = 'Applied to Home screen';
+        break;
+      
+      case 'lock':
+        operations = [
+          { op: 'replace', path: '/lockLayer/backgroundImage', value: uploadedImageUrl }
+        ];
+        description = 'Applied to Lock screen';
+        break;
+      
+      case 'all':
+        operations = [
+          { op: 'replace', path: '/lockLayer/backgroundImage', value: uploadedImageUrl },
+          { op: 'replace', path: '/homeLayer/backgroundImage', value: uploadedImageUrl }
+        ];
+        description = 'Applied to all main screens (Lock + Home)';
+        break;
+      
+      case 'headers':
+        operations = [
+          { op: 'replace', path: '/homeLayer/header/backgroundImage', value: uploadedImageUrl },
+          { op: 'replace', path: '/homeLayer/footer/backgroundImage', value: uploadedImageUrl }
+        ];
+        description = 'Applied to headers and footers';
+        break;
+    }
 
     const patchEntry: ThemePatch = {
       id: uuidv4(),
-      operations: [
-        { op: 'replace', path, value: uploadedImageUrl }
-      ],
-      userPrompt: `Apply uploaded image to ${layer} background`,
+      operations,
+      userPrompt: `Apply uploaded image: ${description}`,
       pageId: 'ai-chat',
       timestamp: new Date(),
       theme: theme
@@ -132,12 +160,12 @@ export default function ThemeChat() {
     // Add confirmation message
     const confirmMessage: Message = {
       role: 'ai',
-      text: `Applied to ${layer === 'home' ? 'Home' : 'Lock'} background.`,
+      text: `✅ ${description}. Your wallet theme has been updated!`,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, confirmMessage]);
 
-    toast.success(`🎨 Applied to ${layer === 'home' ? 'Home' : 'Lock'} background!`);
+    toast.success(`🎨 ${description}!`);
   };
 
   const removeUploadedImage = () => {
@@ -235,7 +263,7 @@ export default function ThemeChat() {
           AI Theme Chat
         </CardTitle>
         <p className="text-sm text-white/70">
-          Modify wallet theme with simple commands
+          Modify wallet theme with simple commands or upload images
         </p>
       </CardHeader>
 
@@ -247,7 +275,7 @@ export default function ThemeChat() {
         >
           {messages.length === 0 ? (
             <div className="text-white/50 text-sm">
-              Write a command to change the theme...
+              Write a command to change the theme or upload an image...
             </div>
           ) : (
             <div className="space-y-3">
@@ -291,6 +319,7 @@ export default function ThemeChat() {
                 disabled={isUploading}
                 className="p-2 rounded-lg bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/20 disabled:opacity-50 transition-colors"
                 aria-label="Upload image"
+                title="Upload background image"
               >
                 <Paperclip className={`h-5 w-5 ${isUploading ? 'animate-pulse' : ''}`} />
               </button>
@@ -303,21 +332,37 @@ export default function ThemeChat() {
               />
             </div>
 
-            {/* Uploaded image preview and actions */}
+            {/* Uploaded image preview and enhanced application options */}
             {uploadedImageUrl && (
-              <div className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 rounded">
-                <img 
-                  src={uploadedImageUrl} 
-                  alt="Uploaded" 
-                  className="h-10 w-10 rounded object-cover"
-                />
-                <div className="flex-1 flex items-center gap-2">
+              <div className="flex flex-col gap-2 p-3 bg-white/5 border border-white/10 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={uploadedImageUrl} 
+                    alt="Uploaded background" 
+                    className="h-12 w-12 rounded-lg object-cover border border-white/20"
+                  />
+                  <div className="flex-1 text-sm text-white/80">
+                    Background image ready to apply
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeUploadedImage}
+                    className="text-white/60 hover:text-white h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {/* Application buttons */}
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => applyImageTo('home')}
-                    className="border-white/20 text-white/80 hover:text-white"
+                    className="border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-xs"
                   >
                     Apply to Home
                   </Button>
@@ -326,18 +371,27 @@ export default function ThemeChat() {
                     variant="outline"
                     size="sm"
                     onClick={() => applyImageTo('lock')}
-                    className="border-white/20 text-white/80 hover:text-white"
+                    className="border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-xs"
                   >
                     Apply to Lock
                   </Button>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={removeUploadedImage}
-                    className="text-white/60 hover:text-white"
+                    onClick={() => applyImageTo('all')}
+                    className="border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-xs font-medium"
                   >
-                    <X className="h-4 w-4" />
+                    Apply to All
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyImageTo('headers')}
+                    className="border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-xs"
+                  >
+                    Apply to Headers
                   </Button>
                 </div>
               </div>
@@ -358,7 +412,7 @@ export default function ThemeChat() {
             <br />
             ⌨️ Tip: Press Shift+Enter for new line, Enter to send, type "help" for more commands
             <br />
-            🖼️ Upload images and apply them as backgrounds to Home or Lock layers
+            🖼️ Upload images (max 8MB) and apply them as backgrounds to different wallet layers
           </div>
         </div>
       </CardContent>
