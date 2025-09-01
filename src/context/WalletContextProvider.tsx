@@ -22,7 +22,7 @@ interface WalletContextExtendedProps {
   isAuthenticated: boolean;
   hasRejectedSignature: boolean;
   
-  // Backend auth state
+  // Backend auth state - используем profile ID как userId
   userId: string | null;
   authToken: string | null;
   walletProfile: any | null;
@@ -114,7 +114,7 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         const profile = JSON.parse(savedProfile);
         setAuthToken(savedToken);
         setWalletProfile(profile);
-        setUserId(profile.id);
+        setUserId(profile.id); // Используем profile.id как userId
         setIsAuthenticated(true);
         console.log('[AUTH] Restored session from localStorage:', {
           profileId: profile.id,
@@ -136,7 +136,7 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, [connected]);
 
   const setAuthSession = useCallback((session: { userId: string; token: string; profile: any }) => {
-    setUserId(session.userId);
+    setUserId(session.profile.id); // Используем profile.id
     setAuthToken(session.token);
     setWalletProfile(session.profile);
     setIsAuthenticated(true);
@@ -198,7 +198,7 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         publicKey: address
       });
       
-      // Set auth session
+      // Set auth session - используем profile как основу
       setAuthSession({
         userId: profile.id,
         token: token || '',
@@ -223,8 +223,8 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     isAuthenticated,
     hasRejectedSignature,
     
-    // Backend auth state - use profile ID as userId for wallet users
-    userId: walletProfile?.id || null,
+    // Backend auth state - используем profile.id как userId
+    userId,
     authToken,
     walletProfile,
     
@@ -235,7 +235,7 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     handleWalletDisconnect
   }), [
     isAuthenticating, isAuthenticated, hasRejectedSignature,
-    walletProfile, authToken,
+    userId, authToken, walletProfile,
     signMessageOnConnect, setAuthSession, clearAuthSession, handleWalletDisconnect
   ]);
 

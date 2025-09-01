@@ -1,15 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { decode } from 'https://deno.land/x/base64@v0.2.1/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// System user ID for wallet authentication
-const WALLET_SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 // Helper to generate secure nonce
 function generateNonce(): string {
@@ -164,17 +160,17 @@ serve(async (req) => {
         .update({ used: true })
         .eq('id', nonceData.id);
 
-      // Create or update wallet profile using UPSERT with the unique constraint
+      // Create or update wallet profile using UPSERT (без user_id)
       const { data: profile, error: profileError } = await supabase
         .from('wallet_profiles')
         .upsert({
           wallet_address: address,
           chain,
-          user_id: WALLET_SYSTEM_USER_ID, // Use system user ID
+          user_id: null, // Оставляем NULL для wallet пользователей
           last_login_at: new Date().toISOString(),
           metadata: { publicKey }
         }, { 
-          onConflict: 'chain,wallet_address' // Use the unique constraint
+          onConflict: 'chain,wallet_address'
         })
         .select()
         .single();
@@ -196,14 +192,14 @@ serve(async (req) => {
         chain: profile.chain
       });
 
-      // Generate a mock JWT token for wallet users
+      // Generate a simple wallet token
       const walletToken = `wallet_${profile.id}_${Date.now()}`;
 
       return new Response(JSON.stringify({
         success: true,
         token: walletToken,
         profile: profile,
-        auth_url: null // No Supabase auth session for wallet users
+        auth_url: null
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });

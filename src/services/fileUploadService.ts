@@ -17,9 +17,6 @@ export interface FileUploadResponse {
   error?: string;
 }
 
-// System user ID for wallet authentication
-const WALLET_SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 export class FileUploadService {
   static async uploadFile(
     fileData: string,
@@ -34,8 +31,8 @@ export class FileUploadService {
         folder: folder || 'user-uploads'
       });
 
-      // For wallet users, use the system user ID for file uploads
-      const uploadUserId = userId.startsWith('wallet_') ? WALLET_SYSTEM_USER_ID : userId;
+      // Для wallet пользователей используем их профиль ID
+      const uploadUserId = userId;
 
       const { data, error } = await supabase.functions.invoke('llm-patch', {
         body: {
