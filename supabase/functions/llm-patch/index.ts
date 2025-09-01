@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { applyPatch, Operation } from 'https://esm.sh/fast-json-patch@3.1.1';
 import Ajv from 'https://esm.sh/ajv@8.12.0';
 import addFormats from 'https://esm.sh/ajv-formats@2.1.1';
+import { FileUploadModule } from './fileUploadModule.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +15,14 @@ interface PatchRequest {
   pageId: string;
   presetId?: string;
   userPrompt: string;
+}
+
+interface FileUploadRequest {
+  mode: 'upload';
+  file_data: string;
+  file_name: string;
+  user_id: string;
+  folder?: string;
 }
 
 interface PatchResponse {
@@ -106,8 +115,6 @@ async function callOpenAI(systemPrompt: string, userContext: string): Promise<Op
 
 /**
  * Fire-and-forget telemetry logging for llm-patch requests
- * IMPORTANT: Never logs the full prompt text for privacy/security
- * Only logs prompt_len (string length) and patch_preview (truncated JSON)
  */
 function logLlmPatchTelemetry(
   supabase: any,
@@ -170,6 +177,19 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    const requestBody = await req.json();
+    
+    // Handle file upload mode
+    if (requestBody.mode === 'upload') {
+      console.log('📁 Processing file upload request');
+      const fileUploadModule = new FileUploadModule(supabase);
+      const result = await fileUploadModule.uploadFile(requestBody as FileUploadRequest);
+      return jsonResponse(result);
+    }
+
+    // Handle patch mode (existing functionality)
+    const { themeId, pageId, presetId, userPrompt } = requestBody as PatchRequest;
+
     // Get user from auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -189,9 +209,6 @@ serve(async (req) => {
         errors: [{ path: 'auth', message: 'Invalid authorization' }]
       }, 401);
     }
-
-    const requestBody: PatchRequest = await req.json();
-    const { themeId, pageId, presetId, userPrompt } = requestBody;
 
     if (!themeId || !pageId || !userPrompt) {
       return jsonResponse({ 

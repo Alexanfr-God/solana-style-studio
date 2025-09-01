@@ -9,7 +9,7 @@ export const LLM_FUNCTION_NAME =
 
 export const API_ENDPOINTS = {
   llmPatch: LLM_FUNCTION_NAME,
-  walletChatGpt: 'wallet-chat-gpt', // legacy, kept for non-chat services
+  walletAuth: 'wallet-auth',
   exportTheme: 'export_theme'
 } as const;
 
@@ -17,6 +17,6 @@ export const API_ENDPOINTS = {
 export const getLLMFunctionName = () => LLM_FUNCTION_NAME;
 
 // Type for supported chat modes
-export type ChatMode = 'analysis' | 'leonardo' | 'replicate' | 'theme-patch';
+export type ChatMode = 'analysis' | 'leonardo' | 'replicate' | 'theme-patch' | 'upload';
 
 console.log('🔧 API Config loaded - LLM Function:', LLM_FUNCTION_NAME);

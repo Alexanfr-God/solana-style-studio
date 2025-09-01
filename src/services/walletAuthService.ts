@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type ChainType = 'evm' | 'solana';
 
 export async function requestNonce(address: string, chain: ChainType) {
-  const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+  const { data, error } = await supabase.functions.invoke('wallet-auth', {
     body: { action: 'nonce', address, chain }
   });
   if (error) throw error;
@@ -20,7 +20,7 @@ export async function verifySignature(params: {
   message: string;
   publicKey?: string; // required for Solana
 }) {
-  const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+  const { data, error } = await supabase.functions.invoke('wallet-auth', {
     body: { action: 'verify', ...params }
   });
   if (error) throw error;
