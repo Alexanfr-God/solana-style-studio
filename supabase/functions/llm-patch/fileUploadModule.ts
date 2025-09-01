@@ -22,6 +22,18 @@ export class FileUploadModule {
     this.supabase = supabase;
   }
 
+  private sanitizeFileName(fileName: string): string {
+    // Extract file extension
+    const ext = fileName.split('.').pop() || 'jpg';
+    
+    // Create safe filename using timestamp
+    const timestamp = Date.now();
+    const safeName = `${timestamp}.${ext.toLowerCase()}`;
+    
+    console.log('🧹 Sanitized filename:', { original: fileName, sanitized: safeName });
+    return safeName;
+  }
+
   async uploadFile(request: FileUploadRequest): Promise<FileUploadResponse> {
     try {
       console.log('📤 Starting file upload:', {
@@ -34,10 +46,12 @@ export class FileUploadModule {
       const base64Data = request.file_data.split(',')[1] || request.file_data;
       const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
       
-      // Generate unique file path
-      const timestamp = Date.now();
+      // Generate safe file path with sanitized filename
+      const safeFileName = this.sanitizeFileName(request.file_name);
       const folder = request.folder || 'user-uploads';
-      const fileName = `${folder}/${request.user_id}/${timestamp}_${request.file_name}`;
+      const fileName = `${folder}/${request.user_id}/${safeFileName}`;
+
+      console.log('📁 Safe file path created:', fileName);
 
       // Upload to Supabase Storage
       const { data, error } = await this.supabase.storage
@@ -94,7 +108,7 @@ export class FileUploadModule {
   async deleteFile(filePath: string, userId: string): Promise<boolean> {
     try {
       // Verify user owns this file (security check)
-      if (!filePath.includes(`user-uploads/${userId}/`)) {
+      if (!filePath.includes(`user-uploads/${userId}/`) && !filePath.includes(`theme-chat-images/${userId}/`)) {
         console.error('❌ Unauthorized delete attempt');
         return false;
       }

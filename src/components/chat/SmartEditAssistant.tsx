@@ -1,3 +1,8 @@
+// LEGACY COMPONENT - DO NOT USE
+// This component has been replaced by src/components/ai/ThemeChat.tsx
+// All new AI chat features should be added to ThemeChat.tsx only
+// This file is kept for reference but should not be modified
+
 import React from 'react';
 import { WalletElement } from '@/hooks/useWalletElements';
 import { Card, CardContent } from '@/components/ui/card';

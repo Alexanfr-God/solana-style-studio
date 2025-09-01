@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Upload, Image, AlertCircle, CheckCircle2, Wallet } from 'lucide-react';
+import { Send, Upload, Image, AlertCircle, CheckCircle2, Wallet, Bot } from 'lucide-react';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { FileUploadService } from '@/services/fileUploadService';
+import { LlmPatchService, type PatchRequest } from '@/services/llmPatchService';
+import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { toast } from 'sonner';
 
 interface Message {
@@ -15,6 +17,7 @@ interface Message {
   content: string;
   timestamp: Date;
   imageUrl?: string;
+  patchApplied?: boolean;
 }
 
 const ThemeChat = () => {
@@ -27,6 +30,7 @@ const ThemeChat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { isAuthenticated, walletProfile, isAuthenticating } = useExtendedWallet();
+  const { selectedThemeId, currentLayer } = useWalletCustomizationStore();
 
   // Simplified authentication check - only use wallet profile
   useEffect(() => {
@@ -49,29 +53,74 @@ const ThemeChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const addMessage = (content: string, type: 'user' | 'assistant') => {
+  const addMessage = (content: string, type: 'user' | 'assistant', imageUrl?: string, patchApplied?: boolean) => {
     const newMessage: Message = {
       id: Date.now().toString(),
       type,
       content,
-      timestamp: new Date()
+      timestamp: new Date(),
+      imageUrl,
+      patchApplied
     };
     setMessages(prev => [...prev, newMessage]);
+  };
+
+  const applyJsonPatch = async (userPrompt: string, imageUrl?: string) => {
+    if (!selectedThemeId) {
+      toast.error('No theme selected for editing');
+      return false;
+    }
+
+    try {
+      console.log('🎨 Applying JSON patch for theme customization');
+      
+      const patchRequest: PatchRequest = {
+        themeId: selectedThemeId,
+        pageId: currentLayer || 'homeLayer',
+        userPrompt: imageUrl ? `${userPrompt} Use this uploaded image: ${imageUrl}` : userPrompt
+      };
+
+      const result = await LlmPatchService.applyPatch(patchRequest);
+      
+      if (result) {
+        console.log('✅ Theme updated successfully');
+        toast.success('🎯 Theme updated with AI suggestions!');
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('❌ Failed to apply patch:', error);
+      toast.error('Failed to update theme');
+      return false;
+    }
   };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
     
-    addMessage(inputValue, 'user');
+    const userMessage = inputValue;
+    addMessage(userMessage, 'user');
     setInputValue('');
     setIsProcessing(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage = `I received your message: "${inputValue}". AI theme generation is not fully implemented yet, but I can help you understand the current wallet customization system.`;
-      addMessage(aiMessage, 'assistant');
+    try {
+      // Apply JSON patch for theme customization
+      const patchApplied = await applyJsonPatch(userMessage);
+      
+      // Generate AI response
+      const aiResponse = patchApplied 
+        ? `I've analyzed your request and updated the wallet theme accordingly. The changes should be visible in the preview. ${userMessage.includes('background') ? 'Background styling has been applied.' : 'Theme styling has been updated.'}`
+        : `I received your message: "${userMessage}". I can help you customize your wallet theme. Try uploading an image or asking for specific styling changes like "make the background darker" or "change button colors to blue".`;
+      
+      addMessage(aiResponse, 'assistant', undefined, patchApplied);
+      
+    } catch (error) {
+      console.error('Error processing message:', error);
+      addMessage('Sorry, I encountered an error processing your request. Please try again.', 'assistant');
+    } finally {
       setIsProcessing(false);
-    }, 1000);
+    }
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +153,7 @@ const ThemeChat = () => {
       // Use wallet profile ID for upload
       const result = await FileUploadService.uploadImageFromFile(
         file,
-        walletProfile.id, // Use wallet profile ID instead of userId
+        walletProfile.id,
         'theme-chat-images'
       );
 
@@ -115,23 +164,19 @@ const ThemeChat = () => {
       console.log('✅ Image uploaded successfully:', result.url);
 
       // Add image message to chat
-      const imageMessage: Message = {
-        id: Date.now().toString(),
-        type: 'user',
-        content: `Uploaded image: ${file.name}`,
-        timestamp: new Date(),
-        imageUrl: result.url
-      };
-
-      setMessages(prev => [...prev, imageMessage]);
+      addMessage(`Uploaded image: ${file.name}`, 'user', result.url);
 
       toast.success('🎯 Image uploaded successfully!');
 
-      // Auto-suggest theme generation
-      setTimeout(() => {
-        const aiResponse = `Great! I can see your uploaded image. You can now use this image URL in your wallet theme JSON: "${result.url}". Would you like me to help you create a custom theme based on this image?`;
-        addMessage(aiResponse, 'assistant');
-      }, 1000);
+      // Auto-apply as background with JSON patch
+      const patchApplied = await applyJsonPatch(`Set this image as the wallet background`, result.url);
+      
+      // Generate AI response about the upload
+      const aiResponse = patchApplied
+        ? `Perfect! I've uploaded your image and set it as the wallet background. The image URL is: ${result.url}. You can now see the changes in the wallet preview.`
+        : `Great! Your image has been uploaded successfully. The image URL is: ${result.url}. You can ask me to apply it as a background or use it in other ways for your wallet theme.`;
+      
+      addMessage(aiResponse, 'assistant', undefined, patchApplied);
 
     } catch (error) {
       console.error('💥 Upload error:', error);
@@ -165,7 +210,10 @@ const ThemeChat = () => {
     <div className="flex flex-col h-full bg-black/20 backdrop-blur-sm">
       {/* Header */}
       <div className="p-4 border-b border-white/10">
-        <h3 className="text-lg font-semibold text-white mb-2">AI Theme Assistant</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <Bot className="h-5 w-5 text-purple-400" />
+          <h3 className="text-lg font-semibold text-white">AI Theme Assistant</h3>
+        </div>
         <div className="flex items-center gap-2">
           <statusDisplay.icon className={`h-4 w-4 ${statusDisplay.color}`} />
           <span className={`text-sm ${statusDisplay.color}`}>
@@ -177,6 +225,11 @@ const ThemeChat = () => {
             {walletProfile.wallet_address?.slice(0, 8)}...{walletProfile.wallet_address?.slice(-6)}
           </div>
         )}
+        {selectedThemeId && (
+          <div className="text-xs text-purple-300 mt-1">
+            Active Theme: {selectedThemeId.slice(0, 8)}... | Layer: {currentLayer || 'homeLayer'}
+          </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -184,11 +237,16 @@ const ThemeChat = () => {
         <div className="space-y-4">
           {messages.length === 0 && (
             <div className="text-center text-white/60 py-8">
-              <Image className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Welcome to AI Theme Assistant</p>
-              <p className="text-sm">Upload an image or ask me to help customize your wallet theme</p>
+              <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium mb-2">AI Theme Assistant</p>
+              <p className="text-sm mb-4">Upload images or describe changes to customize your wallet theme with AI</p>
+              <div className="text-xs text-white/40 space-y-1">
+                <p>• "Make the background darker"</p>
+                <p>• "Change button colors to blue"</p>
+                <p>• "Upload an image → Auto-apply as background"</p>
+              </div>
               {authStatus !== 'authenticated' && (
-                <p className="text-xs text-yellow-400 mt-2">
+                <p className="text-xs text-yellow-400 mt-4">
                   Connect and authenticate your wallet to start uploading images
                 </p>
               )}
@@ -214,9 +272,17 @@ const ThemeChat = () => {
                     />
                   )}
                   <p className="text-white text-sm">{message.content}</p>
-                  <p className="text-white/40 text-xs mt-1">
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-white/40 text-xs">
+                      {message.timestamp.toLocaleTimeString()}
+                    </p>
+                    {message.patchApplied && (
+                      <div className="text-xs text-green-400 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Applied to theme
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -234,7 +300,7 @@ const ThemeChat = () => {
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={authStatus === 'authenticated' ? "Ask me to customize your wallet..." : "Connect wallet first..."}
               className="bg-white/5 border-white/20 text-white placeholder:text-white/40"
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              onKeyPress={(e) => e.key === 'Enter' && !isProcessing && handleSendMessage()}
               disabled={isProcessing || isAuthenticating}
             />
           </div>
@@ -252,7 +318,8 @@ const ThemeChat = () => {
             disabled={isUploading || authStatus !== 'authenticated'}
             variant="outline"
             size="icon"
-            className="bg-white/5 border-white/20 hover:bg-white/10"
+            className="bg-white/5 border-white/20 hover:bg-white/10 disabled:opacity-50"
+            title="Upload image"
           >
             <Upload className={`h-4 w-4 ${isUploading ? 'animate-spin' : ''}`} />
           </Button>
@@ -260,7 +327,8 @@ const ThemeChat = () => {
           <Button
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isProcessing || isAuthenticating}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
+            title="Send message"
           >
             <Send className="h-4 w-4" />
           </Button>
