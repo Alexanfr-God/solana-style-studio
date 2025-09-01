@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send, Upload, Image, AlertCircle, CheckCircle2, Wallet } from 'lucide-react';
-import { useWalletChatContext } from '@/contexts/WalletChatContext';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { FileUploadService } from '@/services/fileUploadService';
@@ -23,11 +22,11 @@ const ThemeChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [authStatus, setAuthStatus] = useState<'checking' | 'wallet-connected' | 'authenticated' | 'disconnected'>('checking');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const { messages: contextMessages, addMessage, isProcessing } = useWalletChatContext();
   const { isAuthenticated, userId, walletProfile, isAuthenticating } = useExtendedWallet();
 
   // Check authentication status
@@ -59,32 +58,30 @@ const ThemeChat = () => {
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, contextMessages]);
+  }, [messages]);
+
+  const addMessage = (content: string, type: 'user' | 'assistant') => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      type,
+      content,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
     
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: inputValue,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
     addMessage(inputValue, 'user');
     setInputValue('');
+    setIsProcessing(true);
 
     // Simulate AI response
     setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: `I received your message: "${inputValue}". AI theme generation is not fully implemented yet, but I can help you understand the current wallet customization system.`,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiMessage]);
-      addMessage(aiMessage.content, 'assistant');
+      const aiMessage = `I received your message: "${inputValue}". AI theme generation is not fully implemented yet, but I can help you understand the current wallet customization system.`;
+      addMessage(aiMessage, 'assistant');
+      setIsProcessing(false);
     }, 1000);
   };
 
@@ -149,20 +146,13 @@ const ThemeChat = () => {
       };
 
       setMessages(prev => [...prev, imageMessage]);
-      addMessage(`Image uploaded: ${result.url}`, 'user');
 
       toast.success('🎯 Image uploaded successfully!');
 
       // Auto-suggest theme generation
       setTimeout(() => {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: `Great! I can see your uploaded image. You can now use this image URL in your wallet theme JSON: "${result.url}". Would you like me to help you create a custom theme based on this image?`,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, aiResponse]);
-        addMessage(aiResponse.content, 'assistant');
+        const aiResponse = `Great! I can see your uploaded image. You can now use this image URL in your wallet theme JSON: "${result.url}". Would you like me to help you create a custom theme based on this image?`;
+        addMessage(aiResponse, 'assistant');
       }, 1000);
 
     } catch (error) {
