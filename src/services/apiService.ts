@@ -84,28 +84,28 @@ export const generateStyle = async (
   }
 };
 
-// Chat function for AI assistant
+// Chat function for AI assistant - using llm-patch instead of legacy wallet-chat-gpt
 export const chatWithAI = async (
   message: string,
   imageUrl?: string,
   walletContext?: any
 ): Promise<{ response: string; styleChanges?: any }> => {
   try {
-    console.log('💬 Starting AI chat:', {
+    console.log('💬 Starting AI chat via llm-patch:', {
       message,
       hasImage: !!imageUrl,
       hasContext: !!walletContext
     });
 
-    const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+    const { data, error } = await supabase.functions.invoke('llm-patch', {
       body: {
-        content: message,
+        prompt: message,
         imageUrl: imageUrl,
-        walletContext: walletContext || {
+        contextData: walletContext || {
           walletType: 'phantom',
           activeLayer: 'wallet'
         },
-        mode: 'analysis'
+        mode: 'chat'
       }
     });
 
@@ -114,11 +114,11 @@ export const chatWithAI = async (
       throw new Error(`AI chat failed: ${error.message}`);
     }
 
-    console.log('✅ AI response received:', data);
+    console.log('✅ AI response received via llm-patch:', data);
 
     return {
-      response: data.response || 'Sorry, I could not process your request.',
-      styleChanges: data.styleChanges
+      response: data.explanation || data.response || 'Sorry, I could not process your request.',
+      styleChanges: data.patch || data.styleChanges
     };
   } catch (error) {
     console.error('💥 Error in chatWithAI:', error);

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ImageAnalysisRequest {
@@ -37,28 +36,29 @@ export interface AnalysisResponse {
 
 class WalletImageAnalysisService {
   /**
-   * Анализ изображения для создания стиля кошелька
+   * Анализ изображения для создания стиля кошелька через llm-patch
    */
   async analyzeImage(request: ImageAnalysisRequest): Promise<AnalysisResponse> {
     const startTime = Date.now();
     
     try {
-      console.log('🖼️ Starting wallet image analysis...', {
+      console.log('🖼️ Starting wallet image analysis via llm-patch...', {
         imageUrl: request.imageUrl,
         walletType: request.walletType,
         analysisType: request.analysisType
       });
 
-      // Используем wallet-chat-gpt для анализа изображения
-      const { data, error } = await supabase.functions.invoke('wallet-chat-gpt', {
+      // Используем llm-patch для анализа изображения вместо legacy wallet-chat-gpt
+      const { data, error } = await supabase.functions.invoke('llm-patch', {
         body: {
-          content: `Analyze this image and extract colors and style for ${request.walletType || 'phantom'} wallet design`,
+          prompt: `Analyze this image and extract colors and style for ${request.walletType || 'phantom'} wallet design`,
           imageUrl: request.imageUrl,
-          walletContext: {
+          contextData: {
             walletType: request.walletType || 'phantom',
-            activeLayer: 'wallet'
+            activeLayer: 'wallet',
+            analysisType: request.analysisType || 'style'
           },
-          mode: 'analysis'
+          mode: 'image_analysis'
         }
       });
 
@@ -70,7 +70,7 @@ class WalletImageAnalysisService {
         throw new Error(`Image analysis failed: ${error.message}`);
       }
 
-      console.log('✅ Image analysis completed:', {
+      console.log('✅ Image analysis completed via llm-patch:', {
         duration: `${duration}s`,
         success: data?.success
       });
@@ -78,15 +78,15 @@ class WalletImageAnalysisService {
       // Преобразуем ответ в нужный формат
       let result: ImageAnalysisResult;
 
-      if (data?.styleChanges) {
-        // Если есть styleChanges, используем их
-        const style = data.styleChanges;
+      if (data?.patch) {
+        // Если есть patch с изменениями стиля, используем их
+        const patch = data.patch;
         result = {
           colors: {
-            dominant: [style.backgroundColor, style.accentColor],
-            accent: style.accentColor,
-            background: style.backgroundColor,
-            text: style.textColor
+            dominant: [patch.backgroundColor || '#1a1a2e', patch.accentColor || '#16213e'],
+            accent: patch.accentColor || '#16213e',
+            background: patch.backgroundColor || '#1a1a2e',
+            text: patch.textColor || '#ffffff'
           },
           style: {
             theme: 'modern',
@@ -94,11 +94,11 @@ class WalletImageAnalysisService {
             complexity: 'moderate' as const
           },
           suggestions: {
-            backgroundColor: style.backgroundColor,
-            accentColor: style.accentColor,
-            textColor: style.textColor,
-            buttonColor: style.buttonColor,
-            styleNotes: style.styleNotes || 'Generated from image analysis'
+            backgroundColor: patch.backgroundColor || '#1a1a2e',
+            accentColor: patch.accentColor || '#16213e',
+            textColor: patch.textColor || '#ffffff',
+            buttonColor: patch.buttonColor || '#0f3460',
+            styleNotes: data.explanation || 'Generated from image analysis via llm-patch'
           }
         };
       } else {
