@@ -27,7 +27,7 @@ const WALLET_ICONS: Record<string, React.ReactNode> = {
 // WalletSelector component with explicit React.FC type
 const WalletSelector: React.FC = () => {
   const { wallets, select, connecting, connected, wallet, disconnect, publicKey } = useWallet();
-  const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature } = useExtendedWallet();
+  const { signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature, walletProfile } = useExtendedWallet();
 
   // Filter and sort wallets by readiness
   const availableWallets = useMemo(() => {
@@ -74,28 +74,43 @@ const WalletSelector: React.FC = () => {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
+  // Get display address - prefer from walletProfile if available
+  const displayAddress = useMemo(() => {
+    if (isAuthenticated && walletProfile?.wallet_address) {
+      return walletProfile.wallet_address;
+    }
+    return publicKey?.toString() || '';
+  }, [isAuthenticated, walletProfile, publicKey]);
+
   // Using explicit return with parentheses to ensure proper transpilation
   return (
     <div className="relative z-10">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button 
-            variant={connected ? "default" : "outline"} 
+            variant={connected && isAuthenticated ? "default" : "outline"} 
             className={`flex items-center gap-2 transition-all duration-300 ${
-              connected ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-black/30 backdrop-blur-sm'
+              connected && isAuthenticated 
+                ? 'bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 shadow-[0_0_10px_rgba(153,69,255,0.4)]' 
+                : 'bg-black/30 backdrop-blur-sm'
             }`}
-            disabled={isAuthenticating}
+            disabled={isAuthenticating || connecting}
           >
             {connecting || isAuthenticating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>{isAuthenticating ? 'Signing...' : 'Connecting...'}</span>
               </>
-            ) : connected && wallet ? (
+            ) : connected && isAuthenticated && displayAddress ? (
               <div className="flex items-center gap-2 wallet-connect-animation">
-                {WALLET_ICONS[wallet.adapter.name] || null}
-                <span>{shortenAddress(publicKey?.toString() || '')}</span>
+                {WALLET_ICONS[wallet?.adapter.name || ''] || null}
+                <span>{shortenAddress(displayAddress)}</span>
                 <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              </div>
+            ) : connected && !isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                {WALLET_ICONS[wallet?.adapter.name || ''] || null}
+                <span className="text-yellow-500">Authentication needed</span>
               </div>
             ) : (
               <span>Connect Wallet</span>
@@ -133,9 +148,25 @@ const WalletSelector: React.FC = () => {
               );
             })
           ) : (
-            <DropdownMenuItem onClick={handleDisconnect} className="cursor-pointer">
-              Disconnect
-            </DropdownMenuItem>
+            <>
+              {isAuthenticated && displayAddress && (
+                <DropdownMenuItem className="flex flex-col items-start">
+                  <div className="text-sm font-medium">Authenticated</div>
+                  <div className="text-xs text-muted-foreground">{displayAddress}</div>
+                </DropdownMenuItem>
+              )}
+              {!isAuthenticated && (
+                <DropdownMenuItem 
+                  onClick={() => publicKey && signMessageOnConnect(publicKey.toString())}
+                  className="cursor-pointer text-yellow-600"
+                >
+                  Sign to Authenticate
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={handleDisconnect} className="cursor-pointer">
+                Disconnect
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

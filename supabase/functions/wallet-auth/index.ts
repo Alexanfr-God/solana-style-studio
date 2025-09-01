@@ -8,6 +8,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// System user ID for wallet authentication
+const WALLET_SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';
+
 // Helper to generate secure nonce
 function generateNonce(): string {
   const array = new Uint8Array(32);
@@ -161,20 +164,23 @@ serve(async (req) => {
         .update({ used: true })
         .eq('id', nonceData.id);
 
-      // Create or update wallet profile
+      // Create or update wallet profile using UPSERT with the unique constraint
       const { data: profile, error: profileError } = await supabase
         .from('wallet_profiles')
         .upsert({
           wallet_address: address,
           chain,
+          user_id: WALLET_SYSTEM_USER_ID, // Use system user ID
           last_login_at: new Date().toISOString(),
           metadata: { publicKey }
+        }, { 
+          onConflict: 'chain,wallet_address' // Use the unique constraint
         })
         .select()
         .single();
 
       if (profileError) {
-        console.error('❌ Failed to create profile:', profileError);
+        console.error('❌ Failed to create/update profile:', profileError);
         return new Response(JSON.stringify({
           success: false,
           error: 'Failed to create user profile'
@@ -190,48 +196,17 @@ serve(async (req) => {
         chain: profile.chain
       });
 
-      // Create a Supabase auth session for file uploads
-      try {
-        const { data: authData, error: authError } = await supabase.auth.admin.generateLink({
-          type: 'magiclink',
-          email: `${address.toLowerCase()}@wallet.wcc`, // Virtual email for wallet users
-          options: {
-            data: {
-              wallet_address: address,
-              chain: chain,
-              wallet_profile_id: profile.id
-            }
-          }
-        });
+      // Generate a mock JWT token for wallet users
+      const walletToken = `wallet_${profile.id}_${Date.now()}`;
 
-        if (authError) {
-          console.error('❌ Failed to generate auth link:', authError);
-        } else {
-          console.log('✅ Auth session created');
-        }
-
-        return new Response(JSON.stringify({
-          success: true,
-          token: authData?.properties?.access_token || null,
-          profile: profile,
-          auth_url: authData?.properties?.action_link || null
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-
-      } catch (authSessionError) {
-        console.error('⚠️ Auth session creation failed, but wallet auth succeeded:', authSessionError);
-        
-        // Return success even if auth session fails
-        return new Response(JSON.stringify({
-          success: true,
-          token: null,
-          profile: profile,
-          auth_url: null
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
+      return new Response(JSON.stringify({
+        success: true,
+        token: walletToken,
+        profile: profile,
+        auth_url: null // No Supabase auth session for wallet users
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     return new Response(JSON.stringify({
