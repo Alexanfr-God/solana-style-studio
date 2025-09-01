@@ -1,4 +1,3 @@
-
 import { FC, ReactNode, useMemo, createContext, useState, useContext, useCallback, useEffect } from 'react';
 import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
@@ -12,6 +11,7 @@ import { clusterApiUrl } from '@solana/web3.js';
 import { toast } from "sonner";
 import { requestNonce, verifySignature } from '@/services/walletAuthService';
 import bs58 from 'bs58';
+import { supabase } from '@/integrations/supabase/client';
 
 // Import the styles for the modal
 import '@solana/wallet-adapter-react-ui/styles.css';
@@ -117,6 +117,11 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         setUserId(profile.id);
         setIsAuthenticated(true);
         console.log('[AUTH] Restored session from localStorage');
+        
+        // Try to set Supabase session if we have auth_url
+        if (profile.auth_url) {
+          attemptSupabaseAuth(profile.auth_url);
+        }
       } catch (error) {
         console.error('[AUTH] Failed to restore session:', error);
         localStorage.removeItem('wcc_wallet_token');
@@ -132,7 +137,31 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [connected]);
 
-  const setAuthSession = useCallback((session: { userId: string; token: string; profile: any }) => {
+  const attemptSupabaseAuth = async (authUrl: string) => {
+    try {
+      console.log('[AUTH] Attempting Supabase session creation...');
+      // This would normally redirect, but we'll extract the token
+      const url = new URL(authUrl);
+      const token = url.searchParams.get('access_token');
+      
+      if (token) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: token,
+          refresh_token: url.searchParams.get('refresh_token') || ''
+        });
+        
+        if (error) {
+          console.error('[AUTH] Supabase session error:', error);
+        } else {
+          console.log('[AUTH] Supabase session established');
+        }
+      }
+    } catch (error) {
+      console.error('[AUTH] Error setting Supabase session:', error);
+    }
+  };
+
+  const setAuthSession = useCallback((session: { userId: string; token: string; profile: any; auth_url?: string }) => {
     setUserId(session.userId);
     setAuthToken(session.token);
     setWalletProfile(session.profile);
@@ -142,12 +171,20 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     if (session.token) {
       localStorage.setItem('wcc_wallet_token', session.token);
     }
-    localStorage.setItem('wcc_wallet_profile', JSON.stringify(session.profile));
+    localStorage.setItem('wcc_wallet_profile', JSON.stringify({
+      ...session.profile,
+      auth_url: session.auth_url
+    }));
+    
+    // Try to establish Supabase session
+    if (session.auth_url) {
+      attemptSupabaseAuth(session.auth_url);
+    }
     
     console.log('[AUTH] Session set:', session.profile?.wallet_address);
   }, []);
 
-  const clearAuthSession = useCallback(() => {
+  const clearAuthSession = useCallback(async () => {
     setUserId(null);
     setAuthToken(null);
     setWalletProfile(null);
@@ -157,6 +194,14 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     // Clear localStorage
     localStorage.removeItem('wcc_wallet_token');
     localStorage.removeItem('wcc_wallet_profile');
+    
+    // Clear Supabase session
+    try {
+      await supabase.auth.signOut();
+      console.log('[AUTH] Supabase session cleared');
+    } catch (error) {
+      console.error('[AUTH] Error clearing Supabase session:', error);
+    }
     
     console.log('[AUTH] Session cleared');
   }, []);
@@ -185,7 +230,7 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       const signature = bs58.encode(sigBytes);
       
       console.log('[AUTH] Signature received, verifying...');
-      const { token, profile } = await verifySignature({
+      const { token, profile, auth_url } = await verifySignature({
         address,
         chain: 'solana',
         signature,
@@ -194,11 +239,12 @@ const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         publicKey: address
       });
       
-      // Set auth session
+      // Set auth session with auth_url for Supabase integration
       setAuthSession({
         userId: profile.id,
         token: token || '',
-        profile
+        profile,
+        auth_url
       });
       
       setHasRejectedSignature(false);

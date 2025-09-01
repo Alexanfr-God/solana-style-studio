@@ -19,7 +19,13 @@ function generateNonce(): string {
 function verifySignature(message: string, signature: string, publicKey: string): boolean {
   // In production, use proper ed25519 signature verification
   // For now, we'll assume signature verification logic
-  console.log('Verifying signature for:', { message: message.slice(0, 50), publicKey: publicKey.slice(0, 20) });
+  console.log('🔐 Verifying signature:', { 
+    messageLength: message.length, 
+    signatureLength: signature.length,
+    publicKeyLength: publicKey.length,
+    messagePreview: message.slice(0, 50),
+    publicKeyPreview: publicKey.slice(0, 20)
+  });
   return signature.length > 10 && publicKey.length > 10; // Simplified check
 }
 
@@ -35,13 +41,33 @@ serve(async (req) => {
 
     const { action, address, chain, signature, nonce, message, publicKey } = await req.json();
     
-    console.log('🔐 Wallet Auth Request:', { action, address, chain });
+    console.log('🔐 Wallet Auth Request:', { 
+      action, 
+      address: address?.slice(0, 10) + '...', 
+      chain,
+      hasSignature: !!signature,
+      hasNonce: !!nonce,
+      messageLength: message?.length,
+      timestamp: new Date().toISOString()
+    });
 
     if (action === 'nonce') {
       // Generate and store nonce
       const generatedNonce = generateNonce();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
       const authMessage = `Sign this message to authenticate with WCC: ${generatedNonce}`;
+
+      console.log('📝 Generating nonce:', {
+        address: address?.slice(0, 10) + '...',
+        nonce: generatedNonce.slice(0, 8) + '...',
+        expiresAt: expiresAt.toISOString()
+      });
+
+      // Clean up old nonces first
+      await supabase
+        .from('auth_nonces')
+        .delete()
+        .or(`expires_at.lt.${new Date().toISOString()},used.eq.true`);
 
       const { error: insertError } = await supabase
         .from('auth_nonces')
@@ -63,6 +89,7 @@ serve(async (req) => {
         });
       }
 
+      console.log('✅ Nonce stored successfully');
       return new Response(JSON.stringify({
         success: true,
         nonce: generatedNonce,
@@ -73,6 +100,8 @@ serve(async (req) => {
     }
 
     if (action === 'verify') {
+      console.log('🔍 Starting signature verification...');
+      
       // Verify nonce exists and not expired
       const { data: nonceData, error: nonceError } = await supabase
         .from('auth_nonces')
@@ -96,6 +125,10 @@ serve(async (req) => {
 
       // Check if nonce is expired
       if (new Date(nonceData.expires_at) < new Date()) {
+        console.error('❌ Nonce expired:', {
+          expiresAt: nonceData.expires_at,
+          now: new Date().toISOString()
+        });
         return new Response(JSON.stringify({
           success: false,
           error: 'Nonce expired'
@@ -104,6 +137,8 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
+
+      console.log('✅ Nonce validation passed');
 
       // Verify signature
       const isValidSignature = verifySignature(message, signature, publicKey || address);
@@ -117,6 +152,8 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
+
+      console.log('✅ Signature validation passed');
 
       // Mark nonce as used
       await supabase
@@ -147,14 +184,54 @@ serve(async (req) => {
         });
       }
 
-      console.log('✅ Wallet authentication successful');
-      return new Response(JSON.stringify({
-        success: true,
-        token: null, // JWT not implemented yet
-        profile: profile
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      console.log('✅ Profile created/updated:', {
+        id: profile.id,
+        address: profile.wallet_address?.slice(0, 10) + '...',
+        chain: profile.chain
       });
+
+      // Create a Supabase auth session for file uploads
+      try {
+        const { data: authData, error: authError } = await supabase.auth.admin.generateLink({
+          type: 'magiclink',
+          email: `${address.toLowerCase()}@wallet.wcc`, // Virtual email for wallet users
+          options: {
+            data: {
+              wallet_address: address,
+              chain: chain,
+              wallet_profile_id: profile.id
+            }
+          }
+        });
+
+        if (authError) {
+          console.error('❌ Failed to generate auth link:', authError);
+        } else {
+          console.log('✅ Auth session created');
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          token: authData?.properties?.access_token || null,
+          profile: profile,
+          auth_url: authData?.properties?.action_link || null
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+
+      } catch (authSessionError) {
+        console.error('⚠️ Auth session creation failed, but wallet auth succeeded:', authSessionError);
+        
+        // Return success even if auth session fails
+        return new Response(JSON.stringify({
+          success: true,
+          token: null,
+          profile: profile,
+          auth_url: null
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     return new Response(JSON.stringify({

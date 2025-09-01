@@ -1,421 +1,305 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Wand2, Send, Paperclip, X } from 'lucide-react';
-import { handleUserMessage } from '@/ai/agent';
-import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
-import type { ThemePatch } from '@/state/themeStore';
-import { v4 as uuidv4 } from 'uuid';
-import { uploadToStorage } from '@/ai/storage';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent } from '@/components/ui/card';
+import { Send, Upload, Image, AlertCircle, CheckCircle2, Wallet } from 'lucide-react';
+import { useWalletChatContext } from '@/contexts/WalletChatContext';
+import { useExtendedWallet } from '@/context/WalletContextProvider';
+import { supabase } from '@/integrations/supabase/client';
+import { FileUploadService } from '@/services/fileUploadService';
 import { toast } from 'sonner';
 
 interface Message {
-  role: 'user' | 'ai';
-  text: string;
+  id: string;
+  type: 'user' | 'assistant';
+  content: string;
   timestamp: Date;
+  imageUrl?: string;
 }
 
-// Language detection function
-function detectLang(text: string): 'en' | 'ru' {
-  if (/[а-яё]/i.test(text)) return 'ru';
-  return 'en';
-}
-
-export default function ThemeChat() {
-  const [input, setInput] = useState('');
+const ThemeChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [inputValue, setInputValue] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const applyPatch = useThemeStore(s => s.applyPatch);
-  const theme = useThemeStore(s => s.theme);
-  const viewportRef = useRef<HTMLDivElement>(null);
+  const [authStatus, setAuthStatus] = useState<'checking' | 'wallet-connected' | 'authenticated' | 'disconnected'>('checking');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const notifiedRef = useRef<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { messages: contextMessages, addMessage, isProcessing } = useWalletChatContext();
+  const { isAuthenticated, userId, walletProfile, isAuthenticating } = useExtendedWallet();
 
-  // Диагностика store instance
-  console.log('[AI] theme store id', THEME_STORE_INSTANCE_ID);
-
-  // Auto-scroll to bottom when messages change
+  // Check authentication status
   useEffect(() => {
-    const el = viewportRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
-  }, [messages]);
+    const checkAuth = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        console.log('🔐 Supabase auth check:', { user: !!user, error, userId, isAuthenticated });
+        
+        if (user && userId && isAuthenticated) {
+          setAuthStatus('authenticated');
+          console.log('✅ Fully authenticated - Supabase + Wallet');
+        } else if (isAuthenticated && walletProfile) {
+          setAuthStatus('wallet-connected');
+          console.log('⚠️ Wallet connected but no Supabase session');
+        } else {
+          setAuthStatus('disconnected');
+          console.log('❌ Not authenticated');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setAuthStatus('disconnected');
+      }
+    };
 
-  const handleFilePick = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    checkAuth();
+  }, [userId, isAuthenticated, walletProfile]);
+
+  // Auto scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, contextMessages]);
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return;
+    
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: inputValue,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    addMessage(inputValue, 'user');
+    setInputValue('');
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: `I received your message: "${inputValue}". AI theme generation is not fully implemented yet, but I can help you understand the current wallet customization system.`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiMessage]);
+      addMessage(aiMessage.content, 'assistant');
+    }, 1000);
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('[UPLOAD] start', file.name, 'size=', file.size, 'type=', file.type);
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+    // Check authentication before upload
+    if (authStatus !== 'authenticated') {
+      toast.error('Please connect and authenticate your wallet first');
+      console.log('❌ Upload blocked - auth status:', authStatus);
       return;
     }
 
-    // Validate file size (8MB limit)
-    const maxSize = 8 * 1024 * 1024; // 8MB
-    if (file.size > maxSize) {
-      toast.error('Max file size is 8MB');
+    if (!userId) {
+      toast.error('No user ID available. Please reconnect your wallet.');
+      console.log('❌ Upload blocked - no userId:', { userId, isAuthenticated });
+      return;
+    }
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image too large. Please select an image under 5MB');
       return;
     }
 
     setIsUploading(true);
-
+    
     try {
-      // Generate path: user-uploads/YYYY/MM/DD/timestamp-random.ext
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const timestamp = now.getTime();
-      const random = Math.random().toString(36).substring(2, 8);
-      const extension = file.name.split('.').pop() || 'jpg';
-      const path = `user-uploads/${year}/${month}/${day}/${timestamp}-${random}.${extension}`;
+      console.log('📤 Starting image upload:', {
+        fileName: file.name,
+        size: file.size,
+        userId,
+        authStatus
+      });
 
-      const publicUrl = await uploadToStorage(file, path);
-      
-      console.log('[STORAGE] uploaded url=', publicUrl);
+      // Verify auth one more time before upload
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('Authentication expired. Please reconnect your wallet.');
+      }
 
-      // Guard against double calls in StrictMode
-      if (publicUrl && publicUrl !== notifiedRef.current) {
-        notifiedRef.current = publicUrl;
-        setUploadedImageUrl(publicUrl);
-        
-        // Add system message
-        const systemMessage: Message = {
-          role: 'ai',
-          text: 'Image uploaded successfully! Choose where to apply it:',
+      const result = await FileUploadService.uploadImageFromFile(
+        file,
+        userId,
+        'theme-chat-images'
+      );
+
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      console.log('✅ Image uploaded successfully:', result.url);
+
+      // Add image message to chat
+      const imageMessage: Message = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: `Uploaded image: ${file.name}`,
+        timestamp: new Date(),
+        imageUrl: result.url
+      };
+
+      setMessages(prev => [...prev, imageMessage]);
+      addMessage(`Image uploaded: ${result.url}`, 'user');
+
+      toast.success('🎯 Image uploaded successfully!');
+
+      // Auto-suggest theme generation
+      setTimeout(() => {
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: `Great! I can see your uploaded image. You can now use this image URL in your wallet theme JSON: "${result.url}". Would you like me to help you create a custom theme based on this image?`,
           timestamp: new Date()
         };
-        setMessages(prev => [...prev, systemMessage]);
-        
-        toast.success('🖼️ Image uploaded successfully!');
-      }
+        setMessages(prev => [...prev, aiResponse]);
+        addMessage(aiResponse.content, 'assistant');
+      }, 1000);
+
     } catch (error) {
-      console.error('[UPLOAD] error:', error);
-      toast.error('Failed to upload image. Please check the connection and try again.');
+      console.error('💥 Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      toast.error(`Upload failed: ${errorMessage}`);
     } finally {
       setIsUploading(false);
-      // Reset file input
+      // Clear the input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
 
-  const applyImageTo = (target: 'home' | 'lock' | 'all' | 'headers') => {
-    if (!uploadedImageUrl) return;
-
-    let operations = [];
-    let description = '';
-
-    switch (target) {
-      case 'home':
-        operations = [
-          { op: 'replace', path: '/homeLayer/backgroundImage', value: uploadedImageUrl }
-        ];
-        description = 'Applied to Home screen';
-        break;
-      
-      case 'lock':
-        operations = [
-          { op: 'replace', path: '/lockLayer/backgroundImage', value: uploadedImageUrl }
-        ];
-        description = 'Applied to Lock screen';
-        break;
-      
-      case 'all':
-        operations = [
-          { op: 'replace', path: '/lockLayer/backgroundImage', value: uploadedImageUrl },
-          { op: 'replace', path: '/homeLayer/backgroundImage', value: uploadedImageUrl }
-        ];
-        description = 'Applied to all main screens (Lock + Home)';
-        break;
-      
-      case 'headers':
-        operations = [
-          { op: 'replace', path: '/homeLayer/header/backgroundImage', value: uploadedImageUrl },
-          { op: 'replace', path: '/homeLayer/footer/backgroundImage', value: uploadedImageUrl }
-        ];
-        description = 'Applied to headers and footers';
-        break;
-    }
-
-    const patchEntry: ThemePatch = {
-      id: uuidv4(),
-      operations,
-      userPrompt: `Apply uploaded image: ${description}`,
-      pageId: 'ai-chat',
-      timestamp: new Date(),
-      theme: theme
-    };
-
-    applyPatch(patchEntry);
-
-    // Add confirmation message
-    const confirmMessage: Message = {
-      role: 'ai',
-      text: `✅ ${description}. Your wallet theme has been updated!`,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, confirmMessage]);
-
-    toast.success(`🎨 ${description}!`);
-  };
-
-  const removeUploadedImage = () => {
-    setUploadedImageUrl('');
-    notifiedRef.current = null;
-    toast.success('Image removed');
-  };
-
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const message = input.trim();
-    if (!message || isProcessing) return;
-
-    // Detect language from user input
-    const detectedLang = detectLang(message);
-
-    // Добавляем сообщение пользователя
-    const userMessage: Message = {
-      role: 'user',
-      text: message,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsProcessing(true);
-
-    try {
-      console.log('[AI] processing command:', message);
-      const result = await handleUserMessage(message, detectedLang);
-      console.log('[AI] patch result:', result.patch);
-
-      // Log patch operations count for mass operations
-      if (result.patch.length > 0) {
-        console.log(`[STORE] AI patch ops ${result.patch.length}`);
-      }
-
-      // Применяем патч локально (оптимистично)
-      if (result.patch.length > 0) {
-        const patchEntry: ThemePatch = {
-          id: uuidv4(),
-          operations: result.patch,
-          userPrompt: message,
-          pageId: 'global', // Default page
-          timestamp: new Date(),
-          theme: theme // Current theme state
-        };
-        
-        applyPatch(patchEntry);
-        
-        // Отправляем на backend (fire-and-forget)
-        fetch('/api/theme/apply', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ patch: result.patch })
-        }).catch(error => {
-          console.warn('[AI] backend save failed:', error);
-        });
-      }
-
-      // Добавляем ответ AI (agent now handles localization)
-      const aiMessage: Message = {
-        role: 'ai',
-        text: result.message,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiMessage]);
-
-    } catch (error) {
-      console.error('[AI] processing error:', error);
-      const errorMessage: Message = {
-        role: 'ai',
-        text: detectedLang === 'ru' 
-          ? 'Произошла ошибка при обработке команды. Попробуйте ещё раз.'
-          : 'An error occurred while processing the command. Please try again.',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsProcessing(false);
+  const getAuthStatusDisplay = () => {
+    switch (authStatus) {
+      case 'checking':
+        return { icon: AlertCircle, text: 'Checking...', color: 'text-yellow-500' };
+      case 'wallet-connected':
+        return { icon: AlertCircle, text: 'Wallet connected, authenticating...', color: 'text-yellow-500' };
+      case 'authenticated':
+        return { icon: CheckCircle2, text: 'Fully authenticated', color: 'text-green-500' };
+      case 'disconnected':
+        return { icon: Wallet, text: 'Connect wallet to upload', color: 'text-red-500' };
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend(e as any);
-    }
-  };
+  const statusDisplay = getAuthStatusDisplay();
 
   return (
-    <div className="flex h-full flex-col">
-      <CardHeader className="pb-4 flex-shrink-0">
-        <CardTitle className="text-white flex items-center gap-2">
-          <Wand2 className="h-5 w-5 text-purple-400" />
-          AI Theme Chat
-        </CardTitle>
-        <p className="text-sm text-white/70">
-          Modify wallet theme with simple commands or upload images
-        </p>
-      </CardHeader>
-
-      <CardContent className="flex flex-col flex-1 gap-4 overflow-hidden">
-        {/* Message History with native scroll */}
-        <div 
-          ref={viewportRef}
-          className="flex-1 overflow-auto border border-white/10 rounded p-3 bg-black/20"
-        >
-          {messages.length === 0 ? (
-            <div className="text-white/50 text-sm">
-              Write a command to change the theme or upload an image...
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {messages.map((msg, i) => (
-                <div key={i} className={`text-sm ${
-                  msg.role === 'user' 
-                    ? 'text-blue-300 font-medium' 
-                    : 'text-green-300'
-                }`}>
-                  <div className="whitespace-pre-wrap">{msg.text}</div>
-                  <div className="text-xs text-white/40 mt-1">
-                    {msg.timestamp.toLocaleTimeString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {isProcessing && (
-            <div className="text-sm text-purple-300 animate-pulse">
-              Processing command...
-            </div>
-          )}
+    <div className="flex flex-col h-full bg-black/20 backdrop-blur-sm">
+      {/* Header */}
+      <div className="p-4 border-b border-white/10">
+        <h3 className="text-lg font-semibold text-white mb-2">AI Theme Assistant</h3>
+        <div className="flex items-center gap-2">
+          <statusDisplay.icon className={`h-4 w-4 ${statusDisplay.color}`} />
+          <span className={`text-sm ${statusDisplay.color}`}>
+            {statusDisplay.text}
+          </span>
         </div>
-
-        {/* Input Section - Fixed at bottom */}
-        <div className="flex-shrink-0 space-y-2">
-          <form className="flex flex-col gap-2" onSubmit={handleSend}>
-            <div className="flex items-center gap-2">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Try: Make all buttons #FF5C00 · Dark theme for the whole wallet · Font: Sora"
-                className="flex-1 min-h-[100px] max-h-[200px] resize-none overflow-y-auto bg-white/10 border-white/20 text-white placeholder:text-white/40"
-                disabled={isProcessing}
-                rows={3}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="p-2 rounded-lg bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/20 disabled:opacity-50 transition-colors"
-                aria-label="Upload image"
-                title="Upload background image"
-              >
-                <Paperclip className={`h-5 w-5 ${isUploading ? 'animate-pulse' : ''}`} />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFilePick}
-              />
-            </div>
-
-            {/* Uploaded image preview and enhanced application options */}
-            {uploadedImageUrl && (
-              <div className="flex flex-col gap-2 p-3 bg-white/5 border border-white/10 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <img 
-                    src={uploadedImageUrl} 
-                    alt="Uploaded background" 
-                    className="h-12 w-12 rounded-lg object-cover border border-white/20"
-                  />
-                  <div className="flex-1 text-sm text-white/80">
-                    Background image ready to apply
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeUploadedImage}
-                    className="text-white/60 hover:text-white h-8 w-8 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                {/* Application buttons */}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyImageTo('home')}
-                    className="border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-xs"
-                  >
-                    Apply to Home
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyImageTo('lock')}
-                    className="border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-xs"
-                  >
-                    Apply to Lock
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyImageTo('all')}
-                    className="border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-xs font-medium"
-                  >
-                    Apply to All
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyImageTo('headers')}
-                    className="border-white/20 text-white/80 hover:text-white hover:bg-white/10 text-xs"
-                  >
-                    Apply to Headers
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isProcessing || !input.trim()}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {isProcessing ? 'Processing...' : 'Send'}
-            </Button>
-          </form>
-
-          <div className="text-xs text-white/40">
-            💡 Examples: "Make all buttons #FF5C00", "Dark theme for the whole wallet", "Font: Sora"
-            <br />
-            ⌨️ Tip: Press Shift+Enter for new line, Enter to send, type "help" for more commands
-            <br />
-            🖼️ Upload images (max 8MB) and apply them as backgrounds to different wallet layers
+        {walletProfile && (
+          <div className="text-xs text-white/60 mt-1">
+            {walletProfile.wallet_address?.slice(0, 8)}...{walletProfile.wallet_address?.slice(-6)}
           </div>
+        )}
+      </div>
+
+      {/* Messages */}
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center text-white/60 py-8">
+              <Image className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium mb-2">Welcome to AI Theme Assistant</p>
+              <p className="text-sm">Upload an image or ask me to help customize your wallet theme</p>
+              {authStatus !== 'authenticated' && (
+                <p className="text-xs text-yellow-400 mt-2">
+                  Connect and authenticate your wallet to start uploading images
+                </p>
+              )}
+            </div>
+          )}
+          
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <Card className={`max-w-[80%] ${
+                message.type === 'user' 
+                  ? 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30' 
+                  : 'bg-white/5 border-white/10'
+              }`}>
+                <CardContent className="p-3">
+                  {message.imageUrl && (
+                    <img 
+                      src={message.imageUrl} 
+                      alt="Uploaded" 
+                      className="w-full max-w-sm rounded mb-2 object-cover"
+                    />
+                  )}
+                  <p className="text-white text-sm">{message.content}</p>
+                  <p className="text-white/40 text-xs mt-1">
+                    {message.timestamp.toLocaleTimeString()}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
         </div>
-      </CardContent>
+        <div ref={messagesEndRef} />
+      </ScrollArea>
+
+      {/* Input */}
+      <div className="p-4 border-t border-white/10">
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={authStatus === 'authenticated' ? "Ask me to customize your wallet..." : "Connect wallet first..."}
+              className="bg-white/5 border-white/20 text-white placeholder:text-white/40"
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              disabled={isProcessing || isAuthenticating}
+            />
+          </div>
+          
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            className="hidden"
+          />
+          
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading || authStatus !== 'authenticated'}
+            variant="outline"
+            size="icon"
+            className="bg-white/5 border-white/20 hover:bg-white/10"
+          >
+            <Upload className={`h-4 w-4 ${isUploading ? 'animate-spin' : ''}`} />
+          </Button>
+          
+          <Button
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || isProcessing || isAuthenticating}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default ThemeChat;
