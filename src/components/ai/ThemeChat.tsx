@@ -3,11 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Wand2, Send } from 'lucide-react';
+import { Wand2, Send, Paperclip, X } from 'lucide-react';
 import { handleUserMessage } from '@/ai/agent';
 import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
 import type { ThemePatch } from '@/state/themeStore';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadToStorage } from '@/ai/storage';
+import { toast } from 'sonner';
 
 interface Message {
   role: 'user' | 'ai';
@@ -25,9 +27,13 @@ export default function ThemeChat() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
   const applyPatch = useThemeStore(s => s.applyPatch);
   const theme = useThemeStore(s => s.theme);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const notifiedRef = useRef<string | null>(null);
 
   // Диагностика store instance
   console.log('[AI] theme store id', THEME_STORE_INSTANCE_ID);
@@ -40,7 +46,108 @@ export default function ThemeChat() {
     }
   }, [messages]);
 
-  const handleSend = async () => {
+  const handleFilePick = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    console.log('[UPLOAD] start', file.name, 'size=', file.size, 'type=', file.type);
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (8MB limit)
+    const maxSize = 8 * 1024 * 1024; // 8MB
+    if (file.size > maxSize) {
+      toast.error('Max file size is 8MB');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Generate path: user-uploads/YYYY/MM/DD/timestamp-random.ext
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const timestamp = now.getTime();
+      const random = Math.random().toString(36).substring(2, 8);
+      const extension = file.name.split('.').pop() || 'jpg';
+      const path = `user-uploads/${year}/${month}/${day}/${timestamp}-${random}.${extension}`;
+
+      const publicUrl = await uploadToStorage(file, path);
+      
+      console.log('[STORAGE] uploaded url=', publicUrl);
+
+      // Guard against double calls in StrictMode
+      if (publicUrl && publicUrl !== notifiedRef.current) {
+        notifiedRef.current = publicUrl;
+        setUploadedImageUrl(publicUrl);
+        
+        // Add system message
+        const systemMessage: Message = {
+          role: 'ai',
+          text: 'Image uploaded. 1024×1024 recommended. Apply to Home or Lock?',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, systemMessage]);
+        
+        toast.success('🖼️ Image uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('[UPLOAD] error:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const applyImageTo = (layer: 'home' | 'lock') => {
+    if (!uploadedImageUrl) return;
+
+    const path = layer === 'home' 
+      ? '/homeLayer/backgroundImage' 
+      : '/lockLayer/backgroundImage';
+
+    const patchEntry: ThemePatch = {
+      id: uuidv4(),
+      operations: [
+        { op: 'replace', path, value: uploadedImageUrl }
+      ],
+      userPrompt: `Apply uploaded image to ${layer} background`,
+      pageId: 'ai-chat',
+      timestamp: new Date(),
+      theme: theme
+    };
+
+    applyPatch(patchEntry);
+
+    // Add confirmation message
+    const confirmMessage: Message = {
+      role: 'ai',
+      text: `Applied to ${layer === 'home' ? 'Home' : 'Lock'} background.`,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, confirmMessage]);
+
+    toast.success(`🎨 Applied to ${layer === 'home' ? 'Home' : 'Lock'} background!`);
+  };
+
+  const removeUploadedImage = () => {
+    setUploadedImageUrl('');
+    notifiedRef.current = null;
+    toast.success('Image removed');
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
     const message = input.trim();
     if (!message || isProcessing) return;
 
@@ -116,7 +223,7 @@ export default function ThemeChat() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSend(e as any);
     }
   };
 
@@ -167,29 +274,91 @@ export default function ThemeChat() {
 
         {/* Input Section - Fixed at bottom */}
         <div className="flex-shrink-0 space-y-2">
-          <div className="flex gap-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Try: Make all buttons #FF5C00 · Dark theme for the whole wallet · Font: Sora"
-              className="flex-1 min-h-[100px] max-h-[200px] resize-none overflow-y-auto bg-white/10 border-white/20 text-white placeholder:text-white/40"
-              disabled={isProcessing}
-              rows={3}
-            />
+          <form className="flex flex-col gap-2" onSubmit={handleSend}>
+            <div className="flex items-center gap-2">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Try: Make all buttons #FF5C00 · Dark theme for the whole wallet · Font: Sora"
+                className="flex-1 min-h-[100px] max-h-[200px] resize-none overflow-y-auto bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                disabled={isProcessing}
+                rows={3}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="p-2 rounded-lg bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/20 disabled:opacity-50 transition-colors"
+                aria-label="Upload image"
+              >
+                <Paperclip className={`h-5 w-5 ${isUploading ? 'animate-pulse' : ''}`} />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFilePick}
+              />
+            </div>
+
+            {/* Uploaded image preview and actions */}
+            {uploadedImageUrl && (
+              <div className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 rounded">
+                <img 
+                  src={uploadedImageUrl} 
+                  alt="Uploaded" 
+                  className="h-10 w-10 rounded object-cover"
+                />
+                <div className="flex-1 flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyImageTo('home')}
+                    className="border-white/20 text-white/80 hover:text-white"
+                  >
+                    Apply to Home
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyImageTo('lock')}
+                    className="border-white/20 text-white/80 hover:text-white"
+                  >
+                    Apply to Lock
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeUploadedImage}
+                    className="text-white/60 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Button
-              onClick={handleSend}
+              type="submit"
               disabled={isProcessing || !input.trim()}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 self-end"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-4 w-4 mr-2" />
+              {isProcessing ? 'Processing...' : 'Send'}
             </Button>
-          </div>
+          </form>
 
           <div className="text-xs text-white/40">
             💡 Examples: "Make all buttons #FF5C00", "Dark theme for the whole wallet", "Font: Sora"
             <br />
             ⌨️ Tip: Press Shift+Enter for new line, Enter to send, type "help" for more commands
+            <br />
+            🖼️ Upload images and apply them as backgrounds to Home or Lock layers
           </div>
         </div>
       </CardContent>
