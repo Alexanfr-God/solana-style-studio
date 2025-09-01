@@ -95,7 +95,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
       pageId: selectedPageId,
       presetId: selectedPresetId || undefined,
       userPrompt: userPrompt.trim(),
-      uploadedImageUrl: uploadedImageUrl || undefined
+      imageUrl: uploadedImageUrl || undefined
     };
 
     setIsProcessing(true);

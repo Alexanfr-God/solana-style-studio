@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ApiResponse<T = any> {
@@ -24,7 +23,7 @@ export interface PatchRequest {
   presetId?: string;
   userPrompt: string;
   mode?: string;
-  imageUrl?: string;
+  imageUrl?: string; // Changed from uploadedImageUrl to imageUrl
   walletContext?: any;
   sessionId?: string;
   currentTheme?: any;
@@ -39,6 +38,7 @@ export interface PatchResponse {
   error?: string;
   explanation?: string;
   styleChanges?: any;
+  // Removed imageUrl as it's not returned by llm-patch
 }
 
 export class ApiClient {
