@@ -1,5 +1,5 @@
 
-import { FC, ReactNode, useMemo, createContext, useState, useContext, useCallback } from 'react';
+import { FC, ReactNode, useMemo, createContext, useState, useContext, useCallback, useEffect } from 'react';
 import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
@@ -10,23 +10,41 @@ import { TorusWalletAdapter as TorusAdapter } from '@solana/wallet-adapter-torus
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { toast } from "sonner";
-import { useNavigate } from 'react-router-dom';
+import { requestNonce, verifySignature } from '@/services/walletAuthService';
+import bs58 from 'bs58';
 
 // Import the styles for the modal
 import '@solana/wallet-adapter-react-ui/styles.css';
 
 interface WalletContextExtendedProps {
-  signMessageOnConnect: (publicKey: string) => Promise<void>;
+  // Solana wallet state
   isAuthenticating: boolean;
   isAuthenticated: boolean;
   hasRejectedSignature: boolean;
+  
+  // Backend auth state
+  userId: string | null;
+  authToken: string | null;
+  walletProfile: any | null;
+  
+  // Methods
+  signMessageOnConnect: (publicKey: string) => Promise<void>;
+  setAuthSession: (session: { userId: string; token: string; profile: any }) => void;
+  clearAuthSession: () => void;
+  handleWalletDisconnect: () => void;
 }
 
 const WalletContextExtended = createContext<WalletContextExtendedProps>({
-  signMessageOnConnect: async () => {},
   isAuthenticating: false,
   isAuthenticated: false,
-  hasRejectedSignature: false
+  hasRejectedSignature: false,
+  userId: null,
+  authToken: null,
+  walletProfile: null,
+  signMessageOnConnect: async () => {},
+  setAuthSession: () => {},
+  clearAuthSession: () => {},
+  handleWalletDisconnect: () => {}
 });
 
 export const useExtendedWallet = () => useContext(WalletContextExtended);
@@ -54,7 +72,7 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
   // Show wallet connection status notifications
   const onError = (error: any) => {
     toast.error(`Wallet error: ${error?.message || 'Unknown error'}`);
-    console.error(error);
+    console.error('[WALLET_ERROR]', error);
   };
 
   return (
@@ -76,43 +94,146 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
 
 // Separate component to handle authentication logic
 const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const { connected, publicKey, signMessage } = useWallet();
+  const { connected, publicKey, signMessage, disconnect } = useWallet();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasRejectedSignature, setHasRejectedSignature] = useState(false);
   
+  // Backend auth state
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [walletProfile, setWalletProfile] = useState<any | null>(null);
+
+  // Load auth state from localStorage on mount
+  useEffect(() => {
+    const savedToken = localStorage.getItem('wcc_wallet_token');
+    const savedProfile = localStorage.getItem('wcc_wallet_profile');
+    
+    if (savedToken && savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        setAuthToken(savedToken);
+        setWalletProfile(profile);
+        setUserId(profile.id);
+        setIsAuthenticated(true);
+        console.log('[AUTH] Restored session from localStorage');
+      } catch (error) {
+        console.error('[AUTH] Failed to restore session:', error);
+        localStorage.removeItem('wcc_wallet_token');
+        localStorage.removeItem('wcc_wallet_profile');
+      }
+    }
+  }, []);
+
+  // Clear auth state when wallet disconnects
+  useEffect(() => {
+    if (!connected) {
+      handleWalletDisconnect();
+    }
+  }, [connected]);
+
+  const setAuthSession = useCallback((session: { userId: string; token: string; profile: any }) => {
+    setUserId(session.userId);
+    setAuthToken(session.token);
+    setWalletProfile(session.profile);
+    setIsAuthenticated(true);
+    
+    // Persist to localStorage
+    if (session.token) {
+      localStorage.setItem('wcc_wallet_token', session.token);
+    }
+    localStorage.setItem('wcc_wallet_profile', JSON.stringify(session.profile));
+    
+    console.log('[AUTH] Session set:', session.profile?.wallet_address);
+  }, []);
+
+  const clearAuthSession = useCallback(() => {
+    setUserId(null);
+    setAuthToken(null);
+    setWalletProfile(null);
+    setIsAuthenticated(false);
+    setHasRejectedSignature(false);
+    
+    // Clear localStorage
+    localStorage.removeItem('wcc_wallet_token');
+    localStorage.removeItem('wcc_wallet_profile');
+    
+    console.log('[AUTH] Session cleared');
+  }, []);
+
+  const handleWalletDisconnect = useCallback(() => {
+    clearAuthSession();
+    console.log('[AUTH] Wallet disconnected, auth cleared');
+  }, [clearAuthSession]);
+  
   const signMessageOnConnect = useCallback(async (publicKeyStr: string) => {
-    if (!signMessage || !publicKey || hasRejectedSignature) return;
+    if (!signMessage || !publicKey || hasRejectedSignature) {
+      console.log('[AUTH] Sign blocked:', { signMessage: !!signMessage, publicKey: !!publicKey, hasRejectedSignature });
+      return;
+    }
     
     try {
       setIsAuthenticating(true);
+      console.log('[AUTH] Starting nonce request...');
       
-      const message = new TextEncoder().encode(
-        "Welcome to Wallet Coast Customs ⚡ Your identity, your style, your wallet. Let's customize the future."
-      );
+      const address = publicKey.toString();
+      const { nonce, message } = await requestNonce(address, 'solana');
+      console.log('[AUTH] Nonce received, requesting signature...');
       
-      // This will trigger the Phantom wallet interface to show the custom message
-      const signature = await signMessage(message);
+      const messageBytes = new TextEncoder().encode(message);
+      const sigBytes = await signMessage(messageBytes);
+      const signature = bs58.encode(sigBytes);
       
-      // If we got here, the user signed the message successfully
-      setIsAuthenticated(true);
+      console.log('[AUTH] Signature received, verifying...');
+      const { token, profile } = await verifySignature({
+        address,
+        chain: 'solana',
+        signature,
+        nonce,
+        message,
+        publicKey: address
+      });
+      
+      // Set auth session
+      setAuthSession({
+        userId: profile.id,
+        token: token || '',
+        profile
+      });
+      
       setHasRejectedSignature(false);
-      console.log("Message signed successfully:", signature);
+      toast.success('Wallet authenticated successfully');
+      console.log('[AUTH] Verify OK, session saved');
     } catch (error: any) {
-      console.error("Error signing message:", error);
+      console.error('[AUTH] Error during authentication:', error);
       setHasRejectedSignature(true);
-      toast.error(`Signature error: ${error?.message || 'User declined to sign'}`);
+      toast.error(`Authentication failed: ${error?.message || 'User declined to sign'}`);
     } finally {
       setIsAuthenticating(false);
     }
-  }, [publicKey, signMessage, hasRejectedSignature]);
+  }, [publicKey, signMessage, hasRejectedSignature, setAuthSession]);
 
   const value = useMemo(() => ({
-    signMessageOnConnect,
+    // Solana wallet state
     isAuthenticating,
     isAuthenticated,
-    hasRejectedSignature
-  }), [signMessageOnConnect, isAuthenticating, isAuthenticated, hasRejectedSignature]);
+    hasRejectedSignature,
+    
+    // Backend auth state
+    userId,
+    authToken,
+    walletProfile,
+    
+    // Methods
+    signMessageOnConnect,
+    setAuthSession,
+    clearAuthSession,
+    handleWalletDisconnect
+  }), [
+    isAuthenticating, isAuthenticated, hasRejectedSignature,
+    userId, authToken, walletProfile,
+    signMessageOnConnect, setAuthSession, clearAuthSession, handleWalletDisconnect
+  ]);
 
   return (
     <WalletContextExtended.Provider value={value}>

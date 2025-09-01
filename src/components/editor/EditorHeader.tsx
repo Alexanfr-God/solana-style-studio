@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import WalletSelector from '../wallet/WalletSelector';
 
 const EditorHeader = () => {
   return (
@@ -34,8 +33,6 @@ const EditorHeader = () => {
             </svg>
           </span>
         </Button>
-        
-        <WalletSelector />
       </div>
     </header>
   );

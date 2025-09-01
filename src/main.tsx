@@ -13,6 +13,7 @@ if (typeof window !== 'undefined') {
 }
 
 import App from './App.tsx';
+import { WalletContextProvider } from '@/context/WalletContextProvider';
 // Make sure all CSS imports are in the correct order
 import './styles/index.css'; // This already imports all other CSS files
 import './App.css';
@@ -32,9 +33,11 @@ console.log('User agent:', navigator.userAgent);
 console.log('🚀 Application initialized successfully!');
 console.log('🎯 Ready for wallet customization!');
 
-// Temporarily remove StrictMode to debug render loops
+// Wrap App with WalletContextProvider for wallet state management
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <App />
+  <WalletContextProvider>
+    <App />
+  </WalletContextProvider>
 );
 
 console.log('Main rendering completed');
