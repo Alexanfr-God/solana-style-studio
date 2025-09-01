@@ -18,6 +18,29 @@ export interface ChatResponse {
   styleChanges?: any;
 }
 
+export interface PatchRequest {
+  themeId: string;
+  pageId: string;
+  presetId?: string;
+  userPrompt: string;
+  mode?: string;
+  imageUrl?: string;
+  walletContext?: any;
+  sessionId?: string;
+  currentTheme?: any;
+}
+
+export interface PatchResponse {
+  success: boolean;
+  patch?: any[];
+  theme?: any;
+  response?: string;
+  userText?: string;
+  error?: string;
+  explanation?: string;
+  styleChanges?: any;
+}
+
 export class ApiClient {
   /**
    * Chat with AI assistant via llm-patch
@@ -156,3 +179,99 @@ export class ApiClient {
     }
   }
 }
+
+// Wrapper function for theme patching
+export const callPatch = async (request: PatchRequest): Promise<PatchResponse> => {
+  try {
+    console.log('[API] callPatch request:', request);
+
+    const { data, error } = await supabase.functions.invoke('llm-patch', {
+      body: {
+        prompt: request.userPrompt,
+        themeId: request.themeId,
+        pageId: request.pageId,
+        presetId: request.presetId,
+        imageUrl: request.imageUrl,
+        mode: request.mode || 'patch',
+        contextData: request.walletContext,
+        sessionId: request.sessionId,
+        currentTheme: request.currentTheme
+      }
+    });
+
+    if (error) {
+      console.error('[API] callPatch error:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+
+    console.log('[API] callPatch response:', data);
+
+    return {
+      success: true,
+      patch: data.patch,
+      theme: data.theme,
+      response: data.response,
+      userText: data.userText,
+      explanation: data.explanation,
+      styleChanges: data.styleChanges
+    };
+  } catch (error) {
+    console.error('[API] callPatch failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+};
+
+// Function to get presets (from public files or API)
+export const getPresets = async (): Promise<any[]> => {
+  try {
+    console.log('[API] Loading presets from manifest...');
+    
+    const response = await fetch('/themes/manifest.json');
+    if (!response.ok) {
+      throw new Error('Failed to load presets manifest');
+    }
+    
+    const presets = await response.json();
+    console.log('[API] Loaded presets:', presets.length);
+    
+    return presets;
+  } catch (error) {
+    console.error('[API] Failed to load presets:', error);
+    return [];
+  }
+};
+
+// Function to prepare theme for NFT minting
+export const prepareMint = async (themeId: string): Promise<{ url: string; walletTarget: string }> => {
+  try {
+    console.log('[API] Preparing theme for mint:', themeId);
+
+    const { data, error } = await supabase.functions.invoke('export_theme', {
+      body: {
+        themeId,
+        format: 'nft'
+      }
+    });
+
+    if (error) {
+      console.error('[API] Mint preparation error:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('[API] Mint preparation successful:', data);
+
+    return {
+      url: data.exportUrl || data.url,
+      walletTarget: data.walletTarget || 'phantom'
+    };
+  } catch (error) {
+    console.error('[API] prepareMint failed:', error);
+    throw error;
+  }
+};
