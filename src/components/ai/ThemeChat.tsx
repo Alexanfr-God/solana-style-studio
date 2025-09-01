@@ -6,7 +6,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send, Upload, Image, AlertCircle, CheckCircle2, Wallet } from 'lucide-react';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
-import { supabase } from '@/integrations/supabase/client';
 import { FileUploadService } from '@/services/fileUploadService';
 import { toast } from 'sonner';
 
@@ -27,33 +26,23 @@ const ThemeChat = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const { isAuthenticated, userId, walletProfile, isAuthenticating } = useExtendedWallet();
+  const { isAuthenticated, walletProfile, isAuthenticating } = useExtendedWallet();
 
-  // Check authentication status
+  // Simplified authentication check - only use wallet profile
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        console.log('🔐 Supabase auth check:', { user: !!user, error, userId, isAuthenticated });
-        
-        if (user && userId && isAuthenticated) {
-          setAuthStatus('authenticated');
-          console.log('✅ Fully authenticated - Supabase + Wallet');
-        } else if (isAuthenticated && walletProfile) {
-          setAuthStatus('wallet-connected');
-          console.log('⚠️ Wallet connected but no Supabase session');
-        } else {
-          setAuthStatus('disconnected');
-          console.log('❌ Not authenticated');
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setAuthStatus('disconnected');
-      }
-    };
-
-    checkAuth();
-  }, [userId, isAuthenticated, walletProfile]);
+    console.log('🔐 Wallet auth check:', { isAuthenticated, walletProfile: !!walletProfile, isAuthenticating });
+    
+    if (isAuthenticated && walletProfile) {
+      setAuthStatus('authenticated');
+      console.log('✅ Wallet authenticated:', walletProfile.wallet_address?.slice(0, 8) + '...');
+    } else if (isAuthenticating) {
+      setAuthStatus('wallet-connected');
+      console.log('⚠️ Wallet connecting...');
+    } else {
+      setAuthStatus('disconnected');
+      console.log('❌ Wallet not connected');
+    }
+  }, [isAuthenticated, walletProfile, isAuthenticating]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -89,16 +78,10 @@ const ThemeChat = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check authentication before upload
-    if (authStatus !== 'authenticated') {
+    // Check wallet authentication
+    if (authStatus !== 'authenticated' || !walletProfile) {
       toast.error('Please connect and authenticate your wallet first');
-      console.log('❌ Upload blocked - auth status:', authStatus);
-      return;
-    }
-
-    if (!userId) {
-      toast.error('No user ID available. Please reconnect your wallet.');
-      console.log('❌ Upload blocked - no userId:', { userId, isAuthenticated });
+      console.log('❌ Upload blocked - auth status:', authStatus, 'walletProfile:', !!walletProfile);
       return;
     }
 
@@ -114,19 +97,14 @@ const ThemeChat = () => {
       console.log('📤 Starting image upload:', {
         fileName: file.name,
         size: file.size,
-        userId,
+        walletProfileId: walletProfile.id,
         authStatus
       });
 
-      // Verify auth one more time before upload
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('Authentication expired. Please reconnect your wallet.');
-      }
-
+      // Use wallet profile ID for upload
       const result = await FileUploadService.uploadImageFromFile(
         file,
-        userId,
+        walletProfile.id, // Use wallet profile ID instead of userId
         'theme-chat-images'
       );
 
@@ -173,9 +151,9 @@ const ThemeChat = () => {
       case 'checking':
         return { icon: AlertCircle, text: 'Checking...', color: 'text-yellow-500' };
       case 'wallet-connected':
-        return { icon: AlertCircle, text: 'Wallet connected, authenticating...', color: 'text-yellow-500' };
+        return { icon: AlertCircle, text: 'Wallet connecting...', color: 'text-yellow-500' };
       case 'authenticated':
-        return { icon: CheckCircle2, text: 'Fully authenticated', color: 'text-green-500' };
+        return { icon: CheckCircle2, text: 'Wallet authenticated', color: 'text-green-500' };
       case 'disconnected':
         return { icon: Wallet, text: 'Connect wallet to upload', color: 'text-red-500' };
     }
