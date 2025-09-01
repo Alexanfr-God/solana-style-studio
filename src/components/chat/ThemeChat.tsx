@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Undo2, Redo2, Send, GitCompare, Wand2, History } from 'lucide-react';
+import { Loader2, Undo2, Redo2, Send, GitCompare, Wand2, History, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThemeStore, useWalletTheme, useThemeHistory, useThemeActions } from '@/state/themeStore';
 import { callPatch, getPresets, type PatchRequest } from '@/lib/api/client';
@@ -194,7 +195,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
               WCC Maestro - Theme Editor
             </CardTitle>
             <p className="text-sm text-white/70 mt-1">
-              AI-powered page-aware theme customization
+              AI-powered page-aware theme customization with wallet integration
             </p>
           </div>
           
@@ -292,7 +293,7 @@ const ThemeChat: React.FC<ThemeChatProps> = ({ themeId, initialTheme }) => {
             disabled={isLoading || isProcessing}
           />
           <p className="text-xs text-white/50">
-            Tip: Press Ctrl/Cmd + Enter to apply changes
+            💡 Tip: Press Ctrl/Cmd + Enter to apply changes
           </p>
         </div>
 
