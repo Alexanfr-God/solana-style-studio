@@ -6,8 +6,6 @@ export { default as ModeSelector } from './ModeSelector';
 export { default as ElementSelector } from './ElementSelector';
 export { default as ChatStarters } from './ChatStarters';
 export { default as PatchCompare } from './PatchCompare';
-export { default as SmartEditAssistant } from './SmartEditAssistant';
-export { default as EnhancedSmartEditAssistant } from './EnhancedSmartEditAssistant';
 export { default as ElementContextDisplay } from './ElementContextDisplay';
 export { default as StructurePanel } from './StructurePanel';
 
