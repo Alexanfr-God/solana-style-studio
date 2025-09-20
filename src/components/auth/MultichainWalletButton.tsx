@@ -42,16 +42,7 @@ const MultichainWalletButton: React.FC = () => {
     });
   }, [isAppKitReady, isInitializing, isConnected, isAuthenticated, address, walletProfile]);
 
-  // Wait for AppKit to be ready before attempting authentication
-  useEffect(() => {
-    if (isConnected && address && !isAuthenticated && isAppKitReady) {
-      console.log('🔐 Wallet connected, starting authentication...', {
-        address: address.slice(0, 10) + '...',
-        network: caipNetwork?.name
-      });
-      handleAuthentication();
-    }
-  }, [isConnected, address, isAuthenticated, isAppKitReady, caipNetwork]);
+  // Remove auto-authentication - user must explicitly authenticate after connection
 
   const handleAuthentication = useCallback(async () => {
     if (!address || !caipNetwork) {
@@ -100,6 +91,7 @@ const MultichainWalletButton: React.FC = () => {
     }
   }, [address, caipNetwork, setAuthSession]);
 
+  // Open wallet selection modal
   const handleConnect = useCallback(async () => {
     if (!isAppKitReady || !open) {
       toast.error('Wallet connector not ready');
@@ -107,12 +99,23 @@ const MultichainWalletButton: React.FC = () => {
     }
 
     try {
+      console.log('🔌 Opening wallet selection modal');
       await open();
     } catch (error: any) {
       console.error('❌ Failed to open wallet modal:', error);
       toast.error('Failed to open wallet selector');
     }
   }, [isAppKitReady, open]);
+
+  // Authenticate after wallet is connected
+  const handleAuthenticate = useCallback(async () => {
+    if (!isConnected || !address) {
+      toast.error('Please connect wallet first');
+      return;
+    }
+
+    await handleAuthentication();
+  }, [isConnected, address, handleAuthentication]);
 
   const handleDisconnect = useCallback(async () => {
     try {
@@ -131,7 +134,6 @@ const MultichainWalletButton: React.FC = () => {
   };
 
   const isBusy = isInitializing;
-  const isConnectedAndAuth = isConnected && isAuthenticated && walletProfile;
 
   // Show loading state while initializing
   if (!isAppKitReady) {
@@ -143,26 +145,64 @@ const MultichainWalletButton: React.FC = () => {
     );
   }
 
+  // Show different states based on connection and authentication
+  if (isConnected && address) {
+    if (isAuthenticated && walletProfile) {
+      // Authenticated state
+      return (
+        <div className="relative z-10">
+          <Button 
+            variant="default"
+            className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary shadow-[0_0_10px_rgba(153,69,255,0.4)]"
+            onClick={handleDisconnect}
+          >
+            <Wallet className="h-4 w-4" />
+            <span>{shortenAddress(address)}</span>
+            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+          </Button>
+        </div>
+      );
+    } else {
+      // Connected but not authenticated
+      return (
+        <div className="relative z-10">
+          <Button 
+            variant="outline"
+            className="flex items-center gap-2 bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20"
+            onClick={handleAuthenticate}
+            disabled={isBusy}
+          >
+            {isBusy ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Authenticating...</span>
+              </>
+            ) : (
+              <>
+                <Wallet className="h-4 w-4" />
+                <span>{shortenAddress(address)} - Authenticate</span>
+                <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse"></div>
+              </>
+            )}
+          </Button>
+        </div>
+      );
+    }
+  }
+
+  // Not connected state
   return (
     <div className="relative z-10">
       <Button 
-        variant={isConnectedAndAuth ? "default" : "outline"} 
-        className={`flex items-center gap-2 transition-all duration-300 ${
-          isConnectedAndAuth ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-background/50 backdrop-blur-sm'
-        }`}
+        variant="outline"
+        className="flex items-center gap-2 bg-background/50 backdrop-blur-sm"
+        onClick={handleConnect}
         disabled={isBusy}
-        onClick={isConnectedAndAuth ? handleDisconnect : handleConnect}
       >
         {isBusy ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
             <span>Processing...</span>
-          </>
-        ) : isConnectedAndAuth ? (
-          <>
-            <Wallet className="h-4 w-4" />
-            <span>{shortenAddress(address || '')}</span>
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
           </>
         ) : (
           <>
