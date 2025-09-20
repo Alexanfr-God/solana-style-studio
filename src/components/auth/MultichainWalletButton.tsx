@@ -43,64 +43,94 @@ const MultichainWalletButton: React.FC = () => {
         const signature = Array.from(signedMessage.signature)
           .map((b: number) => b.toString(16).padStart(2, '0'))
           .join('');
-        console.log('✅ Solana message signed successfully');
+        
+        if (!signature || signature.length === 0) {
+          throw new Error('Failed to generate Solana signature');
+        }
+        
+        console.log('✅ Solana message signed successfully, signature length:', signature.length);
         return signature;
       } else {
-        // For EVM - try multiple signing methods
+        // For EVM - try multiple signing methods with correct parameter order
         console.log('📝 Using EVM signing method');
         const ethereum = (window as any).ethereum;
         if (!ethereum) {
           throw new Error('No Ethereum provider found');
         }
 
-        // Try eth_sign first (more compatible)
+        let signature: string | null = null;
+
+        // Try personal_sign first (most widely supported)
         try {
-          console.log('🔐 Trying eth_sign method...');
-          const signature = await ethereum.request({
-            method: 'eth_sign',
-            params: [address, `0x${Buffer.from(message, 'utf8').toString('hex')}`]
+          console.log('🔐 Trying personal_sign method...');
+          signature = await ethereum.request({
+            method: 'personal_sign',
+            params: [message, address] // Correct order: message first, then address
           });
-          console.log('✅ EVM message signed with eth_sign');
-          return signature;
-        } catch (ethSignError) {
-          console.log('⚠️ eth_sign failed, trying personal_sign...', ethSignError.message);
           
-          // Fallback to personal_sign
-          try {
-            const signature = await ethereum.request({
-              method: 'personal_sign',
-              params: [address, message]
-            });
-            console.log('✅ EVM message signed with personal_sign');
-            return signature;
-          } catch (personalSignError) {
-            console.log('⚠️ personal_sign failed, trying eth_signTypedData_v4...', personalSignError.message);
-            
-            // Last resort: eth_signTypedData_v4
-            const typedData = {
-              domain: {
-                name: 'WCC Authentication',
-                version: '1'
-              },
-              types: {
-                Message: [
-                  { name: 'content', type: 'string' }
-                ]
-              },
-              primaryType: 'Message',
-              message: {
-                content: message
-              }
-            };
-            
-            const signature = await ethereum.request({
-              method: 'eth_signTypedData_v4',
-              params: [address, JSON.stringify(typedData)]
-            });
-            console.log('✅ EVM message signed with eth_signTypedData_v4');
+          if (signature && signature.length > 0) {
+            console.log('✅ EVM message signed with personal_sign, signature length:', signature.length);
             return signature;
           }
+        } catch (personalSignError) {
+          console.log('⚠️ personal_sign failed:', personalSignError.message);
         }
+
+        // Fallback to eth_sign
+        try {
+          console.log('🔐 Trying eth_sign method...');
+          // Convert message to hex using browser-compatible method
+          const messageHex = '0x' + Array.from(new TextEncoder().encode(message))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+          
+          signature = await ethereum.request({
+            method: 'eth_sign',
+            params: [address, messageHex] // Correct order: address first, then hex message
+          });
+          
+          if (signature && signature.length > 0) {
+            console.log('✅ EVM message signed with eth_sign, signature length:', signature.length);
+            return signature;
+          }
+        } catch (ethSignError) {
+          console.log('⚠️ eth_sign failed:', ethSignError.message);
+        }
+
+        // Last resort: eth_signTypedData_v4
+        try {
+          console.log('🔐 Trying eth_signTypedData_v4 method...');
+          const typedData = {
+            domain: {
+              name: 'WCC Authentication',
+              version: '1'
+            },
+            types: {
+              Message: [
+                { name: 'content', type: 'string' }
+              ]
+            },
+            primaryType: 'Message',
+            message: {
+              content: message
+            }
+          };
+          
+          signature = await ethereum.request({
+            method: 'eth_signTypedData_v4',
+            params: [address, JSON.stringify(typedData)] // Correct order: address first, then data
+          });
+          
+          if (signature && signature.length > 0) {
+            console.log('✅ EVM message signed with eth_signTypedData_v4, signature length:', signature.length);
+            return signature;
+          }
+        } catch (typedDataError) {
+          console.log('⚠️ eth_signTypedData_v4 failed:', typedDataError.message);
+        }
+
+        // If all methods failed or returned null/empty signature
+        throw new Error('All signing methods failed or returned empty signature');
       }
     } catch (error) {
       console.error('❌ Failed to sign message with all methods:', error);
@@ -145,6 +175,12 @@ const MultichainWalletButton: React.FC = () => {
       // Step 2: Sign the message through wallet
       console.log('🖊️ Requesting signature from wallet...');
       const signature = await signMessage(message, chainType);
+      
+      // Validate signature before proceeding
+      if (!signature || signature.length === 0) {
+        throw new Error('Failed to obtain valid signature from wallet');
+      }
+      
       console.log('✅ Message signed successfully, signature length:', signature.length);
       
       // Step 3: Verify signature - send publicKey for both chains
