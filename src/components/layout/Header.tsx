@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import ConnectWalletButton from '@/components/auth/ConnectWalletButton';
+import MultichainWalletButton from '@/components/auth/MultichainWalletButton';
 
 const Header = () => {
   return (
@@ -20,7 +20,7 @@ const Header = () => {
           
           {/* Right: Connect Wallet */}
           <div className="flex items-center">
-            <ConnectWalletButton />
+            <MultichainWalletButton />
           </div>
         </div>
       </div>
