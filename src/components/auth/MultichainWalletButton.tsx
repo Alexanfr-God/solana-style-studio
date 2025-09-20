@@ -171,6 +171,7 @@ const MultichainWalletButton: React.FC = () => {
   const appKitReady = isAppKitReady();
   const isBusy = !appKitReady || isAuthenticating;
   const isConnectedAndAuth = isConnected && isAuthenticated && walletProfile;
+  const showAuthButton = isConnected && address && !isAuthenticated;
 
   // Debug logging
   console.log('🔍 MultichainWalletButton state:', {
@@ -181,7 +182,8 @@ const MultichainWalletButton: React.FC = () => {
     hasAddress: !!address,
     addressLength: address?.length,
     networkId: caipNetwork?.id,
-    networkName: caipNetwork?.name
+    networkName: caipNetwork?.name,
+    showAuthButton
   });
 
   // Show loading state while AppKit initializes
@@ -194,52 +196,68 @@ const MultichainWalletButton: React.FC = () => {
     );
   }
 
-  // Show Sign Message button if connected but not authenticated
-  if (isConnected && address && !isAuthenticated) {
+  // If fully authenticated, show connected state
+  if (isConnectedAndAuth) {
     return (
-      <Button 
-        variant="outline" 
-        className="flex items-center gap-2"
-        disabled={isAuthenticating}
-        onClick={handleAuthentication}
-      >
-        {isAuthenticating ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Authenticating...</span>
-          </>
-        ) : (
-          <>
-            <Wallet className="h-4 w-4" />
-            <span>Sign Message</span>
-          </>
-        )}
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          variant="default"
+          className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary shadow-[0_0_10px_rgba(153,69,255,0.4)]"
+          onClick={handleDisconnect}
+        >
+          <Wallet className="h-4 w-4" />
+          <span>{shortenAddress(address || '')}</span>
+          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+        </Button>
+      </div>
     );
   }
 
+  // If connected but need authentication, show auth button separately
+  if (showAuthButton) {
+    return (
+      <div className="flex gap-2">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={handleConnect}
+        >
+          <Wallet className="h-4 w-4" />
+          <span>Change Wallet</span>
+        </Button>
+        <Button 
+          variant="default" 
+          className="flex items-center gap-2"
+          disabled={isAuthenticating}
+          onClick={handleAuthentication}
+        >
+          {isAuthenticating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Authenticating...</span>
+            </>
+          ) : (
+            <>
+              <Wallet className="h-4 w-4" />
+              <span>Sign Message</span>
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  // Default state: not connected, show connect button
   return (
     <div className="relative z-10">
       <Button 
-        variant={isConnectedAndAuth ? "default" : "outline"} 
-        className={`flex items-center gap-2 transition-all duration-300 ${
-          isConnectedAndAuth ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary shadow-[0_0_10px_rgba(153,69,255,0.4)]' : 'bg-background/50 backdrop-blur-sm'
-        }`}
+        variant="outline"
+        className="flex items-center gap-2 bg-background/50 backdrop-blur-sm transition-all duration-300"
         disabled={isBusy}
-        onClick={isConnectedAndAuth ? handleDisconnect : handleConnect}
+        onClick={handleConnect}
       >
-        {isConnectedAndAuth ? (
-          <>
-            <Wallet className="h-4 w-4" />
-            <span>{shortenAddress(address || '')}</span>
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-          </>
-        ) : (
-          <>
-            <Wallet className="h-4 w-4" />
-            <span>Connect Wallet</span>
-          </>
-        )}
+        <Wallet className="h-4 w-4" />
+        <span>Connect Wallet</span>
       </Button>
     </div>
   );

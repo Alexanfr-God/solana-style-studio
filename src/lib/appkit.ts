@@ -116,6 +116,15 @@ export async function initializeAppKit() {
       ]
     });
 
+    // Force disconnect all wallets on startup to ensure clean state
+    try {
+      console.log('🔌 Force disconnecting all wallets...');
+      await modal.disconnect();
+      console.log('✅ All wallets disconnected');
+    } catch (error) {
+      console.log('⚠️ No wallets were connected to disconnect:', error);
+    }
+
     isInitialized = true;
     console.log('✅ AppKit initialized successfully');
     return { modal, wagmiAdapter, solanaWeb3JsAdapter };

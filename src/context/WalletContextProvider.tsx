@@ -59,13 +59,21 @@ export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ ch
 
   // Clear any previous wallet connections on mount
   useEffect(() => {
-    // Clear wallet-related localStorage on app start
+    // Clear comprehensive wallet-related localStorage on app start
     const keysToRemove = [
       'walletconnect',
       'wagmi.store', 
       'wagmi.cache',
       'reown.wallet',
-      'appkit.wallet'
+      'appkit.wallet',
+      'appkit.account',
+      'appkit.network',
+      'appkit.session',
+      'wagmi.injected.shimDisconnect',
+      'wagmi.wallet',
+      'wagmi.connected',
+      'wc@2:',
+      'WALLETCONNECT_DEEPLINK_CHOICE'
     ];
     
     keysToRemove.forEach(key => {
@@ -73,7 +81,7 @@ export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ ch
         localStorage.removeItem(key);
         // Also try with potential prefixes
         Object.keys(localStorage).forEach(storageKey => {
-          if (storageKey.includes(key)) {
+          if (storageKey.includes(key) || storageKey.startsWith(key)) {
             localStorage.removeItem(storageKey);
           }
         });
@@ -82,7 +90,20 @@ export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ ch
       }
     });
     
-    console.log('🧹 Cleared wallet connection cache');
+    // Clear session storage as well
+    try {
+      Object.keys(sessionStorage).forEach(key => {
+        keysToRemove.forEach(keyToRemove => {
+          if (key.includes(keyToRemove) || key.startsWith(keyToRemove)) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      });
+    } catch (error) {
+      console.warn('Failed to clear sessionStorage:', error);
+    }
+    
+    console.log('🧹 Cleared comprehensive wallet connection cache');
   }, []);
 
   // AppKit is now initialized in main.tsx before React rendering
