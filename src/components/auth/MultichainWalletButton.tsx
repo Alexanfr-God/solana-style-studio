@@ -17,24 +17,12 @@ const MultichainWalletButton: React.FC = () => {
     isAppKitReady 
   } = useExtendedWallet();
 
-  // Always call hooks but handle uninitialized state
-  const appKit = useAppKit();
-  const accountData = useAppKitAccount();
-  const networkData = useAppKitNetwork();
-  
-  const { open } = isAppKitReady ? appKit : { open: null };
-  const { address, isConnected, caipAddress } = isAppKitReady ? accountData : { address: null, isConnected: false, caipAddress: null };
-  const { caipNetwork } = isAppKitReady ? networkData : { caipNetwork: null };
+  // Now safe to call hooks since we're within the provider tree
+  const { open } = useAppKit();
+  const { address, isConnected, caipAddress } = useAppKitAccount();
+  const { caipNetwork } = useAppKitNetwork();
 
-  // Wait for AppKit to be ready
-  useEffect(() => {
-    if (isAppKitReady) {
-      setIsInitializing(false);
-      console.log('🎯 AppKit ready for MultichainWalletButton');
-    }
-  }, [isAppKitReady]);
-
-  // Auto-authenticate when wallet connects
+  // Wait for AppKit to be ready before attempting authentication
   useEffect(() => {
     if (isConnected && address && !isAuthenticated && isAppKitReady) {
       console.log('🔐 Wallet connected, starting authentication...', {
@@ -125,7 +113,8 @@ const MultichainWalletButton: React.FC = () => {
   const isBusy = isInitializing;
   const isConnectedAndAuth = isConnected && isAuthenticated && walletProfile;
 
-  if (isInitializing) {
+  // Show loading state while initializing
+  if (!isAppKitReady) {
     return (
       <Button variant="outline" disabled className="flex items-center gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />

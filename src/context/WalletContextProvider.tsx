@@ -1,8 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
-import { initializeAppKit } from '@/lib/appkit';
+import { initializeAppKit, getIsInitialized } from '@/lib/appkit';
+import { WagmiProvider } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import { toast } from 'sonner';
-// Note: AppKit CSS will be imported via the modal component when initialized
+
+// Create QueryClient for Wagmi
+const queryClient = new QueryClient();
 
 // Extended wallet context interface
 interface WalletContextExtendedProps {
@@ -55,12 +59,15 @@ interface WalletContextProviderProps {
 
 export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ children }) => {
   const [isAppKitReady, setIsAppKitReady] = useState(false);
+  const [wagmiConfig, setWagmiConfig] = useState<any>(null);
 
   // Initialize AppKit on mount
   useEffect(() => {
     const init = async () => {
       try {
-        await initializeAppKit();
+        console.log('🔄 Starting AppKit initialization...');
+        const { wagmiAdapter } = await initializeAppKit();
+        setWagmiConfig(wagmiAdapter.wagmiConfig);
         setIsAppKitReady(true);
         console.log('✅ AppKit initialized in context');
       } catch (error) {
@@ -72,10 +79,26 @@ export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ ch
     init();
   }, []);
 
+  // Don't render until AppKit is ready
+  if (!isAppKitReady || !wagmiConfig) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Initializing wallet system...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <WalletAuthProvider isAppKitReady={isAppKitReady}>
-      {children}
-    </WalletAuthProvider>
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <WalletAuthProvider isAppKitReady={isAppKitReady}>
+          {children}
+        </WalletAuthProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 };
 
@@ -96,9 +119,8 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [walletProfile, setWalletProfile] = useState<any>(null);
 
-  // AppKit hooks - always call but handle uninitialized state
-  const accountData = useAppKitAccount();
-  const { address, isConnected } = isAppKitReady ? accountData : { address: null, isConnected: false };
+  // AppKit hooks - now safe to call within providers
+  const { address, isConnected } = useAppKitAccount();
 
   // Restore session from localStorage on component mount
   useEffect(() => {
