@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAppKit, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount, useAppKitNetwork, useDisconnect } from '@reown/appkit/react';
 import { requestNonce, verifySignature, type ChainType } from '@/services/walletAuthService';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { isAppKitReady } from '@/lib/appkit';
@@ -21,6 +21,7 @@ const MultichainWalletButton: React.FC = () => {
   const appKit = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
+  const { disconnect } = useDisconnect();
 
   // Real message signing function with improved EVM support
   const signMessage = useCallback(async (message: string, chainType: ChainType): Promise<string> => {
@@ -53,28 +54,29 @@ const MultichainWalletButton: React.FC = () => {
           throw new Error('No Ethereum provider found');
         }
 
-        // Try eth_sign first (more compatible)
+        // Try personal_sign first (most compatible)
         try {
-          console.log('🔐 Trying eth_sign method...');
+          console.log('🔐 Trying personal_sign method...');
           const signature = await ethereum.request({
-            method: 'eth_sign',
-            params: [address, `0x${Buffer.from(message, 'utf8').toString('hex')}`]
+            method: 'personal_sign',
+            params: [message, address]
           });
-          console.log('✅ EVM message signed with eth_sign');
+          console.log('✅ EVM message signed with personal_sign');
           return signature;
-        } catch (ethSignError) {
-          console.log('⚠️ eth_sign failed, trying personal_sign...', ethSignError.message);
+        } catch (personalSignError) {
+          console.log('⚠️ personal_sign failed, trying eth_sign...', personalSignError.message);
           
-          // Fallback to personal_sign
+          // Fallback to eth_sign
           try {
+            const messageHex = `0x${new TextEncoder().encode(message).reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), '')}`;
             const signature = await ethereum.request({
-              method: 'personal_sign',
-              params: [address, message]
+              method: 'eth_sign',
+              params: [address, messageHex]
             });
-            console.log('✅ EVM message signed with personal_sign');
+            console.log('✅ EVM message signed with eth_sign');
             return signature;
-          } catch (personalSignError) {
-            console.log('⚠️ personal_sign failed, trying eth_signTypedData_v4...', personalSignError.message);
+          } catch (ethSignError) {
+            console.log('⚠️ eth_sign failed, trying eth_signTypedData_v4...', ethSignError.message);
             
             // Last resort: eth_signTypedData_v4
             const typedData = {
@@ -199,13 +201,15 @@ const MultichainWalletButton: React.FC = () => {
 
   const handleDisconnect = useCallback(async () => {
     try {
+      console.log('🔌 Disconnecting wallet...');
+      await disconnect();
       clearAuthSession();
       toast.success('Wallet disconnected');
     } catch (error: any) {
       console.error('❌ Error disconnecting:', error);
       toast.error('Error disconnecting wallet');
     }
-  }, [clearAuthSession]);
+  }, [disconnect, clearAuthSession]);
 
   // Helper function to shorten wallet address
   const shortenAddress = (addr: string) => {
@@ -264,7 +268,10 @@ const MultichainWalletButton: React.FC = () => {
         <Button 
           variant="outline" 
           className="flex items-center gap-2"
-          onClick={handleConnect}
+          onClick={async () => {
+            await disconnect();
+            await handleConnect();
+          }}
         >
           <Wallet className="h-4 w-4" />
           <span>Change Wallet</span>
