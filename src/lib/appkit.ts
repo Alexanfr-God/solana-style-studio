@@ -51,13 +51,7 @@ export async function initializeAppKit() {
         analytics: true,
         email: false,
         socials: false
-      },
-      enableWalletConnect: true,
-      enableInjected: true,
-      enableEIP6963: true,
-      enableCoinbase: true,
-      allowUnsupportedChain: false,
-      allWallets: 'SHOW'
+      }
     });
 
     isInitialized = true;

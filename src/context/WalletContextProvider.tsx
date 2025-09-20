@@ -122,26 +122,11 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
   // AppKit hooks - now safe to call within providers
   const { address, isConnected } = useAppKitAccount();
 
-  // Clear all wallet-related localStorage on component mount
+  // Clear localStorage and restore session on component mount for clean testing
   useEffect(() => {
-    console.log('🧹 Clearing all wallet-related storage for clean start');
-    
-    // Clear auth session
+    // Clear any existing session for clean start
+    console.log('🧹 Clearing localStorage for clean testing');
     localStorage.removeItem('wallet_auth_session');
-    
-    // Clear AppKit/WalletConnect storage
-    localStorage.removeItem('wc@2:client:0.3//session');
-    localStorage.removeItem('wc@2:core:0.3//history');
-    localStorage.removeItem('wc@2:core:0.3//pairing');
-    localStorage.removeItem('wc@2:core:0.3//subscription');
-    localStorage.removeItem('wc@2:core:0.3//keychain');
-    localStorage.removeItem('wc@2:core:0.3//expirer');
-    localStorage.removeItem('wc@2:universal_provider');
-    localStorage.removeItem('@appkit/connected_connector');
-    localStorage.removeItem('@appkit/connected_wallet_image_url');
-    localStorage.removeItem('wagmi.store');
-    localStorage.removeItem('wagmi.cache');
-    localStorage.removeItem('wagmi.wallet');
     
     // Reset authentication state
     setIsAuthenticated(false);
@@ -149,7 +134,7 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
     setAuthToken(null);
     setWalletProfile(null);
     
-    console.log('✅ All wallet storage cleared and auth state reset');
+    console.log('✅ Auth state reset for clean testing');
   }, []);
 
   // Clear session when wallet disconnects
