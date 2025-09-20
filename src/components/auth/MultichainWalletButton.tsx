@@ -22,7 +22,7 @@ const MultichainWalletButton: React.FC = () => {
   const { address, isConnected } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
 
-  // Real message signing function
+  // Real message signing function with improved EVM support
   const signMessage = useCallback(async (message: string, chainType: ChainType): Promise<string> => {
     try {
       console.log('🖊️ Starting message signing:', { chainType, message: message.slice(0, 50) + '...' });
@@ -46,21 +46,64 @@ const MultichainWalletButton: React.FC = () => {
         console.log('✅ Solana message signed successfully');
         return signature;
       } else {
-        // For EVM use personal_sign
+        // For EVM - try multiple signing methods
         console.log('📝 Using EVM signing method');
         const ethereum = (window as any).ethereum;
         if (!ethereum) {
           throw new Error('No Ethereum provider found');
         }
-        const signature = await ethereum.request({
-          method: 'personal_sign',
-          params: [message, address]
-        });
-        console.log('✅ EVM message signed');
-        return signature;
+
+        // Try eth_sign first (more compatible)
+        try {
+          console.log('🔐 Trying eth_sign method...');
+          const signature = await ethereum.request({
+            method: 'eth_sign',
+            params: [address, `0x${Buffer.from(message, 'utf8').toString('hex')}`]
+          });
+          console.log('✅ EVM message signed with eth_sign');
+          return signature;
+        } catch (ethSignError) {
+          console.log('⚠️ eth_sign failed, trying personal_sign...', ethSignError.message);
+          
+          // Fallback to personal_sign
+          try {
+            const signature = await ethereum.request({
+              method: 'personal_sign',
+              params: [address, message]
+            });
+            console.log('✅ EVM message signed with personal_sign');
+            return signature;
+          } catch (personalSignError) {
+            console.log('⚠️ personal_sign failed, trying eth_signTypedData_v4...', personalSignError.message);
+            
+            // Last resort: eth_signTypedData_v4
+            const typedData = {
+              domain: {
+                name: 'WCC Authentication',
+                version: '1'
+              },
+              types: {
+                Message: [
+                  { name: 'content', type: 'string' }
+                ]
+              },
+              primaryType: 'Message',
+              message: {
+                content: message
+              }
+            };
+            
+            const signature = await ethereum.request({
+              method: 'eth_signTypedData_v4',
+              params: [address, JSON.stringify(typedData)]
+            });
+            console.log('✅ EVM message signed with eth_signTypedData_v4');
+            return signature;
+          }
+        }
       }
     } catch (error) {
-      console.error('❌ Failed to sign message:', error);
+      console.error('❌ Failed to sign message with all methods:', error);
       throw error;
     }
   }, [address, appKit]);
@@ -104,7 +147,7 @@ const MultichainWalletButton: React.FC = () => {
       const signature = await signMessage(message, chainType);
       console.log('✅ Message signed successfully, signature length:', signature.length);
       
-      // Step 3: Verify signature
+      // Step 3: Verify signature - send publicKey for both chains
       console.log('🔍 Verifying signature with server...');
       const verificationData = await verifySignature({
         address,
@@ -112,7 +155,8 @@ const MultichainWalletButton: React.FC = () => {
         signature,
         nonce,
         message,
-        publicKey: isSolana ? address : undefined
+        // For Solana, use the actual publicKey. For EVM, use address as publicKey
+        publicKey: isSolana ? address : address
       });
 
       if (verificationData.success) {

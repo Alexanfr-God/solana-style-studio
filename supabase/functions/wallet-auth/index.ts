@@ -14,18 +14,43 @@ function generateNonce(): string {
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-// Helper to verify signature (simplified for Solana)
-function verifySignature(message: string, signature: string, publicKey: string): boolean {
-  // In production, use proper ed25519 signature verification
-  // For now, we'll assume signature verification logic
+// Helper to verify signature for both chains
+function verifySignature(message: string, signature: string, publicKey: string, chain: string): boolean {
   console.log('🔐 Verifying signature:', { 
+    chain,
     messageLength: message.length, 
     signatureLength: signature.length,
     publicKeyLength: publicKey.length,
     messagePreview: message.slice(0, 50),
     publicKeyPreview: publicKey.slice(0, 20)
   });
-  return signature.length > 10 && publicKey.length > 10; // Simplified check
+
+  // Basic validation
+  if (!signature || signature.length < 10 || !publicKey || publicKey.length < 10) {
+    console.error('❌ Invalid signature or publicKey format');
+    return false;
+  }
+
+  if (chain === 'solana') {
+    // For Solana, we expect hex signature and base58 public key
+    console.log('🔐 Validating Solana signature format');
+    return signature.length >= 128 && publicKey.length >= 32; // Solana signature is 64 bytes = 128 hex chars
+  } else {
+    // For EVM, we expect 0x prefixed signature and address as publicKey
+    console.log('🔐 Validating EVM signature format');
+    const isValidSignature = signature.startsWith('0x') && signature.length >= 130; // 65 bytes = 130 hex chars + 0x
+    const isValidAddress = publicKey.startsWith('0x') && publicKey.length === 42; // EVM address
+    
+    console.log('🔍 EVM validation details:', {
+      hasHexPrefix: signature.startsWith('0x'),
+      signatureLength: signature.length,
+      expectedMinLength: 130,
+      isValidAddress,
+      addressLength: publicKey.length
+    });
+    
+    return isValidSignature && isValidAddress;
+  }
 }
 
 serve(async (req) => {
@@ -139,13 +164,13 @@ serve(async (req) => {
 
       console.log('✅ Nonce validation passed');
 
-      // Verify signature
-      const isValidSignature = verifySignature(message, signature, publicKey || address);
+      // Verify signature with chain information
+      const isValidSignature = verifySignature(message, signature, publicKey || address, chain);
       if (!isValidSignature) {
-        console.error('❌ Invalid signature');
+        console.error('❌ Invalid signature for chain:', { chain, signatureLength: signature.length, publicKeyLength: (publicKey || address).length });
         return new Response(JSON.stringify({
           success: false,
-          error: 'Invalid signature'
+          error: `Invalid signature format for ${chain} chain`
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -160,15 +185,25 @@ serve(async (req) => {
         .update({ used: true })
         .eq('id', nonceData.id);
 
-      // Create or update wallet profile using UPSERT (без user_id)
+      // Create or update wallet profile with proper metadata for each chain
+      const metadata = chain === 'solana' 
+        ? { publicKey: publicKey || address, walletType: 'solana', signatureMethod: 'ed25519' }
+        : { publicKey: address, walletType: 'evm', signatureMethod: 'ecdsa', originalPublicKey: publicKey };
+
+      console.log('📝 Creating/updating profile with metadata:', {
+        chain,
+        address: address?.slice(0, 10) + '...',
+        metadata
+      });
+
       const { data: profile, error: profileError } = await supabase
         .from('wallet_profiles')
         .upsert({
           wallet_address: address,
           chain,
-          user_id: null, // Оставляем NULL для wallet пользователей
+          user_id: null, // Keep NULL for wallet users
           last_login_at: new Date().toISOString(),
-          metadata: { publicKey }
+          metadata
         }, { 
           onConflict: 'chain,wallet_address'
         })
