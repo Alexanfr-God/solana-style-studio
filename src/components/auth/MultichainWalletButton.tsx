@@ -25,12 +25,17 @@ const MultichainWalletButton: React.FC = () => {
   // Real message signing function
   const signMessage = useCallback(async (message: string, chainType: ChainType): Promise<string> => {
     try {
+      console.log('🖊️ Starting message signing:', { chainType, message: message.slice(0, 50) + '...' });
+      
       if (chainType === 'solana') {
-        // For Solana use signMessage
+        // For Solana use direct wallet access (AppKit doesn't expose signMessage directly)
+        console.log('📝 Using Solana signing method');
+        
         const solanaWallet = (window as any).solana;
         if (!solanaWallet?.signMessage) {
-          throw new Error('Solana wallet does not support message signing');
+          throw new Error('Solana wallet does not support message signing or is not connected');
         }
+        
         const encodedMessage = new TextEncoder().encode(message);
         const signedMessage = await solanaWallet.signMessage(encodedMessage);
         
@@ -38,9 +43,11 @@ const MultichainWalletButton: React.FC = () => {
         const signature = Array.from(signedMessage.signature)
           .map((b: number) => b.toString(16).padStart(2, '0'))
           .join('');
+        console.log('✅ Solana message signed successfully');
         return signature;
       } else {
         // For EVM use personal_sign
+        console.log('📝 Using EVM signing method');
         const ethereum = (window as any).ethereum;
         if (!ethereum) {
           throw new Error('No Ethereum provider found');
@@ -49,39 +56,56 @@ const MultichainWalletButton: React.FC = () => {
           method: 'personal_sign',
           params: [message, address]
         });
+        console.log('✅ EVM message signed');
         return signature;
       }
     } catch (error) {
       console.error('❌ Failed to sign message:', error);
       throw error;
     }
-  }, [address]);
+  }, [address, appKit]);
 
   const handleAuthentication = useCallback(async () => {
     if (!address || !isAppKitReady() || isAuthenticating) {
-      console.log('❌ Missing requirements for authentication');
+      console.log('❌ Missing requirements for authentication:', { 
+        hasAddress: !!address, 
+        appKitReady: isAppKitReady(), 
+        isAuthenticating 
+      });
       return;
     }
 
     setIsAuthenticating(true);
     
     try {
-      // Determine chain type
+      // Determine chain type - improved detection
       const networkId = String(caipNetwork?.id || '');
-      const isSolana = networkId.includes('solana');
+      const networkName = String(caipNetwork?.name || '').toLowerCase();
+      const isSolana = networkId.includes('solana') || networkName.includes('solana') || 
+                      networkId.startsWith('solana:') || address?.length === 44; // Solana addresses are typically 44 chars
       const chainType: ChainType = isSolana ? 'solana' : 'evm';
       
-      console.log('🔍 Starting authentication:', { address: address.slice(0, 10) + '...', chainType });
+      console.log('🔍 Starting authentication:', { 
+        address: address.slice(0, 10) + '...', 
+        chainType, 
+        networkId, 
+        networkName,
+        addressLength: address.length,
+        caipNetwork: caipNetwork 
+      });
 
       // Step 1: Request nonce
+      console.log('📝 Requesting nonce from server...');
       const { nonce, message } = await requestNonce(address, chainType);
-      console.log('📝 Nonce received, requesting signature...');
+      console.log('✅ Nonce received, message to sign:', message.slice(0, 100) + '...');
 
       // Step 2: Sign the message through wallet
+      console.log('🖊️ Requesting signature from wallet...');
       const signature = await signMessage(message, chainType);
-      console.log('✅ Message signed successfully');
+      console.log('✅ Message signed successfully, signature length:', signature.length);
       
       // Step 3: Verify signature
+      console.log('🔍 Verifying signature with server...');
       const verificationData = await verifySignature({
         address,
         chain: chainType,
@@ -92,7 +116,7 @@ const MultichainWalletButton: React.FC = () => {
       });
 
       if (verificationData.success) {
-        console.log('🎉 Authentication successful!');
+        console.log('🎉 Authentication successful!', verificationData);
         toast.success(`Wallet authenticated: ${chainType.toUpperCase()}`);
         
         setAuthSession({
@@ -114,6 +138,7 @@ const MultichainWalletButton: React.FC = () => {
 
   const handleConnect = useCallback(async () => {
     if (!isAppKitReady() || !appKit) {
+      console.log('❌ AppKit not ready:', { appKitReady: isAppKitReady(), hasAppKit: !!appKit });
       toast.error('Wallet connector not ready');
       return;
     }
@@ -121,6 +146,7 @@ const MultichainWalletButton: React.FC = () => {
     try {
       console.log('🔗 Opening wallet selection modal...');
       await appKit.open();
+      console.log('✅ Wallet modal opened successfully');
     } catch (error: any) {
       console.error('❌ Failed to open wallet modal:', error);
       toast.error('Failed to open wallet selector');
@@ -146,6 +172,18 @@ const MultichainWalletButton: React.FC = () => {
   const isBusy = !appKitReady || isAuthenticating;
   const isConnectedAndAuth = isConnected && isAuthenticated && walletProfile;
 
+  // Debug logging
+  console.log('🔍 MultichainWalletButton state:', {
+    appKitReady,
+    isConnected,
+    isAuthenticated,
+    hasWalletProfile: !!walletProfile,
+    hasAddress: !!address,
+    addressLength: address?.length,
+    networkId: caipNetwork?.id,
+    networkName: caipNetwork?.name
+  });
+
   // Show loading state while AppKit initializes
   if (!appKitReady) {
     return (
@@ -157,7 +195,7 @@ const MultichainWalletButton: React.FC = () => {
   }
 
   // Show Sign Message button if connected but not authenticated
-  if (isConnected && !isAuthenticated) {
+  if (isConnected && address && !isAuthenticated) {
     return (
       <Button 
         variant="outline" 
