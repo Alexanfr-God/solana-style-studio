@@ -2,8 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, ReactNo
 import { initializeAppKit } from '@/lib/appkit';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import { toast } from 'sonner';
-// Import AppKit CSS
-import '@reown/appkit/style.css';
+// Note: AppKit CSS will be imported via the modal component when initialized
 
 // Extended wallet context interface
 interface WalletContextExtendedProps {
