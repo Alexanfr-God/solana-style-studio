@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { requestNonce, verifySignature } from '@/services/walletAuthService';
 import bs58 from 'bs58';
 
+// Import AppKit CSS
+import '@reown/appkit/react/styles.css';
+
 // Import the styles for the modal
 import '@solana/wallet-adapter-react-ui/styles.css';
 
