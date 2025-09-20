@@ -31,7 +31,7 @@ const Footer = () => {
           {/* Left: Docs + Social Icons */}
           <div className="flex-1 flex items-center gap-6">
             <Link 
-              to="/documentation" 
+              to="/docs" 
               className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300 relative group"
             >
               <span>Docs</span>
@@ -90,7 +90,7 @@ const Footer = () => {
           
           {/* Docs */}
           <Link 
-            to="/documentation" 
+            to="/docs" 
             className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300 py-2 relative group"
           >
             <span>Docs</span>
