@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
 import { initializeAppKit } from '@/lib/appkit';
-import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import { toast } from 'sonner';
 // Note: AppKit CSS will be imported via the modal component when initialized
 
@@ -56,15 +55,44 @@ interface WalletContextProviderProps {
 export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ children }) => {
   const [isAppKitReady, setIsAppKitReady] = useState(false);
 
-  // Initialize AppKit on mount
+  // Clear any previous wallet connections on mount
+  useEffect(() => {
+    // Clear wallet-related localStorage on app start
+    const keysToRemove = [
+      'walletconnect',
+      'wagmi.store', 
+      'wagmi.cache',
+      'reown.wallet',
+      'appkit.wallet'
+    ];
+    
+    keysToRemove.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+        // Also try with potential prefixes
+        Object.keys(localStorage).forEach(storageKey => {
+          if (storageKey.includes(key)) {
+            localStorage.removeItem(storageKey);
+          }
+        });
+      } catch (error) {
+        console.warn(`Failed to clear ${key}:`, error);
+      }
+    });
+    
+    console.log('🧹 Cleared wallet connection cache');
+  }, []);
+
+  // Initialize AppKit
   useEffect(() => {
     const init = async () => {
       try {
+        console.log('🚀 Initializing WalletContextProvider...');
         await initializeAppKit();
         setIsAppKitReady(true);
-        console.log('✅ AppKit initialized in context');
+        console.log('✅ AppKit ready in WalletContextProvider');
       } catch (error) {
-        console.error('❌ Failed to initialize AppKit in context:', error);
+        console.error('❌ Failed to initialize AppKit in WalletContextProvider:', error);
         toast.error('Failed to initialize wallet system');
       }
     };
@@ -96,9 +124,14 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [walletProfile, setWalletProfile] = useState<any>(null);
 
-  // AppKit hooks - always call but handle uninitialized state
-  const accountData = useAppKitAccount();
-  const { address, isConnected } = isAppKitReady ? accountData : { address: null, isConnected: false };
+  // Monitor wallet disconnection - don't call hooks conditionally
+  const [lastConnectedState, setLastConnectedState] = useState(false);
+  
+  useEffect(() => {
+    if (isAppKitReady) {
+      // This will be handled by MultichainWalletButton
+    }
+  }, [isAppKitReady]);
 
   // Restore session from localStorage on component mount
   useEffect(() => {
@@ -118,13 +151,26 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
     }
   }, []);
 
-  // Clear session when wallet disconnects
+  // Clear authentication session
+  const clearAuthSession = useCallback(() => {
+    setUserId(null);
+    setAuthToken(null);
+    setWalletProfile(null);
+    setIsAuthenticated(false);
+    setIsAuthenticating(false);
+    setHasRejectedSignature(false);
+    localStorage.removeItem('wallet_auth_session');
+    
+    console.log('🗑️ Auth session cleared');
+  }, []);
+
+  // Handle wallet disconnection (will be triggered by MultichainWalletButton)
   useEffect(() => {
-    if (!isConnected && isAuthenticated) {
+    if (lastConnectedState && !lastConnectedState && isAuthenticated) {
       console.log('🔌 Wallet disconnected, clearing auth session');
       clearAuthSession();
     }
-  }, [isConnected, isAuthenticated]);
+  }, [lastConnectedState, isAuthenticated, clearAuthSession]);
 
   // Set authentication session
   const setAuthSession = useCallback((session: { userId: string; token: string; profile: any }) => {
@@ -146,18 +192,6 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
     console.log('✅ Auth session set and saved');
   }, []);
 
-  // Clear authentication session
-  const clearAuthSession = useCallback(() => {
-    setUserId(null);
-    setAuthToken(null);
-    setWalletProfile(null);
-    setIsAuthenticated(false);
-    setIsAuthenticating(false);
-    setHasRejectedSignature(false);
-    localStorage.removeItem('wallet_auth_session');
-    
-    console.log('🗑️ Auth session cleared');
-  }, []);
 
   // Handle wallet disconnect
   const handleWalletDisconnect = useCallback(() => {
