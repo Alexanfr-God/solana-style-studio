@@ -6,6 +6,9 @@ import { toast } from 'sonner';
 
 // Extended wallet context interface
 interface WalletContextExtendedProps {
+  // AppKit state
+  isAppKitReady: boolean;
+  
   // Authentication state
   isAuthenticating: boolean;
   isAuthenticated: boolean;
@@ -24,6 +27,7 @@ interface WalletContextExtendedProps {
 
 // Create context with default values
 const WalletContextExtended = createContext<WalletContextExtendedProps>({
+  isAppKitReady: false,
   isAuthenticating: false,
   isAuthenticated: false,
   hasRejectedSignature: false,
@@ -50,14 +54,14 @@ interface WalletContextProviderProps {
 }
 
 export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ children }) => {
-  const [isAppKitInitialized, setIsAppKitInitialized] = useState(false);
+  const [isAppKitReady, setIsAppKitReady] = useState(false);
 
   // Initialize AppKit on mount
   useEffect(() => {
     const init = async () => {
       try {
         await initializeAppKit();
-        setIsAppKitInitialized(true);
+        setIsAppKitReady(true);
         console.log('✅ AppKit initialized in context');
       } catch (error) {
         console.error('❌ Failed to initialize AppKit in context:', error);
@@ -69,7 +73,7 @@ export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ ch
   }, []);
 
   return (
-    <WalletAuthProvider>
+    <WalletAuthProvider isAppKitReady={isAppKitReady}>
       {children}
     </WalletAuthProvider>
   );
@@ -78,9 +82,10 @@ export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ ch
 // Authentication provider component
 interface WalletAuthProviderProps {
   children: ReactNode;
+  isAppKitReady: boolean;
 }
 
-const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children }) => {
+const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isAppKitReady }) => {
   // Authentication state
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -91,8 +96,9 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children }) => 
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [walletProfile, setWalletProfile] = useState<any>(null);
 
-  // AppKit hooks
-  const { address, isConnected } = useAppKitAccount();
+  // AppKit hooks - always call but handle uninitialized state
+  const accountData = useAppKitAccount();
+  const { address, isConnected } = isAppKitReady ? accountData : { address: null, isConnected: false };
 
   // Restore session from localStorage on component mount
   useEffect(() => {
@@ -160,6 +166,9 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children }) => 
 
   // Context value
   const contextValue = useMemo(() => ({
+    // AppKit state
+    isAppKitReady,
+    
     // Authentication state
     isAuthenticating,
     isAuthenticated,
@@ -175,6 +184,7 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children }) => 
     clearAuthSession,
     handleWalletDisconnect,
   }), [
+    isAppKitReady,
     isAuthenticating,
     isAuthenticated,
     hasRejectedSignature,

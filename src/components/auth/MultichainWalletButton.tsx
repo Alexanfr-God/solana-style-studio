@@ -2,53 +2,48 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
-import { initializeAppKit } from '@/lib/appkit';
 import { useAppKit, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import { requestNonce, verifySignature } from '@/services/walletAuthService';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 
 const MultichainWalletButton: React.FC = () => {
-  const [isInitialized, setIsInitialized] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const { open } = useAppKit();
-  const { address, isConnected, caipAddress } = useAppKitAccount();
-  const { caipNetwork } = useAppKitNetwork();
   
   const { 
     isAuthenticated, 
     setAuthSession, 
     clearAuthSession,
-    walletProfile 
+    walletProfile,
+    isAppKitReady 
   } = useExtendedWallet();
 
-  // Initialize AppKit on component mount
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await initializeAppKit();
-        setIsInitialized(true);
-        console.log('🎯 AppKit ready for use');
-      } catch (error) {
-        console.error('❌ AppKit initialization failed:', error);
-        toast.error('Failed to initialize wallet connector');
-      } finally {
-        setIsInitializing(false);
-      }
-    };
+  // Always call hooks but handle uninitialized state
+  const appKit = useAppKit();
+  const accountData = useAppKitAccount();
+  const networkData = useAppKitNetwork();
+  
+  const { open } = isAppKitReady ? appKit : { open: null };
+  const { address, isConnected, caipAddress } = isAppKitReady ? accountData : { address: null, isConnected: false, caipAddress: null };
+  const { caipNetwork } = isAppKitReady ? networkData : { caipNetwork: null };
 
-    init();
-  }, []);
+  // Wait for AppKit to be ready
+  useEffect(() => {
+    if (isAppKitReady) {
+      setIsInitializing(false);
+      console.log('🎯 AppKit ready for MultichainWalletButton');
+    }
+  }, [isAppKitReady]);
 
   // Auto-authenticate when wallet connects
   useEffect(() => {
-    if (isConnected && address && !isAuthenticated && isInitialized) {
+    if (isConnected && address && !isAuthenticated && isAppKitReady) {
       console.log('🔐 Wallet connected, starting authentication...', {
         address: address.slice(0, 10) + '...',
         network: caipNetwork?.name
       });
       handleAuthentication();
     }
-  }, [isConnected, address, isAuthenticated, isInitialized, caipNetwork]);
+  }, [isConnected, address, isAuthenticated, isAppKitReady, caipNetwork]);
 
   const handleAuthentication = useCallback(async () => {
     if (!address || !caipNetwork) {
@@ -98,7 +93,7 @@ const MultichainWalletButton: React.FC = () => {
   }, [address, caipNetwork, setAuthSession]);
 
   const handleConnect = useCallback(async () => {
-    if (!isInitialized) {
+    if (!isAppKitReady || !open) {
       toast.error('Wallet connector not ready');
       return;
     }
@@ -109,7 +104,7 @@ const MultichainWalletButton: React.FC = () => {
       console.error('❌ Failed to open wallet modal:', error);
       toast.error('Failed to open wallet selector');
     }
-  }, [isInitialized, open]);
+  }, [isAppKitReady, open]);
 
   const handleDisconnect = useCallback(async () => {
     try {
