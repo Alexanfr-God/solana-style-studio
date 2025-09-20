@@ -14,6 +14,7 @@ if (typeof window !== 'undefined') {
 
 import App from './App.tsx';
 import { WalletContextProvider } from '@/context/WalletContextProvider';
+import { initializeAppKit } from '@/lib/appkit';
 // Make sure all CSS imports are in the correct order
 import './styles/index.css'; // This already imports all other CSS files
 import './App.css';
@@ -29,15 +30,61 @@ console.log('React version:', React.version);
 console.log('Screen size:', window.innerWidth, 'x', window.innerHeight);
 console.log('User agent:', navigator.userAgent);
 
-// Removed WalletStructureService initialization as it's no longer needed
-console.log('🚀 Application initialized successfully!');
-console.log('🎯 Ready for wallet customization!');
+// Initialize AppKit before React rendering
+async function initializeAndRender() {
+  try {
+    console.log('🔗 Initializing AppKit...');
+    await initializeAppKit();
+    console.log('✅ AppKit initialized, starting React render');
+    
+    // Wrap App with WalletContextProvider for wallet state management
+    ReactDOM.createRoot(document.getElementById('root')!).render(
+      <WalletContextProvider>
+        <App />
+      </WalletContextProvider>
+    );
+    
+    console.log('🚀 Application initialized successfully!');
+    console.log('🎯 Ready for wallet customization!');
+  } catch (error) {
+    console.error('❌ Failed to initialize AppKit:', error);
+    
+    // Show error state in UI
+    ReactDOM.createRoot(document.getElementById('root')!).render(
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh', 
+        background: '#1a1a1a', 
+        color: 'white',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+      }}>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <h1>🔌 Wallet Connection Error</h1>
+          <p>Failed to initialize wallet connection service.</p>
+          <p style={{ opacity: 0.7, fontSize: '0.9em' }}>Please refresh the page to try again.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            style={{ 
+              marginTop: '1rem', 
+              padding: '0.5rem 1rem', 
+              background: '#6366f1', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '0.375rem',
+              cursor: 'pointer'
+            }}
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
 
-// Wrap App with WalletContextProvider for wallet state management
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <WalletContextProvider>
-    <App />
-  </WalletContextProvider>
-);
+// Start initialization
+initializeAndRender();
 
 console.log('Main rendering completed');

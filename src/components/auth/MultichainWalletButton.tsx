@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useAppKit, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import { requestNonce, verifySignature, type ChainType } from '@/services/walletAuthService';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
+import { isAppKitReady } from '@/lib/appkit';
 
 const MultichainWalletButton: React.FC = () => {
   const { 
@@ -13,8 +14,7 @@ const MultichainWalletButton: React.FC = () => {
     setIsAuthenticating,
     setAuthSession, 
     clearAuthSession,
-    walletProfile,
-    isAppKitReady 
+    walletProfile
   } = useExtendedWallet();
 
   // Always call hooks (React rules)
@@ -58,7 +58,7 @@ const MultichainWalletButton: React.FC = () => {
   }, [address]);
 
   const handleAuthentication = useCallback(async () => {
-    if (!address || !isAppKitReady || isAuthenticating) {
+    if (!address || !isAppKitReady() || isAuthenticating) {
       console.log('❌ Missing requirements for authentication');
       return;
     }
@@ -110,10 +110,10 @@ const MultichainWalletButton: React.FC = () => {
     } finally {
       setIsAuthenticating(false);
     }
-  }, [address, caipNetwork, isAppKitReady, isAuthenticating, setIsAuthenticating, setAuthSession, signMessage]);
+  }, [address, caipNetwork, isAuthenticating, setIsAuthenticating, setAuthSession, signMessage]);
 
   const handleConnect = useCallback(async () => {
-    if (!isAppKitReady || !appKit) {
+    if (!isAppKitReady() || !appKit) {
       toast.error('Wallet connector not ready');
       return;
     }
@@ -125,7 +125,7 @@ const MultichainWalletButton: React.FC = () => {
       console.error('❌ Failed to open wallet modal:', error);
       toast.error('Failed to open wallet selector');
     }
-  }, [isAppKitReady, appKit]);
+  }, [appKit]);
 
   const handleDisconnect = useCallback(async () => {
     try {
@@ -142,11 +142,12 @@ const MultichainWalletButton: React.FC = () => {
     return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   };
 
-  const isBusy = !isAppKitReady || isAuthenticating;
+  const appKitReady = isAppKitReady();
+  const isBusy = !appKitReady || isAuthenticating;
   const isConnectedAndAuth = isConnected && isAuthenticated && walletProfile;
 
   // Show loading state while AppKit initializes
-  if (!isAppKitReady) {
+  if (!appKitReady) {
     return (
       <Button variant="outline" disabled className="flex items-center gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />

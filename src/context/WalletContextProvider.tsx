@@ -85,21 +85,11 @@ export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ ch
     console.log('🧹 Cleared wallet connection cache');
   }, []);
 
-  // Initialize AppKit
+  // AppKit is now initialized in main.tsx before React rendering
+  // Set ready state immediately since initialization happens before this component
   useEffect(() => {
-    const init = async () => {
-      try {
-        console.log('🚀 Initializing WalletContextProvider...');
-        await initializeAppKit();
-        setIsAppKitReady(true);
-        console.log('✅ AppKit ready in WalletContextProvider');
-      } catch (error) {
-        console.error('❌ Failed to initialize AppKit in WalletContextProvider:', error);
-        toast.error('Failed to initialize wallet system');
-      }
-    };
-
-    init();
+    console.log('🚀 WalletContextProvider mounted, AppKit should already be ready');
+    setIsAppKitReady(true);
   }, []);
 
   return (
