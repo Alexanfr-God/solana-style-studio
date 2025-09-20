@@ -10,6 +10,7 @@ interface WalletContextExtendedProps {
   
   // Authentication state
   isAuthenticating: boolean;
+  setIsAuthenticating: (value: boolean) => void;
   isAuthenticated: boolean;
   hasRejectedSignature: boolean;
   
@@ -28,6 +29,7 @@ interface WalletContextExtendedProps {
 const WalletContextExtended = createContext<WalletContextExtendedProps>({
   isAppKitReady: false,
   isAuthenticating: false,
+  setIsAuthenticating: () => {},
   isAuthenticated: false,
   hasRejectedSignature: false,
   userId: null,
@@ -124,15 +126,6 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [walletProfile, setWalletProfile] = useState<any>(null);
 
-  // Monitor wallet disconnection - don't call hooks conditionally
-  const [lastConnectedState, setLastConnectedState] = useState(false);
-  
-  useEffect(() => {
-    if (isAppKitReady) {
-      // This will be handled by MultichainWalletButton
-    }
-  }, [isAppKitReady]);
-
   // Restore session from localStorage on component mount
   useEffect(() => {
     const savedSession = localStorage.getItem('wallet_auth_session');
@@ -163,14 +156,6 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
     
     console.log('🗑️ Auth session cleared');
   }, []);
-
-  // Handle wallet disconnection (will be triggered by MultichainWalletButton)
-  useEffect(() => {
-    if (lastConnectedState && !lastConnectedState && isAuthenticated) {
-      console.log('🔌 Wallet disconnected, clearing auth session');
-      clearAuthSession();
-    }
-  }, [lastConnectedState, isAuthenticated, clearAuthSession]);
 
   // Set authentication session
   const setAuthSession = useCallback((session: { userId: string; token: string; profile: any }) => {
@@ -205,6 +190,7 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
     
     // Authentication state
     isAuthenticating,
+    setIsAuthenticating,
     isAuthenticated,
     hasRejectedSignature,
     

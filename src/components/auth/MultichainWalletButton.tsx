@@ -1,86 +1,98 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppKit, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
-import { requestNonce, verifySignature } from '@/services/walletAuthService';
+import { requestNonce, verifySignature, type ChainType } from '@/services/walletAuthService';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 
 const MultichainWalletButton: React.FC = () => {
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  
   const { 
     isAuthenticated, 
+    isAuthenticating,
+    setIsAuthenticating,
     setAuthSession, 
     clearAuthSession,
     walletProfile,
     isAppKitReady 
   } = useExtendedWallet();
 
-  // Only use hooks when AppKit is ready
-  let appKit, accountData, networkData;
-  let open, address, isConnected, caipAddress, caipNetwork;
+  // Always call hooks (React rules)
+  const appKit = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
+  const { caipNetwork } = useAppKitNetwork();
 
-  if (isAppKitReady) {
+  // Real message signing function
+  const signMessage = useCallback(async (message: string, chainType: ChainType): Promise<string> => {
     try {
-      appKit = useAppKit();
-      accountData = useAppKitAccount();
-      networkData = useAppKitNetwork();
-      
-      open = appKit?.open;
-      address = accountData?.address;
-      isConnected = accountData?.isConnected;
-      caipAddress = accountData?.caipAddress;
-      caipNetwork = networkData?.caipNetwork;
+      if (chainType === 'solana') {
+        // For Solana use signMessage
+        const solanaWallet = (window as any).solana;
+        if (!solanaWallet?.signMessage) {
+          throw new Error('Solana wallet does not support message signing');
+        }
+        const encodedMessage = new TextEncoder().encode(message);
+        const signedMessage = await solanaWallet.signMessage(encodedMessage);
+        
+        // Convert signature to hex string
+        const signature = Array.from(signedMessage.signature)
+          .map((b: number) => b.toString(16).padStart(2, '0'))
+          .join('');
+        return signature;
+      } else {
+        // For EVM use personal_sign
+        const ethereum = (window as any).ethereum;
+        if (!ethereum) {
+          throw new Error('No Ethereum provider found');
+        }
+        const signature = await ethereum.request({
+          method: 'personal_sign',
+          params: [message, address]
+        });
+        return signature;
+      }
     } catch (error) {
-      console.warn('AppKit hooks not ready yet:', error);
+      console.error('❌ Failed to sign message:', error);
+      throw error;
     }
-  }
+  }, [address]);
 
   const handleAuthentication = useCallback(async () => {
-    if (!address || !caipNetwork || isAuthenticating) {
-      console.log('❌ Missing requirements for authentication:', { address: !!address, caipNetwork: !!caipNetwork, isAuthenticating });
+    if (!address || !isAppKitReady || isAuthenticating) {
+      console.log('❌ Missing requirements for authentication');
       return;
     }
 
     setIsAuthenticating(true);
     
     try {
-      // Determine chain type based on CAIP network
-      const networkId = String(caipNetwork.id || '');
-      const networkName = String(caipNetwork.name || '').toLowerCase();
-      const isSolana = networkId.includes('solana') || networkName.includes('solana');
-      const chainType = isSolana ? 'solana' : 'evm';
+      // Determine chain type
+      const networkId = String(caipNetwork?.id || '');
+      const isSolana = networkId.includes('solana');
+      const chainType: ChainType = isSolana ? 'solana' : 'evm';
       
-      console.log('🔍 Starting authentication flow:', {
-        address: address.slice(0, 10) + '...',
-        chainType,
-        network: caipNetwork.name
-      });
+      console.log('🔍 Starting authentication:', { address: address.slice(0, 10) + '...', chainType });
 
-      // Step 1: Request nonce from backend
+      // Step 1: Request nonce
       const { nonce, message } = await requestNonce(address, chainType);
-      console.log('📝 Nonce received, message to sign:', message);
+      console.log('📝 Nonce received, requesting signature...');
 
-      // Step 2: Sign the message through the wallet
-      // TODO: Implement actual wallet signing based on chain type
-      // For now, we'll create a mock signature for demonstration
-      const mockSignature = `0x${'a'.repeat(130)}`; // Mock signature
+      // Step 2: Sign the message through wallet
+      const signature = await signMessage(message, chainType);
+      console.log('✅ Message signed successfully');
       
-      toast.info('Please sign the message in your wallet...');
-      
-      // Step 3: Verify signature with backend
+      // Step 3: Verify signature
       const verificationData = await verifySignature({
         address,
         chain: chainType,
-        signature: mockSignature,
+        signature,
         nonce,
         message,
         publicKey: isSolana ? address : undefined
       });
 
       if (verificationData.success) {
-        console.log('✅ Authentication successful');
+        console.log('🎉 Authentication successful!');
         toast.success(`Wallet authenticated: ${chainType.toUpperCase()}`);
         
         setAuthSession({
@@ -98,29 +110,22 @@ const MultichainWalletButton: React.FC = () => {
     } finally {
       setIsAuthenticating(false);
     }
-  }, [address, caipNetwork, setAuthSession, isAuthenticating]);
+  }, [address, caipNetwork, isAppKitReady, isAuthenticating, setIsAuthenticating, setAuthSession, signMessage]);
 
   const handleConnect = useCallback(async () => {
-    if (!isAppKitReady || !open) {
+    if (!isAppKitReady || !appKit) {
       toast.error('Wallet connector not ready');
       return;
     }
 
     try {
       console.log('🔗 Opening wallet selection modal...');
-      await open();
+      await appKit.open();
     } catch (error: any) {
       console.error('❌ Failed to open wallet modal:', error);
       toast.error('Failed to open wallet selector');
     }
-  }, [isAppKitReady, open]);
-
-  const handleAuthenticateAfterConnect = useCallback(async () => {
-    if (isConnected && address && !isAuthenticated && !isAuthenticating) {
-      console.log('🔐 Wallet connected, starting authentication flow...');
-      await handleAuthentication();
-    }
-  }, [isConnected, address, isAuthenticated, isAuthenticating, handleAuthentication]);
+  }, [isAppKitReady, appKit]);
 
   const handleDisconnect = useCallback(async () => {
     try {
@@ -131,14 +136,6 @@ const MultichainWalletButton: React.FC = () => {
       toast.error('Error disconnecting wallet');
     }
   }, [clearAuthSession]);
-
-  // Monitor connection state and trigger authentication
-  useEffect(() => {
-    if (isAppKitReady && isConnected && address && !isAuthenticated && !isAuthenticating) {
-      console.log('🔐 Auto-triggering authentication after wallet connection');
-      handleAuthenticateAfterConnect();
-    }
-  }, [isAppKitReady, isConnected, address, isAuthenticated, isAuthenticating, handleAuthenticateAfterConnect]);
 
   // Helper function to shorten wallet address
   const shortenAddress = (addr: string) => {
@@ -158,6 +155,30 @@ const MultichainWalletButton: React.FC = () => {
     );
   }
 
+  // Show Sign Message button if connected but not authenticated
+  if (isConnected && !isAuthenticated) {
+    return (
+      <Button 
+        variant="outline" 
+        className="flex items-center gap-2"
+        disabled={isAuthenticating}
+        onClick={handleAuthentication}
+      >
+        {isAuthenticating ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Authenticating...</span>
+          </>
+        ) : (
+          <>
+            <Wallet className="h-4 w-4" />
+            <span>Sign Message</span>
+          </>
+        )}
+      </Button>
+    );
+  }
+
   return (
     <div className="relative z-10">
       <Button 
@@ -168,12 +189,7 @@ const MultichainWalletButton: React.FC = () => {
         disabled={isBusy}
         onClick={isConnectedAndAuth ? handleDisconnect : handleConnect}
       >
-        {isAuthenticating ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Authenticating...</span>
-          </>
-        ) : isConnectedAndAuth ? (
+        {isConnectedAndAuth ? (
           <>
             <Wallet className="h-4 w-4" />
             <span>{shortenAddress(address || '')}</span>
