@@ -28,8 +28,8 @@ const Footer = () => {
       >
         {/* Desktop layout */}
         <div className="hidden md:flex justify-between items-center">
-          {/* Left: Docs */}
-          <div className="flex-1">
+          {/* Left: Docs + Social Icons */}
+          <div className="flex-1 flex items-center gap-6">
             <Link 
               to="/documentation" 
               className="text-white/80 hover:text-white transition-all hover:text-shadow-glow duration-300 relative group"
@@ -37,6 +37,31 @@ const Footer = () => {
               <span>Docs</span>
               <span className="absolute left-0 right-0 bottom-0 h-[1px] bg-gradient-to-r from-purple-400 to-pink-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
+            
+            <div className="flex gap-4">
+              <a 
+                href="https://github.com/Alexanfr-God/solana-style-studio" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
+              >
+                <Github className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+              </a>
+              <a 
+                href="" 
+                className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
+              >
+                <Send className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+              </a>
+              <a 
+                href="https://x.com/wacocuapp" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
+              >
+                <X className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
+              </a>
+            </div>
           </div>
           
           {/* Center: Brand */}
@@ -49,33 +74,8 @@ const Footer = () => {
             </p>
           </div>
           
-          {/* Right: Social Icons */}
-          <div className="flex-1 flex justify-end gap-4">
-            <a 
-              href="https://github.com/wacocuapp" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
-            >
-              <Github className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
-            </a>
-            <a 
-              href="https://telegram.org" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
-            >
-              <Send className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
-            </a>
-            <a 
-              href="https://twitter.com" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
-            >
-              <X className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
-            </a>
-          </div>
+          {/* Right: Empty space */}
+          <div className="flex-1"></div>
         </div>
         
         {/* Mobile layout */}
@@ -100,7 +100,7 @@ const Footer = () => {
           {/* Social Icons */}
           <div className="flex justify-center gap-4 py-2">
             <a 
-              href="https://github.com/wacocuapp" 
+              href="https://github.com/Alexanfr-God/solana-style-studio" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
@@ -108,15 +108,13 @@ const Footer = () => {
               <Github className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
             </a>
             <a 
-              href="https://telegram.org" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+              href="" 
               className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
             >
               <Send className="w-5 h-5 group-hover:shadow-[0_0_10px_rgba(153,69,255,0.7)]" />
             </a>
             <a 
-              href="https://twitter.com" 
+              href="https://x.com/wacocuapp" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-white/80 hover:text-white hover:scale-110 transition-all duration-300 group"
