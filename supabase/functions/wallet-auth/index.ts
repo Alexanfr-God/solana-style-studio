@@ -187,15 +187,17 @@ serve(async (req) => {
       console.log('✅ Signature validation passed');
 
       // Mark nonce as used - CRITICAL FIX
+      console.log('🔄 Marking nonce as used:', nonceData.id);
       const { error: nonceUpdateError } = await supabase
         .from('auth_nonces')
         .update({ used: true })
         .eq('id', nonceData.id);
 
       if (nonceUpdateError) {
-        console.error('❌ Failed to mark nonce as used:', nonceUpdateError);
+        console.error('❌ CRITICAL: Failed to mark nonce as used:', nonceUpdateError);
+        // Continue anyway - this shouldn't block authentication
       } else {
-        console.log('✅ Nonce marked as used:', nonceData.id);
+        console.log('✅ Nonce successfully marked as used:', nonceData.id);
       }
 
       // Create or update wallet profile with proper metadata for each chain
@@ -225,6 +227,8 @@ serve(async (req) => {
         metadata
       });
 
+      // Use UPSERT to handle existing records gracefully
+      console.log('💾 Upserting wallet profile...');
       const { data: profile, error: profileError } = await supabase
         .from('wallet_profiles')
         .upsert({
@@ -234,7 +238,8 @@ serve(async (req) => {
           last_login_at: new Date().toISOString(),
           metadata
         }, { 
-          onConflict: 'chain,wallet_address'
+          onConflict: 'chain,wallet_address',
+          ignoreDuplicates: false // Always update existing records
         })
         .select()
         .single();

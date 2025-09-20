@@ -246,8 +246,44 @@ const MultichainWalletButton: React.FC = () => {
   const handleDisconnect = useCallback(async () => {
     try {
       console.log('🔌 Disconnecting wallet...');
+      
+      // Aggressive cleanup of wallet-related storage
+      const keysToRemove = [
+        'wallet_auth_session',
+        'walletconnect',
+        'wagmi.store', 
+        'wagmi.cache',
+        'reown.wallet',
+        'appkit.wallet',
+        'appkit.account',
+        'appkit.network',
+        'appkit.session',
+        'wagmi.injected.shimDisconnect',
+        'wagmi.wallet',
+        'wagmi.connected',
+        'wc@2:',
+        'WALLETCONNECT_DEEPLINK_CHOICE'
+      ];
+      
+      // Clear localStorage
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          // Also try with potential prefixes
+          Object.keys(localStorage).forEach(storageKey => {
+            if (storageKey.includes(key) || storageKey.startsWith(key)) {
+              localStorage.removeItem(storageKey);
+            }
+          });
+        } catch (error) {
+          console.warn(`Failed to clear ${key}:`, error);
+        }
+      });
+      
       await disconnect();
       clearAuthSession();
+      
+      console.log('🧹 Aggressive wallet cleanup completed');
       toast.success('Wallet disconnected');
     } catch (error: any) {
       console.error('❌ Error disconnecting:', error);
@@ -313,8 +349,9 @@ const MultichainWalletButton: React.FC = () => {
           variant="outline" 
           className="flex items-center gap-2"
           onClick={async () => {
-            await disconnect();
-            await handleConnect();
+            console.log('🔄 Forcing wallet change...');
+            await handleDisconnect(); // Use our enhanced disconnect
+            setTimeout(() => handleConnect(), 500); // Small delay to ensure cleanup
           }}
         >
           <Wallet className="h-4 w-4" />
