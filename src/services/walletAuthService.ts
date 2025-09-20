@@ -42,8 +42,18 @@ export async function verifySignature(params: {
     messageLength: params.message.length
   });
   
+  const headers: Record<string, string> = {};
+  
+  // Add EVM-specific headers for better metadata
+  if (params.chain === 'evm') {
+    if (params.walletProvider) headers['x-wallet-provider'] = params.walletProvider;
+    if (params.chainId) headers['x-chain-id'] = params.chainId;
+    if (params.networkName) headers['x-network-name'] = params.networkName;
+  }
+
   const { data, error } = await supabase.functions.invoke('wallet-auth', {
-    body: { action: 'verify', ...params }
+    body: { action: 'verify', ...params },
+    headers
   });
   
   if (error) {

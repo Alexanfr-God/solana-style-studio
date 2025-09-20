@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-chain-id, x-network-name, x-wallet-provider',
 };
 
 // Helper to generate secure nonce
@@ -63,7 +63,14 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, address, chain, signature, nonce, message, publicKey, walletProvider, chainId, networkName } = await req.json();
+    // Parse body and headers
+    const body = await req.json();
+    const { action, address, chain, signature, nonce, message, publicKey } = body;
+    
+    // Get additional metadata from headers for EVM wallets
+    const walletProvider = req.headers.get('x-wallet-provider') || body.walletProvider;
+    const chainId = req.headers.get('x-chain-id') || body.chainId;
+    const networkName = req.headers.get('x-network-name') || body.networkName;
     
     console.log('🔐 Wallet Auth Request:', { 
       action, 
