@@ -22,6 +22,26 @@ const MultichainWalletButton: React.FC = () => {
   const { address, isConnected, caipAddress } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
 
+  // Reset isInitializing when AppKit is ready
+  useEffect(() => {
+    if (isAppKitReady) {
+      console.log('🚀 AppKit ready, setting initialization to false');
+      setIsInitializing(false);
+    }
+  }, [isAppKitReady]);
+
+  // Debug logging for button states
+  useEffect(() => {
+    console.log('🔍 Button state debug:', {
+      isAppKitReady,
+      isInitializing,
+      isConnected,
+      isAuthenticated,
+      hasAddress: !!address,
+      hasProfile: !!walletProfile
+    });
+  }, [isAppKitReady, isInitializing, isConnected, isAuthenticated, address, walletProfile]);
+
   // Wait for AppKit to be ready before attempting authentication
   useEffect(() => {
     if (isConnected && address && !isAuthenticated && isAppKitReady) {

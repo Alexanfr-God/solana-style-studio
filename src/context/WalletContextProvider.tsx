@@ -122,22 +122,19 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
   // AppKit hooks - now safe to call within providers
   const { address, isConnected } = useAppKitAccount();
 
-  // Restore session from localStorage on component mount
+  // Clear localStorage and restore session on component mount for clean testing
   useEffect(() => {
-    const savedSession = localStorage.getItem('wallet_auth_session');
-    if (savedSession) {
-      try {
-        const session = JSON.parse(savedSession);
-        setUserId(session.userId);
-        setAuthToken(session.authToken);
-        setWalletProfile(session.walletProfile);
-        setIsAuthenticated(true);
-        console.log('🔄 Restored auth session from localStorage');
-      } catch (error) {
-        console.error('❌ Error restoring auth session:', error);
-        localStorage.removeItem('wallet_auth_session');
-      }
-    }
+    // Clear any existing session for clean start
+    console.log('🧹 Clearing localStorage for clean testing');
+    localStorage.removeItem('wallet_auth_session');
+    
+    // Reset authentication state
+    setIsAuthenticated(false);
+    setUserId(null);
+    setAuthToken(null);
+    setWalletProfile(null);
+    
+    console.log('✅ Auth state reset for clean testing');
   }, []);
 
   // Clear session when wallet disconnects
