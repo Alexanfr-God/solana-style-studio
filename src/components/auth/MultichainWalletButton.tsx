@@ -17,32 +17,24 @@ const MultichainWalletButton: React.FC = () => {
     isAppKitReady 
   } = useExtendedWallet();
 
-  // Now safe to call hooks since we're within the provider tree
-  const { open } = useAppKit();
-  const { address, isConnected, caipAddress } = useAppKitAccount();
-  const { caipNetwork } = useAppKitNetwork();
+  // Always call hooks but handle uninitialized state
+  const appKit = useAppKit();
+  const accountData = useAppKitAccount();
+  const networkData = useAppKitNetwork();
+  
+  const { open } = isAppKitReady ? appKit : { open: null };
+  const { address, isConnected, caipAddress } = isAppKitReady ? accountData : { address: null, isConnected: false, caipAddress: null };
+  const { caipNetwork } = isAppKitReady ? networkData : { caipNetwork: null };
 
-  // Reset isInitializing when AppKit is ready
+  // Wait for AppKit to be ready
   useEffect(() => {
     if (isAppKitReady) {
-      console.log('🚀 AppKit ready, setting initialization to false');
       setIsInitializing(false);
+      console.log('🎯 AppKit ready for MultichainWalletButton');
     }
   }, [isAppKitReady]);
 
-  // Debug logging for button states
-  useEffect(() => {
-    console.log('🔍 Button state debug:', {
-      isAppKitReady,
-      isInitializing,
-      isConnected,
-      isAuthenticated,
-      hasAddress: !!address,
-      hasProfile: !!walletProfile
-    });
-  }, [isAppKitReady, isInitializing, isConnected, isAuthenticated, address, walletProfile]);
-
-  // Wait for AppKit to be ready before attempting authentication
+  // Auto-authenticate when wallet connects
   useEffect(() => {
     if (isConnected && address && !isAuthenticated && isAppKitReady) {
       console.log('🔐 Wallet connected, starting authentication...', {
@@ -133,8 +125,7 @@ const MultichainWalletButton: React.FC = () => {
   const isBusy = isInitializing;
   const isConnectedAndAuth = isConnected && isAuthenticated && walletProfile;
 
-  // Show loading state while initializing
-  if (!isAppKitReady) {
+  if (isInitializing) {
     return (
       <Button variant="outline" disabled className="flex items-center gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />

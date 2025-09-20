@@ -6,11 +6,10 @@ import { mainnet, arbitrum, polygon, base, optimism, sepolia, bsc } from 'viem/c
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { supabase } from '@/integrations/supabase/client'
 
-// Initialize AppKit configuration immediately (not in useEffect)
+// Initialize AppKit configuration
 let modal: any = null;
 let wagmiAdapter: any = null;
 let solanaWeb3JsAdapter: any = null;
-let isInitialized = false;
 
 // Function to initialize AppKit with project ID
 export async function initializeAppKit() {
@@ -54,17 +53,12 @@ export async function initializeAppKit() {
       }
     });
 
-    isInitialized = true;
     console.log('✅ AppKit initialized successfully');
     return { modal, wagmiAdapter, solanaWeb3JsAdapter };
   } catch (error) {
     console.error('❌ Failed to initialize AppKit:', error);
-    isInitialized = false;
     throw error;
   }
 }
 
-export { modal, wagmiAdapter, solanaWeb3JsAdapter };
-
-// Export initialization status
-export const getIsInitialized = () => isInitialized;
+export { modal, wagmiAdapter, solanaWeb3JsAdapter }

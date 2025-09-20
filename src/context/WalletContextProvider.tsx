@@ -1,12 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
-import { initializeAppKit, getIsInitialized } from '@/lib/appkit';
-import { WagmiProvider } from 'wagmi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { initializeAppKit } from '@/lib/appkit';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import { toast } from 'sonner';
-
-// Create QueryClient for Wagmi
-const queryClient = new QueryClient();
+// Note: AppKit CSS will be imported via the modal component when initialized
 
 // Extended wallet context interface
 interface WalletContextExtendedProps {
@@ -59,15 +55,12 @@ interface WalletContextProviderProps {
 
 export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ children }) => {
   const [isAppKitReady, setIsAppKitReady] = useState(false);
-  const [wagmiConfig, setWagmiConfig] = useState<any>(null);
 
   // Initialize AppKit on mount
   useEffect(() => {
     const init = async () => {
       try {
-        console.log('🔄 Starting AppKit initialization...');
-        const { wagmiAdapter } = await initializeAppKit();
-        setWagmiConfig(wagmiAdapter.wagmiConfig);
+        await initializeAppKit();
         setIsAppKitReady(true);
         console.log('✅ AppKit initialized in context');
       } catch (error) {
@@ -79,26 +72,10 @@ export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ ch
     init();
   }, []);
 
-  // Don't render until AppKit is ready
-  if (!isAppKitReady || !wagmiConfig) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-muted-foreground">Initializing wallet system...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <WalletAuthProvider isAppKitReady={isAppKitReady}>
-          {children}
-        </WalletAuthProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <WalletAuthProvider isAppKitReady={isAppKitReady}>
+      {children}
+    </WalletAuthProvider>
   );
 };
 
@@ -119,22 +96,26 @@ const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children, isApp
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [walletProfile, setWalletProfile] = useState<any>(null);
 
-  // AppKit hooks - now safe to call within providers
-  const { address, isConnected } = useAppKitAccount();
+  // AppKit hooks - always call but handle uninitialized state
+  const accountData = useAppKitAccount();
+  const { address, isConnected } = isAppKitReady ? accountData : { address: null, isConnected: false };
 
-  // Clear localStorage and restore session on component mount for clean testing
+  // Restore session from localStorage on component mount
   useEffect(() => {
-    // Clear any existing session for clean start
-    console.log('🧹 Clearing localStorage for clean testing');
-    localStorage.removeItem('wallet_auth_session');
-    
-    // Reset authentication state
-    setIsAuthenticated(false);
-    setUserId(null);
-    setAuthToken(null);
-    setWalletProfile(null);
-    
-    console.log('✅ Auth state reset for clean testing');
+    const savedSession = localStorage.getItem('wallet_auth_session');
+    if (savedSession) {
+      try {
+        const session = JSON.parse(savedSession);
+        setUserId(session.userId);
+        setAuthToken(session.authToken);
+        setWalletProfile(session.walletProfile);
+        setIsAuthenticated(true);
+        console.log('🔄 Restored auth session from localStorage');
+      } catch (error) {
+        console.error('❌ Error restoring auth session:', error);
+        localStorage.removeItem('wallet_auth_session');
+      }
+    }
   }, []);
 
   // Clear session when wallet disconnects
