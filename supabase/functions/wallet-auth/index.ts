@@ -16,6 +16,16 @@ function generateNonce(): string {
 
 // Helper to verify signature (simplified for Solana)
 function verifySignature(message: string, signature: string, publicKey: string): boolean {
+  // Add null/undefined checks
+  if (!message || !signature || !publicKey) {
+    console.error('❌ Missing parameters in verifySignature:', {
+      hasMessage: !!message,
+      hasSignature: !!signature,
+      hasPublicKey: !!publicKey
+    });
+    return false;
+  }
+
   // In production, use proper ed25519 signature verification
   // For now, we'll assume signature verification logic
   console.log('🔐 Verifying signature:', { 
