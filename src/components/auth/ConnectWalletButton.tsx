@@ -28,35 +28,84 @@ function isMetaMask(eth: any) {
 
 // Helper function to detect Rabby more thoroughly
 function findRabbyProvider(): any {
+  console.log('[RABBY] Starting Rabby provider detection...');
   const eth = (window as any).ethereum;
-  if (!eth) return null;
+  
+  if (!eth) {
+    console.log('[RABBY] No ethereum object found');
+    return null;
+  }
+  
+  console.log('[RABBY] Available providers info:', {
+    hasEthereum: !!eth,
+    isRabby: !!eth?.isRabby,
+    providersLength: eth.providers?.length || 0,
+    allProviders: eth.providers?.map((p: any) => ({
+      isRabby: !!p?.isRabby,
+      isMetaMask: !!p?.isMetaMask,
+      isBraveWallet: !!p?.isBraveWallet
+    })) || []
+  });
   
   // If ethereum is Rabby directly
-  if (isRabby(eth)) return eth;
+  if (isRabby(eth)) {
+    console.log('[RABBY] Found Rabby as main provider');
+    return eth;
+  }
   
   // If multiple providers exist
   if (eth.providers?.length) {
-    return eth.providers.find((p: any) => isRabby(p));
+    const rabbyProvider = eth.providers.find((p: any) => isRabby(p));
+    if (rabbyProvider) {
+      console.log('[RABBY] Found Rabby in providers array');
+      return rabbyProvider;
+    }
   }
   
+  console.log('[RABBY] No Rabby provider found');
   return null;
 }
 
 // Helper function to find MetaMask provider
 function findMetaMaskProvider(): any {
+  console.log('[METAMASK] Starting MetaMask provider detection...');
   const eth = (window as any).ethereum;
-  if (!eth) return null;
+  
+  if (!eth) {
+    console.log('[METAMASK] No ethereum object found');
+    return null;
+  }
+  
+  console.log('[METAMASK] Available providers info:', {
+    hasEthereum: !!eth,
+    isMetaMask: !!eth?.isMetaMask,
+    isBraveWallet: !!eth?.isBraveWallet,
+    isRabby: !!eth?.isRabby,
+    providersLength: eth.providers?.length || 0,
+    allProviders: eth.providers?.map((p: any) => ({
+      isRabby: !!p?.isRabby,
+      isMetaMask: !!p?.isMetaMask,
+      isBraveWallet: !!p?.isBraveWallet
+    })) || []
+  });
   
   // If ethereum is MetaMask directly
-  if (isMetaMask(eth)) return eth;
+  if (isMetaMask(eth)) {
+    console.log('[METAMASK] Found MetaMask as main provider');
+    return eth;
+  }
   
   // If multiple providers exist
   if (eth.providers?.length) {
-    return eth.providers.find((p: any) => isMetaMask(p));
+    const metaMaskProvider = eth.providers.find((p: any) => isMetaMask(p));
+    if (metaMaskProvider) {
+      console.log('[METAMASK] Found MetaMask in providers array');
+      return metaMaskProvider;
+    }
   }
   
-  // Fallback to first provider if no specific MetaMask found
-  return eth.providers?.[0] || eth;
+  console.log('[METAMASK] No MetaMask provider found, returning null');
+  return null;
 }
 
 const ConnectWalletButton: React.FC = () => {
@@ -123,6 +172,16 @@ const ConnectWalletButton: React.FC = () => {
     try {
       console.log(`[${target.toUpperCase()}] Starting connection...`);
       
+      // Clear any existing Solana wallet connection to prevent conflicts
+      if (connected && wallet) {
+        console.log(`[${target.toUpperCase()}] Disconnecting Solana wallet first...`);
+        try {
+          await disconnect();
+        } catch (e) {
+          console.log(`[${target.toUpperCase()}] Solana disconnect failed (okay):`, e);
+        }
+      }
+      
       let provider: any;
       
       if (target === 'rabby') {
@@ -132,6 +191,13 @@ const ConnectWalletButton: React.FC = () => {
           return;
         }
         console.log('[RABBY] Rabby provider found:', !!provider);
+        
+        // Verify we have the correct provider
+        if (!provider.isRabby) {
+          console.error('[RABBY] Provider found but not identified as Rabby');
+          toast.error('Rabby wallet detection failed. Please ensure Rabby is installed and enabled.');
+          return;
+        }
       } else {
         provider = findMetaMaskProvider();
         if (!provider) {
@@ -139,6 +205,13 @@ const ConnectWalletButton: React.FC = () => {
           return;
         }
         console.log('[METAMASK] MetaMask provider found:', !!provider);
+        
+        // Verify we have the correct provider
+        if (!provider.isMetaMask || provider.isRabby) {
+          console.error('[METAMASK] Provider found but not identified as MetaMask');
+          toast.error('MetaMask wallet detection failed. Please ensure MetaMask is installed and enabled.');
+          return;
+        }
       }
 
       setAuthLoading(true);
@@ -196,6 +269,26 @@ const ConnectWalletButton: React.FC = () => {
 
   const handleWalletConnect = useCallback(() => {
     toast.info('WalletConnect requires a Project ID. Please provide it and we will enable Web3Modal.');
+  }, []);
+
+  const debugProviders = useCallback(() => {
+    const eth = (window as any).ethereum;
+    console.log('[DEBUG] All providers information:', {
+      hasEthereum: !!eth,
+      ethereumProps: eth ? Object.keys(eth).filter(k => typeof eth[k] !== 'function') : [],
+      isMetaMask: !!eth?.isMetaMask,
+      isRabby: !!eth?.isRabby,
+      isBraveWallet: !!eth?.isBraveWallet,
+      providers: eth?.providers?.map((p: any, i: number) => ({
+        index: i,
+        isMetaMask: !!p?.isMetaMask,
+        isRabby: !!p?.isRabby,
+        isBraveWallet: !!p?.isBraveWallet,
+        props: Object.keys(p).filter(k => typeof p[k] !== 'function')
+      })) || []
+    });
+    
+    toast.info('Provider debug info logged to console');
   }, []);
 
   const handleDisconnect = useCallback(async () => {
@@ -295,6 +388,13 @@ const ConnectWalletButton: React.FC = () => {
               >
                 <img src="https://www.phantom.app/img/logo.png" alt="Phantom" className="h-4 w-4" />
                 <span>Phantom (Solana)</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                onClick={debugProviders} 
+                className="cursor-pointer gap-2 hover:bg-accent text-xs text-muted-foreground"
+              >
+                🔍 Debug Providers
               </DropdownMenuItem>
             </>
           ) : (
