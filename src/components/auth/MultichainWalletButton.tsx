@@ -110,6 +110,23 @@ const MultichainWalletButton: React.FC = () => {
     }
   }, [address, appKit]);
 
+  // Enhanced wallet detection function
+  const detectWalletProvider = useCallback(() => {
+    const ethereum = (window as any).ethereum;
+    
+    if (!ethereum) return 'unknown';
+    
+    // Check for specific wallet providers
+    if (ethereum.isMetaMask) return 'metamask';
+    if (ethereum.isRabby) return 'rabby';
+    if (ethereum.isCoinbaseWallet) return 'coinbase';
+    if (ethereum.isTrust) return 'trust';
+    if (ethereum.isImToken) return 'imtoken';
+    if (ethereum.providers?.length > 0) return 'walletconnect';
+    
+    return 'unknown_evm';
+  }, []);
+
   const handleAuthentication = useCallback(async () => {
     if (!address || !isAppKitReady() || isAuthenticating) {
       console.log('❌ Missing requirements for authentication:', { 
@@ -129,6 +146,9 @@ const MultichainWalletButton: React.FC = () => {
       const isSolana = networkId.includes('solana') || networkName.includes('solana') || 
                       networkId.startsWith('solana:') || address?.length === 44; // Solana addresses are typically 44 chars
       const chainType: ChainType = isSolana ? 'solana' : 'evm';
+
+      // Detect wallet provider
+      const walletProvider = chainType === 'solana' ? 'phantom' : detectWalletProvider();
       
       console.log('🔍 Starting authentication:', { 
         address: address.slice(0, 10) + '...', 
@@ -136,6 +156,8 @@ const MultichainWalletButton: React.FC = () => {
         networkId, 
         networkName,
         addressLength: address.length,
+        walletProvider,
+        chainId: String(caipNetwork?.id || '').split(':')[1] || 'unknown',
         caipNetwork: caipNetwork 
       });
 
@@ -149,7 +171,19 @@ const MultichainWalletButton: React.FC = () => {
       const signature = await signMessage(message, chainType);
       console.log('✅ Message signed successfully, signature length:', signature.length);
       
-      // Step 3: Verify signature - send publicKey for both chains
+      // Step 3: Get publicKey for verification
+      let publicKey = address; // Default to address
+      if (chainType === 'solana') {
+        // For Solana, get the actual publicKey from wallet
+        const solanaWallet = (window as any).solana;
+        publicKey = solanaWallet?.publicKey?.toString() || address;
+        console.log('🔑 Solana publicKey:', publicKey.slice(0, 20) + '...');
+      } else {
+        // For EVM, address is the publicKey
+        console.log('🔑 EVM address as publicKey:', address.slice(0, 20) + '...');
+      }
+      
+      // Step 4: Verify signature with enhanced metadata
       console.log('🔍 Verifying signature with server...');
       const verificationData = await verifySignature({
         address,
@@ -157,13 +191,18 @@ const MultichainWalletButton: React.FC = () => {
         signature,
         nonce,
         message,
-        // For Solana, use the actual publicKey. For EVM, use address as publicKey
-        publicKey: isSolana ? address : address
+        publicKey,
+        // Additional metadata for EVM wallets
+        ...(chainType === 'evm' && {
+          walletProvider,
+          chainId: String(caipNetwork?.id || '').split(':')[1] || 'unknown',
+          networkName: caipNetwork?.name
+        })
       });
 
       if (verificationData.success) {
         console.log('🎉 Authentication successful!', verificationData);
-        toast.success(`Wallet authenticated: ${chainType.toUpperCase()}`);
+        toast.success(`${walletProvider.charAt(0).toUpperCase() + walletProvider.slice(1)} wallet connected!`);
         
         setAuthSession({
           userId: verificationData.profile.id,
@@ -176,11 +215,16 @@ const MultichainWalletButton: React.FC = () => {
 
     } catch (error: any) {
       console.error('❌ Authentication failed:', error);
-      toast.error(`Authentication failed: ${error?.message || 'Unknown error'}`);
+      
+      if (error.message?.includes('reject') || error.message?.includes('cancel') || error.message?.includes('denied')) {
+        toast.error('Signature rejected. Please try again.');
+      } else {
+        toast.error(`Authentication failed: ${error?.message || 'Unknown error'}`);
+      }
     } finally {
       setIsAuthenticating(false);
     }
-  }, [address, caipNetwork, isAuthenticating, setIsAuthenticating, setAuthSession, signMessage]);
+  }, [address, caipNetwork, isAuthenticating, setIsAuthenticating, setAuthSession, signMessage, detectWalletProvider]);
 
   const handleConnect = useCallback(async () => {
     if (!isAppKitReady() || !appKit) {

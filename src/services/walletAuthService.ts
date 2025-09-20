@@ -31,6 +31,9 @@ export async function verifySignature(params: {
   nonce: string;
   message: string;
   publicKey?: string; // required for Solana
+  walletProvider?: string; // EVM wallet type
+  chainId?: string; // EVM chain ID
+  networkName?: string; // EVM network name
 }) {
   console.log('🔍 Verifying signature for:', { 
     address: params.address.slice(0, 10) + '...', 

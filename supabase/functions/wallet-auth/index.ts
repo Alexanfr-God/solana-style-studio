@@ -63,7 +63,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, address, chain, signature, nonce, message, publicKey } = await req.json();
+    const { action, address, chain, signature, nonce, message, publicKey, walletProvider, chainId, networkName } = await req.json();
     
     console.log('🔐 Wallet Auth Request:', { 
       action, 
@@ -179,16 +179,38 @@ serve(async (req) => {
 
       console.log('✅ Signature validation passed');
 
-      // Mark nonce as used
-      await supabase
+      // Mark nonce as used - CRITICAL FIX
+      const { error: nonceUpdateError } = await supabase
         .from('auth_nonces')
         .update({ used: true })
         .eq('id', nonceData.id);
 
+      if (nonceUpdateError) {
+        console.error('❌ Failed to mark nonce as used:', nonceUpdateError);
+      } else {
+        console.log('✅ Nonce marked as used:', nonceData.id);
+      }
+
       // Create or update wallet profile with proper metadata for each chain
       const metadata = chain === 'solana' 
-        ? { publicKey: publicKey || address, walletType: 'solana', signatureMethod: 'ed25519' }
-        : { publicKey: address, walletType: 'evm', signatureMethod: 'ecdsa', originalPublicKey: publicKey };
+        ? { 
+            publicKey: publicKey || address, 
+            walletType: 'solana', 
+            signatureMethod: 'ed25519',
+            walletProvider: 'phantom'
+          }
+        : { 
+            publicKey: address, 
+            walletType: 'evm', 
+            signatureMethod: 'ecdsa',
+            chainId: chainId || 'unknown',
+            networkName: networkName || 'unknown',
+            walletProvider: walletProvider || 'metamask',
+            originalSignature: signature,
+            signatureLength: signature.length
+          };
+
+      console.log('🔍 Enhanced metadata for', chain, ':', metadata);
 
       console.log('📝 Creating/updating profile with metadata:', {
         chain,
