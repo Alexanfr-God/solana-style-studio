@@ -1,42 +1,29 @@
-
-import { FC, ReactNode, useMemo, createContext, useState, useContext, useCallback, useEffect } from 'react';
-import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
-import { SolflareWalletAdapter as SolflareAdapter } from '@solana/wallet-adapter-solflare';
-import { LedgerWalletAdapter as LedgerAdapter } from '@solana/wallet-adapter-ledger';
-import { CoinbaseWalletAdapter as CoinbaseAdapter } from '@solana/wallet-adapter-coinbase';
-import { TorusWalletAdapter as TorusAdapter } from '@solana/wallet-adapter-torus';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { clusterApiUrl } from '@solana/web3.js';
-import { toast } from "sonner";
-import { requestNonce, verifySignature } from '@/services/walletAuthService';
-import bs58 from 'bs58';
-
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
+import { initializeAppKit } from '@/lib/appkit';
+import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
+import { toast } from 'sonner';
 // Import AppKit CSS
-import '@reown/appkit/react/styles.css';
+import '@reown/appkit/style.css';
 
-// Import the styles for the modal
-import '@solana/wallet-adapter-react-ui/styles.css';
-
+// Extended wallet context interface
 interface WalletContextExtendedProps {
-  // Solana wallet state
+  // Authentication state
   isAuthenticating: boolean;
   isAuthenticated: boolean;
   hasRejectedSignature: boolean;
   
-  // Backend auth state - используем profile ID как userId
+  // User data
   userId: string | null;
   authToken: string | null;
-  walletProfile: any | null;
+  walletProfile: any;
   
-  // Methods
-  signMessageOnConnect: (publicKey: string) => Promise<void>;
+  // Authentication actions
   setAuthSession: (session: { userId: string; token: string; profile: any }) => void;
   clearAuthSession: () => void;
   handleWalletDisconnect: () => void;
 }
 
+// Create context with default values
 const WalletContextExtended = createContext<WalletContextExtendedProps>({
   isAuthenticating: false,
   isAuthenticated: false,
@@ -44,206 +31,164 @@ const WalletContextExtended = createContext<WalletContextExtendedProps>({
   userId: null,
   authToken: null,
   walletProfile: null,
-  signMessageOnConnect: async () => {},
   setAuthSession: () => {},
   clearAuthSession: () => {},
-  handleWalletDisconnect: () => {}
+  handleWalletDisconnect: () => {},
 });
 
-export const useExtendedWallet = () => useContext(WalletContextExtended);
+// Hook to use the extended wallet context
+export const useExtendedWallet = () => {
+  const context = useContext(WalletContextExtended);
+  if (!context) {
+    throw new Error('useExtendedWallet must be used within WalletContextProvider');
+  }
+  return context;
+};
 
+// Main wallet context provider
 interface WalletContextProviderProps {
   children: ReactNode;
 }
 
-export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children }) => {
-  // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'
-  const network = WalletAdapterNetwork.Devnet;
+export const WalletContextProvider: React.FC<WalletContextProviderProps> = ({ children }) => {
+  const [isAppKitInitialized, setIsAppKitInitialized] = useState(false);
 
-  // You can also provide a custom RPC endpoint
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  // Initialize AppKit on mount
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await initializeAppKit();
+        setIsAppKitInitialized(true);
+        console.log('✅ AppKit initialized in context');
+      } catch (error) {
+        console.error('❌ Failed to initialize AppKit in context:', error);
+        toast.error('Failed to initialize wallet system');
+      }
+    };
 
-  // Use specific wallet adapters instead of the aggregator
-  const wallets = useMemo(() => [
-    new PhantomWalletAdapter(),
-    new SolflareAdapter(),
-    new CoinbaseAdapter(),
-    new LedgerAdapter(),
-    new TorusAdapter()
-  ], []);
-
-  // Show wallet connection status notifications
-  const onError = (error: any) => {
-    toast.error(`Wallet error: ${error?.message || 'Unknown error'}`);
-    console.error('[WALLET_ERROR]', error);
-  };
+    init();
+  }, []);
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider 
-        wallets={wallets} 
-        autoConnect={false}
-        onError={onError}
-      >
-        <WalletModalProvider>
-          <WalletAuthProvider>
-            {children}
-          </WalletAuthProvider>
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <WalletAuthProvider>
+      {children}
+    </WalletAuthProvider>
   );
 };
 
-// Separate component to handle authentication logic
-const WalletAuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const { connected, publicKey, signMessage, disconnect } = useWallet();
+// Authentication provider component
+interface WalletAuthProviderProps {
+  children: ReactNode;
+}
+
+const WalletAuthProvider: React.FC<WalletAuthProviderProps> = ({ children }) => {
+  // Authentication state
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasRejectedSignature, setHasRejectedSignature] = useState(false);
   
-  // Backend auth state
+  // User data
   const [userId, setUserId] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
-  const [walletProfile, setWalletProfile] = useState<any | null>(null);
+  const [walletProfile, setWalletProfile] = useState<any>(null);
 
-  // Load auth state from localStorage on mount
+  // AppKit hooks
+  const { address, isConnected } = useAppKitAccount();
+
+  // Restore session from localStorage on component mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('wcc_wallet_token');
-    const savedProfile = localStorage.getItem('wcc_wallet_profile');
-    
-    if (savedToken && savedProfile) {
+    const savedSession = localStorage.getItem('wallet_auth_session');
+    if (savedSession) {
       try {
-        const profile = JSON.parse(savedProfile);
-        setAuthToken(savedToken);
-        setWalletProfile(profile);
-        setUserId(profile.id); // Используем profile.id как userId
+        const session = JSON.parse(savedSession);
+        setUserId(session.userId);
+        setAuthToken(session.authToken);
+        setWalletProfile(session.walletProfile);
         setIsAuthenticated(true);
-        console.log('[AUTH] Restored session from localStorage:', {
-          profileId: profile.id,
-          address: profile.wallet_address?.slice(0, 10) + '...'
-        });
+        console.log('🔄 Restored auth session from localStorage');
       } catch (error) {
-        console.error('[AUTH] Failed to restore session:', error);
-        localStorage.removeItem('wcc_wallet_token');
-        localStorage.removeItem('wcc_wallet_profile');
+        console.error('❌ Error restoring auth session:', error);
+        localStorage.removeItem('wallet_auth_session');
       }
     }
   }, []);
 
-  // Clear auth state when wallet disconnects
+  // Clear session when wallet disconnects
   useEffect(() => {
-    if (!connected) {
-      handleWalletDisconnect();
+    if (!isConnected && isAuthenticated) {
+      console.log('🔌 Wallet disconnected, clearing auth session');
+      clearAuthSession();
     }
-  }, [connected]);
+  }, [isConnected, isAuthenticated]);
 
+  // Set authentication session
   const setAuthSession = useCallback((session: { userId: string; token: string; profile: any }) => {
-    setUserId(session.profile.id); // Используем profile.id
+    setUserId(session.userId);
     setAuthToken(session.token);
     setWalletProfile(session.profile);
     setIsAuthenticated(true);
+    setIsAuthenticating(false);
+    setHasRejectedSignature(false);
+
+    // Save to localStorage for persistence
+    const sessionData = {
+      userId: session.userId,
+      authToken: session.token,
+      walletProfile: session.profile,
+    };
+    localStorage.setItem('wallet_auth_session', JSON.stringify(sessionData));
     
-    // Persist to localStorage
-    localStorage.setItem('wcc_wallet_token', session.token);
-    localStorage.setItem('wcc_wallet_profile', JSON.stringify(session.profile));
-    
-    console.log('[AUTH] Session set for wallet:', {
-      profileId: session.profile.id,
-      address: session.profile.wallet_address?.slice(0, 10) + '...'
-    });
+    console.log('✅ Auth session set and saved');
   }, []);
 
+  // Clear authentication session
   const clearAuthSession = useCallback(() => {
     setUserId(null);
     setAuthToken(null);
     setWalletProfile(null);
     setIsAuthenticated(false);
+    setIsAuthenticating(false);
     setHasRejectedSignature(false);
+    localStorage.removeItem('wallet_auth_session');
     
-    // Clear localStorage
-    localStorage.removeItem('wcc_wallet_token');
-    localStorage.removeItem('wcc_wallet_profile');
-    
-    console.log('[AUTH] Session cleared');
+    console.log('🗑️ Auth session cleared');
   }, []);
 
+  // Handle wallet disconnect
   const handleWalletDisconnect = useCallback(() => {
     clearAuthSession();
-    console.log('[AUTH] Wallet disconnected, auth cleared');
   }, [clearAuthSession]);
-  
-  const signMessageOnConnect = useCallback(async (publicKeyStr: string) => {
-    if (!signMessage || !publicKey || hasRejectedSignature) {
-      console.log('[AUTH] Sign blocked:', { signMessage: !!signMessage, publicKey: !!publicKey, hasRejectedSignature });
-      return;
-    }
-    
-    try {
-      setIsAuthenticating(true);
-      console.log('[AUTH] Starting nonce request for address:', publicKey.toString().slice(0, 10) + '...');
-      
-      const address = publicKey.toString();
-      const { nonce, message } = await requestNonce(address, 'solana');
-      console.log('[AUTH] Nonce received, requesting signature...');
-      
-      const messageBytes = new TextEncoder().encode(message);
-      const sigBytes = await signMessage(messageBytes);
-      const signature = bs58.encode(sigBytes);
-      
-      console.log('[AUTH] Signature received, verifying...');
-      const { token, profile } = await verifySignature({
-        address,
-        chain: 'solana',
-        signature,
-        nonce,
-        message,
-        publicKey: address
-      });
-      
-      // Set auth session - используем profile как основу
-      setAuthSession({
-        userId: profile.id,
-        token: token || '',
-        profile
-      });
-      
-      setHasRejectedSignature(false);
-      toast.success(`🎯 Wallet authenticated: ${address.slice(0, 6)}...${address.slice(-4)}`);
-      console.log('[AUTH] Authentication completed successfully');
-    } catch (error: any) {
-      console.error('[AUTH] Authentication error:', error);
-      setHasRejectedSignature(true);
-      toast.error(`❌ Authentication failed: ${error?.message || 'User declined to sign'}`);
-    } finally {
-      setIsAuthenticating(false);
-    }
-  }, [publicKey, signMessage, hasRejectedSignature, setAuthSession]);
 
-  const value = useMemo(() => ({
-    // Solana wallet state
+  // Context value
+  const contextValue = useMemo(() => ({
+    // Authentication state
     isAuthenticating,
     isAuthenticated,
     hasRejectedSignature,
     
-    // Backend auth state - используем profile.id как userId
+    // User data
     userId,
     authToken,
     walletProfile,
     
-    // Methods
-    signMessageOnConnect,
+    // Authentication actions
     setAuthSession,
     clearAuthSession,
-    handleWalletDisconnect
+    handleWalletDisconnect,
   }), [
-    isAuthenticating, isAuthenticated, hasRejectedSignature,
-    userId, authToken, walletProfile,
-    signMessageOnConnect, setAuthSession, clearAuthSession, handleWalletDisconnect
+    isAuthenticating,
+    isAuthenticated,
+    hasRejectedSignature,
+    userId,
+    authToken,
+    walletProfile,
+    setAuthSession,
+    clearAuthSession,
+    handleWalletDisconnect,
   ]);
 
   return (
-    <WalletContextExtended.Provider value={value}>
+    <WalletContextExtended.Provider value={contextValue}>
       {children}
     </WalletContextExtended.Provider>
   );
