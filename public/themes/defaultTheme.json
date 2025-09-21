@@ -299,7 +299,7 @@
       "qrIcon": { "color": "#9CA3AF", "type": "qr-code" }
     },
     "centerContainer": {
-      "backgroundColor": "",
+      "backgroundColor": "rgba(107, 114, 128, 0.1)",
       "backgroundImage": "",
       "backgroundPosition": "center",
       "borderRadius": "18px"
