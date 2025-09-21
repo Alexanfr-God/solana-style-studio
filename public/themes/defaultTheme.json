@@ -14,8 +14,8 @@
     "iconClose": { "color": "#FFFFFF", "type": "x" }
   },
   "lockLayer": {
-    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
-    "backgroundColor": "",
+    "backgroundImage": "",
+    "backgroundColor": "rgba(75, 85, 99, 0.8)",
     "title": {
       "textColor": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
@@ -103,8 +103,8 @@
     }
   },
   "homeLayer": {
-    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
-    "backgroundColor": "",
+    "backgroundImage": "",
+    "backgroundColor": "rgba(75, 85, 99, 0.8)",
     "header": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
       "backgroundImage": "",
@@ -254,7 +254,7 @@
   "receiveLayer": {
     "centerContainer": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
+      "backgroundImage": "",
       "backgroundPosition": "center",
       "borderRadius": "0px"
     },
@@ -285,7 +285,7 @@
   "sendLayer": {
     "headerContainer": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundImage": "",
       "backgroundPosition": "center"
     },
     "header": {
@@ -366,8 +366,8 @@
   },
   "buyLayer": {
     "headerContainer": {
-      "backgroundColor": "",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
+      "backgroundColor": "rgba(75, 85, 99, 0.8)",
+      "backgroundImage": "",
       "backgroundPosition": "center",
       "borderRadius": "0px"
     },
@@ -391,8 +391,8 @@
       }
     },
     "centerContainer": {
-      "backgroundColor": "",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
+      "backgroundColor": "rgba(75, 85, 99, 0.8)",
+      "backgroundImage": "",
       "backgroundPosition": "center",
       "borderRadius": "0px",
       "fontFamily": "Inter, sans-serif"
