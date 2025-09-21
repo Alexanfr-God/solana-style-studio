@@ -299,7 +299,7 @@
     },
     "centerContainer": {
       "backgroundColor": "#232323",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundImage": "",
       "backgroundPosition": "center",
       "borderRadius": "18px"
     },
