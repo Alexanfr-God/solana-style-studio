@@ -13,7 +13,7 @@
     "iconClose": { "color": "#F6C63B", "type": "x" }
   },
   "lockLayer": {
-    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
     "backgroundColor": "#143745",
     "title": {
       "textColor": "#F6C63B",
@@ -102,7 +102,7 @@
     }
   },
   "homeLayer": {
-    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
     "backgroundColor": "#0F2E3A",
     "header": {
       "backgroundColor": "#0F2E3A",
@@ -253,7 +253,7 @@
   "receiveLayer": {
     "centerContainer": {
       "backgroundColor": "",
-      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
       "backgroundPosition": "center",
       "borderRadius": "0px"
     },
