@@ -1,5 +1,5 @@
 export type BgTarget = {
-  id: 'lock' | 'home' | 'receiveCenter' | 'buyHeader' | 'ALL';
+  id: 'lock' | 'home' | 'receiveCenter' | 'sendCenter' | 'buyCenter' | 'ALL';
   label: string;
   imgPtr?: string; // json pointer
   colorPtr?: string; // json pointer
@@ -25,10 +25,16 @@ export const BG_TARGETS: BgTarget[] = [
     colorPtr: '/receiveLayer/centerContainer/backgroundColor' 
   },
   { 
-    id: 'buyHeader', 
+    id: 'sendCenter', 
+    label: 'Send', 
+    imgPtr: '/sendLayer/centerContainer/backgroundImage', 
+    colorPtr: '/sendLayer/centerContainer/backgroundColor' 
+  },
+  { 
+    id: 'buyCenter', 
     label: 'Buy', 
-    imgPtr: '/buyLayer/headerContainer/backgroundImage', 
-    colorPtr: '/buyLayer/headerContainer/backgroundColor' 
+    imgPtr: '/buyLayer/centerContainer/backgroundImage', 
+    colorPtr: '/buyLayer/centerContainer/backgroundColor' 
   },
   { 
     id: 'ALL', 
