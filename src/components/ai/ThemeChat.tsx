@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2 } from 'lucide-react';
+import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw } from 'lucide-react';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { FileUploadService } from '@/services/fileUploadService';
 import { LlmPatchService, type PatchRequest } from '@/services/llmPatchService';
@@ -138,6 +138,12 @@ const ThemeChat = () => {
       console.error('Failed to apply patch:', error);
       toast.error('Failed to apply image');
     }
+  };
+
+  const onReset = () => {
+    setApplied({});
+    console.log('[APPLY] Reset all applied states');
+    toast.success('Reset completed - you can reapply images');
   };
 
   const getElementSuggestions = (element: WalletElement) => {
@@ -434,6 +440,21 @@ const ThemeChat = () => {
                           {applied['ALL'] ? 'Applied: ALL' : 'Apply: ALL'}
                         </Button>
                       </div>
+                      
+                      {/* Reset button - show if any layers are applied */}
+                      {Object.values(applied).some(Boolean) && (
+                        <div className="flex justify-center mt-2">
+                          <Button
+                            onClick={onReset}
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs bg-red-500/10 border-red-500/30 hover:bg-red-500/20 text-red-300"
+                          >
+                            <RotateCcw className="w-3 h-3 mr-1" />
+                            Reset
+                          </Button>
+                        </div>
+                      )}
                       <div className="mt-2 text-xs text-white/60">
                         Note: when an image is applied, backgroundColor is cleared ("").
                       </div>
