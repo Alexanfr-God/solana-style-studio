@@ -104,7 +104,7 @@
   },
   "homeLayer": {
     "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
-    "backgroundColor": "#1F2937",
+    "backgroundColor": "",
     "header": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
       "backgroundImage": "",
