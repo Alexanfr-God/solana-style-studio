@@ -366,7 +366,7 @@
   },
   "buyLayer": {
     "headerContainer": {
-      "backgroundColor": "rgba(107, 114, 128, 0.1)",
+      "backgroundColor": "",
       "backgroundImage": "",
       "backgroundPosition": "center",
       "borderRadius": "0px"
