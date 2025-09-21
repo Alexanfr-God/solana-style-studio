@@ -367,7 +367,7 @@
   "buyLayer": {
     "headerContainer": {
       "backgroundColor": "",
-      "backgroundImage": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
       "backgroundPosition": "center",
       "borderRadius": "0px"
     },
