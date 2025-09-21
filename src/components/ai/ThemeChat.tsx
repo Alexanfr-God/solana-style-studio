@@ -140,10 +140,50 @@ const ThemeChat = () => {
     }
   };
 
-  const onReset = () => {
+  const onReset = async () => {
+    // Определяем какие слои были применены
+    const appliedTargets = Object.keys(applied).filter(key => applied[key]);
+    
+    if (appliedTargets.length > 0) {
+      try {
+        // Генерируем "обратный патч" для сброса изображений и восстановления фонов
+        const resetOps = buildExclusiveImageOps('ALL', '', theme).concat(
+          BG_TARGETS
+            .filter(t => t.id !== 'ALL' && t.colorPtr)
+            .map(t => {
+              const defaultColors = {
+                'lock': 'rgba(31, 41, 55, 0.8)',
+                'home': 'rgba(31, 41, 55, 0.9)', 
+                'receiveCenter': 'rgba(107, 114, 128, 0.1)',
+                'sendCenter': 'rgba(107, 114, 128, 0.1)',
+                'buyCenter': 'rgba(75, 85, 99, 0.8)'
+              };
+              const defaultColor = defaultColors[t.id as keyof typeof defaultColors] || '';
+              return { op: 'replace' as const, path: t.colorPtr!, value: defaultColor };
+            })
+        );
+        
+        // Применяем патч для визуального сброса
+        const resetPatch = {
+          id: crypto.randomUUID(),
+          operations: resetOps,
+          userPrompt: 'Reset applied images and restore original backgrounds',
+          pageId: 'home',
+          theme: theme,
+          timestamp: new Date()
+        };
+        await applyPatch(resetPatch);
+        console.log('[APPLY] Applied reset patch to remove images and restore backgrounds');
+      } catch (error) {
+        console.error('Failed to apply reset patch:', error);
+        toast.error('Failed to reset images');
+      }
+    }
+    
+    // Сбрасываем UI состояние
     setApplied({});
     console.log('[APPLY] Reset all applied states');
-    toast.success('Reset completed - you can reapply images');
+    toast.success('Reset completed - images removed and backgrounds restored');
   };
 
   const getElementSuggestions = (element: WalletElement) => {
