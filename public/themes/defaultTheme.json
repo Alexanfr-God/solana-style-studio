@@ -285,7 +285,7 @@
   "sendLayer": {
     "headerContainer": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
-      "backgroundImage": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_1/image_1.png",
       "backgroundPosition": "center"
     },
     "header": {
@@ -300,7 +300,7 @@
     },
     "centerContainer": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
-      "backgroundImage": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
       "backgroundPosition": "center",
       "borderRadius": "18px"
     },
