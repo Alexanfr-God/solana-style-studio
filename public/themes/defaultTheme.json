@@ -391,8 +391,8 @@
       }
     },
     "centerContainer": {
-      "backgroundColor": "rgba(107, 114, 128, 0.1)",
-      "backgroundImage": "",
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_18/Image_18.png",
       "backgroundPosition": "center",
       "borderRadius": "0px",
       "fontFamily": "Inter, sans-serif"
