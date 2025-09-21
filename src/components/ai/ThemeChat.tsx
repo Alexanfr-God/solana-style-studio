@@ -11,15 +11,19 @@ import { LlmPatchService, type PatchRequest } from '@/services/llmPatchService';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletElements, type WalletElement } from '@/hooks/useWalletElements';
 import { useSmartEditContext } from '@/hooks/useSmartEditContext';
+import { useThemeStore } from '@/state/themeStore';
+import { BG_TARGETS, type BgTarget } from '@/ai/constants/backgroundTargets';
+import { buildExclusiveImageOps } from '@/ai/tools/patchBuilders';
 import { toast } from 'sonner';
 
 interface Message {
   id: string;
-  type: 'user' | 'assistant';
+  type: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
   imageUrl?: string;
   patchApplied?: boolean;
+  uploadedImageUrl?: string; // For apply buttons
 }
 
 type ChatMode = 'general' | 'element';
@@ -31,6 +35,7 @@ const ThemeChat = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [authStatus, setAuthStatus] = useState<'checking' | 'wallet-connected' | 'authenticated' | 'disconnected'>('checking');
   const [chatMode, setChatMode] = useState<ChatMode>('general');
+  const [applied, setApplied] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -38,6 +43,7 @@ const ThemeChat = () => {
   const { currentLayer } = useWalletCustomizationStore();
   const { elements } = useWalletElements();
   const { selectedElement, updateSelectedElement, isEditMode, setIsEditMode } = useSmartEditContext();
+  const { theme, applyPatch } = useThemeStore();
 
   // Authentication check
   useEffect(() => {
@@ -60,14 +66,15 @@ const ThemeChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const addMessage = (content: string, type: 'user' | 'assistant', imageUrl?: string, patchApplied?: boolean) => {
+  const addMessage = (content: string, type: 'user' | 'assistant' | 'system', imageUrl?: string, patchApplied?: boolean, uploadedImageUrl?: string) => {
     const newMessage: Message = {
       id: Date.now().toString(),
       type,
       content,
       timestamp: new Date(),
       imageUrl,
-      patchApplied
+      patchApplied,
+      uploadedImageUrl
     };
     setMessages(prev => [...prev, newMessage]);
   };
@@ -103,6 +110,33 @@ const ThemeChat = () => {
       console.error('❌ Failed to apply patch:', error);
       toast.error('Failed to update theme');
       return false;
+    }
+  };
+
+  const onApply = async (targetId: BgTarget['id'], imageUrl: string) => {
+    if (!theme) return;
+    
+    const ops = buildExclusiveImageOps(targetId, imageUrl, theme);
+    if (!ops.length) return;
+
+    const patchEntry = {
+      id: `img-apply-${targetId}-${Date.now()}`,
+      operations: ops,
+      userPrompt: `Apply uploaded image to ${targetId}`,
+      pageId: 'ai-chat',
+      timestamp: new Date(),
+      theme: theme
+    };
+
+    console.log(`[STORE] Applied ops: ${ops.length} (img exclusive)`, { targetId, operations: ops });
+    
+    try {
+      await applyPatch(patchEntry);
+      setApplied(prev => ({ ...prev, [targetId]: true }));
+      toast.success(`✅ Image applied to ${targetId}`);
+    } catch (error) {
+      console.error('Failed to apply patch:', error);
+      toast.error('Failed to apply image');
     }
   };
 
@@ -222,15 +256,8 @@ const ThemeChat = () => {
 
       toast.success('🎯 Image uploaded successfully!');
 
-      // Auto-apply as background with JSON patch
-      const patchApplied = await applyJsonPatch(`Set this image as the wallet background`, result.url);
-      
-      // Generate AI response about the upload
-      const aiResponse = patchApplied
-        ? `Perfect! I've uploaded your image and set it as the wallet background. You can now see the changes in the wallet preview.`
-        : `Great! Your image has been uploaded successfully. You can ask me to apply it as a background or use it in other ways for your wallet theme.`;
-      
-      addMessage(aiResponse, 'assistant', undefined, patchApplied);
+      // Add system message with apply buttons
+      addMessage('', 'system', undefined, undefined, result.url);
 
     } catch (error) {
       console.error('💥 Upload error:', error);
@@ -379,18 +406,57 @@ const ThemeChat = () => {
                       className="w-full max-w-sm rounded mb-2 object-cover"
                     />
                   )}
-                  <p className="text-white text-sm">{message.content}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-white/40 text-xs">
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
-                    {message.patchApplied && (
-                      <div className="text-xs text-green-400 flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Applied to theme
+                  
+                  {/* System message with apply buttons */}
+                  {message.type === 'system' && message.uploadedImageUrl && (
+                    <div className="rounded-lg border border-purple-500/30 p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+                      <div className="mb-2 text-sm text-white">Image uploaded. Choose where to apply:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {BG_TARGETS.filter(t => t.id !== 'ALL').map(t => (
+                          <Button
+                            key={t.id}
+                            onClick={() => onApply(t.id, message.uploadedImageUrl!)}
+                            disabled={applied[t.id]}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-white/5 border-white/20 hover:bg-white/10 disabled:opacity-50"
+                          >
+                            {applied[t.id] ? `Applied: ${t.label}` : `Apply: ${t.label}`}
+                          </Button>
+                        ))}
+                        <Button
+                          onClick={() => onApply('ALL', message.uploadedImageUrl!)}
+                          disabled={applied['ALL']}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-3 text-xs bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30 hover:from-purple-600/30 hover:to-pink-600/30 disabled:opacity-50 font-medium"
+                        >
+                          {applied['ALL'] ? 'Applied: ALL' : 'Apply: ALL'}
+                        </Button>
                       </div>
-                    )}
-                  </div>
+                      <div className="mt-2 text-xs text-white/60">
+                        Note: when an image is applied, backgroundColor is cleared ("").
+                      </div>
+                    </div>
+                  )}
+                  
+                  {message.content && (
+                    <p className="text-white text-sm">{message.content}</p>
+                  )}
+                  
+                  {message.type !== 'system' && (
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-white/40 text-xs">
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
+                      {message.patchApplied && (
+                        <div className="text-xs text-green-400 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Applied to theme
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
