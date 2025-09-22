@@ -1,0 +1,668 @@
+{
+  "name": "Superman",
+  "version": "1.0.0",
+  "globalSearchInput": {
+    "backgroundColor": "#060508",
+    "textColor": "#DC2626", 
+    "placeholderColor": "#8B5CF6",
+    "borderRadius": "12px",
+    "border": "none",
+    "fontFamily": "Bangers, Comic Neue, sans-serif",
+    "fontSize": "15px",
+    "iconSearch": { "color": "#DC2626", "type": "search" },
+    "iconClose": { "color": "#DC2626", "type": "x" }
+  },
+  "lockLayer": {
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
+    "backgroundColor": "#070709",
+    "title": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "28px"
+    },
+    "passwordInput": {
+      "backgroundColor": "rgba(11,7,8,0.8)",
+      "textColor": "#F8F8FF",
+      "placeholderColor": "#8B5CF6",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Comic Neue, sans-serif",
+      "iconEyeColor": "#DC2626"
+    },
+    "forgotPassword": {
+      "textColor": "#3B82F6",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    },
+    "unlockButton": {
+      "backgroundColor": "#DC2626",
+      "textColor": "#FFFFFF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "600",
+      "fontSize": "19px",
+      "borderRadius": "14px"
+    }
+  },
+  "avatarHeader": {
+    "backgroundColor": "#DC2626",
+    "textColor": "#FFFFFF",
+    "fontFamily": "Bangers, Comic Neue, sans-serif",
+    "fontWeight": "bold",
+    "fontSize": "20px"
+  },
+  "sidebarLayer": {
+    "header": {
+      "backgroundColor": "#0b0708",
+      "accountTitle": {
+        "textColor": "#DC2626",
+        "fontFamily": "Bangers, Comic Neue, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "19px"
+      },
+      "closeIcon": {
+        "color": "#DC2626",
+        "type": "x"
+      }
+    },
+    "center": {
+      "backgroundColor": "#060508",
+      "accountList": {
+        "avatar": {
+          "backgroundColor": "#050e1d",
+          "textColor": "#3B82F6",
+          "fontFamily": "Bangers, Comic Neue, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "20px"
+        },
+        "accountName": {
+          "textColor": "#F8F8FF",
+          "fontFamily": "Bangers, Comic Neue, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "17px"
+        },
+        "accountAddress": {
+          "textColor": "#A5B4FC",
+          "fontFamily": "Comic Neue, sans-serif",
+          "fontSize": "14px"
+        },
+        "selectedAnimation": {
+          "color": "#DC2626",
+          "type": "glow"
+        }
+      }
+    },
+    "footer": {
+      "backgroundColor": "#0b0708",
+      "footerIcons": {
+        "addIcon": { "color": "#DC2626", "type": "plus" },
+        "editIcon": { "color": "#DC2626", "type": "pencil" },
+        "settingsIcon": { "color": "#DC2626", "type": "settings" }
+      }
+    }
+  },
+  "homeLayer": {
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
+    "backgroundColor": "#070709",
+    "header": {
+      "backgroundColor": "#070709",
+      "backgroundImage": "",
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "searchIcon": {
+        "color": "#DC2626",
+        "type": "search"
+      }
+    },
+    "footer": {
+      "backgroundColor": "#070709",
+      "backgroundImage": "",
+      "iconColor": "#DC2626",
+      "activeIconColor": "#3B82F6",
+      "textColor": "#A5B4FC",
+      "activeTextColor": "#F8F8FF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "14px",
+      "navigationIcons": {
+        "homeIcon": {
+          "color": "#DC2626",
+          "activeColor": "#FFFFFF",
+          "type": "home"
+        },
+        "appsIcon": {
+          "color": "#DC2626",
+          "activeColor": "#FFFFFF",
+          "type": "layout-grid"
+        },
+        "swapIcon": {
+          "color": "#DC2626",
+          "activeColor": "#FFFFFF",
+          "type": "arrow-right-left"
+        },
+        "historyIcon": {
+          "color": "#DC2626",
+          "activeColor": "#FFFFFF",
+          "type": "clock"
+        },
+        "searchIcon": {
+          "color": "#DC2626",
+          "activeColor": "#FFFFFF",
+          "type": "search"
+        }
+      }
+    },
+    "mainContainer": {
+      "backgroundColor": "rgba(220, 38, 38, 0.08)",
+      "borderRadius": "18px"
+    },
+    "totalBalanceLabel": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontWeight": "normal",
+      "fontSize": "17px"
+    },
+    "totalBalanceValue": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "32px"
+    },
+    "totalBalanceChange": {
+      "positiveColor": "#10B981",
+      "negativeColor": "#EF4444",
+      "zeroColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "16px"
+    },
+    "actionButtons": {
+      "receiveButton": {
+        "containerColor": "#DC2626",
+        "iconColor": "#FFFFFF",
+        "labelColor": "#FFFFFF",
+        "labelFontFamily": "Comic Neue, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "sendButton": {
+        "containerColor": "#3B82F6",
+        "iconColor": "#FFFFFF",
+        "labelColor": "#FFFFFF",
+        "labelFontFamily": "Comic Neue, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "swapButton": {
+        "containerColor": "#DC2626",
+        "iconColor": "#FFFFFF",
+        "labelColor": "#FFFFFF",
+        "labelFontFamily": "Comic Neue, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "buyButton": {
+        "containerColor": "#3B82F6",
+        "iconColor": "#FFFFFF",
+        "labelColor": "#FFFFFF",
+        "labelFontFamily": "Comic Neue, sans-serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      }
+    },
+    "seeAll": {
+      "textColor": "#3B82F6",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "13px"
+    },
+    "accountDropdown": {
+      "containerBackgroundColor": "#0e0709",
+      "containerBorderRadius": "16px",
+      "headerText": {
+        "selectAccountColor": "#F8F8FF",
+        "selectAccountDescription": "#A5B4FC",
+        "selectAccountFontFamily": "Comic Neue, sans-serif",
+        "selectAccountFontSize": "14px"
+      },
+      "accountItems": {
+        "mainAccountColor": "#F8F8FF",
+        "mainAccountFontFamily": "Comic Neue, sans-serif",
+        "mainAccountFontSize": "14px",
+        "tradingAccountColor": "#A5B4FC",
+        "tradingAccountFontFamily": "Comic Neue, sans-serif",
+        "tradingAccountFontSize": "14px",
+        "accountNetworkColor": "#A5B4FC",
+        "accountAddressColor": "#A5B4FC"
+      },
+      "actionButtons": {
+        "addAccountColor": "#DC2626",
+        "addAccountFontFamily": "Comic Neue, sans-serif",
+        "addAccountFontSize": "14px",
+        "manageCollectibleColor": "#DC2626",
+        "manageCollectibleFontFamily": "Comic Neue, sans-serif",
+        "manageCollectibleFontSize": "14px"
+      },
+      "icons": {
+        "copyAddressIcon": {
+          "color": "#DC2626",
+          "type": "copy"
+        }
+      }
+    }
+  },
+  "receiveLayer": {
+    "centerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px"
+    },
+    "selectNetworkLabel": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px"
+    },
+    "selectNetworkDescription": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    },
+    "footer": {
+      "backgroundColor": "",
+      "backgroundImage": "",
+      "closeButton": {
+        "backgroundColor": "#DC2626",
+        "textColor": "#FFFFFF",
+        "fontFamily": "Comic Neue, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "16px",
+        "borderRadius": "12px"
+      }
+    }
+  },
+  "sendLayer": {
+    "headerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
+      "backgroundPosition": "center"
+    },
+    "header": {
+      "backIcon": { "color": "#DC2626", "type": "arrow-left" },
+      "title": {
+        "textColor": "#F8F8FF",
+        "fontFamily": "Bangers, Comic Neue, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "23px"
+      },
+      "qrIcon": { "color": "#3B82F6", "type": "qr-code" }
+    },
+    "centerContainer": {
+      "backgroundColor": "#050e1c",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
+      "backgroundPosition": "center",
+      "borderRadius": "18px"
+    },
+    "selectNetworkLabel": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "19px"
+    },
+    "selectNetworkDescription": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    },
+    "emptyState": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    },
+    "footerContainer": {
+      "backgroundColor": "#070709",
+      "backgroundImage": ""
+    },
+    "footer": {
+      "closeButton": {
+        "backgroundColor": "#050e1d",
+        "textColor": "#F8F8FF",
+        "fontFamily": "Comic Neue, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "19px",
+        "icon": { "color": "#DC2626", "type": "x" },
+        "borderRadius": "16px"
+      }
+    }
+  },
+  "appsLayer": {
+    "title": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "26px"
+    },
+    "subtitle": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "16px"
+    },
+    "collectibleCard": {
+      "backgroundColor": "#DC2626",
+      "backgroundImage": "",
+      "borderRadius": "16px"
+    },
+    "collectibleName": {
+      "textColor": "#FFFFFF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "17px"
+    },
+    "manageCollectibleList": {
+      "textColor": "#3B82F6",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "14px"
+    }
+  },
+  "buyLayer": {
+    "headerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px"
+    },
+    "header": {
+      "backButton": {
+        "backgroundColor": "#3B82F6",
+        "borderRadius": "14px",
+        "text": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Comic Neue, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "17px"
+        },
+        "icon": { "color": "#FFFFFF", "type": "arrow-left" }
+      },
+      "title": {
+        "textColor": "#F8F8FF",
+        "fontFamily": "Bangers, Comic Neue, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "26px"
+      }
+    },
+    "centerContainer": {
+      "backgroundColor": "#050e1c",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_9/image_9.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px",
+      "fontFamily": "Comic Neue, sans-serif"
+    },
+    "sectionLabel": {
+      "getStarted": {
+        "textColor": "#F8F8FF",
+        "fontFamily": "Bangers, Comic Neue, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "18px"
+      },
+      "popular": {
+        "textColor": "#F8F8FF",
+        "fontFamily": "Bangers, Comic Neue, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "18px"
+      }
+    },
+    "buyButton": {
+      "backgroundColor": "#DC2626",
+      "textColor": "#FFFFFF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "18px",
+      "borderRadius": "14px"
+    },
+    "footerContainer": {
+      "backgroundColor": "#070709",
+      "borderRadius": "0px"
+    },
+    "footer": {
+      "closeButton": {
+        "backgroundColor": "#3B82F6",
+        "textColor": "#FFFFFF",
+        "fontFamily": "Comic Neue, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "18px",
+        "borderRadius": "14px",
+        "icon": { "color": "#FFFFFF", "type": "x" }
+      }
+    }
+  },
+  "swapLayer": {
+    "mainContainer": {
+      "backgroundColor": "#0b0708",
+      "backgroundImage": "",
+      "borderRadius": "20px"
+    },
+    "swapTitle": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "22px"
+    },
+    "settingsIcon": {
+      "color": "#DC2626",
+      "type": "settings"
+    },
+    "fromContainer": {
+      "backgroundColor": "#0e0709",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "fromLabel": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    },
+    "fromBalance": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "14px"
+    },
+    "fromCoinTag": {
+      "backgroundColor": "#050e1d",
+      "textColor": "#F8F8FF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px",
+      "borderRadius": "10px"
+    },
+    "toContainer": {
+      "backgroundColor": "#0e0709",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "toLabel": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    },
+    "toBalance": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "14px"
+    },
+    "toCoinTag": {
+      "backgroundColor": "#050e1d",
+      "textColor": "#F8F8FF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px",
+      "borderRadius": "10px"
+    },
+    "arrowIcon": {
+      "color": "#DC2626",
+      "type": "arrow-up-down"
+    },
+    "rateContainer": {
+      "backgroundColor": "#0e0709",
+      "backgroundImage": "",
+      "borderRadius": "12px"
+    },
+    "rateLabel": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    },
+    "rateValue": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "16px"
+    },
+    "infoIcon": {
+      "color": "#3B82F6",
+      "type": "info"
+    },
+    "swapActionButton": {
+      "backgroundColor": "#DC2626",
+      "color": "#FFFFFF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "16px",
+      "borderRadius": "12px"
+    }
+  },
+  "historyLayer": {
+    "recentActivityTitle": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "19px"
+    },
+    "menuIcon": {
+      "color": "#DC2626",
+      "type": "more-vertical"
+    },
+    "activityDate": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "13px"
+    },
+    "activityStatus": {
+      "successColor": "#10B981",
+      "failedColor": "#EF4444",
+      "pendingColor": "#FCD34D",
+      "fontWeight": "500"
+    },
+    "loadMore": {
+      "textColor": "#3B82F6",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    }
+  },
+  "searchLayer": {
+    "searchInput": {
+      "backgroundColor": "#060508",
+      "textColor": "#F8F8FF",
+      "placeholderColor": "#8B5CF6",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Comic Neue, sans-serif",
+      "iconSearch": { "color": "#DC2626", "type": "search" },
+      "iconClose": { "color": "#DC2626", "type": "x" }
+    },
+    "searchInputFont": {
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px",
+      "textColor": "#F8F8FF"
+    },
+    "recentSearchesLabel": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "iconTime": { "color": "#DC2626", "type": "clock" }
+    },
+    "trendingLabel": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "iconTrending": { "color": "#10B981", "type": "trending-up" }
+    },
+    "tokenTag": {
+      "backgroundColor": "#050e1d",
+      "textColor": "#F8F8FF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "14px",
+      "borderRadius": "10px"
+    }
+  },
+  "assetCard": {
+    "backgroundColor": "#0e0709",
+    "borderRadius": "14px",
+    "title": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Bangers, Comic Neue, sans-serif",
+      "fontWeight": "bold",
+      "fontSize": "16px"
+    },
+    "description": {
+      "textColor": "#A5B4FC",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "14px"
+    },
+    "value": {
+      "textColor": "#F8F8FF",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "15px"
+    },
+    "percent": {
+      "positiveColor": "#10B981",
+      "negativeColor": "#EF4444",
+      "fontFamily": "Comic Neue, sans-serif",
+      "fontSize": "14px"
+    },
+    "icon": {
+      "color": "#DC2626",
+      "size": "24px"
+    }
+  },
+  "tokenCost": {
+    "fontSize": "13px",
+    "fontWeight": "400",
+    "fontFamily": "Comic Neue, sans-serif",
+    "color": "#A5B4FC"
+  },
+  "tokenCardTitle": {
+    "fontSize": "16px",
+    "fontWeight": "600",
+    "fontFamily": "Bangers, Comic Neue, sans-serif",
+    "color": "#F8F8FF",
+    "textAlign": "center"
+  },
+  "tokenCardDescription": {
+    "fontSize": "13px",
+    "fontWeight": "400",
+    "fontFamily": "Comic Neue, sans-serif",
+    "color": "#A5B4FC",
+    "textAlign": "center"
+  },
+  "inputs": {
+    "passwordInput": {
+      "backgroundColor": "#0e0709",
+      "textColor": "#F8F8FF",
+      "placeholderColor": "#8B5CF6",
+      "iconEyeColor": "#DC2626",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Comic Neue, sans-serif"
+    },
+    "searchInput": {
+      "backgroundColor": "#0e0709",
+      "textColor": "#F8F8FF",
+      "placeholderColor": "#8B5CF6",
+      "borderRadius": "10px",
+      "border": "1px solid #050e1d",
+      "fontFamily": "Comic Neue, sans-serif"
+    }
+  },
+  "global": {
+    "fontFamily": "Comic Neue, sans-serif",
+    "borderRadius": "14px",
+    "transition": "all 0.2s ease"
+  }
+}
