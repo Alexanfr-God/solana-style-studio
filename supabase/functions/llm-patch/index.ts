@@ -4,6 +4,7 @@ import { applyPatch, Operation } from 'https://esm.sh/fast-json-patch@3.1.1';
 import Ajv from 'https://esm.sh/ajv@8.12.0';
 import addFormats from 'https://esm.sh/ajv-formats@2.1.1';
 import { FileUploadModule } from './fileUploadModule.ts';
+import { processVisionStyle, VisionStyleRequest } from './modules/visionStyle.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -184,6 +185,32 @@ serve(async (req) => {
       console.log('📁 Processing file upload request');
       const fileUploadModule = new FileUploadModule(supabase);
       const result = await fileUploadModule.uploadFile(requestBody as FileUploadRequest);
+      return jsonResponse(result);
+    }
+
+    // Handle vision-style mode
+    if (requestBody.mode === 'vision-style') {
+      console.log('🎨 Processing vision-style request');
+      const result = await processVisionStyle(requestBody as VisionStyleRequest, supabase);
+      
+      // Log telemetry for vision request
+      try {
+        await logLlmPatchTelemetry(supabase, {
+          user_id: 'anonymous', // Vision может быть без auth
+          prompt: `Vision analysis: ${requestBody.imageUrl}`,
+          page_id: 'vision',
+          has_preset: false,
+          preset_id: null,
+          response_valid: result.ops.length > 0,
+          operation_count: result.ops.length,
+          execution_time_ms: performance.now() - startTime,
+          error_message: result.ops.length === 0 ? result.message : null,
+          theme_id: 'vision-analysis'
+        });
+      } catch (telemetryError) {
+        console.error('📊 Telemetry logging failed:', telemetryError);
+      }
+      
       return jsonResponse(result);
     }
 

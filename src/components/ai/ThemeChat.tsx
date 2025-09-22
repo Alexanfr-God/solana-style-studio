@@ -186,6 +186,88 @@ const ThemeChat = () => {
     toast.success('Reset completed - images removed and backgrounds restored');
   };
 
+  const handleAnalyzeColors = async (imageUrl: string) => {
+    if (!theme) {
+      toast.error('Theme not loaded');
+      return;
+    }
+
+    setIsProcessing(true);
+    console.log('[VISION] Starting color analysis for:', imageUrl);
+
+    try {
+      // Определяем язык (простая проверка на кириллицу в последних сообщениях)
+      const recentMessages = messages.slice(-3);
+      const hasRussianText = recentMessages.some(msg => 
+        /[а-яё]/i.test(msg.content)
+      );
+      const lang = hasRussianText ? 'ru' : 'en';
+
+      // Подготовка запроса для vision-style mode
+      const visionRequest = {
+        mode: 'vision-style' as const,
+        imageUrl: imageUrl,
+        themeSnapshot: theme,
+        targets: [
+          'lockLayer',
+          'homeLayer',
+          'receiveLayer.centerContainer',
+          'sendLayer.centerContainer',
+          'buyLayer.centerContainer'
+        ],
+        rules: {
+          exclusiveBg: true,
+          onlyReplace: true,
+          preserveSemanticColors: true
+        },
+        lang: lang
+      };
+
+      console.log('[VISION] Calling llm-patch with vision-style mode');
+      
+      // Вызываем edge функцию через supabase functions напрямую
+      const supabase = (await import('@/integrations/supabase/client')).supabase;
+      const { data: response, error } = await supabase.functions.invoke('llm-patch', {
+        body: visionRequest
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (response && response.ops && response.ops.length > 0) {
+        // Применяем полученные патчи
+        const visionPatch = {
+          id: `vision-${Date.now()}`,
+          operations: response.ops,
+          userPrompt: `Vision color analysis: ${imageUrl}`,
+          pageId: 'vision',
+          timestamp: new Date(),
+          theme: theme
+        };
+
+        await applyPatch(visionPatch);
+        console.log(`[STORE] Applied ops: ${response.ops.length} (vision)`);
+
+        // Добавляем сообщение о результате
+        addMessage(response.message || `Applied color analysis • ${response.ops.length} fields updated`, 'assistant', undefined, true);
+
+        toast.success('🎨 Colors analyzed and applied!');
+      } else {
+        console.log('[VISION] No operations returned');
+        addMessage(response?.message || 'No color changes were applied - existing images may be protecting the backgrounds.', 'assistant');
+        toast.info('No colors applied - backgrounds may be protected by images');
+      }
+
+    } catch (error) {
+      console.error('[VISION] Error during color analysis:', error);
+      addMessage(`Error analyzing colors: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
+      toast.error('Failed to analyze colors');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const getElementSuggestions = (element: WalletElement) => {
     const elementType = element.type;
     const elementName = element.name;
@@ -481,20 +563,31 @@ const ThemeChat = () => {
                         </Button>
                       </div>
                       
-                      {/* Reset button - show if any layers are applied */}
-                      {Object.values(applied).some(Boolean) && (
-                        <div className="flex justify-center mt-2">
+                      {/* Analyze colors button - show after image upload */}
+                      <div className="flex justify-center mt-3 gap-2">
+                        <Button
+                          onClick={() => handleAnalyzeColors(message.uploadedImageUrl!)}
+                          disabled={isProcessing}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-3 text-xs bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30 hover:from-blue-500/30 hover:to-cyan-500/30 disabled:opacity-50"
+                        >
+                          {isProcessing ? 'Analyzing...' : 'Analyze colors'}
+                        </Button>
+                        
+                        {/* Reset button - show if any layers are applied */}
+                        {Object.values(applied).some(Boolean) && (
                           <Button
                             onClick={onReset}
                             variant="outline"
                             size="sm"
-                            className="h-7 px-2 text-xs bg-red-500/10 border-red-500/30 hover:bg-red-500/20 text-red-300"
+                            className="h-8 px-2 text-xs bg-red-500/10 border-red-500/30 hover:bg-red-500/20 text-red-300"
                           >
                             <RotateCcw className="w-3 h-3 mr-1" />
                             Reset
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                       <div className="mt-2 text-xs text-white/60">
                         Note: when an image is applied, backgroundColor is cleared ("").
                       </div>
