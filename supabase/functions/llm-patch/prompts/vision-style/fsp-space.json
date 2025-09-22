@@ -1,0 +1,668 @@
+{
+"name": "Spaca",
+"version": "1.0.0",
+"globalSearchInput": {
+"backgroundColor": "#0A0D1F",
+"textColor": "#F4D35E",
+"placeholderColor": "#4A5B8B",
+"borderRadius": "12px",
+"border": "none",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px",
+"iconSearch": { "color": "#F4D35E", "type": "search" },
+"iconClose": { "color": "#F4D35E", "type": "x" }
+},
+"lockLayer": {
+"backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
+"backgroundColor": "#111A3A",
+"title": {
+"textColor": "#F4D35E",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "28px"
+},
+"passwordInput": {
+"backgroundColor": "rgba(10,13,31,0.8)",
+"textColor": "#EDEAF7",
+"placeholderColor": "#4A5B8B",
+"borderRadius": "12px",
+"border": "none",
+"fontFamily": "Space Grotesk, sans-serif",
+"iconEyeColor": "#F4D35E"
+},
+"forgotPassword": {
+"textColor": "#E5892F",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+},
+"unlockButton": {
+"backgroundColor": "#F4D35E",
+"textColor": "#0A0D1F",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "600",
+"fontSize": "19px",
+"borderRadius": "14px"
+}
+},
+"avatarHeader": {
+"backgroundColor": "#F4D35E",
+"textColor": "#0A0D1F",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "20px"
+},
+"sidebarLayer": {
+"header": {
+"backgroundColor": "#1B2554",
+"accountTitle": {
+"textColor": "#F4D35E",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "19px"
+},
+"closeIcon": {
+"color": "#F4D35E",
+"type": "x"
+}
+},
+"center": {
+"backgroundColor": "#0A0D1F",
+"accountList": {
+"avatar": {
+"backgroundColor": "#2442A8",
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "20px"
+},
+"accountName": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "17px"
+},
+"accountAddress": {
+"textColor": "#4A5B8B",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "14px"
+},
+"selectedAnimation": {
+"color": "#F4D35E",
+"type": "glow"
+}
+}
+},
+"footer": {
+"backgroundColor": "#1B2554",
+"footerIcons": {
+"addIcon": { "color": "#F4D35E", "type": "plus" },
+"editIcon": { "color": "#F4D35E", "type": "pencil" },
+"settingsIcon": { "color": "#F4D35E", "type": "settings" }
+}
+}
+},
+"homeLayer": {
+"backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
+"backgroundColor": "#0A0D1F",
+"header": {
+"backgroundColor": "#0A0D1F",
+"backgroundImage": "",
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "17px",
+"searchIcon": {
+"color": "#F4D35E",
+"type": "search"
+}
+},
+"footer": {
+"backgroundColor": "#0A0D1F",
+"backgroundImage": "",
+"iconColor": "#F4D35E",
+"activeIconColor": "#E5892F",
+"textColor": "#EDEAF7",
+"activeTextColor": "#F4D35E",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "14px",
+"navigationIcons": {
+"homeIcon": {
+"color": "#F4D35E",
+"activeColor": "#E5892F",
+"type": "home"
+},
+"appsIcon": {
+"color": "#F4D35E",
+"activeColor": "#E5892F",
+"type": "layout-grid"
+},
+"swapIcon": {
+"color": "#F4D35E",
+"activeColor": "#E5892F",
+"type": "arrow-right-left"
+},
+"historyIcon": {
+"color": "#F4D35E",
+"activeColor": "#E5892F",
+"type": "clock"
+},
+"searchIcon": {
+"color": "#F4D35E",
+"activeColor": "#E5892F",
+"type": "search"
+}
+}
+},
+"mainContainer": {
+"backgroundColor": "rgba(244,211,94,0.08)",
+"borderRadius": "18px"
+},
+"totalBalanceLabel": {
+"textColor": "#EDEAF7",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontWeight": "normal",
+"fontSize": "17px"
+},
+"totalBalanceValue": {
+"textColor": "#F4D35E",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "32px"
+},
+"totalBalanceChange": {
+"positiveColor": "#2EB67D",
+"negativeColor": "#C23A3A",
+"zeroColor": "#EDEAF7",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "16px"
+},
+"actionButtons": {
+"receiveButton": {
+"containerColor": "#F4D35E",
+"iconColor": "#0A0D1F",
+"labelColor": "#0A0D1F",
+"labelFontFamily": "Orbitron, sans-serif",
+"labelFontSize": "14px",
+"borderRadius": "12px"
+},
+"sendButton": {
+"containerColor": "#F4D35E",
+"iconColor": "#0A0D1F",
+"labelColor": "#0A0D1F",
+"labelFontFamily": "Orbitron, sans-serif",
+"labelFontSize": "14px",
+"borderRadius": "12px"
+},
+"swapButton": {
+"containerColor": "#F4D35E",
+"iconColor": "#0A0D1F",
+"labelColor": "#0A0D1F",
+"labelFontFamily": "Orbitron, sans-serif",
+"labelFontSize": "14px",
+"borderRadius": "12px"
+},
+"buyButton": {
+"containerColor": "#F4D35E",
+"iconColor": "#0A0D1F",
+"labelColor": "#0A0D1F",
+"labelFontFamily": "Orbitron, sans-serif",
+"labelFontSize": "14px",
+"borderRadius": "12px"
+}
+},
+"seeAll": {
+"textColor": "#59B8D6",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "13px"
+},
+"accountDropdown": {
+"containerBackgroundColor": "#1B2554",
+"containerBorderRadius": "16px",
+"headerText": {
+"selectAccountColor": "#EDEAF7",
+"selectAccountDescription": "#4A5B8B",
+"selectAccountFontFamily": "Space Grotesk, sans-serif",
+"selectAccountFontSize": "14px"
+},
+"accountItems": {
+"mainAccountColor": "#EDEAF7",
+"mainAccountFontFamily": "Space Grotesk, sans-serif",
+"mainAccountFontSize": "14px",
+"tradingAccountColor": "#4A5B8B",
+"tradingAccountFontFamily": "Space Grotesk, sans-serif",
+"tradingAccountFontSize": "14px",
+"accountNetworkColor": "#4A5B8B",
+"accountAddressColor": "#4A5B8B"
+},
+"actionButtons": {
+"addAccountColor": "#F4D35E",
+"addAccountFontFamily": "Space Grotesk, sans-serif",
+"addAccountFontSize": "14px",
+"manageCollectibleColor": "#F4D35E",
+"manageCollectibleFontFamily": "Space Grotesk, sans-serif",
+"manageCollectibleFontSize": "14px"
+},
+"icons": {
+"copyAddressIcon": {
+"color": "#F4D35E",
+"type": "copy"
+}
+}
+}
+},
+"receiveLayer": {
+"centerContainer": {
+"backgroundColor": "",
+"backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
+"backgroundPosition": "center",
+"borderRadius": "0px"
+},
+"selectNetworkLabel": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "17px"
+},
+"selectNetworkDescription": {
+"textColor": "#59B8D6",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+},
+"footer": {
+"backgroundColor": "",
+"backgroundImage": "",
+"closeButton": {
+"backgroundColor": "#F4D35E",
+"textColor": "#0A0D1F",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "16px",
+"borderRadius": "12px"
+}
+}
+},
+"sendLayer": {
+"headerContainer": {
+"backgroundColor": "",
+"backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
+"backgroundPosition": "center"
+},
+"header": {
+"backIcon": { "color": "#F4D35E", "type": "arrow-left" },
+"title": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "23px"
+},
+"qrIcon": { "color": "#F4D35E", "type": "qr-code" }
+},
+"centerContainer": {
+"backgroundColor": "#1B2554",
+"backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
+"backgroundPosition": "center",
+"borderRadius": "18px"
+},
+"selectNetworkLabel": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "19px"
+},
+"selectNetworkDescription": {
+"textColor": "#59B8D6",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+},
+"emptyState": {
+"textColor": "#EDEAF7",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+},
+"footerContainer": {
+"backgroundColor": "#0A0D1F",
+"backgroundImage": ""
+},
+"footer": {
+"closeButton": {
+"backgroundColor": "#4A5B8B",
+"textColor": "#EDEAF7",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontWeight": "bold",
+"fontSize": "19px",
+"icon": { "color": "#59B8D6", "type": "x" },
+"borderRadius": "16px"
+}
+}
+},
+"appsLayer": {
+"title": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "26px"
+},
+"subtitle": {
+"textColor": "#59B8D6",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "16px"
+},
+"collectibleCard": {
+"backgroundColor": "#F4D35E",
+"backgroundImage": "",
+"borderRadius": "16px"
+},
+"collectibleName": {
+"textColor": "#0A0D1F",
+"fontFamily": "Orbitron, sans-serif",
+"fontSize": "17px"
+},
+"manageCollectibleList": {
+"textColor": "#59B8D6",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "14px"
+}
+},
+"buyLayer": {
+"headerContainer": {
+"backgroundColor": "",
+"backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
+"backgroundPosition": "center",
+"borderRadius": "0px"
+},
+"header": {
+"backButton": {
+"backgroundColor": "#F4D35E",
+"borderRadius": "14px",
+"text": {
+"textColor": "#0A0D1F",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "17px"
+},
+"icon": { "color": "#0A0D1F", "type": "arrow-left" }
+},
+"title": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "26px"
+}
+},
+"centerContainer": {
+"backgroundColor": "#1B2554",
+"backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_19/Image_19.png",
+"backgroundPosition": "center",
+"borderRadius": "0px",
+"fontFamily": "Space Grotesk, sans-serif"
+},
+"sectionLabel": {
+"getStarted": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "18px"
+},
+"popular": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "18px"
+}
+},
+"buyButton": {
+"backgroundColor": "#F4D35E",
+"textColor": "#0A0D1F",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "18px",
+"borderRadius": "14px"
+},
+"footerContainer": {
+"backgroundColor": "#0A0D1F",
+"borderRadius": "0px"
+},
+"footer": {
+"closeButton": {
+"backgroundColor": "#F4D35E",
+"textColor": "#0A0D1F",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "18px",
+"borderRadius": "14px",
+"icon": { "color": "#0A0D1F", "type": "x" }
+}
+}
+},
+"swapLayer": {
+"mainContainer": {
+"backgroundColor": "#0A0D1F",
+"backgroundImage": "",
+"borderRadius": "20px"
+},
+"swapTitle": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "22px"
+},
+"settingsIcon": {
+"color": "#F4D35E",
+"type": "settings"
+},
+"fromContainer": {
+"backgroundColor": "#1B2554",
+"backgroundImage": "",
+"borderRadius": "15px"
+},
+"fromLabel": {
+"textColor": "#EDEAF7",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+},
+"fromBalance": {
+"textColor": "#4A5B8B",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "14px"
+},
+"fromCoinTag": {
+"backgroundColor": "#1B2554",
+"textColor": "#F4D35E",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px",
+"borderRadius": "10px"
+},
+"toContainer": {
+"backgroundColor": "#1B2554",
+"backgroundImage": "",
+"borderRadius": "15px"
+},
+"toLabel": {
+"textColor": "#EDEAF7",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+},
+"toBalance": {
+"textColor": "#4A5B8B",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "14px"
+},
+"toCoinTag": {
+"backgroundColor": "#1B2554",
+"textColor": "#F4D35E",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px",
+"borderRadius": "10px"
+},
+"arrowIcon": {
+"color": "#59B8D6",
+"type": "arrow-up-down"
+},
+"rateContainer": {
+"backgroundColor": "#1B2554",
+"backgroundImage": "",
+"borderRadius": "12px"
+},
+"rateLabel": {
+"textColor": "#4A5B8B",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+},
+"rateValue": {
+"textColor": "#F4D35E",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "16px"
+},
+"infoIcon": {
+"color": "#F4D35E",
+"type": "info"
+},
+"swapActionButton": {
+"backgroundColor": "#F4D35E",
+"color": "#0A0D1F",
+"fontFamily": "Orbitron, sans-serif",
+"fontSize": "16px",
+"borderRadius": "12px"
+}
+},
+"historyLayer": {
+"recentActivityTitle": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "19px"
+},
+"menuIcon": {
+"color": "#F4D35E",
+"type": "more-vertical"
+},
+"activityDate": {
+"textColor": "#59B8D6",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "13px"
+},
+"activityStatus": {
+"successColor": "#2EB67D",
+"failedColor": "#C23A3A",
+"pendingColor": "#F4D35E",
+"fontWeight": "500"
+},
+"loadMore": {
+"textColor": "#59B8D6",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+}
+},
+"searchLayer": {
+"searchInput": {
+"backgroundColor": "#0A0D1F",
+"textColor": "#EDEAF7",
+"placeholderColor": "#4A5B8B",
+"borderRadius": "12px",
+"border": "none",
+"fontFamily": "Space Grotesk, sans-serif",
+"iconSearch": { "color": "#F4D35E", "type": "search" },
+"iconClose": { "color": "#F4D35E", "type": "x" }
+},
+"searchInputFont": {
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px",
+"textColor": "#EDEAF7"
+},
+"recentSearchesLabel": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "17px",
+"iconTime": { "color": "#F4D35E", "type": "clock" }
+},
+"trendingLabel": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "17px",
+"iconTrending": { "color": "#2EB67D", "type": "trending-up" }
+},
+"tokenTag": {
+"backgroundColor": "#4A5B8B",
+"textColor": "#EDEAF7",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "14px",
+"borderRadius": "10px"
+}
+},
+"assetCard": {
+"backgroundColor": "#1B2554",
+"borderRadius": "14px",
+"title": {
+"textColor": "#EDEAF7",
+"fontFamily": "Orbitron, sans-serif",
+"fontWeight": "bold",
+"fontSize": "16px"
+},
+"description": {
+"textColor": "#59B8D6",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "14px"
+},
+"value": {
+"textColor": "#EDEAF7",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "15px"
+},
+"percent": {
+"positiveColor": "#2EB67D",
+"negativeColor": "#C23A3A",
+"fontFamily": "Space Grotesk, sans-serif",
+"fontSize": "14px"
+},
+"icon": {
+"color": "#F4D35E",
+"size": "24px"
+}
+},
+"tokenCost": {
+"fontSize": "13px",
+"fontWeight": "400",
+"fontFamily": "Space Grotesk, sans-serif",
+"color": "#59B8D6"
+},
+"tokenCardTitle": {
+"fontSize": "16px",
+"fontWeight": "600",
+"fontFamily": "Orbitron, sans-serif",
+"color": "#EDEAF7",
+"textAlign": "center"
+},
+"tokenCardDescription": {
+"fontSize": "13px",
+"fontWeight": "400",
+"fontFamily": "Space Grotesk, sans-serif",
+"color": "#59B8D6",
+"textAlign": "center"
+},
+"inputs": {
+"passwordInput": {
+"backgroundColor": "#1B2554",
+"textColor": "#EDEAF7",
+"placeholderColor": "#4A5B8B",
+"iconEyeColor": "#F4D35E",
+"borderRadius": "12px",
+"border": "none",
+"fontFamily": "Space Grotesk, sans-serif"
+},
+"searchInput": {
+"backgroundColor": "#1B2554",
+"textColor": "#EDEAF7",
+"placeholderColor": "#4A5B8B",
+"borderRadius": "10px",
+"border": "1px solid #4A5B8B",
+"fontFamily": "Space Grotesk, sans-serif"
+}
+},
+"global": {
+"fontFamily": "Space Grotesk, sans-serif",
+"borderRadius": "14px",
+"transition": "all 0.2s ease"
+}
+}
