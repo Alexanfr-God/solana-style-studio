@@ -1,0 +1,668 @@
+{
+  "name": "Gucci Cat Luxury Theme",
+  "version": "1.0.0",
+  "globalSearchInput": {
+    "backgroundColor": "#1B4332",
+    "textColor": "#D4AF37",
+    "placeholderColor": "#8B4513",
+    "borderRadius": "12px",
+    "border": "none",
+    "fontFamily": "Playfair Display, Georgia, serif",
+    "fontSize": "15px",
+    "iconSearch": { "color": "#D4AF37", "type": "search" },
+    "iconClose": { "color": "#D4AF37", "type": "x" }
+  },
+  "lockLayer": {
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png",
+    "backgroundColor": "#1B4332",
+    "title": {
+      "textColor": "#F5F5DC",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "28px"
+    },
+    "passwordInput": {
+      "backgroundColor": "rgba(27,67,50,0.8)",
+      "textColor": "#F5F5DC",
+      "placeholderColor": "#D4AF37",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "iconEyeColor": "#D4AF37"
+    },
+    "forgotPassword": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    },
+    "unlockButton": {
+      "backgroundColor": "#8B2F1B",
+      "textColor": "#F5F5DC",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "700",
+      "fontSize": "19px",
+      "borderRadius": "14px"
+    }
+  },
+  "avatarHeader": {
+    "backgroundColor": "#D4AF37",
+    "textColor": "#1B4332",
+    "fontFamily": "Playfair Display, Georgia, serif",
+    "fontWeight": "bold",
+    "fontSize": "20px"
+  },
+  "sidebarLayer": {
+    "header": {
+      "backgroundColor": "#1B4332",
+      "accountTitle": {
+        "textColor": "#D4AF37",
+        "fontFamily": "Playfair Display, Georgia, serif",
+        "fontWeight": "bold",
+        "fontSize": "19px"
+      },
+      "closeIcon": {
+        "color": "#D4AF37",
+        "type": "x"
+      }
+    },
+    "center": {
+      "backgroundColor": "#2D5F47",
+      "accountList": {
+        "avatar": {
+          "backgroundColor": "#8B2F1B",
+          "textColor": "#F5F5DC",
+          "fontFamily": "Playfair Display, Georgia, serif",
+          "fontWeight": "bold",
+          "fontSize": "20px"
+        },
+        "accountName": {
+          "textColor": "#D4AF37",
+          "fontFamily": "Playfair Display, Georgia, serif",
+          "fontWeight": "bold",
+          "fontSize": "17px"
+        },
+        "accountAddress": {
+          "textColor": "#C19A6B",
+          "fontFamily": "Playfair Display, Georgia, serif",
+          "fontSize": "14px"
+        },
+        "selectedAnimation": {
+          "color": "#D4AF37",
+          "type": "glow"
+        }
+      }
+    },
+    "footer": {
+      "backgroundColor": "#1B4332",
+      "footerIcons": {
+        "addIcon": { "color": "#D4AF37", "type": "plus" },
+        "editIcon": { "color": "#D4AF37", "type": "pencil" },
+        "settingsIcon": { "color": "#D4AF37", "type": "settings" }
+      }
+    }
+  },
+  "homeLayer": {
+    "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png",
+    "backgroundColor": "#1B4332",
+    "header": {
+      "backgroundColor": "#1B4332",
+      "backgroundImage": "",
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "searchIcon": {
+        "color": "#D4AF37",
+        "type": "search"
+      }
+    },
+    "footer": {
+      "backgroundColor": "#1B4332",
+      "backgroundImage": "",
+      "iconColor": "#D4AF37",
+      "activeIconColor": "#8B2F1B",
+      "textColor": "#D4AF37",
+      "activeTextColor": "#8B2F1B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "14px",
+      "navigationIcons": {
+        "homeIcon": {
+          "color": "#D4AF37",
+          "activeColor": "#F5F5DC",
+          "type": "home"
+        },
+        "appsIcon": {
+          "color": "#D4AF37",
+          "activeColor": "#F5F5DC",
+          "type": "layout-grid"
+        },
+        "swapIcon": {
+          "color": "#D4AF37",
+          "activeColor": "#F5F5DC",
+          "type": "arrow-right-left"
+        },
+        "historyIcon": {
+          "color": "#D4AF37",
+          "activeColor": "#F5F5DC",
+          "type": "clock"
+        },
+        "searchIcon": {
+          "color": "#D4AF37",
+          "activeColor": "#F5F5DC",
+          "type": "search"
+        }
+      }
+    },
+    "mainContainer": {
+      "backgroundColor": "rgba(212, 175, 55, 0.12)",
+      "borderRadius": "18px"
+    },
+    "totalBalanceLabel": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "600",
+      "fontSize": "17px"
+    },
+    "totalBalanceValue": {
+      "textColor": "#F5F5DC",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "800",
+      "fontSize": "32px"
+    },
+    "totalBalanceChange": {
+      "positiveColor": "#D4AF37",
+      "negativeColor": "#8B2F1B",
+      "zeroColor": "#F5F5DC",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "16px"
+    },
+    "actionButtons": {
+      "receiveButton": {
+        "containerColor": "#D4AF37",
+        "iconColor": "#1B4332",
+        "labelColor": "#1B4332",
+        "labelFontFamily": "Playfair Display, Georgia, serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "sendButton": {
+        "containerColor": "#8B2F1B",
+        "iconColor": "#F5F5DC",
+        "labelColor": "#F5F5DC",
+        "labelFontFamily": "Playfair Display, Georgia, serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "swapButton": {
+        "containerColor": "#C19A6B",
+        "iconColor": "#1B4332",
+        "labelColor": "#1B4332",
+        "labelFontFamily": "Playfair Display, Georgia, serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      },
+      "buyButton": {
+        "containerColor": "#D4AF37",
+        "iconColor": "#1B4332",
+        "labelColor": "#1B4332",
+        "labelFontFamily": "Playfair Display, Georgia, serif",
+        "labelFontSize": "14px",
+        "borderRadius": "12px"
+      }
+    },
+    "seeAll": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "13px"
+    },
+    "accountDropdown": {
+      "containerBackgroundColor": "#2D5F47",
+      "containerBorderRadius": "16px",
+      "headerText": {
+        "selectAccountColor": "#D4AF37",
+        "selectAccountDescription": "#C19A6B",
+        "selectAccountFontFamily": "Playfair Display, Georgia, serif",
+        "selectAccountFontSize": "14px"
+      },
+      "accountItems": {
+        "mainAccountColor": "#D4AF37",
+        "mainAccountFontFamily": "Playfair Display, Georgia, serif",
+        "mainAccountFontSize": "14px",
+        "tradingAccountColor": "#C19A6B",
+        "tradingAccountFontFamily": "Playfair Display, Georgia, serif",
+        "tradingAccountFontSize": "14px",
+        "accountNetworkColor": "#C19A6B",
+        "accountAddressColor": "#C19A6B"
+      },
+      "actionButtons": {
+        "addAccountColor": "#D4AF37",
+        "addAccountFontFamily": "Playfair Display, Georgia, serif",
+        "addAccountFontSize": "14px",
+        "manageCollectibleColor": "#D4AF37",
+        "manageCollectibleFontFamily": "Playfair Display, Georgia, serif",
+        "manageCollectibleFontSize": "14px"
+      },
+      "icons": {
+        "copyAddressIcon": {
+          "color": "#D4AF37",
+          "type": "copy"
+        }
+      }
+    }
+  },
+  "receiveLayer": {
+    "centerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px"
+    },
+    "selectNetworkLabel": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "17px"
+    },
+    "selectNetworkDescription": {
+      "textColor": "#C19A6B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    },
+    "footer": {
+      "backgroundColor": "",
+      "backgroundImage": "",
+      "closeButton": {
+        "backgroundColor": "#8B2F1B",
+        "textColor": "#F5F5DC",
+        "fontFamily": "Playfair Display, Georgia, serif",
+        "fontWeight": "bold",
+        "fontSize": "16px",
+        "borderRadius": "12px"
+      }
+    }
+  },
+  "sendLayer": {
+    "headerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png",
+      "backgroundPosition": "center"
+    },
+    "header": {
+      "backIcon": { "color": "#8B2F1B", "type": "arrow-left" },
+      "title": {
+        "textColor": "#1B4332",
+        "fontFamily": "Playfair Display, Georgia, serif",
+        "fontWeight": "bold",
+        "fontSize": "23px"
+      },
+      "qrIcon": { "color": "#8B2F1B", "type": "qr-code" }
+    },
+    "centerContainer": {
+      "backgroundColor": "#2D5F47",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png",
+      "backgroundPosition": "center",
+      "borderRadius": "18px"
+    },
+    "selectNetworkLabel": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "19px"
+    },
+    "selectNetworkDescription": {
+      "textColor": "#C19A6B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    },
+    "emptyState": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    },
+    "footerContainer": {
+      "backgroundColor": "#1B4332",
+      "backgroundImage": ""
+    },
+    "footer": {
+      "closeButton": {
+        "backgroundColor": "#2D5F47",
+        "textColor": "#D4AF37",
+        "fontFamily": "Playfair Display, Georgia, serif",
+        "fontWeight": "bold",
+        "fontSize": "19px",
+        "icon": { "color": "#8B2F1B", "type": "x" },
+        "borderRadius": "16px"
+      }
+    }
+  },
+  "appsLayer": {
+    "title": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "26px"
+    },
+    "subtitle": {
+      "textColor": "#C19A6B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "16px"
+    },
+    "collectibleCard": {
+      "backgroundColor": "#8B2F1B",
+      "backgroundImage": "",
+      "borderRadius": "16px"
+    },
+    "collectibleName": {
+      "textColor": "#F5F5DC",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "17px"
+    },
+    "manageCollectibleList": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "14px"
+    }
+  },
+  "buyLayer": {
+    "headerContainer": {
+      "backgroundColor": "",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px"
+    },
+    "header": {
+      "backButton": {
+        "backgroundColor": "#D4AF37",
+        "borderRadius": "14px",
+        "text": {
+          "textColor": "#1B4332",
+          "fontFamily": "Playfair Display, Georgia, serif",
+          "fontWeight": "bold",
+          "fontSize": "17px"
+        },
+        "icon": { "color": "#1B4332", "type": "arrow-left" }
+      },
+      "title": {
+        "textColor": "#D4AF37",
+        "fontFamily": "Playfair Display, Georgia, serif",
+        "fontWeight": "bold",
+        "fontSize": "26px"
+      }
+    },
+    "centerContainer": {
+      "backgroundColor": "#2D5F47",
+      "backgroundImage": "https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/ai-examples-json/poster_5/image_5.png",
+      "backgroundPosition": "center",
+      "borderRadius": "0px",
+      "fontFamily": "Playfair Display, Georgia, serif"
+    },
+    "sectionLabel": {
+      "getStarted": {
+        "textColor": "#D4AF37",
+        "fontFamily": "Playfair Display, Georgia, serif",
+        "fontWeight": "bold",
+        "fontSize": "18px"
+      },
+      "popular": {
+        "textColor": "#D4AF37",
+        "fontFamily": "Playfair Display, Georgia, serif",
+        "fontWeight": "bold",
+        "fontSize": "18px"
+      }
+    },
+    "buyButton": {
+      "backgroundColor": "#8B2F1B",
+      "textColor": "#F5F5DC",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "18px",
+      "borderRadius": "14px"
+    },
+    "footerContainer": {
+      "backgroundColor": "#1B4332",
+      "borderRadius": "0px"
+    },
+    "footer": {
+      "closeButton": {
+        "backgroundColor": "#D4AF37",
+        "textColor": "#1B4332",
+        "fontFamily": "Playfair Display, Georgia, serif",
+        "fontWeight": "bold",
+        "fontSize": "18px",
+        "borderRadius": "14px",
+        "icon": { "color": "#1B4332", "type": "x" }
+      }
+    }
+  },
+  "swapLayer": {
+    "mainContainer": {
+      "backgroundColor": "#1B4332",
+      "backgroundImage": "",
+      "borderRadius": "20px"
+    },
+    "swapTitle": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "22px"
+    },
+    "settingsIcon": {
+      "color": "#D4AF37",
+      "type": "settings"
+    },
+    "fromContainer": {
+      "backgroundColor": "#2D5F47",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "fromLabel": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    },
+    "fromBalance": {
+      "textColor": "#C19A6B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "14px"
+    },
+    "fromCoinTag": {
+      "backgroundColor": "#1B4332",
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px",
+      "borderRadius": "10px"
+    },
+    "toContainer": {
+      "backgroundColor": "#2D5F47",
+      "backgroundImage": "",
+      "borderRadius": "15px"
+    },
+    "toLabel": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    },
+    "toBalance": {
+      "textColor": "#C19A6B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "14px"
+    },
+    "toCoinTag": {
+      "backgroundColor": "#1B4332",
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px",
+      "borderRadius": "10px"
+    },
+    "arrowIcon": {
+      "color": "#8B2F1B",
+      "type": "arrow-up-down"
+    },
+    "rateContainer": {
+      "backgroundColor": "#2D5F47",
+      "backgroundImage": "",
+      "borderRadius": "12px"
+    },
+    "rateLabel": {
+      "textColor": "#C19A6B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    },
+    "rateValue": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "16px"
+    },
+    "infoIcon": {
+      "color": "#D4AF37",
+      "type": "info"
+    },
+    "swapActionButton": {
+      "backgroundColor": "#8B2F1B",
+      "color": "#FFFFFF",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "16px",
+      "borderRadius": "12px"
+    }
+  },
+  "historyLayer": {
+    "recentActivityTitle": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "19px"
+    },
+    "menuIcon": {
+      "color": "#D4AF37",
+      "type": "more-vertical"
+    },
+    "activityDate": {
+      "textColor": "#C19A6B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "13px"
+    },
+    "activityStatus": {
+      "successColor": "#D4AF37",
+      "failedColor": "#8B2F1B",
+      "pendingColor": "#C19A6B",
+      "fontWeight": "600"
+    },
+    "loadMore": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    }
+  },
+  "searchLayer": {
+    "searchInput": {
+      "backgroundColor": "#1B4332",
+      "textColor": "#D4AF37",
+      "placeholderColor": "#8B2F1B",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "iconSearch": { "color": "#D4AF37", "type": "search" },
+      "iconClose": { "color": "#D4AF37", "type": "x" }
+    },
+    "searchInputFont": {
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px",
+      "textColor": "#D4AF37"
+    },
+    "recentSearchesLabel": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "iconTime": { "color": "#D4AF37", "type": "clock" }
+    },
+    "trendingLabel": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "17px",
+      "iconTrending": { "color": "#C19A6B", "type": "trending-up" }
+    },
+    "tokenTag": {
+      "backgroundColor": "#2D5F47",
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "14px",
+      "borderRadius": "10px"
+    }
+  },
+  "assetCard": {
+    "backgroundColor": "#2D5F47",
+    "borderRadius": "14px",
+    "title": {
+      "textColor": "#D4AF37",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontWeight": "bold",
+      "fontSize": "16px"
+    },
+    "description": {
+      "textColor": "#C19A6B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "14px"
+    },
+    "value": {
+      "textColor": "#F5F5DC",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "15px"
+    },
+    "percent": {
+      "positiveColor": "#D4AF37",
+      "negativeColor": "#8B2F1B",
+      "fontFamily": "Playfair Display, Georgia, serif",
+      "fontSize": "14px"
+    },
+    "icon": {
+      "color": "#D4AF37",
+      "size": "24px"
+    }
+  },
+  "tokenCost": {
+    "fontSize": "13px",
+    "fontWeight": "600",
+    "fontFamily": "Playfair Display, Georgia, serif",
+    "color": "#C19A6B"
+  },
+  "tokenCardTitle": {
+    "fontSize": "16px",
+    "fontWeight": "700",
+    "fontFamily": "Playfair Display, Georgia, serif",
+    "color": "#D4AF37",
+    "textAlign": "center"
+  },
+  "tokenCardDescription": {
+    "fontSize": "13px",
+    "fontWeight": "500",
+    "fontFamily": "Playfair Display, Georgia, serif",
+    "color": "#C19A6B",
+    "textAlign": "center"
+  },
+  "inputs": {
+    "passwordInput": {
+      "backgroundColor": "#2D5F47",
+      "textColor": "#D4AF37",
+      "placeholderColor": "#8B2F1B",
+      "iconEyeColor": "#D4AF37",
+      "borderRadius": "12px",
+      "border": "none",
+      "fontFamily": "Playfair Display, Georgia, serif"
+    },
+    "searchInput": {
+      "backgroundColor": "#2D5F47",
+      "textColor": "#D4AF37",
+      "placeholderColor": "#8B2F1B",
+      "borderRadius": "10px",
+      "border": "1px solid #8B2F1B",
+      "fontFamily": "Playfair Display, Georgia, serif"
+    }
+  },
+  "global": {
+    "fontFamily": "Playfair Display, Georgia, serif",
+    "borderRadius": "14px",
+    "transition": "all 0.2s ease"
+  }
+}
