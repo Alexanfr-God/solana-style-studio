@@ -374,6 +374,7 @@ export type Database = {
           icon_group: string | null
           id: string
           is_customizable_icon: boolean | null
+          json_path: string | null
           name: string
           parent_element: string | null
           position: string | null
@@ -395,6 +396,7 @@ export type Database = {
           icon_group?: string | null
           id: string
           is_customizable_icon?: boolean | null
+          json_path?: string | null
           name: string
           parent_element?: string | null
           position?: string | null
@@ -416,6 +418,7 @@ export type Database = {
           icon_group?: string | null
           id?: string
           is_customizable_icon?: boolean | null
+          json_path?: string | null
           name?: string
           parent_element?: string | null
           position?: string | null
