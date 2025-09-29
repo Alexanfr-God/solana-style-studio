@@ -156,11 +156,11 @@ export const useWalletTheme = () => {
   const getSearchLayer = () => theme.searchLayer || {};
   const getGlobal = () => theme.global || {};
   
-  const getAccountDropdown = () => theme.accountDropdown || {};
+  const getAccountDropdown = () => theme.homeLayer?.accountDropdown || {};
 
-  const getBottomNavigation = () => theme.bottomNavigation || {};
+  const getBottomNavigation = () => theme.homeLayer?.footer || {};
 
-  const getActionButtons = () => theme.actionButtons || {};
+  const getActionButtons = () => theme.homeLayer?.actionButtons || {};
 
   const getTransition = (type: string = 'default') => {
     return theme.global?.transition || 'all 0.2s ease';
