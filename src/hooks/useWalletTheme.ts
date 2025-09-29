@@ -156,28 +156,11 @@ export const useWalletTheme = () => {
   const getSearchLayer = () => theme.searchLayer || {};
   const getGlobal = () => theme.global || {};
   
-  const getAccountDropdown = () => theme.accountDropdown || {
-    backgroundColor: '#1a1410',
-    borderColor: 'rgba(255, 215, 115, 0.2)',
-    itemHoverColor: 'rgba(255, 215, 115, 0.1)',
-    textColor: '#ffd773',
-    secondaryTextColor: '#ad7e26'
-  };
+  const getAccountDropdown = () => theme.accountDropdown || {};
 
-  const getBottomNavigation = () => theme.bottomNavigation || {
-    backgroundColor: '#1a1410',
-    borderColor: 'rgba(255, 215, 115, 0.2)',
-    activeColor: '#ffd773',
-    inactiveColor: '#ad7e26'
-  };
+  const getBottomNavigation = () => theme.bottomNavigation || {};
 
-  const getActionButtons = () => theme.actionButtons || {
-    backgroundColor: 'rgba(255, 215, 115, 0.1)',
-    hoverBackgroundColor: 'rgba(255, 215, 115, 0.2)',
-    textColor: '#ffd773',
-    iconColor: '#ffd773',
-    borderRadius: '12px'
-  };
+  const getActionButtons = () => theme.actionButtons || {};
 
   const getTransition = (type: string = 'default') => {
     return theme.global?.transition || 'all 0.2s ease';
