@@ -56,6 +56,9 @@ interface WalletTheme {
   tokenCardTitle?: TokenCardTitle;
   tokenCardDescription?: TokenCardDescription;
   global?: any;
+  accountDropdown?: any;
+  bottomNavigation?: any;
+  actionButtons?: any;
 }
 
 // Bridge to useThemeStore - single source of truth
@@ -152,6 +155,29 @@ export const useWalletTheme = () => {
   const getHistoryLayer = () => theme.historyLayer || {};
   const getSearchLayer = () => theme.searchLayer || {};
   const getGlobal = () => theme.global || {};
+  
+  const getAccountDropdown = () => theme.accountDropdown || {
+    backgroundColor: '#1a1410',
+    borderColor: 'rgba(255, 215, 115, 0.2)',
+    itemHoverColor: 'rgba(255, 215, 115, 0.1)',
+    textColor: '#ffd773',
+    secondaryTextColor: '#ad7e26'
+  };
+
+  const getBottomNavigation = () => theme.bottomNavigation || {
+    backgroundColor: '#1a1410',
+    borderColor: 'rgba(255, 215, 115, 0.2)',
+    activeColor: '#ffd773',
+    inactiveColor: '#ad7e26'
+  };
+
+  const getActionButtons = () => theme.actionButtons || {
+    backgroundColor: 'rgba(255, 215, 115, 0.1)',
+    hoverBackgroundColor: 'rgba(255, 215, 115, 0.2)',
+    textColor: '#ffd773',
+    iconColor: '#ffd773',
+    borderRadius: '12px'
+  };
 
   const getTransition = (type: string = 'default') => {
     return theme.global?.transition || 'all 0.2s ease';
@@ -201,6 +227,9 @@ export const useWalletTheme = () => {
     getHistoryLayer,
     getSearchLayer,
     getGlobal,
+    getAccountDropdown,
+    getBottomNavigation,
+    getActionButtons,
     getTransition,
     getUnifiedTokenColor,
     tokenColors

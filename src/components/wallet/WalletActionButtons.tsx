@@ -18,7 +18,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
   showAccountDropdown = false 
 }) => {
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
-  const { getHomeLayer, getTransition } = useWalletTheme();
+  const { getHomeLayer, getActionButtons, getTransition } = useWalletTheme();
 
   const actions = [
     { id: 'receive', icon: Download, label: 'Receive' },
@@ -28,6 +28,7 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
   ];
 
   const homeStyle = getHomeLayer();
+  const actionButtonsStyle = getActionButtons();
   
   return (
     <div className="grid grid-cols-4 gap-2 px-4 pt-0 pb-4">
@@ -38,8 +39,10 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
         const actionButtonStyle: React.CSSProperties = {
           height: '56px',
           width: '56px',
-          borderRadius: buttonConfig?.borderRadius || style.borderRadius || '16px',
-          backgroundColor: buttonConfig?.containerColor || 'rgba(40, 40, 40, 0.8)',
+          borderRadius: buttonConfig?.borderRadius || actionButtonsStyle?.borderRadius || style.borderRadius || '16px',
+          backgroundColor: isHovered 
+            ? buttonConfig?.hoverBackgroundColor || actionButtonsStyle?.hoverBackgroundColor || 'rgba(60, 60, 60, 0.8)'
+            : buttonConfig?.containerColor || actionButtonsStyle?.backgroundColor || 'rgba(40, 40, 40, 0.8)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -62,14 +65,14 @@ const WalletActionButtons: React.FC<WalletActionButtonsProps> = ({
               <action.icon 
                 className={`h-5 w-5 home-${action.id}-icon`}
                 data-element-id={`home-${action.id}-icon`}
-                style={{ color: buttonConfig?.iconColor || style.accentColor }} 
+                style={{ color: buttonConfig?.iconColor || actionButtonsStyle?.iconColor || style.accentColor }} 
               />
             </button>
             <span 
               className={`text-xs mt-2 home-${action.id}-label`}
               data-element-id={`home-${action.id}-label`}
               style={{ 
-                color: buttonConfig?.labelColor || '#FFFFFF',
+                color: buttonConfig?.labelColor || actionButtonsStyle?.textColor || '#FFFFFF',
                 fontFamily: buttonConfig?.labelFontFamily || 'Inter, sans-serif',
                 fontSize: buttonConfig?.labelFontSize || '14px'
               }}

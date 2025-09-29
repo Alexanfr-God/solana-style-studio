@@ -15,11 +15,10 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
     setActiveAccount
   } = useWalletCustomizationStore();
   
-  const { getHomeLayer, getTransition } = useWalletTheme();
+  const { getAccountDropdown, getTransition } = useWalletTheme();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const homeStyle = getHomeLayer();
-  const dropdownConfig = homeStyle.accountDropdown;
+  const dropdownConfig = getAccountDropdown();
 
   // Close dropdown when clicking outside
   useEffect(() => {

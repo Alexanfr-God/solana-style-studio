@@ -27,8 +27,8 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
     setActiveAccount
   } = useWalletCustomizationStore();
   
-  const { getHomeLayer } = useWalletTheme();
-  const dropdownStyle = getHomeLayer()?.accountDropdown;
+  const { getAccountDropdown } = useWalletTheme();
+  const dropdownStyle = getAccountDropdown();
   
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 

@@ -10,8 +10,9 @@ const WalletBottomNavigation = () => {
     setCurrentLayer
   } = useWalletCustomizationStore();
   
-  const { getHomeLayer } = useWalletTheme();
+  const { getHomeLayer, getBottomNavigation } = useWalletTheme();
   const homeStyle = getHomeLayer();
+  const bottomNavStyle = getBottomNavigation();
 
   const navItems = [
     { 
@@ -66,13 +67,14 @@ const WalletBottomNavigation = () => {
       style={{
         backgroundColor: homeStyle.footer?.backgroundImage 
           ? `url(${homeStyle.footer.backgroundImage})` 
-          : homeStyle.footer?.backgroundColor || 'rgba(0, 0, 0, 0.5)',
+          : bottomNavStyle?.backgroundColor || homeStyle.footer?.backgroundColor || 'rgba(0, 0, 0, 0.5)',
         backgroundSize: homeStyle.footer?.backgroundImage ? 'cover' : undefined,
         backgroundPosition: homeStyle.footer?.backgroundImage ? 'center' : undefined,
         backdropFilter: 'blur(10px)',
         borderBottomLeftRadius: '1rem',
         borderBottomRightRadius: '1rem',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        borderColor: bottomNavStyle?.borderColor || 'rgba(255, 255, 255, 0.1)',
+        border: `1px solid ${bottomNavStyle?.borderColor || 'rgba(255, 255, 255, 0.1)'}`
       }}
     >
       <div className="grid grid-cols-5 items-center">
@@ -97,8 +99,8 @@ const WalletBottomNavigation = () => {
                 data-element-id={item.dataElementId}
                 style={{
                   color: isActive 
-                    ? iconConfig?.activeColor || homeStyle.footer?.activeIconColor || '#fff'
-                    : iconConfig?.color || homeStyle.footer?.iconColor || '#6a55ff'
+                    ? iconConfig?.activeColor || bottomNavStyle?.activeColor || homeStyle.footer?.activeIconColor || '#fff'
+                    : iconConfig?.color || bottomNavStyle?.inactiveColor || homeStyle.footer?.iconColor || '#6a55ff'
                 }}
               />
               <span 
