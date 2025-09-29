@@ -7,6 +7,9 @@ import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import WalletContainer from '@/components/wallet/WalletContainer';
 import { useWalletElements } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
+import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
+import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
+import { useSmartEditContext } from '@/hooks/useSmartEditContext';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -30,6 +33,14 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const walletContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Smart Edit Context for visual element selection
+  const { 
+    isEditMode, 
+    setIsEditMode, 
+    updateSelectedElement, 
+    selectedElement 
+  } = useSmartEditContext();
 
   // Read theme from SoT without writing back
   const theme = useThemeStore(state => state.theme);
@@ -367,8 +378,32 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             ) : (
               <WalletContainer />
             )}
+            
+            {/* Visual Element Selection System */}
+            <AdvancedInteractiveElementSelector
+              isActive={isEditMode}
+              onElementSelect={(element) => {
+                updateSelectedElement(element);
+                console.log('✅ Element selected:', {
+                  name: element.name,
+                  type: element.type,
+                  json_path: element.json_path,
+                  screen: element.screen
+                });
+              }}
+              onExit={() => setIsEditMode(false)}
+              containerRef={walletContainerRef}
+            />
           </div>
         </div>
+        
+        {/* Edit Mode Indicator */}
+        <EditModeIndicator
+          isActive={isEditMode}
+          selectedElementName={selectedElement?.name}
+          elementsCount={elements.length}
+          onExit={() => setIsEditMode(false)}
+        />
       </CardContent>
     </Card>
   );

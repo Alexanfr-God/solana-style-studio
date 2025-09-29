@@ -72,7 +72,12 @@ export const ElementHighlightOverlay: React.FC<ElementHighlightOverlayProps> = (
             boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
           }}
         >
-          ✓ {walletElement?.name || 'Selected'}
+          <div>✓ {walletElement?.name || 'Selected'}</div>
+          {walletElement?.json_path && (
+            <div style={{ fontSize: '9px', opacity: 0.85, marginTop: '2px' }}>
+              {walletElement.json_path}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -92,7 +97,12 @@ export const ElementHighlightOverlay: React.FC<ElementHighlightOverlayProps> = (
             boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)'
           }}
         >
-          {walletElement?.name || 'Hover'}
+          <div>{walletElement?.name || 'Hover'}</div>
+          {walletElement?.json_path && (
+            <div style={{ fontSize: '9px', opacity: 0.85, marginTop: '2px' }}>
+              {walletElement.json_path}
+            </div>
+          )}
         </div>
       </div>
     );

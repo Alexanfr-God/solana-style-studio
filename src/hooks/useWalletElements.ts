@@ -17,6 +17,7 @@ export interface WalletElement {
   category?: string;
   asset_library_path?: string;
   z_index?: number;
+  json_path?: string;
 }
 
 export interface ElementCategory {
