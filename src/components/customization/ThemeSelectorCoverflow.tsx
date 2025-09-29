@@ -4,10 +4,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useThemeSelector } from '@/hooks/useThemeSelector';
-import { useCustomizationStore } from '@/stores/customizationStore';
 import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
 import { CUST_STORE_INSTANCE_ID } from '@/stores/customizationStore';
-import { mapThemeToWalletStyle } from '@/utils/themeMapper';
 import { toast } from 'sonner';
 import { withRenderGuard } from '@/utils/guard';
 
@@ -32,7 +30,6 @@ const ThemeSelectorCoverflow: React.FC = () => {
     source 
   } = useThemeSelector();
   
-  const { setStyleForLayer } = useCustomizationStore();
   const { setTheme, setActiveThemeId } = useThemeStore();
   const [loadingThemes, setLoadingThemes] = useState<Set<string>>(new Set());
   
@@ -69,22 +66,17 @@ const ThemeSelectorCoverflow: React.FC = () => {
     });
     
     try {
-      // Apply to themeStore (main source of truth)
+      // Apply to themeStore (single source of truth)
       setTheme(themeData);
       setActiveThemeId(themeId);
       
-      // Apply to customizationStore for compatibility
-      const { loginStyle, walletStyle } = mapThemeToWalletStyle(themeData);
-      setStyleForLayer('login', loginStyle);
-      setStyleForLayer('wallet', walletStyle);
-      
-      console.log('[CF] ✅ Theme applied successfully to both stores');
+      console.log('[CF] ✅ Theme applied successfully to themeStore');
       
     } catch (error) {
       console.error('[CF] 💥 Error applying theme:', error);
       throw error;
     }
-  }, [setStyleForLayer, setTheme, setActiveThemeId]);
+  }, [setTheme, setActiveThemeId]);
 
   // Apply active theme when initialized
   useEffect(() => {
