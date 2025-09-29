@@ -9,7 +9,7 @@ import { useWalletElements } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
 import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
 import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
-import { useSmartEditContext } from '@/hooks/useSmartEditContext';
+import { useSmartEdit } from '@/contexts/SmartEditContext';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -40,7 +40,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     setIsEditMode, 
     updateSelectedElement, 
     selectedElement 
-  } = useSmartEditContext();
+  } = useSmartEdit();
 
   // Read theme from SoT without writing back
   const theme = useThemeStore(state => state.theme);

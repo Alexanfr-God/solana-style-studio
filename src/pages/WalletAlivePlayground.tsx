@@ -4,6 +4,7 @@ import WalletPreviewContainer from '@/components/customization/WalletPreviewCont
 // import ChatInterface from '@/components/chat/ChatInterface'; // Временно закомментировано
 import { Button } from '@/components/ui/button';
 import { WalletChatProvider } from '@/contexts/WalletChatContext';
+import { SmartEditContextProvider } from '@/contexts/SmartEditContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ThemeSelectorCoverflow from '@/components/customization/ThemeSelectorCoverflow';
@@ -24,7 +25,8 @@ const WalletAlivePlayground = () => {
 
   return (
     <WalletChatProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex flex-col">
+      <SmartEditContextProvider>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex flex-col">
         {/* Header */}
         <Header />
         
@@ -80,7 +82,8 @@ const WalletAlivePlayground = () => {
 
         {/* Footer - Will stick to bottom with mt-auto from flex layout */}
         <Footer />
-      </div>
+        </div>
+      </SmartEditContextProvider>
     </WalletChatProvider>
   );
 };

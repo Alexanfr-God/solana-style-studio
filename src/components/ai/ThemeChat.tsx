@@ -10,7 +10,7 @@ import { FileUploadService } from '@/services/fileUploadService';
 import { LlmPatchService, type PatchRequest } from '@/services/llmPatchService';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useWalletElements, type WalletElement } from '@/hooks/useWalletElements';
-import { useSmartEditContext } from '@/hooks/useSmartEditContext';
+import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { useThemeStore } from '@/state/themeStore';
 import { BG_TARGETS, type BgTarget } from '@/ai/constants/backgroundTargets';
 import { buildExclusiveImageOps } from '@/ai/tools/patchBuilders';
@@ -42,7 +42,7 @@ const ThemeChat = () => {
   const { isAuthenticated, walletProfile, isAuthenticating } = useExtendedWallet();
   const { currentLayer } = useWalletCustomizationStore();
   const { elements } = useWalletElements();
-  const { selectedElement, updateSelectedElement, isEditMode, setIsEditMode } = useSmartEditContext();
+  const { selectedElement, updateSelectedElement, isEditMode, setIsEditMode } = useSmartEdit();
   const { theme, applyPatch } = useThemeStore();
 
   // Authentication check
