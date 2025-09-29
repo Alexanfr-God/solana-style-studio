@@ -428,7 +428,10 @@ const ThemeChat = () => {
           <Button
             variant={chatMode === 'general' ? "default" : "ghost"}
             size="sm"
-            onClick={() => setChatMode('general')}
+            onClick={() => {
+              setChatMode('general');
+              setIsEditMode(false);
+            }}
             className="h-7 px-2 text-xs"
           >
             <Palette className="h-3 w-3 mr-1" />
@@ -437,7 +440,10 @@ const ThemeChat = () => {
           <Button
             variant={chatMode === 'element' ? "default" : "ghost"}
             size="sm"
-            onClick={() => setChatMode('element')}
+            onClick={() => {
+              setChatMode('element');
+              setIsEditMode(true);
+            }}
             className="h-7 px-2 text-xs"
           >
             <Wand2 className="h-3 w-3 mr-1" />
