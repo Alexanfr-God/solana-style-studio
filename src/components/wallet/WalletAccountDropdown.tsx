@@ -77,7 +77,7 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
         data-element-id="account-dropdown-overlay"
         style={{
           backgroundColor: 'rgba(0, 0, 0, 0.2)',
-          borderRadius: dropdownConfig?.containerBorderRadius || '16px',
+          borderRadius: dropdownConfig?.containerBorderRadius,
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
@@ -99,9 +99,9 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
         className="fixed w-80 rounded-xl border shadow-2xl overflow-hidden animate-fade-in z-[9999] account-dropdown-menu"
         data-element-id="account-dropdown-menu"
         style={{
-          backgroundColor: dropdownConfig?.containerBackgroundColor || '#18140e',
+          backgroundColor: dropdownConfig?.containerBackgroundColor,
           backdropFilter: 'blur(20px)',
-          borderRadius: dropdownConfig?.containerBorderRadius || '16px',
+          borderRadius: dropdownConfig?.containerBorderRadius,
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
           top: '50%',
@@ -121,9 +121,9 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
             className="text-sm font-medium account-dropdown-title"
             data-element-id="account-dropdown-title"
             style={{
-              color: dropdownConfig?.headerText?.selectAccountColor || '#FFD166',
-              fontFamily: dropdownConfig?.headerText?.selectAccountFontFamily || 'Inter, sans-serif',
-              fontSize: dropdownConfig?.headerText?.selectAccountFontSize || '14px'
+              color: dropdownConfig?.headerText?.selectAccountColor,
+              fontFamily: dropdownConfig?.headerText?.selectAccountFontFamily,
+              fontSize: dropdownConfig?.headerText?.selectAccountFontSize
             }}
           >
             {getTitle()}
@@ -132,8 +132,8 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
             className="text-xs mt-1 account-dropdown-description"
             data-element-id="account-dropdown-description"
             style={{ 
-              color: dropdownConfig?.headerText?.selectAccountDescription || '#ffe6a2',
-              fontFamily: dropdownConfig?.headerText?.selectAccountFontFamily || 'Inter, sans-serif'
+              color: dropdownConfig?.headerText?.selectAccountDescription,
+              fontFamily: dropdownConfig?.headerText?.selectAccountFontFamily
             }}
           >
             {getDescription()}
@@ -172,9 +172,9 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
               }
             }}
             style={{
-              color: dropdownConfig?.actionButtons?.addAccountColor || '#FFD700',
-              fontFamily: dropdownConfig?.actionButtons?.addAccountFontFamily || 'Inter, sans-serif',
-              fontSize: dropdownConfig?.actionButtons?.addAccountFontSize || '14px',
+              color: dropdownConfig?.actionButtons?.addAccountColor,
+              fontFamily: dropdownConfig?.actionButtons?.addAccountFontFamily,
+              fontSize: dropdownConfig?.actionButtons?.addAccountFontSize,
               transition: getTransition('default')
             }}
           >

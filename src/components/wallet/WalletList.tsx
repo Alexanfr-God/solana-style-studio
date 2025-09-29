@@ -94,8 +94,8 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
                 className="font-medium text-sm wallet-list-account-name" 
                 data-element-id={`wallet-list-account-name-${index}`}
                 style={{
-                  color: dropdownStyle?.accountItems?.mainAccountColor || '#FFFFFF',
-                  fontFamily: dropdownStyle?.accountItems?.mainAccountFontFamily || 'Inter, sans-serif'
+                  color: dropdownStyle?.accountItems?.mainAccountColor,
+                  fontFamily: dropdownStyle?.accountItems?.mainAccountFontFamily
                 }}
               >
                 {account.name}
@@ -104,8 +104,8 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
                 className="text-xs wallet-list-account-network" 
                 data-element-id={`wallet-list-account-network-${index}`}
                 style={{
-                  color: dropdownStyle?.accountItems?.accountNetworkColor || '#aaa',
-                  fontFamily: dropdownStyle?.accountItems?.tradingAccountFontFamily || 'Inter, sans-serif'
+                  color: dropdownStyle?.accountItems?.accountNetworkColor,
+                  fontFamily: dropdownStyle?.accountItems?.tradingAccountFontFamily
                 }}
               >
                 {account.network}
@@ -119,7 +119,7 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
               className="text-xs font-mono wallet-list-address" 
               data-element-id={`wallet-list-address-${index}`}
               style={{
-                color: dropdownStyle?.accountItems?.accountAddressColor || '#aaa',
+                color: dropdownStyle?.accountItems?.accountAddressColor,
                 fontFamily: 'monospace'
               }}
             >
@@ -138,7 +138,7 @@ const WalletList = ({ context, onAccountSelect, onClose, metadata }: WalletListP
                   className="w-3 h-3 hover:scale-105 transition-transform wallet-list-copy-icon" 
                   data-element-id={`wallet-list-copy-icon-${index}`}
                   style={{
-                    color: dropdownStyle?.icons?.copyAddressIcon?.color || '#aaa'
+                    color: dropdownStyle?.icons?.copyAddressIcon?.color
                   }}
                 />
               )}
