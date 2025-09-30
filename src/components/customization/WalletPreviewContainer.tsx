@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
@@ -10,6 +10,7 @@ import { walletElementsMapper } from '@/services/walletElementsMappingService';
 import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
 import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
+import { applyMappingsToDOM } from '@/services/runtimeMappingEngine';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -52,6 +53,17 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     hasLockLayer: !!theme?.lockLayer,
     lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : []
   });
+
+  // Apply runtime mappings when theme changes
+  useEffect(() => {
+    if (theme && Object.keys(theme).length > 0) {
+      console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
+      // Delay to ensure DOM is ready
+      setTimeout(() => {
+        applyMappingsToDOM(theme);
+      }, 100);
+    }
+  }, [theme, activeThemeId]);
 
   // FIXED: Better theme validation and fallback handling
   const previewData = useMemo(() => {
@@ -363,6 +375,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           {/* Wallet Container */}
           <div 
             ref={walletContainerRef}
+            data-wallet-container
             className="relative w-96 h-[650px] mx-auto rounded-2xl overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',

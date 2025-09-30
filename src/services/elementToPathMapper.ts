@@ -15,6 +15,7 @@ export interface ElementMapping {
   description: string;
   category?: string;
   jsonPath?: string;
+  selector?: string;
   customizable: boolean;
 }
 
