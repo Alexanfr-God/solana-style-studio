@@ -37,23 +37,32 @@ serve(async (req) => {
 
     console.log('[ai-apply-colors] Applying scheme:', scheme.name, 'for user:', userId);
     console.log('[ai-apply-colors] Target layers:', layers);
+    console.log('[ai-apply-colors] Color scheme:', scheme.colors);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Load current user theme
+    // Load current user theme (get the most recent one)
     const { data: userTheme, error: loadError } = await supabase
       .from('user_themes')
       .select('theme_data, version')
       .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (loadError) {
       console.error('[ai-apply-colors] Failed to load user theme:', loadError);
       throw new Error(`Failed to load user theme: ${loadError.message}`);
     }
+    
+    console.log('[ai-apply-colors] User theme found:', {
+      version: userTheme?.version,
+      hasThemeData: !!userTheme?.theme_data,
+      themeKeys: userTheme?.theme_data ? Object.keys(userTheme.theme_data) : []
+    });
 
     if (!userTheme || !userTheme.theme_data) {
       throw new Error('User theme not found');
