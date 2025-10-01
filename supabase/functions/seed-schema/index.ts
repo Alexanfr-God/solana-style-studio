@@ -260,7 +260,8 @@ serve(async (req) => {
       .from('schema_versions')
       .insert({
         version: '1.0.0',
-        schema: defaultSchema
+        schema: defaultSchema,
+        is_active: true
       });
 
     if (insertError) {
