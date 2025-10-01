@@ -170,38 +170,6 @@ export type Database = {
         }
         Relationships: []
       }
-      patches: {
-        Row: {
-          applied_by: string | null
-          created_at: string
-          id: string
-          ops: Json
-          theme_id: string
-        }
-        Insert: {
-          applied_by?: string | null
-          created_at?: string
-          id?: string
-          ops: Json
-          theme_id: string
-        }
-        Update: {
-          applied_by?: string | null
-          created_at?: string
-          id?: string
-          ops?: Json
-          theme_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "patches_theme_id_fkey"
-            columns: ["theme_id"]
-            isOneToOne: false
-            referencedRelation: "themes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       presets: {
         Row: {
           cover_url: string | null
@@ -232,27 +200,6 @@ export type Database = {
         }
         Relationships: []
       }
-      projects: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       schema_versions: {
         Row: {
           schema: Json
@@ -267,47 +214,6 @@ export type Database = {
           version?: string
         }
         Relationships: []
-      }
-      themes: {
-        Row: {
-          base_theme: Json
-          created_at: string
-          current_theme: Json
-          id: string
-          name: string
-          project_id: string
-          schema_version: string
-          updated_at: string
-        }
-        Insert: {
-          base_theme: Json
-          created_at?: string
-          current_theme: Json
-          id?: string
-          name: string
-          project_id: string
-          schema_version?: string
-          updated_at?: string
-        }
-        Update: {
-          base_theme?: Json
-          created_at?: string
-          current_theme?: Json
-          id?: string
-          name?: string
-          project_id?: string
-          schema_version?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "themes_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_custom_icons: {
         Row: {

@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 interface PatchRequest {
-  themeId: string;
+  userId: string;
   pageId: string;
   presetId?: string;
   userPrompt: string;
@@ -215,45 +215,22 @@ serve(async (req) => {
     }
 
     // Handle patch mode (existing functionality)
-    const { themeId, pageId, presetId, userPrompt } = requestBody as PatchRequest;
+    const { userId, pageId, presetId, userPrompt } = requestBody as PatchRequest;
 
-    // Get user from auth
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    if (!userId || !pageId || !userPrompt) {
       return jsonResponse({ 
         valid: false,
-        errors: [{ path: 'auth', message: 'Authorization required' }]
-      }, 401);
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      return jsonResponse({ 
-        valid: false,
-        errors: [{ path: 'auth', message: 'Invalid authorization' }]
-      }, 401);
-    }
-
-    if (!themeId || !pageId || !userPrompt) {
-      return jsonResponse({ 
-        valid: false,
-        errors: [{ path: 'request', message: 'Missing required fields: themeId, pageId, userPrompt' }]
+        errors: [{ path: 'request', message: 'Missing required fields: userId, pageId, userPrompt' }]
       }, 400);
     }
 
-    console.log(`📋 Processing patch request for theme: ${themeId}, page: ${pageId}`);
+    console.log(`📋 Processing patch request for user: ${userId}, page: ${pageId}`);
 
-    // 1. Check theme ownership and get theme data
+    // 1. Get theme data from user_themes
     const { data: themeData, error: themeError } = await supabase
-      .from('themes')
-      .select(`
-        *,
-        projects!inner(user_id)
-      `)
-      .eq('id', themeId)
+      .from('user_themes')
+      .select('*')
+      .eq('user_id', userId)
       .single();
 
     if (themeError || !themeData) {
@@ -261,14 +238,14 @@ serve(async (req) => {
       const durationMs = performance.now() - startTime;
       
       // Log error telemetry
-      logLlmPatchTelemetry(
-        supabase, user.id, themeId, pageId, userPrompt, 
-        [], durationMs, 'error', 'Theme not found or access denied'
+      await logLlmPatchTelemetry(
+        supabase, userId, userId, pageId, userPrompt, 
+        [], durationMs, 'error', 'Theme not found - please initialize theme first'
       );
       
       return jsonResponse({ 
         valid: false,
-        errors: [{ path: 'theme', message: 'Theme not found or access denied' }]
+        errors: [{ path: 'theme', message: 'Theme not found - please initialize theme first' }]
       }, 404);
     }
 
@@ -277,7 +254,7 @@ serve(async (req) => {
       const { data: schemaData, error: schemaError } = await supabase
         .from('schema_versions')
         .select('schema')
-        .eq('version', themeData.schema_version)
+        .eq('version', '1.0.0')
         .single();
 
       if (schemaError || !schemaData) {
@@ -285,8 +262,8 @@ serve(async (req) => {
         const durationMs = performance.now() - startTime;
         
         // Log error telemetry
-        logLlmPatchTelemetry(
-          supabase, user.id, themeId, pageId, userPrompt, 
+        await logLlmPatchTelemetry(
+          supabase, userId, userId, pageId, userPrompt, 
           [], durationMs, 'error', 'Schema version not found'
         );
         
@@ -349,15 +326,15 @@ ${JSON.stringify(presetData.sample_patch, null, 2)}
     }
 
     // 5. Prepare context for OpenAI
-    const currentTheme = themeData.current_theme;
-    const pageData = currentTheme.pages?.[pageId];
+    const currentTheme = themeData.theme_data;
+    const pageData = currentTheme[pageId];
     
     if (!pageData) {
       const durationMs = performance.now() - startTime;
       
       // Log error telemetry
-      logLlmPatchTelemetry(
-        supabase, user.id, themeId, pageId, userPrompt, 
+      await logLlmPatchTelemetry(
+        supabase, userId, userId, pageId, userPrompt, 
         [], durationMs, 'error', `Page '${pageId}' not found in theme`
       );
       
@@ -432,8 +409,8 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
       const durationMs = validationEndTime - startTime;
       
       // Log error telemetry
-      logLlmPatchTelemetry(
-        supabase, user.id, themeId, pageId, userPrompt, 
+      await logLlmPatchTelemetry(
+        supabase, userId, userId, pageId, userPrompt, 
         patchOperations, durationMs, 'error', 'Generated patch is invalid'
       );
       
@@ -460,8 +437,8 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
       const durationMs = validationEndTime - startTime;
       
       // Log error telemetry
-      logLlmPatchTelemetry(
-        supabase, user.id, themeId, pageId, userPrompt, 
+      await logLlmPatchTelemetry(
+        supabase, userId, userId, pageId, userPrompt, 
         patchOperations, durationMs, 'error', 'Theme validation failed'
       );
       
@@ -472,46 +449,25 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
       }, 400);
     }
 
-    // 9. Save patch and update theme
+    // 9. Update theme in user_themes
     const dbStartTime = performance.now();
     
-    const { error: patchError } = await supabase
-      .from('patches')
-      .insert({
-        theme_id: themeId,
-        ops: patchOperations,
-        applied_by: user.id
-      });
-
-    if (patchError) {
-      console.error('❌ Failed to save patch:', patchError);
-      const durationMs = performance.now() - startTime;
-      
-      // Log error telemetry
-      logLlmPatchTelemetry(
-        supabase, user.id, themeId, pageId, userPrompt, 
-        patchOperations, durationMs, 'error', 'Failed to save patch'
-      );
-      
-      return jsonResponse({ 
-        valid: false,
-        errors: [{ path: 'database', message: 'Failed to save patch' }],
-        executionTime: durationMs
-      }, 500);
-    }
-
     const { error: updateError } = await supabase
-      .from('themes')
-      .update({ current_theme: updatedTheme })
-      .eq('id', themeId);
+      .from('user_themes')
+      .update({ 
+        theme_data: updatedTheme,
+        version: themeData.version + 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
 
     if (updateError) {
       console.error('❌ Failed to update theme:', updateError);
       const durationMs = performance.now() - startTime;
       
       // Log error telemetry
-      logLlmPatchTelemetry(
-        supabase, user.id, themeId, pageId, userPrompt, 
+      await logLlmPatchTelemetry(
+        supabase, userId, userId, pageId, userPrompt, 
         patchOperations, durationMs, 'error', 'Failed to update theme'
       );
       
@@ -532,8 +488,8 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
     console.log(`📊 Performance: AI=${(aiEndTime - aiStartTime).toFixed(2)}ms, Validation=${(validationEndTime - validationStartTime).toFixed(2)}ms, DB=${(dbEndTime - dbStartTime).toFixed(2)}ms`);
 
     // 10. Log successful telemetry
-    logLlmPatchTelemetry(
-      supabase, user.id, themeId, pageId, userPrompt, 
+    await logLlmPatchTelemetry(
+      supabase, userId, userId, pageId, userPrompt, 
       patchOperations, totalTime, 'ok'
     );
 
@@ -568,8 +524,9 @@ Generate a JSON Patch to fulfill this request while maintaining the existing str
         if (user) {
           // Try to get request info for telemetry
           const requestBody = await req.json().catch(() => ({}));
-          logLlmPatchTelemetry(
-            supabase, user.id, requestBody.themeId || 'unknown', 
+          const userId = requestBody.userId || user.id || 'unknown';
+          await logLlmPatchTelemetry(
+            supabase, userId, userId, 
             requestBody.pageId || 'unknown', requestBody.userPrompt || '', 
             [], totalTime, 'error', error.message
           );

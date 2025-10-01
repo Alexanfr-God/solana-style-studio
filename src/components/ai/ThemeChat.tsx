@@ -16,6 +16,7 @@ import { BG_TARGETS, type BgTarget } from '@/ai/constants/backgroundTargets';
 import { buildExclusiveImageOps } from '@/ai/tools/patchBuilders';
 import { toast } from 'sonner';
 import ColorSchemeCard from './ColorSchemeCard';
+import { ThemeInitButton } from './ThemeInitButton';
 
 interface Message {
   id: string;
@@ -104,8 +105,10 @@ const ThemeChat = () => {
         finalPrompt = `${userPrompt} Target element: ${targetElement.name} (${targetElement.type}) on ${targetElement.screen} screen`;
       }
 
+      const userId = walletProfile?.wallet_address || 'anonymous';
+      
       const patchRequest: PatchRequest = {
-        themeId: 'current-theme', // Use a default theme ID
+        userId: userId,
         pageId: currentLayer || 'homeLayer',
         userPrompt: finalPrompt
       };
@@ -556,6 +559,19 @@ const ThemeChat = () => {
                   : 'Select elements and apply specific styling changes'
                 }
               </p>
+              
+              {/* Theme initialization prompt */}
+              <div className="mb-6 max-w-md mx-auto">
+                <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+                  <CardContent className="p-4 space-y-3">
+                    <p className="text-sm text-white/80">
+                      🎨 Initialize your theme to start customizing
+                    </p>
+                    <ThemeInitButton />
+                  </CardContent>
+                </Card>
+              </div>
+              
               <div className="text-xs text-white/40 space-y-1">
                 {chatMode === 'general' ? (
                   <>

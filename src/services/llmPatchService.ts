@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { applyPatch, type Operation } from 'fast-json-patch';
 
 export interface PatchRequest {
-  themeId: string;
+  userId: string;
   pageId: string;
   presetId?: string;
   userPrompt: string;
@@ -61,11 +61,11 @@ export class LlmPatchService {
     return data as PatchResponse;
   }
 
-  static async getTheme(themeId: string) {
+  static async getUserTheme(userId: string) {
     const { data, error } = await supabase
-      .from('themes')
+      .from('user_themes')
       .select('*')
-      .eq('id', themeId)
+      .eq('user_id', userId)
       .single();
 
     if (error) {
@@ -75,56 +75,20 @@ export class LlmPatchService {
     return data;
   }
 
-  static async getUserThemes() {
+  static async updateUserTheme(userId: string, themeData: any) {
     const { data, error } = await supabase
-      .from('themes')
-      .select(`
-        *,
-        projects!inner(name, user_id)
-      `)
-      .order('updated_at', { ascending: false });
-
-    if (error) {
-      throw new Error(`Failed to get themes: ${error.message}`);
-    }
-
-    return data;
-  }
-
-  static async createProject(name: string) {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw new Error(`Auth error: ${userError.message}`);
-    if (!user) throw new Error('Unauthorized');
-
-    const { data, error } = await supabase
-      .from('projects')
-      .insert({ name, user_id: user.id })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create project: ${error.message}`);
-    }
-
-    return data;
-  }
-
-  static async createTheme(projectId: string, name: string, baseTheme: any) {
-    const { data, error } = await supabase
-      .from('themes')
-      .insert({
-        project_id: projectId,
-        name,
-        base_theme: baseTheme,
-        current_theme: baseTheme,
-        schema_version: '1.0.0'
+      .from('user_themes')
+      .update({
+        theme_data: themeData,
+        version: 1,
+        updated_at: new Date().toISOString()
       })
+      .eq('user_id', userId)
       .select()
       .single();
 
     if (error) {
-      throw new Error(`Failed to create theme: ${error.message}`);
+      throw new Error(`Failed to update theme: ${error.message}`);
     }
 
     return data;
