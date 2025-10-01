@@ -57,8 +57,11 @@ verify_jwt = false
 [functions.export_theme]
 verify_jwt = true
 
+[functions.seed_presets]
+verify_jwt = false
+
 [functions.seed-schema]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-background]
 verify_jwt = false
