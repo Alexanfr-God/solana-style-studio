@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw } from 'lucide-react';
+import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw, Loader2 } from 'lucide-react';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { FileUploadService } from '@/services/fileUploadService';
 import { LlmPatchService, type PatchRequest } from '@/services/llmPatchService';
@@ -15,6 +15,7 @@ import { useThemeStore } from '@/state/themeStore';
 import { BG_TARGETS, type BgTarget } from '@/ai/constants/backgroundTargets';
 import { buildExclusiveImageOps } from '@/ai/tools/patchBuilders';
 import { toast } from 'sonner';
+import ColorSchemeCard from './ColorSchemeCard';
 
 interface Message {
   id: string;
@@ -46,6 +47,8 @@ const ThemeChat = () => {
       secondary: string;
     };
   }>>([]);
+  const [isAnalyzingColors, setIsAnalyzingColors] = useState(false);
+  const [appliedScheme, setAppliedScheme] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -198,10 +201,14 @@ const ThemeChat = () => {
 
   const handleAnalyzeColors = async (imageUrl: string) => {
     try {
-      setIsProcessing(true);
+      setIsAnalyzingColors(true);
       setColorSchemes([]); // Clear previous schemes
+      setAppliedScheme(null); // Clear applied status
       
       console.log('[AI-COLORS] Starting AI color analysis with Gemini Vision...');
+      
+      // Add loading message
+      addMessage('🔍 Analyzing image colors with AI... This may take a few seconds.', 'assistant');
       
       // Call the new AI edge function
       const supabase = (await import('@/integrations/supabase/client')).supabase;
@@ -211,7 +218,7 @@ const ThemeChat = () => {
 
       if (aiError) {
         console.error('[AI-COLORS] AI color analysis error:', aiError);
-        addMessage(`AI analysis failed: ${aiError.message}`, 'assistant');
+        addMessage(`❌ AI analysis failed: ${aiError.message}`, 'assistant');
         toast.error('Failed to analyze colors with AI');
         return;
       }
@@ -219,7 +226,7 @@ const ThemeChat = () => {
       const schemes = aiData?.schemes || [];
       
       if (schemes.length === 0) {
-        addMessage("The AI couldn't extract color schemes from this image. Try a different image with clearer colors.", 'assistant');
+        addMessage("❌ The AI couldn't extract color schemes from this image. Try a different image with clearer colors.", 'assistant');
         toast.error('No color schemes generated');
         return;
       }
@@ -227,16 +234,16 @@ const ThemeChat = () => {
       console.log('[AI-COLORS] Received AI color schemes:', schemes);
       setColorSchemes(schemes);
       
-      addMessage(`🎨 AI analyzed your image and generated ${schemes.length} professional color schemes. Select one below to apply it to your wallet.`, 'assistant');
+      addMessage(`✨ AI analyzed your image and generated ${schemes.length} professional color schemes. Select one below to apply it to your wallet.`, 'assistant');
       
       toast.success(`Generated ${schemes.length} color scheme options!`);
 
     } catch (error) {
       console.error('[AI-COLORS] Color analysis error:', error);
-      addMessage(`Error analyzing colors: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
+      addMessage(`❌ Error analyzing colors: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
       toast.error('Failed to analyze colors');
     } finally {
-      setIsProcessing(false);
+      setIsAnalyzingColors(false);
     }
   };
 
@@ -324,8 +331,8 @@ const ThemeChat = () => {
         
         toast.success(`${scheme.name} applied to ${response.layers.length} layers!`);
         
-        // Clear color schemes after successful application
-        setColorSchemes([]);
+        // Mark this scheme as applied
+        setAppliedScheme(scheme.name);
       } else {
         toast.error('Failed to apply color scheme');
       }
@@ -642,12 +649,19 @@ const ThemeChat = () => {
                       <div className="flex justify-center mt-3 gap-2">
                         <Button
                           onClick={() => handleAnalyzeColors(message.uploadedImageUrl!)}
-                          disabled={isProcessing}
+                          disabled={isAnalyzingColors}
                           variant="outline"
                           size="sm"
                           className="h-8 px-3 text-xs bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30 hover:from-blue-500/30 hover:to-cyan-500/30 disabled:opacity-50"
                         >
-                          {isProcessing ? 'Analyzing...' : 'Analyze colors'}
+                          {isAnalyzingColors ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Analyzing...</span>
+                            </div>
+                          ) : (
+                            'Analyze colors'
+                          )}
                         </Button>
                         
                         {/* Reset button - show if any layers are applied */}
@@ -664,64 +678,22 @@ const ThemeChat = () => {
                         )}
                       </div>
                       
-                      {/* AI Color Schemes Display */}
+                      {/* AI Color Schemes Display with new component */}
                       {colorSchemes.length > 0 && (
-                        <div className="mt-4 space-y-3">
-                          <div className="text-sm text-white font-medium">
-                            🎨 AI Generated Color Schemes
+                        <div className="mt-4 space-y-3 animate-fade-in">
+                          <div className="flex items-center gap-2 text-sm text-white font-medium">
+                            <Palette className="h-4 w-4 text-purple-400" />
+                            <span>AI Generated Color Schemes</span>
                           </div>
-                          <div className="space-y-2">
+                          <div className="grid grid-cols-1 gap-3">
                             {colorSchemes.map((scheme, idx) => (
-                              <div key={idx} className="border border-white/20 rounded-lg p-3 bg-white/5 space-y-2">
-                                <div className="flex items-start justify-between">
-                                  <div>
-                                    <h4 className="font-medium text-sm text-white">{scheme.name}</h4>
-                                    <p className="text-xs text-white/60 mt-1">{scheme.description}</p>
-                                  </div>
-                                  <Button 
-                                    size="sm" 
-                                    onClick={() => applyColorScheme(scheme)}
-                                    disabled={isProcessing}
-                                    className="ml-2 h-7 px-3 text-xs bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30"
-                                  >
-                                    {isProcessing ? 'Applying...' : 'Apply'}
-                                  </Button>
-                                </div>
-                                <div className="grid grid-cols-4 gap-2">
-                                  <div className="space-y-1">
-                                    <div className="text-[10px] text-white/40 uppercase tracking-wide">BG</div>
-                                    <div 
-                                      className="h-8 rounded border border-white/20" 
-                                      style={{ backgroundColor: scheme.colors.background }}
-                                      title={scheme.colors.background}
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <div className="text-[10px] text-white/40 uppercase tracking-wide">Text</div>
-                                    <div 
-                                      className="h-8 rounded border border-white/20" 
-                                      style={{ backgroundColor: scheme.colors.text }}
-                                      title={scheme.colors.text}
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <div className="text-[10px] text-white/40 uppercase tracking-wide">Accent</div>
-                                    <div 
-                                      className="h-8 rounded border border-white/20" 
-                                      style={{ backgroundColor: scheme.colors.accent }}
-                                      title={scheme.colors.accent}
-                                    />
-                                  </div>
-                                  <div className="space-y-1">
-                                    <div className="text-[10px] text-white/40 uppercase tracking-wide">2nd</div>
-                                    <div 
-                                      className="h-8 rounded border border-white/20" 
-                                      style={{ backgroundColor: scheme.colors.secondary }}
-                                      title={scheme.colors.secondary}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
+                              <ColorSchemeCard
+                                key={idx}
+                                scheme={scheme}
+                                onApply={applyColorScheme}
+                                isApplying={isProcessing}
+                                isApplied={appliedScheme === scheme.name}
+                              />
                             ))}
                           </div>
                         </div>
