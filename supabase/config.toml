@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.ai-dom-scanner]
 verify_jwt = false
+
+[functions.ai-analyze-colors]
+verify_jwt = true

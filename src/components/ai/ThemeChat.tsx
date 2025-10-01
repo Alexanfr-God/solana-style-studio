@@ -36,6 +36,16 @@ const ThemeChat = () => {
   const [authStatus, setAuthStatus] = useState<'checking' | 'wallet-connected' | 'authenticated' | 'disconnected'>('checking');
   const [chatMode, setChatMode] = useState<ChatMode>('general');
   const [applied, setApplied] = useState<Record<string, boolean>>({});
+  const [colorSchemes, setColorSchemes] = useState<Array<{
+    name: string;
+    description: string;
+    colors: {
+      background: string;
+      text: string;
+      accent: string;
+      secondary: string;
+    };
+  }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -187,82 +197,101 @@ const ThemeChat = () => {
   };
 
   const handleAnalyzeColors = async (imageUrl: string) => {
+    try {
+      setIsProcessing(true);
+      setColorSchemes([]); // Clear previous schemes
+      
+      console.log('[AI-COLORS] Starting AI color analysis with Gemini Vision...');
+      
+      // Call the new AI edge function
+      const supabase = (await import('@/integrations/supabase/client')).supabase;
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('ai-analyze-colors', {
+        body: { imageBase64: imageUrl }
+      });
+
+      if (aiError) {
+        console.error('[AI-COLORS] AI color analysis error:', aiError);
+        addMessage(`AI analysis failed: ${aiError.message}`, 'assistant');
+        toast.error('Failed to analyze colors with AI');
+        return;
+      }
+
+      const schemes = aiData?.schemes || [];
+      
+      if (schemes.length === 0) {
+        addMessage("The AI couldn't extract color schemes from this image. Try a different image with clearer colors.", 'assistant');
+        toast.error('No color schemes generated');
+        return;
+      }
+
+      console.log('[AI-COLORS] Received AI color schemes:', schemes);
+      setColorSchemes(schemes);
+      
+      addMessage(`🎨 AI analyzed your image and generated ${schemes.length} professional color schemes. Select one below to apply it to your wallet.`, 'assistant');
+      
+      toast.success(`Generated ${schemes.length} color scheme options!`);
+
+    } catch (error) {
+      console.error('[AI-COLORS] Color analysis error:', error);
+      addMessage(`Error analyzing colors: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
+      toast.error('Failed to analyze colors');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const applyColorScheme = async (scheme: typeof colorSchemes[0]) => {
     if (!theme) {
       toast.error('Theme not loaded');
       return;
     }
 
-    setIsProcessing(true);
-    console.log('[VISION] Starting color analysis for:', imageUrl);
-
     try {
-      // Определяем язык (простая проверка на кириллицу в последних сообщениях)
-      const recentMessages = messages.slice(-3);
-      const hasRussianText = recentMessages.some(msg => 
-        /[а-яё]/i.test(msg.content)
-      );
-      const lang = hasRussianText ? 'ru' : 'en';
+      setIsProcessing(true);
+      console.log('[AI-COLORS] Applying scheme:', scheme.name);
 
-      // Подготовка запроса для vision-style mode
-      const visionRequest = {
-        mode: 'vision-style' as const,
-        imageUrl: imageUrl,
-        themeSnapshot: theme,
-        targets: [
-          'lockLayer',
-          'homeLayer',
-          'receiveLayer.centerContainer',
-          'sendLayer.centerContainer',
-          'buyLayer.centerContainer'
-        ],
-        rules: {
-          exclusiveBg: true,
-          onlyReplace: true,
-          preserveSemanticColors: true
-        },
-        lang: lang
-      };
-
-      console.log('[VISION] Calling llm-patch with vision-style mode');
-      
-      // Вызываем edge функцию через supabase functions напрямую
+      // Apply the color scheme through llm-patch
       const supabase = (await import('@/integrations/supabase/client')).supabase;
       const { data: response, error } = await supabase.functions.invoke('llm-patch', {
-        body: visionRequest
+        body: {
+          mode: 'vision-style',
+          extractedPalette: {
+            bg: scheme.colors.background,
+            text: scheme.colors.text,
+            primary: scheme.colors.accent,
+            secondary: scheme.colors.secondary
+          },
+          themeSnapshot: theme
+        }
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.error('[AI-COLORS] Error applying scheme:', error);
+        toast.error(`Failed to apply scheme: ${error.message}`);
+        return;
       }
 
       if (response && response.ops && response.ops.length > 0) {
-        // Применяем полученные патчи
-        const visionPatch = {
-          id: `vision-${Date.now()}`,
+        const schemePatch = {
+          id: `scheme-${Date.now()}`,
           operations: response.ops,
-          userPrompt: `Vision color analysis: ${imageUrl}`,
-          pageId: 'vision',
+          userPrompt: `Applied AI scheme: ${scheme.name}`,
+          pageId: 'ai-scheme',
           timestamp: new Date(),
           theme: theme
         };
 
-        await applyPatch(visionPatch);
-        console.log(`[STORE] Applied ops: ${response.ops.length} (vision)`);
-
-        // Добавляем сообщение о результате
-        addMessage(response.message || `Applied color analysis • ${response.ops.length} fields updated`, 'assistant', undefined, true);
-
-        toast.success('🎨 Colors analyzed and applied!');
+        await applyPatch(schemePatch);
+        console.log(`[AI-COLORS] Applied ${response.ops.length} operations`);
+        
+        addMessage(`✅ Applied "${scheme.name}" scheme to your wallet!`, 'assistant', undefined, true);
+        toast.success(`Applied "${scheme.name}" scheme!`);
       } else {
-        console.log('[VISION] No operations returned');
-        addMessage(response?.message || 'No color changes were applied - existing images may be protecting the backgrounds.', 'assistant');
-        toast.info('No colors applied - backgrounds may be protected by images');
+        toast.info('No changes applied - scheme may match current colors');
       }
-
     } catch (error) {
-      console.error('[VISION] Error during color analysis:', error);
-      addMessage(`Error analyzing colors: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
-      toast.error('Failed to analyze colors');
+      console.error('[AI-COLORS] Apply scheme error:', error);
+      toast.error(`Failed to apply scheme: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsProcessing(false);
     }
@@ -594,6 +623,70 @@ const ThemeChat = () => {
                           </Button>
                         )}
                       </div>
+                      
+                      {/* AI Color Schemes Display */}
+                      {colorSchemes.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <div className="text-sm text-white font-medium">
+                            🎨 AI Generated Color Schemes
+                          </div>
+                          <div className="space-y-2">
+                            {colorSchemes.map((scheme, idx) => (
+                              <div key={idx} className="border border-white/20 rounded-lg p-3 bg-white/5 space-y-2">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <h4 className="font-medium text-sm text-white">{scheme.name}</h4>
+                                    <p className="text-xs text-white/60 mt-1">{scheme.description}</p>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => applyColorScheme(scheme)}
+                                    disabled={isProcessing}
+                                    className="ml-2 h-7 px-3 text-xs bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30"
+                                  >
+                                    {isProcessing ? 'Applying...' : 'Apply'}
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2">
+                                  <div className="space-y-1">
+                                    <div className="text-[10px] text-white/40 uppercase tracking-wide">BG</div>
+                                    <div 
+                                      className="h-8 rounded border border-white/20" 
+                                      style={{ backgroundColor: scheme.colors.background }}
+                                      title={scheme.colors.background}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="text-[10px] text-white/40 uppercase tracking-wide">Text</div>
+                                    <div 
+                                      className="h-8 rounded border border-white/20" 
+                                      style={{ backgroundColor: scheme.colors.text }}
+                                      title={scheme.colors.text}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="text-[10px] text-white/40 uppercase tracking-wide">Accent</div>
+                                    <div 
+                                      className="h-8 rounded border border-white/20" 
+                                      style={{ backgroundColor: scheme.colors.accent }}
+                                      title={scheme.colors.accent}
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="text-[10px] text-white/40 uppercase tracking-wide">2nd</div>
+                                    <div 
+                                      className="h-8 rounded border border-white/20" 
+                                      style={{ backgroundColor: scheme.colors.secondary }}
+                                      title={scheme.colors.secondary}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="mt-2 text-xs text-white/60">
                         Note: when an image is applied, backgroundColor is cleared ("").
                       </div>
