@@ -140,34 +140,23 @@ export const usePresetsLoader = () => {
       setError(null);
       
       try {
-        // Try loading from Supabase first
-        const supabasePresets = await loadPresetsFromSupabase();
-        setPresets(supabasePresets);
-        setSource('supabase');
-        console.log('[PL] 🎯 Using Supabase presets (database source)');
-      } catch (supabaseError) {
-        console.warn('[PL] ⚠️ Supabase failed, automatically falling back to files...');
-        console.warn('[PL]   Reason:', supabaseError instanceof Error ? supabaseError.message : 'Unknown error');
-        
-        try {
-          // Automatic fallback to files
-          const filePresets = await loadPresetsFromFiles();
-          if (filePresets.length > 0) {
-            setPresets(filePresets);
-            setSource('files');
-            console.log('[PL] 🎯 Using file fallback presets (manifest source)');
-            console.log(`[PL]   Successfully loaded ${filePresets.length} themes with data`);
-          } else {
-            throw new Error('No presets available from files either');
-          }
-        } catch (fileError) {
-          console.error('[PL] 💥 Both sources failed - no presets available');
-          console.error('[PL]   Supabase:', supabaseError instanceof Error ? supabaseError.message : 'Unknown');
-          console.error('[PL]   Files:', fileError instanceof Error ? fileError.message : 'Unknown');
-          setError('Failed to load presets from both database and files');
-          setPresets([]);
-          setSource(null);
+        // FORCE file-based loading (Supabase presets use patches, we need themeData)
+        console.log('[PL] 🎯 Loading themes from /public/themes/ (forced file mode)');
+        const filePresets = await loadPresetsFromFiles();
+        if (filePresets.length > 0) {
+          setPresets(filePresets);
+          setSource('files');
+          console.log('[PL] ✅ Using file-based themes (manifest source)');
+          console.log(`[PL]   Successfully loaded ${filePresets.length} themes with data`);
+        } else {
+          throw new Error('No presets available from files');
         }
+      } catch (fileError) {
+        console.error('[PL] 💥 File loading failed - no presets available');
+        console.error('[PL]   Error:', fileError instanceof Error ? fileError.message : 'Unknown');
+        setError('Failed to load presets from theme files');
+        setPresets([]);
+        setSource(null);
       } finally {
         setIsLoading(false);
       }

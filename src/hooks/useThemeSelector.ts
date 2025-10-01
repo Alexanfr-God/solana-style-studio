@@ -83,59 +83,36 @@ export const useThemeSelector = () => {
     }
   };
 
-  // FIXED: Improved applyTheme with better validation and loading
+  // FIXED: Simplified applyTheme for file-based themes
   const applyTheme = async (selectedTheme: ThemeItem) => {
-    console.log(`[TS] 🎨 APPLY THEME CLICKED: ${selectedTheme.name}`);
-    console.log('[TS] Theme data available:', {
-      hasThemeData: !!selectedTheme.themeData,
-      hasPatch: !!(selectedTheme.patch && selectedTheme.patch.length > 0),
-      themeDataKeys: selectedTheme.themeData ? Object.keys(selectedTheme.themeData) : []
-    });
+    console.log(`[TS] 🎨 APPLY THEME: ${selectedTheme.name}`);
     
-    // Priority 1: Direct theme data (JSON themes)
+    // Priority 1: Direct theme data (already loaded)
     if (selectedTheme.themeData) {
-      console.log('[TS] ✅ Applying JSON theme data directly');
+      console.log('[TS] ✅ Applying theme data directly');
       setTheme(selectedTheme.themeData);
       setActiveThemeId(selectedTheme.id);
-      console.log('[TS] ✅ JSON theme applied:', selectedTheme.name);
+      console.log('[TS] ✅ Theme applied:', selectedTheme.name);
       return;
     }
     
-    // Priority 2: Load theme data from file if not available
-    if (source === 'files' && !selectedTheme.themeData) {
-      console.log('[TS] 🔄 Loading theme data from file...');
-      try {
-        const response = await fetch(`/themes/${selectedTheme.id}.json`);
-        if (response.ok) {
-          const themeData = await response.json();
-          console.log('[TS] ✅ Loaded theme data from file:', Object.keys(themeData));
-          setTheme(themeData);
-          setActiveThemeId(selectedTheme.id);
-          console.log('[TS] ✅ File theme applied:', selectedTheme.name);
-          return;
-        }
-      } catch (error) {
-        console.error('[TS] 💥 Error loading theme file:', error);
-      }
-    }
-    
-    // Priority 3: Supabase presets with patches
-    if (selectedTheme.patch && selectedTheme.patch.length > 0) {
-      console.log('[TS] ✅ Applying Supabase preset patch');
-      const currentTheme = getDisplayTheme();
-      
-      try {
-        const newTheme = applyPatch(currentTheme, selectedTheme.patch as Operation[], false, false).newDocument;
-        setTheme(newTheme);
+    // Priority 2: Load theme data from file
+    console.log('[TS] 🔄 Loading theme from file...');
+    try {
+      const response = await fetch(`/themes/${selectedTheme.id}.json`);
+      if (response.ok) {
+        const themeData = await response.json();
+        console.log('[TS] ✅ Loaded theme from file');
+        setTheme(themeData);
         setActiveThemeId(selectedTheme.id);
-        console.log('[TS] ✅ Preset patch applied:', selectedTheme.name);
+        console.log('[TS] ✅ File theme applied:', selectedTheme.name);
         return;
-      } catch (error) {
-        console.error('[TS] 💥 Error applying preset patch:', error);
       }
+    } catch (error) {
+      console.error('[TS] 💥 Error loading theme file:', error);
     }
     
-    console.error('[TS] 💥 Cannot apply theme - no valid data source:', selectedTheme.name);
+    console.error('[TS] 💥 Cannot apply theme - no valid data:', selectedTheme.name);
   };
 
   // Commit current preview to main theme
