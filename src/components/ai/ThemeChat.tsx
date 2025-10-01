@@ -257,14 +257,14 @@ const ThemeChat = () => {
     }
 
     // Check if user is authenticated
-    if (!walletProfile?.id) {
+    if (!walletProfile?.wallet_address) {
       toast.error('Please connect your wallet first');
       return;
     }
 
     try {
       setIsProcessing(true);
-      console.log('[AI-COLORS] Applying scheme:', scheme.name, 'for user:', walletProfile.id);
+      console.log('[AI-COLORS] Applying scheme:', scheme.name, 'for user:', walletProfile.wallet_address);
 
       // Define all layers to apply colors to
       const allLayers = [
@@ -282,7 +282,7 @@ const ThemeChat = () => {
       const supabase = (await import('@/integrations/supabase/client')).supabase;
       const { data: response, error } = await supabase.functions.invoke('ai-apply-colors', {
         body: {
-          userId: walletProfile.id,
+          userId: walletProfile.wallet_address,
           scheme: scheme,
           layers: allLayers
         }
@@ -301,7 +301,7 @@ const ThemeChat = () => {
         const { data: updatedTheme, error: themeError } = await supabase
           .from('user_themes')
           .select('theme_data')
-          .eq('user_id', walletProfile.id)
+          .eq('user_id', walletProfile.wallet_address)
           .single();
 
         if (themeError) {
