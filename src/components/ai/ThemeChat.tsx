@@ -246,22 +246,35 @@ const ThemeChat = () => {
       return;
     }
 
+    // Check if user is authenticated
+    if (!walletProfile?.id) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
     try {
       setIsProcessing(true);
-      console.log('[AI-COLORS] Applying scheme:', scheme.name);
+      console.log('[AI-COLORS] Applying scheme:', scheme.name, 'for user:', walletProfile.id);
 
-      // Apply the color scheme through llm-patch
+      // Define all layers to apply colors to
+      const allLayers = [
+        'lockLayer',
+        'homeLayer', 
+        'swapLayer',
+        'historyLayer',
+        'searchLayer',
+        'buyLayer',
+        'sendLayer',
+        'receiveLayer'
+      ];
+
+      // Call the new ai-apply-colors edge function
       const supabase = (await import('@/integrations/supabase/client')).supabase;
-      const { data: response, error } = await supabase.functions.invoke('llm-patch', {
+      const { data: response, error } = await supabase.functions.invoke('ai-apply-colors', {
         body: {
-          mode: 'vision-style',
-          extractedPalette: {
-            bg: scheme.colors.background,
-            text: scheme.colors.text,
-            primary: scheme.colors.accent,
-            secondary: scheme.colors.secondary
-          },
-          themeSnapshot: theme
+          userId: walletProfile.id,
+          scheme: scheme,
+          layers: allLayers
         }
       });
 
@@ -271,23 +284,50 @@ const ThemeChat = () => {
         return;
       }
 
-      if (response && response.ops && response.ops.length > 0) {
-        const schemePatch = {
-          id: `scheme-${Date.now()}`,
-          operations: response.ops,
-          userPrompt: `Applied AI scheme: ${scheme.name}`,
-          pageId: 'ai-scheme',
-          timestamp: new Date(),
-          theme: theme
-        };
-
-        await applyPatch(schemePatch);
-        console.log(`[AI-COLORS] Applied ${response.ops.length} operations`);
+      if (response?.success) {
+        console.log(`[AI-COLORS] Successfully applied scheme:`, response);
         
-        addMessage(`✅ Applied "${scheme.name}" scheme to your wallet!`, 'assistant', undefined, true);
-        toast.success(`Applied "${scheme.name}" scheme!`);
+        // Reload theme from database to get updated values
+        const { data: updatedTheme, error: themeError } = await supabase
+          .from('user_themes')
+          .select('theme_data')
+          .eq('user_id', walletProfile.id)
+          .single();
+
+        if (themeError) {
+          console.error('[AI-COLORS] Failed to reload theme:', themeError);
+          toast.error('Scheme applied but failed to reload theme');
+          return;
+        }
+
+        if (updatedTheme?.theme_data) {
+          // Update theme store with new data
+          const refreshPatch = {
+            id: `refresh-${Date.now()}`,
+            operations: [{ op: 'replace' as const, path: '/', value: updatedTheme.theme_data }],
+            userPrompt: `Refresh theme after applying ${scheme.name}`,
+            pageId: 'ai-scheme',
+            timestamp: new Date(),
+            theme: updatedTheme.theme_data
+          };
+          
+          await applyPatch(refreshPatch);
+          console.log('[AI-COLORS] Theme refreshed successfully');
+        }
+        
+        addMessage(
+          `✅ Applied "${scheme.name}" to all wallet layers!\n${response.message}`, 
+          'assistant', 
+          undefined, 
+          true
+        );
+        
+        toast.success(`${scheme.name} applied to ${response.layers.length} layers!`);
+        
+        // Clear color schemes after successful application
+        setColorSchemes([]);
       } else {
-        toast.info('No changes applied - scheme may match current colors');
+        toast.error('Failed to apply color scheme');
       }
     } catch (error) {
       console.error('[AI-COLORS] Apply scheme error:', error);

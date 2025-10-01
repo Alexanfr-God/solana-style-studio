@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.ai-analyze-colors]
 verify_jwt = true
+
+[functions.ai-apply-colors]
+verify_jwt = true
