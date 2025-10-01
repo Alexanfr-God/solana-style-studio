@@ -5,12 +5,26 @@ import CreateGuideImageButton from './CreateGuideImageButton';
 import { ConvertTrainingDataButton } from './ConvertTrainingDataButton';
 import { UniversalTrainingDataManager } from './UniversalTrainingDataManager';
 import { AiDomScannerButton } from './AiDomScannerButton';
+import { DatabaseSeeder } from './DatabaseSeeder';
 
 const AdminPanel = () => {
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
       
+      <Card className="bg-black/30 backdrop-blur-md border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white">Database Seeder</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-white/70 text-sm mb-4">
+            Fill empty tables (presets, schema_versions) with initial data.
+            Run this once after database cleanup.
+          </p>
+          <DatabaseSeeder />
+        </CardContent>
+      </Card>
+
       <Card className="bg-black/30 backdrop-blur-md border-white/10">
         <CardHeader>
           <CardTitle className="text-white">Mask Guide Image</CardTitle>
