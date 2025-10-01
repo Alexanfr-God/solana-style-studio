@@ -51,21 +51,35 @@ serve(async (req) => {
       .eq('user_id', userId)
       .order('updated_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (loadError) {
       console.error('[ai-apply-colors] Failed to load user theme:', loadError);
       throw new Error(`Failed to load user theme: ${loadError.message}`);
     }
     
+    if (!userTheme) {
+      console.error('[ai-apply-colors] No theme found for user:', userId);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Theme not found. Please initialize your theme first by clicking "Initialize Theme".'
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
     console.log('[ai-apply-colors] User theme found:', {
-      version: userTheme?.version,
-      hasThemeData: !!userTheme?.theme_data,
-      themeKeys: userTheme?.theme_data ? Object.keys(userTheme.theme_data) : []
+      version: userTheme.version,
+      hasThemeData: !!userTheme.theme_data,
+      themeKeys: userTheme.theme_data ? Object.keys(userTheme.theme_data) : []
     });
 
-    if (!userTheme || !userTheme.theme_data) {
-      throw new Error('User theme not found');
+    if (!userTheme.theme_data) {
+      throw new Error('Theme data is empty');
     }
 
     console.log('[ai-apply-colors] Loaded theme version:', userTheme.version);
