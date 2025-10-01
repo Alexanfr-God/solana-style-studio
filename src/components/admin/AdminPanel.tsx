@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CreateGuideImageButton from './CreateGuideImageButton';
 import { ConvertTrainingDataButton } from './ConvertTrainingDataButton';
 import { UniversalTrainingDataManager } from './UniversalTrainingDataManager';
+import { AiDomScannerButton } from './AiDomScannerButton';
 
 const AdminPanel = () => {
   return (
@@ -24,6 +25,23 @@ const AdminPanel = () => {
       </Card>
 
       <UniversalTrainingDataManager />
+
+      <Card className="bg-black/30 backdrop-blur-md border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white">AI Element Mapper</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-white/70 text-sm mb-4">
+            AI automatically scans DOM structure and maps elements to JSON paths.
+            Uses Gemini 2.5 Flash for intelligent element detection.
+          </p>
+          <div className="flex gap-2">
+            <AiDomScannerButton screen="home" />
+            <AiDomScannerButton screen="search" />
+            <AiDomScannerButton screen="buy" />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="bg-black/30 backdrop-blur-md border-white/10">
         <CardHeader>

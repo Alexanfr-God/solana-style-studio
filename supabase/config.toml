@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.get-walletconnect-config]
 verify_jwt = false
+
+[functions.ai-dom-scanner]
+verify_jwt = false

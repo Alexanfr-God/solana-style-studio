@@ -176,10 +176,25 @@ export function setupMappingWatcher(getTheme: () => any) {
   // Check every 500ms for theme changes
   const interval = setInterval(checkAndApply, 500);
   
+  // Listen for JSON Bridge updates
+  const handleThemeUpdate = (event: CustomEvent) => {
+    console.log('🔗 Runtime Engine: Theme updated via JSON Bridge');
+    const theme = event.detail.theme;
+    if (theme) {
+      lastTheme = theme;
+      applyMappingsToDOM(theme);
+    }
+  };
+  
+  window.addEventListener('theme-updated', handleThemeUpdate as EventListener);
+  
   // Initial apply
   checkAndApply();
   
-  return () => clearInterval(interval);
+  return () => {
+    clearInterval(interval);
+    window.removeEventListener('theme-updated', handleThemeUpdate as EventListener);
+  };
 }
 
 /**
