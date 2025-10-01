@@ -14,8 +14,7 @@ const CENTER_BACKGROUNDS = [
   '/homeLayer/backgroundColor', 
   '/receiveLayer/centerContainer/backgroundColor',
   '/sendLayer/centerContainer/backgroundColor',
-  '/buyLayer/centerContainer/backgroundColor',
-  '/swapLayer/mainContainer/backgroundColor'
+  '/buyLayer/centerContainer/backgroundColor'
 ];
 
 // Вторичные поверхности (прозрачные участки/карточки)
@@ -23,10 +22,7 @@ const SECONDARY_BACKGROUNDS = [
   '/homeLayer/header/backgroundColor',
   '/homeLayer/footer/backgroundColor',
   '/homeLayer/mainContainer/backgroundColor',
-  '/assetCard/backgroundColor',
-  '/swapLayer/rateContainer/backgroundColor',
-  '/searchLayer/tokenTag/backgroundColor',
-  '/searchLayer/searchInput/backgroundColor'
+  '/assetCard/backgroundColor'
 ];
 
 // Текстовые цвета (контраст к фону)
@@ -42,20 +38,7 @@ const TEXT_COLORS = [
   '/homeLayer/footer/activeTextColor',
   '/sendLayer/selectNetworkLabel/textColor',
   '/sendLayer/selectNetworkDescription/textColor',
-  '/sendLayer/emptyState/textColor',
-  '/swapLayer/swapLabel/textColor',
-  '/swapLayer/swapTitle/textColor',
-  '/swapLayer/rateLabel/textColor',
-  '/swapLayer/rateValue/textColor',
-  '/historyLayer/recentActivityTitle/textColor',
-  '/historyLayer/activityDate/textColor',
-  '/historyLayer/loadMore/textColor',
-  '/searchLayer/searchInput/textColor',
-  '/searchLayer/searchInput/placeholderColor',
-  '/searchLayer/searchInputFont/textColor',
-  '/searchLayer/recentSearchesLabel/textColor',
-  '/searchLayer/trendingLabel/textColor',
-  '/searchLayer/tokenTag/textColor'
+  '/sendLayer/emptyState/textColor'
 ];
 
 // Акцентные поверхности (кнопки/активные)
@@ -68,8 +51,7 @@ const ACCENT_COLORS = [
   '/sendLayer/footer/closeButton/backgroundColor',
   '/buyLayer/footer/closeButton/backgroundColor',
   '/homeLayer/footer/activeIconColor',
-  '/homeLayer/footer/activeTextColor',
-  '/swapLayer/swapActionButton/backgroundColor'
+  '/homeLayer/footer/activeTextColor'
 ];
 
 export const VISION_COLOR_PATHS: VisionColorPaths = {
@@ -85,8 +67,7 @@ export const IMAGE_PROTECTED_PATHS = [
   '/homeLayer',
   '/receiveLayer/centerContainer', 
   '/sendLayer/centerContainer',
-  '/buyLayer/centerContainer',
-  '/swapLayer/mainContainer'
+  '/buyLayer/centerContainer'
 ];
 
 // Получить все разрешенные пути для Vision-анализа

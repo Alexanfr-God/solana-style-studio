@@ -56,9 +56,6 @@ function buildVisionColorOps(
   console.log('[VISION] Building ops with palette:', palette);
   console.log('[VISION] Rules:', rules);
   
-  const changedPaths: string[] = [];
-  const skippedPaths: string[] = [];
-  
   // Center backgrounds - только если нет backgroundImage
   for (const path of VISION_COLOR_PATHS.centerBackgrounds) {
     if (!isAllowedVisionPath(path)) continue;
@@ -68,14 +65,11 @@ function buildVisionColorOps(
     const protectedPath = IMAGE_PROTECTED_PATHS.find(p => basePath.startsWith(p));
     
     if (protectedPath && hasBackgroundImage(theme, protectedPath)) {
-      console.log('[VISION] ⏭️  Skipping', path, '- backgroundImage exists');
-      skippedPaths.push(path);
+      console.log('[VISION] Skipping', path, '- backgroundImage exists');
       continue;
     }
     
     ops.push(createReplaceOp(path, palette.bg));
-    changedPaths.push(path);
-    console.log('[VISION] ✅ Changed', path, '→', palette.bg);
   }
   
   // Secondary backgrounds (с прозрачностью)
@@ -85,8 +79,6 @@ function buildVisionColorOps(
     // Конвертируем bg в rgba с прозрачностью
     const bgWithAlpha = convertToRgba(palette.bg, 0.12);
     ops.push(createReplaceOp(path, bgWithAlpha));
-    changedPaths.push(path);
-    console.log('[VISION] ✅ Changed', path, '→', bgWithAlpha);
   }
   
   // Text colors (контрастный текст)
@@ -101,25 +93,18 @@ function buildVisionColorOps(
       path.includes('failedColor') ||
       path.includes('pendingColor')
     )) {
-      skippedPaths.push(path);
-      console.log('[VISION] ⏭️  Skipping', path, '- semantic color');
       continue;
     }
     
     ops.push(createReplaceOp(path, palette.text));
-    changedPaths.push(path);
-    console.log('[VISION] ✅ Changed', path, '→', palette.text);
   }
   
   // Accent colors (кнопки и активные элементы)
   for (const path of VISION_COLOR_PATHS.accentColors) {
     if (!isAllowedVisionPath(path)) continue;
     ops.push(createReplaceOp(path, palette.accent));
-    changedPaths.push(path);
-    console.log('[VISION] ✅ Changed', path, '→', palette.accent);
   }
   
-  console.log('[VISION] 📊 Summary: Changed', changedPaths.length, 'paths, Skipped', skippedPaths.length, 'paths');
   console.log('[VISION] Generated', ops.length, 'operations');
   return ops;
 }
