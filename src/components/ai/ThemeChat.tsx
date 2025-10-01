@@ -297,13 +297,26 @@ const ThemeChat = () => {
       if (response?.success) {
         console.log(`[AI-COLORS] Successfully applied scheme:`, response);
         
+        // Verify walletProfile exists
+        if (!walletProfile?.wallet_address) {
+          console.error('[AI-COLORS] No wallet address found in profile:', walletProfile);
+          toast.error('Wallet not connected. Please connect your wallet first.');
+          return;
+        }
+
         // Reload theme from database to get updated values
-        console.log('[AI-COLORS] Fetching updated theme from database...');
+        console.log('[AI-COLORS] Fetching theme for wallet:', walletProfile.wallet_address);
         const { data: updatedTheme, error: themeError } = await supabase
           .from('user_themes')
           .select('theme_data')
           .eq('user_id', walletProfile.wallet_address)
           .maybeSingle();
+        
+        console.log('[AI-COLORS] DB Query result:', { 
+          found: !!updatedTheme, 
+          error: themeError,
+          wallet: walletProfile.wallet_address 
+        });
 
         if (themeError) {
           console.error('[AI-COLORS] Failed to reload theme:', themeError);
