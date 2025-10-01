@@ -57,7 +57,7 @@ const ThemeChat = () => {
   const { currentLayer } = useWalletCustomizationStore();
   const { elements } = useWalletElements();
   const { selectedElement, updateSelectedElement, isEditMode, setIsEditMode } = useSmartEdit();
-  const { theme, applyPatch } = useThemeStore();
+  const { theme, applyPatch, setTheme } = useThemeStore();
 
   // Authentication check
   useEffect(() => {
@@ -298,11 +298,12 @@ const ThemeChat = () => {
         console.log(`[AI-COLORS] Successfully applied scheme:`, response);
         
         // Reload theme from database to get updated values
+        console.log('[AI-COLORS] Fetching updated theme from database...');
         const { data: updatedTheme, error: themeError } = await supabase
           .from('user_themes')
           .select('theme_data')
           .eq('user_id', walletProfile.wallet_address)
-          .single();
+          .maybeSingle();
 
         if (themeError) {
           console.error('[AI-COLORS] Failed to reload theme:', themeError);
@@ -310,19 +311,17 @@ const ThemeChat = () => {
           return;
         }
 
+        if (!updatedTheme) {
+          console.error('[AI-COLORS] No theme found in database after applying scheme');
+          toast.error('Theme not found after applying scheme');
+          return;
+        }
+
         if (updatedTheme?.theme_data) {
-          // Update theme store with new data
-          const refreshPatch = {
-            id: `refresh-${Date.now()}`,
-            operations: [{ op: 'replace' as const, path: '/', value: updatedTheme.theme_data }],
-            userPrompt: `Refresh theme after applying ${scheme.name}`,
-            pageId: 'ai-scheme',
-            timestamp: new Date(),
-            theme: updatedTheme.theme_data
-          };
-          
-          await applyPatch(refreshPatch);
-          console.log('[AI-COLORS] Theme refreshed successfully');
+          console.log('[AI-COLORS] Applying theme to UI store:', Object.keys(updatedTheme.theme_data));
+          // Directly update theme store for immediate visual feedback
+          setTheme(updatedTheme.theme_data);
+          console.log('[AI-COLORS] ✅ Theme applied to UI successfully!');
         }
         
         addMessage(
