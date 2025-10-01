@@ -120,7 +120,7 @@ class JsonBridgeService {
   async updateThemeValue(
     jsonPath: string, 
     value: any, 
-    userId: string = 'anonymous'
+    userId: string
   ): Promise<boolean> {
     try {
       console.log('🔗 Updating theme via JSON Bridge:', { jsonPath, value, userId });
@@ -172,7 +172,7 @@ class JsonBridgeService {
 
   async updateMultipleValues(
     updates: Array<{ jsonPath: string; value: any }>,
-    userId: string = 'anonymous'
+    userId: string
   ): Promise<boolean> {
     try {
       console.log('🔗 Batch updating theme:', updates.length, 'changes');

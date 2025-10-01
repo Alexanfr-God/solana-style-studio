@@ -113,7 +113,8 @@ export const useEditModeManager = () => {
 
   const updateElementStyle = useCallback(async (
     property: string, 
-    value: any
+    value: any,
+    userId: string
   ) => {
     const { selectedElement, jsonPath } = stateRef.current;
     
@@ -124,7 +125,7 @@ export const useEditModeManager = () => {
 
     // Update via JSON Bridge instead of DOM manipulation
     const fullPath = `${jsonPath}/${property}`;
-    const success = await jsonBridge.updateThemeValue(fullPath, value);
+    const success = await jsonBridge.updateThemeValue(fullPath, value, userId);
     
     if (success) {
       console.log('✅ Updated via JSON Bridge:', fullPath, '=', value);

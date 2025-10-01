@@ -11,6 +11,7 @@ import { Toaster } from 'sonner';
 import WalletAlivePlayground from '@/pages/WalletAlivePlayground';
 import Documentation from '@/pages/Documentation';
 import NotFound from '@/pages/NotFound';
+import AdminPanel from '@/components/admin/AdminPanel';
 import { EffectsProvider } from '@/contexts/EffectsContext';
 import AppBootstrap from '@/components/AppBootstrap';
 
@@ -30,6 +31,7 @@ function App() {
             <Routes>
               <Route path="/" element={<WalletAlivePlayground />} />
               <Route path="/docs" element={<Documentation />} />
+              <Route path="/admin" element={<AdminPanel />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Router>
