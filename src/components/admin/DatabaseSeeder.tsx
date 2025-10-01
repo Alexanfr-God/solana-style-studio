@@ -15,7 +15,7 @@ export const DatabaseSeeder = () => {
     try {
       // Step 1: Seed presets
       setStatus('Seeding presets table (18 themes)...');
-      const { data: presetsData, error: presetsError } = await supabase.functions.invoke('admin/seed_presets', {
+      const { data: presetsData, error: presetsError } = await supabase.functions.invoke('seed_presets', {
         method: 'POST'
       });
 
