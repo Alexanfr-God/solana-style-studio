@@ -22,27 +22,675 @@ serve(async (req) => {
       );
     }
 
-    // Load defaultTheme.json from the public folder
-    const defaultThemeUrl = 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/wallet-assets/defaultTheme.json';
-    
-    let themeData;
-    try {
-      const themeResponse = await fetch(defaultThemeUrl);
-      if (!themeResponse.ok) {
-        throw new Error(`Failed to fetch default theme: ${themeResponse.statusText}`);
-      }
-      themeData = await themeResponse.json();
-    } catch (error) {
-      console.error('Error loading default theme:', error);
-      // Fallback to a minimal theme structure
-      themeData = {
-        name: "Default Theme",
-        version: "1.0.0",
-        homeLayer: {
-          background: { backgroundColor: "#1A1A1A" }
+    // Full default theme data embedded directly
+    const themeData = {
+      "name": "Simple Gray Theme",
+      "version": "1.0.0",
+      "globalSearchInput": {
+        "backgroundColor": "#374151",
+        "textColor": "#FFFFFF", 
+        "placeholderColor": "#9CA3AF",
+        "borderRadius": "12px",
+        "border": "none",
+        "fontFamily": "Inter, sans-serif",
+        "fontSize": "15px",
+        "iconSearch": { "color": "#FFFFFF", "type": "search" },
+        "iconClose": { "color": "#FFFFFF", "type": "x" }
+      },
+      "lockLayer": {
+        "backgroundImage": "",
+        "backgroundColor": "rgba(75, 85, 99, 0.8)",
+        "title": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "28px"
+        },
+        "passwordInput": {
+          "backgroundColor": "rgba(75, 85, 99, 0.8)",
+          "textColor": "#FFFFFF",
+          "placeholderColor": "#9CA3AF",
+          "borderRadius": "12px",
+          "border": "none",
+          "fontFamily": "Inter, sans-serif",
+          "iconEyeColor": "#9CA3AF"
+        },
+        "forgotPassword": {
+          "textColor": "#9CA3AF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        },
+        "unlockButton": {
+          "backgroundColor": "#6B7280",
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "600",
+          "fontSize": "19px",
+          "borderRadius": "14px"
         }
-      };
-    }
+      },
+      "avatarHeader": {
+        "backgroundColor": "#6B7280",
+        "textColor": "#FFFFFF",
+        "fontFamily": "Inter, sans-serif",
+        "fontWeight": "bold",
+        "fontSize": "20px"
+      },
+      "sidebarLayer": {
+        "header": {
+          "backgroundColor": "#374151",
+          "accountTitle": {
+            "textColor": "#FFFFFF",
+            "fontFamily": "Inter, sans-serif",
+            "fontWeight": "bold",
+            "fontSize": "19px"
+          },
+          "closeIcon": {
+            "color": "#FFFFFF",
+            "type": "x"
+          }
+        },
+        "center": {
+          "backgroundColor": "#1F2937",
+          "accountList": {
+            "avatar": {
+              "backgroundColor": "#6B7280",
+              "textColor": "#FFFFFF",
+              "fontFamily": "Inter, sans-serif",
+              "fontWeight": "bold",
+              "fontSize": "20px"
+            },
+            "accountName": {
+              "textColor": "#FFFFFF",
+              "fontFamily": "Inter, sans-serif",
+              "fontWeight": "bold",
+              "fontSize": "17px"
+            },
+            "accountAddress": {
+              "textColor": "#D1D5DB",
+              "fontFamily": "Inter, sans-serif",
+              "fontSize": "14px"
+            },
+            "selectedAnimation": {
+              "color": "#FFFFFF",
+              "type": "glow"
+            }
+          }
+        },
+        "footer": {
+          "backgroundColor": "#374151",
+          "footerIcons": {
+            "addIcon": { "color": "#FFFFFF", "type": "plus" },
+            "editIcon": { "color": "#FFFFFF", "type": "pencil" },
+            "settingsIcon": { "color": "#FFFFFF", "type": "settings" }
+          }
+        }
+      },
+      "homeLayer": {
+        "backgroundImage": "",
+        "backgroundColor": "rgba(75, 85, 99, 0.8)",
+        "header": {
+          "backgroundColor": "rgba(107, 114, 128, 0.1)",
+          "backgroundImage": "",
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "17px",
+          "searchIcon": {
+            "color": "#FFFFFF",
+            "type": "search"
+          }
+        },
+        "footer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.1)",
+          "backgroundImage": "",
+          "iconColor": "#FFFFFF",
+          "activeIconColor": "#9CA3AF",
+          "textColor": "#FFFFFF",
+          "activeTextColor": "#9CA3AF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "14px",
+          "navigationIcons": {
+            "homeIcon": {
+              "color": "#FFFFFF",
+              "activeColor": "#9CA3AF",
+              "type": "home"
+            },
+            "appsIcon": {
+              "color": "#FFFFFF",
+              "activeColor": "#9CA3AF",
+              "type": "layout-grid"
+            },
+            "swapIcon": {
+              "color": "#FFFFFF",
+              "activeColor": "#9CA3AF",
+              "type": "arrow-right-left"
+            },
+            "historyIcon": {
+              "color": "#FFFFFF",
+              "activeColor": "#9CA3AF",
+              "type": "clock"
+            },
+            "searchIcon": {
+              "color": "#FFFFFF",
+              "activeColor": "#9CA3AF",
+              "type": "search"
+            }
+          }
+        },
+        "mainContainer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.1)",
+          "borderRadius": "18px"
+        },
+        "totalBalanceLabel": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "normal",
+          "fontSize": "17px"
+        },
+        "totalBalanceValue": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "32px"
+        },
+        "totalBalanceChange": {
+          "positiveColor": "#10B981",
+          "negativeColor": "#EF4444",
+          "zeroColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "16px"
+        },
+        "actionButtons": {
+          "receiveButton": {
+            "containerColor": "#6B7280",
+            "iconColor": "#FFFFFF",
+            "labelColor": "#FFFFFF",
+            "labelFontFamily": "Inter, sans-serif",
+            "labelFontSize": "14px",
+            "borderRadius": "12px"
+          },
+          "sendButton": {
+            "containerColor": "#6B7280",
+            "iconColor": "#FFFFFF",
+            "labelColor": "#FFFFFF",
+            "labelFontFamily": "Inter, sans-serif",
+            "labelFontSize": "14px",
+            "borderRadius": "12px"
+          },
+          "swapButton": {
+            "containerColor": "#6B7280",
+            "iconColor": "#FFFFFF",
+            "labelColor": "#FFFFFF",
+            "labelFontFamily": "Inter, sans-serif",
+            "labelFontSize": "14px",
+            "borderRadius": "12px"
+          },
+          "buyButton": {
+            "containerColor": "#6B7280",
+            "iconColor": "#FFFFFF",
+            "labelColor": "#FFFFFF",
+            "labelFontFamily": "Inter, sans-serif",
+            "labelFontSize": "14px",
+            "borderRadius": "12px"
+          }
+        },
+        "seeAll": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "13px"
+        },
+        "accountDropdown": {
+          "containerBackgroundColor": "rgba(107, 114, 128, 0.1)",
+          "containerBorderRadius": "16px",
+          "headerText": {
+            "selectAccountColor": "#FFFFFF",
+            "selectAccountDescription": "#D1D5DB",
+            "selectAccountFontFamily": "Inter, sans-serif",
+            "selectAccountFontSize": "14px"
+          },
+          "accountItems": {
+            "mainAccountColor": "#FFFFFF",
+            "mainAccountFontFamily": "Inter, sans-serif",
+            "mainAccountFontSize": "14px",
+            "tradingAccountColor": "#D1D5DB",
+            "tradingAccountFontFamily": "Inter, sans-serif",
+            "tradingAccountFontSize": "14px",
+            "accountNetworkColor": "#D1D5DB",
+            "accountAddressColor": "#D1D5DB"
+          },
+          "actionButtons": {
+            "addAccountColor": "#D1D5DB",
+            "addAccountFontFamily": "Inter, sans-serif",
+            "addAccountFontSize": "14px",
+            "manageCollectibleColor": "#D1D5DB",
+            "manageCollectibleFontFamily": "Inter, sans-serif",
+            "manageCollectibleFontSize": "14px"
+          },
+          "icons": {
+            "copyAddressIcon": {
+              "color": "#FFFFFF",
+              "type": "copy"
+            }
+          }
+        }
+      },
+      "receiveLayer": {
+        "centerContainer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.1)",
+          "backgroundImage": "",
+          "backgroundPosition": "center",
+          "borderRadius": "0px"
+        },
+        "selectNetworkLabel": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "17px"
+        },
+        "selectNetworkDescription": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        },
+        "footer": {
+          "backgroundColor": "",
+          "backgroundImage": "",
+          "closeButton": {
+            "backgroundColor": "#6B7280",
+            "textColor": "#FFFFFF",
+            "fontFamily": "Inter, sans-serif",
+            "fontWeight": "bold",
+            "fontSize": "16px",
+            "borderRadius": "12px"
+          }
+        }
+      },
+      "sendLayer": {
+        "headerContainer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.1)",
+          "backgroundImage": "",
+          "backgroundPosition": "center"
+        },
+        "header": {
+          "backIcon": { "color": "#9CA3AF", "type": "arrow-left" },
+          "title": {
+            "textColor": "#FFFFFF",
+            "fontFamily": "Inter, sans-serif",
+            "fontWeight": "bold",
+            "fontSize": "23px"
+          },
+          "qrIcon": { "color": "#9CA3AF", "type": "qr-code" }
+        },
+        "centerContainer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.1)",
+          "backgroundImage": "",
+          "backgroundPosition": "center",
+          "borderRadius": "18px"
+        },
+        "selectNetworkLabel": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "19px"
+        },
+        "selectNetworkDescription": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        },
+        "emptyState": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        },
+        "footerContainer": {
+          "backgroundColor": "#1F2937",
+          "backgroundImage": ""
+        },
+        "footer": {
+          "closeButton": {
+            "backgroundColor": "#6B7280",
+            "textColor": "#FFFFFF",
+            "fontFamily": "Inter, sans-serif",
+            "fontWeight": "bold",
+            "fontSize": "19px",
+            "icon": { "color": "#9CA3AF", "type": "x" },
+            "borderRadius": "16px"
+          }
+        }
+      },
+      "appsLayer": {
+        "title": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "26px"
+        },
+        "subtitle": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "16px"
+        },
+        "collectibleCard": {
+          "backgroundColor": "rgba(107, 114, 128, 0.2)",
+          "backgroundImage": "",
+          "borderRadius": "16px"
+        },
+        "collectibleName": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "17px"
+        },
+        "manageCollectibleList": {
+          "textColor": "#D1D5DB",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "14px"
+        }
+      },
+      "buyLayer": {
+        "headerContainer": {
+          "backgroundColor": "rgba(75, 85, 99, 0.8)",
+          "backgroundImage": "",
+          "backgroundPosition": "center",
+          "borderRadius": "0px"
+        },
+        "header": {
+          "backButton": {
+            "backgroundColor": "#6B7280",
+            "borderRadius": "14px",
+            "text": {
+              "textColor": "#FFFFFF",
+              "fontFamily": "Inter, sans-serif",
+              "fontWeight": "bold",
+              "fontSize": "17px"
+            },
+            "icon": { "color": "#FFFFFF", "type": "arrow-left" }
+          },
+          "title": {
+            "textColor": "#FFFFFF",
+            "fontFamily": "Inter, sans-serif",
+            "fontWeight": "bold",
+            "fontSize": "26px"
+          }
+        },
+        "centerContainer": {
+          "backgroundColor": "rgba(75, 85, 99, 0.8)",
+          "backgroundImage": "",
+          "backgroundPosition": "center",
+          "borderRadius": "0px",
+          "fontFamily": "Inter, sans-serif"
+        },
+        "sectionLabel": {
+          "getStarted": {
+            "textColor": "#FFFFFF",
+            "fontFamily": "Inter, sans-serif",
+            "fontWeight": "bold",
+            "fontSize": "18px"
+          },
+          "popular": {
+            "textColor": "#FFFFFF",
+            "fontFamily": "Inter, sans-serif",
+            "fontWeight": "bold",
+            "fontSize": "18px"
+          }
+        },
+        "buyButton": {
+          "backgroundColor": "#6B7280",
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "18px",
+          "borderRadius": "14px"
+        },
+        "footerContainer": {
+          "backgroundColor": "#1F2937",
+          "borderRadius": "0px"
+        },
+        "footer": {
+          "closeButton": {
+            "backgroundColor": "#6B7280",
+            "textColor": "#FFFFFF",
+            "fontFamily": "Inter, sans-serif",
+            "fontWeight": "bold",
+            "fontSize": "18px",
+            "borderRadius": "14px",
+            "icon": { "color": "#FFFFFF", "type": "x" }
+          }
+        }
+      },
+      "swapLayer": {
+        "mainContainer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.1)",
+          "backgroundImage": "",
+          "borderRadius": "20px"
+        },
+        "swapTitle": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "22px"
+        },
+        "settingsIcon": {
+          "color": "#FFFFFF",
+          "type": "settings"
+        },
+        "fromContainer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.2)",
+          "backgroundImage": "",
+          "borderRadius": "15px"
+        },
+        "fromLabel": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        },
+        "fromBalance": {
+          "textColor": "#9CA3AF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "14px"
+        },
+        "fromCoinTag": {
+          "backgroundColor": "rgba(107, 114, 128, 0.2)",
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px",
+          "borderRadius": "10px"
+        },
+        "toContainer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.2)",
+          "backgroundImage": "",
+          "borderRadius": "15px"
+        },
+        "toLabel": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        },
+        "toBalance": {
+          "textColor": "#9CA3AF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "14px"
+        },
+        "toCoinTag": {
+          "backgroundColor": "rgba(107, 114, 128, 0.2)",
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px",
+          "borderRadius": "10px"
+        },
+        "arrowIcon": {
+          "color": "#6B7280",
+          "type": "arrow-up-down"
+        },
+        "rateContainer": {
+          "backgroundColor": "rgba(107, 114, 128, 0.2)",
+          "backgroundImage": "",
+          "borderRadius": "12px"
+        },
+        "rateLabel": {
+          "textColor": "#9CA3AF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        },
+        "rateValue": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "16px"
+        },
+        "infoIcon": {
+          "color": "#FFFFFF",
+          "type": "info"
+        },
+        "swapActionButton": {
+          "backgroundColor": "#6B7280",
+          "color": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "16px",
+          "borderRadius": "12px"
+        }
+      },
+      "historyLayer": {
+        "recentActivityTitle": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "19px"
+        },
+        "menuIcon": {
+          "color": "#FFFFFF",
+          "type": "more-vertical"
+        },
+        "activityDate": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "13px"
+        },
+        "activityStatus": {
+          "successColor": "#10B981",
+          "failedColor": "#EF4444",
+          "pendingColor": "#F59E0B",
+          "fontWeight": "500"
+        },
+        "loadMore": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        }
+      },
+      "searchLayer": {
+        "searchInput": {
+          "backgroundColor": "#374151",
+          "textColor": "#FFFFFF",
+          "placeholderColor": "#9CA3AF",
+          "borderRadius": "12px",
+          "border": "none",
+          "fontFamily": "Inter, sans-serif",
+          "iconSearch": { "color": "#FFFFFF", "type": "search" },
+          "iconClose": { "color": "#FFFFFF", "type": "x" }
+        },
+        "searchInputFont": {
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px",
+          "textColor": "#FFFFFF"
+        },
+        "recentSearchesLabel": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "17px",
+          "iconTime": { "color": "#FFFFFF", "type": "clock" }
+        },
+        "trendingLabel": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "17px",
+          "iconTrending": { "color": "#10B981", "type": "trending-up" }
+        },
+        "tokenTag": {
+          "backgroundColor": "rgba(107, 114, 128, 0.2)",
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "14px",
+          "borderRadius": "10px"
+        }
+      },
+      "assetCard": {
+        "backgroundColor": "rgba(107, 114, 128, 0.2)",
+        "borderRadius": "14px",
+        "title": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": "bold",
+          "fontSize": "16px"
+        },
+        "description": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "14px"
+        },
+        "value": {
+          "textColor": "#FFFFFF",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "15px"
+        },
+        "percent": {
+          "positiveColor": "#10B981",
+          "negativeColor": "#EF4444",
+          "fontFamily": "Inter, sans-serif",
+          "fontSize": "14px"
+        },
+        "icon": {
+          "color": "#FFFFFF",
+          "size": "24px"
+        }
+      },
+      "tokenCost": {
+        "fontSize": "13px",
+        "fontWeight": "400",
+        "fontFamily": "Inter, sans-serif",
+        "color": "#FFFFFF"
+      },
+      "tokenCardTitle": {
+        "fontSize": "16px",
+        "fontWeight": "600",
+        "fontFamily": "Inter, sans-serif",
+        "color": "#FFFFFF",
+        "textAlign": "center"
+      },
+      "tokenCardDescription": {
+        "fontSize": "13px",
+        "fontWeight": "400",
+        "fontFamily": "Inter, sans-serif",
+        "color": "#FFFFFF",
+        "textAlign": "center"
+      },
+      "inputs": {
+        "passwordInput": {
+          "backgroundColor": "#6B7280",
+          "textColor": "#FFFFFF",
+          "placeholderColor": "#9CA3AF",
+          "iconEyeColor": "#9CA3AF",
+          "borderRadius": "12px",
+          "border": "none",
+          "fontFamily": "Inter, sans-serif"
+        },
+        "searchInput": {
+          "backgroundColor": "#6B7280",
+          "textColor": "#FFFFFF",
+          "placeholderColor": "#9CA3AF",
+          "borderRadius": "10px",
+          "border": "1px solid #374151",
+          "fontFamily": "Inter, sans-serif"
+        }
+      },
+      "global": {
+        "fontFamily": "Inter, sans-serif",
+        "borderRadius": "14px",
+        "transition": "all 0.2s ease"
+      }
+    };
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
