@@ -61,11 +61,14 @@ export const ThemeInitButton = () => {
       if (error) throw error;
 
       if (data.success) {
-        toast.success('🎨 Theme initialized successfully!');
         setHasTheme(true);
 
         // ✅ Без перезагрузки: сразу подтягиваем тему из БД и применяем
         console.log('[ThemeInitButton] ✅ Theme created, loading from database...');
+        
+        // Даём Edge Function время закоммитить транзакцию
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         const { data: themeRow, error: themeError } = await supabase
           .from('user_themes')
           .select('theme_data')
