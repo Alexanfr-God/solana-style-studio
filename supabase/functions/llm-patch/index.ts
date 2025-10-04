@@ -465,47 +465,38 @@ ${JSON.stringify(presetData.sample_patch, null, 2)}
 
     // 5. Prepare context for OpenAI
     const currentTheme = themeData.theme_data;
-    const pageData = currentTheme[pageId];
-    
-    if (!pageData) {
-      const durationMs = performance.now() - startTime;
-      
-      // Log error telemetry
-      await logLlmPatchTelemetry(
-        supabase, userId, userId, pageId, userPrompt, 
-        [], durationMs, 'error', `Page '${pageId}' not found in theme`
-      );
-      
-      return jsonResponse({ 
-        valid: false,
-        errors: [{ path: 'page', message: `Page '${pageId}' not found in theme` }]
-      }, 400);
-    }
 
-    const systemPrompt = `You are WCC Maestro — a page‑aware theme editor for a crypto wallet.
-Return **JSON Patch only**. Modify **values only**; never rename keys or add unknown fields.
-Default scope is the provided pageId. Apply global changes only if the user explicitly requests it.
-Respect the provided JSON Schema (version from theme). If changes violate the schema, propose the closest valid alternative.
-Use only whitelisted icon sets and fonts. For any images, return placeholders and ask the asset tool; insert only approved CDN URLs.
-Maintain WCAG AA contrast for text vs background where possible.
-Follow safety policy RUG. Keep responses minimal and deterministic.
+    const systemPrompt = `You are WCC Maestro — a FULL theme editor for crypto wallet.
+
+CRITICAL RULES:
+1. When user says "make buttons blue" → change ALL button-related colors in ENTIRE theme
+2. Search RECURSIVELY through ALL layers: ${Object.keys(currentTheme).join(', ')}
+3. Fields ending with "Color", "backgroundColor", "containerColor", "iconColor" are colors
+4. Return JSON Patch operations for ALL matching fields across ALL layers
+5. Use FULL paths like: "/homeLayer/actionButtons/sendButton/containerColor"
+
+IMPORTANT:
+- DO NOT limit changes to one layer
+- Find ALL occurrences of the requested change
+- Apply consistently across entire theme
+
+Example:
+User: "make all buttons red"
+You MUST change:
+- /homeLayer/actionButtons/sendButton/containerColor
+- /homeLayer/actionButtons/receiveButton/containerColor
+- /homeLayer/actionButtons/buyButton/containerColor
+- /buyLayer/buyButton/backgroundColor
+- /sendLayer/footer/closeButton/backgroundColor
+- /swapLayer/swapActionButton/backgroundColor
+- ALL other button colors in theme
+
+Available layers in theme:
+${Object.keys(currentTheme).map(key => `- ${key}: ${Object.keys(currentTheme[key] || {}).join(', ')}`).join('\n')}
 
 **PRESET INTEGRATION RULES:**
 When presetId is provided, use STYLE CONTEXT from preset.sample_context to bias suggestions. Do not copy brand names or celebrity likeness; keep stylistic, generic and safe.
-REFERENCE PATCH is an example only; infer the aesthetic and produce a minimal valid JSON Patch scoped to pageId unless a global change is explicitly requested.
 Extract color palettes, typography preferences, and component styling from the context to guide your modifications.
-
-IMPORTANT RULES:
-1. Return ONLY valid JSON with a "patch" array containing RFC6902 operations
-2. Only modify paths starting with "/pages/${pageId}/"
-3. Never modify global theme properties unless explicitly requested
-4. Each patch operation must have: "op", "path", and "value" (if applicable)
-5. Valid operations: "replace", "add", "remove"
-6. All color values must be valid hex format (#RRGGBB or #RRGGBBAA)
-7. Ensure changes maintain visual accessibility and contrast
-
-Current page structure:
-${JSON.stringify(pageData, null, 2)}
 
 ${presetContext}
 ${referencePatch}
@@ -513,16 +504,23 @@ ${referencePatch}
 ${examplePresets.length > 0 ? `Example patches:
 ${examplePresets.map(p => JSON.stringify(p.sample_patch, null, 2)).join('\n\n')}` : ''}
 
-Respond with: {"patch": [{"op": "replace", "path": "/pages/${pageId}/components/someComponent/backgroundColor", "value": "#RRGGBB"}]}`;
+TECHNICAL RULES:
+- Return ONLY valid JSON with a "patch" array containing RFC6902 operations
+- Each patch operation must have: "op", "path", and "value" (if applicable)
+- Valid operations: "replace", "add", "remove"
+- All color values must be valid hex format (#RRGGBB or #RRGGBBAA)
+- Ensure changes maintain visual accessibility and contrast
+
+Respond with: {"patch": [{"op": "replace", "path": "/layerName/element/property", "value": "#HEXCOLOR"}]}`;
 
     const userContext = `User request: "${userPrompt}"
-    
-Target page: ${pageId}
-Current page data: ${JSON.stringify(pageData, null, 2)}
 
-${presetContext ? `Apply the style inspiration from the provided preset context.` : ''}
+FULL CURRENT THEME (all layers):
+${JSON.stringify(currentTheme, null, 2)}
 
-Generate a JSON Patch to fulfill this request while maintaining the existing structure and only modifying the specified page.`;
+Apply changes to ALL relevant fields across ALL layers.
+
+${presetContext ? `Apply the style inspiration from the provided preset context.` : ''}`;
 
     // 6. Call OpenAI
     console.log('🤖 Calling OpenAI...');
