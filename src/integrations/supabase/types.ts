@@ -71,6 +71,36 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_nonces: {
+        Row: {
+          chain: string
+          created_at: string
+          expires_at: string
+          id: string
+          nonce: string
+          used: boolean
+          wallet_address: string
+        }
+        Insert: {
+          chain?: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          nonce: string
+          used?: boolean
+          wallet_address: string
+        }
+        Update: {
+          chain?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          nonce?: string
+          used?: boolean
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       element_categories: {
         Row: {
           created_at: string | null
