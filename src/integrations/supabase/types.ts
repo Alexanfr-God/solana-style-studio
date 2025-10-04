@@ -73,31 +73,31 @@ export type Database = {
       }
       auth_nonces: {
         Row: {
+          address: string
           chain: string
           created_at: string
           expires_at: string
           id: string
           nonce: string
           used: boolean
-          wallet_address: string
         }
         Insert: {
-          chain?: string
+          address: string
+          chain: string
           created_at?: string
           expires_at: string
           id?: string
           nonce: string
           used?: boolean
-          wallet_address: string
         }
         Update: {
+          address?: string
           chain?: string
           created_at?: string
           expires_at?: string
           id?: string
           nonce?: string
           used?: boolean
-          wallet_address?: string
         }
         Relationships: []
       }

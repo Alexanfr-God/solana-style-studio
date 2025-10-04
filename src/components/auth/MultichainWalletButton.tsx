@@ -1,256 +1,397 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useAppKitAccount, useDisconnect } from '@reown/appkit/react';
+import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { modal } from '@/lib/appkit';
-import { BrowserProvider } from 'ethers';
-
-// Helper: Shorten address for display
-const shortenAddress = (addr: string) => 
-  `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+import { useAppKit, useAppKitAccount, useAppKitNetwork, useDisconnect } from '@reown/appkit/react';
+import { requestNonce, verifySignature, type ChainType } from '@/services/walletAuthService';
+import { useExtendedWallet } from '@/context/WalletContextProvider';
+import { isAppKitReady } from '@/lib/appkit';
 
 const MultichainWalletButton: React.FC = () => {
-  const { address, isConnected, caipAddress } = useAppKitAccount();
+  const { 
+    isAuthenticated, 
+    isAuthenticating,
+    setIsAuthenticating,
+    setAuthSession, 
+    clearAuthSession,
+    walletProfile
+  } = useExtendedWallet();
+
+  // Always call hooks (React rules)
+  const appKit = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
+  const { caipNetwork } = useAppKitNetwork();
   const { disconnect } = useDisconnect();
-  
-  const [user, setUser] = useState<any>(null);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Listen to Supabase auth state
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('🔐 Auth state changed:', event, session?.user?.id);
-        setUser(session?.user ?? null);
-        setIsInitialized(true);
+  // Real message signing function with improved EVM support
+  const signMessage = useCallback(async (message: string, chainType: ChainType): Promise<string> => {
+    try {
+      console.log('🖊️ Starting message signing:', { chainType, message: message.slice(0, 50) + '...' });
+      
+      if (chainType === 'solana') {
+        // For Solana use direct wallet access (AppKit doesn't expose signMessage directly)
+        console.log('📝 Using Solana signing method');
+        
+        const solanaWallet = (window as any).solana;
+        if (!solanaWallet?.signMessage) {
+          throw new Error('Solana wallet does not support message signing or is not connected');
+        }
+        
+        const encodedMessage = new TextEncoder().encode(message);
+        const signedMessage = await solanaWallet.signMessage(encodedMessage);
+        
+        // Convert signature to hex string
+        const signature = Array.from(signedMessage.signature)
+          .map((b: number) => b.toString(16).padStart(2, '0'))
+          .join('');
+        console.log('✅ Solana message signed successfully');
+        return signature;
+      } else {
+        // For EVM - try multiple signing methods
+        console.log('📝 Using EVM signing method');
+        const ethereum = (window as any).ethereum;
+        if (!ethereum) {
+          throw new Error('No Ethereum provider found');
+        }
+
+        // Try personal_sign first (most compatible)
+        try {
+          console.log('🔐 Trying personal_sign method...');
+          const signature = await ethereum.request({
+            method: 'personal_sign',
+            params: [message, address]
+          });
+          console.log('✅ EVM message signed with personal_sign');
+          return signature;
+        } catch (personalSignError) {
+          console.log('⚠️ personal_sign failed, trying eth_sign...', personalSignError.message);
+          
+          // Fallback to eth_sign
+          try {
+            const messageHex = `0x${new TextEncoder().encode(message).reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), '')}`;
+            const signature = await ethereum.request({
+              method: 'eth_sign',
+              params: [address, messageHex]
+            });
+            console.log('✅ EVM message signed with eth_sign');
+            return signature;
+          } catch (ethSignError) {
+            console.log('⚠️ eth_sign failed, trying eth_signTypedData_v4...', ethSignError.message);
+            
+            // Last resort: eth_signTypedData_v4
+            const typedData = {
+              domain: {
+                name: 'WCC Authentication',
+                version: '1'
+              },
+              types: {
+                Message: [
+                  { name: 'content', type: 'string' }
+                ]
+              },
+              primaryType: 'Message',
+              message: {
+                content: message
+              }
+            };
+            
+            const signature = await ethereum.request({
+              method: 'eth_signTypedData_v4',
+              params: [address, JSON.stringify(typedData)]
+            });
+            console.log('✅ EVM message signed with eth_signTypedData_v4');
+            return signature;
+          }
+        }
       }
-    );
+    } catch (error) {
+      console.error('❌ Failed to sign message with all methods:', error);
+      throw error;
+    }
+  }, [address, appKit]);
 
-    // Check current session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsInitialized(true);
-    });
-
-    return () => subscription.unsubscribe();
+  // Enhanced wallet detection function
+  const detectWalletProvider = useCallback(() => {
+    const ethereum = (window as any).ethereum;
+    
+    if (!ethereum) return 'unknown';
+    
+    // Check for specific wallet providers
+    if (ethereum.isMetaMask) return 'metamask';
+    if (ethereum.isRabby) return 'rabby';
+    if (ethereum.isCoinbaseWallet) return 'coinbase';
+    if (ethereum.isTrust) return 'trust';
+    if (ethereum.isImToken) return 'imtoken';
+    if (ethereum.providers?.length > 0) return 'walletconnect';
+    
+    return 'unknown_evm';
   }, []);
 
-  // Get chain type from CAIP address
-  const getChainType = useCallback((): 'solana' | 'ethereum' => {
-    if (!caipAddress) return 'ethereum';
-    const namespace = caipAddress.split(':')[0];
-    return namespace === 'solana' ? 'solana' : 'ethereum';
-  }, [caipAddress]);
-
-  // Auto-authenticate when wallet connects
-  useEffect(() => {
-    if (isConnected && address && !user && !isAuthenticating && isInitialized) {
-      console.log('🔄 Wallet connected, initiating Web3 authentication...');
-      handleAuthentication();
-    }
-  }, [isConnected, address, user, isInitialized]);
-
-  // Hybrid Web3 Authentication: Native Solana + Custom Ethereum
   const handleAuthentication = useCallback(async () => {
-    if (!address || isAuthenticating) return;
-
-    const chain = getChainType();
-    console.log('🚀 Starting Web3 auth:', { address: address.slice(0, 10) + '...', chain });
+    if (!address || !isAppKitReady() || isAuthenticating) {
+      console.log('❌ Missing requirements for authentication:', { 
+        hasAddress: !!address, 
+        appKitReady: isAppKitReady(), 
+        isAuthenticating 
+      });
+      return;
+    }
 
     setIsAuthenticating(true);
-
+    
     try {
-      if (chain === 'solana') {
-        // ✅ Native Solana Web3 Auth
-        console.log('🔗 Connecting to Solana wallet...');
-        
-        // Must connect first
-        if (window.solana && !window.solana.isConnected) {
-          await window.solana.connect();
-        }
+      // Determine chain type - improved detection
+      const networkId = String(caipNetwork?.id || '');
+      const networkName = String(caipNetwork?.name || '').toLowerCase();
+      const isSolana = networkId.includes('solana') || networkName.includes('solana') || 
+                      networkId.startsWith('solana:') || address?.length === 44; // Solana addresses are typically 44 chars
+      const chainType: ChainType = isSolana ? 'solana' : 'evm';
 
-        const { data, error } = await supabase.auth.signInWithWeb3({
-          chain: 'solana' as const,
-          statement: 'Sign in to Wallet Coast Customs',
-        });
+      // Detect wallet provider
+      const walletProvider = chainType === 'solana' ? 'phantom' : detectWalletProvider();
+      
+      console.log('🔍 Starting authentication:', { 
+        address: address.slice(0, 10) + '...', 
+        chainType, 
+        networkId, 
+        networkName,
+        addressLength: address.length,
+        walletProvider,
+        chainId: String(caipNetwork?.id || '').split(':')[1] || 'unknown',
+        caipNetwork: caipNetwork 
+      });
 
-        if (error) throw error;
+      // Step 1: Request nonce
+      console.log('📝 Requesting nonce from server...');
+      const { nonce, message } = await requestNonce(address, chainType);
+      console.log('✅ Nonce received, message to sign:', message.slice(0, 100) + '...');
 
-        console.log('✅ Solana Web3 authentication successful:', data);
-        toast.success('Connected to Solana wallet', {
-          description: `Address: ${shortenAddress(address)}`
-        });
-
+      // Step 2: Sign the message through wallet
+      console.log('🖊️ Requesting signature from wallet...');
+      const signature = await signMessage(message, chainType);
+      console.log('✅ Message signed successfully, signature length:', signature.length);
+      
+      // Step 3: Get publicKey for verification
+      let publicKey = address; // Default to address
+      if (chainType === 'solana') {
+        // For Solana, get the actual publicKey from wallet
+        const solanaWallet = (window as any).solana;
+        publicKey = solanaWallet?.publicKey?.toString() || address;
+        console.log('🔑 Solana publicKey:', publicKey.slice(0, 20) + '...');
       } else {
-        // 🔧 Custom Ethereum Auth with cryptographic validation
-        console.log('🔗 Starting Ethereum custom auth...');
+        // For EVM, address is the publicKey
+        console.log('🔑 EVM address as publicKey:', address.slice(0, 20) + '...');
+      }
+      
+      // Step 4: Verify signature with enhanced metadata
+      console.log('🔍 Verifying signature with server...');
+      const verificationData = await verifySignature({
+        address,
+        chain: chainType,
+        signature,
+        nonce,
+        message,
+        publicKey,
+        // Additional metadata for EVM wallets
+        ...(chainType === 'evm' && {
+          walletProvider,
+          chainId: String(caipNetwork?.id || '').split(':')[1] || 'unknown',
+          networkName: caipNetwork?.name
+        })
+      });
 
-        // 1. Request nonce
-        const { data: nonceData, error: nonceError } = await supabase.functions.invoke(
-          'ethereum-auth',
-          {
-            body: {
-              action: 'request-nonce',
-              walletAddress: address,
-            },
-          }
-        );
-
-        if (nonceError || !nonceData?.nonce) {
-          throw new Error('Failed to get authentication nonce');
-        }
-
-        const { nonce } = nonceData;
-        const message = `Sign in to Wallet Coast Customs\n\nNonce: ${nonce}\nAddress: ${address}`;
-
-        // 2. Sign message
-        console.log('✍️ Requesting signature...');
+      if (verificationData.success) {
+        console.log('🎉 Authentication successful!', verificationData);
+        toast.success(`${walletProvider.charAt(0).toUpperCase() + walletProvider.slice(1)} wallet connected!`);
         
-        if (!window.ethereum) {
-          throw new Error('Ethereum provider not found');
-        }
-
-        const provider = new BrowserProvider(window.ethereum as any);
-        const signer = await provider.getSigner();
-        const signature = await signer.signMessage(message);
-
-        console.log('✅ Message signed');
-
-        // 3. Verify signature
-        const { data: authData, error: authError } = await supabase.functions.invoke(
-          'ethereum-auth',
-          {
-            body: {
-              action: 'verify-signature',
-              walletAddress: address,
-              signature,
-              message,
-            },
-          }
-        );
-
-        if (authError || !authData?.session) {
-          throw new Error(authError?.message || 'Authentication failed');
-        }
-
-        // 4. Set session
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: authData.session.properties.access_token,
-          refresh_token: authData.session.properties.refresh_token,
+        setAuthSession({
+          userId: verificationData.profile.id,
+          token: verificationData.token || `temp_token_${Date.now()}`,
+          profile: verificationData.profile
         });
-
-        if (sessionError) throw sessionError;
-
-        console.log('✅ Ethereum authentication successful');
-        toast.success('Connected to Ethereum wallet', {
-          description: `Address: ${shortenAddress(address)}`
-        });
+      } else {
+        throw new Error('Signature verification failed');
       }
 
     } catch (error: any) {
-      console.error('❌ Web3 auth failed:', error);
+      console.error('❌ Authentication failed:', error);
       
-      if (error?.code === 4001 || error?.message?.includes('rejected')) {
-        toast.error('Signature rejected', {
-          description: 'You must sign the message to authenticate'
-        });
+      if (error.message?.includes('reject') || error.message?.includes('cancel') || error.message?.includes('denied')) {
+        toast.error('Signature rejected. Please try again.');
       } else {
-        toast.error('Authentication failed', {
-          description: error?.message || 'Please try again'
-        });
+        toast.error(`Authentication failed: ${error?.message || 'Unknown error'}`);
       }
-      
-      await disconnect();
     } finally {
       setIsAuthenticating(false);
     }
-  }, [address, isAuthenticating, getChainType, disconnect]);
+  }, [address, caipNetwork, isAuthenticating, setIsAuthenticating, setAuthSession, signMessage, detectWalletProvider]);
 
-  // Open AppKit modal
   const handleConnect = useCallback(async () => {
+    if (!isAppKitReady() || !appKit) {
+      console.log('❌ AppKit not ready:', { appKitReady: isAppKitReady(), hasAppKit: !!appKit });
+      toast.error('Wallet connector not ready');
+      return;
+    }
+
     try {
       console.log('🔗 Opening wallet selection modal...');
-      await modal.open();
+      await appKit.open();
+      console.log('✅ Wallet modal opened successfully');
     } catch (error: any) {
       console.error('❌ Failed to open wallet modal:', error);
       toast.error('Failed to open wallet selector');
     }
-  }, []);
+  }, [appKit]);
 
-  // Handle disconnect
   const handleDisconnect = useCallback(async () => {
-    console.log('👋 Disconnecting wallet...');
-    
     try {
-      // Sign out from Supabase Auth
-      await supabase.auth.signOut();
+      console.log('🔌 Disconnecting wallet...');
       
-      // Disconnect from AppKit
-      await disconnect();
-      
-      // Clean up wallet connection storage
+      // Aggressive cleanup of wallet-related storage
       const keysToRemove = [
-        'wc@2:core:0.3//pairing',
-        'wc@2:client:0.3//proposal',
-        'wc@2:universal_provider:/namespaces',
-        '-walletlink:https://www.walletlink.org:session:id'
+        'wallet_auth_session',
+        'walletconnect',
+        'wagmi.store', 
+        'wagmi.cache',
+        'reown.wallet',
+        'appkit.wallet',
+        'appkit.account',
+        'appkit.network',
+        'appkit.session',
+        'wagmi.injected.shimDisconnect',
+        'wagmi.wallet',
+        'wagmi.connected',
+        'wc@2:',
+        'WALLETCONNECT_DEEPLINK_CHOICE'
       ];
       
+      // Clear localStorage
       keysToRemove.forEach(key => {
         try {
           localStorage.removeItem(key);
-          sessionStorage.removeItem(key);
-        } catch (e) {
-          console.warn('Failed to remove key:', key);
+          // Also try with potential prefixes
+          Object.keys(localStorage).forEach(storageKey => {
+            if (storageKey.includes(key) || storageKey.startsWith(key)) {
+              localStorage.removeItem(storageKey);
+            }
+          });
+        } catch (error) {
+          console.warn(`Failed to clear ${key}:`, error);
         }
       });
       
-      console.log('✅ Wallet disconnected');
-      toast.success('Wallet disconnected');
+      await disconnect();
+      clearAuthSession();
       
-    } catch (error) {
-      console.error('❌ Disconnect error:', error);
-      toast.error('Failed to disconnect');
+      console.log('🧹 Aggressive wallet cleanup completed');
+      toast.success('Wallet disconnected');
+    } catch (error: any) {
+      console.error('❌ Error disconnecting:', error);
+      toast.error('Error disconnecting wallet');
     }
-  }, [disconnect]);
+  }, [disconnect, clearAuthSession]);
 
-  // Render button states
-  if (!isInitialized) {
+  // Helper function to shorten wallet address
+  const shortenAddress = (addr: string) => {
+    return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
+  };
+
+  const appKitReady = isAppKitReady();
+  const isBusy = !appKitReady || isAuthenticating;
+  const isConnectedAndAuth = isConnected && isAuthenticated && walletProfile;
+  const showAuthButton = isConnected && address && !isAuthenticated;
+
+  // Debug logging
+  console.log('🔍 MultichainWalletButton state:', {
+    appKitReady,
+    isConnected,
+    isAuthenticated,
+    hasWalletProfile: !!walletProfile,
+    hasAddress: !!address,
+    addressLength: address?.length,
+    networkId: caipNetwork?.id,
+    networkName: caipNetwork?.name,
+    showAuthButton
+  });
+
+  // Show loading state while AppKit initializes
+  if (!appKitReady) {
     return (
-      <Button disabled variant="outline" size="sm">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Initializing...
+      <Button variant="outline" disabled className="flex items-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Initializing...</span>
       </Button>
     );
   }
 
-  if (isConnected && user && address) {
+  // If fully authenticated, show connected state
+  if (isConnectedAndAuth) {
     return (
-      <Button onClick={handleDisconnect} variant="default" size="sm" className="flex items-center gap-2">
-        <Wallet className="h-4 w-4" />
-        {shortenAddress(address)}
-        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          variant="default"
+          className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary shadow-[0_0_10px_rgba(153,69,255,0.4)]"
+          onClick={handleDisconnect}
+        >
+          <Wallet className="h-4 w-4" />
+          <span>{shortenAddress(address || '')}</span>
+          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+        </Button>
+      </div>
     );
   }
 
-  if (isConnected && !user) {
+  // If connected but need authentication, show auth button separately
+  if (showAuthButton) {
     return (
-      <Button disabled variant="outline" size="sm">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Signing...
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={async () => {
+            console.log('🔄 Forcing wallet change...');
+            await handleDisconnect(); // Use our enhanced disconnect
+            setTimeout(() => handleConnect(), 500); // Small delay to ensure cleanup
+          }}
+        >
+          <Wallet className="h-4 w-4" />
+          <span>Change Wallet</span>
+        </Button>
+        <Button 
+          variant="default" 
+          className="flex items-center gap-2"
+          disabled={isAuthenticating}
+          onClick={handleAuthentication}
+        >
+          {isAuthenticating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Authenticating...</span>
+            </>
+          ) : (
+            <>
+              <Wallet className="h-4 w-4" />
+              <span>Sign Message</span>
+            </>
+          )}
+        </Button>
+      </div>
     );
   }
 
+  // Default state: not connected, show connect button
   return (
-    <Button onClick={handleConnect} variant="outline" size="sm">
-      <Wallet className="h-4 w-4 mr-2" />
-      Connect Wallet
-    </Button>
+    <div className="relative z-10">
+      <Button 
+        variant="outline"
+        className="flex items-center gap-2 bg-background/50 backdrop-blur-sm transition-all duration-300"
+        disabled={isBusy}
+        onClick={handleConnect}
+      >
+        <Wallet className="h-4 w-4" />
+        <span>Connect Wallet</span>
+      </Button>
+    </div>
   );
 };
 

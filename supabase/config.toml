@@ -36,12 +36,6 @@ jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 
-[auth.web3.ethereum]
-enabled = true
-
-[auth.web3.solana]
-enabled = true
-
 [realtime]
 enabled = true
 
@@ -51,6 +45,8 @@ enabled = true
 [functions.generate-style]
 verify_jwt = true
 
+[functions.wallet-auth]
+verify_jwt = false
 
 [functions.llm-patch]
 verify_jwt = true
@@ -81,9 +77,6 @@ verify_jwt = true
 
 [functions.ai-apply-colors]
 verify_jwt = true
-
-[functions.ethereum-auth]
-verify_jwt = false
 
 [functions.create-base-theme]
 verify_jwt = false
