@@ -51,7 +51,7 @@ export const WalletChatProvider = ({ children }: WalletChatProviderProps) => {
   const { currentLayer, walletStyle, loginStyle } = useWalletCustomizationStore();
 
   const getWalletContext = () => {
-    const currentStyle = currentLayer === 'login' ? loginStyle : walletStyle;
+    const currentStyle = currentLayer === 'lockLayer' ? loginStyle : walletStyle;
     
     return {
       walletType: 'Phantom Wallet (WalletAlivePlayground)',

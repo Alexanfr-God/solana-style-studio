@@ -158,7 +158,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   };
 
   const handleLock = () => {
-    setCurrentLayer('login');
+    setCurrentLayer('lockLayer');
   };
 
   const renderLoginScreen = () => (
@@ -351,7 +351,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
         <div className="flex-1 flex items-center justify-center overflow-visible relative">
           {/* LOCK/UNLOCK Button - External to wallet container */}
           <div className="absolute top-4 right-4 z-20">
-            {currentLayer === 'login' ? (
+            {currentLayer === 'lockLayer' ? (
               <Button
                 size="sm"
                 onClick={handleUnlock}
@@ -386,7 +386,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
                 : '0 20px 40px rgba(0,0,0,0.3)'
             }}
           >
-            {currentLayer === 'login' ? (
+            {currentLayer === 'lockLayer' ? (
               renderLoginScreen()
             ) : (
               <WalletContainer />

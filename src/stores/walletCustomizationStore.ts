@@ -3,7 +3,7 @@ import { WalletStyle } from './customizationStore';
 import { getCoinIcon } from '@/constants/coinIcons';
 import { THEME_SOT_IS_ZUSTAND } from '@/config/flags';
 
-export type WalletLayer = 'login' | 'wallet' | 'receive' | 'send' | 'buy' | 'swap' | 'apps' | 'history' | 'search' | 'home';
+export type WalletLayer = 'lockLayer' | 'wallet' | 'receive' | 'send' | 'buy' | 'swap' | 'apps' | 'history' | 'search' | 'home';
 
 // Stable empty style object to prevent infinite re-renders
 const EMPTY_STYLE = {};
@@ -155,7 +155,7 @@ const mockTokens = [
 ];
 
 export const useWalletCustomizationStore = create<WalletCustomizationState>((set, get) => ({
-  currentLayer: 'login',
+  currentLayer: 'lockLayer',
   walletStyle: { ...defaultWalletStyle },
   loginStyle: { ...defaultLoginStyle },
   selectedWallet: 'phantom',
