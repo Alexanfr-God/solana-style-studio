@@ -116,8 +116,25 @@ const ThemeChat = () => {
       const result = await LlmPatchService.applyPatch(patchRequest);
       
       if (result) {
-        console.log('✅ Theme updated successfully');
-        toast.success('🎯 Theme updated with AI suggestions!');
+        console.log('✅ Theme updated successfully in database');
+        
+        // Reload theme from database to see AI changes
+        console.log('[ThemeChat] 🔄 Reloading theme from DB after AI update...');
+        const { data: updatedTheme, error: themeError } = await (await import('@/integrations/supabase/client')).supabase
+          .from('user_themes')
+          .select('theme_data')
+          .eq('user_id', userId)
+          .single();
+        
+        if (themeError) {
+          console.error('[ThemeChat] ❌ Failed to reload theme:', themeError);
+          toast.error('Theme updated but failed to reload - please refresh');
+        } else if (updatedTheme?.theme_data) {
+          console.log('[ThemeChat] ✅ Theme reloaded from DB, applying to UI store...');
+          setTheme(updatedTheme.theme_data);
+          toast.success('🎯 Theme updated with AI suggestions!');
+        }
+        
         return true;
       }
       

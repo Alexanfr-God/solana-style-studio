@@ -9,8 +9,12 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ThemeSelectorCoverflow from '@/components/customization/ThemeSelectorCoverflow';
 import ThemeChat from '@/components/ai/ThemeChat';
+import { useUserThemeLoader } from '@/hooks/useUserThemeLoader';
 
 const WalletAlivePlayground = () => {
+  // Load user theme from database when wallet connects
+  useUserThemeLoader();
+  
   const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
 
   const handleMintClick = () => {
