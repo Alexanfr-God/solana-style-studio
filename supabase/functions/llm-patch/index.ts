@@ -5,6 +5,8 @@ import Ajv from 'https://esm.sh/ajv@8.12.0';
 import addFormats from 'https://esm.sh/ajv-formats@2.1.1';
 import { FileUploadModule } from './fileUploadModule.ts';
 import { processVisionStyle, VisionStyleRequest } from './modules/visionStyle.ts';
+import { extractPaletteFromImage, Palette } from './lib/extractPalette.ts';
+import { generatePatchFromPalette, DEFAULT_SAFE_PREFIXES } from './lib/generatePatchFromPalette.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +26,14 @@ interface FileUploadRequest {
   file_name: string;
   user_id: string;
   folder?: string;
+}
+
+interface VisionPaletteRequest {
+  mode: 'vision-palette';
+  userId: string;
+  imageUrl: string;
+  safePrefixes?: string[];
+  allowFontChange?: boolean;
 }
 
 interface PatchResponse {
@@ -212,6 +222,134 @@ serve(async (req) => {
       }
       
       return jsonResponse(result);
+    }
+
+    // ============================================================================
+    // Mode: vision-palette
+    // ============================================================================
+    if (requestBody.mode === 'vision-palette') {
+      const visionReq = requestBody as VisionPaletteRequest;
+      const paletteStartTime = Date.now();
+      
+      console.log('[VISION-PALETTE] 🎨 Starting palette extraction from image:', visionReq.imageUrl);
+      
+      try {
+        // 1. Get current user theme
+        const { data: themeData, error: themeError } = await supabase
+          .from('user_themes')
+          .select('theme_data')
+          .eq('user_id', visionReq.userId)
+          .single();
+        
+        if (themeError || !themeData?.theme_data) {
+          console.error('[VISION-PALETTE] ❌ Theme not found for user:', visionReq.userId);
+          return jsonResponse({ error: 'Theme not found' }, 404);
+        }
+        
+        const currentTheme = themeData.theme_data;
+        console.log('[VISION-PALETTE] ✅ Loaded theme for user:', visionReq.userId);
+        
+        // 2. Extract palette from image
+        const palette = await extractPaletteFromImage(visionReq.imageUrl);
+        console.log('[VISION-PALETTE] 🎨 Extracted palette:', palette);
+        
+        // 3. Generate patch operations
+        const safePrefixes = visionReq.safePrefixes || DEFAULT_SAFE_PREFIXES;
+        const ops = generatePatchFromPalette(
+          palette, 
+          currentTheme, 
+          safePrefixes,
+          visionReq.allowFontChange || false
+        );
+        
+        console.log('[VISION-PALETTE] 📝 Generated operations:', ops.length);
+        
+        if (ops.length === 0) {
+          console.warn('[VISION-PALETTE] ⚠️ No operations generated');
+          return jsonResponse({
+            success: false,
+            message: 'No color changes needed',
+            palette,
+            patch: [],
+            applied: 0
+          });
+        }
+        
+        // 4. Apply patch to theme
+        const patchResult = applyPatch(currentTheme, ops, false, false);
+        const updatedTheme = patchResult.newDocument;
+        
+        // 5. Save updated theme to database
+        const { error: updateError } = await supabase
+          .from('user_themes')
+          .update({ 
+            theme_data: updatedTheme,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', visionReq.userId);
+        
+        if (updateError) {
+          console.error('[VISION-PALETTE] ❌ Failed to save theme:', updateError);
+          return jsonResponse({ error: 'Failed to update theme' }, 500);
+        }
+        
+        const executionTime = Date.now() - paletteStartTime;
+        console.log('[VISION-PALETTE] ✅ Successfully applied palette in', executionTime, 'ms');
+        
+        // 6. Log telemetry
+        try {
+          await logLlmPatchTelemetry(supabase, {
+            user_id: visionReq.userId,
+            prompt: `Vision palette from image: ${visionReq.imageUrl}`,
+            page_id: 'all-layers',
+            has_preset: false,
+            preset_id: null,
+            response_valid: true,
+            operation_count: ops.length,
+            execution_time_ms: executionTime,
+            error_message: null,
+            theme_id: 'vision-palette'
+          });
+        } catch (telemetryError) {
+          console.error('[VISION-PALETTE] 📊 Telemetry logging failed:', telemetryError);
+        }
+        
+        // 7. Return response
+        return jsonResponse({
+          success: true,
+          palette,
+          patch: ops,
+          applied: ops.length,
+          theme: updatedTheme,
+          message: `Applied ${ops.length} color changes from palette`,
+          executionTime
+        });
+        
+      } catch (error) {
+        const executionTime = Date.now() - paletteStartTime;
+        console.error('[VISION-PALETTE] ❌ Fatal error:', error);
+        
+        try {
+          await logLlmPatchTelemetry(supabase, {
+            user_id: visionReq.userId,
+            prompt: `Vision palette from image: ${visionReq.imageUrl}`,
+            page_id: 'all-layers',
+            has_preset: false,
+            preset_id: null,
+            response_valid: false,
+            operation_count: 0,
+            execution_time_ms: executionTime,
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            theme_id: 'vision-palette'
+          });
+        } catch (telemetryError) {
+          console.error('[VISION-PALETTE] 📊 Telemetry logging failed:', telemetryError);
+        }
+        
+        return jsonResponse({
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }, 500);
+      }
     }
 
     // Handle patch mode (existing functionality)

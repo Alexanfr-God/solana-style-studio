@@ -267,6 +267,98 @@ const ThemeChat = () => {
     }
   };
 
+  const handleApplyPaletteFromImage = async (imageUrl: string) => {
+    if (!walletProfile?.wallet_address) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      console.log('[VISION-PALETTE] 🎨 Applying palette from image:', imageUrl);
+      
+      addMessage('🎨 Extracting color palette from your image...', 'assistant');
+      
+      // Call llm-patch with vision-palette mode
+      const supabase = (await import('@/integrations/supabase/client')).supabase;
+      const { data, error } = await supabase.functions.invoke('llm-patch', {
+        body: {
+          mode: 'vision-palette',
+          userId: walletProfile.wallet_address,
+          imageUrl: imageUrl,
+          safePrefixes: [
+            '/lockLayer', '/homeLayer', '/sidebarLayer',
+            '/receiveLayer', '/sendLayer', '/swapLayer',
+            '/appsLayer', '/historyLayer', '/searchLayer',
+            '/globalSearchInput', '/assetCard', '/global', '/inputs'
+          ],
+          allowFontChange: false
+        }
+      });
+
+      if (error) {
+        console.error('[VISION-PALETTE] ❌ Error:', error);
+        addMessage(`❌ Failed to apply palette: ${error.message}`, 'assistant');
+        toast.error('Failed to apply palette');
+        return;
+      }
+
+      if (!data.success) {
+        console.warn('[VISION-PALETTE] ⚠️ No changes:', data.message);
+        addMessage(`⚠️ ${data.message}`, 'assistant');
+        toast.warning(data.message || 'No color changes needed');
+        return;
+      }
+
+      console.log('[VISION-PALETTE] ✅ Success:', data);
+      
+      // Reload theme from database
+      const { data: updatedTheme, error: themeError } = await supabase
+        .from('user_themes')
+        .select('theme_data')
+        .eq('user_id', walletProfile.wallet_address)
+        .single();
+      
+      if (themeError || !updatedTheme?.theme_data) {
+        console.error('[VISION-PALETTE] ❌ Failed to reload theme');
+        toast.error('Theme updated but failed to reload');
+        return;
+      }
+      
+      // Apply to UI via store
+      setTheme(updatedTheme.theme_data);
+      console.log('[VISION-PALETTE] ✅ Theme applied to UI');
+      
+      // Success message with palette details
+      const palette = data.palette;
+      addMessage(
+        `✅ ${data.message}\n\n**Extracted Palette:**\n` +
+        `• Background: \`${palette.bg}\`\n` +
+        `• Text: \`${palette.fg}\`\n` +
+        `• Primary: \`${palette.primary}\`\n` +
+        `• Accent 1: \`${palette.accent1}\`\n` +
+        `• Accent 2: \`${palette.accent2}\`\n` +
+        `• Neutral: \`${palette.neutral}\`\n\n` +
+        `Applied **${data.applied}** color changes across all layers.`,
+        'assistant',
+        undefined,
+        true
+      );
+      
+      toast.success(`Palette applied! ${data.applied} colors updated`);
+      
+    } catch (error) {
+      console.error('[VISION-PALETTE] ❌ Fatal error:', error);
+      addMessage(
+        `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'assistant'
+      );
+      toast.error('Failed to apply palette');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const applyColorScheme = async (scheme: typeof colorSchemes[0]) => {
     if (!theme) {
       toast.error('Theme not loaded');
@@ -713,8 +805,19 @@ const ThemeChat = () => {
                         </Button>
                       </div>
                       
-                      {/* Analyze colors button - show after image upload */}
+                      {/* Apply Palette & Analyze Colors buttons */}
                       <div className="flex justify-center mt-3 gap-2">
+                        <Button
+                          onClick={() => handleApplyPaletteFromImage(message.uploadedImageUrl!)}
+                          disabled={isProcessing || isUploading}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-3 text-xs bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30 hover:from-purple-600/30 hover:to-pink-600/30 disabled:opacity-50 font-medium"
+                        >
+                          <Palette className="h-3 w-3 mr-1" />
+                          Apply Palette
+                        </Button>
+                        
                         <Button
                           onClick={() => handleAnalyzeColors(message.uploadedImageUrl!)}
                           disabled={isAnalyzingColors}
@@ -728,7 +831,7 @@ const ThemeChat = () => {
                               <span>Analyzing...</span>
                             </div>
                           ) : (
-                            'Analyze colors'
+                            'AI Color Schemes'
                           )}
                         </Button>
                         
