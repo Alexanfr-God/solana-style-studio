@@ -77,9 +77,9 @@ function formatValidationErrors(ajvErrors: any[]): ValidationError[] {
 }
 
 async function callOpenAI(systemPrompt: string, userContext: string): Promise<Operation[]> {
-  const openAiKey = Deno.env.get('OPENAI_API_KEY');
+  const openAiKey = Deno.env.get('OPENA_API_KEY');
   if (!openAiKey) {
-    throw new Error('OPENAI_API_KEY not configured');
+    throw new Error('OPENA_API_KEY not configured');
   }
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {

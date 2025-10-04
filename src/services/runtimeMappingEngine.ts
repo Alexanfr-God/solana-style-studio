@@ -4,6 +4,7 @@
  */
 
 import { getAllMappedElements, type ElementMapping } from './elementToPathMapper';
+import { useThemeStore } from '@/state/themeStore';
 
 export interface AppliedStyle {
   elementId: string;
@@ -77,9 +78,9 @@ function applyStylesToElement(element: HTMLElement, styleObj: any): string[] {
 }
 
 /**
- * Apply mappings to DOM elements within wallet container
+ * Apply theme to DOM elements (main public API)
  */
-export async function applyMappingsToDOM(theme: any): Promise<AppliedStyle[]> {
+export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
   const results: AppliedStyle[] = [];
   
   try {
@@ -169,7 +170,7 @@ export function setupMappingWatcher(getTheme: () => any) {
     const currentTheme = getTheme();
     if (currentTheme && currentTheme !== lastTheme) {
       lastTheme = currentTheme;
-      applyMappingsToDOM(currentTheme);
+      applyThemeToDOM(currentTheme);
     }
   };
   
@@ -182,7 +183,7 @@ export function setupMappingWatcher(getTheme: () => any) {
     const theme = event.detail.theme;
     if (theme) {
       lastTheme = theme;
-      applyMappingsToDOM(theme);
+      applyThemeToDOM(theme);
     }
   };
   
@@ -226,4 +227,60 @@ export function applyManualMapping(
     console.error('[RuntimeMapping] Manual apply error:', err);
     return false;
   }
+}
+
+// ============================================================================
+// Global WCC API for debugging and manual theme control
+// ============================================================================
+
+if (typeof window !== 'undefined') {
+  (window as any).wcc = {
+    /**
+     * Apply new theme and update UI
+     * @example window.wcc.applyTheme({ lockLayer: { backgroundColor: '#ff0000' } })
+     */
+    applyTheme: (newTheme: any) => {
+      console.log('[WCC] 📥 Applying theme via window.wcc.applyTheme');
+      useThemeStore.getState().setTheme(newTheme);
+      applyThemeToDOM(newTheme);
+      return { success: true, theme: newTheme };
+    },
+    
+    /**
+     * Get current theme from store
+     * @example window.wcc.getCurrentTheme()
+     */
+    getCurrentTheme: () => {
+      return useThemeStore.getState().theme;
+    },
+    
+    /**
+     * Reapply current theme to DOM (useful for debugging)
+     * @example window.wcc.reapplyStyles()
+     */
+    reapplyStyles: () => {
+      console.log('[WCC] 🔄 Reapplying styles via window.wcc.reapplyStyles');
+      const theme = useThemeStore.getState().theme;
+      applyThemeToDOM(theme);
+      return { success: true };
+    },
+    
+    /**
+     * Get store state for debugging
+     * @example window.wcc.getStoreState()
+     */
+    getStoreState: () => {
+      const state = useThemeStore.getState();
+      return {
+        hasTheme: !!state.theme,
+        themeKeys: Object.keys(state.theme || {}),
+        activeThemeId: state.activeThemeId,
+        isLoading: state.isLoading,
+        error: state.error
+      };
+    }
+  };
+  
+  console.log('[WCC] ✅ Global API initialized: window.wcc');
+  console.log('[WCC] 📖 Available methods:', Object.keys((window as any).wcc));
 }

@@ -10,7 +10,7 @@ import { walletElementsMapper } from '@/services/walletElementsMappingService';
 import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
 import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
-import { applyMappingsToDOM } from '@/services/runtimeMappingEngine';
+import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -60,7 +60,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
       console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
       // Delay to ensure DOM is ready
       setTimeout(() => {
-        applyMappingsToDOM(theme);
+        applyThemeToDOM(theme);
       }, 100);
     }
   }, [theme, activeThemeId]);
