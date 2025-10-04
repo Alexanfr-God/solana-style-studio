@@ -5,6 +5,7 @@ import { Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { modal } from '@/lib/appkit';
+import { BrowserProvider } from 'ethers';
 
 // Helper: Shorten address for display
 const shortenAddress = (addr: string) => 
@@ -52,7 +53,7 @@ const MultichainWalletButton: React.FC = () => {
     }
   }, [isConnected, address, user, isInitialized]);
 
-  // Native Supabase Web3 Authentication
+  // Hybrid Web3 Authentication: Native Solana + Custom Ethereum
   const handleAuthentication = useCallback(async () => {
     if (!address || isAuthenticating) return;
 
@@ -62,32 +63,92 @@ const MultichainWalletButton: React.FC = () => {
     setIsAuthenticating(true);
 
     try {
-      let result;
-      
       if (chain === 'solana') {
-        // Solana Web3 auth
-        result = await supabase.auth.signInWithWeb3({
+        // ✅ Native Solana Web3 Auth
+        console.log('🔗 Connecting to Solana wallet...');
+        
+        // Must connect first
+        if (window.solana && !window.solana.isConnected) {
+          await window.solana.connect();
+        }
+
+        const { data, error } = await supabase.auth.signInWithWeb3({
           chain: 'solana' as const,
           statement: 'Sign in to Wallet Coast Customs',
         });
+
+        if (error) throw error;
+
+        console.log('✅ Solana Web3 authentication successful:', data);
+        toast.success('Connected to Solana wallet', {
+          description: `Address: ${shortenAddress(address)}`
+        });
+
       } else {
-        // Ethereum Web3 auth
-        result = await supabase.auth.signInWithWeb3({
-          chain: 'ethereum' as const,
-          statement: 'Sign in to Wallet Coast Customs',
+        // 🔧 Custom Ethereum Auth with cryptographic validation
+        console.log('🔗 Starting Ethereum custom auth...');
+
+        // 1. Request nonce
+        const { data: nonceData, error: nonceError } = await supabase.functions.invoke(
+          'ethereum-auth',
+          {
+            body: {
+              action: 'request-nonce',
+              walletAddress: address,
+            },
+          }
+        );
+
+        if (nonceError || !nonceData?.nonce) {
+          throw new Error('Failed to get authentication nonce');
+        }
+
+        const { nonce } = nonceData;
+        const message = `Sign in to Wallet Coast Customs\n\nNonce: ${nonce}\nAddress: ${address}`;
+
+        // 2. Sign message
+        console.log('✍️ Requesting signature...');
+        
+        if (!window.ethereum) {
+          throw new Error('Ethereum provider not found');
+        }
+
+        const provider = new BrowserProvider(window.ethereum as any);
+        const signer = await provider.getSigner();
+        const signature = await signer.signMessage(message);
+
+        console.log('✅ Message signed');
+
+        // 3. Verify signature
+        const { data: authData, error: authError } = await supabase.functions.invoke(
+          'ethereum-auth',
+          {
+            body: {
+              action: 'verify-signature',
+              walletAddress: address,
+              signature,
+              message,
+            },
+          }
+        );
+
+        if (authError || !authData?.session) {
+          throw new Error(authError?.message || 'Authentication failed');
+        }
+
+        // 4. Set session
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: authData.session.properties.access_token,
+          refresh_token: authData.session.properties.refresh_token,
+        });
+
+        if (sessionError) throw sessionError;
+
+        console.log('✅ Ethereum authentication successful');
+        toast.success('Connected to Ethereum wallet', {
+          description: `Address: ${shortenAddress(address)}`
         });
       }
-
-      const { data, error } = result;
-      
-      if (error) throw error;
-
-      console.log('✅ Web3 authentication successful:', data);
-      
-      toast.success(
-        `Connected to ${chain === 'solana' ? 'Solana' : 'Ethereum'} wallet`,
-        { description: `Address: ${shortenAddress(address)}` }
-      );
 
     } catch (error: any) {
       console.error('❌ Web3 auth failed:', error);

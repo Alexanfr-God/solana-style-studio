@@ -82,5 +82,8 @@ verify_jwt = true
 [functions.ai-apply-colors]
 verify_jwt = true
 
+[functions.ethereum-auth]
+verify_jwt = false
+
 [functions.create-base-theme]
 verify_jwt = false
