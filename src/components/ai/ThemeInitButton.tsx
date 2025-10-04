@@ -62,21 +62,33 @@ export const ThemeInitButton = () => {
 
       if (data.success) {
         setHasTheme(true);
+        console.log('[ThemeInitButton] ✅ Theme created, retrying to load...');
 
-        // ✅ Без перезагрузки: сразу подтягиваем тему из БД и применяем
-        console.log('[ThemeInitButton] ✅ Theme created, loading from database...');
-        
-        // Даём Edge Function время закоммитить транзакцию
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        const { data: themeRow, error: themeError } = await supabase
-          .from('user_themes')
-          .select('theme_data')
-          .eq('user_id', walletProfile.wallet_address)
-          .single();
+        // Retry logic: 5 попыток с задержкой 200ms
+        let themeRow = null;
+        let themeError = null;
+
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          const result = await supabase
+            .from('user_themes')
+            .select('theme_data')
+            .eq('user_id', walletProfile.wallet_address)
+            .maybeSingle();
+          
+          if (result.data) {
+            themeRow = result.data;
+            console.log(`[ThemeInitButton] ✅ Theme loaded on attempt ${attempt}`);
+            break;
+          }
+          
+          themeError = result.error;
+          console.log(`[ThemeInitButton] Retry ${attempt}/5...`);
+        }
 
         if (themeError) {
-          console.error('[ThemeInitButton] ❌ Failed to load theme:', themeError);
+          console.error('[ThemeInitButton] ❌ Failed to load theme after 5 retries:', themeError);
           toast.error('Theme created but failed to load.');
         } else if (themeRow?.theme_data) {
           setTheme(themeRow.theme_data);
@@ -84,6 +96,7 @@ export const ThemeInitButton = () => {
           toast.success('✨ Theme applied! You can now customize it with AI.');
         } else {
           console.warn('[ThemeInitButton] ⚠️ Empty theme_data in DB');
+          toast.error('Theme created but empty.');
         }
       } else {
         throw new Error('Failed to initialize theme');
