@@ -4,12 +4,14 @@ import { Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
+import { useThemeStore } from '@/state/themeStore';
 
 export const ThemeInitButton = () => {
   const [isInitializing, setIsInitializing] = useState(false);
   const [hasTheme, setHasTheme] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const { walletProfile } = useExtendedWallet();
+  const { setTheme } = useThemeStore();
 
   useEffect(() => {
     const checkExistingTheme = async () => {
@@ -61,8 +63,25 @@ export const ThemeInitButton = () => {
       if (data.success) {
         toast.success('🎨 Theme initialized successfully!');
         setHasTheme(true);
-        // Reload page to fetch the new theme
-        setTimeout(() => window.location.reload(), 1000);
+
+        // ✅ Без перезагрузки: сразу подтягиваем тему из БД и применяем
+        console.log('[ThemeInitButton] ✅ Theme created, loading from database...');
+        const { data: themeRow, error: themeError } = await supabase
+          .from('user_themes')
+          .select('theme_data')
+          .eq('user_id', walletProfile.wallet_address)
+          .single();
+
+        if (themeError) {
+          console.error('[ThemeInitButton] ❌ Failed to load theme:', themeError);
+          toast.error('Theme created but failed to load.');
+        } else if (themeRow?.theme_data) {
+          setTheme(themeRow.theme_data);
+          console.log('[ThemeInitButton] ✅ Theme applied to UI');
+          toast.success('✨ Theme applied! You can now customize it with AI.');
+        } else {
+          console.warn('[ThemeInitButton] ⚠️ Empty theme_data in DB');
+        }
       } else {
         throw new Error('Failed to initialize theme');
       }
