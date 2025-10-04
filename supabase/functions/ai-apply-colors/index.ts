@@ -165,7 +165,8 @@ serve(async (req) => {
         'mainContainer', 'headerContainer', 'centerContainer', 
         'footerContainer', 'fromContainer', 'toContainer',
         'searchInputContainer', 'header', 'searchInput',
-        'sectionLabel', 'footer'
+        'sectionLabel', 'footer', 'sidebar', 'dropdownMenu',
+        'assetContainer', 'assetList'
       ];
 
       for (const containerKey of containerKeys) {

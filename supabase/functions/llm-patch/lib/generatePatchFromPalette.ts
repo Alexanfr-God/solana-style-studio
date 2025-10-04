@@ -11,7 +11,8 @@ export const DEFAULT_SAFE_PREFIXES = [
   "/lockLayer", "/homeLayer", "/sidebarLayer",
   "/receiveLayer", "/sendLayer", "/swapLayer",
   "/appsLayer", "/historyLayer", "/searchLayer",
-  "/globalSearchInput", "/assetCard", "/global", "/inputs"
+  "/globalSearchInput", "/assetCard", "/global", "/inputs",
+  "/sidebar", "/dropdownMenu", "/assetContainer", "/assetList"
 ];
 
 // Keys that indicate a color property
@@ -58,6 +59,19 @@ function toRgba(hex: string, alpha: number = 1): string {
 }
 
 /**
+ * Get object by path (e.g., "/homeLayer/header" -> theme.homeLayer.header)
+ */
+function getObjectByPath(obj: any, path: string): any {
+  const parts = path.split('/').filter(p => p);
+  let current = obj;
+  for (const part of parts) {
+    if (!current || typeof current !== 'object') return undefined;
+    current = current[part];
+  }
+  return current;
+}
+
+/**
  * Decide which color from palette to use based on path and key
  */
 function decideColor(path: string, key: string, palette: Palette): string {
@@ -83,6 +97,45 @@ function decideColor(path: string, key: string, palette: Palette): string {
     // Button background
     if (k.includes('background') || k.includes('color')) {
       return palette.primary;
+    }
+  }
+  
+  // Sidebar specific elements
+  if (lc.includes('sidebar') || lc.includes('/sidebar')) {
+    if (k.includes('background')) {
+      return palette.neutral;
+    }
+    if (k.includes('text') || k.includes('icon')) {
+      return palette.fg;
+    }
+    if (k.includes('border')) {
+      return toRgba(palette.fg, 0.24);
+    }
+  }
+  
+  // Dropdown menu specific elements
+  if (lc.includes('dropdown') || lc.includes('menu')) {
+    if (k.includes('background')) {
+      return palette.neutral;
+    }
+    if (k.includes('text')) {
+      return palette.fg;
+    }
+    if (k.includes('border')) {
+      return toRgba(palette.fg, 0.24);
+    }
+  }
+  
+  // Asset containers and lists
+  if (lc.includes('asset') || lc.includes('assetcontainer') || lc.includes('assetlist')) {
+    if (k.includes('background')) {
+      return palette.neutral;
+    }
+    if (k.includes('text')) {
+      return palette.fg;
+    }
+    if (k.includes('border')) {
+      return toRgba(palette.fg, 0.12);
     }
   }
   
@@ -170,6 +223,15 @@ export function generatePatchFromPalette(
         
         // Replace color values
         if (COLOR_KEYS_RE.test(k) && isHexOrRgba(val)) {
+          // Skip backgroundColor if backgroundImage exists in parent
+          if (k.toLowerCase().includes('background') && k.toLowerCase().includes('color')) {
+            const parentPath = child.substring(0, child.lastIndexOf('/'));
+            const parentObj = getObjectByPath(currentTheme, parentPath);
+            if (parentObj && parentObj.backgroundImage) {
+              continue; // Don't change backgroundColor if backgroundImage is present
+            }
+          }
+          
           const nextColor = decideColor(child, k, palette);
           if (nextColor && nextColor !== val) {
             ops.push({ 
