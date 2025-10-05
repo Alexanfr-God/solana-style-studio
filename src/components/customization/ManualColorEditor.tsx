@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Palette, AlertTriangle } from 'lucide-react';
-import { ColorPicker } from 'react-gradient-color-picker';
+import ColorPicker from 'react-best-gradient-color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { jsonBridge } from '@/services/jsonBridgeService';
@@ -82,11 +82,11 @@ export const ManualColorEditor: React.FC = () => {
             <ColorPicker
               value={color}
               onChange={handleColorChange}
-              hidePresets
-              hideEyeDrop
-              hideAdvancedSliders
-              hideColorGuide
-              hideInputType
+              hidePresets={true}
+              hideEyeDrop={true}
+              hideAdvancedSliders={true}
+              hideColorGuide={true}
+              hideInputType={false}
             />
           )}
         </div>
