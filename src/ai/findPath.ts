@@ -26,7 +26,9 @@ export function getExistingPath(theme: any, candidates: string[]): string | null
 
 // Утилита для установки значения по пути
 export function setByPath(obj: any, path: string, value: any): void {
-  const parts = path.split('.');
+  // Поддержка путей с `/` и `.`
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const parts = cleanPath.split(/[/.]/);
   const last = parts.pop()!;
   let current = obj;
   

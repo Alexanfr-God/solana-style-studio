@@ -140,7 +140,7 @@ Return ONLY a JSON array of mappings:
       JSON.stringify({ 
         success: true, 
         mappings: updates,
-        totalProcessed: unmappedElements?.length || 0,
+        totalProcessed: mappings.length,
         totalMapped: updates.length
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
