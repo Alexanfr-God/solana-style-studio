@@ -11,6 +11,7 @@ import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode
 import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicator';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
+import { ManualColorEditor } from './ManualColorEditor';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -371,6 +372,13 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               </Button>
             )}
           </div>
+
+          {/* Manual Color Editor - появляется только в Edit Mode */}
+          {isEditMode && selectedElement && (
+            <div className="absolute top-20 right-4 z-20">
+              <ManualColorEditor />
+            </div>
+          )}
           
           {/* Wallet Container */}
           <div 
