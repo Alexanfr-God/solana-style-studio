@@ -375,25 +375,33 @@ const ThemeChat = () => {
       setIsProcessing(true);
       console.log('[AI-COLORS] Applying scheme:', scheme.name, 'for user:', walletProfile.wallet_address);
 
-      // Define all layers to apply colors to
-      const allLayers = [
-        'lockLayer',
-        'homeLayer', 
-        'swapLayer',
-        'historyLayer',
-        'searchLayer',
-        'buyLayer',
-        'sendLayer',
-        'receiveLayer'
-      ];
+      // Convert AI Color Scheme to Palette format
+      const palette = {
+        bg: scheme.colors.background,
+        fg: scheme.colors.text,
+        primary: scheme.colors.accent,
+        accent1: scheme.colors.secondary,
+        accent2: scheme.colors.accent,
+        neutral: scheme.colors.background // Use background as neutral
+      };
 
-      // Call the new ai-apply-colors edge function
+      console.log('[AI-COLORS] Converted to palette:', palette);
+
+      // Call llm-patch with vision-palette mode and pre-defined palette
       const supabase = (await import('@/integrations/supabase/client')).supabase;
-      const { data: response, error } = await supabase.functions.invoke('ai-apply-colors', {
+      const { data: response, error } = await supabase.functions.invoke('llm-patch', {
         body: {
+          mode: 'vision-palette',
           userId: walletProfile.wallet_address,
-          scheme: scheme,
-          layers: allLayers
+          palette: palette,
+          safePrefixes: [
+            '/lockLayer', '/homeLayer', '/sidebarLayer',
+            '/receiveLayer', '/sendLayer', '/swapLayer',
+            '/appsLayer', '/historyLayer', '/searchLayer',
+            '/globalSearchInput', '/assetCard', '/global', '/inputs',
+            '/sidebar', '/dropdownMenu', '/assetContainer', '/assetList'
+          ],
+          allowFontChange: false
         }
       });
 
@@ -403,86 +411,47 @@ const ThemeChat = () => {
         return;
       }
 
-      if (response?.success) {
-        console.log(`[AI-COLORS] Successfully applied scheme:`, response);
-        
-        // Verify walletProfile exists
-        if (!walletProfile?.wallet_address) {
-          console.error('[AI-COLORS] No wallet address found in profile:', walletProfile);
-          toast.error('Wallet not connected. Please connect your wallet first.');
-          return;
-        }
-
-        // Wait for DB write to complete (500ms delay)
-        console.log('[AI-COLORS] Waiting 500ms for DB write to complete...');
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const fetchTheme = async (retryCount = 0): Promise<boolean> => {
-          console.log(`[AI-COLORS] Fetching theme (attempt ${retryCount + 1}) for wallet:`, walletProfile.wallet_address);
-          
-          const { data: updatedTheme, error: themeError } = await supabase
-            .from('user_themes')
-            .select('theme_data, version, updated_at')
-            .eq('user_id', walletProfile.wallet_address)
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          
-          console.log('[AI-COLORS] DB Query result:', { 
-            found: !!updatedTheme, 
-            error: themeError,
-            wallet: walletProfile.wallet_address,
-            version: updatedTheme?.version,
-            updated_at: updatedTheme?.updated_at,
-            has_theme_data: !!updatedTheme?.theme_data,
-            theme_keys: updatedTheme?.theme_data ? Object.keys(updatedTheme.theme_data) : []
-          });
-
-          if (themeError) {
-            console.error('[AI-COLORS] Failed to reload theme:', themeError);
-            toast.error('Failed to reload theme from database');
-            return false;
-          }
-
-          if (updatedTheme?.theme_data) {
-            console.log('[AI-COLORS] ✅ Theme found! Applying to UI store...');
-            console.log('[AI-COLORS] Theme data keys:', Object.keys(updatedTheme.theme_data));
-            setTheme(updatedTheme.theme_data);
-            console.log('[AI-COLORS] ✅ setTheme() called successfully!');
-            toast.success('Color scheme applied successfully!');
-            return true;
-          }
-
-          // Retry once after 1 second if theme not found
-          if (retryCount === 0) {
-            console.log('[AI-COLORS] ⚠️ Theme not found on first attempt, retrying in 1 second...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            return fetchTheme(1);
-          }
-
-          console.error('[AI-COLORS] ❌ Theme not found after applying scheme and retry');
-          toast.error('Theme not found after applying scheme. Please try again.');
-          return false;
-        };
-
-        const success = await fetchTheme();
-        
-        if (success) {
-          addMessage(
-            `✅ Applied "${scheme.name}" to all wallet layers!\n${response.message}`, 
-            'assistant', 
-            undefined, 
-            true
-          );
-        }
-        
-        toast.success(`${scheme.name} applied to ${response.layers.length} layers!`);
-        
-        // Mark this scheme as applied
-        setAppliedScheme(scheme.name);
-      } else {
-        toast.error('Failed to apply color scheme');
+      if (!response?.success) {
+        console.warn('[AI-COLORS] No changes:', response?.message);
+        toast.warning(response?.message || 'No color changes needed');
+        return;
       }
+
+      console.log('[AI-COLORS] ✅ Successfully applied scheme:', response);
+      
+      // Reload theme from database
+      const { data: updatedTheme, error: themeError } = await supabase
+        .from('user_themes')
+        .select('theme_data')
+        .eq('user_id', walletProfile.wallet_address)
+        .single();
+      
+      if (themeError || !updatedTheme?.theme_data) {
+        console.error('[AI-COLORS] ❌ Failed to reload theme');
+        toast.error('Theme updated but failed to reload');
+        return;
+      }
+      
+      // Apply to UI via store
+      setTheme(updatedTheme.theme_data);
+      console.log('[AI-COLORS] ✅ Theme applied to UI');
+      
+      // Update applied state and show success
+      setAppliedScheme(scheme.name);
+      toast.success(`✅ Applied "${scheme.name}" scheme with ${response.applied} color changes!`);
+      
+      addMessage(
+        `✅ Applied "${scheme.name}" to all wallet layers!\n\n` +
+        `**Palette:**\n` +
+        `• Background: \`${palette.bg}\`\n` +
+        `• Text: \`${palette.fg}\`\n` +
+        `• Primary: \`${palette.primary}\`\n` +
+        `• Accent: \`${palette.accent1}\`\n\n` +
+        `Applied **${response.applied}** color changes using smart color logic.`,
+        'assistant', 
+        undefined, 
+        true
+      );
     } catch (error) {
       console.error('[AI-COLORS] Apply scheme error:', error);
       toast.error(`Failed to apply scheme: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -31,7 +31,8 @@ interface FileUploadRequest {
 interface VisionPaletteRequest {
   mode: 'vision-palette';
   userId: string;
-  imageUrl: string;
+  imageUrl?: string;
+  palette?: Palette;
   safePrefixes?: string[];
   allowFontChange?: boolean;
 }
@@ -231,8 +232,6 @@ serve(async (req) => {
       const visionReq = requestBody as VisionPaletteRequest;
       const paletteStartTime = Date.now();
       
-      console.log('[VISION-PALETTE] 🎨 Starting palette extraction from image:', visionReq.imageUrl);
-      
       try {
         // 1. Get current user theme
         const { data: themeData, error: themeError } = await supabase
@@ -249,9 +248,21 @@ serve(async (req) => {
         const currentTheme = themeData.theme_data;
         console.log('[VISION-PALETTE] ✅ Loaded theme for user:', visionReq.userId);
         
-        // 2. Extract palette from image
-        const palette = await extractPaletteFromImage(visionReq.imageUrl);
-        console.log('[VISION-PALETTE] 🎨 Extracted palette:', palette);
+        // 2. Get palette (either from imageUrl or pre-defined)
+        let palette: Palette;
+        if (visionReq.palette) {
+          // Use pre-defined palette from AI Color Schemes
+          console.log('[VISION-PALETTE] 🎨 Using pre-defined palette:', visionReq.palette);
+          palette = visionReq.palette;
+        } else if (visionReq.imageUrl) {
+          // Extract palette from image
+          console.log('[VISION-PALETTE] 🎨 Extracting palette from image:', visionReq.imageUrl);
+          palette = await extractPaletteFromImage(visionReq.imageUrl);
+          console.log('[VISION-PALETTE] 🎨 Extracted palette:', palette);
+        } else {
+          console.error('[VISION-PALETTE] ❌ Neither imageUrl nor palette provided');
+          return jsonResponse({ error: 'Either imageUrl or palette is required' }, 400);
+        }
         
         // 3. Generate patch operations
         const safePrefixes = visionReq.safePrefixes || DEFAULT_SAFE_PREFIXES;
