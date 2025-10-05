@@ -82,6 +82,7 @@ export const ManualColorEditor: React.FC = () => {
             <ColorPicker
               value={color}
               onChange={handleColorChange}
+              width={280}
               hidePresets={true}
               hideEyeDrop={true}
               hideAdvancedSliders={true}
