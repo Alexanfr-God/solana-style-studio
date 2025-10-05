@@ -78,15 +78,17 @@ export const ManualColorEditor: React.FC = () => {
           <div className="text-xs text-white/60 font-mono">
             {selectedElement.json_path}
           </div>
-          <ColorPicker
-            value={color}
-            onChange={handleColorChange}
-            hidePresets
-            hideEyeDrop
-            hideAdvancedSliders
-            hideColorGuide
-            hideInputType
-          />
+          {isOpen && (
+            <ColorPicker
+              value={color}
+              onChange={handleColorChange}
+              hidePresets
+              hideEyeDrop
+              hideAdvancedSliders
+              hideColorGuide
+              hideInputType
+            />
+          )}
         </div>
       </PopoverContent>
     </Popover>
