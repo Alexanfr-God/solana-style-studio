@@ -40,25 +40,47 @@ export const ManualColorEditor: React.FC = () => {
 
     const userId = 'user-theme-manual-edit';
     
+    // Определяем, что мы редактируем - background или весь объект
+    const pathToUpdate = selectedElement.json_path + '/background';
+    
     console.log('[ManualColorEditor] 🎨 Updating color:', {
       element: selectedElement.name,
-      path: selectedElement.json_path,
+      basePath: selectedElement.json_path,
+      fullPath: pathToUpdate,
       color: newColor,
-      userId
+      userId,
+      selector: selectedElement.selector
     });
     
     try {
+      // Обновляем в БД
       await jsonBridge.updateThemeValue(
-        selectedElement.json_path,
+        pathToUpdate,
         newColor,
         userId
       );
 
-      console.log('[ManualColorEditor] ✅ Color updated in DB');
+      console.log('[ManualColorEditor] ✅ Color updated in DB, applying to DOM...');
+      
+      // ПРЯМОЕ применение к DOM через Runtime Mapping Engine
+      const { applyManualMapping } = await import('@/services/runtimeMappingEngine');
+      const { useThemeStore } = await import('@/state/themeStore');
+      const theme = useThemeStore.getState().theme;
+      
+      if (selectedElement.selector) {
+        const applied = applyManualMapping(selectedElement.selector, selectedElement.json_path, theme);
+        console.log('[ManualColorEditor] 🎯 Direct DOM application result:', applied);
+        
+        if (!applied) {
+          console.warn('[ManualColorEditor] ⚠️ Failed to apply to DOM, waiting for theme-updated event...');
+        }
+      } else {
+        console.warn('[ManualColorEditor] ⚠️ No selector for element, skipping direct DOM application');
+      }
       
       toast({
         title: "✓ Color updated",
-        description: `${selectedElement.name}: ${newColor}`,
+        description: `${pathToUpdate}: ${newColor}`,
       });
     } catch (error) {
       console.error('[ManualColorEditor] ❌ Failed to update color:', error);
@@ -83,10 +105,10 @@ export const ManualColorEditor: React.FC = () => {
       <PopoverContent className="w-auto p-4 bg-gray-900/95 border-purple-500/30 backdrop-blur-sm" align="start">
         <div className="space-y-3">
           <div className="text-sm font-semibold text-white">
-            Editing: {selectedElement.name}
+            Editing: {selectedElement.json_path}/background
           </div>
           <div className="text-xs text-white/60 font-mono">
-            {selectedElement.json_path}
+            Element: {selectedElement.name} ({selectedElement.selector})
           </div>
           {isOpen && (
             <ColorPicker

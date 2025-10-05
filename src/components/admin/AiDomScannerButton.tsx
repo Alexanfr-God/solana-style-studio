@@ -34,14 +34,16 @@ export const AiDomScannerButton: React.FC<AiDomScannerButtonProps> = ({
         const result = await scanDomWithAI(undefined, currentScreen);
 
         if (result.success) {
-          totalMapped += result.totalMapped;
-          totalProcessed += result.totalProcessed;
-          console.log(`[AiDomScanner] ✅ ${currentScreen}: ${result.totalMapped}/${result.totalProcessed}`);
+          const mapped = result.totalMapped || 0;
+          const total = result.totalProcessed || 0;
+          totalMapped += mapped;
+          totalProcessed += total;
+          console.log(`[AiDomScanner] ✅ ${currentScreen}: mapped ${mapped} of ${total} elements`);
         }
       }
 
       toast.success(
-        `✅ Mapped ${totalMapped} of ${totalProcessed} elements across ${screensToScan.length} screen(s)`
+        `✅ Total: ${totalProcessed} elements, Mapped: ${totalMapped} across ${screensToScan.length} screen(s)`
       );
     } catch (error) {
       console.error('AI scan error:', error);

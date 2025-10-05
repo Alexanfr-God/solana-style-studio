@@ -3,7 +3,7 @@
  * Applies styles from JSON theme to DOM elements based on json_path mappings
  */
 
-import { getAllMappedElements, type ElementMapping } from './elementToPathMapper';
+import { jsonBridge } from '@/services/jsonBridgeService';
 import { useThemeStore } from '@/state/themeStore';
 
 export interface AppliedStyle {
@@ -84,10 +84,14 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
   const results: AppliedStyle[] = [];
   
   try {
-    // Get all mapped elements from database
-    const mappedElements = await getAllMappedElements();
+    // Используем jsonBridge для единого источника данных
+    await jsonBridge.loadElementMappings();
+    const mappings = Object.values((jsonBridge as any).mappingsById || {});
     
-    if (mappedElements.length === 0) {
+    console.log('[RuntimeMapping] 🎨 Applying theme to DOM');
+    console.log('[RuntimeMapping] 📋 Found mappings from jsonBridge:', mappings.length);
+    
+    if (mappings.length === 0) {
       console.log('[RuntimeMapping] No mapped elements found');
       return results;
     }
@@ -99,28 +103,35 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
       return results;
     }
     
-    console.log(`[RuntimeMapping] Processing ${mappedElements.length} mapped elements`);
+    console.log(`[RuntimeMapping] Processing ${mappings.length} mapped elements`);
     
     // Apply each mapping
-    for (const element of mappedElements) {
-      if (!element.selector || !element.jsonPath) continue;
+    for (const element of mappings as any[]) {
+      if (!element.selector || !element.json_path) {
+        console.log('[RuntimeMapping] ⚠️ Skipping element without selector/json_path:', element.id);
+        continue;
+      }
       
       try {
         // Find DOM elements within wallet container
         const domElements = walletRoot.querySelectorAll(element.selector);
         
+        console.log(`[RuntimeMapping] 🔍 Selector: ${element.selector} → ${domElements.length} elements`);
+        
         if (domElements.length === 0) {
-          console.debug(`[RuntimeMapping] No DOM elements found for selector: ${element.selector}`);
+          console.warn(`[RuntimeMapping] ⚠️ No DOM elements found for selector: ${element.selector}`);
           continue;
         }
         
         // Get style from theme by json_path
-        const styleValue = getThemeValueByPath(theme, element.jsonPath);
+        const styleValue = getThemeValueByPath(theme, element.json_path);
         
         if (!styleValue) {
-          console.debug(`[RuntimeMapping] No theme value found for path: ${element.jsonPath}`);
+          console.warn(`[RuntimeMapping] ⚠️ No theme value found for path: ${element.json_path}`);
           continue;
         }
+        
+        console.log(`[RuntimeMapping] 🎨 Applying style from ${element.json_path}:`, styleValue);
         
         // Apply to all matching elements
         domElements.forEach((domEl) => {
@@ -136,7 +147,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
               success: true
             });
             
-            console.log(`[RuntimeMapping] ✅ Applied ${appliedProps.length} properties to ${element.name}`);
+            console.log(`[RuntimeMapping] ✅ Applied ${appliedProps.length} properties to ${element.name}: ${appliedProps.join(', ')}`);
           }
         });
         
