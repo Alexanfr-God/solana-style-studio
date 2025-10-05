@@ -12,6 +12,7 @@ import { EditModeIndicator } from '@/components/wallet/editMode/EditModeIndicato
 import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
 import { ManualColorEditor } from './ManualColorEditor';
+import { AiDomScannerButton } from '@/components/admin/AiDomScannerButton';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -372,6 +373,13 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               </Button>
             )}
           </div>
+
+          {/* AI Dom Scanner - появляется только в Edit Mode */}
+          {isEditMode && (
+            <div className="absolute top-4 left-4 z-20">
+              <AiDomScannerButton screen={currentLayer} />
+            </div>
+          )}
 
           {/* Manual Color Editor - появляется только в Edit Mode */}
           {isEditMode && selectedElement && (

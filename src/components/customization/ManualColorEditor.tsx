@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Palette } from 'lucide-react';
+import { Palette, AlertTriangle } from 'lucide-react';
 import { ColorPicker } from 'react-gradient-color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
@@ -11,9 +11,18 @@ export const ManualColorEditor: React.FC = () => {
   const [color, setColor] = useState('#3b82f6');
   const [isOpen, setIsOpen] = useState(false);
 
-  // Если нет выбранного элемента с json_path - не показываем кнопку
-  if (!selectedElement || !selectedElement.json_path) {
+  // Если нет выбранного элемента - не показываем
+  if (!selectedElement) {
     return null;
+  }
+
+  // Если нет json_path - показываем предупреждение
+  if (!selectedElement.json_path) {
+    return (
+      <div className="w-12 h-12 rounded-full bg-amber-500/20 border-2 border-amber-500 shadow-lg flex items-center justify-center" title="Element has no JSON path">
+        <AlertTriangle className="h-5 w-5 text-amber-500" />
+      </div>
+    );
   }
 
   const handleColorChange = async (newColor: string) => {

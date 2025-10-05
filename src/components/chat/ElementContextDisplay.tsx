@@ -43,13 +43,6 @@ export const ElementContextDisplay: React.FC<ElementContextDisplayProps> = ({
           )}
         </div>
         
-        {element.selector && (
-          <div className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded">
-            <Code className="h-3 w-3" />
-            <span className="font-mono">{element.selector}</span>
-          </div>
-        )}
-        
         {element.json_path ? (
           <div className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded">
             <Code className="h-3 w-3" />

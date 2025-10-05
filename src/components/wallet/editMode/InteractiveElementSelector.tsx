@@ -1,9 +1,6 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { WalletElement } from '@/hooks/useWalletElements';
-import { walletElementsMapper } from '@/services/walletElementsMappingService';
 import { jsonBridge } from '@/services/jsonBridgeService';
-
 interface InteractiveElementSelectorProps {
   isActive: boolean;
   onElementSelect: (element: WalletElement) => void;
@@ -43,24 +40,20 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
         return;
       }
 
-      // Проверяем, является ли элемент кастомизируемым
-      if (walletElementsMapper.isElementCustomizable(elementAtPoint)) {
+      // Используем ТОЛЬКО jsonBridge для проверки и получения информации
+      const mapping = jsonBridge.findMappingByDomElement(elementAtPoint);
+      
+      if (mapping) {
         if (elementAtPoint !== hoveredElement) {
           setHoveredElement(elementAtPoint);
           
-          const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
-          const mapping = jsonBridge.findMappingByDomElement(elementAtPoint);
-          const jsonPath = mapping?.json_path || elementInfo?.json_path;
-          
-          if (elementInfo) {
-            setTooltip({
-              x: e.clientX + 10,
-              y: e.clientY - 30,
-              text: jsonPath 
-                ? `${elementInfo.name} (${elementInfo.type})\n${jsonPath}`
-                : `${elementInfo.name} (${elementInfo.type})`
-            });
-          }
+          setTooltip({
+            x: e.clientX + 10,
+            y: e.clientY - 30,
+            text: mapping.json_path 
+              ? `${mapping.name} (${mapping.type})\n${mapping.json_path}`
+              : `${mapping.name} (${mapping.type})`
+          });
         }
       } else {
         setHoveredElement(null);
@@ -74,26 +67,28 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
       const elementAtPoint = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
       if (!elementAtPoint || !container.contains(elementAtPoint)) return;
 
-      if (walletElementsMapper.isElementCustomizable(elementAtPoint)) {
+      // Используем ТОЛЬКО jsonBridge
+      const mapping = jsonBridge.findMappingByDomElement(elementAtPoint);
+      
+      if (mapping) {
         e.preventDefault();
         e.stopPropagation();
         
-        const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
-        if (elementInfo) {
-          // Получаем json_path через jsonBridge
-          const mapping = jsonBridge.findMappingByDomElement(elementAtPoint);
-          const jsonPath = mapping?.json_path || elementInfo.json_path;
-          
-          // Создаем enriched element с json_path
-          const enrichedElement: WalletElement = {
-            ...elementInfo,
-            json_path: jsonPath
-          };
-          
-          setSelectedElement(elementAtPoint);
-          onElementSelect(enrichedElement);
-          console.log('✅ Element selected:', elementInfo.name, 'JSON path:', jsonPath);
-        }
+        // Создаем WalletElement из jsonBridge mapping
+        const walletElement: WalletElement = {
+          id: mapping.id,
+          name: mapping.name,
+          type: mapping.type,
+          screen: mapping.screen || 'unknown',
+          selector: mapping.selector,
+          json_path: mapping.json_path,
+          description: `Editable element: ${mapping.name}`,
+          customizable: true
+        };
+        
+        setSelectedElement(elementAtPoint);
+        onElementSelect(walletElement);
+        console.log('✅ Element selected:', mapping.name, 'JSON path:', mapping.json_path);
       }
     };
 
