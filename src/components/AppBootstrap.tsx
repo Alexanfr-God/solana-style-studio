@@ -30,6 +30,15 @@ export default function AppBootstrap() {
         } catch (error) {
           console.error('[Bootstrap] Error loading default theme:', error);
         }
+
+        // Подключаем Runtime Mapping Engine для автоматического обновления DOM
+        try {
+          const { setupMappingWatcher } = await import('@/services/runtimeMappingEngine');
+          setupMappingWatcher(() => themeStoreModule.useThemeStore.getState().theme);
+          console.log('[Bootstrap] 🔌 Runtime Mapping Engine connected');
+        } catch (error) {
+          console.error('[Bootstrap] ❌ Failed to connect Runtime Mapping Engine:', error);
+        }
       } catch (error) {
         console.error('[Bootstrap] Failed to import theme store:', error);
         setStoreInstanceId('error');

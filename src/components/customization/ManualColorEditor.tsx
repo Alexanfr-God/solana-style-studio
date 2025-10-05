@@ -29,15 +29,23 @@ export const ManualColorEditor: React.FC = () => {
     setColor(newColor);
     
     if (!selectedElement?.json_path) {
+      console.warn('[ManualColorEditor] ❌ No json_path for element:', selectedElement?.id);
       toast({
-        title: "No element selected",
-        description: "Please select an element first",
+        title: "Element not mapped",
+        description: "This element doesn't have a theme path yet. Run AI Scanner first.",
         variant: "destructive"
       });
       return;
     }
 
     const userId = 'user-theme-manual-edit';
+    
+    console.log('[ManualColorEditor] 🎨 Updating color:', {
+      element: selectedElement.name,
+      path: selectedElement.json_path,
+      color: newColor,
+      userId
+    });
     
     try {
       await jsonBridge.updateThemeValue(
@@ -46,12 +54,14 @@ export const ManualColorEditor: React.FC = () => {
         userId
       );
 
+      console.log('[ManualColorEditor] ✅ Color updated in DB');
+      
       toast({
         title: "✓ Color updated",
         description: `${selectedElement.name}: ${newColor}`,
       });
     } catch (error) {
-      console.error('[ManualColorEditor] Failed to update color:', error);
+      console.error('[ManualColorEditor] ❌ Failed to update color:', error);
       toast({
         title: "Failed to update color",
         description: error instanceof Error ? error.message : "Unknown error",
