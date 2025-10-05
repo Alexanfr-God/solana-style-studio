@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { WalletElement } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
+import { jsonBridge } from '@/services/jsonBridgeService';
 
 interface InteractiveElementSelectorProps {
   isActive: boolean;
@@ -26,6 +27,11 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
 
     const container = containerRef.current;
     
+    // Load element mappings from jsonBridge
+    jsonBridge.loadElementMappings().catch(err => {
+      console.error('[InteractiveElementSelector] Failed to load element mappings:', err);
+    });
+    
     const handleMouseMove = (e: MouseEvent) => {
       if (!isActive) return;
 
@@ -43,11 +49,16 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
           setHoveredElement(elementAtPoint);
           
           const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
+          const mapping = jsonBridge.findMappingByDomElement(elementAtPoint);
+          const jsonPath = mapping?.json_path || elementInfo?.json_path;
+          
           if (elementInfo) {
             setTooltip({
               x: e.clientX + 10,
               y: e.clientY - 30,
-              text: `${elementInfo.name} (${elementInfo.type})`
+              text: jsonPath 
+                ? `${elementInfo.name} (${elementInfo.type})\n${jsonPath}`
+                : `${elementInfo.name} (${elementInfo.type})`
             });
           }
         }
@@ -69,9 +80,19 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
         
         const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
         if (elementInfo) {
+          // Получаем json_path через jsonBridge
+          const mapping = jsonBridge.findMappingByDomElement(elementAtPoint);
+          const jsonPath = mapping?.json_path || elementInfo.json_path;
+          
+          // Создаем enriched element с json_path
+          const enrichedElement: WalletElement = {
+            ...elementInfo,
+            json_path: jsonPath
+          };
+          
           setSelectedElement(elementAtPoint);
-          onElementSelect(elementInfo);
-          console.log('✅ Element selected:', elementInfo.name, elementInfo.selector);
+          onElementSelect(enrichedElement);
+          console.log('✅ Element selected:', elementInfo.name, 'JSON path:', jsonPath);
         }
       }
     };
