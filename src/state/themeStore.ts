@@ -38,6 +38,7 @@ interface ThemeState {
   // Actions
   setTheme: (theme: any) => void;
   setActiveThemeId: (themeId: string | null) => void;
+  updateThemeValue: (jsonPath: string, value: any, userId?: string) => Promise<void>;
   applyPatch: (patch: ThemePatch) => void;
   applyPreviewPatch: (patch: Operation[]) => void;
   commitPreview: () => void;
@@ -112,6 +113,43 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     
     console.log(`[STORE:theme] ✅ Theme set successfully (#${updateCounter})`);
     console.log('[STORE:theme] Theme preview keys:', theme ? Object.keys(theme).slice(0, 5) : []);
+    
+    // Dispatch event for runtime mapping engine
+    window.dispatchEvent(new CustomEvent('theme-updated', { 
+      detail: { theme } 
+    }));
+  },
+
+  updateThemeValue: async (jsonPath: string, value: any, userId: string = 'user-theme-manual-edit') => {
+    const { theme } = get();
+    console.log('[ThemeStore] 🎨 Step 2a: Updating theme value:', { jsonPath, value });
+    
+    // Update local theme state
+    const pathParts = jsonPath.split('/');
+    const newTheme = JSON.parse(JSON.stringify(theme)); // deep clone
+    let current = newTheme;
+    
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      if (!current[pathParts[i]]) {
+        current[pathParts[i]] = {};
+      }
+      current = current[pathParts[i]];
+    }
+    current[pathParts[pathParts.length - 1]] = value;
+    
+    console.log('[ThemeStore] ✅ Step 2b: Local theme updated');
+    set({ theme: newTheme });
+    
+    // Save to DB
+    const { jsonBridge } = await import('@/services/jsonBridgeService');
+    await jsonBridge.updateThemeValue(jsonPath, value, userId);
+    console.log('[ThemeStore] 💾 Step 2c: Saved to DB');
+    
+    // Dispatch event for runtime mapping engine
+    window.dispatchEvent(new CustomEvent('theme-updated', { 
+      detail: { theme: newTheme, updatedPath: jsonPath } 
+    }));
+    console.log('[ThemeStore] 📢 Step 2d: Event dispatched -> runtime mapping engine will update DOM');
   },
 
   applyPreviewPatch: (operations: Operation[]) => {

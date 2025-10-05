@@ -3,7 +3,6 @@ import { Palette, AlertTriangle } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
-import { jsonBridge } from '@/services/jsonBridgeService';
 import { toast } from '@/hooks/use-toast';
 
 export const ManualColorEditor: React.FC = () => {
@@ -38,49 +37,23 @@ export const ManualColorEditor: React.FC = () => {
       return;
     }
 
-    const userId = 'user-theme-manual-edit';
-    
-    // Определяем, что мы редактируем - background или весь объект
     const pathToUpdate = selectedElement.json_path + '/background';
     
-    console.log('[ManualColorEditor] 🎨 Updating color:', {
-      element: selectedElement.name,
-      basePath: selectedElement.json_path,
-      fullPath: pathToUpdate,
-      color: newColor,
-      userId,
-      selector: selectedElement.selector
-    });
+    console.log('[ManualColorEditor] 🎨 Step 1: User changed color to:', newColor);
+    console.log('[ManualColorEditor] 📍 Path:', pathToUpdate);
     
     try {
-      // Обновляем в БД
-      await jsonBridge.updateThemeValue(
-        pathToUpdate,
-        newColor,
-        userId
-      );
-
-      console.log('[ManualColorEditor] ✅ Color updated in DB, applying to DOM...');
-      
-      // ПРЯМОЕ применение к DOM через Runtime Mapping Engine
-      const { applyManualMapping } = await import('@/services/runtimeMappingEngine');
+      // Шаг 2: Обновляем themeStore (который сам обновит БД и вызовет событие)
       const { useThemeStore } = await import('@/state/themeStore');
-      const theme = useThemeStore.getState().theme;
+      console.log('[ManualColorEditor] 🔄 Step 2: Updating themeStore...');
       
-      if (selectedElement.selector) {
-        const applied = applyManualMapping(selectedElement.selector, selectedElement.json_path, theme);
-        console.log('[ManualColorEditor] 🎯 Direct DOM application result:', applied);
-        
-        if (!applied) {
-          console.warn('[ManualColorEditor] ⚠️ Failed to apply to DOM, waiting for theme-updated event...');
-        }
-      } else {
-        console.warn('[ManualColorEditor] ⚠️ No selector for element, skipping direct DOM application');
-      }
+      await useThemeStore.getState().updateThemeValue(pathToUpdate, newColor);
+      
+      console.log('[ManualColorEditor] ✅ Step 3: Done! Theme updated, DB saved, event dispatched');
       
       toast({
         title: "✓ Color updated",
-        description: `${pathToUpdate}: ${newColor}`,
+        description: `${selectedElement.name}: ${newColor}`,
       });
     } catch (error) {
       console.error('[ManualColorEditor] ❌ Failed to update color:', error);
