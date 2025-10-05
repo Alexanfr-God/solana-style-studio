@@ -1,7 +1,7 @@
 import React from 'react';
 import { WalletElement } from '@/hooks/useWalletElements';
 import { Badge } from '@/components/ui/badge';
-import { Target, Layers, Eye, Code } from 'lucide-react';
+import { Target, Layers, Eye, Code, AlertTriangle, Settings } from 'lucide-react';
 
 interface ElementContextDisplayProps {
   element: WalletElement | null;
@@ -47,6 +47,25 @@ export const ElementContextDisplay: React.FC<ElementContextDisplayProps> = ({
           <div className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded">
             <Code className="h-3 w-3" />
             <span className="font-mono">{element.selector}</span>
+          </div>
+        )}
+        
+        {element.json_path ? (
+          <div className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded">
+            <Code className="h-3 w-3" />
+            <span className="font-mono">{element.json_path}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 text-xs text-amber-400 bg-amber-400/10 px-2 py-1 rounded">
+            <AlertTriangle className="h-3 w-3" />
+            <span>No JSON path found</span>
+          </div>
+        )}
+
+        {element.json_path && (
+          <div className="flex items-center gap-1 text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded">
+            <Settings className="h-3 w-3" />
+            <span>Editable: color, backgroundColor, fontSize, borderRadius, padding</span>
           </div>
         )}
         
