@@ -57,6 +57,21 @@ class JsonBridgeService {
     return this.elementsCache.get(elementIdOrSelector) || null;
   }
 
+  getAllMappings(): ElementMapping[] {
+    const mappings: ElementMapping[] = [];
+    const seen = new Set<string>();
+    
+    this.elementsCache.forEach((mapping) => {
+      if (!seen.has(mapping.id)) {
+        mappings.push(mapping);
+        seen.add(mapping.id);
+      }
+    });
+    
+    console.log(`[JsonBridge] getAllMappings: returning ${mappings.length} unique mappings`);
+    return mappings;
+  }
+
   findMappingByDomElement(domElement: HTMLElement): ElementMapping | null {
     // Try to find by data-element-id first
     const elementId = domElement.getAttribute('data-element-id');

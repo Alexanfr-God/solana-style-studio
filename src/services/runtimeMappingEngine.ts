@@ -86,7 +86,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
   try {
     // Используем jsonBridge для единого источника данных
     await jsonBridge.loadElementMappings();
-    const mappings = Object.values((jsonBridge as any).mappingsById || {});
+    const mappings = jsonBridge.getAllMappings();
     
     console.log('[RuntimeMapping] 🎨 Applying theme to DOM');
     console.log('[RuntimeMapping] 📋 Found mappings from jsonBridge:', mappings.length);
