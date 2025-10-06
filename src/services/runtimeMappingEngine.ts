@@ -186,8 +186,11 @@ function applyStyleToPath(theme: any, jsonPath: string) {
     console.log('[RuntimeMapping] 🎯 Applying style to path:', jsonPath);
     
     // Find mapping for this path
-    const mappings = jsonBridge.getAllMappings();
-    const mapping = mappings.find((m: any) => m.json_path === jsonPath);
+  const mappings = jsonBridge.getAllMappings();
+  const mapping = mappings.find((m: any) => 
+    jsonPath.startsWith(m.json_path) && 
+    (jsonPath === m.json_path || jsonPath[m.json_path.length] === '/')
+  );
     
     if (!mapping) {
       console.warn('[RuntimeMapping] ⚠️ No mapping found for path:', jsonPath);
