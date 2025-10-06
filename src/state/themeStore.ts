@@ -122,7 +122,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
 
   updateThemeValue: async (jsonPath: string, value: any, userId: string = 'user-theme-manual-edit') => {
     const { theme } = get();
-    console.log('[ThemeStore] 🎨 Step 2a: Updating theme value:', { jsonPath, value });
+    console.log('[ThemeStore] 🎨 Updating theme value:', { jsonPath, value });
     
     // Update local theme state
     const pathParts = jsonPath.split('/');
@@ -137,19 +137,20 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }
     current[pathParts[pathParts.length - 1]] = value;
     
-    console.log('[ThemeStore] ✅ Step 2b: Local theme updated');
+    console.log('[ThemeStore] ✅ Local theme updated');
     set({ theme: newTheme });
     
-    // Save to DB
-    const { jsonBridge } = await import('@/services/jsonBridgeService');
-    await jsonBridge.updateThemeValue(jsonPath, value, userId);
-    console.log('[ThemeStore] 💾 Step 2c: Saved to DB');
-    
-    // Dispatch event for runtime mapping engine
+    // Dispatch event IMMEDIATELY (sync) for runtime mapping engine
     window.dispatchEvent(new CustomEvent('theme-updated', { 
       detail: { theme: newTheme, updatedPath: jsonPath } 
     }));
-    console.log('[ThemeStore] 📢 Step 2d: Event dispatched -> runtime mapping engine will update DOM');
+    console.log('[ThemeStore] 📢 Event dispatched -> runtime will apply styles');
+    
+    // Save to DB async (don't block UI)
+    const { jsonBridge } = await import('@/services/jsonBridgeService');
+    jsonBridge.updateThemeValue(jsonPath, value, userId).catch(err => {
+      console.error('[ThemeStore] ❌ DB save failed:', err);
+    });
   },
 
   applyPreviewPatch: (operations: Operation[]) => {

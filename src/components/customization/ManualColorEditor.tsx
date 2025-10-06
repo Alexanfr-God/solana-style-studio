@@ -28,38 +28,39 @@ export const ManualColorEditor: React.FC = () => {
     setColor(newColor);
     
     if (!selectedElement?.json_path) {
-      console.warn('[ManualColorEditor] ❌ No json_path for element:', selectedElement?.id);
       toast({
-        title: "Element not mapped",
-        description: "This element doesn't have a theme path yet. Run AI Scanner first.",
+        title: "Ошибка",
+        description: "У элемента отсутствует json_path",
         variant: "destructive"
       });
       return;
     }
-
+    
     const pathToUpdate = selectedElement.json_path + '/background';
     
-    console.log('[ManualColorEditor] 🎨 Step 1: User changed color to:', newColor);
-    console.log('[ManualColorEditor] 📍 Path:', pathToUpdate);
+    console.log('[ManualEdit] 🎯', {
+      element: selectedElement.name,
+      selector: selectedElement.selector,
+      json_path: pathToUpdate,
+      newColor
+    });
     
     try {
-      // Шаг 2: Обновляем themeStore (который сам обновит БД и вызовет событие)
       const { useThemeStore } = await import('@/state/themeStore');
-      console.log('[ManualColorEditor] 🔄 Step 2: Updating themeStore...');
       
+      // Вызываем ТОЛЬКО themeStore.updateThemeValue
       await useThemeStore.getState().updateThemeValue(pathToUpdate, newColor);
       
-      console.log('[ManualColorEditor] ✅ Step 3: Done! Theme updated, DB saved, event dispatched');
-      
       toast({
-        title: "✓ Color updated",
-        description: `${selectedElement.name}: ${newColor}`,
+        title: "✅ Успешно",
+        description: `Цвет обновлён: ${selectedElement.name}`,
       });
+      
     } catch (error) {
-      console.error('[ManualColorEditor] ❌ Failed to update color:', error);
+      console.error('[ManualEdit] ❌ Error:', error);
       toast({
-        title: "Failed to update color",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: "Ошибка",
+        description: "Не удалось обновить цвет",
         variant: "destructive"
       });
     }

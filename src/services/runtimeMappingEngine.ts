@@ -47,6 +47,13 @@ function applyStylesToElement(element: HTMLElement, styleObj: any): string[] {
   
   if (!styleObj || typeof styleObj !== 'object') return appliedProps;
   
+  // 🛡️ ЗАЩИТА: если есть backgroundImage, не трогаем backgroundColor
+  if (styleObj.backgroundColor && styleObj.backgroundImage) {
+    console.log('[RuntimeMapping] 🛡️ Skipping backgroundColor (backgroundImage present)');
+    const { backgroundColor, ...rest } = styleObj;
+    styleObj = rest;
+  }
+  
   // Map of theme properties to CSS properties
   const propertyMap: Record<string, string> = {
     backgroundColor: 'background-color',
@@ -172,6 +179,46 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
 }
 
 /**
+ * Apply styles to a specific path (точечное обновление)
+ */
+function applyStyleToPath(theme: any, jsonPath: string) {
+  try {
+    console.log('[RuntimeMapping] 🎯 Applying style to path:', jsonPath);
+    
+    // Find mapping for this path
+    const mappings = jsonBridge.getAllMappings();
+    const mapping = mappings.find((m: any) => m.json_path === jsonPath);
+    
+    if (!mapping) {
+      console.warn('[RuntimeMapping] ⚠️ No mapping found for path:', jsonPath);
+      return;
+    }
+    
+    // Apply styles only to this selector
+    const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);
+    if (!walletRoot) {
+      console.warn('[RuntimeMapping] Wallet container not found');
+      return;
+    }
+    
+    const elements = walletRoot.querySelectorAll(mapping.selector);
+    const styleValue = getThemeValueByPath(theme, mapping.json_path);
+    
+    console.log(`[RuntimeMapping] 🎨 Found ${elements.length} elements for selector:`, mapping.selector);
+    console.log('[RuntimeMapping] 🎨 Applying value:', styleValue);
+    
+    elements.forEach((el) => {
+      if (el instanceof HTMLElement) {
+        const applied = applyStylesToElement(el, styleValue);
+        console.log('[RuntimeMapping] ✅ Applied properties:', applied);
+      }
+    });
+  } catch (err) {
+    console.error('[RuntimeMapping] Error in applyStyleToPath:', err);
+  }
+}
+
+/**
  * Watch for theme changes and reapply mappings
  */
 export function setupMappingWatcher(getTheme: () => any) {
@@ -188,13 +235,27 @@ export function setupMappingWatcher(getTheme: () => any) {
   // Check every 500ms for theme changes
   const interval = setInterval(checkAndApply, 500);
   
-  // Listen for JSON Bridge updates
+  // Listen for theme updates
   const handleThemeUpdate = (event: CustomEvent) => {
-    console.log('🔗 Runtime Engine: Theme updated via JSON Bridge');
-    const theme = event.detail.theme;
+    console.log('[RuntimeEngine] 📢 Event received:', {
+      updatedPath: event.detail.updatedPath,
+      themeKeys: event.detail.theme ? Object.keys(event.detail.theme).slice(0, 5) : []
+    });
+    
+    const { theme, updatedPath } = event.detail;
+    
     if (theme) {
       lastTheme = theme;
-      applyThemeToDOM(theme);
+      
+      // 🎯 Точечное обновление если есть updatedPath
+      if (updatedPath) {
+        console.log('[RuntimeEngine] 🎯 Applying targeted update');
+        applyStyleToPath(theme, updatedPath);
+      } else {
+        // Полное обновление (при загрузке темы)
+        console.log('[RuntimeEngine] 🔄 Applying full theme');
+        applyThemeToDOM(theme);
+      }
     }
   };
   
