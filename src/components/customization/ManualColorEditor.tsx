@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Palette, AlertTriangle } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { useThemeStore } from '@/state/themeStore';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
@@ -9,7 +10,7 @@ import { useExtendedWallet } from '@/context/WalletContextProvider';
 export const ManualColorEditor: React.FC = () => {
   const { selectedElement } = useSmartEdit();
   const { walletProfile } = useExtendedWallet();
-  const [color, setColor] = useState('#3b82f6');
+  const [tempColor, setTempColor] = useState('#3b82f6');
   const [isOpen, setIsOpen] = useState(false);
 
   // Если нет выбранного элемента - не показываем
@@ -27,8 +28,10 @@ export const ManualColorEditor: React.FC = () => {
   }
 
   const handleColorChange = (newColor: string) => {
-    setColor(newColor);
-    
+    setTempColor(newColor);
+  };
+
+  const applyColor = () => {
     if (!selectedElement?.json_path) {
       console.warn('[ManualEdit] ⚠️ No json_path for element:', selectedElement?.name);
       return;
@@ -37,10 +40,10 @@ export const ManualColorEditor: React.FC = () => {
     const pathToUpdate = selectedElement.json_path;
     const userId = walletProfile?.wallet_address || 'anonymous';
     
-    console.log('[ManualEdit] 🎨 Updating:', { path: pathToUpdate, value: newColor, userId });
+    console.log('[ManualEdit] 🎨 Applying color:', { path: pathToUpdate, value: tempColor, userId });
     
-    // Синхронный вызов с реальным userId
-    useThemeStore.getState().updateThemeValue(pathToUpdate, newColor, userId);
+    useThemeStore.getState().updateThemeValue(pathToUpdate, tempColor, userId);
+    setIsOpen(false);
   };
 
   return (
@@ -62,16 +65,25 @@ export const ManualColorEditor: React.FC = () => {
             Element: {selectedElement.name} ({selectedElement.selector})
           </div>
           {isOpen && (
-            <ColorPicker
-              value={color}
-              onChange={handleColorChange}
-              width={280}
-              hidePresets={true}
-              hideEyeDrop={true}
-              hideAdvancedSliders={true}
-              hideColorGuide={true}
-              hideInputType={false}
-            />
+            <>
+              <ColorPicker
+                value={tempColor}
+                onChange={handleColorChange}
+                width={280}
+                hidePresets={true}
+                hideEyeDrop={true}
+                hideAdvancedSliders={true}
+                hideColorGuide={true}
+                hideInputType={false}
+              />
+              <Button 
+                onClick={applyColor}
+                className="w-full mt-3"
+                size="sm"
+              >
+                Apply Color
+              </Button>
+            </>
           )}
         </div>
       </PopoverContent>
