@@ -39,320 +39,258 @@ function getThemeValueByPath(theme: any, jsonPath: string): any {
   return current;
 }
 
-/**
- * Apply a single value to an element based on jsonPath suffix
- * This handles gradients, colors, text colors, and placeholders intelligently
- */
-function applyValueToElement(element: HTMLElement, value: string, jsonPath: string): string[] {
-  const appliedProps: string[] = [];
+// ============================================================================
+// Helpers
+// ============================================================================
+
+const getKeyFromPath = (jsonPath: string): string =>
+  (jsonPath.split('/').pop() || '').toLowerCase();
+
+const parentPath = (jsonPath: string): string =>
+  jsonPath.includes('/') ? jsonPath.split('/').slice(0, -1).join('/') : '';
+
+const getByPath = (obj: any, path: string): any => {
+  if (!path) return obj;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return cleanPath.split('/').filter(Boolean).reduce((acc, k) => acc?.[k], obj);
+};
+
+const hasBackgroundImageAtSameNode = (theme: any, jsonPath: string): boolean => {
+  const key = getKeyFromPath(jsonPath);
+  if (key !== 'backgroundcolor') return false;
   
-  // Определяем CSS свойство по последней части пути
-  const pathParts = jsonPath.split('/');
-  const propertyName = pathParts[pathParts.length - 1];
-  
-  console.log('[RuntimeMapping] 🎯 Applying value to element:', { propertyName, value });
-  
-  // Определяем является ли значение градиентом
-  const isGradient = value.includes('gradient(');
-  
-  // Применяем соответствующее CSS свойство
-  if (propertyName === 'backgroundColor') {
-    // 🔥 Если есть backgroundImage — очищаем его (пользователь явно хочет видеть цвет)
-    if (element.style.backgroundImage && element.style.backgroundImage !== 'none') {
-      console.log('[RuntimeMapping] ⚠️ Clearing backgroundImage to apply color');
-      element.style.backgroundImage = '';
-    }
-    
+  const base = parentPath(jsonPath);
+  const node = getByPath(theme, base);
+  const bgImg = node?.backgroundImage;
+  return Boolean(bgImg && String(bgImg).trim() !== '');
+};
+
+// ============================================================================
+// ЕДИНЫЙ МЭППЕР - применяет значение к DOM элементу
+// ============================================================================
+
+export function applyValueToNodeUnified(
+  el: HTMLElement,
+  jsonPath: string,
+  value: any,
+  theme: any
+) {
+  const key = getKeyFromPath(jsonPath);
+  const isGradient = typeof value === 'string' && value.includes('gradient(');
+
+  // 🛡️ ЗАЩИТА ФОНА: не затирать backgroundImage
+  if (key === 'backgroundcolor' && hasBackgroundImageAtSameNode(theme, jsonPath)) {
+    console.log('[Runtime] 🛡️ skip bgColor (backgroundImage present)', { jsonPath });
+    return;
+  }
+
+  if (key === 'background') {
+    el.style.background = String(value);
+    el.style.removeProperty('background-color');
+    console.log('[Runtime] ✅ Applied background');
+    return;
+  }
+
+  if (key === 'backgroundcolor') {
     if (isGradient) {
-      element.style.background = value;
-      appliedProps.push('background');
-      console.log('[RuntimeMapping] ✅ Applied gradient to background');
+      el.style.background = String(value);
+      el.style.removeProperty('background-color');
+      console.log('[Runtime] ✅ Applied gradient');
     } else {
-      element.style.backgroundColor = value;
-      appliedProps.push('background-color');
-      console.log('[RuntimeMapping] ✅ Applied solid color to backgroundColor');
+      el.style.backgroundColor = String(value);
+      el.style.removeProperty('background');
+      console.log('[Runtime] ✅ Applied backgroundColor');
     }
-  } else if (propertyName === 'textColor' || propertyName === 'color') {
-    element.style.color = value;
-    appliedProps.push('color');
-    console.log('[RuntimeMapping] ✅ Applied text color');
-  } else if (propertyName === 'placeholderColor') {
-    element.style.setProperty('--placeholder-color', value);
-    appliedProps.push('--placeholder-color');
-    console.log('[RuntimeMapping] ✅ Applied placeholder color');
-  } else if (propertyName === 'borderColor') {
-    element.style.borderColor = value;
-    appliedProps.push('border-color');
-  } else {
-    // Fallback для других свойств
-    const cssProperty = propertyName.replace(/([A-Z])/g, '-$1').toLowerCase();
-    element.style.setProperty(cssProperty, value);
-    appliedProps.push(cssProperty);
-    console.log('[RuntimeMapping] ✅ Applied generic property:', cssProperty);
+    return;
   }
-  
-  return appliedProps;
+
+  if (key === 'textcolor' || key === 'color') {
+    el.style.color = String(value);
+    console.log('[Runtime] ✅ Applied textColor');
+    return;
+  }
+
+  if (key === 'bordercolor') {
+    el.style.borderColor = String(value);
+    console.log('[Runtime] ✅ Applied borderColor');
+    return;
+  }
+
+  if (key === 'placeholdercolor') {
+    el.style.setProperty('--placeholder-color', String(value));
+    console.log('[Runtime] ✅ Applied placeholderColor');
+    return;
+  }
+
+  if (key === 'iconcolor') {
+    el.style.color = String(value);
+    console.log('[Runtime] ✅ Applied iconColor');
+    return;
+  }
+
+  // Unmapped key
+  console.log('[Runtime] ⚠️ unmapped key', { key, jsonPath, value });
 }
 
-/**
- * Apply style object to DOM element
- */
-function applyStylesToElement(element: HTMLElement, styleObj: any): string[] {
-  const appliedProps: string[] = [];
-  
-  if (!styleObj || typeof styleObj !== 'object') return appliedProps;
-  
-  // 🛡️ ЗАЩИТА: если есть backgroundImage, не трогаем backgroundColor
-  if (styleObj.backgroundColor && styleObj.backgroundImage) {
-    console.log('[RuntimeMapping] 🛡️ Skipping backgroundColor (backgroundImage present)');
-    const { backgroundColor, ...rest } = styleObj;
-    styleObj = rest;
-  }
-  
-  // Map of theme properties to CSS properties
-  const propertyMap: Record<string, string> = {
-    backgroundColor: 'background-color',
-    textColor: 'color',
-    fontSize: 'font-size',
-    fontFamily: 'font-family',
-    fontWeight: 'font-weight',
-    borderRadius: 'border-radius',
-    border: 'border',
-    boxShadow: 'box-shadow',
-    padding: 'padding',
-    margin: 'margin',
-    opacity: 'opacity',
-    backgroundImage: 'background-image',
-    backdropFilter: 'backdrop-filter',
-  };
-  
-  Object.entries(styleObj).forEach(([key, value]) => {
-    if (key === 'states' || key === 'animation') return; // Skip nested objects for now
-    
-    const cssProperty = propertyMap[key] || key;
-    if (value !== undefined && value !== null) {
-      element.style.setProperty(cssProperty, String(value));
-      appliedProps.push(cssProperty);
-    }
-  });
-  
-  return appliedProps;
-}
+// ============================================================================
+// Apply theme to DOM (полное применение)
+// ============================================================================
 
-/**
- * Apply theme to DOM elements (main public API)
- */
 export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
   const results: AppliedStyle[] = [];
   
   try {
-    // Используем jsonBridge для единого источника данных
     await jsonBridge.loadElementMappings();
     const mappings = jsonBridge.getAllMappings();
     
-    console.log('[RuntimeMapping] 🎨 Applying theme to DOM');
-    console.log('[RuntimeMapping] 📋 Found mappings from jsonBridge:', mappings.length);
+    console.log('[Runtime] 🔄 Full apply:', mappings.length, 'mappings');
     
-    if (mappings.length === 0) {
-      console.log('[RuntimeMapping] No mapped elements found');
-      return results;
-    }
+    if (mappings.length === 0) return results;
     
-    // Get wallet root container
     const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);
     if (!walletRoot) {
-      console.warn('[RuntimeMapping] Wallet container not found:', WALLET_ROOT_SELECTOR);
+      console.warn('[Runtime] Wallet container not found');
       return results;
     }
     
-    console.log(`[RuntimeMapping] Processing ${mappings.length} mapped elements`);
-    
-    // Apply each mapping
-    for (const element of mappings as any[]) {
-      if (!element.selector || !element.json_path) {
-        console.log('[RuntimeMapping] ⚠️ Skipping element without selector/json_path:', element.id);
-        continue;
-      }
+    for (const mapping of mappings as any[]) {
+      if (!mapping.selector || !mapping.json_path) continue;
       
       try {
-        // Find DOM elements within wallet container
-        const domElements = walletRoot.querySelectorAll(element.selector);
+        const domElements = walletRoot.querySelectorAll(mapping.selector);
+        if (domElements.length === 0) continue;
         
-        console.log(`[RuntimeMapping] 🔍 Selector: ${element.selector} → ${domElements.length} elements`);
+        const value = getByPath(theme, mapping.json_path);
+        if (value === null || value === undefined) continue;
         
-        if (domElements.length === 0) {
-          console.warn(`[RuntimeMapping] ⚠️ No DOM elements found for selector: ${element.selector}`);
-          continue;
-        }
-        
-        // Get style from theme by json_path
-        const styleValue = getThemeValueByPath(theme, element.json_path);
-        
-        if (!styleValue) {
-          console.warn(`[RuntimeMapping] ⚠️ No theme value found for path: ${element.json_path}`);
-          continue;
-        }
-        
-        console.log(`[RuntimeMapping] 🎨 Applying style from ${element.json_path}:`, styleValue);
-        
-        // Apply to all matching elements
-        domElements.forEach((domEl) => {
-          if (!(domEl instanceof HTMLElement)) return;
-          
-          const appliedProps = applyStylesToElement(domEl, styleValue);
-          
-          if (appliedProps.length > 0) {
-            results.push({
-              elementId: element.id,
-              selector: element.selector,
-              appliedProperties: appliedProps,
-              success: true
-            });
-            
-            console.log(`[RuntimeMapping] ✅ Applied ${appliedProps.length} properties to ${element.name}: ${appliedProps.join(', ')}`);
+        domElements.forEach((el) => {
+          if (el instanceof HTMLElement) {
+            applyValueToNodeUnified(el, mapping.json_path, value, theme);
           }
         });
         
-      } catch (err) {
-        console.error(`[RuntimeMapping] Error applying mapping for ${element.name}:`, err);
         results.push({
-          elementId: element.id,
-          selector: element.selector,
-          appliedProperties: [],
-          success: false
+          elementId: mapping.id,
+          selector: mapping.selector,
+          appliedProperties: [getKeyFromPath(mapping.json_path)],
+          success: true
         });
+        
+      } catch (err) {
+        console.error('[Runtime] Error for', mapping.name, err);
       }
     }
     
-    console.log(`[RuntimeMapping] ✅ Applied mappings to ${results.filter(r => r.success).length} elements`);
+    console.log('[Runtime] ✅ Full apply complete:', results.filter(r => r.success).length);
     
   } catch (error) {
-    console.error('[RuntimeMapping] Fatal error:', error);
+    console.error('[Runtime] Fatal error:', error);
   }
   
   return results;
 }
 
-/**
- * Apply styles to a specific path (точечное обновление)
- */
+// ============================================================================
+// Apply to specific path (точечное обновление)
+// ============================================================================
+
 function applyStyleToPath(theme: any, jsonPath: string) {
   try {
-    console.log('[RuntimeMapping] 🎯 Applying style to path:', jsonPath);
+    console.log('[Runtime] 🎯 Targeted update:', jsonPath);
     
     const mappings = jsonBridge.getAllMappings();
-    console.log('[RuntimeMapping] 📋 Total mappings in cache:', mappings.length);
     
-    // Умный поиск: сначала точное совпадение, потом базовый путь
-    let mapping = mappings.find((m: any) => m.json_path === jsonPath);
+    // Ищем mapping: точное совпадение или prefix
+    const mapping = mappings.find((m: any) =>
+      jsonPath === m.json_path || jsonPath.startsWith(m.json_path + '/')
+    );
     
-    // Если не нашли — убираем суффиксы свойств (/backgroundColor, /textColor и т.д.)
     if (!mapping) {
-      const propertyNames = ['backgroundColor', 'textColor', 'borderColor', 'placeholderColor', 'color'];
-      let basePath = jsonPath;
-      
-      for (const propName of propertyNames) {
-        if (jsonPath.endsWith('/' + propName)) {
-          basePath = jsonPath.replace('/' + propName, '');
-          console.log('[RuntimeMapping] 📍 Extracted base path:', basePath);
-          break;
-        }
-      }
-      
-      // Ищем маппинг по базовому пути
-      mapping = mappings.find((m: any) => m.json_path === basePath);
-      
-      if (!mapping) {
-        console.warn('[RuntimeMapping] ⚠️ No mapping found for:', { fullPath: jsonPath, basePath });
-        console.log('[RuntimeMapping] 📋 Available paths sample:', mappings.slice(0, 5).map((m: any) => m.json_path));
-        return;
-      }
+      console.warn('[Runtime] ⚠️ mapping not found', { jsonPath });
+      console.log('[Runtime] Available paths (sample):', 
+        mappings.slice(0, 3).map((m: any) => m.json_path));
+      return;
     }
     
-    console.log('[RuntimeMapping] ✅ Found mapping:', {
-      fullPath: jsonPath,
-      mappingPath: mapping.json_path,
+    console.log('[Runtime] ✅ Found mapping:', {
+      mapPath: mapping.json_path,
       selector: mapping.selector
     });
     
-    // Apply styles only to this selector
     const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);
     if (!walletRoot) {
-      console.warn('[RuntimeMapping] Wallet container not found');
+      console.warn('[Runtime] Wallet container not found');
       return;
     }
     
     const elements = walletRoot.querySelectorAll(mapping.selector);
+    const value = getByPath(theme, jsonPath);
     
-    // Get value using the EXACT jsonPath
-    const value = getThemeValueByPath(theme, jsonPath);
-    
-    console.log(`[RuntimeMapping] 🎨 Found ${elements.length} elements for selector:`, mapping.selector);
-    console.log('[RuntimeMapping] 🎨 Value from theme:', value);
+    console.log('[Runtime] 🎨 Applying to', elements.length, 'nodes:', value);
     
     if (value === null || value === undefined) {
-      console.warn('[RuntimeMapping] ⚠️ No value found at path:', jsonPath);
+      console.warn('[Runtime] ⚠️ No value at path:', jsonPath);
       return;
     }
     
-    // Apply value to each element using smart value application
     elements.forEach((el) => {
       if (el instanceof HTMLElement) {
-        const applied = typeof value === 'string' 
-          ? applyValueToElement(el, value, jsonPath)
-          : applyStylesToElement(el, value);
-        console.log('[RuntimeMapping] ✅ Applied properties:', applied);
+        applyValueToNodeUnified(el, jsonPath, value, theme);
       }
     });
+    
+    console.log('[Runtime] ✅ Applied to selector:', mapping.selector);
   } catch (err) {
-    console.error('[RuntimeMapping] Error in applyStyleToPath:', err);
+    console.error('[Runtime] Error in applyStyleToPath:', err);
   }
 }
 
-/**
- * Watch for theme changes and reapply mappings
- */
+// ============================================================================
+// Watch for theme changes (с защитой от эхо)
+// ============================================================================
+
+let lastManualEditAt = 0;
+
 export function setupMappingWatcher(getTheme: () => any) {
   let lastTheme: any = null;
   
   const checkAndApply = () => {
     const currentTheme = getTheme();
+    
+    // 🛡️ Skip full apply if recent manual edit
+    if (Date.now() - lastManualEditAt < 500) {
+      console.log('[Runtime] 🛡️ Skip full apply (recent manual edit)');
+      return;
+    }
+    
     if (currentTheme && currentTheme !== lastTheme) {
       lastTheme = currentTheme;
       applyThemeToDOM(currentTheme);
     }
   };
   
-  // Check every 500ms for theme changes
   const interval = setInterval(checkAndApply, 500);
   
-  // Listen for theme updates
   const handleThemeUpdate = (event: CustomEvent) => {
-    console.log('[RuntimeEngine] 📢 Event received:', {
-      updatedPath: event.detail.updatedPath,
-      themeKeys: event.detail.theme ? Object.keys(event.detail.theme).slice(0, 5) : []
-    });
-    
     const { theme, updatedPath } = event.detail;
     
-    if (theme) {
-      lastTheme = theme;
-      
-      // 🎯 Точечное обновление если есть updatedPath
-      if (updatedPath) {
-        console.log('[RuntimeEngine] 🎯 Applying targeted update');
-        applyStyleToPath(theme, updatedPath);
-      } else {
-        // Полное обновление (при загрузке темы)
-        console.log('[RuntimeEngine] 🔄 Applying full theme');
-        applyThemeToDOM(theme);
-      }
+    if (!theme) return;
+    lastTheme = theme;
+    
+    if (updatedPath) {
+      // 🎯 Точечное обновление
+      lastManualEditAt = Date.now();
+      console.log('[Runtime] 🎯 Manual edit detected');
+      applyStyleToPath(theme, updatedPath);
+    } else {
+      // 🔄 Полное обновление
+      console.log('[Runtime] 🔄 Full theme apply');
+      applyThemeToDOM(theme);
     }
   };
   
   window.addEventListener('theme-updated', handleThemeUpdate as EventListener);
   
-  // Initial apply
   checkAndApply();
   
   return () => {
@@ -361,36 +299,6 @@ export function setupMappingWatcher(getTheme: () => any) {
   };
 }
 
-/**
- * Apply single mapping rule manually (for Manual Editor)
- */
-export function applyManualMapping(
-  selector: string,
-  jsonPath: string,
-  theme: any
-): boolean {
-  try {
-    const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);
-    if (!walletRoot) return false;
-    
-    const elements = walletRoot.querySelectorAll(selector);
-    if (elements.length === 0) return false;
-    
-    const styleValue = getThemeValueByPath(theme, jsonPath);
-    if (!styleValue) return false;
-    
-    elements.forEach((el) => {
-      if (el instanceof HTMLElement) {
-        applyStylesToElement(el, styleValue);
-      }
-    });
-    
-    return true;
-  } catch (err) {
-    console.error('[RuntimeMapping] Manual apply error:', err);
-    return false;
-  }
-}
 
 // ============================================================================
 // Global WCC API for debugging and manual theme control
