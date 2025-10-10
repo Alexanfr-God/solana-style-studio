@@ -57,13 +57,10 @@ function applyValueToElement(element: HTMLElement, value: string, jsonPath: stri
   
   // Применяем соответствующее CSS свойство
   if (propertyName === 'backgroundColor') {
-    // 🛡️ Защита: не перекрываем backgroundImage
-    const hasBackgroundImage = element.style.backgroundImage && 
-                               element.style.backgroundImage !== 'none';
-    
-    if (hasBackgroundImage) {
-      console.log('[RuntimeMapping] 🛡️ Skipping backgroundColor (backgroundImage present)');
-      return appliedProps;
+    // 🔥 Если есть backgroundImage — очищаем его (пользователь явно хочет видеть цвет)
+    if (element.style.backgroundImage && element.style.backgroundImage !== 'none') {
+      console.log('[RuntimeMapping] ⚠️ Clearing backgroundImage to apply color');
+      element.style.backgroundImage = '';
     }
     
     if (isGradient) {

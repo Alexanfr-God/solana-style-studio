@@ -29,6 +29,10 @@ export const ManualColorEditor: React.FC = () => {
 
   const handleColorChange = (newColor: string) => {
     setTempColor(newColor);
+    console.log('[ManualEdit] 🎨 Color changed:', { 
+      path: selectedElement?.json_path, 
+      value: newColor 
+    });
   };
 
   const applyColor = () => {
