@@ -244,24 +244,36 @@ function applyStyleToPath(theme: any, jsonPath: string) {
     console.log('[RuntimeMapping] 🎯 Applying style to path:', jsonPath);
     
     const mappings = jsonBridge.getAllMappings();
+    console.log('[RuntimeMapping] 📋 Total mappings in cache:', mappings.length);
     
-    // Сначала ищем точное совпадение
+    // Умный поиск: сначала точное совпадение, потом базовый путь
     let mapping = mappings.find((m: any) => m.json_path === jsonPath);
     
-    // Если не нашли — ищем по префиксу
+    // Если не нашли — убираем суффиксы свойств (/backgroundColor, /textColor и т.д.)
     if (!mapping) {
-      mapping = mappings.find((m: any) => 
-        jsonPath.startsWith(m.json_path + '/') || m.json_path.startsWith(jsonPath + '/')
-      );
+      const propertyNames = ['backgroundColor', 'textColor', 'borderColor', 'placeholderColor', 'color'];
+      let basePath = jsonPath;
+      
+      for (const propName of propertyNames) {
+        if (jsonPath.endsWith('/' + propName)) {
+          basePath = jsonPath.replace('/' + propName, '');
+          console.log('[RuntimeMapping] 📍 Extracted base path:', basePath);
+          break;
+        }
+      }
+      
+      // Ищем маппинг по базовому пути
+      mapping = mappings.find((m: any) => m.json_path === basePath);
+      
+      if (!mapping) {
+        console.warn('[RuntimeMapping] ⚠️ No mapping found for:', { fullPath: jsonPath, basePath });
+        console.log('[RuntimeMapping] 📋 Available paths sample:', mappings.slice(0, 5).map((m: any) => m.json_path));
+        return;
+      }
     }
     
-    if (!mapping) {
-      console.warn('[RuntimeMapping] ⚠️ No mapping found for path:', jsonPath);
-      return;
-    }
-    
-    console.log('[RuntimeMapping] 🎯 Found mapping:', {
-      path: jsonPath,
+    console.log('[RuntimeMapping] ✅ Found mapping:', {
+      fullPath: jsonPath,
       mappingPath: mapping.json_path,
       selector: mapping.selector
     });

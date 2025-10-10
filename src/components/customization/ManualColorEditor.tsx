@@ -4,9 +4,11 @@ import ColorPicker from 'react-best-gradient-color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { useThemeStore } from '@/state/themeStore';
+import { useExtendedWallet } from '@/context/WalletContextProvider';
 
 export const ManualColorEditor: React.FC = () => {
   const { selectedElement } = useSmartEdit();
+  const { walletProfile } = useExtendedWallet();
   const [color, setColor] = useState('#3b82f6');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -33,11 +35,12 @@ export const ManualColorEditor: React.FC = () => {
     }
     
     const pathToUpdate = selectedElement.json_path;
+    const userId = walletProfile?.wallet_address || 'anonymous';
     
-    console.log('[ManualEdit]', { path: pathToUpdate, value: newColor });
+    console.log('[ManualEdit] 🎨 Updating:', { path: pathToUpdate, value: newColor, userId });
     
-    // Синхронный вызов без await
-    useThemeStore.getState().updateThemeValue(pathToUpdate, newColor);
+    // Синхронный вызов с реальным userId
+    useThemeStore.getState().updateThemeValue(pathToUpdate, newColor, userId);
   };
 
   return (

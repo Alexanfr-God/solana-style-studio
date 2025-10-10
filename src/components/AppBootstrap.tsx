@@ -36,6 +36,11 @@ export default function AppBootstrap() {
           const { setupMappingWatcher } = await import('@/services/runtimeMappingEngine');
           setupMappingWatcher(() => themeStoreModule.useThemeStore.getState().theme);
           console.log('[Bootstrap] 🔌 Runtime Mapping Engine connected');
+          
+          // Загружаем маппинги элементов для Runtime Engine
+          const { jsonBridge } = await import('@/services/jsonBridgeService');
+          await jsonBridge.loadElementMappings();
+          console.log('[Bootstrap] 🗺️ Element mappings loaded:', jsonBridge.getAllMappings().length);
         } catch (error) {
           console.error('[Bootstrap] ❌ Failed to connect Runtime Mapping Engine:', error);
         }
