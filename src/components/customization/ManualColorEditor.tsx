@@ -41,10 +41,27 @@ export const ManualColorEditor: React.FC = () => {
       return;
     }
     
-    const pathToUpdate = selectedElement.json_path;
+    // 🔧 Quick Fix: если путь указывает на объект (не свойство) — добавляем /backgroundColor
+    let pathToUpdate = selectedElement.json_path;
+    
+    const lastPart = pathToUpdate.split('/').pop()?.toLowerCase() || '';
+    const isPropertyPath = ['backgroundcolor', 'textcolor', 'color', 'bordercolor', 'iconcolor'].includes(lastPart);
+    
+    if (!isPropertyPath) {
+      // Путь указывает на объект (например /homeLayer/actionButtons/swapButton)
+      // → добавляем /backgroundColor
+      pathToUpdate = pathToUpdate + '/backgroundColor';
+      console.log('[ManualEdit] 🔧 Auto-appended /backgroundColor:', pathToUpdate);
+    }
+    
     const userId = walletProfile?.wallet_address || 'anonymous';
     
-    console.log('[ManualEdit] 🎨 Applying color:', { path: pathToUpdate, value: tempColor, userId });
+    console.log('[ManualEdit] 🎨 Applying color:', { 
+      original: selectedElement.json_path,
+      path: pathToUpdate, 
+      value: tempColor, 
+      userId 
+    });
     
     useThemeStore.getState().updateThemeValue(pathToUpdate, tempColor, userId);
     setIsOpen(false);
