@@ -36,7 +36,8 @@ export const ManualColorEditor: React.FC = () => {
       return;
     }
     
-    const pathToUpdate = selectedElement.json_path + '/backgroundColor';
+    // Используем json_path напрямую без добавления суффикса
+    const pathToUpdate = selectedElement.json_path;
     
     console.log('[ManualEdit] 🎯', {
       element: selectedElement.name,
@@ -79,7 +80,7 @@ export const ManualColorEditor: React.FC = () => {
       <PopoverContent className="w-auto p-4 bg-gray-900/95 border-purple-500/30 backdrop-blur-sm" align="start">
         <div className="space-y-3">
           <div className="text-sm font-semibold text-white">
-            Editing: {selectedElement.json_path}/backgroundColor
+            Editing: {selectedElement.json_path}
           </div>
           <div className="text-xs text-white/60 font-mono">
             Element: {selectedElement.name} ({selectedElement.selector})

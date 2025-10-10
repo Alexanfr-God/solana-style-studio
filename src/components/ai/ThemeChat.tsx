@@ -105,18 +105,18 @@ const ThemeChat = () => {
         const jsonPath = targetElement.json_path;
         
         if (jsonPath) {
-          // JSON-ориентированный промпт для элементов с json_path
-          finalPrompt = `${userPrompt}
+      const finalPrompt = `${userPrompt}
 
 CRITICAL INSTRUCTIONS:
 - Target JSON path: ${jsonPath}
 - Element: ${targetElement.name} (${targetElement.type})
 - Screen: ${targetElement.screen}
 - You MUST modify ONLY the value at path: ${jsonPath}
-- Available properties for this element: backgroundColor, color, fontSize, fontWeight, borderRadius, padding, boxShadow
 - Example: if user says "make it blue", change ${jsonPath} to "#3b82f6"
 - DO NOT modify any other paths in the theme
-- Generate a JSON Patch operation targeting ${jsonPath}`;
+- Generate EXACTLY ONE JSON Patch operation targeting ${jsonPath}
+
+IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path and nothing else!`;
         } else {
           // Fallback для элементов без json_path
           console.warn('[applyJsonPatch] ⚠️ Element has no json_path, using textual prompt');

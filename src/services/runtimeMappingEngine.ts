@@ -40,6 +40,55 @@ function getThemeValueByPath(theme: any, jsonPath: string): any {
 }
 
 /**
+ * Apply a single value to an element based on jsonPath suffix
+ * This handles gradients, colors, text colors, and placeholders intelligently
+ */
+function applyValueToElement(element: HTMLElement, value: string, jsonPath: string): string[] {
+  const appliedProps: string[] = [];
+  
+  // Определяем CSS свойство по последней части пути
+  const pathParts = jsonPath.split('/');
+  const propertyName = pathParts[pathParts.length - 1];
+  
+  console.log('[RuntimeMapping] 🎯 Applying value to element:', { propertyName, value });
+  
+  // Определяем является ли значение градиентом
+  const isGradient = value.includes('gradient(');
+  
+  // Применяем соответствующее CSS свойство
+  if (propertyName === 'backgroundColor') {
+    if (isGradient) {
+      element.style.background = value;
+      appliedProps.push('background');
+      console.log('[RuntimeMapping] ✅ Applied gradient to background');
+    } else {
+      element.style.backgroundColor = value;
+      appliedProps.push('background-color');
+      console.log('[RuntimeMapping] ✅ Applied solid color to backgroundColor');
+    }
+  } else if (propertyName === 'textColor' || propertyName === 'color') {
+    element.style.color = value;
+    appliedProps.push('color');
+    console.log('[RuntimeMapping] ✅ Applied text color');
+  } else if (propertyName === 'placeholderColor') {
+    element.style.setProperty('--placeholder-color', value);
+    appliedProps.push('--placeholder-color');
+    console.log('[RuntimeMapping] ✅ Applied placeholder color');
+  } else if (propertyName === 'borderColor') {
+    element.style.borderColor = value;
+    appliedProps.push('border-color');
+  } else {
+    // Fallback для других свойств
+    const cssProperty = propertyName.replace(/([A-Z])/g, '-$1').toLowerCase();
+    element.style.setProperty(cssProperty, value);
+    appliedProps.push(cssProperty);
+    console.log('[RuntimeMapping] ✅ Applied generic property:', cssProperty);
+  }
+  
+  return appliedProps;
+}
+
+/**
  * Apply style object to DOM element
  */
 function applyStylesToElement(element: HTMLElement, styleObj: any): string[] {
@@ -185,15 +234,12 @@ function applyStyleToPath(theme: any, jsonPath: string) {
   try {
     console.log('[RuntimeMapping] 🎯 Applying style to path:', jsonPath);
     
-    // Find mapping for this path
-  const mappings = jsonBridge.getAllMappings();
-  const mapping = mappings.find((m: any) => 
-    jsonPath.startsWith(m.json_path) && 
-    (jsonPath === m.json_path || jsonPath[m.json_path.length] === '/')
-  );
+    // Find mapping with EXACT match of json_path
+    const mappings = jsonBridge.getAllMappings();
+    const mapping = mappings.find((m: any) => m.json_path === jsonPath);
     
     if (!mapping) {
-      console.warn('[RuntimeMapping] ⚠️ No mapping found for path:', jsonPath);
+      console.warn('[RuntimeMapping] ⚠️ No exact mapping found for path:', jsonPath);
       return;
     }
     
@@ -205,14 +251,24 @@ function applyStyleToPath(theme: any, jsonPath: string) {
     }
     
     const elements = walletRoot.querySelectorAll(mapping.selector);
-    const styleValue = getThemeValueByPath(theme, mapping.json_path);
+    
+    // Get value using the EXACT jsonPath
+    const value = getThemeValueByPath(theme, jsonPath);
     
     console.log(`[RuntimeMapping] 🎨 Found ${elements.length} elements for selector:`, mapping.selector);
-    console.log('[RuntimeMapping] 🎨 Applying value:', styleValue);
+    console.log('[RuntimeMapping] 🎨 Value from theme:', value);
     
+    if (value === null || value === undefined) {
+      console.warn('[RuntimeMapping] ⚠️ No value found at path:', jsonPath);
+      return;
+    }
+    
+    // Apply value to each element using smart value application
     elements.forEach((el) => {
       if (el instanceof HTMLElement) {
-        const applied = applyStylesToElement(el, styleValue);
+        const applied = typeof value === 'string' 
+          ? applyValueToElement(el, value, jsonPath)
+          : applyStylesToElement(el, value);
         console.log('[RuntimeMapping] ✅ Applied properties:', applied);
       }
     });

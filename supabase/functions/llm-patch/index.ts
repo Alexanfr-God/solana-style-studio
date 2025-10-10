@@ -477,30 +477,22 @@ ${JSON.stringify(presetData.sample_patch, null, 2)}
     // 5. Prepare context for OpenAI
     const currentTheme = themeData.theme_data;
 
-    const systemPrompt = `You are WCC Maestro — a FULL theme editor for crypto wallet.
+    const systemPrompt = `You are WCC Maestro — a smart theme editor for crypto wallet.
 
-CRITICAL RULES:
-1. When user says "make buttons blue" → change ALL button-related colors in ENTIRE theme
-2. Search RECURSIVELY through ALL layers: ${Object.keys(currentTheme).join(', ')}
-3. Fields ending with "Color", "backgroundColor", "containerColor", "iconColor" are colors
-4. Return JSON Patch operations for ALL matching fields across ALL layers
-5. Use FULL paths like: "/homeLayer/actionButtons/sendButton/containerColor"
+CRITICAL: Read the MODE from user context:
 
-IMPORTANT:
-- DO NOT limit changes to one layer
-- Find ALL occurrences of the requested change
+MODE 1: PRECISE (when json_path is provided)
+- User gives you a SPECIFIC json_path like "/lockLayer/unlockButton/backgroundColor"
+- You MUST generate EXACTLY ONE operation targeting ONLY that path
+- DO NOT modify any other paths
+- DO NOT search for similar elements
+- Example: {"op": "replace", "path": "/lockLayer/unlockButton/backgroundColor", "value": "#9333ea"}
+
+MODE 2: GLOBAL (when NO json_path is provided)
+- User wants to change elements globally (e.g., "make all buttons blue")
+- Search RECURSIVELY through ALL layers: ${Object.keys(currentTheme).join(', ')}
+- Find ALL matching fields and change them
 - Apply consistently across entire theme
-
-Example:
-User: "make all buttons red"
-You MUST change:
-- /homeLayer/actionButtons/sendButton/containerColor
-- /homeLayer/actionButtons/receiveButton/containerColor
-- /homeLayer/actionButtons/buyButton/containerColor
-- /buyLayer/buyButton/backgroundColor
-- /sendLayer/footer/closeButton/backgroundColor
-- /swapLayer/swapActionButton/backgroundColor
-- ALL other button colors in theme
 
 Available layers in theme:
 ${Object.keys(currentTheme).map(key => `- ${key}: ${Object.keys(currentTheme[key] || {}).join(', ')}`).join('\n')}
@@ -519,19 +511,17 @@ TECHNICAL RULES:
 - Return ONLY valid JSON with a "patch" array containing RFC6902 operations
 - Each patch operation must have: "op", "path", and "value" (if applicable)
 - Valid operations: "replace", "add", "remove"
-- All color values must be valid hex format (#RRGGBB or #RRGGBBAA)
+- All color values must be valid hex format (#RRGGBB or #RRGGBBAA) or CSS gradients
 - Ensure changes maintain visual accessibility and contrast
 
 Respond with: {"patch": [{"op": "replace", "path": "/layerName/element/property", "value": "#HEXCOLOR"}]}`;
 
     const userContext = `User request: "${userPrompt}"
 
-FULL CURRENT THEME (all layers):
-${JSON.stringify(currentTheme, null, 2)}
+${presetContext ? `Apply the style inspiration from the provided preset context.` : ''}
 
-Apply changes to ALL relevant fields across ALL layers.
-
-${presetContext ? `Apply the style inspiration from the provided preset context.` : ''}`;
+Current theme structure (all layers):
+${JSON.stringify(currentTheme, null, 2)}`;
 
     // 6. Call OpenAI
     console.log('🤖 Calling OpenAI...');
