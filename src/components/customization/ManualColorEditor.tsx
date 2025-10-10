@@ -3,7 +3,7 @@ import { Palette, AlertTriangle } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
-import { toast } from '@/hooks/use-toast';
+import { useThemeStore } from '@/state/themeStore';
 
 export const ManualColorEditor: React.FC = () => {
   const { selectedElement } = useSmartEdit();
@@ -24,47 +24,20 @@ export const ManualColorEditor: React.FC = () => {
     );
   }
 
-  const handleColorChange = async (newColor: string) => {
+  const handleColorChange = (newColor: string) => {
     setColor(newColor);
     
     if (!selectedElement?.json_path) {
-      toast({
-        title: "Ошибка",
-        description: "У элемента отсутствует json_path",
-        variant: "destructive"
-      });
+      console.warn('[ManualEdit] ⚠️ No json_path for element:', selectedElement?.name);
       return;
     }
     
-    // Используем json_path напрямую без добавления суффикса
     const pathToUpdate = selectedElement.json_path;
     
-    console.log('[ManualEdit] 🎯', {
-      element: selectedElement.name,
-      selector: selectedElement.selector,
-      json_path: pathToUpdate,
-      newColor
-    });
+    console.log('[ManualEdit]', { path: pathToUpdate, value: newColor });
     
-    try {
-      const { useThemeStore } = await import('@/state/themeStore');
-      
-      // Вызываем ТОЛЬКО themeStore.updateThemeValue
-      await useThemeStore.getState().updateThemeValue(pathToUpdate, newColor);
-      
-      toast({
-        title: "✅ Успешно",
-        description: `Цвет обновлён: ${selectedElement.name}`,
-      });
-      
-    } catch (error) {
-      console.error('[ManualEdit] ❌ Error:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить цвет",
-        variant: "destructive"
-      });
-    }
+    // Синхронный вызов без await
+    useThemeStore.getState().updateThemeValue(pathToUpdate, newColor);
   };
 
   return (

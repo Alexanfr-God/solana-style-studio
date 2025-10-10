@@ -57,6 +57,15 @@ function applyValueToElement(element: HTMLElement, value: string, jsonPath: stri
   
   // Применяем соответствующее CSS свойство
   if (propertyName === 'backgroundColor') {
+    // 🛡️ Защита: не перекрываем backgroundImage
+    const hasBackgroundImage = element.style.backgroundImage && 
+                               element.style.backgroundImage !== 'none';
+    
+    if (hasBackgroundImage) {
+      console.log('[RuntimeMapping] 🛡️ Skipping backgroundColor (backgroundImage present)');
+      return appliedProps;
+    }
+    
     if (isGradient) {
       element.style.background = value;
       appliedProps.push('background');
@@ -234,14 +243,28 @@ function applyStyleToPath(theme: any, jsonPath: string) {
   try {
     console.log('[RuntimeMapping] 🎯 Applying style to path:', jsonPath);
     
-    // Find mapping with EXACT match of json_path
     const mappings = jsonBridge.getAllMappings();
-    const mapping = mappings.find((m: any) => m.json_path === jsonPath);
+    
+    // Сначала ищем точное совпадение
+    let mapping = mappings.find((m: any) => m.json_path === jsonPath);
+    
+    // Если не нашли — ищем по префиксу
+    if (!mapping) {
+      mapping = mappings.find((m: any) => 
+        jsonPath.startsWith(m.json_path + '/') || m.json_path.startsWith(jsonPath + '/')
+      );
+    }
     
     if (!mapping) {
-      console.warn('[RuntimeMapping] ⚠️ No exact mapping found for path:', jsonPath);
+      console.warn('[RuntimeMapping] ⚠️ No mapping found for path:', jsonPath);
       return;
     }
+    
+    console.log('[RuntimeMapping] 🎯 Found mapping:', {
+      path: jsonPath,
+      mappingPath: mapping.json_path,
+      selector: mapping.selector
+    });
     
     // Apply styles only to this selector
     const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);

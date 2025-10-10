@@ -125,17 +125,27 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     console.log('[ThemeStore] 🎨 Updating theme value:', { jsonPath, value });
     
     // Update local theme state
-    const pathParts = jsonPath.split('/');
+    // Убираем leading slashes и парсим путь
+    const pathParts = jsonPath.replace(/^\/+/, '').split('/');
     const newTheme = JSON.parse(JSON.stringify(theme)); // deep clone
     let current = newTheme;
     
+    // Проходим по всем частям пути кроме последней
     for (let i = 0; i < pathParts.length - 1; i++) {
-      if (!current[pathParts[i]]) {
-        current[pathParts[i]] = {};
+      const part = pathParts[i];
+      if (!part) continue; // Пропускаем пустые части
+      
+      if (!current[part]) {
+        current[part] = {};
       }
-      current = current[pathParts[i]];
+      current = current[part];
     }
-    current[pathParts[pathParts.length - 1]] = value;
+    
+    // Устанавливаем значение по последней части
+    const lastPart = pathParts[pathParts.length - 1];
+    if (lastPart) {
+      current[lastPart] = value;
+    }
     
     console.log('[ThemeStore] ✅ Local theme updated');
     set({ theme: newTheme });
