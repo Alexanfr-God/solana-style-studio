@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { WalletElement } from '@/hooks/useWalletElements';
 import { jsonBridge } from '@/services/jsonBridgeService';
+import { PathAnalyzer } from '@/services/pathAnalyzer';
 interface InteractiveElementSelectorProps {
   isActive: boolean;
   onElementSelect: (element: WalletElement) => void;
@@ -88,7 +89,17 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
         
         setSelectedElement(elementAtPoint);
         onElementSelect(walletElement);
-        console.log('✅ Element selected:', mapping.name, 'JSON path:', mapping.json_path);
+        
+        const pathType = mapping.json_path 
+          ? PathAnalyzer.analyze(mapping.json_path).type 
+          : 'unknown';
+        
+        console.log('[ElementSelector] ✅ Selected:', {
+          name: mapping.name,
+          path: mapping.json_path,
+          pathType,
+          selector: mapping.selector
+        });
       }
     };
 

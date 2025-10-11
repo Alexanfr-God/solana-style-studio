@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Palette, AlertTriangle } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -6,12 +6,30 @@ import { Button } from '@/components/ui/button';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { useThemeStore } from '@/state/themeStore';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
+import { PathAnalyzer, PathAnalysis } from '@/services/pathAnalyzer';
 
 export const ManualColorEditor: React.FC = () => {
   const { selectedElement } = useSmartEdit();
   const { walletProfile } = useExtendedWallet();
   const [tempColor, setTempColor] = useState('#3b82f6');
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<string>('backgroundColor');
+  const [pathAnalysis, setPathAnalysis] = useState<PathAnalysis | null>(null);
+
+  // Analyze path when element changes
+  useEffect(() => {
+    if (selectedElement?.json_path) {
+      const analysis = PathAnalyzer.analyze(selectedElement.json_path);
+      setPathAnalysis(analysis);
+      setSelectedProperty(analysis.defaultProperty);
+      
+      console.log('[ManualEdit] 🔍 Path analyzed:', {
+        path: selectedElement.json_path,
+        type: analysis.type,
+        defaultProperty: analysis.defaultProperty
+      });
+    }
+  }, [selectedElement]);
 
   // Если нет выбранного элемента - не показываем
   if (!selectedElement) {
@@ -36,34 +54,28 @@ export const ManualColorEditor: React.FC = () => {
   };
 
   const applyColor = () => {
-    if (!selectedElement?.json_path) {
-      console.warn('[ManualEdit] ⚠️ No json_path for element:', selectedElement?.name);
+    if (!selectedElement?.json_path || !pathAnalysis) {
+      console.warn('[ManualEdit] ⚠️ No json_path or analysis:', selectedElement?.name);
       return;
     }
     
-    // 🔧 Quick Fix: если путь указывает на объект (не свойство) — добавляем /backgroundColor
-    let pathToUpdate = selectedElement.json_path;
-    
-    const lastPart = pathToUpdate.split('/').pop()?.toLowerCase() || '';
-    const isPropertyPath = ['backgroundcolor', 'textcolor', 'color', 'bordercolor', 'iconcolor'].includes(lastPart);
-    
-    if (!isPropertyPath) {
-      // Путь указывает на объект (например /homeLayer/actionButtons/swapButton)
-      // → добавляем /backgroundColor
-      pathToUpdate = pathToUpdate + '/backgroundColor';
-      console.log('[ManualEdit] 🔧 Auto-appended /backgroundColor:', pathToUpdate);
-    }
+    // Build final path based on analysis type
+    const finalPath = pathAnalysis.type === 'property'
+      ? pathAnalysis.path
+      : PathAnalyzer.buildPropertyPath(pathAnalysis.path, selectedProperty);
     
     const userId = walletProfile?.wallet_address || 'anonymous';
     
     console.log('[ManualEdit] 🎨 Applying color:', { 
+      mode: pathAnalysis.type,
       original: selectedElement.json_path,
-      path: pathToUpdate, 
-      value: tempColor, 
+      final: finalPath,
+      property: pathAnalysis.type === 'object' ? selectedProperty : pathAnalysis.defaultProperty,
+      value: tempColor,
       userId 
     });
     
-    useThemeStore.getState().updateThemeValue(pathToUpdate, tempColor, userId);
+    useThemeStore.getState().updateThemeValue(finalPath, tempColor, userId);
     setIsOpen(false);
   };
 
@@ -85,8 +97,30 @@ export const ManualColorEditor: React.FC = () => {
           <div className="text-xs text-white/60 font-mono">
             Element: {selectedElement.name} ({selectedElement.selector})
           </div>
+          {pathAnalysis && (
+            <div className="text-xs text-purple-400 font-mono">
+              Mode: {pathAnalysis.type === 'property' ? '🎯 Simple' : '🎛️ Advanced'}
+            </div>
+          )}
           {isOpen && (
             <>
+              {/* Advanced Mode: Property Selector */}
+              {pathAnalysis?.type === 'object' && (
+                <div className="space-y-2">
+                  <label className="text-xs text-white/80">Property to edit:</label>
+                  <select 
+                    value={selectedProperty}
+                    onChange={(e) => setSelectedProperty(e.target.value)}
+                    className="w-full bg-gray-800 text-white border border-purple-500/30 rounded px-2 py-1.5 text-sm"
+                  >
+                    {pathAnalysis.availableProperties.map(prop => (
+                      <option key={prop} value={prop}>{prop}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              {/* Color Picker */}
               <ColorPicker
                 value={tempColor}
                 onChange={handleColorChange}
@@ -97,6 +131,8 @@ export const ManualColorEditor: React.FC = () => {
                 hideColorGuide={true}
                 hideInputType={false}
               />
+              
+              {/* Apply Button */}
               <Button 
                 onClick={applyColor}
                 className="w-full mt-3"

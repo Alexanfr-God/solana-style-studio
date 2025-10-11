@@ -199,6 +199,7 @@ function applyStyleToPath(theme: any, jsonPath: string) {
     console.log('[Runtime] 🎯 Targeted update:', jsonPath);
     
     const mappings = jsonBridge.getAllMappings();
+    console.log('[Runtime] 🔍 Searching mapping for:', { path: jsonPath, totalMappings: mappings.length });
     
     // Ищем mapping: точное совпадение или prefix
     const mapping = mappings.find((m: any) =>
@@ -208,13 +209,14 @@ function applyStyleToPath(theme: any, jsonPath: string) {
     if (!mapping) {
       console.warn('[Runtime] ⚠️ mapping not found', { jsonPath });
       console.log('[Runtime] Available paths (sample):', 
-        mappings.slice(0, 3).map((m: any) => m.json_path));
+        mappings.slice(0, 5).map((m: any) => m.json_path));
       return;
     }
     
-    console.log('[Runtime] ✅ Found mapping:', {
+    console.log('[Runtime] 📍 Found mapping:', {
       mapPath: mapping.json_path,
-      selector: mapping.selector
+      selector: mapping.selector,
+      name: mapping.name
     });
     
     const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);
@@ -239,7 +241,7 @@ function applyStyleToPath(theme: any, jsonPath: string) {
       }
     });
     
-    console.log('[Runtime] ✅ Applied to selector:', mapping.selector);
+    console.log('[Runtime] ✅ Applied to nodes:', elements.length, 'selector:', mapping.selector);
   } catch (err) {
     console.error('[Runtime] Error in applyStyleToPath:', err);
   }
@@ -258,13 +260,15 @@ export function setupMappingWatcher(getTheme: () => any) {
     const currentTheme = getTheme();
     
     // 🛡️ Skip full apply if recent manual edit
-    if (Date.now() - lastManualEditAt < 500) {
-      console.log('[Runtime] 🛡️ Skip full apply (recent manual edit)');
+    const timeSinceEdit = Date.now() - lastManualEditAt;
+    if (timeSinceEdit < 500) {
+      console.log('[Runtime] ⏭️ Skipping full apply (recent manual edit, elapsed:', timeSinceEdit, 'ms)');
       return;
     }
     
     if (currentTheme && currentTheme !== lastTheme) {
       lastTheme = currentTheme;
+      console.log('[Runtime] 🔄 Theme changed, applying full theme');
       applyThemeToDOM(currentTheme);
     }
   };
@@ -280,22 +284,24 @@ export function setupMappingWatcher(getTheme: () => any) {
     if (updatedPath) {
       // 🎯 Точечное обновление
       lastManualEditAt = Date.now();
-      console.log('[Runtime] 🎯 Manual edit detected');
+      console.log('[Runtime] 🎨 Manual edit detected:', { updatedPath });
       applyStyleToPath(theme, updatedPath);
     } else {
       // 🔄 Полное обновление
-      console.log('[Runtime] 🔄 Full theme apply');
+      console.log('[Runtime] 🔄 Full theme apply triggered');
       applyThemeToDOM(theme);
     }
   };
   
   window.addEventListener('theme-updated', handleThemeUpdate as EventListener);
   
+  console.log('[Runtime] 👀 Mapping watcher initialized');
   checkAndApply();
   
   return () => {
     clearInterval(interval);
     window.removeEventListener('theme-updated', handleThemeUpdate as EventListener);
+    console.log('[Runtime] 🛑 Mapping watcher stopped');
   };
 }
 

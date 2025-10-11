@@ -122,7 +122,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
 
   updateThemeValue: async (jsonPath: string, value: any, userId: string = 'user-theme-manual-edit') => {
     const { theme } = get();
-    console.log('[ThemeStore] 🎨 Updating theme value:', { jsonPath, value });
+    
+    console.log('[ThemeStore] 📝 Update:', { path: jsonPath, value, userId });
     
     // Update local theme state
     // Убираем leading slashes и парсим путь
@@ -147,14 +148,14 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       current[lastPart] = value;
     }
     
-    console.log('[ThemeStore] ✅ Local theme updated');
+    console.log('[ThemeStore] ✅ Local theme updated, dispatching event');
     set({ theme: newTheme });
     
     // Dispatch event IMMEDIATELY (sync) for runtime mapping engine
     window.dispatchEvent(new CustomEvent('theme-updated', { 
       detail: { theme: newTheme, updatedPath: jsonPath } 
     }));
-    console.log('[ThemeStore] 📢 Event dispatched -> runtime will apply styles');
+    console.log('[ThemeStore] 📢 Event dispatched:', { updatedPath: jsonPath });
     
     // Save to DB async (don't block UI)
     const { jsonBridge } = await import('@/services/jsonBridgeService');
