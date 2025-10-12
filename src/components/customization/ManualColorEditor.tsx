@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Palette, AlertTriangle } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -6,30 +6,19 @@ import { Button } from '@/components/ui/button';
 import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { useThemeStore } from '@/state/themeStore';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
-import { PathAnalyzer, PathAnalysis } from '@/services/pathAnalyzer';
+
+// Helper to get value from theme by path
+const getByPath = (obj: any, path: string): any => {
+  if (!path) return obj;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return cleanPath.split('/').filter(Boolean).reduce((acc, k) => acc?.[k], obj);
+};
 
 export const ManualColorEditor: React.FC = () => {
   const { selectedElement } = useSmartEdit();
   const { walletProfile } = useExtendedWallet();
   const [tempColor, setTempColor] = useState('#3b82f6');
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<string>('backgroundColor');
-  const [pathAnalysis, setPathAnalysis] = useState<PathAnalysis | null>(null);
-
-  // Analyze path when element changes
-  useEffect(() => {
-    if (selectedElement?.json_path) {
-      const analysis = PathAnalyzer.analyze(selectedElement.json_path);
-      setPathAnalysis(analysis);
-      setSelectedProperty(analysis.defaultProperty);
-      
-      console.log('[ManualEdit] 🔍 Path analyzed:', {
-        path: selectedElement.json_path,
-        type: analysis.type,
-        defaultProperty: analysis.defaultProperty
-      });
-    }
-  }, [selectedElement]);
 
   // Если нет выбранного элемента - не показываем
   if (!selectedElement) {
@@ -45,6 +34,12 @@ export const ManualColorEditor: React.FC = () => {
     );
   }
 
+  // Get current value from theme
+  const currentValue = useMemo(() => {
+    const theme = useThemeStore.getState().theme;
+    return getByPath(theme, selectedElement?.json_path || '');
+  }, [selectedElement]);
+
   const handleColorChange = (newColor: string) => {
     setTempColor(newColor);
     console.log('[ManualEdit] 🎨 Color changed:', { 
@@ -54,28 +49,28 @@ export const ManualColorEditor: React.FC = () => {
   };
 
   const applyColor = () => {
-    if (!selectedElement?.json_path || !pathAnalysis) {
-      console.warn('[ManualEdit] ⚠️ No json_path or analysis:', selectedElement?.name);
+    if (!selectedElement?.json_path) {
+      console.warn('[ManualEdit] ⚠️ No json_path');
       return;
     }
-    
-    // Build final path based on analysis type
-    const finalPath = pathAnalysis.type === 'property'
-      ? pathAnalysis.path
-      : PathAnalyzer.buildPropertyPath(pathAnalysis.path, selectedProperty);
     
     const userId = walletProfile?.wallet_address || 'anonymous';
     
     console.log('[ManualEdit] 🎨 Applying color:', { 
-      mode: pathAnalysis.type,
-      original: selectedElement.json_path,
-      final: finalPath,
-      property: pathAnalysis.type === 'object' ? selectedProperty : pathAnalysis.defaultProperty,
+      path: selectedElement.json_path,
       value: tempColor,
+      mode: 'full',
       userId 
     });
     
-    useThemeStore.getState().updateThemeValue(finalPath, tempColor, userId);
+    // ✅ Используем ТОЛЬКО json_path как есть, БЕЗ конкатенаций
+    useThemeStore.getState().updateThemeValue(
+      selectedElement.json_path, 
+      tempColor, 
+      userId,
+      { mode: 'full' }  // ✅ Новый параметр
+    );
+    
     setIsOpen(false);
   };
 
@@ -97,29 +92,11 @@ export const ManualColorEditor: React.FC = () => {
           <div className="text-xs text-white/60 font-mono">
             Element: {selectedElement.name} ({selectedElement.selector})
           </div>
-          {pathAnalysis && (
-            <div className="text-xs text-purple-400 font-mono">
-              Mode: {pathAnalysis.type === 'property' ? '🎯 Simple' : '🎛️ Advanced'}
-            </div>
-          )}
+          <div className="text-xs text-purple-400">
+            Current: {currentValue || 'not set'}
+          </div>
           {isOpen && (
             <>
-              {/* Advanced Mode: Property Selector */}
-              {pathAnalysis?.type === 'object' && (
-                <div className="space-y-2">
-                  <label className="text-xs text-white/80">Property to edit:</label>
-                  <select 
-                    value={selectedProperty}
-                    onChange={(e) => setSelectedProperty(e.target.value)}
-                    className="w-full bg-gray-800 text-white border border-purple-500/30 rounded px-2 py-1.5 text-sm"
-                  >
-                    {pathAnalysis.availableProperties.map(prop => (
-                      <option key={prop} value={prop}>{prop}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              
               {/* Color Picker */}
               <ColorPicker
                 value={tempColor}

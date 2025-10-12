@@ -38,7 +38,7 @@ interface ThemeState {
   // Actions
   setTheme: (theme: any) => void;
   setActiveThemeId: (themeId: string | null) => void;
-  updateThemeValue: (jsonPath: string, value: any, userId?: string) => Promise<void>;
+  updateThemeValue: (jsonPath: string, value: any, userId?: string, options?: { mode?: 'full' | 'targeted' }) => Promise<void>;
   applyPatch: (patch: ThemePatch) => void;
   applyPreviewPatch: (patch: Operation[]) => void;
   commitPreview: () => void;
@@ -120,44 +120,50 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }));
   },
 
-  updateThemeValue: async (jsonPath: string, value: any, userId: string = 'user-theme-manual-edit') => {
+  updateThemeValue: async (
+    jsonPath: string, 
+    value: any, 
+    userId: string = 'user-theme-manual-edit',
+    options?: { mode?: 'full' | 'targeted' }
+  ) => {
     const { theme } = get();
     
-    console.log('[ThemeStore] 📝 Update:', { path: jsonPath, value, userId });
+    const mode = options?.mode || 'targeted';
+    console.log('[ThemeStore] 📝 Update:', { path: jsonPath, value, userId, mode });
     
-    // Update local theme state
-    // Убираем leading slashes и парсим путь
+    // 1) Update local theme
     const pathParts = jsonPath.replace(/^\/+/, '').split('/');
-    const newTheme = JSON.parse(JSON.stringify(theme)); // deep clone
+    const newTheme = JSON.parse(JSON.stringify(theme));
     let current = newTheme;
     
-    // Проходим по всем частям пути кроме последней
     for (let i = 0; i < pathParts.length - 1; i++) {
       const part = pathParts[i];
-      if (!part) continue; // Пропускаем пустые части
-      
-      if (!current[part]) {
-        current[part] = {};
-      }
+      if (!part) continue;
+      if (!current[part]) current[part] = {};
       current = current[part];
     }
     
-    // Устанавливаем значение по последней части
     const lastPart = pathParts[pathParts.length - 1];
-    if (lastPart) {
-      current[lastPart] = value;
-    }
+    if (lastPart) current[lastPart] = value;
     
-    console.log('[ThemeStore] ✅ Local theme updated, dispatching event');
     set({ theme: newTheme });
     
-    // Dispatch event IMMEDIATELY (sync) for runtime mapping engine
-    window.dispatchEvent(new CustomEvent('theme-updated', { 
-      detail: { theme: newTheme, updatedPath: jsonPath } 
-    }));
-    console.log('[ThemeStore] 📢 Event dispatched:', { updatedPath: jsonPath });
+    // 2) Dispatch event
+    if (mode === 'full') {
+      // ✅ БЕЗ updatedPath → runtime вызовет applyThemeToDOM (полный apply)
+      window.dispatchEvent(new CustomEvent('theme-updated', { 
+        detail: { theme: newTheme, forceFullApply: true }
+      }));
+      console.log('[ThemeStore] 📢 Event: FULL apply');
+    } else {
+      // 🎯 С updatedPath → runtime вызовет applyStyleToPath (targeted)
+      window.dispatchEvent(new CustomEvent('theme-updated', { 
+        detail: { theme: newTheme, updatedPath: jsonPath }
+      }));
+      console.log('[ThemeStore] 📢 Event: TARGETED apply');
+    }
     
-    // Save to DB async (don't block UI)
+    // 3) Save to DB async
     const { jsonBridge } = await import('@/services/jsonBridgeService');
     jsonBridge.updateThemeValue(jsonPath, value, userId).catch(err => {
       console.error('[ThemeStore] ❌ DB save failed:', err);

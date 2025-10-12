@@ -128,6 +128,26 @@ export function applyValueToNodeUnified(
     return;
   }
 
+  // ✅ ДОБАВЛЕНО: containerColor → backgroundColor
+  if (key === 'containercolor') {
+    if (isGradient) {
+      el.style.background = String(value);
+      el.style.removeProperty('background-color');
+    } else {
+      el.style.backgroundColor = String(value);
+      el.style.removeProperty('background');
+    }
+    console.log('[Runtime] ✅ Applied containerColor');
+    return;
+  }
+
+  // ✅ ДОБАВЛЕНО: labelColor → color
+  if (key === 'labelcolor') {
+    el.style.color = String(value);
+    console.log('[Runtime] ✅ Applied labelColor');
+    return;
+  }
+
   // Unmapped key
   console.log('[Runtime] ⚠️ unmapped key', { key, jsonPath, value });
 }
@@ -276,19 +296,26 @@ export function setupMappingWatcher(getTheme: () => any) {
   const interval = setInterval(checkAndApply, 500);
   
   const handleThemeUpdate = (event: CustomEvent) => {
-    const { theme, updatedPath } = event.detail;
+    const { theme, updatedPath, forceFullApply } = event.detail;
     
     if (!theme) return;
     lastTheme = theme;
     
+    // ✅ НОВАЯ ЛОГИКА: forceFullApply = true → полный apply БЕЗ блокировки
+    if (forceFullApply) {
+      console.log('[Runtime] 🔄 FORCED full apply (Manual mode)');
+      applyThemeToDOM(theme);
+      return;
+    }
+    
     if (updatedPath) {
-      // 🎯 Точечное обновление
+      // 🎯 Точечное обновление (старое поведение)
       lastManualEditAt = Date.now();
-      console.log('[Runtime] 🎨 Manual edit detected:', { updatedPath });
+      console.log('[Runtime] 🎨 Targeted update:', { updatedPath });
       applyStyleToPath(theme, updatedPath);
     } else {
-      // 🔄 Полное обновление
-      console.log('[Runtime] 🔄 Full theme apply triggered');
+      // 🔄 Полное обновление (GitHub или другие источники)
+      console.log('[Runtime] 🔄 Full theme apply');
       applyThemeToDOM(theme);
     }
   };
