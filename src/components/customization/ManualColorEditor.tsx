@@ -15,12 +15,20 @@ const getByPath = (obj: any, path: string): any => {
 };
 
 export const ManualColorEditor: React.FC = () => {
+  // ✅ ВСЕ ХУКИ СНАЧАЛА - до любых return
   const { selectedElement } = useSmartEdit();
   const { walletProfile } = useExtendedWallet();
   const [tempColor, setTempColor] = useState('#3b82f6');
   const [isOpen, setIsOpen] = useState(false);
 
-  // Если нет выбранного элемента - не показываем
+  // Get current value from theme - useMemo тоже должен быть до return
+  const currentValue = useMemo(() => {
+    if (!selectedElement?.json_path) return null;
+    const theme = useThemeStore.getState().theme;
+    return getByPath(theme, selectedElement.json_path);
+  }, [selectedElement?.json_path]);
+
+  // ✅ Ранние return ТОЛЬКО ПОСЛЕ всех хуков
   if (!selectedElement) {
     return null;
   }
@@ -33,12 +41,6 @@ export const ManualColorEditor: React.FC = () => {
       </div>
     );
   }
-
-  // Get current value from theme
-  const currentValue = useMemo(() => {
-    const theme = useThemeStore.getState().theme;
-    return getByPath(theme, selectedElement?.json_path || '');
-  }, [selectedElement]);
 
   const handleColorChange = (newColor: string) => {
     setTempColor(newColor);

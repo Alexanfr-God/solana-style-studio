@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useSmartEditContext } from '@/hooks/useSmartEditContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 type SmartEditContextType = ReturnType<typeof useSmartEditContext>;
 
@@ -13,9 +14,11 @@ export const SmartEditContextProvider: React.FC<SmartEditContextProviderProps> =
   const smartEditState = useSmartEditContext();
   
   return (
-    <SmartEditContext.Provider value={smartEditState}>
-      {children}
-    </SmartEditContext.Provider>
+    <ErrorBoundary>
+      <SmartEditContext.Provider value={smartEditState}>
+        {children}
+      </SmartEditContext.Provider>
+    </ErrorBoundary>
   );
 };
 
