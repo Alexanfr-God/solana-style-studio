@@ -644,6 +644,7 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
               setIsEditMode(false);
             }}
             className="h-7 px-2 text-xs"
+            data-ignore-dropdown-close="true"
           >
             <Palette className="h-3 w-3 mr-1" />
             General Theme
@@ -656,6 +657,7 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
               setIsEditMode(true);
             }}
             className="h-7 px-2 text-xs"
+            data-ignore-dropdown-close="true"
           >
             <Wand2 className="h-3 w-3 mr-1" />
             Element Edit

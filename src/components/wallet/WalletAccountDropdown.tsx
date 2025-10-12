@@ -23,7 +23,16 @@ const WalletAccountDropdown = ({ context = 'account-selector', onClose }: Wallet
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+      
+      // ✅ НЕ закрывать dropdown, если клик на кнопках режима редактирования
+      const shouldIgnoreClick = target.closest('[data-ignore-dropdown-close="true"]');
+      if (shouldIgnoreClick) {
+        console.log('[Dropdown] 🔓 Click on mode button, keeping dropdown open');
+        return;
+      }
+      
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         if (onClose) {
           onClose();
         } else {
