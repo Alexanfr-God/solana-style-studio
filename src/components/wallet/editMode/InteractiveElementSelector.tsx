@@ -67,6 +67,16 @@ export const InteractiveElementSelector: React.FC<InteractiveElementSelectorProp
       const elementAtPoint = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
       if (!elementAtPoint || !container.contains(elementAtPoint)) return;
 
+      // ✅ Проверяем, что клик НЕ внутри dropdown меню
+      const isInsideDropdown = elementAtPoint.closest('[data-element-id^="account-dropdown"]') ||
+                               elementAtPoint.closest('[data-element-id^="wallet-list"]');
+      
+      if (isInsideDropdown) {
+        // 🔓 Пропускаем клик - пусть dropdown обработает его сам
+        console.log('[ElementSelector] ⏭️ Click inside dropdown, skipping');
+        return; // НЕ вызываем preventDefault/stopPropagation
+      }
+
       // Используем ТОЛЬКО jsonBridge
       const mapping = jsonBridge.findMappingByDomElement(elementAtPoint);
       
