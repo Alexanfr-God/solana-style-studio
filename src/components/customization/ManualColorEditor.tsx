@@ -92,9 +92,13 @@ export const ManualColorEditor: React.FC = () => {
           <div className="text-xs text-white/60 font-mono">
             Element: {selectedElement.name} ({selectedElement.selector})
           </div>
-          <div className="text-xs text-purple-400">
-            Current: {currentValue || 'not set'}
-          </div>
+      <div className="text-xs text-purple-400">
+        Current: {
+          typeof currentValue === 'object' && currentValue !== null
+            ? `<object: ${Object.keys(currentValue).join(', ')}>`
+            : (currentValue || 'not set')
+        }
+      </div>
           {isOpen && (
             <>
               {/* Color Picker */}
