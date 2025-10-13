@@ -20,6 +20,7 @@ export const ManualColorEditor: React.FC = () => {
   const { walletProfile } = useExtendedWallet();
   const [tempColor, setTempColor] = useState('#3b82f6');
   const [isOpen, setIsOpen] = useState(false);
+  const [bgMode, setBgMode] = useState<'auto' | 'image' | 'color-override'>('auto');
 
   // Get current value from theme - useMemo тоже должен быть до return
   const currentValue = useMemo(() => {
@@ -62,6 +63,7 @@ export const ManualColorEditor: React.FC = () => {
       path: selectedElement.json_path,
       value: tempColor,
       mode: 'full',
+      bgMode,
       userId 
     });
     
@@ -70,11 +72,15 @@ export const ManualColorEditor: React.FC = () => {
       selectedElement.json_path, 
       tempColor, 
       userId,
-      { mode: 'full' }  // ✅ Новый параметр
+      { mode: 'full', bgMode }  // ✅ Передаем bgMode
     );
     
     setIsOpen(false);
   };
+
+  // Определяем, показывать ли bgMode переключатель
+  const isBackgroundProperty = selectedElement?.json_path?.endsWith('/backgroundColor') || 
+                                selectedElement?.json_path?.endsWith('/backgroundImage');
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -103,6 +109,22 @@ export const ManualColorEditor: React.FC = () => {
       </div>
           {isOpen && (
             <>
+              {/* Background Mode Selector (для фона) */}
+              {isBackgroundProperty && (
+                <div className="mb-3">
+                  <label className="text-xs text-white/70 mb-1 block">Background Mode:</label>
+                  <select 
+                    value={bgMode} 
+                    onChange={(e) => setBgMode(e.target.value as any)}
+                    className="w-full bg-gray-800 text-white border border-purple-500/30 rounded px-2 py-1 text-xs"
+                  >
+                    <option value="auto">Auto (Image &gt; Color)</option>
+                    <option value="image">Image Only</option>
+                    <option value="color-override">Color (Clear Image)</option>
+                  </select>
+                </div>
+              )}
+
               {/* Color Picker */}
               <ColorPicker
                 value={tempColor}

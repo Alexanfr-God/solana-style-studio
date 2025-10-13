@@ -73,15 +73,31 @@ export function applyValueToNodeUnified(
   el: HTMLElement,
   jsonPath: string,
   value: any,
-  theme: any
+  theme: any,
+  bgMode: string = 'auto'
 ) {
   const key = getKeyFromPath(jsonPath);
   const isGradient = typeof value === 'string' && value.includes('gradient(');
 
-  // 🛡️ ЗАЩИТА ФОНА: не затирать backgroundImage
-  if (key === 'backgroundcolor' && hasBackgroundImageAtSameNode(theme, jsonPath)) {
-    console.log('[Runtime] 🛡️ skip bgColor (backgroundImage present)', { jsonPath });
-    return;
+  // 🛡️ ЗАЩИТА ФОНА: политика bgMode
+  if (key === 'backgroundcolor') {
+    const hasImage = hasBackgroundImageAtSameNode(theme, jsonPath);
+    
+    if (bgMode === 'auto' && hasImage) {
+      console.log('[Runtime] 🛡️ bgMode=auto: skip bgColor (image present)', { jsonPath });
+      return;
+    }
+    
+    if (bgMode === 'color-override' && hasImage) {
+      // Очистить backgroundImage в теме
+      const imagePath = jsonPath.replace('/backgroundColor', '/backgroundImage');
+      const parentPathStr = imagePath.split('/').slice(0, -1).join('/');
+      const node = getByPath(theme, parentPathStr);
+      if (node) {
+        node.backgroundImage = '';
+        console.log('[Runtime] 🗑️ bgMode=color-override: cleared backgroundImage', { imagePath });
+      }
+    }
   }
 
   if (key === 'background') {
@@ -95,11 +111,19 @@ export function applyValueToNodeUnified(
     if (isGradient) {
       el.style.background = String(value);
       el.style.removeProperty('background-color');
-      console.log('[Runtime] ✅ Applied gradient');
+      console.log('[Runtime] ✅ Applied gradient', { bgMode });
     } else {
       el.style.backgroundColor = String(value);
       el.style.removeProperty('background');
-      console.log('[Runtime] ✅ Applied backgroundColor');
+      console.log('[Runtime] ✅ Applied backgroundColor', { bgMode });
+    }
+    return;
+  }
+
+  if (key === 'backgroundimage') {
+    if (bgMode === 'image' || bgMode === 'auto') {
+      el.style.backgroundImage = value ? `url(${value})` : '';
+      console.log('[Runtime] ✅ Applied backgroundImage', { bgMode });
     }
     return;
   }
@@ -185,7 +209,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         
         domElements.forEach((el) => {
           if (el instanceof HTMLElement) {
-            applyValueToNodeUnified(el, mapping.json_path, value, theme);
+            applyValueToNodeUnified(el, mapping.json_path, value, theme, 'auto');
           }
         });
         
@@ -214,7 +238,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
 // Apply to specific path (точечное обновление)
 // ============================================================================
 
-function applyStyleToPath(theme: any, jsonPath: string) {
+function applyStyleToPath(theme: any, jsonPath: string, bgMode: string = 'auto') {
   try {
     console.log('[Runtime] 🎯 Targeted update:', jsonPath);
     
@@ -257,7 +281,7 @@ function applyStyleToPath(theme: any, jsonPath: string) {
     
     elements.forEach((el) => {
       if (el instanceof HTMLElement) {
-        applyValueToNodeUnified(el, jsonPath, value, theme);
+        applyValueToNodeUnified(el, jsonPath, value, theme, bgMode);
       }
     });
     
@@ -296,14 +320,20 @@ export function setupMappingWatcher(getTheme: () => any) {
   const interval = setInterval(checkAndApply, 500);
   
   const handleThemeUpdate = (event: CustomEvent) => {
-    const { theme, updatedPath, forceFullApply } = event.detail;
+    const { theme, updatedPath, forceFullApply, bgMode } = event.detail;
     
     if (!theme) return;
     lastTheme = theme;
     
+    console.log('[ThemeStore] Update event received:', {
+      path: updatedPath,
+      forceFullApply,
+      bgMode
+    });
+    
     // ✅ НОВАЯ ЛОГИКА: forceFullApply = true → полный apply БЕЗ блокировки
     if (forceFullApply) {
-      console.log('[Runtime] 🔄 FORCED full apply (Manual mode)');
+      console.log('[Runtime] 🔄 FORCED full apply (Manual mode), bgMode:', bgMode || 'auto');
       applyThemeToDOM(theme);
       return;
     }
@@ -311,8 +341,8 @@ export function setupMappingWatcher(getTheme: () => any) {
     if (updatedPath) {
       // 🎯 Точечное обновление (старое поведение)
       lastManualEditAt = Date.now();
-      console.log('[Runtime] 🎨 Targeted update:', { updatedPath });
-      applyStyleToPath(theme, updatedPath);
+      console.log('[Runtime] 🎨 Targeted update:', { updatedPath, bgMode });
+      applyStyleToPath(theme, updatedPath, bgMode || 'auto');
     } else {
       // 🔄 Полное обновление (GitHub или другие источники)
       console.log('[Runtime] 🔄 Full theme apply');
