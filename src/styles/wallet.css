@@ -84,3 +84,8 @@
   height: 20px;
   flex-shrink: 0;
 }
+
+/* Lock Layer Placeholder Color */
+[data-element-id="lock-password-input-text"]::placeholder {
+  color: var(--placeholder-color, #9ca3af);
+}

@@ -403,7 +403,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             }}
           >
             {currentLayer === 'lockLayer' ? (
-              renderLoginScreen()
+              <LockLayer />
             ) : (
               <WalletContainer />
             )}

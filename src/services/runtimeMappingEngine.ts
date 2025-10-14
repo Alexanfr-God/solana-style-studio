@@ -123,7 +123,17 @@ export function applyValueToNodeUnified(
   if (key === 'backgroundimage') {
     if (bgMode === 'image' || bgMode === 'auto') {
       el.style.backgroundImage = value ? `url(${value})` : '';
-      console.log('[Runtime] ✅ Applied backgroundImage', { bgMode });
+      
+      // ✅ Always set backgroundSize and backgroundPosition when image is set
+      if (value) {
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        console.log('[Runtime] ✅ Applied backgroundImage + size/position', { bgMode });
+      } else {
+        el.style.removeProperty('background-size');
+        el.style.removeProperty('background-position');
+        console.log('[Runtime] 🗑️ Cleared backgroundImage + size/position', { bgMode });
+      }
     }
     return;
   }
