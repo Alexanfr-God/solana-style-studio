@@ -49,8 +49,7 @@ export const LockLayer: React.FC = () => {
     outline: 'none',
     color: lockLayer.passwordInput?.textColor || '#ffffff',
     flex: 1,
-    fontSize: '1rem',
-    ['--placeholder-color' as any]: lockLayer.passwordInput?.placeholderColor || '#9ca3af'
+    fontSize: '1rem'
   };
 
   const eyeIconStyle = {

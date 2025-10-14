@@ -132,25 +132,9 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     const bgMode = options?.bgMode || 'auto';
     console.log('[ThemeStore] 📝 Update:', { path: jsonPath, value, userId, mode, bgMode });
     
-    // ✅ RULE: Image OR Color for Lock Layer background
-    let newTheme = JSON.parse(JSON.stringify(theme));
-    
-    if (jsonPath === '/lockLayer/backgroundColor') {
-      // Clear backgroundImage when setting backgroundColor
-      if (newTheme.lockLayer) {
-        newTheme.lockLayer.backgroundImage = '';
-        console.log('[ThemeStore] 🗑️ Cleared backgroundImage (setting backgroundColor)');
-      }
-    } else if (jsonPath === '/lockLayer/backgroundImage') {
-      // Clear backgroundColor when setting backgroundImage
-      if (newTheme.lockLayer) {
-        newTheme.lockLayer.backgroundColor = '';
-        console.log('[ThemeStore] 🗑️ Cleared backgroundColor (setting backgroundImage)');
-      }
-    }
-    
     // 1) Update local theme
     const pathParts = jsonPath.replace(/^\/+/, '').split('/');
+    const newTheme = JSON.parse(JSON.stringify(theme));
     let current = newTheme;
     
     for (let i = 0; i < pathParts.length - 1; i++) {
