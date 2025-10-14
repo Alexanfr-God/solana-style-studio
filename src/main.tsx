@@ -2,6 +2,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
+// Register ThemeProbe listener EARLY (before React renders)
+import { registerThemeProbeListener } from './agents/mcp/ThemeProbeListener';
+registerThemeProbeListener();
+
 // Диагностика React дубликатов в dev режиме
 if (import.meta.env.DEV) { 
   import("./utils/reactDiag").then(m => m.logReactIdentity("main")); 

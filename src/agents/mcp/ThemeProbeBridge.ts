@@ -3,116 +3,121 @@
  * Allows AdminPanel to trigger ThemeProbe scanning in Preview page where wallet DOM exists
  */
 
+type Scope = 'home' | 'lock' | 'all';
+const VERSION = 'theme-probe/v1';
+const PREVIEW_IFRAME_SEL = 'iframe[data-preview], iframe#preview, #preview-iframe';
+
+let popupRef: Window | null = null;
+
 export interface ThemeProbeCommand {
-  type: 'THEME_PROBE_RUN';
+  type: 'THEME_PROBE_RUN' | 'THEME_PROBE_PING';
   id: string;
-  screen: 'lock' | 'home';
+  version: string;
+  screen?: Scope;
 }
 
 export interface ThemeProbeResponse {
-  type: 'THEME_PROBE_RESULT' | 'THEME_PROBE_ERROR';
+  type: 'THEME_PROBE_RESULT' | 'THEME_PROBE_READY';
   id: string;
-  screen: 'lock' | 'home';
+  version: string;
+  screen?: Scope;
   result?: any;
   error?: string;
+  origin?: string;
+  summary?: any;
 }
 
-const PREVIEW_URL = window.location.origin + '/';
+function waitForMessage<T>(predicate: (e: MessageEvent) => boolean, timeoutMs: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      window.removeEventListener('message', onMsg as any);
+      reject(new Error('ThemeProbe timeout - preview did not respond'));
+    }, timeoutMs);
+    
+    function onMsg(e: MessageEvent) {
+      try {
+        if (predicate(e)) {
+          clearTimeout(timer);
+          window.removeEventListener('message', onMsg as any);
+          resolve(e.data as T);
+        }
+      } catch (err) {
+        console.warn('[Bridge] Message handler error:', err);
+      }
+    }
+    
+    window.addEventListener('message', onMsg as any);
+  });
+}
+
+async function ensurePreviewReady(urlIfPopup: string, timeoutMs = 15000): Promise<{ target: Window; origin: string }> {
+  console.log('[Bridge] Ensuring preview is ready...');
+  
+  // 1) Try to find iframe
+  const iframe = document.querySelector(PREVIEW_IFRAME_SEL) as HTMLIFrameElement | null;
+  if (iframe?.contentWindow) {
+    console.log('[Bridge] Found preview iframe, sending PING');
+    const id = crypto.randomUUID();
+    iframe.contentWindow.postMessage({ type: 'THEME_PROBE_PING', id, version: VERSION }, '*');
+    
+    const ready: any = await waitForMessage(
+      e => e.data?.type === 'THEME_PROBE_READY' && e.data?.id === id && e.data?.version === VERSION,
+      timeoutMs
+    );
+    
+    console.log('[Bridge] Iframe preview is READY');
+    return { target: iframe.contentWindow, origin: ready.origin || '*' };
+  }
+
+  // 2) Fallback: open popup
+  console.log('[Bridge] No iframe found, opening popup');
+  if (!popupRef || popupRef.closed) {
+    popupRef = window.open(urlIfPopup, 'wallet-preview', 'width=1200,height=800,menubar=no,toolbar=no,location=no');
+    if (!popupRef) throw new Error('Failed to open preview window. Please allow popups for this site.');
+  }
+
+  console.log('[Bridge] Waiting for popup READY signal...');
+  const ready: any = await waitForMessage(
+    e => e.data?.type === 'THEME_PROBE_READY' && e.source === popupRef && e.data?.version === VERSION,
+    timeoutMs
+  );
+
+  console.log('[Bridge] Popup preview is READY');
+  return { target: popupRef, origin: ready.origin || '*' };
+}
 
 /**
  * Run ThemeProbe in Preview page via PostMessage
  * Opens preview in popup if needed, sends command, waits for result
  */
 export async function runThemeProbeInPreview(
-  screen: 'lock' | 'home',
-  timeoutMs = 30000
+  screen: Scope,
+  urlIfPopup = '/?enableThemeProbe=1&debugProbe=1',
+  timeoutMs = 60000
 ): Promise<any> {
   console.log(`[Bridge] Starting ThemeProbe for screen="${screen}"`);
 
-  // Check if we're already on the preview page
-  const isOnPreviewPage = document.querySelector('[data-wallet-container]');
-  if (isOnPreviewPage) {
-    console.log('[Bridge] Already on preview page, running locally');
-    // Check if ThemeProbe is available
-    if ((window as any).ThemeProbe) {
-      return await (window as any).ThemeProbe.run(screen);
-    } else {
-      throw new Error('ThemeProbe not available on preview page');
-    }
-  }
-
-  // Open preview page in popup
-  const popup = window.open(
-    PREVIEW_URL,
-    'theme-probe-preview',
-    'width=1200,height=800,menubar=no,toolbar=no,location=no'
-  );
-
-  if (!popup) {
-    throw new Error('Failed to open preview popup. Please allow popups for this site.');
-  }
-
+  const { target, origin } = await ensurePreviewReady(urlIfPopup, 15000);
   const id = crypto.randomUUID();
 
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      cleanup();
-      popup.close();
-      reject(new Error('ThemeProbe timeout - preview did not respond'));
-    }, timeoutMs);
+  console.log(`[Bridge] Sending THEME_PROBE_RUN command to preview`);
+  target.postMessage({ 
+    type: 'THEME_PROBE_RUN', 
+    id, 
+    version: VERSION, 
+    screen 
+  }, origin);
 
-    function onMessage(e: MessageEvent<ThemeProbeResponse>) {
-      const data = e.data;
-      if (!data || (data.type !== 'THEME_PROBE_RESULT' && data.type !== 'THEME_PROBE_ERROR')) return;
-      if (data.id !== id) return;
+  const res: any = await waitForMessage(
+    e => e.data?.type === 'THEME_PROBE_RESULT' && e.data?.id === id && e.data?.version === VERSION,
+    timeoutMs
+  );
 
-      console.log(`[Bridge] Received response:`, data);
+  if (res.error) {
+    console.error('[Bridge] ThemeProbe error:', res.error);
+    throw new Error(res.error);
+  }
 
-      cleanup();
-
-      if (data.type === 'THEME_PROBE_ERROR') {
-        popup.close();
-        reject(new Error(data.error || 'Unknown error in preview'));
-      } else {
-        popup.close();
-        resolve(data.result);
-      }
-    }
-
-    function cleanup() {
-      clearTimeout(timer);
-      window.removeEventListener('message', onMessage as any);
-    }
-
-    window.addEventListener('message', onMessage as any);
-
-    // Wait for popup to load, then send command
-    const checkLoaded = setInterval(() => {
-      try {
-        if (popup.closed) {
-          cleanup();
-          clearInterval(checkLoaded);
-          reject(new Error('Preview popup was closed'));
-          return;
-        }
-
-        // Try to send message
-        popup.postMessage(
-          {
-            type: 'THEME_PROBE_RUN',
-            id,
-            screen
-          } as ThemeProbeCommand,
-          PREVIEW_URL
-        );
-
-        console.log(`[Bridge] Sent THEME_PROBE_RUN command to preview`);
-      } catch (err) {
-        console.warn('[Bridge] Failed to send message, retrying...', err);
-      }
-    }, 500);
-
-    // Stop checking after 5 seconds
-    setTimeout(() => clearInterval(checkLoaded), 5000);
-  });
+  console.log('[Bridge] ThemeProbe result OK', res.summary);
+  return res.result || res;
 }

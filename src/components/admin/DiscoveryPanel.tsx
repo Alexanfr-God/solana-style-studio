@@ -97,13 +97,20 @@ export const DiscoveryPanel: React.FC = () => {
       setIsLoading(true);
       setProbeProgress({ current: 0, total: 0, path: 'Opening Preview window for DOM scanning...' });
       setProbeResult(null);
+      toast.info('Opening preview window for DOM scanning...', {
+        description: 'Please keep the preview window open until scanning completes'
+      });
       console.log('[DiscoveryPanel] 🔬 Starting ThemeProbe auto-mapping');
 
       // Import bridge
       const { runThemeProbeInPreview } = await import('@/agents/mcp/ThemeProbeBridge');
       
       // Run ThemeProbe in Preview page via PostMessage
-      const result = await runThemeProbeInPreview(screen);
+      const result = await runThemeProbeInPreview(
+        screen,
+        '/?enableThemeProbe=1&debugProbe=1',
+        60000
+      );
 
       setProbeResult(result);
 

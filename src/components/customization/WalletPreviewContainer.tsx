@@ -13,7 +13,6 @@ import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
 import { ManualColorEditor } from './ManualColorEditor';
 import { AiDomScannerButton } from '@/components/admin/AiDomScannerButton';
-import { registerThemeProbeListener } from '@/agents/mcp/ThemeProbeListener';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -56,12 +55,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     hasLockLayer: !!theme?.lockLayer,
     lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : []
   });
-
-  // Register ThemeProbe listener for Admin panel communication
-  useEffect(() => {
-    console.log('[WalletPreview] Registering ThemeProbe listener');
-    registerThemeProbeListener();
-  }, []);
 
   // Apply runtime mappings when theme changes
   useEffect(() => {

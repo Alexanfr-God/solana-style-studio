@@ -5,7 +5,15 @@
 
 import { ThemeProbe } from './ThemeProbe';
 import { ZustandThemeAdapter } from './ZustandThemeAdapter';
-import type { ThemeProbeCommand, ThemeProbeResponse } from './ThemeProbeBridge';
+
+type Scope = 'home' | 'lock' | 'all';
+const VERSION = 'theme-probe/v1';
+
+declare global {
+  interface Window {
+    ThemeProbe?: { run: (scope: Scope) => Promise<any> };
+  }
+}
 
 let isRegistered = false;
 
@@ -14,6 +22,13 @@ let isRegistered = false;
  * Should be called once when Preview page loads
  */
 export function registerThemeProbeListener() {
+  // Check if enabled via URL param
+  const enabled = /[?&]enableThemeProbe=1/.test(location.search) || location.pathname === '/';
+  if (!enabled && location.pathname !== '/') {
+    console.log('[ThemeProbeListener] Not enabled (use ?enableThemeProbe=1)');
+    return;
+  }
+
   if (isRegistered) {
     console.warn('[ThemeProbeListener] Already registered');
     return;
@@ -27,62 +42,102 @@ export function registerThemeProbeListener() {
   const probe = new ThemeProbe(adapter);
 
   // Export to window for direct access
-  (window as any).ThemeProbe = {
-    run: async (screen: 'lock' | 'home') => {
-      console.log(`[ThemeProbeListener] Running probe for screen="${screen}"`);
-      const result = await probe.buildMapping({ screen });
-      console.log(`[ThemeProbeListener] Probe complete:`, {
+  window.ThemeProbe = {
+    run: async (scope: Scope) => {
+      console.log(`[ThemeProbe][preview] Running probe for scope="${scope}"`);
+      const prefixes = scope === 'all' ? ['home-', 'lock-'] : [`${scope}-`];
+      
+      const result = await probe.buildMapping({ 
+        screen: scope as 'lock' | 'home',
+        idPrefixes: prefixes
+      });
+      
+      console.log(`[ThemeProbe][preview] Probe complete:`, {
         items: result.items.length,
         coverage: result.coverage,
         totals: result.totals
       });
+      
       return result;
     }
   };
 
+  async function reply(target: WindowProxy, origin: string, payload: any) {
+    target.postMessage(payload, origin);
+  }
+
   // Listen for commands from AdminPanel
-  window.addEventListener('message', async (e: MessageEvent<ThemeProbeCommand>) => {
-    const data = e.data;
+  window.addEventListener('message', async (e: MessageEvent) => {
+    const d = e.data || {};
     
-    // Validate message
-    if (!data || data.type !== 'THEME_PROBE_RUN') return;
-    
-    console.log(`[ThemeProbeListener] Received command:`, data);
-
-    const response: ThemeProbeResponse = {
-      type: 'THEME_PROBE_RESULT',
-      id: data.id,
-      screen: data.screen
-    };
-
-    try {
-      // Run ThemeProbe
-      const result = await probe.buildMapping({ 
-        screen: data.screen,
-        idPrefixes: data.screen === 'home' 
-          ? ['home-', 'action-', 'header-']
-          : ['lock-', 'unlock-']
-      });
-
-      console.log(`[ThemeProbeListener] Probe successful:`, {
-        totalElements: result.items.length,
-        coverage: result.coverage,
-        totals: result.totals
-      });
-
-      response.result = result;
-    } catch (error) {
-      console.error(`[ThemeProbeListener] Probe failed:`, error);
-      response.type = 'THEME_PROBE_ERROR';
-      response.error = error instanceof Error ? error.message : String(error);
+    // PING → READY handshake
+    if (d.type === 'THEME_PROBE_PING' && d.version === VERSION) {
+      console.log('[ThemeProbe][preview] PING received from', e.origin);
+      const target = (window.opener && e.source === window.opener) 
+        ? window.opener 
+        : (window.parent || e.source);
+      
+      if (target) {
+        await reply(target, e.origin, { 
+          type: 'THEME_PROBE_READY', 
+          id: d.id, 
+          version: VERSION, 
+          origin: location.origin 
+        });
+        console.log('[ThemeProbe][preview] Sent READY response');
+      }
+      return;
     }
 
-    // Send response back to AdminPanel
-    if (e.source && 'postMessage' in e.source) {
-      (e.source as WindowProxy).postMessage(response, e.origin);
-      console.log(`[ThemeProbeListener] Sent response back to admin`);
+    // RUN → RESULT execution
+    if (d.type === 'THEME_PROBE_RUN' && d.version === VERSION) {
+      console.log('[ThemeProbe][preview] RUN command received, scope:', d.screen);
+      const target = (window.opener && e.source === window.opener) 
+        ? window.opener 
+        : (window.parent || e.source);
+
+      try {
+        if (!window.ThemeProbe?.run) {
+          throw new Error('ThemeProbe.run is not available in preview');
+        }
+
+        const result = await window.ThemeProbe.run(d.screen || 'home');
+        
+        if (target) {
+          await reply(target, e.origin, { 
+            type: 'THEME_PROBE_RESULT', 
+            id: d.id, 
+            version: VERSION, 
+            result, 
+            summary: result?.summary || { totalElements: result?.items?.length || 0 }
+          });
+          console.log('[ThemeProbe][preview] Sent RESULT response');
+        }
+      } catch (error) {
+        console.error('[ThemeProbe][preview] Probe failed:', error);
+        if (target) {
+          await reply(target, e.origin, { 
+            type: 'THEME_PROBE_RESULT', 
+            id: d.id, 
+            version: VERSION, 
+            error: error instanceof Error ? error.message : String(error) 
+          });
+        }
+      }
     }
   });
+
+  // Auto-READY for popup: tell opener/parent we're ready
+  const parentWin = window.opener || (window.parent !== window ? window.parent : null);
+  if (parentWin) {
+    console.log('[ThemeProbe][preview] Sending auto-READY to parent/opener');
+    parentWin.postMessage({ 
+      type: 'THEME_PROBE_READY', 
+      id: 'init', 
+      version: VERSION, 
+      origin: location.origin 
+    }, '*');
+  }
 
   console.log('[ThemeProbeListener] Listener registered successfully');
 }
