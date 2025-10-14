@@ -13,22 +13,27 @@ const WALLET_CONTAINER_CANDIDATES = [
   '.wallet-preview'
 ];
 
+/**
+ * Find wallet root container using fallback candidates
+ */
+export function findWalletRoot(): Element | null {
+  for (const candidate of WALLET_CONTAINER_CANDIDATES) {
+    const root = document.querySelector(candidate);
+    if (root) {
+      console.log(`[findWalletRoot] ✅ Found wallet container: ${candidate}`);
+      return root;
+    }
+  }
+  console.warn('[findWalletRoot] ❌ Wallet container not found. Tried:', WALLET_CONTAINER_CANDIDATES);
+  return null;
+}
+
 export class LocalDomInspector implements DomInspector {
   scan(screen: 'lock' | 'home'): DomInspectionResult[] {
     const results: DomInspectionResult[] = [];
     
-    // Find wallet container using candidate selectors
-    let walletRoot: Element | null = null;
-    for (const candidate of WALLET_CONTAINER_CANDIDATES) {
-      walletRoot = document.querySelector(candidate);
-      if (walletRoot) {
-        console.log(`[LocalDomInspector] ✅ Found wallet container: ${candidate}`);
-        break;
-      }
-    }
-    
+    const walletRoot = findWalletRoot();
     if (!walletRoot) {
-      console.warn('[LocalDomInspector] ❌ Wallet container not found. Tried:', WALLET_CONTAINER_CANDIDATES);
       return results;
     }
 

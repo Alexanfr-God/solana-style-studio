@@ -4,6 +4,7 @@
  */
 
 import { ThemeAdapter } from './ThemeAdapter';
+import { findWalletRoot } from './LocalDomInspector';
 
 export type ProbeOptions = {
   screen: 'home' | 'lock' | string;
@@ -57,49 +58,114 @@ export class ThemeProbe {
   }
 
   /**
+   * Deep DOM walker - traverses shadow roots and iframes
+   */
+  private *walkDeep(root: Node): Generator<Element> {
+    // Get document for createTreeWalker
+    const doc = root instanceof Document ? root : 
+                (root as ShadowRoot).ownerDocument || document;
+    
+    const walker = doc.createTreeWalker(
+      root, 
+      NodeFilter.SHOW_ELEMENT
+    );
+    
+    while (walker.nextNode()) {
+      const el = walker.currentNode as Element;
+      yield el;
+      
+      // Traverse shadow DOM
+      const sr = (el as HTMLElement).shadowRoot;
+      if (sr) {
+        yield* this.walkDeep(sr);
+      }
+      
+      // Traverse iframes
+      if (el.tagName === 'IFRAME') {
+        try {
+          const doc = (el as HTMLIFrameElement).contentDocument;
+          if (doc) {
+            yield* this.walkDeep(doc);
+          }
+        } catch (e) {
+          // Cross-origin iframe, skip
+        }
+      }
+    }
+  }
+
+  /**
+   * Query all elements deeply with specified prefixes
+   */
+  private queryAllDeep(root: Node, prefixes: string[]): Element[] {
+    const out: Element[] = [];
+    
+    for (const el of this.walkDeep(root)) {
+      const id = el.getAttribute?.('data-element-id');
+      if (!id) continue;
+      
+      if (prefixes.some(pref => id.startsWith(pref))) {
+        out.push(el);
+      }
+    }
+    
+    return out;
+  }
+
+  /**
+   * Soft visibility check - use getClientRects or SVGElement
+   */
+  private isElementVisible(el: Element): boolean {
+    // SVG elements are always considered visible
+    if (el instanceof SVGElement) return true;
+    
+    // Use getClientRects for soft check
+    const rects = el.getClientRects();
+    return rects.length > 0;
+  }
+
+  /**
    * List all visible element IDs with specified prefixes
    */
   listElementIds(prefixes: string[]): string[] {
-    const container = document.querySelector('[data-wallet-container]');
-    if (!container) {
+    const walletRoot = findWalletRoot();
+    
+    if (!walletRoot) {
       console.warn('[ThemeProbe] Wallet container not found');
       return [];
     }
 
-    const elements = container.querySelectorAll('[data-element-id]');
+    // Deep query with prefix filtering
+    const elements = this.queryAllDeep(walletRoot, prefixes);
+    
+    // Count by prefix for diagnostics
+    const byPrefix: Record<string, number> = {};
+    prefixes.forEach(p => byPrefix[p] = 0);
+    
     const ids: string[] = [];
 
     elements.forEach((el) => {
       const id = el.getAttribute('data-element-id');
       if (!id) return;
 
-      // Check prefix
-      const matchesPrefix = prefixes.some(prefix => id.startsWith(prefix));
-      if (!matchesPrefix) return;
-
-      // Check visibility
-      if (!(el instanceof HTMLElement || el instanceof SVGElement)) return;
-      
-      const isVisible = this.isElementVisible(el);
-      if (!isVisible) return;
+      // Check visibility (soft)
+      if (!this.isElementVisible(el)) return;
 
       ids.push(id);
+      
+      // Track prefix
+      for (const prefix of prefixes) {
+        if (id.startsWith(prefix)) {
+          byPrefix[prefix]++;
+          break;
+        }
+      }
     });
 
-    console.log(`[ThemeProbe] Found ${ids.length} visible elements`);
+    console.log(`[ThemeProbe] Found roots: 1, elements: total ${elements.length} (${Object.entries(byPrefix).map(([p, c]) => `${p}${c}`).join(', ')})`);
+    console.log(`[ThemeProbe] Visible elements: ${ids.length}`);
+    
     return ids;
-  }
-
-  private isElementVisible(el: Element): boolean {
-    if (el instanceof HTMLElement) {
-      if (el.offsetParent === null) return false;
-      const style = getComputedStyle(el);
-      if (style.display === 'none' || style.visibility === 'hidden') return false;
-    } else if (el instanceof SVGElement) {
-      const style = getComputedStyle(el);
-      if (style.display === 'none' || style.visibility === 'hidden') return false;
-    }
-    return true;
   }
 
   /**
