@@ -95,23 +95,26 @@ export const DiscoveryPanel: React.FC = () => {
   const handleAutoMap = async () => {
     try {
       setIsLoading(true);
-      setProbeProgress(null);
+      setProbeProgress({ current: 0, total: 0, path: 'Opening Preview window for DOM scanning...' });
       setProbeResult(null);
       console.log('[DiscoveryPanel] 🔬 Starting ThemeProbe auto-mapping');
 
-      const probe = new ThemeProbe(new ZustandThemeAdapter());
+      // Import bridge
+      const { runThemeProbeInPreview } = await import('@/agents/mcp/ThemeProbeBridge');
       
-      probe.onProgress((current, total, path) => {
-        setProbeProgress({ current, total, path });
-      });
+      // Run ThemeProbe in Preview page via PostMessage
+      const result = await runThemeProbeInPreview(screen);
 
-      const result = await probe.buildMapping({ screen });
       setProbeResult(result);
 
-      toast.success(`✅ Auto-mapping complete: ${result.totals.OK} OK (${(result.coverage * 100).toFixed(1)}% coverage)`);
-
-      // Export results
+      // Import and export results
+      const { ThemeProbe } = await import('@/agents/mcp/ThemeProbe');
+      const { ZustandThemeAdapter } = await import('@/agents/mcp/ZustandThemeAdapter');
+      const adapter = new ZustandThemeAdapter();
+      const probe = new ThemeProbe(adapter);
       await probe.exportResults(result, screen);
+
+      toast.success(`✅ Auto-mapping complete: ${result.totals.OK} OK (${(result.coverage * 100).toFixed(1)}% coverage)`);
       toast.info('📄 Results exported to downloads');
     } catch (error) {
       console.error('[DiscoveryPanel] ThemeProbe error:', error);

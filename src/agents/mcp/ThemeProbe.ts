@@ -59,6 +59,7 @@ export class ThemeProbe {
 
   /**
    * Deep DOM walker - traverses shadow roots and iframes
+   * Safely handles cross-origin iframes
    */
   private *walkDeep(root: Node): Generator<Element> {
     // Get document for createTreeWalker
@@ -80,7 +81,7 @@ export class ThemeProbe {
         yield* this.walkDeep(sr);
       }
       
-      // Traverse iframes
+      // Traverse iframes - with cross-origin safety
       if (el.tagName === 'IFRAME') {
         try {
           const doc = (el as HTMLIFrameElement).contentDocument;
@@ -88,10 +89,23 @@ export class ThemeProbe {
             yield* this.walkDeep(doc);
           }
         } catch (e) {
-          // Cross-origin iframe, skip
+          // Cross-origin iframe - skip silently
+          console.debug('[ThemeProbe] Skipping cross-origin iframe');
         }
       }
     }
+  }
+
+  /**
+   * Soft visibility check using getClientRects
+   * More reliable than offsetParent for SVG/shadow DOM
+   */
+  private isRenderable(el: Element): boolean {
+    // SVG elements are always considered visible
+    if (el instanceof SVGElement) return true;
+    
+    // Check if element has any rendered boxes
+    return el.getClientRects().length > 0;
   }
 
   /**
@@ -113,18 +127,6 @@ export class ThemeProbe {
   }
 
   /**
-   * Soft visibility check - use getClientRects or SVGElement
-   */
-  private isElementVisible(el: Element): boolean {
-    // SVG elements are always considered visible
-    if (el instanceof SVGElement) return true;
-    
-    // Use getClientRects for soft check
-    const rects = el.getClientRects();
-    return rects.length > 0;
-  }
-
-  /**
    * List all visible element IDs with specified prefixes
    */
   listElementIds(prefixes: string[]): string[] {
@@ -132,26 +134,31 @@ export class ThemeProbe {
     
     if (!walletRoot) {
       console.warn('[ThemeProbe] Wallet container not found');
+      console.warn('[ThemeProbe] Tried candidates:', [
+        '[data-wallet-container]',
+        '[data-testid="wallet-preview"]',
+        '.wallet-preview'
+      ]);
       return [];
     }
+
+    console.log('[ThemeProbe] Starting element scan from wallet root');
 
     // Deep query with prefix filtering
     const elements = this.queryAllDeep(walletRoot, prefixes);
     
+    // Filter to only visible/renderable elements
+    const visible = elements.filter(el => this.isRenderable(el));
+
+    console.log(`[ThemeProbe] Found ${elements.length} elements total, ${visible.length} visible`);
+
     // Count by prefix for diagnostics
     const byPrefix: Record<string, number> = {};
     prefixes.forEach(p => byPrefix[p] = 0);
     
-    const ids: string[] = [];
-
-    elements.forEach((el) => {
+    visible.forEach((el) => {
       const id = el.getAttribute('data-element-id');
       if (!id) return;
-
-      // Check visibility (soft)
-      if (!this.isElementVisible(el)) return;
-
-      ids.push(id);
       
       // Track prefix
       for (const prefix of prefixes) {
@@ -162,10 +169,10 @@ export class ThemeProbe {
       }
     });
 
-    console.log(`[ThemeProbe] Found roots: 1, elements: total ${elements.length} (${Object.entries(byPrefix).map(([p, c]) => `${p}${c}`).join(', ')})`);
-    console.log(`[ThemeProbe] Visible elements: ${ids.length}`);
+    console.log(`[ThemeProbe] Visible elements by prefix:`, byPrefix);
+    console.log(`[ThemeProbe] First 5 IDs:`, visible.slice(0, 5).map(el => el.getAttribute('data-element-id')));
     
-    return ids;
+    return visible.map(el => el.getAttribute('data-element-id')!);
   }
 
   /**
