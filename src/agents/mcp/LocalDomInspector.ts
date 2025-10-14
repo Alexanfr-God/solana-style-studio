@@ -32,19 +32,28 @@ export class LocalDomInspector implements DomInspector {
       return results;
     }
 
-    // Scan for elements with matching prefix
-    const prefix = screen === 'lock' ? 'lock-' : 'home-';
-    const elements = walletRoot.querySelectorAll(`[data-element-id^="${prefix}"]`);
+    // Scan ALL elements with data-element-id in the container
+    const elements = walletRoot.querySelectorAll(`[data-element-id]`);
     
     elements.forEach((el) => {
       const id = el.getAttribute('data-element-id');
-      if (id) {
-        results.push({
-          id,
-          selector: `[data-element-id="${id}"]`,
-          element: el instanceof HTMLElement ? el : undefined
-        });
+      if (!id) return;
+
+      // For 'lock' screen: only lock-* elements
+      if (screen === 'lock' && !id.startsWith('lock-') && !id.startsWith('unlock-')) {
+        return;
       }
+
+      // For 'home' screen: home-* and action-* elements
+      if (screen === 'home' && !id.startsWith('home-') && !id.startsWith('action-') && !id.startsWith('header-')) {
+        return;
+      }
+
+      results.push({
+        id,
+        selector: `[data-element-id="${id}"]`,
+        element: el instanceof HTMLElement ? el : undefined
+      });
     });
 
     console.log(`[LocalDomInspector] 🔍 Found ${results.length} elements for screen="${screen}"`);
