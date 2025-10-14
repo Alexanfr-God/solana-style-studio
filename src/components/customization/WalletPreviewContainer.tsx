@@ -5,6 +5,7 @@ import { useWalletCustomizationStore } from '@/stores/walletCustomizationStore';
 import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
 import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import WalletContainer from '@/components/wallet/WalletContainer';
+import { LockLayer } from '@/components/wallet/layers/LockLayer';
 import { useWalletElements } from '@/hooks/useWalletElements';
 import { walletElementsMapper } from '@/services/walletElementsMappingService';
 import { AdvancedInteractiveElementSelector } from '@/components/wallet/editMode/AdvancedInteractiveElementSelector';
