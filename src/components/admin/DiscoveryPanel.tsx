@@ -9,9 +9,11 @@ import { DiscoverService, DiscoveryResult } from '@/agents/discovery/DiscoverSer
 import { ValidationService, ValidationResult } from '@/agents/discovery/ValidationService';
 import { LocalDomInspector } from '@/agents/mcp/LocalDomInspector';
 import { SupabaseDbAdapter } from '@/agents/mcp/SupabaseDbAdapter';
+import { ThemeProbe, ProbeResult } from '@/agents/mcp/ThemeProbe';
+import { ZustandThemeAdapter } from '@/agents/mcp/ZustandThemeAdapter';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
-import { Scan, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { Scan, CheckCircle2, AlertTriangle, Info, Microscope } from 'lucide-react';
 
 export const DiscoveryPanel: React.FC = () => {
   const [screen, setScreen] = useState<'lock' | 'home'>('lock');
@@ -20,6 +22,8 @@ export const DiscoveryPanel: React.FC = () => {
   const [result, setResult] = useState<DiscoveryResult | null>(null);
   const [validationResult, setValidationResult] = useState<ValidationResult[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [probeResult, setProbeResult] = useState<ProbeResult | null>(null);
+  const [probeProgress, setProbeProgress] = useState<{ current: number; total: number; path: string } | null>(null);
 
   const handleDiscover = async () => {
     try {
@@ -85,6 +89,36 @@ export const DiscoveryPanel: React.FC = () => {
       toast.error('Validation failed: ' + (error as Error).message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAutoMap = async () => {
+    try {
+      setIsLoading(true);
+      setProbeProgress(null);
+      setProbeResult(null);
+      console.log('[DiscoveryPanel] 🔬 Starting ThemeProbe auto-mapping');
+
+      const probe = new ThemeProbe(new ZustandThemeAdapter());
+      
+      probe.onProgress((current, total, path) => {
+        setProbeProgress({ current, total, path });
+      });
+
+      const result = await probe.buildMapping({ screen });
+      setProbeResult(result);
+
+      toast.success(`✅ Auto-mapping complete: ${result.totals.OK} OK (${(result.coverage * 100).toFixed(1)}% coverage)`);
+
+      // Export results
+      await probe.exportResults(result, screen);
+      toast.info('📄 Results exported to downloads');
+    } catch (error) {
+      console.error('[DiscoveryPanel] ThemeProbe error:', error);
+      toast.error('Auto-mapping failed: ' + (error as Error).message);
+    } finally {
+      setIsLoading(false);
+      setProbeProgress(null);
     }
   };
 
@@ -165,7 +199,30 @@ export const DiscoveryPanel: React.FC = () => {
           >
             Validate
           </Button>
+
+          <Button 
+            onClick={handleAutoMap} 
+            disabled={isLoading} 
+            size="sm"
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+          >
+            <Microscope className="h-4 w-4 mr-1" />
+            Auto-Map (ThemeProbe)
+          </Button>
         </div>
+
+        {/* Progress indicator */}
+        {probeProgress && (
+          <Alert className="bg-purple-500/10 border-purple-500/30">
+            <Microscope className="h-4 w-4 text-purple-400 animate-pulse" />
+            <AlertDescription className="text-purple-200 text-sm">
+              Probing: {probeProgress.current}/{probeProgress.total} scalars
+              <div className="text-xs text-purple-300/70 mt-1 font-mono truncate">
+                {probeProgress.path}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Path Changes Warning */}
         {pathChanges.length > 0 && (
@@ -269,6 +326,89 @@ export const DiscoveryPanel: React.FC = () => {
                       </td>
                       <td className="p-2 font-mono text-gray-400 truncate max-w-xs">
                         {item.exists ? JSON.stringify(item.value) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ThemeProbe Results */}
+        {probeResult && (
+          <div className="mt-4">
+            <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+              <Microscope className="h-4 w-4 text-purple-400" />
+              ThemeProbe Results: {(probeResult.coverage * 100).toFixed(1)}% coverage
+            </h4>
+            
+            {/* Stats */}
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              <div className="bg-green-500/10 border border-green-500/30 rounded p-2 text-center">
+                <div className="text-xs text-green-300">OK</div>
+                <div className="text-lg font-bold text-green-400">{probeResult.totals.OK}</div>
+              </div>
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded p-2 text-center">
+                <div className="text-xs text-orange-300">AMBIGUOUS</div>
+                <div className="text-lg font-bold text-orange-400">{probeResult.totals.AMBIGUOUS}</div>
+              </div>
+              <div className="bg-red-500/10 border border-red-500/30 rounded p-2 text-center">
+                <div className="text-xs text-red-300">UNMAPPED</div>
+                <div className="text-lg font-bold text-red-400">{probeResult.totals.UNMAPPED}</div>
+              </div>
+              <div className="bg-gray-500/10 border border-gray-500/30 rounded p-2 text-center">
+                <div className="text-xs text-gray-300">NON_SCALAR</div>
+                <div className="text-lg font-bold text-gray-400">{probeResult.totals.NON_SCALAR}</div>
+              </div>
+            </div>
+
+            {/* Results table */}
+            <div className="max-h-96 overflow-auto border border-white/10 rounded-lg">
+              <table className="w-full text-xs text-white">
+                <thead className="bg-black/50 sticky top-0">
+                  <tr>
+                    <th className="p-2 text-left">ID</th>
+                    <th className="p-2 text-left">Best Path</th>
+                    <th className="p-2 text-center">Confidence</th>
+                    <th className="p-2 text-left">Changed Props</th>
+                    <th className="p-2 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {probeResult.items.map((item) => (
+                    <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
+                      <td className="p-2 font-mono text-purple-300">{item.id}</td>
+                      <td className="p-2 font-mono text-blue-300 truncate max-w-xs">
+                        {item.bestPath || '—'}
+                      </td>
+                      <td className="p-2 text-center">
+                        {item.confidence > 0 ? (
+                          <span className={
+                            item.confidence >= 0.8 ? 'text-green-400' :
+                            item.confidence >= 0.6 ? 'text-orange-400' :
+                            'text-red-400'
+                          }>
+                            {(item.confidence * 100).toFixed(0)}%
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td className="p-2 text-xs text-gray-400">
+                        {item.changedProps?.join(', ') || '—'}
+                      </td>
+                      <td className="p-2 text-center">
+                        {item.status === 'OK' && (
+                          <Badge className="bg-green-600">OK</Badge>
+                        )}
+                        {item.status === 'AMBIGUOUS' && (
+                          <Badge className="bg-orange-500">AMBIGUOUS</Badge>
+                        )}
+                        {item.status === 'UNMAPPED' && (
+                          <Badge variant="destructive">UNMAPPED</Badge>
+                        )}
+                        {item.status === 'NON_SCALAR' && (
+                          <Badge variant="outline" className="text-gray-400">NON_SCALAR</Badge>
+                        )}
                       </td>
                     </tr>
                   ))}
