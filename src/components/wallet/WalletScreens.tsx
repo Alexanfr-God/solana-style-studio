@@ -1,6 +1,6 @@
+
 import React from 'react';
 import { WalletStyle } from '@/stores/customizationStore';
-import { LockLayer } from './layers/LockLayer';
 import { UnifiedWalletRenderer } from './UnifiedWalletRenderer';
 
 interface WalletScreenProps {
@@ -9,7 +9,7 @@ interface WalletScreenProps {
 }
 
 export const LoginScreen = ({ style }: WalletScreenProps) => {
-  return <LockLayer />;
+  return <UnifiedWalletRenderer style={style} type="login" renderMode="preview" />;
 };
 
 export const WalletScreen = ({ style, isIndexPage = false }: WalletScreenProps) => {

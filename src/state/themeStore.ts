@@ -38,7 +38,7 @@ interface ThemeState {
   // Actions
   setTheme: (theme: any) => void;
   setActiveThemeId: (themeId: string | null) => void;
-  updateThemeValue: (jsonPath: string, value: any, userId?: string, options?: { mode?: 'full' | 'targeted'; bgMode?: 'auto' | 'image' | 'color-override' }) => Promise<void>;
+  updateThemeValue: (jsonPath: string, value: any, userId?: string, options?: { mode?: 'full' | 'targeted' }) => Promise<void>;
   applyPatch: (patch: ThemePatch) => void;
   applyPreviewPatch: (patch: Operation[]) => void;
   commitPreview: () => void;
@@ -124,13 +124,12 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     jsonPath: string, 
     value: any, 
     userId: string = 'user-theme-manual-edit',
-    options?: { mode?: 'full' | 'targeted'; bgMode?: 'auto' | 'image' | 'color-override' }
+    options?: { mode?: 'full' | 'targeted' }
   ) => {
     const { theme } = get();
     
     const mode = options?.mode || 'targeted';
-    const bgMode = options?.bgMode || 'auto';
-    console.log('[ThemeStore] 📝 Update:', { path: jsonPath, value, userId, mode, bgMode });
+    console.log('[ThemeStore] 📝 Update:', { path: jsonPath, value, userId, mode });
     
     // 1) Update local theme
     const pathParts = jsonPath.replace(/^\/+/, '').split('/');
@@ -153,13 +152,13 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     if (mode === 'full') {
       // ✅ БЕЗ updatedPath → runtime вызовет applyThemeToDOM (полный apply)
       window.dispatchEvent(new CustomEvent('theme-updated', { 
-        detail: { theme: newTheme, forceFullApply: true, bgMode }
+        detail: { theme: newTheme, forceFullApply: true }
       }));
-      console.log('[ThemeStore] 📢 Event: FULL apply, bgMode:', bgMode);
+      console.log('[ThemeStore] 📢 Event: FULL apply');
     } else {
       // 🎯 С updatedPath → runtime вызовет applyStyleToPath (targeted)
       window.dispatchEvent(new CustomEvent('theme-updated', { 
-        detail: { theme: newTheme, updatedPath: jsonPath, bgMode }
+        detail: { theme: newTheme, updatedPath: jsonPath }
       }));
       console.log('[ThemeStore] 📢 Event: TARGETED apply');
     }

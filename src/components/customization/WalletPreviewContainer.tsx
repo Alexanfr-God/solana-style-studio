@@ -189,8 +189,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
         >
           {/* Password Title */}
           <h2 
-            className="text-center font-medium text-white text-lg" 
-            data-element-id="lock-title-text"
+            className="text-center font-medium text-white text-lg login-password-title" 
+            data-element-id="login-password-title"
             style={{
               fontFamily: previewData.lockLayer.title.fontFamily,
               color: previewData.lockLayer.title.textColor,
@@ -198,21 +198,26 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               fontWeight: previewData.lockLayer.title.fontWeight
             }}
           >
-            Enter your password
+            <span 
+              className="unlock-password-title-text"
+              data-element-id="unlock-password-title-text"
+            >
+              Enter your password
+            </span>
           </h2>
           
           {/* Password Input */}
           <div 
-            className="relative"
-            data-element-id="lock-password-input-bg"
+            className="relative unlock-password-field-container"
+            data-element-id="unlock-password-field-container"
           >
             <input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full px-4 py-2.5 rounded-xl border-none outline-none text-sm"
-              data-element-id="lock-password-input-text"
+              className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
+              data-element-id="login-password-input"
               style={{
                 backgroundColor: previewData.lockLayer.passwordInput.backgroundColor,
                 color: previewData.lockLayer.passwordInput.textColor,
@@ -225,42 +230,51 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                data-element-id="lock-password-input-icon-eye"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white login-show-password"
+                data-element-id="login-show-password"
                 style={{
                   color: previewData.lockLayer.passwordInput.iconEyeColor
                 }}
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
+                  <EyeOff className="h-4 w-4 unlock-password-toggle-icon" data-element-id="unlock-password-toggle-icon" />
                 ) : (
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 unlock-password-toggle-icon" data-element-id="unlock-password-toggle-icon" />
                 )}
               </button>
             )}
           </div>
           
           {/* Forgot Password Link */}
-          <div className="text-center">
+          <div 
+            className="text-center unlock-forgot-container"
+            data-element-id="unlock-forgot-container"
+          >
             <button
-              className="text-sm"
-              data-element-id="lock-forgot-password-text"
+              className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
+              data-element-id="login-forgot-password"
               style={{ 
                 fontFamily: previewData.lockLayer.forgotPassword.fontFamily,
                 color: previewData.lockLayer.forgotPassword.textColor,
                 fontSize: previewData.lockLayer.forgotPassword.fontSize
               }}
             >
-              Forgot password?
+              <span 
+                className="unlock-forgot-text"
+                data-element-id="unlock-forgot-text"
+              >
+                Forgot password?
+              </span>
             </button>
           </div>
           
           {/* Unlock Button */}
           <button
-            className="w-full py-3 rounded-xl transition-colors hover:opacity-90"
-            data-element-id="lock-unlock-button-bg"
+            className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
+            data-element-id="login-unlock-button"
             style={{
               backgroundColor: previewData.lockLayer.unlockButton.backgroundColor,
+              color: previewData.lockLayer.unlockButton.textColor,
               fontFamily: previewData.lockLayer.unlockButton.fontFamily,
               borderRadius: previewData.lockLayer.unlockButton.borderRadius,
               fontWeight: previewData.lockLayer.unlockButton.fontWeight,
@@ -269,10 +283,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             onClick={handleUnlock}
           >
             <span 
-              data-element-id="lock-unlock-button-text"
-              style={{
-                color: previewData.lockLayer.unlockButton.textColor
-              }}
+              className="unlock-button-text"
+              data-element-id="unlock-button-text"
             >
               Unlock
             </span>
