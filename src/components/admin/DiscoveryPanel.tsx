@@ -352,9 +352,15 @@ export const DiscoveryPanel: React.FC = () => {
               <Microscope className="h-4 w-4 text-purple-400" />
               ThemeProbe Results: {(probeResult.coverage * 100).toFixed(1)}% coverage
             </h4>
+
+            {/* Wallet Root & Active Layers */}
+            <div className="mb-3 text-sm text-white/70">
+              <div><strong>Wallet Root:</strong> {probeResult.walletRoot}</div>
+              <div><strong>Active Layers:</strong> {probeResult.activeLayers.join(', ') || 'None'}</div>
+            </div>
             
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="grid grid-cols-5 gap-2 mb-3">
               <div className="bg-green-500/10 border border-green-500/30 rounded p-2 text-center">
                 <div className="text-xs text-green-300">OK</div>
                 <div className="text-lg font-bold text-green-400">{probeResult.totals.OK}</div>
@@ -371,28 +377,49 @@ export const DiscoveryPanel: React.FC = () => {
                 <div className="text-xs text-gray-300">NON_SCALAR</div>
                 <div className="text-lg font-bold text-gray-400">{probeResult.totals.NON_SCALAR}</div>
               </div>
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded p-2 text-center">
+                <div className="text-xs text-purple-300">INACTIVE</div>
+                <div className="text-lg font-bold text-purple-400">{probeResult.totals.INACTIVE_LAYER}</div>
+              </div>
             </div>
+
+            {/* Layer Summary */}
+            {probeResult.layerSummary.length > 0 && (
+              <div className="mb-3">
+                <div className="text-sm font-semibold text-white mb-1">Layer Summary:</div>
+                <div className="flex flex-wrap gap-2">
+                  {probeResult.layerSummary.map(ls => (
+                    <div key={ls.layer} className={`px-2 py-1 rounded text-xs ${
+                      ls.status === 'SCANNED' ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {ls.layer}: {ls.ok}/{ls.total}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Results table */}
             <div className="max-h-96 overflow-auto border border-white/10 rounded-lg">
               <table className="w-full text-xs text-white">
                 <thead className="bg-black/50 sticky top-0">
                   <tr>
+                    <th className="p-2 text-left">Layer</th>
                     <th className="p-2 text-left">ID</th>
                     <th className="p-2 text-left">Best Path</th>
                     <th className="p-2 text-center">Confidence</th>
-                    <th className="p-2 text-left">Changed Props</th>
                     <th className="p-2 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {probeResult.items.map((item) => (
                     <tr key={item.id} className="border-b border-white/5 hover:bg-white/5">
-                      <td className="p-2 font-mono text-purple-300">{item.id}</td>
-                      <td className="p-2 font-mono text-blue-300 truncate max-w-xs">
+                      <td className="p-2 text-xs text-gray-400">{item.layer}</td>
+                      <td className="p-2 font-mono text-purple-300 text-xs">{item.id}</td>
+                      <td className="p-2 font-mono text-blue-300 truncate max-w-xs text-xs">
                         {item.bestPath || '—'}
                       </td>
-                      <td className="p-2 text-center">
+                      <td className="p-2 text-center text-xs">
                         {item.confidence > 0 ? (
                           <span className={
                             item.confidence >= 0.8 ? 'text-green-400' :

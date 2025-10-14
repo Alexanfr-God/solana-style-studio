@@ -44,18 +44,19 @@ export function registerThemeProbeListener() {
   // Export to window for direct access
   window.ThemeProbe = {
     run: async (scope: Scope) => {
-      console.log(`[ThemeProbe][preview] Running probe for scope="${scope}"`);
-      const prefixes = scope === 'all' ? ['home-', 'lock-'] : [`${scope}-`];
+      console.log(`[ThemeProbe][preview] 🚀 Running wallet-scoped probe for scope="${scope}"`);
       
       const result = await probe.buildMapping({ 
-        screen: scope as 'lock' | 'home',
-        idPrefixes: prefixes
+        scope: scope === 'all' ? 'all' : scope
       });
       
-      console.log(`[ThemeProbe][preview] Probe complete:`, {
+      console.log(`[ThemeProbe][preview] ✅ Probe complete:`, {
+        walletRoot: result.walletRoot,
+        activeLayers: result.activeLayers,
         items: result.items.length,
-        coverage: result.coverage,
-        totals: result.totals
+        coverage: (result.coverage * 100).toFixed(1) + '%',
+        totals: result.totals,
+        layerSummary: result.layerSummary
       });
       
       return result;
