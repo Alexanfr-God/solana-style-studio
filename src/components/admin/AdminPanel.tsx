@@ -6,6 +6,7 @@ import { ConvertTrainingDataButton } from './ConvertTrainingDataButton';
 import { UniversalTrainingDataManager } from './UniversalTrainingDataManager';
 import { AiDomScannerButton } from './AiDomScannerButton';
 import { DatabaseSeeder } from './DatabaseSeeder';
+import { DiscoveryPanel } from './DiscoveryPanel';
 
 const AdminPanel = () => {
   return (
@@ -39,6 +40,8 @@ const AdminPanel = () => {
       </Card>
 
       <UniversalTrainingDataManager />
+
+      <DiscoveryPanel />
 
       <Card className="bg-black/30 backdrop-blur-md border-white/10">
         <CardHeader>
