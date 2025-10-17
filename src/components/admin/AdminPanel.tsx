@@ -1,12 +1,14 @@
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import CreateGuideImageButton from './CreateGuideImageButton';
 import { ConvertTrainingDataButton } from './ConvertTrainingDataButton';
 import { UniversalTrainingDataManager } from './UniversalTrainingDataManager';
 import { AiDomScannerButton } from './AiDomScannerButton';
 import { DatabaseSeeder } from './DatabaseSeeder';
 import { DiscoveryPanel } from './DiscoveryPanel';
+import { Eye } from 'lucide-react';
 
 const AdminPanel = () => {
   return (
@@ -23,6 +25,24 @@ const AdminPanel = () => {
             Run this once after database cleanup.
           </p>
           <DatabaseSeeder />
+        </CardContent>
+      </Card>
+
+      <Card className="bg-black/30 backdrop-blur-md border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white">AI-Vision: Theme Coverage Analyzer</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-white/70 text-sm mb-4">
+            Visual analysis of theme coverage with ThemeProbe. 
+            Shows colored overlay on wallet elements based on mapping status (OK/AMBIGUOUS/UNMAPPED/NON_SCALAR).
+          </p>
+          <Link to="/admin/ai-vision">
+            <Button className="w-full">
+              <Eye className="mr-2 h-4 w-4" />
+              Open AI-Vision
+            </Button>
+          </Link>
         </CardContent>
       </Card>
 
