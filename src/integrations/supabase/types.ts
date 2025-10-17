@@ -344,6 +344,13 @@ export type Database = {
             referencedRelation: "wallet_elements"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "wallet_elements_parent_element_fkey"
+            columns: ["parent_element"]
+            isOneToOne: false
+            referencedRelation: "wallet_elements_autofill_preview"
+            referencedColumns: ["id"]
+          },
         ]
       }
       wallet_profiles: {
@@ -390,11 +397,48 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_elements_autofill_preview: {
+        Row: {
+          current_json_path: string | null
+          id: string | null
+          name: string | null
+          proposed_json_path: string | null
+          screen: string | null
+          type: string | null
+        }
+        Insert: {
+          current_json_path?: string | null
+          id?: string | null
+          name?: string | null
+          proposed_json_path?: never
+          screen?: string | null
+          type?: string | null
+        }
+        Update: {
+          current_json_path?: string | null
+          id?: string | null
+          name?: string | null
+          proposed_json_path?: never
+          screen?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_nonces: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      compute_json_path: {
+        Args: {
+          _category: string
+          _icon_group: string
+          _id: string
+          _screen: string
+          _type: string
+        }
+        Returns: string
       }
       get_final_icon_path: {
         Args: { p_element_id: string; p_user_id?: string }
@@ -403,6 +447,14 @@ export type Database = {
       refresh_feedback_analytics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      strip_screen_prefix: {
+        Args: { _id: string; _screen: string }
+        Returns: string
+      }
+      upsert_ai_vision_mappings: {
+        Args: { element_ids: string[]; json_paths: string[] }
+        Returns: number
       }
     }
     Enums: {
