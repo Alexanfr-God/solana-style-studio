@@ -9,6 +9,7 @@ import { exportMappingJSON, exportMappingSummary } from '@/utils/inspector/expor
 import { runThemeProbeInPreview } from '@/agents/mcp/ThemeProbeBridge';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
 const AiVisionPage: React.FC = () => {
   const { toast } = useToast();
@@ -90,6 +91,39 @@ const AiVisionPage: React.FC = () => {
       // Auto-enable overlay if it's off
       if (!overlayEnabled) {
         setOverlayEnabled(true);
+      }
+
+      // Persist mappings to DB
+      try {
+        const validMappings = probeResult.mapping
+          .filter(m => m.bestPath?.startsWith('/') && (m.confidence || 0) > 0.5)
+          .map(m => ({ 
+            id: m.id, 
+            json_path: m.bestPath!, 
+            confidence: m.confidence || 0 
+          }));
+
+        if (validMappings.length > 0) {
+          const { data, error } = await supabase.functions.invoke('ai-vision-upsert-mappings', {
+            body: { mappings: validMappings }
+          });
+
+          if (error) throw error;
+          
+          console.log(`[AiVision] Saved ${data.updated} mappings to DB`);
+          
+          toast({
+            title: 'Mappings saved',
+            description: `Updated ${data.updated} elements in database`,
+          });
+        }
+      } catch (err) {
+        console.error('[AiVision] Failed to persist mappings:', err);
+        toast({
+          title: 'Warning',
+          description: 'Probe completed but failed to save mappings to DB',
+          variant: 'destructive',
+        });
       }
 
       toast({

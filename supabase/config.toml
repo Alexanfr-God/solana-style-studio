@@ -75,5 +75,8 @@ verify_jwt = false
 [functions.ai-analyze-colors]
 verify_jwt = true
 
+[functions.ai-vision-upsert-mappings]
+verify_jwt = false
+
 [functions.create-base-theme]
 verify_jwt = false

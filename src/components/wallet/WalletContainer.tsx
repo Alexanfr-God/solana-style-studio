@@ -25,7 +25,11 @@ const WalletContainer = () => {
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-2xl">
+    <div 
+      data-wallet-root
+      data-layer={currentLayer}
+      className="relative w-full h-full overflow-hidden rounded-2xl"
+    >
       {renderMainLayer()}
       
       {/* ReceiveLayer as bottom-sheet overlay */}
