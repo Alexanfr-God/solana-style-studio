@@ -19,36 +19,36 @@ const WalletBottomNavigation = () => {
       id: 'home' as WalletLayer, 
       icon: Home, 
       label: 'Home', 
-      className: 'nav-home-icon',
-      dataElementId: 'nav-home-icon'
+      iconDataId: 'global-nav-home-tab',
+      labelDataId: 'global-nav-home-label'
     },
     { 
       id: 'apps' as WalletLayer, 
       icon: LayoutGrid, 
       label: 'Apps', 
-      className: 'nav-apps-icon',
-      dataElementId: 'nav-apps-icon'
+      iconDataId: 'global-nav-apps-tab',
+      labelDataId: 'global-nav-apps-label'
     },
     { 
       id: 'swap' as WalletLayer, 
       icon: ArrowRightLeft, 
       label: 'Swap', 
-      className: 'nav-swap-icon',
-      dataElementId: 'nav-swap-icon'
+      iconDataId: 'global-nav-swap-tab',
+      labelDataId: 'global-nav-swap-label'
     },
     { 
       id: 'history' as WalletLayer, 
       icon: Clock, 
       label: 'History', 
-      className: 'nav-history-icon',
-      dataElementId: 'nav-history-icon'
+      iconDataId: 'global-nav-history-tab',
+      labelDataId: 'global-nav-history-label'
     },
     { 
       id: 'search' as WalletLayer, 
       icon: Search, 
       label: 'Search', 
-      className: 'nav-search-icon',
-      dataElementId: 'nav-search-icon'
+      iconDataId: 'global-nav-search-tab',
+      labelDataId: 'global-nav-search-label'
     }
   ];
 
@@ -85,18 +85,17 @@ const WalletBottomNavigation = () => {
           return (
             <button 
               key={item.id}
-              className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 ${item.className} ${
+              className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 ${
                 isActive ? 'opacity-100' : 'opacity-50'
               }`}
-              data-element-id={item.dataElementId}
               onClick={() => handleNavClick(item.id)}
               style={{
                 borderRadius: '8px'
               }}
             >
               <item.icon 
-                className={`w-6 h-6 transition-colors ${item.className}`} 
-                data-element-id={item.dataElementId}
+                className={`w-6 h-6 transition-colors`} 
+                data-element-id={item.iconDataId}
                 style={{
                   color: isActive 
                     ? iconConfig?.activeColor || bottomNavStyle?.activeColor || homeStyle.footer?.activeIconColor || '#fff'
@@ -104,11 +103,8 @@ const WalletBottomNavigation = () => {
                 }}
               />
               <span 
-                className={`text-xs mt-1 transition-colors ${
-                  isActive 
-                    ? 'text-white' 
-                    : 'text-gray-400'
-                }`}
+                className={`text-xs mt-1 transition-colors`}
+                data-element-id={item.labelDataId}
                 style={{
                   color: isActive 
                     ? homeStyle.footer?.activeTextColor || '#FFFFFF'

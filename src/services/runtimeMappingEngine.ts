@@ -128,6 +128,13 @@ export function applyValueToNodeUnified(
     return;
   }
 
+  // ✅ ДОБАВЛЕНО: activeColor для active состояния иконок
+  if (key === 'activecolor') {
+    el.style.color = String(value);
+    console.log('[Runtime] ✅ Applied activeColor');
+    return;
+  }
+
   // ✅ ДОБАВЛЕНО: containerColor → backgroundColor
   if (key === 'containercolor') {
     if (isGradient) {

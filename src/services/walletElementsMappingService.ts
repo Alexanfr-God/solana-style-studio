@@ -47,12 +47,19 @@ export class WalletElementsMappingService {
     
     // Расширенный маппинг селекторов к реальным классам в DOM
     const selectorMappings: Record<string, string[]> = {
-      // Навигационные иконки
-      'nav-home-icon': ['nav-home-icon'],
-      'nav-apps-icon': ['nav-apps-icon'],
-      'nav-swap-icon': ['nav-swap-icon'],
-      'nav-history-icon': ['nav-history-icon'],
-      'nav-search-icon': ['nav-search-icon'],
+      // Навигационные иконки (новый формат)
+      '[data-element-id="global-nav-home-tab"]': ['global-nav-home-tab'],
+      '[data-element-id="global-nav-apps-tab"]': ['global-nav-apps-tab'],
+      '[data-element-id="global-nav-swap-tab"]': ['global-nav-swap-tab'],
+      '[data-element-id="global-nav-history-tab"]': ['global-nav-history-tab'],
+      '[data-element-id="global-nav-search-tab"]': ['global-nav-search-tab'],
+      
+      // Навигационные labels
+      '[data-element-id="global-nav-home-label"]': ['global-nav-home-label'],
+      '[data-element-id="global-nav-apps-label"]': ['global-nav-apps-label'],
+      '[data-element-id="global-nav-swap-label"]': ['global-nav-swap-label'],
+      '[data-element-id="global-nav-history-label"]': ['global-nav-history-label'],
+      '[data-element-id="global-nav-search-label"]': ['global-nav-search-label'],
       
       // Иконки действий
       'action-send-icon': ['action-send-icon'],
