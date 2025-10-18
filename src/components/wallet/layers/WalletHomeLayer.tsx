@@ -101,14 +101,14 @@ const WalletHomeLayer = () => {
         className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 z-[10] home-header"
         data-element-id="home-header"
         style={{
-          backgroundColor: styles.homeStyle.header?.backgroundImage 
+          backgroundColor: (styles.homeStyle.header?.backgroundImage && styles.homeStyle.header.backgroundImage !== '')
             ? undefined 
             : styles.homeStyle.header?.backgroundColor || 'rgba(255, 255, 255, 0.05)',
-          backgroundImage: styles.homeStyle.header?.backgroundImage 
+          backgroundImage: (styles.homeStyle.header?.backgroundImage && styles.homeStyle.header.backgroundImage !== '')
             ? `url(${styles.homeStyle.header.backgroundImage})` 
             : undefined,
-          backgroundSize: styles.homeStyle.header?.backgroundImage ? 'cover' : undefined,
-          backgroundPosition: styles.homeStyle.header?.backgroundImage ? 'center' : undefined,
+          backgroundSize: (styles.homeStyle.header?.backgroundImage && styles.homeStyle.header.backgroundImage !== '') ? 'cover' : undefined,
+          backgroundPosition: (styles.homeStyle.header?.backgroundImage && styles.homeStyle.header.backgroundImage !== '') ? 'center' : undefined,
           backdropFilter: styles.homeStyle.header?.backdropFilter || 'blur(10px)',
           borderTopLeftRadius: '1rem',
           borderTopRightRadius: '1rem',

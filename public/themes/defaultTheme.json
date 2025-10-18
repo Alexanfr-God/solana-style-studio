@@ -14,7 +14,6 @@
     "iconClose": { "color": "#FFFFFF", "type": "x" }
   },
   "lockLayer": {
-    "backgroundImage": "",
     "backgroundColor": "rgba(75, 85, 99, 0.8)",
     "title": {
       "textColor": "#FFFFFF",
@@ -103,11 +102,9 @@
     }
   },
   "homeLayer": {
-    "backgroundImage": "",
     "backgroundColor": "rgba(75, 85, 99, 0.8)",
     "header": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
-      "backgroundImage": "",
       "textColor": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
@@ -119,7 +116,6 @@
     },
     "footer": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
-      "backgroundImage": "",
       "iconColor": "#FFFFFF",
       "activeIconColor": "#9CA3AF",
       "textColor": "#FFFFFF",

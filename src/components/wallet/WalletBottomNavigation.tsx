@@ -65,11 +65,14 @@ const WalletBottomNavigation = () => {
       className="absolute bottom-0 left-0 right-0 px-4 py-3 border-t border-white/10 z-[5] bottom-navigation"
       data-element-id="bottom-navigation"
       style={{
-        backgroundColor: homeStyle.footer?.backgroundImage 
-          ? `url(${homeStyle.footer.backgroundImage})` 
+        backgroundColor: (homeStyle.footer?.backgroundImage && homeStyle.footer.backgroundImage !== '')
+          ? undefined
           : bottomNavStyle?.backgroundColor || homeStyle.footer?.backgroundColor || 'rgba(0, 0, 0, 0.5)',
-        backgroundSize: homeStyle.footer?.backgroundImage ? 'cover' : undefined,
-        backgroundPosition: homeStyle.footer?.backgroundImage ? 'center' : undefined,
+        backgroundImage: (homeStyle.footer?.backgroundImage && homeStyle.footer.backgroundImage !== '')
+          ? `url(${homeStyle.footer.backgroundImage})`
+          : undefined,
+        backgroundSize: (homeStyle.footer?.backgroundImage && homeStyle.footer.backgroundImage !== '') ? 'cover' : undefined,
+        backgroundPosition: (homeStyle.footer?.backgroundImage && homeStyle.footer.backgroundImage !== '') ? 'center' : undefined,
         backdropFilter: 'blur(10px)',
         borderBottomLeftRadius: '1rem',
         borderBottomRightRadius: '1rem',
