@@ -61,6 +61,10 @@ export class WalletElementsMappingService {
       '[data-element-id="global-nav-history-label"]': ['global-nav-history-label'],
       '[data-element-id="global-nav-search-label"]': ['global-nav-search-label'],
       
+      // Контейнеры Header и Footer
+      '[data-element-id="home-header"]': ['home-header'],
+      '[data-element-id="bottom-navigation"]': ['global-bottom-nav-container'],
+      
       // Иконки действий
       'action-send-icon': ['action-send-icon'],
       'action-receive-icon': ['action-receive-icon'],
