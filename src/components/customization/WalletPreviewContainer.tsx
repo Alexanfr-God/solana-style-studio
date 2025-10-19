@@ -56,90 +56,35 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : []
   });
 
-  // Apply runtime mappings when theme changes
+  // Don't render until theme is loaded
+  if (!theme || Object.keys(theme).length === 0) {
+    return (
+      <Card className="bg-black/30 backdrop-blur-md border-white/10 h-full">
+        <CardContent className="p-6 h-full flex items-center justify-center">
+          <div className="text-white">Loading theme...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Apply runtime mappings when theme changes - SYNCHRONOUSLY
   useEffect(() => {
-    if (theme && Object.keys(theme).length > 0) {
-      console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
-      // Delay to ensure DOM is ready
-      setTimeout(() => {
-        applyThemeToDOM(theme);
-      }, 100);
-    }
+    console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
+    applyThemeToDOM(theme);
   }, [theme, activeThemeId]);
 
-  // FIXED: Better theme validation and fallback handling
+  // Simplified previewData - theme is guaranteed to exist by guard above
   const previewData = useMemo(() => {
-    // Validate theme structure
-    if (!theme || typeof theme !== 'object') {
-      console.warn('[WPC] ⚠️ Invalid theme, using defaults');
-      return {
-        lockLayer: {
-          backgroundColor: '#181818',
-          title: {
-            fontFamily: 'Inter',
-            textColor: '#FFFFFF',
-            fontSize: '28px',
-            fontWeight: 'bold'
-          },
-          passwordInput: {
-            backgroundColor: 'rgba(30,30,30,0.8)',
-            textColor: '#FFFFFF',
-            fontFamily: 'Inter',
-            borderRadius: '12px',
-            border: 'none',
-            iconEyeColor: '#aaa'
-          },
-          forgotPassword: {
-            fontFamily: 'Inter',
-            textColor: '#aaa',
-            fontSize: '15px'
-          },
-          unlockButton: {
-            backgroundColor: '#13e163',
-            textColor: '#FFFFFF',
-            fontFamily: 'Inter',
-            borderRadius: '14px',
-            fontWeight: '600',
-            fontSize: '19px'
-          }
-        }
-      };
-    }
-    
     const lockLayer = theme.lockLayer || {};
-    console.log('[WPC] lockLayer structure:', lockLayer);
     
     return {
       lockLayer: {
         backgroundColor: lockLayer.backgroundColor || '#181818',
         backgroundImage: lockLayer.backgroundImage,
-        title: {
-          fontFamily: lockLayer.title?.fontFamily || 'Inter',
-          textColor: lockLayer.title?.textColor || '#FFFFFF',
-          fontSize: lockLayer.title?.fontSize || '28px',
-          fontWeight: lockLayer.title?.fontWeight || 'bold'
-        },
-        passwordInput: {
-          backgroundColor: lockLayer.passwordInput?.backgroundColor || 'rgba(30,30,30,0.8)',
-          textColor: lockLayer.passwordInput?.textColor || '#FFFFFF',
-          fontFamily: lockLayer.passwordInput?.fontFamily || 'Inter',
-          borderRadius: lockLayer.passwordInput?.borderRadius || '12px',
-          border: lockLayer.passwordInput?.border || 'none',
-          iconEyeColor: lockLayer.passwordInput?.iconEyeColor || '#aaa'
-        },
-        forgotPassword: {
-          fontFamily: lockLayer.forgotPassword?.fontFamily || 'Inter',
-          textColor: lockLayer.forgotPassword?.textColor || '#aaa',
-          fontSize: lockLayer.forgotPassword?.fontSize || '15px'
-        },
-        unlockButton: {
-          backgroundColor: lockLayer.unlockButton?.backgroundColor || '#13e163',
-          textColor: lockLayer.unlockButton?.textColor || '#FFFFFF',
-          fontFamily: lockLayer.unlockButton?.fontFamily || 'Inter',
-          borderRadius: lockLayer.unlockButton?.borderRadius || '14px',
-          fontWeight: lockLayer.unlockButton?.fontWeight || '600',
-          fontSize: lockLayer.unlockButton?.fontSize || '19px'
-        }
+        title: lockLayer.title || {},
+        passwordInput: lockLayer.passwordInput || {},
+        forgotPassword: lockLayer.forgotPassword || {},
+        unlockButton: lockLayer.unlockButton || {}
       }
     };
   }, [theme]);
@@ -165,7 +110,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
 
   const renderLoginScreen = () => (
     <div 
-      className="relative flex flex-col justify-end unlock-screen-container h-full overflow-hidden rounded-2xl" 
+      className="relative p-6 flex flex-col justify-end unlock-screen-container h-full overflow-hidden rounded-2xl" 
       data-element-id="unlock-screen-container"
       style={{
         backgroundColor: previewData.lockLayer.backgroundColor,
@@ -177,7 +122,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     >
       {/* Login Form - Bottom Section */}
       <div 
-        className="w-full max-w-xs mx-auto mb-8 px-6 pb-6 unlock-form-wrapper"
+        className="w-full max-w-xs mx-auto mb-8 unlock-form-wrapper"
         data-element-id="unlock-form-wrapper"
       >
         <div 
