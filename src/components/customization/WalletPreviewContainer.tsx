@@ -165,7 +165,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
 
   const renderLoginScreen = () => (
     <div 
-      className="relative p-6 flex flex-col justify-end unlock-screen-container" 
+      className="relative w-full h-full flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
       style={{
         backgroundColor: previewData.lockLayer.backgroundColor,
