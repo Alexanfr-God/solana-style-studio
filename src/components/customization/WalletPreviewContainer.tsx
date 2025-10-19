@@ -165,7 +165,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
 
   const renderLoginScreen = () => (
     <div 
-      className="relative p-6 flex flex-col justify-end unlock-screen-container h-full overflow-hidden rounded-2xl" 
+      className="relative flex flex-col justify-end unlock-screen-container h-full overflow-hidden rounded-2xl" 
       data-element-id="unlock-screen-container"
       style={{
         backgroundColor: previewData.lockLayer.backgroundColor,
@@ -177,7 +177,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     >
       {/* Login Form - Bottom Section */}
       <div 
-        className="w-full max-w-xs mx-auto mb-8 unlock-form-wrapper"
+        className="w-full max-w-xs mx-auto mb-8 px-6 pb-6 unlock-form-wrapper"
         data-element-id="unlock-form-wrapper"
       >
         <div 
