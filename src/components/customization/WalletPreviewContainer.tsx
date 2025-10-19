@@ -165,16 +165,14 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
 
   const renderLoginScreen = () => (
     <div 
-      className="relative p-6 flex flex-col justify-end unlock-screen-container h-full" 
+      className="relative p-6 flex flex-col justify-end unlock-screen-container h-full overflow-hidden rounded-2xl" 
       data-element-id="unlock-screen-container"
       style={{
         backgroundColor: previewData.lockLayer.backgroundColor,
         backgroundImage: previewData.lockLayer.backgroundImage ? `url(${previewData.lockLayer.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        borderBottomLeftRadius: '1rem',
-        borderBottomRightRadius: '1rem'
+        backgroundRepeat: 'no-repeat'
       }}
     >
       {/* Login Form - Bottom Section */}
@@ -391,8 +389,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           <div 
             ref={walletContainerRef}
             data-wallet-container
-            className="relative w-96 h-[650px] mx-auto rounded-2xl overflow-hidden"
-            style={{
+            className="relative w-96 h-[650px] mx-auto rounded-2xl"
+            style={currentLayer === 'lockLayer' ? {} : {
               background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
               backdropFilter: 'blur(10px)',
               border: '1px solid rgba(255,255,255,0.1)',
