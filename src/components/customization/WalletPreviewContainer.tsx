@@ -172,9 +172,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
         backgroundImage: previewData.lockLayer.backgroundImage ? `url(${previewData.lockLayer.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        borderRadius: '1rem',
-        overflow: 'hidden'
+        backgroundRepeat: 'no-repeat'
       }}
     >
       {/* Login Form - Bottom Section */}
