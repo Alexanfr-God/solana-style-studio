@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { prepareMint } from '@/lib/api/client';
+import BlockchainSelectorDialog from './BlockchainSelectorDialog';
 
 interface ExportToIpfsButtonProps {
   targetRef: React.RefObject<HTMLElement>;
@@ -12,8 +13,10 @@ interface ExportToIpfsButtonProps {
 
 const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, themeId }) => {
   const [isExporting, setIsExporting] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
-  const handleMintClick = async () => {
+  const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL') => {
+    setDialogOpen(false);
     if (!themeId) {
       toast.error('No theme selected for minting');
       return;
@@ -27,7 +30,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
       const { url, walletTarget } = await prepareMint(themeId);
       
       // Show success message
-      toast.success(`Theme prepared for mint (${walletTarget})`);
+      toast.success(`Theme prepared for mint on ${blockchain} (${walletTarget})`);
       
       // Open the export file in a new tab
       window.open(url, '_blank');
@@ -42,15 +45,23 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
   };
   
   return (
-    <Button
-      onClick={handleMintClick}
-      disabled={isExporting || !themeId}
-      className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all"
-      size="lg"
-    >
-      {isExporting ? <Loader className="mr-2 animate-spin" /> : <Diamond className="mr-2" />}
-      {isExporting ? 'Preparing…' : 'Mint as NFT'}
-    </Button>
+    <>
+      <Button
+        onClick={() => setDialogOpen(true)}
+        disabled={isExporting || !themeId}
+        className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all"
+        size="lg"
+      >
+        {isExporting ? <Loader className="mr-2 animate-spin" /> : <Diamond className="mr-2" />}
+        {isExporting ? 'Preparing…' : 'Mint as NFT'}
+      </Button>
+      
+      <BlockchainSelectorDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSelectBlockchain={handleSelectBlockchain}
+      />
+    </>
   );
 };
 
