@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 // import ChatInterface from '@/components/chat/ChatInterface'; // Временно закомментировано
-import { Button } from '@/components/ui/button';
 import { WalletChatProvider } from '@/contexts/WalletChatContext';
 import { SmartEditContextProvider } from '@/contexts/SmartEditContext';
 import Header from '@/components/layout/Header';
@@ -10,17 +9,14 @@ import Footer from '@/components/layout/Footer';
 import ThemeSelectorCoverflow from '@/components/customization/ThemeSelectorCoverflow';
 import ThemeChat from '@/components/ai/ThemeChat';
 import { useUserThemeLoader } from '@/hooks/useUserThemeLoader';
+import ExportToIpfsButton from '@/components/wallet/ExportToIpfsButton';
 
 const WalletAlivePlayground = () => {
   // Load user theme from database when wallet connects
   useUserThemeLoader();
   
   const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
-
-  const handleMintClick = () => {
-    console.log('MINT clicked');
-    // TODO: Implement mint functionality
-  };
+  const walletPreviewRef = useRef<HTMLDivElement>(null);
 
   const handleElementSelectFromPreview = (elementSelector: string) => {
     setSelectedElementFromPreview(elementSelector);
@@ -60,7 +56,7 @@ const WalletAlivePlayground = () => {
             </div>
 
             {/* Main Layout - Single Column (chat is now fixed) */}
-            <div className="mb-8">
+            <div className="mb-8" ref={walletPreviewRef}>
               {/* Wallet Preview */}
               <WalletPreviewContainer 
                 onElementSelect={handleElementSelectFromPreview}
@@ -69,12 +65,9 @@ const WalletAlivePlayground = () => {
 
             {/* MINT NFT Button - Between Preview and Coverflow */}
             <div className="flex justify-center mb-8">
-              <Button
-                onClick={handleMintClick}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-[0_0_20px_rgba(153,69,255,0.4)]"
-              >
-                🚀 MINT NFT
-              </Button>
+              <ExportToIpfsButton 
+                targetRef={walletPreviewRef}
+              />
             </div>
             
             {/* Theme Selector Coverflow */}
