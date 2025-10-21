@@ -10,10 +10,13 @@ import ThemeSelectorCoverflow from '@/components/customization/ThemeSelectorCove
 import ThemeChat from '@/components/ai/ThemeChat';
 import { useUserThemeLoader } from '@/hooks/useUserThemeLoader';
 import ExportToIpfsButton from '@/components/wallet/ExportToIpfsButton';
+import { useThemeStore } from '@/state/themeStore';
 
 const WalletAlivePlayground = () => {
   // Load user theme from database when wallet connects
   useUserThemeLoader();
+  
+  const activeThemeId = useThemeStore(state => state.activeThemeId);
   
   const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
   const walletPreviewRef = useRef<HTMLDivElement>(null);
@@ -67,6 +70,7 @@ const WalletAlivePlayground = () => {
             <div className="flex justify-center mb-8">
               <ExportToIpfsButton 
                 targetRef={walletPreviewRef}
+                themeId={activeThemeId}
               />
             </div>
             
