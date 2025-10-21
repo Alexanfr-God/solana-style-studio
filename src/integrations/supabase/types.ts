@@ -344,13 +344,6 @@ export type Database = {
             referencedRelation: "wallet_elements"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "wallet_elements_parent_element_fkey"
-            columns: ["parent_element"]
-            isOneToOne: false
-            referencedRelation: "wallet_elements_autofill_preview"
-            referencedColumns: ["id"]
-          },
         ]
       }
       wallet_profiles: {
@@ -394,33 +387,6 @@ export type Database = {
           feedback_count: number | null
           feedback_texts: string[] | null
           prompt: string | null
-        }
-        Relationships: []
-      }
-      wallet_elements_autofill_preview: {
-        Row: {
-          current_json_path: string | null
-          id: string | null
-          name: string | null
-          proposed_json_path: string | null
-          screen: string | null
-          type: string | null
-        }
-        Insert: {
-          current_json_path?: string | null
-          id?: string | null
-          name?: string | null
-          proposed_json_path?: never
-          screen?: string | null
-          type?: string | null
-        }
-        Update: {
-          current_json_path?: string | null
-          id?: string | null
-          name?: string | null
-          proposed_json_path?: never
-          screen?: string | null
-          type?: string | null
         }
         Relationships: []
       }
