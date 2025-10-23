@@ -19,24 +19,45 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { imageData, themeName, themeData, description }: MintRequest = await req.json();
-
-    console.log('[upload-to-ipfs] Function invoked');
-    console.log('[upload-to-ipfs] Theme name:', themeName);
+    console.log('📦 Starting IPFS upload function...');
+    const body = await req.json() as MintRequest;
+    console.log('📦 Request body keys:', Object.keys(body));
     
-    // Диагностика секрета
-    const nftStorageKey = Deno.env.get('NFT_STORAGE_KEY');
-    console.log('[upload-to-ipfs] NFT_STORAGE_KEY set:', !!nftStorageKey);
+    const { imageData, themeName, themeData, description } = body;
     
-    // Диагностика payload
-    console.log('[upload-to-ipfs] Request body keys:', Object.keys({ imageData, themeName, themeData, description }));
-    console.log('[upload-to-ipfs] Image data size:', imageData?.length || 0, 'chars');
-    console.log('[upload-to-ipfs] Theme data keys:', Object.keys(themeData || {}));
-    
-    if (!nftStorageKey) {
-      console.error('❌ NFT_STORAGE_KEY not configured');
-      throw new Error('NFT_STORAGE_KEY not configured');
+    // Проверка обязательных полей
+    if (!imageData || !themeName || !themeData) {
+      console.error('❌ Missing required fields:', { 
+        hasImageData: !!imageData, 
+        hasThemeName: !!themeName, 
+        hasThemeData: !!themeData 
+      });
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Missing required fields: imageData, themeName, or themeData' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+    
+    console.log('[upload-to-ipfs] Theme name:', themeName);
+    console.log('[upload-to-ipfs] Image data size:', imageData.length, 'chars');
+    console.log('[upload-to-ipfs] Theme data keys:', Object.keys(themeData));
+    
+    // Проверка NFT_STORAGE_KEY
+    const nftStorageKey = Deno.env.get('NFT_STORAGE_KEY');
+    if (!nftStorageKey) {
+      console.error('❌ NFT_STORAGE_KEY not found in environment');
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'NFT_STORAGE_KEY not configured on server' 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    console.log('✅ NFT_STORAGE_KEY present');
 
     console.log('📦 Starting IPFS upload for theme:', themeName);
 

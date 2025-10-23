@@ -1,11 +1,11 @@
-import { Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-// Metaplex будет импортирован динамически при вызове mintThemeNft
+import { Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js';
+import type { WalletAdapter } from '@solana/wallet-adapter-base';
 
-// Generic wallet adapter interface
-interface WalletAdapter {
+// Generic wallet adapter interface (для AppKit/WalletConnect)
+interface GenericWalletAdapter {
   publicKey: any;
-  signTransaction: (tx: any) => Promise<any>;
-  signAllTransactions?: (txs: any[]) => Promise<any[]>;
+  signTransaction: (tx: Transaction) => Promise<Transaction>;
+  signAllTransactions?: (txs: Transaction[]) => Promise<Transaction[]>;
 }
 
 /**
@@ -49,10 +49,58 @@ export async function requestDevnetAirdrop(walletAddress: string): Promise<void>
 }
 
 /**
+ * Создать WalletAdapter-обёртку для Metaplex из "сырого" signer'а
+ */
+function makeMetaplexAdapter(signer: GenericWalletAdapter): WalletAdapter {
+  const pk = signer.publicKey instanceof PublicKey
+    ? signer.publicKey
+    : new PublicKey(
+        typeof signer.publicKey === 'string'
+          ? signer.publicKey
+          : signer.publicKey.toBase58()
+      );
+
+  return {
+    name: 'WCC-AppKit-Adapter',
+    url: '',
+    icon: '',
+    readyState: 'Installed',
+    publicKey: pk,
+    connecting: false,
+    connected: true,
+    autoConnect: false,
+    supportedTransactionVersions: null,
+    
+    async connect() {},
+    async disconnect() {},
+    
+    async sendTransaction(transaction: Transaction, connection: Connection) {
+      const signed = await signer.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      return signature;
+    },
+    
+    async signTransaction<T extends Transaction>(tx: T): Promise<T> {
+      return await signer.signTransaction(tx as Transaction) as T;
+    },
+    
+    async signAllTransactions<T extends Transaction>(txs: T[]): Promise<T[]> {
+      if (signer.signAllTransactions) {
+        return await signer.signAllTransactions(txs as Transaction[]) as T[];
+      }
+      return await Promise.all(txs.map(tx => signer.signTransaction(tx as Transaction))) as T[];
+    },
+    
+    on() {},
+    off() {},
+  } as unknown as WalletAdapter;
+}
+
+/**
  * Минт NFT на Solana devnet через Metaplex
  */
 export async function mintThemeNft(
-  walletAdapter: WalletAdapter,
+  walletAdapter: GenericWalletAdapter,
   metadataUri: string,
   themeName: string
 ): Promise<{ mint: PublicKey; transaction: string; explorerUrl: string }> {
@@ -66,31 +114,13 @@ export async function mintThemeNft(
     
     // Динамический импорт Metaplex - грузится только при клике "Mint"
     console.log('📦 Loading Metaplex SDK...');
-    const { Metaplex, keypairIdentity, guestIdentity } = await import('@metaplex-foundation/js');
+    const { Metaplex, walletAdapterIdentity } = await import('@metaplex-foundation/js');
     
-    // Создаём custom identity adapter для нашего wallet
-    const customIdentity = {
-      publicKey: walletAdapter.publicKey,
-      secretKey: null,
-      signMessage: async (message: Uint8Array) => {
-        throw new Error('signMessage not supported');
-      },
-      signTransaction: async (transaction: any) => {
-        return await walletAdapter.signTransaction(transaction);
-      },
-      signAllTransactions: async (transactions: any[]) => {
-        if (walletAdapter.signAllTransactions) {
-          return await walletAdapter.signAllTransactions(transactions);
-        }
-        return await Promise.all(transactions.map(tx => walletAdapter.signTransaction(tx)));
-      }
-    };
+    // ✅ Создаём адаптер, совместимый с Metaplex
+    const adapter = makeMetaplexAdapter(walletAdapter);
     
-    const metaplex = Metaplex.make(connection).use({
-      install(metaplex) {
-        metaplex.identity = () => customIdentity as any;
-      }
-    });
+    // ✅ Используем официальный плагин walletAdapterIdentity
+    const metaplex = Metaplex.make(connection).use(walletAdapterIdentity(adapter));
     
     // Минт NFT
     const { nft, response } = await metaplex.nfts().create({
