@@ -3,24 +3,32 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
-import { useWalletTheme } from '@/state/themeStore';
+import { useThemeStore } from '@/state/themeStore';
 import { supabase } from '@/integrations/supabase/client';
 import { mintThemeNft } from '@/services/solanaMintService';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
-import html2canvas from 'html2canvas';
 import BlockchainSelectorDialog from './BlockchainSelectorDialog';
 
 interface ExportToIpfsButtonProps {
-  targetRef: React.RefObject<HTMLElement>;
   themeId?: string;
 }
 
-const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, themeId }) => {
+// Resolve preview image URL from theme layers (cascade fallback)
+function resolvePreviewImageUrl(theme: any): string {
+  if (theme.lockLayer?.backgroundImage) return theme.lockLayer.backgroundImage;
+  if (theme.homeLayer?.backgroundImage) return theme.homeLayer.backgroundImage;
+  if (theme.receiveLayer?.centerContainer?.backgroundImage) return theme.receiveLayer.centerContainer.backgroundImage;
+  if (theme.sendLayer?.headerContainer?.backgroundImage) return theme.sendLayer.headerContainer.backgroundImage;
+  if (theme.buyLayer?.headerContainer?.backgroundImage) return theme.buyLayer.headerContainer.backgroundImage;
+  
+  console.warn('[ExportToIpfs] No backgroundImage found in theme, using placeholder');
+  return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+}
+
+const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   
-  // Получаем текущую тему и AppKit wallet
-  const currentTheme = useWalletTheme();
   const { address, isConnected } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
   
@@ -55,7 +63,6 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
       return;
     }
     
-    // Получаем Solana wallet adapter из window.solana (Phantom/Solflare через AppKit)
     const solanaWallet = (window as any).solana;
     if (!solanaWallet?.signTransaction || !solanaWallet?.publicKey) {
       toast.error('Solana wallet does not support signing transactions. Please ensure Phantom or Solflare is connected.');
@@ -67,70 +74,51 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
       hasSignTransaction: !!solanaWallet.signTransaction
     });
     
-    if (!targetRef.current) {
-      toast.error('Wallet preview not found');
-      return;
-    }
-    
     try {
       setIsExporting(true);
+      toast.info('Starting NFT mint process...');
       
-      // Шаг 1: Захватываем скриншот кошелька
-      toast.info('📸 Capturing wallet screenshot...');
-      console.log('📸 Starting screenshot capture...');
+      // Step 1: Get current theme from store
+      const currentTheme = useThemeStore.getState().theme;
+      const themeName = themeId || useThemeStore.getState().activeThemeId || 'custom-theme';
       
-      const canvas = await html2canvas(targetRef.current, {
-        backgroundColor: null,
-        scale: 2,
-        logging: false,
-        useCORS: true,
-      });
+      // Step 2: Resolve preview image URL (cascade through layers)
+      const previewImageUrl = resolvePreviewImageUrl(currentTheme);
       
-      const imageData = canvas.toDataURL('image/png', 0.9); // Сжатие 90%
-      console.log('✅ Screenshot captured, size:', (imageData.length / 1024).toFixed(2), 'KB');
+      console.log('[ExportToIpfs] Theme:', themeName);
+      console.log('[ExportToIpfs] Preview URL:', previewImageUrl);
+      console.log('[ExportToIpfs] Theme data size:', JSON.stringify(currentTheme).length);
       
-      // Шаг 2: Загружаем на IPFS
-      toast.info('📤 Uploading to IPFS...');
-      console.log('📤 Uploading to IPFS...', {
-        themeName: themeId || 'Custom Theme',
-        themeDataKeys: Object.keys(currentTheme)
-      });
-      
+      // Step 3: Upload to IPFS via Edge Function
+      toast.info('📤 Uploading theme to IPFS...');
       const { data: ipfsData, error: ipfsError } = await supabase.functions.invoke('upload-to-ipfs', {
         body: {
-          imageData: imageData,
-          themeName: themeId || 'Custom Theme',
+          themeName,
           themeData: currentTheme,
-          description: `Custom wallet theme created with Wallet Coast Customs`
+          previewImageUrl,
+          description: 'Custom wallet theme created with Wallet Coast Customs'
         }
       });
       
-      if (ipfsError) {
-        console.error('❌ IPFS upload error:', ipfsError);
-        throw new Error(ipfsError.message || 'Failed to upload to IPFS');
+      if (ipfsError || !ipfsData?.success) {
+        throw new Error(ipfsData?.message || ipfsError?.message || 'Failed to upload to IPFS');
       }
       
-      if (!ipfsData?.success || !ipfsData?.metadataUri) {
-        console.error('❌ Invalid IPFS response:', ipfsData);
-        throw new Error('Invalid response from IPFS upload');
-      }
-      
-      console.log('✅ IPFS upload successful:', {
+      console.log('[ExportToIpfs] ✅ IPFS Upload success:', {
         metadataUri: ipfsData.metadataUri,
-        imageUri: ipfsData.imageUri,
+        imageCid: ipfsData.imageCid,
         themeCid: ipfsData.themeCid
       });
       
       toast.success('✅ Uploaded to IPFS!');
       
-      // Шаг 3: Минтим NFT на Solana
+      // Step 4: Mint NFT on Solana
       toast.info('🎨 Minting NFT on Solana...');
-      console.log('🎨 Starting Solana mint...', {
+      console.log('[ExportToIpfs] 🎨 Starting Solana mint...', {
         wallet: solanaWallet.publicKey.toString(),
         metadataUri: ipfsData.metadataUri
       });
       
-      // Формируем wallet adapter для mintThemeNft
       const walletAdapter = {
         publicKey: solanaWallet.publicKey,
         signTransaction: solanaWallet.signTransaction.bind(solanaWallet),
@@ -140,15 +128,17 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
       const mintResult = await mintThemeNft(
         walletAdapter,
         ipfsData.metadataUri,
-        themeId || 'Custom Theme'
+        themeName
       );
       
-      console.log('✅ Mint successful:', mintResult);
+      console.log('[ExportToIpfs] ✅ Mint successful:', mintResult);
       
       toast.success(
         `🎉 NFT Minted Successfully!\nMint: ${mintResult.mint.toString().slice(0, 8)}...`,
         { duration: 5000 }
       );
+      
+      setDialogOpen(false);
       
     } catch (error) {
       console.error('❌ Mint process failed:', error);

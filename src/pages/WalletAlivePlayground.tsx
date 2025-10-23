@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import WalletPreviewContainer from '@/components/customization/WalletPreviewContainer';
 // import ChatInterface from '@/components/chat/ChatInterface'; // Временно закомментировано
 import { WalletChatProvider } from '@/contexts/WalletChatContext';
@@ -19,7 +19,6 @@ const WalletAlivePlayground = () => {
   const activeThemeId = useThemeStore(state => state.activeThemeId);
   
   const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
-  const walletPreviewRef = useRef<HTMLDivElement>(null);
 
   const handleElementSelectFromPreview = (elementSelector: string) => {
     setSelectedElementFromPreview(elementSelector);
@@ -59,7 +58,7 @@ const WalletAlivePlayground = () => {
             </div>
 
             {/* Main Layout - Single Column (chat is now fixed) */}
-            <div className="mb-8" ref={walletPreviewRef}>
+            <div className="mb-8">
               {/* Wallet Preview */}
               <WalletPreviewContainer 
                 onElementSelect={handleElementSelectFromPreview}
@@ -69,7 +68,6 @@ const WalletAlivePlayground = () => {
             {/* MINT NFT Button - Between Preview and Coverflow */}
             <div className="flex justify-center items-center gap-4 mb-8">
               <ExportToIpfsButton 
-                targetRef={walletPreviewRef}
                 themeId={activeThemeId}
               />
             </div>

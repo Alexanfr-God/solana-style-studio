@@ -83,8 +83,8 @@ Deno.serve(async (req: Request) => {
 
     // 2. Parse request body
     const body = await req.json().catch(() => ({}));
-    const { imageData, themeName, description, themeData } = body as {
-      imageData?: string;
+    const { previewImageUrl, themeName, description, themeData } = body as {
+      previewImageUrl?: string;
       themeName?: string;
       description?: string;
       themeData?: any;
@@ -93,23 +93,28 @@ Deno.serve(async (req: Request) => {
     console.log("[upload-to-ipfs] 🚀 Start", {
       hasTheme: !!themeData,
       themeName,
-      imageSize: imageData ? `${(imageData.length / 1024).toFixed(2)} KB` : "0 KB",
+      previewUrl: previewImageUrl,
     });
 
-    if (!imageData || !themeName) {
+    if (!previewImageUrl || !themeName || !themeData) {
       console.error("[upload-to-ipfs] ❌ Missing required fields");
       return jsonResponse(400, {
         success: false,
-        message: "imageData and themeName are required",
+        message: "previewImageUrl, themeName, and themeData are required",
       });
     }
 
-    // 3. Decode base64 image
-    const base64 = imageData.includes("base64,")
-      ? imageData.split("base64,")[1]
-      : imageData;
-    const imageBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-    const imageBlob = new Blob([imageBytes], { type: "image/png" });
+    // 3. Download preview image from URL
+    console.log("[upload-to-ipfs] 📥 Downloading preview image...");
+    const imageRes = await fetch(previewImageUrl);
+    if (!imageRes.ok) {
+      throw new Error(`Failed to download preview image: ${imageRes.status} ${imageRes.statusText}`);
+    }
+    const imageBlob = await imageRes.blob();
+    console.log("[upload-to-ipfs] ✅ Image downloaded:", {
+      size: `${(imageBlob.size / 1024).toFixed(2)} KB`,
+      type: imageBlob.type
+    });
 
     // 4. Upload image to Lighthouse
     console.log("[upload-to-ipfs] 📤 Uploading image to Lighthouse...");
