@@ -18,6 +18,7 @@ if (typeof window !== 'undefined') {
 
 import App from './App.tsx';
 import { WalletContextProvider } from '@/context/WalletContextProvider';
+import { SolanaWalletProvider } from '@/context/SolanaWalletProvider';
 import { initializeAppKit } from '@/lib/appkit';
 // Make sure all CSS imports are in the correct order
 import './styles/index.css'; // This already imports all other CSS files
@@ -38,11 +39,13 @@ async function initializeAndRender() {
     console.log('✅ AppKit initialized, starting React render');
     
     // Wrap App with WalletContextProvider for wallet state management
-    ReactDOM.createRoot(document.getElementById('root')!).render(
-      <WalletContextProvider>
-        <App />
-      </WalletContextProvider>
-    );
+      ReactDOM.createRoot(document.getElementById('root')!).render(
+        <WalletContextProvider>
+          <SolanaWalletProvider>
+            <App />
+          </SolanaWalletProvider>
+        </WalletContextProvider>
+      );
     
     console.log('🚀 Application initialized successfully!');
     console.log('🎯 Ready for wallet customization!');

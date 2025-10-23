@@ -32,9 +32,16 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
       return;
     }
     
+    // Отладка: проверяем состояние Solana wallet
+    console.log('[SolanaWallet Debug]', {
+      connected: wallet.connected,
+      publicKey: wallet.publicKey?.toBase58(),
+      hasSignTransaction: !!wallet.signTransaction
+    });
+    
     // Проверяем подключение кошелька
-    if (!wallet.connected || !wallet.publicKey) {
-      toast.error('Please connect your Solana wallet first');
+    if (!wallet.connected || !wallet.publicKey || !wallet.signTransaction) {
+      toast.error('Please connect a Solana wallet (Phantom/Solflare)');
       return;
     }
     
