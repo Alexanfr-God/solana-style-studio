@@ -8,6 +8,7 @@ const corsHeaders = {
 interface MintRequest {
   imageData: string;      // base64 image data
   themeName: string;
+  themeData: any;         // JSON темы
   description?: string;
 }
 
@@ -18,7 +19,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { imageData, themeName, description }: MintRequest = await req.json();
+    const { imageData, themeName, themeData, description }: MintRequest = await req.json();
 
     console.log('📦 Starting IPFS upload for theme:', themeName);
 
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
 
     const client = new NFTStorage({ token: nftStorageKey });
 
-    // Конвертируем base64 в blob
+    // 1. Конвертируем base64 в blob (изображение)
     const base64Data = imageData.includes('base64,') 
       ? imageData.split('base64,')[1] 
       : imageData;
@@ -38,33 +39,66 @@ Deno.serve(async (req) => {
     const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
     const imageFile = new File([imageBuffer], 'wallet-theme.png', { type: 'image/png' });
 
-    console.log('📤 Uploading image to IPFS...');
+    // 2. Загружаем JSON темы отдельно
+    console.log('📤 Uploading theme JSON to IPFS...');
+    const themeJsonString = JSON.stringify(themeData, null, 2);
+    const themeJsonFile = new File([themeJsonString], 'theme.json', { type: 'application/json' });
+    const themeCid = await client.storeBlob(themeJsonFile);
+    
+    // 3. Вычисляем SHA256 хеш темы
+    const themeBuffer = new TextEncoder().encode(themeJsonString);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', themeBuffer);
+    const themeSha256 = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
 
-    // Загружаем через NFT.Storage (автоматически создает metadata)
+    console.log('📤 Uploading image and metadata to IPFS...');
+
+    // 4. Загружаем изображение и создаём полную metadata
     const metadata = await client.store({
       name: `WCC: ${themeName}`,
       description: description || `Custom wallet theme created with Wallet Coast Customs`,
       image: imageFile,
+      wcc_theme_uri: `ipfs://${themeCid}`,
+      wcc_theme_sha256: themeSha256,
+      schemaVersion: 'wcc-theme-v1',
+      attributes: [
+        { trait_type: 'Theme ID', value: themeName },
+        { trait_type: 'Created At', value: new Date().toISOString() },
+        { trait_type: 'Schema Version', value: 'wcc-theme-v1' }
+      ],
       properties: {
         creator: 'Wallet Coast Customs',
         category: 'wallet-theme',
         createdAt: new Date().toISOString(),
+        files: [
+          { uri: metadata.data.image, type: 'image/png' },
+          { uri: `ipfs://${themeCid}`, type: 'application/json' }
+        ]
       }
     });
 
-    const metadataUri = metadata.url.replace('ipfs://', 'https://nftstorage.link/ipfs/');
-    const imageUri = metadata.data.image.replace('ipfs://', 'https://nftstorage.link/ipfs/');
+    // 5. Формируем ответ с обеими версиями ссылок
+    const imageCid = metadata.data.image.replace('ipfs://', '');
+    const metadataCid = metadata.url.replace('ipfs://', '');
 
     console.log('✅ Upload successful!');
-    console.log('📍 Metadata URI:', metadataUri);
-    console.log('🖼️ Image URI:', imageUri);
+    console.log('📍 Metadata CID:', metadataCid);
+    console.log('🖼️ Image CID:', imageCid);
+    console.log('📄 Theme CID:', themeCid);
+    console.log('🔐 Theme SHA256:', themeSha256);
 
     return new Response(
       JSON.stringify({
         success: true,
-        metadataUri,
-        imageUri,
-        ipfsHash: metadata.ipnft,
+        metadataUri: `ipfs://${metadataCid}`,
+        metadataUrl: `https://nftstorage.link/ipfs/${metadataCid}`,
+        imageUri: `ipfs://${imageCid}`,
+        imageUrl: `https://nftstorage.link/ipfs/${imageCid}`,
+        themeCid: themeCid,
+        themeUrl: `https://nftstorage.link/ipfs/${themeCid}`,
+        themeSha256: themeSha256,
+        schemaVersion: 'wcc-theme-v1'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
