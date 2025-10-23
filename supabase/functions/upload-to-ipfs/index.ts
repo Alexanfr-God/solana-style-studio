@@ -23,11 +23,17 @@ async function uploadBlobToLighthouse(
   const fd = new FormData();
   fd.append('file', blob, filename);
 
-  const res = await fetch('https://node.lighthouse.storage/api/v0/add', {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+  const res = await fetch('https://upload.lighthouse.storage/api/v0/add', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}` },
     body: fd,
+    signal: controller.signal,
   });
+
+  clearTimeout(timeoutId);
 
   if (!res.ok) {
     const txt = await res.text();
@@ -201,6 +207,16 @@ Deno.serve(async (req: Request) => {
     console.error("[upload-to-ipfs] ❌ Unhandled error:", error);
     
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorName = error instanceof Error ? error.name : '';
+    
+    // Timeout-specific error handling
+    if (errorName === 'AbortError' || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('timed out')) {
+      return jsonResponse(504, {
+        success: false,
+        message: "Upload timeout (>60s). Try a smaller file or retry later.",
+        detail: errorMessage,
+      });
+    }
     
     // Lighthouse-specific error handling
     if (errorMessage.includes('401')) {
