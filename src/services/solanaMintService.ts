@@ -1,6 +1,6 @@
 import { Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Metaplex, walletAdapterIdentity } from '@metaplex-foundation/js';
 import type { WalletContextState } from '@solana/wallet-adapter-react';
+// Metaplex будет импортирован динамически при вызове mintThemeNft
 
 /**
  * Получить подключение к Solana
@@ -66,6 +66,11 @@ export async function mintThemeNft(
   
   try {
     const connection = getConnection();
+    
+    // Динамический импорт Metaplex - грузится только при клике "Mint"
+    console.log('📦 Loading Metaplex SDK...');
+    const { Metaplex, walletAdapterIdentity } = await import('@metaplex-foundation/js');
+    
     const metaplex = Metaplex.make(connection)
       .use(walletAdapterIdentity(wallet));
     

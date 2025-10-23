@@ -22,11 +22,7 @@ import { initializeAppKit } from '@/lib/appkit';
 // Make sure all CSS imports are in the correct order
 import './styles/index.css'; // This already imports all other CSS files
 import './App.css';
-import { Buffer } from 'buffer';
-import './polyfills';
-
-// This fixes the 'Buffer is not defined' error
-window.Buffer = Buffer;
+import './polyfills'; // Includes Buffer and process polyfills
 
 // Add better debugging
 console.log('Main rendering started');
