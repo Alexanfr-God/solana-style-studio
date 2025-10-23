@@ -21,13 +21,24 @@ Deno.serve(async (req) => {
   try {
     const { imageData, themeName, themeData, description }: MintRequest = await req.json();
 
-    console.log('📦 Starting IPFS upload for theme:', themeName);
-
-    // Получаем NFT.Storage API key из секретов
+    console.log('[upload-to-ipfs] Function invoked');
+    console.log('[upload-to-ipfs] Theme name:', themeName);
+    
+    // Диагностика секрета
     const nftStorageKey = Deno.env.get('NFT_STORAGE_KEY');
+    console.log('[upload-to-ipfs] NFT_STORAGE_KEY set:', !!nftStorageKey);
+    
+    // Диагностика payload
+    console.log('[upload-to-ipfs] Request body keys:', Object.keys({ imageData, themeName, themeData, description }));
+    console.log('[upload-to-ipfs] Image data size:', imageData?.length || 0, 'chars');
+    console.log('[upload-to-ipfs] Theme data keys:', Object.keys(themeData || {}));
+    
     if (!nftStorageKey) {
+      console.error('❌ NFT_STORAGE_KEY not configured');
       throw new Error('NFT_STORAGE_KEY not configured');
     }
+
+    console.log('📦 Starting IPFS upload for theme:', themeName);
 
     const client = new NFTStorage({ token: nftStorageKey });
 

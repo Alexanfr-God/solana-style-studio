@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useWalletTheme } from '@/state/themeStore';
 import { supabase } from '@/integrations/supabase/client';
 import { mintThemeNft } from '@/services/solanaMintService';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import html2canvas from 'html2canvas';
 import BlockchainSelectorDialog from './BlockchainSelectorDialog';
 
@@ -19,9 +19,10 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
   const [isExporting, setIsExporting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   
-  // Получаем текущую тему и Solana кошелёк
+  // Получаем текущую тему и AppKit wallet
   const currentTheme = useWalletTheme();
-  const wallet = useWallet();
+  const { address, isConnected } = useAppKitAccount();
+  const { caipNetwork } = useAppKitNetwork();
   
   const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL') => {
     setDialogOpen(false);
@@ -32,18 +33,39 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
       return;
     }
     
-    // Отладка: проверяем состояние Solana wallet
-    console.log('[SolanaWallet Debug]', {
-      connected: wallet.connected,
-      publicKey: wallet.publicKey?.toBase58(),
-      hasSignTransaction: !!wallet.signTransaction
-    });
-    
-    // Проверяем подключение кошелька
-    if (!wallet.connected || !wallet.publicKey || !wallet.signTransaction) {
-      toast.error('Please connect a Solana wallet (Phantom/Solflare)');
+    // Проверка: подключён ли кошелёк
+    if (!isConnected || !address) {
+      toast.error('Please connect a wallet using the top-right button');
       return;
     }
+    
+    // Проверка: это Solana сеть?
+    const networkId = String(caipNetwork?.id || '');
+    const isSolana = networkId.includes('solana') || address.length === 44;
+    
+    console.log('[ExportToIpfs] Wallet check:', {
+      address: address.slice(0, 10) + '...',
+      network: caipNetwork?.name,
+      networkId,
+      isSolana
+    });
+    
+    if (!isSolana) {
+      toast.error('Please switch to a Solana network (Devnet/Mainnet)');
+      return;
+    }
+    
+    // Получаем Solana wallet adapter из window.solana (Phantom/Solflare через AppKit)
+    const solanaWallet = (window as any).solana;
+    if (!solanaWallet?.signTransaction || !solanaWallet?.publicKey) {
+      toast.error('Solana wallet does not support signing transactions. Please ensure Phantom or Solflare is connected.');
+      return;
+    }
+    
+    console.log('[ExportToIpfs] Using AppKit Solana wallet:', {
+      address: solanaWallet.publicKey.toString().slice(0, 10) + '...',
+      hasSignTransaction: !!solanaWallet.signTransaction
+    });
     
     if (!targetRef.current) {
       toast.error('Wallet preview not found');
@@ -61,10 +83,11 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
         backgroundColor: null,
         scale: 2,
         logging: false,
+        useCORS: true,
       });
       
-      const imageData = canvas.toDataURL('image/png');
-      console.log('✅ Screenshot captured');
+      const imageData = canvas.toDataURL('image/png', 0.9); // Сжатие 90%
+      console.log('✅ Screenshot captured, size:', (imageData.length / 1024).toFixed(2), 'KB');
       
       // Шаг 2: Загружаем на IPFS
       toast.info('📤 Uploading to IPFS...');
@@ -103,12 +126,19 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
       // Шаг 3: Минтим NFT на Solana
       toast.info('🎨 Minting NFT on Solana...');
       console.log('🎨 Starting Solana mint...', {
-        wallet: wallet.publicKey.toString(),
+        wallet: solanaWallet.publicKey.toString(),
         metadataUri: ipfsData.metadataUri
       });
       
+      // Формируем wallet adapter для mintThemeNft
+      const walletAdapter = {
+        publicKey: solanaWallet.publicKey,
+        signTransaction: solanaWallet.signTransaction.bind(solanaWallet),
+        signAllTransactions: solanaWallet.signAllTransactions?.bind(solanaWallet)
+      };
+      
       const mintResult = await mintThemeNft(
-        wallet,
+        walletAdapter,
         ipfsData.metadataUri,
         themeId || 'Custom Theme'
       );

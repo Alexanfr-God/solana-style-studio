@@ -18,7 +18,6 @@ if (typeof window !== 'undefined') {
 
 import App from './App.tsx';
 import { WalletContextProvider } from '@/context/WalletContextProvider';
-import { SolanaWalletProvider } from '@/context/SolanaWalletProvider';
 import { initializeAppKit } from '@/lib/appkit';
 // Make sure all CSS imports are in the correct order
 import './styles/index.css'; // This already imports all other CSS files
@@ -41,9 +40,7 @@ async function initializeAndRender() {
     // Wrap App with WalletContextProvider for wallet state management
       ReactDOM.createRoot(document.getElementById('root')!).render(
         <WalletContextProvider>
-          <SolanaWalletProvider>
-            <App />
-          </SolanaWalletProvider>
+          <App />
         </WalletContextProvider>
       );
     

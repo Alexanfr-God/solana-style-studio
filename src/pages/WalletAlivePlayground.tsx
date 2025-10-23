@@ -11,7 +11,6 @@ import ThemeChat from '@/components/ai/ThemeChat';
 import { useUserThemeLoader } from '@/hooks/useUserThemeLoader';
 import ExportToIpfsButton from '@/components/wallet/ExportToIpfsButton';
 import { useThemeStore } from '@/state/themeStore';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const WalletAlivePlayground = () => {
   // Load user theme from database when wallet connects
@@ -69,7 +68,6 @@ const WalletAlivePlayground = () => {
 
             {/* MINT NFT Button - Between Preview and Coverflow */}
             <div className="flex justify-center items-center gap-4 mb-8">
-              <WalletMultiButton />
               <ExportToIpfsButton 
                 targetRef={walletPreviewRef}
                 themeId={activeThemeId}
