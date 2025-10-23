@@ -66,17 +66,30 @@ export async function mintThemeNft(
     
     // Динамический импорт Metaplex - грузится только при клике "Mint"
     console.log('📦 Loading Metaplex SDK...');
-    const { Metaplex } = await import('@metaplex-foundation/js');
+    const { Metaplex, keypairIdentity, guestIdentity } = await import('@metaplex-foundation/js');
+    
+    // Создаём custom identity adapter для нашего wallet
+    const customIdentity = {
+      publicKey: walletAdapter.publicKey,
+      secretKey: null,
+      signMessage: async (message: Uint8Array) => {
+        throw new Error('signMessage not supported');
+      },
+      signTransaction: async (transaction: any) => {
+        return await walletAdapter.signTransaction(transaction);
+      },
+      signAllTransactions: async (transactions: any[]) => {
+        if (walletAdapter.signAllTransactions) {
+          return await walletAdapter.signAllTransactions(transactions);
+        }
+        return await Promise.all(transactions.map(tx => walletAdapter.signTransaction(tx)));
+      }
+    };
     
     const metaplex = Metaplex.make(connection).use({
-      identity: () => ({
-        publicKey: walletAdapter.publicKey,
-        signMessage: async () => { throw new Error('Not required for minting') },
-        signTransaction: walletAdapter.signTransaction,
-        signAllTransactions: walletAdapter.signAllTransactions || (async (txs) => {
-          return Promise.all(txs.map(tx => walletAdapter.signTransaction(tx)));
-        })
-      })
+      install(metaplex) {
+        metaplex.identity = () => customIdentity as any;
+      }
     });
     
     // Минт NFT
