@@ -1,5 +1,5 @@
 // supabase/functions/upload-to-ipfs/index.ts
-// ✅ Pure Deno runtime (no Node.js imports)
+// ✅ Pure Deno runtime - Lighthouse.storage implementation
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,10 +14,49 @@ function jsonResponse(status: number, body: unknown) {
   });
 }
 
-async function sha256Hex(input: Uint8Array): Promise<string> {
-  const hash = await crypto.subtle.digest("SHA-256", input);
-  const bytes = new Uint8Array(hash);
-  return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+// Helper: Upload blob to Lighthouse
+async function uploadBlobToLighthouse(
+  blob: Blob,
+  filename: string,
+  apiKey: string
+): Promise<string> {
+  const fd = new FormData();
+  fd.append('file', blob, filename);
+
+  const res = await fetch('https://node.lighthouse.storage/api/v0/add', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: fd,
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Lighthouse upload failed: ${res.status} ${txt}`);
+  }
+
+  // Response format: { Hash: "bafyrei...", Name: "file.png", Size: "1234" }
+  const data = await res.json();
+  return data.Hash as string;
+}
+
+// Helper: Convert CID to IPFS URI
+function toIpfsUri(cid: string): string {
+  return `ipfs://${cid}`;
+}
+
+// Helper: Convert CID to Gateway URL
+function toGatewayUrl(cid: string): string {
+  return `https://gateway.lighthouse.storage/ipfs/${cid}`;
+}
+
+// Helper: SHA256 hash of string
+async function sha256HexFromString(input: string): Promise<string> {
+  const enc = new TextEncoder();
+  const buf = enc.encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 Deno.serve(async (req: Request) => {
@@ -26,11 +65,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // 1. Check for NFT.Storage API key
-    const NFT_STORAGE_KEY = Deno.env.get("NFT_STORAGE_KEY");
-    if (!NFT_STORAGE_KEY) {
-      console.error("[upload-to-ipfs] ❌ Missing NFT_STORAGE_KEY");
-      return jsonResponse(500, { error: "Missing NFT_STORAGE_KEY" });
+    // 1. Check for Lighthouse API key
+    const LIGHTHOUSE_API_KEY = Deno.env.get("LIGHTHOUSE_API_KEY");
+    if (!LIGHTHOUSE_API_KEY) {
+      console.error("[upload-to-ipfs] ❌ Missing LIGHTHOUSE_API_KEY");
+      return jsonResponse(500, { 
+        success: false,
+        message: "Missing LIGHTHOUSE_API_KEY in environment" 
+      });
     }
 
     // 2. Parse request body
@@ -42,16 +84,19 @@ Deno.serve(async (req: Request) => {
       themeData?: any;
     };
 
-    console.log("[upload-to-ipfs] 📦 Request keys:", Object.keys(body));
+    console.log("[upload-to-ipfs] 🚀 Start", {
+      hasTheme: !!themeData,
+      themeName,
+      imageSize: imageData ? `${(imageData.length / 1024).toFixed(2)} KB` : "0 KB",
+    });
 
-    if (!imageData || !themeName || !themeData) {
+    if (!imageData || !themeName) {
       console.error("[upload-to-ipfs] ❌ Missing required fields");
       return jsonResponse(400, {
-        error: "imageData, themeName, themeData are required",
+        success: false,
+        message: "imageData and themeName are required",
       });
     }
-
-    console.log(`[upload-to-ipfs] 📦 Theme: ${themeName}, Image size: ${imageData.length} chars`);
 
     // 3. Decode base64 image
     const base64 = imageData.includes("base64,")
@@ -60,142 +105,124 @@ Deno.serve(async (req: Request) => {
     const imageBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
     const imageBlob = new Blob([imageBytes], { type: "image/png" });
 
-    // 4. Upload image to NFT.Storage
-    console.log("[upload-to-ipfs] 📤 Uploading image...");
-    const imgForm = new FormData();
-    imgForm.append("file", imageBlob, `${themeName}.png`);
+    // 4. Upload image to Lighthouse
+    console.log("[upload-to-ipfs] 📤 Uploading image to Lighthouse...");
+    const imageCid = await uploadBlobToLighthouse(
+      imageBlob,
+      `${themeName}.png`,
+      LIGHTHOUSE_API_KEY
+    );
+    console.log("[upload-to-ipfs] ✅ Image uploaded:", { cid: imageCid });
 
-    const imgRes = await fetch("https://api.nft.storage/upload", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${NFT_STORAGE_KEY}` },
-      body: imgForm,
-    });
+    // 5. Upload theme JSON (if provided)
+    let themeCid: string | undefined;
+    let themeSha256: string | undefined;
 
-    if (!imgRes.ok) {
-      const errorText = await imgRes.text();
-      console.error(`[upload-to-ipfs] ❌ Image upload failed: ${imgRes.status}`, errorText);
-      return jsonResponse(502, {
-        error: "Image upload failed",
-        status: imgRes.status,
-        detail: errorText,
+    if (themeData) {
+      console.log("[upload-to-ipfs] 📤 Uploading theme JSON to Lighthouse...");
+      const themeStr = JSON.stringify(themeData);
+      themeSha256 = await sha256HexFromString(themeStr);
+      
+      const themeBlob = new Blob([new TextEncoder().encode(themeStr)], {
+        type: "application/json",
       });
+      
+      themeCid = await uploadBlobToLighthouse(
+        themeBlob,
+        `${themeName}.theme.json`,
+        LIGHTHOUSE_API_KEY
+      );
+      console.log("[upload-to-ipfs] ✅ Theme uploaded:", { cid: themeCid, sha256: themeSha256 });
     }
 
-    const imgJson = await imgRes.json();
-    const imageCid = imgJson.value?.cid ?? imgJson.cid;
-    if (!imageCid) {
-      console.error("[upload-to-ipfs] ❌ No image CID returned");
-      return jsonResponse(502, { error: "No image CID returned", raw: imgJson });
-    }
-
-    // 5. Upload theme JSON
-    console.log("[upload-to-ipfs] 📤 Uploading theme JSON...");
-    const themeStr = JSON.stringify(themeData);
-    const themeBytes = new TextEncoder().encode(themeStr);
-    const themeBlob = new Blob([themeBytes], { type: "application/json" });
-
-    const themeForm = new FormData();
-    themeForm.append("file", themeBlob, `${themeName}.theme.json`);
-
-    const themeRes = await fetch("https://api.nft.storage/upload", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${NFT_STORAGE_KEY}` },
-      body: themeForm,
-    });
-
-    if (!themeRes.ok) {
-      const errorText = await themeRes.text();
-      console.error(`[upload-to-ipfs] ❌ Theme upload failed: ${themeRes.status}`, errorText);
-      return jsonResponse(502, {
-        error: "Theme upload failed",
-        status: themeRes.status,
-        detail: errorText,
-      });
-    }
-
-    const themeJson = await themeRes.json();
-    const themeCid = themeJson.value?.cid ?? themeJson.cid;
-    if (!themeCid) {
-      console.error("[upload-to-ipfs] ❌ No theme CID returned");
-      return jsonResponse(502, { error: "No theme CID returned", raw: themeJson });
-    }
-
-    // 6. Calculate SHA256 hash of theme
-    const themeSha256 = await sha256Hex(themeBytes);
-
-    // 7. Create and upload metadata
-    console.log("[upload-to-ipfs] 📤 Uploading metadata...");
+    // 6. Build Metaplex-compatible metadata
     const metadata = {
       name: `WCC: ${themeName}`,
       symbol: "WCC",
       description: description ?? "Custom wallet theme created with Wallet Coast Customs",
-      image: `ipfs://${imageCid}`,
+      image: toIpfsUri(imageCid),
       attributes: [
+        { trait_type: "Theme Name", value: themeName },
         { trait_type: "Schema Version", value: "wcc-theme-v1" },
         { trait_type: "Created At", value: new Date().toISOString() },
       ],
       properties: {
         category: "image",
         files: [
-          { uri: `ipfs://${imageCid}`, type: "image/png" },
-          { uri: `ipfs://${themeCid}`, type: "application/json" },
+          { uri: toIpfsUri(imageCid), type: "image/png" },
+          ...(themeCid ? [{ uri: toIpfsUri(themeCid), type: "application/json" }] : []),
         ],
       },
-      wcc_theme_uri: `ipfs://${themeCid}`,
-      wcc_theme_sha256: themeSha256,
+      ...(themeCid && { wcc_theme_uri: toIpfsUri(themeCid) }),
+      ...(themeSha256 && { wcc_theme_sha256: themeSha256 }),
       schemaVersion: "wcc-theme-v1",
     };
 
-    const metaBlob = new Blob([new TextEncoder().encode(JSON.stringify(metadata))], {
+    // 7. Upload metadata to Lighthouse
+    console.log("[upload-to-ipfs] 📤 Uploading metadata to Lighthouse...");
+    const metaBlob = new Blob([JSON.stringify(metadata)], {
       type: "application/json",
     });
-    const metaForm = new FormData();
-    metaForm.append("file", metaBlob, `${themeName}.metadata.json`);
 
-    const metaRes = await fetch("https://api.nft.storage/upload", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${NFT_STORAGE_KEY}` },
-      body: metaForm,
-    });
+    const metadataCid = await uploadBlobToLighthouse(
+      metaBlob,
+      `${themeName}.metadata.json`,
+      LIGHTHOUSE_API_KEY
+    );
+    console.log("[upload-to-ipfs] ✅ Metadata uploaded:", { cid: metadataCid });
 
-    if (!metaRes.ok) {
-      const errorText = await metaRes.text();
-      console.error(`[upload-to-ipfs] ❌ Metadata upload failed: ${metaRes.status}`, errorText);
-      return jsonResponse(502, {
-        error: "Metadata upload failed",
-        status: metaRes.status,
-        detail: errorText,
-      });
-    }
-
-    const metaJson = await metaRes.json();
-    const metadataCid = metaJson.value?.cid ?? metaJson.cid;
-    if (!metadataCid) {
-      console.error("[upload-to-ipfs] ❌ No metadata CID returned");
-      return jsonResponse(502, { error: "No metadata CID returned", raw: metaJson });
-    }
-
-    // 8. Success response
-    console.log(`[upload-to-ipfs] ✅ Success! Metadata CID: ${metadataCid}`);
+    // 8. Success response (backward compatible)
+    console.log("[upload-to-ipfs] ✅ Success! All files uploaded to Lighthouse");
     return jsonResponse(200, {
       success: true,
+      
+      // Primary fields
       imageCid,
-      themeCid,
+      imageUri: toIpfsUri(imageCid),
+      imageUrl: toGatewayUrl(imageCid),
+      
+      themeCid: themeCid ?? null,
+      themeUri: themeCid ? toIpfsUri(themeCid) : null,
+      themeUrl: themeCid ? toGatewayUrl(themeCid) : null,
+      themeSha256: themeSha256 ?? null,
+      
       metadataCid,
-      imageUri: `ipfs://${imageCid}`,
-      themeUri: `ipfs://${themeCid}`,
-      metadataUri: `ipfs://${metadataCid}`,
-      imageUrl: `https://nftstorage.link/ipfs/${imageCid}`,
-      themeUrl: `https://nftstorage.link/ipfs/${themeCid}`,
-      metadataUrl: `https://nftstorage.link/ipfs/${metadataCid}`,
-      themeSha256,
+      metadataUri: toIpfsUri(metadataCid),
+      metadataUrl: toGatewayUrl(metadataCid),
+      
       schemaVersion: "wcc-theme-v1",
+      
+      // Backward compatibility aliases
+      metadata_uri: toIpfsUri(metadataCid),
+      image_url: toGatewayUrl(imageCid),
+      theme_cid: themeCid ?? null,
     });
   } catch (error) {
     console.error("[upload-to-ipfs] ❌ Unhandled error:", error);
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Lighthouse-specific error handling
+    if (errorMessage.includes('401')) {
+      return jsonResponse(401, {
+        success: false,
+        message: "Invalid or expired LIGHTHOUSE_API_KEY",
+        detail: errorMessage,
+      });
+    }
+    
+    if (errorMessage.includes('413')) {
+      return jsonResponse(413, {
+        success: false,
+        message: "File too large (max 100MB per file)",
+        detail: errorMessage,
+      });
+    }
+    
     return jsonResponse(500, {
-      error: "Internal Error",
-      detail: String(error),
+      success: false,
+      message: "Internal server error during IPFS upload",
+      detail: errorMessage,
     });
   }
 });
