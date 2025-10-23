@@ -18,17 +18,25 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' && componentTagger(),
     nodePolyfills({
       include: ['buffer', 'process'],
+      globals: { Buffer: true, process: true },
     }),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    conditions: ['browser', 'module', 'import'],
     // Force single React version resolution
     dedupe: ["react", "react-dom", "use-sync-external-store"]
   },
   optimizeDeps: {
-    exclude: ["@radix-ui/react-switch"],
+    exclude: [
+      "@radix-ui/react-switch",
+      'node-fetch',
+      '@irys/sdk',
+      'arbundles',
+      '@toruslabs/eccrypto',
+    ],
     include: [
       'react',
       'react-dom',
@@ -41,7 +49,6 @@ export default defineConfig(({ mode }) => ({
       '@solana/web3.js',
       'buffer',
       'process',
-      '@metaplex-foundation/js',
     ],
     esbuildOptions: {
       // Node.js global to browser globalThis
