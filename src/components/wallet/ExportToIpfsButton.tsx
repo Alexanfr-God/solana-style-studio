@@ -3,7 +3,11 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
-import { prepareMint } from '@/lib/api/client';
+import { useWalletTheme } from '@/state/themeStore';
+import { supabase } from '@/integrations/supabase/client';
+import { mintThemeNft } from '@/services/solanaMintService';
+import { useWallet } from '@solana/wallet-adapter-react';
+import html2canvas from 'html2canvas';
 import BlockchainSelectorDialog from './BlockchainSelectorDialog';
 
 interface ExportToIpfsButtonProps {
@@ -15,30 +19,104 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ targetRef, them
   const [isExporting, setIsExporting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   
+  // Получаем текущую тему и Solana кошелёк
+  const currentTheme = useWalletTheme();
+  const wallet = useWallet();
+  
   const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL') => {
     setDialogOpen(false);
-    if (!themeId) {
-      toast.error('No theme selected for minting');
+    
+    // Пока поддерживаем только Solana
+    if (blockchain !== 'SOL') {
+      toast.error('Only Solana minting is supported at this time');
+      return;
+    }
+    
+    // Проверяем подключение кошелька
+    if (!wallet.connected || !wallet.publicKey) {
+      toast.error('Please connect your Solana wallet first');
+      return;
+    }
+    
+    if (!targetRef.current) {
+      toast.error('Wallet preview not found');
       return;
     }
     
     try {
       setIsExporting(true);
-      toast.info('Preparing theme for mint...');
       
-      // Call the new export API
-      const { url, walletTarget } = await prepareMint(themeId);
+      // Шаг 1: Захватываем скриншот кошелька
+      toast.info('📸 Capturing wallet screenshot...');
+      console.log('📸 Starting screenshot capture...');
       
-      // Show success message
-      toast.success(`Theme prepared for mint on ${blockchain} (${walletTarget})`);
+      const canvas = await html2canvas(targetRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        logging: false,
+      });
       
-      // Open the export file in a new tab
-      window.open(url, '_blank');
+      const imageData = canvas.toDataURL('image/png');
+      console.log('✅ Screenshot captured');
+      
+      // Шаг 2: Загружаем на IPFS
+      toast.info('📤 Uploading to IPFS...');
+      console.log('📤 Uploading to IPFS...', {
+        themeName: themeId || 'Custom Theme',
+        themeDataKeys: Object.keys(currentTheme)
+      });
+      
+      const { data: ipfsData, error: ipfsError } = await supabase.functions.invoke('upload-to-ipfs', {
+        body: {
+          imageData: imageData,
+          themeName: themeId || 'Custom Theme',
+          themeData: currentTheme,
+          description: `Custom wallet theme created with Wallet Coast Customs`
+        }
+      });
+      
+      if (ipfsError) {
+        console.error('❌ IPFS upload error:', ipfsError);
+        throw new Error(ipfsError.message || 'Failed to upload to IPFS');
+      }
+      
+      if (!ipfsData?.success || !ipfsData?.metadataUri) {
+        console.error('❌ Invalid IPFS response:', ipfsData);
+        throw new Error('Invalid response from IPFS upload');
+      }
+      
+      console.log('✅ IPFS upload successful:', {
+        metadataUri: ipfsData.metadataUri,
+        imageUri: ipfsData.imageUri,
+        themeCid: ipfsData.themeCid
+      });
+      
+      toast.success('✅ Uploaded to IPFS!');
+      
+      // Шаг 3: Минтим NFT на Solana
+      toast.info('🎨 Minting NFT on Solana...');
+      console.log('🎨 Starting Solana mint...', {
+        wallet: wallet.publicKey.toString(),
+        metadataUri: ipfsData.metadataUri
+      });
+      
+      const mintResult = await mintThemeNft(
+        wallet,
+        ipfsData.metadataUri,
+        themeId || 'Custom Theme'
+      );
+      
+      console.log('✅ Mint successful:', mintResult);
+      
+      toast.success(
+        `🎉 NFT Minted Successfully!\nMint: ${mintResult.mint.toString().slice(0, 8)}...`,
+        { duration: 5000 }
+      );
       
     } catch (error) {
-      console.error('Mint preparation error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Mint preparation failed';
-      toast.error(errorMessage);
+      console.error('❌ Mint process failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Minting failed';
+      toast.error(`❌ ${errorMessage}`);
     } finally {
       setIsExporting(false);
     }
