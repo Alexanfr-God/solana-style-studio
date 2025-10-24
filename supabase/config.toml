@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.upload-to-ipfs]
 verify_jwt = false
+
+[functions.mint-nft-solana]
+verify_jwt = false

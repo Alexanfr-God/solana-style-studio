@@ -5,7 +5,6 @@ import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThemeStore } from '@/state/themeStore';
 import { supabase } from '@/integrations/supabase/client';
-import { mintThemeNft } from '@/services/solanaMintService';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import BlockchainSelectorDialog from './BlockchainSelectorDialog';
 
@@ -63,17 +62,6 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       return;
     }
     
-    const solanaWallet = (window as any).solana;
-    if (!solanaWallet?.signTransaction || !solanaWallet?.publicKey) {
-      toast.error('Solana wallet does not support signing transactions. Please ensure Phantom or Solflare is connected.');
-      return;
-    }
-    
-    console.log('[ExportToIpfs] Using AppKit Solana wallet:', {
-      address: solanaWallet.publicKey.toString().slice(0, 10) + '...',
-      hasSignTransaction: !!solanaWallet.signTransaction
-    });
-    
     try {
       setIsExporting(true);
       toast.info('Starting NFT mint process...');
@@ -112,30 +100,35 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       
       toast.success('✅ Uploaded to IPFS!');
       
-      // Step 4: Mint NFT on Solana
+      // Step 4: Mint NFT on Solana via Edge Function
       toast.info('🎨 Minting NFT on Solana...');
-      console.log('[ExportToIpfs] 🎨 Starting Solana mint...', {
-        wallet: solanaWallet.publicKey.toString(),
+      console.log('[ExportToIpfs] 🎨 Calling mint-nft-solana Edge Function...', {
+        recipient: address,
         metadataUri: ipfsData.metadataUri
       });
       
-      const walletAdapter = {
-        publicKey: solanaWallet.publicKey,
-        signTransaction: solanaWallet.signTransaction.bind(solanaWallet),
-        signAllTransactions: solanaWallet.signAllTransactions?.bind(solanaWallet)
-      };
-      
-      const mintResult = await mintThemeNft(
-        walletAdapter,
-        ipfsData.metadataUri,
-        themeName
-      );
-      
-      console.log('[ExportToIpfs] ✅ Mint successful:', mintResult);
+      const { data: mintData, error: mintError } = await supabase.functions.invoke('mint-nft-solana', {
+        body: {
+          metadataUri: ipfsData.metadataUri,
+          recipient: address,
+          name: `WCC: ${themeName}`,
+          symbol: 'WCC',
+        },
+      });
+
+      if (mintError || !mintData?.success) {
+        throw new Error(mintData?.message || mintError?.message || 'Minting failed');
+      }
+
+      console.log('[ExportToIpfs] ✅ Mint successful:', {
+        mintAddress: mintData.mintAddress,
+        signature: mintData.signature,
+        explorerUrl: mintData.explorerUrl,
+      });
       
       toast.success(
-        `🎉 NFT Minted Successfully!\nMint: ${mintResult.mint.toString().slice(0, 8)}...`,
-        { duration: 5000 }
+        `🎉 NFT Minted Successfully!\nMint: ${mintData.mintAddress.slice(0, 8)}...\nTransferred to your wallet!`,
+        { duration: 7000 }
       );
       
       setDialogOpen(false);
