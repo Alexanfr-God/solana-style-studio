@@ -104,6 +104,21 @@ export function applyValueToNodeUnified(
     return;
   }
 
+  // ✅ ДОБАВЛЕНО: backgroundImage
+  if (key === 'backgroundimage') {
+    if (value && String(value).trim() !== '') {
+      el.style.backgroundImage = `url(${value})`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.backgroundRepeat = 'no-repeat';
+      console.log('[Runtime] ✅ Applied backgroundImage:', value);
+    } else {
+      el.style.removeProperty('background-image');
+      console.log('[Runtime] ✅ Removed backgroundImage');
+    }
+    return;
+  }
+
   if (key === 'textcolor' || key === 'color') {
     el.style.color = String(value);
     console.log('[Runtime] ✅ Applied textColor');
@@ -192,6 +207,12 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         
         domElements.forEach((el) => {
           if (el instanceof HTMLElement) {
+            console.log('[Runtime] 🎨 Applying:', {
+              selector: mapping.selector,
+              jsonPath: mapping.json_path,
+              key: getKeyFromPath(mapping.json_path),
+              value: value
+            });
             applyValueToNodeUnified(el, mapping.json_path, value, theme);
           }
         });

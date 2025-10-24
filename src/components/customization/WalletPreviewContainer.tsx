@@ -60,10 +60,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   useEffect(() => {
     if (theme && Object.keys(theme).length > 0) {
       console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
-      // Delay to ensure DOM is ready
-      setTimeout(() => {
+      // ✅ FIXED: Use requestAnimationFrame to sync with browser rendering (no race condition)
+      requestAnimationFrame(() => {
         applyThemeToDOM(theme);
-      }, 100);
+      });
     }
   }, [theme, activeThemeId]);
 
