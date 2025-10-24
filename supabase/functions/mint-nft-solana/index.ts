@@ -62,9 +62,13 @@ Deno.serve(async (req) => {
 
     // Connect to Solana (use HELIUS_RPC_DEVNET if available)
     const rpcUrl = Deno.env.get('HELIUS_RPC_DEVNET') || clusterApiUrl('devnet');
+    console.log('[mint-nft-solana] 🌐 Using RPC:', rpcUrl);
+    console.log('[mint-nft-solana] 🔍 HELIUS_RPC_DEVNET env:', Deno.env.get('HELIUS_RPC_DEVNET') ? 'SET' : 'NOT SET');
+    
     const connection = new Connection(rpcUrl, 'confirmed');
 
     // Check balance
+    console.log('[mint-nft-solana] 💰 Checking balance for:', serverWallet.publicKey.toBase58());
     const balance = await connection.getBalance(serverWallet.publicKey);
     console.log('[mint-nft-solana] 💰 Server balance:', balance / 1e9, 'SOL');
 
