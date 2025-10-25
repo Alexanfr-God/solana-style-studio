@@ -9,6 +9,23 @@ import { ExternalLink, Sparkles } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
 
+// Convert IPFS URI to HTTP gateway URL
+function ipfsToHttp(uri: string): string {
+  if (!uri) return uri;
+  
+  if (uri.startsWith('ipfs://')) {
+    const cid = uri.replace('ipfs://', '');
+    return `https://gateway.lighthouse.storage/ipfs/${cid}`;
+  }
+  
+  if (uri.startsWith('https://')) {
+    return uri;
+  }
+  
+  // Fallback for raw CID
+  return `https://gateway.lighthouse.storage/ipfs/${uri}`;
+}
+
 type MintRow = {
   id: string;
   created_at: string;
@@ -124,8 +141,22 @@ export default function MintedGallerySection() {
       // Fetch from IPFS if not cached
       if (!metadata) {
         console.log('[MintedGallery] Fetching metadata from:', metadataUri);
-        const response = await fetch(metadataUri);
-        if (!response.ok) throw new Error(`IPFS fetch failed: ${response.statusText}`);
+        
+        // Convert IPFS URI to HTTP URL
+        const httpUrl = ipfsToHttp(metadataUri);
+        console.log('[MintedGallery] HTTP URL:', httpUrl);
+        
+        const response = await fetch(httpUrl);
+        if (!response.ok) {
+          const errorBody = await response.text();
+          console.error('[MintedGallery] Fetch failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            url: httpUrl,
+            body: errorBody
+          });
+          throw new Error(`IPFS fetch failed: ${response.status} ${response.statusText}`);
+        }
         
         metadata = await response.json();
         
@@ -150,7 +181,11 @@ export default function MintedGallerySection() {
         console.log('[MintedGallery] Fetching legacy theme from:', metadata.wcc_theme_uri);
         toast.loading('🔄 Loading legacy format...', { id: loadingToast });
         
-        const legacyResponse = await fetch(metadata.wcc_theme_uri);
+        // Convert IPFS URI to HTTP URL
+        const legacyHttpUrl = ipfsToHttp(metadata.wcc_theme_uri);
+        console.log('[MintedGallery] Legacy HTTP URL:', legacyHttpUrl);
+        
+        const legacyResponse = await fetch(legacyHttpUrl);
         if (legacyResponse.ok) {
           themeData = await legacyResponse.json();
         }
