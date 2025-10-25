@@ -64,17 +64,34 @@ serve(async (req: Request) => {
       });
     }
 
-    // Connect to Solana devnet via Helius (requires API key from secret)
-    const rpcUrl = Deno.env.get("HELIUS_DEVNET");
-    if (!rpcUrl) {
-      console.error("[mint-nft-build] ❌ HELIUS_DEVNET secret not found");
+    // Get RPC URL from secret, trim whitespace, fallback to public devnet
+    const endpoint = (Deno.env.get("HELIUS_DEVNET") ?? "https://api.devnet.solana.com").trim();
+    console.log("[mint-nft-build] 🌐 RPC endpoint (masked):", endpoint.replace(/api-key=[^&]+/, "api-key=***"));
+    
+    // Health-check: ping Helius to verify auth BEFORE creating Connection
+    console.log("[mint-nft-build] 🏥 Health-check: pinging RPC...");
+    const pingResponse = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ 
+        jsonrpc: "2.0", 
+        id: 1, 
+        method: "getHealth" 
+      }),
+    });
+    const pingText = await pingResponse.text();
+    console.log("[mint-nft-build] 🏥 Ping response:", pingResponse.status, pingText);
+    
+    if (!pingResponse.ok) {
+      console.error("[mint-nft-build] ❌ RPC health-check failed");
       return jsonResponse(500, {
         success: false,
-        message: "RPC configuration error: HELIUS_DEVNET not set",
+        message: `RPC endpoint unavailable (${pingResponse.status}): ${pingText}`,
       });
     }
-    console.log("[mint-nft-build] 🌐 Using RPC:", rpcUrl);
-    const connection = new Connection(rpcUrl, "confirmed");
+    
+    // Create connection ONLY if health-check passed
+    const connection = new Connection(endpoint, "confirmed");
 
     // Parse user public key (will be feePayer)
     const userPubkey = new PublicKey(userPublicKey);
