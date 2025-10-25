@@ -269,15 +269,30 @@ const sections = [{
   id: 'royalties',
   title: 'Royalties & Profit Split',
   content: <>
-        <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400"></h3>
+        <p className="mb-4">At Wallet Coast Customs, we believe customization should reward everyone who makes it possible — the creator, the platform, and even the wallet that brings it to life.</p>
         
-        <p className="mb-4">Every wallet skin minted through Wallet Coast Customs includes built-in royalty logic. Creators can choose between one-of-one drops or open editions, and earn a percentage on every secondary sale — automatically enforced on-chain. Each collection can define its royalty rate at the time of launch.</p>
+        <p className="mb-4">Every minted wallet theme is designed to include multi-tier royalties, where revenue is fairly shared between all key contributors:</p>
         
-        <p className="mb-4">The platform also applies a small service fee on each mint and resale, which funds product development, moderation, and infrastructure. All royalty and fee logic is encoded in the smart contract and publicly visible.</p>
+        <ul className="list-disc pl-5 mb-4 space-y-2">
+          <li><strong>Creators</strong> earn ongoing royalties from every resale of their custom skins.</li>
+          <li><strong>WCC Platform</strong> receives a small service fee to fund product development, moderation, and AI infrastructure.</li>
+          <li><strong>Integrated wallets</strong> receive a partner fee — a percentage that supports the ecosystem hosting and displaying the themes.</li>
+        </ul>
         
-        <p className="mb-4">In open edition drops (e.g., 10,000 mints), a dynamic minting page is generated with real-time stats: minted count, remaining supply, and a live preview of the wallet skin. These collections come with a unique link, making them easy to promote and track. In the future, verified collections will gain access to customizable landing pages, advanced analytics, and boost options.</p>
+        <p className="mb-4">This model transforms customization into a collaborative economy, not just a marketplace. Each participant benefits from the success of the others, encouraging innovation, design quality, and open integration.</p>
         
-        <p className="mb-4">This system is designed to fairly reward creators, foster viral drops, and ensure the long-term sustainability of the platform.</p>
+        <p className="mb-4">As the system evolves, creators will be able to:</p>
+        
+        <ul className="list-disc pl-5 mb-4 space-y-2">
+          <li>Set their own royalty percentage</li>
+          <li>Launch one-of-one or open-edition drops</li>
+          <li>Track real-time mint stats, resales, and collector analytics</li>
+          <li>Share verified links for easier promotion and community building</li>
+        </ul>
+        
+        <p className="mb-4">All fee and royalty logic will be transparent and encoded on-chain once the marketplace and wallet integration layers go live.</p>
+        
+        <p className="mb-4">WCC's goal is simple: build an ecosystem where every layer of creativity — from design to delivery — is rewarded.</p>
       </>
 }, {
   id: 'architecture',
