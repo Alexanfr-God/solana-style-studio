@@ -3,7 +3,8 @@
 // Builds UNSIGNED Metaplex NFT transaction for user to sign
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { 
+import { Buffer } from "node:buffer";
+import {
   Connection, 
   clusterApiUrl, 
   PublicKey, 
