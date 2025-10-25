@@ -195,9 +195,37 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
         lastValidBlockHeight: buildData.lastValidBlockHeight
       }, 'confirmed');
 
-      console.log('[MintFlow] ✅ Transaction confirmed!');
+      console.log('[MintFlow] ✅ Transaction confirmed!', {
+        signature,
+        explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+      });
 
-      // Step 10: Show success
+      // Step 10: Save mint record to database
+      console.log('[MintFlow] 💾 Saving mint record to database...');
+      try {
+        const { error: insertError } = await supabase
+          .from('minted_themes')
+          .insert({
+            tx_sig: signature,
+            mint_address: buildData.mintAddress,
+            owner_address: address,
+            metadata_uri: ipfsData.metadataUri,
+            theme_name: themeName,
+            image_url: previewImageUrl,
+            network: 'devnet'
+          });
+        
+        if (insertError) {
+          console.error('[MintFlow] ⚠️ Failed to save mint record:', insertError);
+          // Don't block mint success, just log
+        } else {
+          console.log('[MintFlow] ✅ Mint record saved to database');
+        }
+      } catch (dbError) {
+        console.error('[MintFlow] ⚠️ Database error:', dbError);
+      }
+
+      // Step 11: Show success
       const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=devnet`;
       const mintExplorerUrl = `https://explorer.solana.com/address/${buildData.mintAddress}?cluster=devnet`;
 

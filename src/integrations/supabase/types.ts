@@ -170,6 +170,45 @@ export type Database = {
         }
         Relationships: []
       }
+      minted_themes: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          metadata_uri: string
+          mint_address: string
+          network: string
+          owner_address: string
+          theme_name: string | null
+          tx_sig: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          metadata_uri: string
+          mint_address: string
+          network?: string
+          owner_address: string
+          theme_name?: string | null
+          tx_sig: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          metadata_uri?: string
+          mint_address?: string
+          network?: string
+          owner_address?: string
+          theme_name?: string | null
+          tx_sig?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       presets: {
         Row: {
           cover_url: string | null
@@ -392,10 +431,7 @@ export type Database = {
       }
     }
     Functions: {
-      cleanup_expired_nonces: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_nonces: { Args: never; Returns: undefined }
       compute_json_path: {
         Args: {
           _category: string
@@ -410,10 +446,7 @@ export type Database = {
         Args: { p_element_id: string; p_user_id?: string }
         Returns: string
       }
-      refresh_feedback_analytics: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      refresh_feedback_analytics: { Args: never; Returns: undefined }
       strip_screen_prefix: {
         Args: { _id: string; _screen: string }
         Returns: string

@@ -11,6 +11,7 @@ import ThemeChat from '@/components/ai/ThemeChat';
 import { useUserThemeLoader } from '@/hooks/useUserThemeLoader';
 import ExportToIpfsButton from '@/components/wallet/ExportToIpfsButton';
 import { useThemeStore } from '@/state/themeStore';
+import MintedGallerySection from '@/components/wallet/MintedGallerySection';
 
 const WalletAlivePlayground = () => {
   // Load user theme from database when wallet connects
@@ -76,6 +77,9 @@ const WalletAlivePlayground = () => {
             <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-lg">
               <ThemeSelectorCoverflow />
             </div>
+
+            {/* Minted Gallery Section */}
+            <MintedGallerySection />
           </div>
         </main>
 
