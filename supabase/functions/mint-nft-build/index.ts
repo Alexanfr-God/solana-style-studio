@@ -64,8 +64,8 @@ serve(async (req: Request) => {
       });
     }
 
-    // Connect to Solana devnet
-    const rpcUrl = Deno.env.get("HELIUS_DEVNET") || clusterApiUrl("devnet");
+    // Connect to Solana devnet (public RPC, no auth required)
+    const rpcUrl = clusterApiUrl("devnet");
     console.log("[mint-nft-build] 🌐 Using RPC:", rpcUrl);
     const connection = new Connection(rpcUrl, "confirmed");
 
