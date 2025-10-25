@@ -17,75 +17,52 @@ const sections = [{
   content: <>
         <Card className="bg-black/40 border-white/5 shadow-lg">
           <CardContent className="p-6 max-h-[70vh] overflow-y-auto scrollbar-custom">
-            <p className="mb-4"><strong>Wallet Coast Customs (WCC)</strong> is redefining how Web3 wallets look, feel, and behave.</p>
+            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🌴 About Wallet Coast Customs</h3>
             
-            <p className="mb-4">We are building the world's first AI-driven customization platform where users can generate, personalize, and mint wallet UI skins as NFTs — transforming a standard interface into a reflection of personal identity.</p>
+            <p className="mb-4">Wallet Coast Customs (WCC) is a startup reimagining how Web3 wallets should look, feel, and express individuality.</p>
             
-            <p className="mb-4">This is not just decoration. It's an evolution of what a wallet can be.</p>
+            <p className="mb-4">We're building the first AI-powered customization platform for Web3 wallet extensions —
+            a place where design becomes an NFT theme, and every wallet becomes a reflection of its owner's personality.</p>
             
-            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🔥 v1 — Live Beta</h3>
-            Our first working version is already live and demo-ready.
-            It allows users to generate Phantom Wallet login screens using Supabase Edge Functions and OpenAI DALL·E. Users describe a vibe, upload an image — and get a custom interface.</p>
+            <p className="mb-4">WCC isn't just another "skin."
+            It's a step into a new era where users control not only their tokens,
+            but also the visual identity of their digital self.</p>
             
-            <p className="mb-4">It's basic. It's raw. But it proves the concept — and it works.</p>
+            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🎨 Today</h3>
             
-            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🧪 v2 — Advanced Style Generator (Demo Stage)</h3>
-            The second version goes deeper — allowing AI-powered generation and manual editing of:</p>
+            <p className="mb-4">The system is currently being trained on the WCC Demo Wallet.
+            Here, users can upload an image — and AI Vision extracts its color palette,
+            replaces the corresponding values in the JSON theme,
+            and instantly applies the result to the wallet interface.</p>
             
-            <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li>Fonts</li>
-              <li>Buttons</li>
-              <li>Colors & borders</li>
-              <li>Background animations</li>
-              <li>Iconography</li>
-            </ul>
+            <p className="mb-4">Users can manually fine-tune details, save their theme,
+            and even mint it as an NFT — preserving their visual style on-chain.</p>
             
-            <p className="mb-4">All structured as a complete wallet interface, rendered in JSON and layered PNGs — ready to mint as NFTs and apply visually.</p>
+            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🚀 Why It Matters</h3>
             
-            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🎭 v3 — Wallet Masks (In Development)</h3>
-            We're implementing "wallet masks" — decorative overlays that wrap around the wallet UI (not over it).
-            Think memes, frames, characters — all reacting to the wallet layout.
-            The architecture is complete. Generation works via Replicate + SDXL. Next: tuning and precision styling.</p>
+            <p className="mb-4">We believe customization is the next level of ownership in Web3.
+            If NFTs let people own digital art,
+            then wallet themes let them own their interface.</p>
             
-            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🤖 The AI Companion — Next-Gen Wallet Intelligence</h3>
-            WCC introduces the AI Wallet Pet — a stylized, emotional assistant that lives inside your wallet.</p>
+            <p className="mb-4">Every screen, background, and color becomes part of your on-chain identity.
+            WCC makes that possible.</p>
             
-            <p className="mb-4">It observes behavior patterns, reacts to voice, displays emotion — and serves as an early-warning system against suspicious activity.
-            In our roadmap:</p>
+            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🧩 How It Works</h3>
             
             <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li>Voice recognition</li>
-              <li>Customizable personalities</li>
-              <li>Security alerts and interaction blocking</li>
+              <li><strong>AI Vision</strong> analyzes uploaded images and generates color palettes</li>
+              <li><strong>GPT Theme Engine</strong> updates the JSON theme across all interface layers</li>
+              <li><strong>Manual Editor</strong> lets users fine-tune colors, backgrounds, and typography</li>
+              <li><strong>Mint System</strong> saves each finished theme as an NFT</li>
             </ul>
             
-            <p className="mb-4">It's a companion, a guardian — and a signature of your Web3 identity.</p>
-            
-            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">⚙️ Tech Stack</h3></p>
-            <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li>Supabase Edge Functions – serverless customization engine</li>
-              <li>OpenAI GPT + DALL·E – prompt → design → layout</li>
-              <li>Replicate + SDXL + ControlNet – image-aware overlay generation</li>
-              <li>Solana Smart Contracts – NFT minting, collections, royalties</li>
-              <li>Lovable – interface prototyping</li>
-              <li>(Planned) Hugging Face model – fine-tuned UI layout generation</li>
-            </ul>
-            
-            <p className="mb-4"><h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🌍 Who It's For</h3></p>
-            <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li>Web3 builders</li>
-              <li>NFT creators & collectors</li>
-              <li>Meme coin communities</li>
-              <li>Security-conscious wallet users</li>
-              <li>Anyone who believes wallets should reflect you</li>
-            </ul>
+            <p className="mb-4">All changes happen in real time, directly inside the wallet interface.</p>
             
             <div className="p-4 bg-gradient-to-r from-black/60 to-solana-purple/10 rounded-md mb-4">
               <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🌊 Our Mission</h3>
-              <p className="mb-2">Wallets are more than tools.<br />
-              They're digital homes, mirrors of identity, and emotional signatures in Web3.</p>
-              
-              <p>With Wallet Coast Customs, every wallet becomes a piece of art — intelligent, expressive, iconic.</p>
+              <p className="mb-2">Wallet Coast Customs is a laboratory of Web3 customization —
+              transforming wallet interfaces into personal spaces
+              where AI helps users create, express, and truly own their style.</p>
             </div>
           </CardContent>
         </Card>
