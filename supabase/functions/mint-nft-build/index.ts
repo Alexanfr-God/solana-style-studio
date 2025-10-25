@@ -27,6 +27,7 @@ import {
   createCreateMetadataAccountV3Instruction,
   PROGRAM_ID as MPL_TOKEN_METADATA_PROGRAM_ID,
 } from "npm:@metaplex-foundation/mpl-token-metadata@^2.0.0";
+import { createMemoInstruction } from "npm:@solana/spl-memo@0.2.5";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -121,10 +122,17 @@ serve(async (req: Request) => {
       })
     );
 
+    // Instruction 1: Add unique memo to prevent duplicate detection
+    const uniqueMemo = `WCC-MINT-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    console.log("[mint-nft-build] 🔖 Adding memo:", uniqueMemo);
+    tx.add(
+      createMemoInstruction(uniqueMemo, [userPubkey])
+    );
+
     // Get mint rent-exempt amount
     const mintRent = await getMinimumBalanceForRentExemptMint(connection);
 
-    // Instruction 1: Create mint account
+    // Instruction 2: Create mint account
     tx.add(
       SystemProgram.createAccount({
         fromPubkey: userPubkey,
@@ -135,7 +143,7 @@ serve(async (req: Request) => {
       })
     );
 
-    // Instruction 2: Initialize mint (decimals=0 for NFT, userPubkey is mint authority)
+    // Instruction 3: Initialize mint (decimals=0 for NFT, userPubkey is mint authority)
     tx.add(
       createInitializeMintInstruction(
         mintAddress,
@@ -146,7 +154,7 @@ serve(async (req: Request) => {
       )
     );
 
-    // Instruction 3: Get/Create ATA for user
+    // Instruction 4: Get/Create ATA for user
     const userAta = await getAssociatedTokenAddress(
       mintAddress,
       userPubkey,
@@ -166,7 +174,7 @@ serve(async (req: Request) => {
       )
     );
 
-    // Instruction 4: Mint 1 token to user's ATA
+    // Instruction 5: Mint 1 token to user's ATA
     tx.add(
       createMintToInstruction(
         mintAddress,
@@ -178,7 +186,7 @@ serve(async (req: Request) => {
       )
     );
 
-    // Instruction 5: Create Metadata Account V3 (Metaplex)
+    // Instruction 6: Create Metadata Account V3 (Metaplex)
     const [metadataAddress] = PublicKey.findProgramAddressSync(
       [
         Buffer.from("metadata"),

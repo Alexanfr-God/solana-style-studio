@@ -27,6 +27,7 @@ function resolvePreviewImageUrl(theme: any): string {
 const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [lastMintTime, setLastMintTime] = useState(0);
   
   const { address, isConnected } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
@@ -38,6 +39,14 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       return;
     }
     
+    // Prevent spam (5 sec cooldown)
+    const now = Date.now();
+    if (now - lastMintTime < 5000) {
+      toast.error('⏳ Please wait 5 seconds between mints');
+      return;
+    }
+    
+    setLastMintTime(now);
     setDialogOpen(false);
     
     // Пока поддерживаем только Solana
@@ -255,16 +264,30 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
     }
   };
   
+  const cooldownRemaining = Math.max(0, 5 - Math.floor((Date.now() - lastMintTime) / 1000));
+  const isOnCooldown = cooldownRemaining > 0 && !isExporting;
+
   return (
     <>
       <Button
         onClick={() => setDialogOpen(true)}
-        disabled={isExporting || !themeId}
+        disabled={isExporting || !themeId || isOnCooldown}
         className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all"
         size="lg"
       >
-        {isExporting ? <Loader className="mr-2 animate-spin" /> : <Diamond className="mr-2" />}
-        {isExporting ? 'Preparing…' : 'Mint as NFT'}
+        {isExporting ? (
+          <>
+            <Loader className="mr-2 animate-spin" />
+            Preparing…
+          </>
+        ) : isOnCooldown ? (
+          <>⏳ Wait {cooldownRemaining}s</>
+        ) : (
+          <>
+            <Diamond className="mr-2" />
+            Mint as NFT
+          </>
+        )}
       </Button>
       
       <BlockchainSelectorDialog
