@@ -71,60 +71,96 @@ const sections = [{
   id: 'roadmap',
   title: 'Roadmap',
   content: <>
-        <h2 className="text-xl font-bold mb-4"></h2>
+        <h2 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🚗 WCC Roadmap — 2025–2026</h2>
         
         <div className="space-y-6">
           <div>
-            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q2 2025 — MVP Launched</span></p>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q4 2025 — Stabilization & Real Mint Integration</span></p>
+            <p className="mb-2 italic text-white/70">current phase: "AI-Driven Demo → NFT Theme Flow"</p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
-              <li>✅ First live demo version: AI-generated login screens via Supabase + DALL·E</li>
-              <li>✅ Development of custom Solana smart contract (wallet skins, royalties, collections)</li>
-              <li>✅ Custom GPT built: generates full UI structure (JSON + layered PNGs)</li>
-              <li>✅ V2 demo released: AI-driven UI style generation (fonts, buttons, animations, backgrounds)</li>
-              <li>✅ V3 mask architecture implemented: Safe Zone logic and Replicate SDXL rendering</li>
-              <li>✅ Participated in Solana Breakout Hackathon to validate vision and technology</li>
+              <li>✅ Full NFT theme minting — users sign and pay for their own transactions</li>
+              <li>✅ Minted Gallery launched — filterable cards with themes, owners, and "Apply Theme" button</li>
+              <li>⚙️ Manual Editor improvements — AI recognizes more JSON elements (colors, backgrounds, text, buttons)</li>
+              <li>🧠 AI palette extraction and replacement from uploaded images</li>
+              <li>🎨 Development of AI Poster Generator — automatic theme posters and visual previews</li>
             </ul>
+            <p className="mt-3 font-semibold">→ Goal by December 2025:</p>
+            <p className="mb-2">Deliver a stable build where users can upload an image → AI extracts and applies a palette → the theme is minted as an NFT → and instantly applied to the interface.
+            Also launch AI-generated theme posters and previews.</p>
           </div>
           
           <div>
-            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q3 2025 — Product Growth & Development</span></p>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q1 2026 — Transition to Real Extension Layer</span></p>
+            <p className="mb-2 italic text-white/70">"from demo wallet → to real browser extension environment"</p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
-              <li>🎨 Public release of Style Editor (v2): hybrid AI + manual interface customization</li>
-              <li>🎭 Completion of Wallet Mask system (v3): preview and fallback logic</li>
-              <li>🤖 AI Companion development begins: emotions, voice interaction, behavioral response</li>
-              <li>💬 Gathering feedback from closed group testing (focus groups & early community)</li>
-              <li>👥 Expanding the core team: frontend, backend, and AI developers</li>
-              <li>💸 Actively pursuing grants and strategic investment opportunities</li>
-              <li>🔌 Starting integration with Web3 marketplaces (no names disclosed)</li>
+              <li>🚀 Move customization logic into a real browser extension</li>
+              <li>🔌 Integrate the Theme Engine as a standalone runtime JSON patch module</li>
+              <li>💾 Configure IPFS + Supabase Storage for user theme libraries</li>
+              <li>🧩 Expand JSON structure: fonts, borders, icons, hover states</li>
+              <li>🎨 Finalize "Apply Theme" with visual feedback and animation</li>
+              <li>🧠 Start model training on edit history — AI learns to suggest design patterns</li>
             </ul>
+            <p className="mt-3 font-semibold">→ Goal by March 2026:</p>
+            <p className="mb-2">Build a functional browser extension prototype with AI-assisted theme application and adaptive design learning.</p>
           </div>
           
           <div>
-            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q4 2025 — Scaling & Customization</span></p>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q2 2026 — Multi-Interface Integration & Marketplace</span></p>
+            <p className="mb-2 italic text-white/70">"turning customization into an ecosystem"</p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
-              <li>🎁 Partnered drops and visual collaborations with Web3 projects and communities</li>
-              <li>💎 Skin rarity levels, collectible layers, creator profiles</li>
-              <li>🧠 Expansion of AI infrastructure: custom model development and style control logic</li>
-              <li>🌐 Early testing of omnichain skin ownership via LayerZero</li>
-              <li>🔒 AI Companion prototypes early security behaviors: detect anomalies, protect users</li>
+              <li>🌐 Support multiple wallet interfaces and layouts</li>
+              <li>🪙 Create a simple NFT Theme Marketplace — users can sell or exchange their custom themes</li>
+              <li>🎭 Introduce User Profiles (on-chain portfolios showcasing owned and created themes)</li>
+              <li>💬 Collect user feedback to improve AI theme suggestions and color mapping</li>
             </ul>
+            <p className="mt-3 font-semibold">→ Goal by June 2026:</p>
+            <p className="mb-2">Launch a public demo featuring multi-interface customization and an open NFT theme marketplace.</p>
           </div>
           
           <div>
-            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">2026 — From Product to Protocol</span></p>
+            <p className="mb-2 text-lg font-semibold">🔹 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Q3–Q4 2026 — Scale & Standardization</span></p>
+            <p className="mb-2 italic text-white/70">"from project → to protocol"</p>
             <ul className="list-disc pl-5 mb-2 space-y-1">
-              <li>🔗 Potential direct integrations with major Web3 wallets</li>
-              <li>🐾 AI Companion becomes persistent layer: emotional, behavioral, voice-enabled</li>
-              <li>🎞️ Animated skins: motion-reactive styles responding to user interaction</li>
-              <li>👛 Cross-wallet theming: apply one skin across multiple wallets</li>
-              <li>🌍 Omnichain skins: unified visual identity across ecosystems</li>
-              <li>🛡️ Real-time AI Guardian: behavioral analysis and protective logic during wallet usage</li>
+              <li>🧩 Develop the WCC Theme Protocol — an open standard for Web3 interface customization</li>
+              <li>🌍 Partner with Web3 projects (wallets, NFT marketplaces, DAOs)</li>
+              <li>🎨 Cross-platform themes (desktop, mobile, browser)</li>
+              <li>💡 Begin testing the AI Layout Generator for automatic interface composition</li>
+              <li>📦 Publish documentation and SDK for integrating WCC into external products</li>
             </ul>
+            <p className="mt-3 font-semibold">→ Goal by end of 2026:</p>
+            <p className="mb-2">Position WCC as the standard for Web3 interface customization — a foundation layer for personalized wallet experiences.</p>
           </div>
           
-          <blockquote className="border-l-4 border-purple-500 pl-4 py-1 italic text-white/80">
-            🚀 This isn't just a roadmap — it's the DNA of a protocol where wallets become culture.
-          </blockquote>
+          <div className="mt-6 p-4 bg-black/40 border border-white/10 rounded-lg">
+            <h3 className="text-lg font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">⏱️ Progress Timeline</h3>
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-4 font-semibold text-white/90 pb-2 border-b border-white/20">
+                <span>Stage</span>
+                <span>Target Date</span>
+                <span>Status</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-white/80">
+                <span>Stable build (AI Palette + Mint + Posters)</span>
+                <span>December 2025</span>
+                <span>🔥 Achievable</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-white/80">
+                <span>Real browser extension prototype</span>
+                <span>March–April 2026</span>
+                <span>⚙️ Realistic</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-white/80">
+                <span>Multi-interface + Marketplace</span>
+                <span>Summer 2026</span>
+                <span>🌊 Early public release</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-white/80">
+                <span>Customization Protocol (standardization)</span>
+                <span>End of 2026</span>
+                <span>🧠 Vision milestone</span>
+              </div>
+            </div>
+          </div>
         </div>
       </>
 }, {
