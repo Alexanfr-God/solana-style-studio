@@ -64,65 +64,10 @@ serve(async (req: Request) => {
       });
     }
 
-    // Try public Solana RPC first
-    let endpoint = "https://api.devnet.solana.com";
-    console.log("[mint-nft-build] 🌐 Trying public Solana RPC first:", endpoint);
+    // Use only public Solana devnet RPC
+    const endpoint = "https://api.devnet.solana.com";
+    console.log("[mint-nft-build] 🌐 Using Solana devnet RPC:", endpoint);
     
-    let pingResponse = await fetch(endpoint, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ 
-        jsonrpc: "2.0", 
-        id: 1, 
-        method: "getHealth" 
-      }),
-    });
-    
-    console.log("[mint-nft-build] 🏥 Public RPC health-check:", pingResponse.status);
-    
-    // If public RPC fails, try Helius
-    if (!pingResponse.ok) {
-      console.log("[mint-nft-build] ⚠️ Public RPC unavailable, switching to Helius...");
-      const heliusUrl = Deno.env.get("HELIUS_DEVNET");
-      
-      if (!heliusUrl) {
-        console.error("[mint-nft-build] ❌ HELIUS_DEVNET not configured and public RPC failed");
-        return jsonResponse(500, {
-          success: false,
-          message: "Both public RPC and Helius are unavailable. Please configure HELIUS_DEVNET.",
-        });
-      }
-      
-      endpoint = heliusUrl.trim();
-      console.log("[mint-nft-build] 🌐 Trying Helius RPC (masked):", endpoint.replace(/api-key=[^&]+/, "api-key=***"));
-      
-      pingResponse = await fetch(endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ 
-          jsonrpc: "2.0", 
-          id: 1, 
-          method: "getHealth" 
-        }),
-      });
-      
-      const pingText = await pingResponse.text();
-      console.log("[mint-nft-build] 🏥 Helius health-check:", pingResponse.status, pingText);
-      
-      if (!pingResponse.ok) {
-        console.error("[mint-nft-build] ❌ Helius RPC also failed");
-        return jsonResponse(500, {
-          success: false,
-          message: `All RPC endpoints unavailable. Helius status: ${pingResponse.status}`,
-        });
-      }
-      
-      console.log("[mint-nft-build] ✅ Helius RPC connected successfully");
-    } else {
-      console.log("[mint-nft-build] ✅ Public Solana RPC connected successfully");
-    }
-    
-    // Create connection with working endpoint
     const connection = new Connection(endpoint, "confirmed");
 
     // Parse user public key (will be feePayer)
