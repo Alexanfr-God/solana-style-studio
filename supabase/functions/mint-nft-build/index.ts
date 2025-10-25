@@ -24,8 +24,8 @@ import {
 } from "npm:@solana/spl-token@0.3.11";
 import {
   createCreateMetadataAccountV3Instruction,
-  MPL_TOKEN_METADATA_PROGRAM_ID,
-} from "npm:@metaplex-foundation/mpl-token-metadata@3.4.0";
+  PROGRAM_ID as MPL_TOKEN_METADATA_PROGRAM_ID,
+} from "npm:@metaplex-foundation/mpl-token-metadata@2.13.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
