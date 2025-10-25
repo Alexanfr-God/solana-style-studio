@@ -25,7 +25,7 @@ import {
 import {
   createCreateMetadataAccountV3Instruction,
   PROGRAM_ID as MPL_TOKEN_METADATA_PROGRAM_ID,
-} from "npm:@metaplex-foundation/mpl-token-metadata@2.13.2";
+} from "npm:@metaplex-foundation/mpl-token-metadata@^2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
