@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.mint-nft-solana]
 verify_jwt = false
+
+[functions.mint-nft-build]
+verify_jwt = false

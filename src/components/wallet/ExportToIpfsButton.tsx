@@ -100,34 +100,81 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       
       toast.success('✅ Uploaded to IPFS!');
       
-      // Step 4: Mint NFT on Solana via Edge Function
-      toast.info('🎨 Minting NFT on Solana...');
-      console.log('[ExportToIpfs] 🎨 Calling mint-nft-solana Edge Function...', {
-        recipient: address,
-        metadataUri: ipfsData.metadataUri
-      });
-      
-      const { data: mintData, error: mintError } = await supabase.functions.invoke('mint-nft-solana', {
+      // Step 4: Build unsigned transaction via Edge Function
+      toast.info('🔨 Building mint transaction...');
+      console.log('[MintFlow] 1️⃣ Calling mint-nft-build...');
+
+      const { data: buildData, error: buildError } = await supabase.functions.invoke('mint-nft-build', {
         body: {
+          userPublicKey: address,
           metadataUri: ipfsData.metadataUri,
-          recipient: address,
           name: `WCC: ${themeName}`,
           symbol: 'WCC',
-        },
+        }
       });
 
-      if (mintError || !mintData?.success) {
-        throw new Error(mintData?.message || mintError?.message || 'Minting failed');
+      if (buildError || !buildData?.success) {
+        throw new Error(buildData?.message || buildError?.message || 'Failed to build transaction');
       }
 
-      console.log('[ExportToIpfs] ✅ Mint successful:', {
-        mintAddress: mintData.mintAddress,
-        signature: mintData.signature,
-        explorerUrl: mintData.explorerUrl,
+      console.log('[MintFlow] ✅ Transaction built:', {
+        mintAddress: buildData.mintAddress,
+        txSize: buildData.txBase64?.length
       });
+
+      // Step 5: Deserialize transaction
+      const { Transaction, Connection, clusterApiUrl } = await import('@solana/web3.js');
+      const tx = Transaction.from(Buffer.from(buildData.txBase64, 'base64'));
+
+      // Step 6: Sign transaction via connected wallet
+      console.log('[MintFlow] 2️⃣ Requesting wallet signature...');
+      toast.info('🔓 Please sign the transaction in your wallet...');
+
+      // Access Solana wallet (Phantom, Solflare, etc.)
+      const wallet = (window as any).solana;
       
+      if (!wallet?.signTransaction) {
+        throw new Error('No Solana wallet detected. Please install Phantom or Solflare wallet.');
+      }
+
+      // Ensure wallet is connected
+      if (!wallet.isConnected) {
+        await wallet.connect();
+      }
+
+      const signed = await wallet.signTransaction(tx);
+      console.log('[MintFlow] ✅ Transaction signed by user');
+
+      // Step 7: Send to Solana devnet
+      toast.info('📤 Sending transaction to Solana...');
+      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+
+      const signature = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed'
+      });
+
+      console.log('[MintFlow] 3️⃣ Transaction sent:', signature);
+
+      // Step 8: Confirm transaction
+      toast.info('⏳ Confirming transaction...');
+      await connection.confirmTransaction({
+        signature,
+        blockhash: buildData.recentBlockhash,
+        lastValidBlockHeight: buildData.lastValidBlockHeight
+      }, 'confirmed');
+
+      console.log('[MintFlow] ✅ Transaction confirmed!');
+
+      // Step 9: Show success
+      const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=devnet`;
+      const mintExplorerUrl = `https://explorer.solana.com/address/${buildData.mintAddress}?cluster=devnet`;
+
+      console.log('[MintFlow] 🎫 Mint address:', buildData.mintAddress);
+      console.log('[MintFlow] 🔗 Explorer:', explorerUrl);
+
       toast.success(
-        `🎉 NFT Minted Successfully!\nMint: ${mintData.mintAddress.slice(0, 8)}...\nTransferred to your wallet!`,
+        `🎉 NFT Minted Successfully!\nMint: ${buildData.mintAddress.slice(0, 8)}...\n✅ You paid the gas fees!`,
         { duration: 7000 }
       );
       
