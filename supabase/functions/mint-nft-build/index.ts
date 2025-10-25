@@ -64,8 +64,15 @@ serve(async (req: Request) => {
       });
     }
 
-    // Connect to Solana devnet (public RPC, no auth required)
-    const rpcUrl = clusterApiUrl("devnet");
+    // Connect to Solana devnet via Helius (requires API key from secret)
+    const rpcUrl = Deno.env.get("HELIUS_DEVNET");
+    if (!rpcUrl) {
+      console.error("[mint-nft-build] ❌ HELIUS_DEVNET secret not found");
+      return jsonResponse(500, {
+        success: false,
+        message: "RPC configuration error: HELIUS_DEVNET not set",
+      });
+    }
     console.log("[mint-nft-build] 🌐 Using RPC:", rpcUrl);
     const connection = new Connection(rpcUrl, "confirmed");
 
