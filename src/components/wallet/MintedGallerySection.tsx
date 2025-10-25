@@ -111,30 +111,46 @@ export default function MintedGallerySection() {
       const metadata = await response.json();
       console.log('[MintedGallery] Metadata received:', metadata);
       
-      // Try multiple paths for theme data
-      const themeData = 
+      // Try multiple paths for theme data (new and legacy NFTs)
+      let themeData = 
         metadata.properties?.theme || 
         metadata.theme || 
         metadata.properties?.files?.[0]?.theme;
       
+      // Fallback: fetch from wcc_theme_uri for legacy NFTs
+      if (!themeData && metadata.wcc_theme_uri) {
+        console.log('[MintedGallery] Fetching legacy theme from:', metadata.wcc_theme_uri);
+        const legacyResponse = await fetch(metadata.wcc_theme_uri);
+        if (legacyResponse.ok) {
+          themeData = await legacyResponse.json();
+        }
+      }
+      
       if (!themeData) {
         console.error('[MintedGallery] Invalid metadata structure:', metadata);
-        throw new Error('Theme data not found in metadata. Please re-mint this NFT with the latest version.');
+        throw new Error('Theme data not found. This NFT may need to be re-minted with the latest version.');
+      }
+      
+      // Basic validation
+      if (typeof themeData !== 'object' || !themeData.homeLayer) {
+        throw new Error('Invalid theme structure. Missing required properties.');
       }
       
       console.log('[MintedGallery] Applying theme:', themeData);
       
-      // Apply theme to store
+      // Clear any preview and apply theme
+      const store = useThemeStore.getState();
+      store.clearPreview?.();
       setTheme(themeData);
       setActiveThemeId(themeName);
       
-      toast.success(`✅ Theme "${themeName}" applied!`);
+      toast.success(`✅ "${themeName}" applied successfully!`);
       
       // Scroll to preview
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       console.error('[MintedGallery] Error applying theme:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to apply theme');
+      toast.error(error instanceof Error ? error.message : 'Failed to apply theme. Check console for details.');
     }
   }
 
@@ -283,14 +299,20 @@ export default function MintedGallerySection() {
             >
               {/* Preview Image */}
               <div className="relative aspect-[2/1] bg-black/20 overflow-hidden">
-                {/* WCC Badge */}
-                <div className="absolute top-2 right-2 z-10">
-                  <img 
-                    src="/lovable-uploads/WCC.png" 
-                    alt="WCC" 
-                    className="w-8 h-8 rounded-full bg-black/50 p-1 backdrop-blur-sm"
-                  />
-                </div>
+              {/* WCC Badge */}
+              <div className="absolute top-2 right-2 z-10 flex gap-1">
+                <img 
+                  src="/lovable-uploads/WCC.png" 
+                  alt="WCC" 
+                  className="w-8 h-8 rounded-full bg-black/50 p-1 backdrop-blur-sm"
+                />
+                {/* Legacy v1 indicator for old NFTs without properties.theme */}
+                {!item.metadata_uri?.includes('properties') && (
+                  <div className="w-8 h-8 rounded-full bg-orange-500/80 backdrop-blur-sm flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-white">v1</span>
+                  </div>
+                )}
+              </div>
                 
                 {item.image_url ? (
                   <img
@@ -326,30 +348,31 @@ export default function MintedGallerySection() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-1.5 pt-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 border-white/10 text-white hover:bg-white/10"
+                    className="flex-1 min-w-0 border-white/10 text-white hover:bg-white/10 px-2 text-xs sm:text-sm"
                     asChild
                   >
                     <a
                       href={`https://explorer.solana.com/tx/${item.tx_sig}?cluster=${item.network}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="flex items-center justify-center"
                     >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Explorer
+                      <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 sm:mr-1.5" />
+                      <span className="hidden sm:inline truncate">Explorer</span>
                     </a>
                   </Button>
                   
                   <Button
                     size="sm"
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    className="flex-1 min-w-0 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-2 text-xs sm:text-sm"
                     onClick={() => handleApplyTheme(item.metadata_uri, item.theme_name || 'imported-theme')}
                   >
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Apply
+                    <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 sm:mr-1.5" />
+                    <span className="hidden sm:inline truncate">Apply</span>
                   </Button>
                 </div>
               </div>
