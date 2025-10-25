@@ -24,7 +24,7 @@ import {
 } from "npm:@solana/spl-token@0.3.11";
 import {
   createCreateMetadataAccountV3Instruction,
-  PROGRAM_ID as METADATA_PROGRAM_ID,
+  MPL_TOKEN_METADATA_PROGRAM_ID,
 } from "npm:@metaplex-foundation/mpl-token-metadata@3.4.0";
 
 const corsHeaders = {
@@ -72,6 +72,29 @@ serve(async (req: Request) => {
     // Parse user public key (will be feePayer)
     const userPubkey = new PublicKey(userPublicKey);
 
+    // Check user balance (need at least 0.105 SOL for 0.1 payment + gas)
+    const balance = await connection.getBalance(userPubkey);
+    const balanceSOL = balance / LAMPORTS_PER_SOL;
+    console.log("[mint-nft-build] 💰 User balance:", balanceSOL.toFixed(4), "SOL");
+
+    if (balance < 0.105 * LAMPORTS_PER_SOL) {
+      return jsonResponse(400, {
+        success: false,
+        message: `Insufficient balance. You need at least 0.105 SOL (you have ${balanceSOL.toFixed(4)} SOL). Get devnet SOL from https://faucet.solana.com/`,
+      });
+    }
+
+    // Get treasury wallet from env
+    const treasuryWallet = Deno.env.get("TREASURY_WALLET");
+    if (!treasuryWallet) {
+      return jsonResponse(500, {
+        success: false,
+        message: "TREASURY_WALLET not configured on server",
+      });
+    }
+    const treasuryPubkey = new PublicKey(treasuryWallet);
+    console.log("[mint-nft-build] 🏦 Treasury wallet:", treasuryPubkey.toBase58());
+
     // Generate new mint keypair (NFT address)
     const mintKeypair = Keypair.generate();
     const mintAddress = mintKeypair.publicKey;
@@ -85,6 +108,16 @@ serve(async (req: Request) => {
     const tx = new Transaction();
     tx.recentBlockhash = blockhash;
     tx.feePayer = userPubkey; // ✅ User pays all fees
+
+    // Instruction 0: Transfer 0.1 SOL to treasury (mint price)
+    console.log("[mint-nft-build] 💸 Adding 0.1 SOL payment to treasury...");
+    tx.add(
+      SystemProgram.transfer({
+        fromPubkey: userPubkey,
+        toPubkey: treasuryPubkey,
+        lamports: 0.1 * LAMPORTS_PER_SOL, // 0.1 SOL mint price
+      })
+    );
 
     // Get mint rent-exempt amount
     const mintRent = await getMinimumBalanceForRentExemptMint(connection);
@@ -147,10 +180,10 @@ serve(async (req: Request) => {
     const [metadataAddress] = PublicKey.findProgramAddressSync(
       [
         Buffer.from("metadata"),
-        METADATA_PROGRAM_ID.toBuffer(),
+        MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(),
         mintAddress.toBuffer(),
       ],
-      METADATA_PROGRAM_ID
+      MPL_TOKEN_METADATA_PROGRAM_ID
     );
 
     tx.add(

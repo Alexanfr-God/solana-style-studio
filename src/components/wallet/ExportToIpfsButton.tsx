@@ -77,6 +77,20 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       console.log('[ExportToIpfs] Preview URL:', previewImageUrl);
       console.log('[ExportToIpfs] Theme data size:', JSON.stringify(currentTheme).length);
       
+      // Step 2.5: Check user balance (need at least 0.105 SOL)
+      const { Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
+      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+      const userPubkey = new PublicKey(address);
+      const balance = await connection.getBalance(userPubkey);
+      const balanceSOL = balance / LAMPORTS_PER_SOL;
+      
+      console.log('[ExportToIpfs] User balance:', balanceSOL.toFixed(4), 'SOL');
+      
+      if (balance < 0.105 * LAMPORTS_PER_SOL) {
+        toast.error(`Insufficient balance. You need at least 0.105 SOL (you have ${balanceSOL.toFixed(4)} SOL). Get devnet SOL from https://faucet.solana.com/`);
+        return;
+      }
+      
       // Step 3: Upload to IPFS via Edge Function
       toast.info('📤 Uploading theme to IPFS...');
       const { data: ipfsData, error: ipfsError } = await supabase.functions.invoke('upload-to-ipfs', {
@@ -100,7 +114,10 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       
       toast.success('✅ Uploaded to IPFS!');
       
-      // Step 4: Build unsigned transaction via Edge Function
+      // Step 4: Show cost to user
+      toast.info('💰 Mint cost: 0.1 SOL + gas fees (~0.005 SOL)', { duration: 5000 });
+      
+      // Step 5: Build unsigned transaction via Edge Function
       toast.info('🔨 Building mint transaction...');
       console.log('[MintFlow] 1️⃣ Calling mint-nft-build...');
 
@@ -122,33 +139,47 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
         txSize: buildData.txBase64?.length
       });
 
-      // Step 5: Deserialize transaction
-      const { Transaction, Connection, clusterApiUrl } = await import('@solana/web3.js');
+      // Step 6: Deserialize transaction
+      const { Transaction } = await import('@solana/web3.js');
       const tx = Transaction.from(Buffer.from(buildData.txBase64, 'base64'));
 
-      // Step 6: Sign transaction via connected wallet
+      // Step 7: Sign transaction via connected wallet (universal check)
       console.log('[MintFlow] 2️⃣ Requesting wallet signature...');
       toast.info('🔓 Please sign the transaction in your wallet...');
 
-      // Access Solana wallet (Phantom, Solflare, etc.)
-      const wallet = (window as any).solana;
+      // Universal wallet detection (Phantom, Solflare, Backpack, etc.)
+      const wallet = (window as any).solana || (window as any).phantom?.solana || (window as any).solflare;
       
       if (!wallet?.signTransaction) {
-        throw new Error('No Solana wallet detected. Please install Phantom or Solflare wallet.');
+        throw new Error('No Solana wallet detected. Please install Phantom, Solflare, or another Solana wallet extension.');
       }
+
+      console.log('[MintFlow] 🔍 Detected wallet:', wallet.isPhantom ? 'Phantom' : wallet.isSolflare ? 'Solflare' : 'Unknown');
 
       // Ensure wallet is connected
       if (!wallet.isConnected) {
-        await wallet.connect();
+        console.log('[MintFlow] Wallet not connected, requesting connection...');
+        try {
+          await wallet.connect();
+        } catch (err) {
+          throw new Error('Wallet connection rejected by user');
+        }
       }
 
-      const signed = await wallet.signTransaction(tx);
-      console.log('[MintFlow] ✅ Transaction signed by user');
+      let signed;
+      try {
+        signed = await wallet.signTransaction(tx);
+        console.log('[MintFlow] ✅ Transaction signed by user');
+      } catch (err: any) {
+        if (err.message?.includes('User rejected') || err.code === 4001) {
+          throw new Error('Transaction cancelled by user');
+        }
+        throw err;
+      }
 
-      // Step 7: Send to Solana devnet
+      // Step 8: Send to Solana devnet (reuse connection from balance check)
+
       toast.info('📤 Sending transaction to Solana...');
-      const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
-
       const signature = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
         preflightCommitment: 'confirmed'
@@ -156,7 +187,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
 
       console.log('[MintFlow] 3️⃣ Transaction sent:', signature);
 
-      // Step 8: Confirm transaction
+      // Step 9: Confirm transaction
       toast.info('⏳ Confirming transaction...');
       await connection.confirmTransaction({
         signature,
@@ -166,7 +197,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
 
       console.log('[MintFlow] ✅ Transaction confirmed!');
 
-      // Step 9: Show success
+      // Step 10: Show success
       const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=devnet`;
       const mintExplorerUrl = `https://explorer.solana.com/address/${buildData.mintAddress}?cluster=devnet`;
 
@@ -174,8 +205,8 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       console.log('[MintFlow] 🔗 Explorer:', explorerUrl);
 
       toast.success(
-        `🎉 NFT Minted Successfully!\nMint: ${buildData.mintAddress.slice(0, 8)}...\n✅ You paid the gas fees!`,
-        { duration: 7000 }
+        `🎉 NFT Minted Successfully!\nMint: ${buildData.mintAddress.slice(0, 8)}...\n💰 Cost: 0.1 SOL + gas fees\n🔗 View in Explorer`,
+        { duration: 10000 }
       );
       
       setDialogOpen(false);
