@@ -31,6 +31,7 @@ export default function MintedGallerySection() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [selectedBlockchain, setSelectedBlockchain] = useState<'all' | 'solana' | 'ethereum'>('all');
   const [selectedNetwork, setSelectedNetwork] = useState<'all' | 'devnet' | 'mainnet'>('all');
+  const [showWccOnly, setShowWccOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +40,7 @@ export default function MintedGallerySection() {
 
   useEffect(() => {
     fetchMints();
-  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, page, address]);
+  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, page, address]);
 
   async function fetchMints() {
     setIsLoading(true);
@@ -71,6 +72,11 @@ export default function MintedGallerySection() {
         query = query.eq('owner_address', address);
       }
 
+      // Filter "WCC Themes"
+      if (showWccOnly) {
+        query = query.ilike('theme_name', 'WCC:%');
+      }
+
       // Sort
       query = query.order('created_at', { 
         ascending: sortOrder === 'oldest' 
@@ -98,18 +104,25 @@ export default function MintedGallerySection() {
     try {
       toast.info('📥 Loading theme from IPFS...');
       
-      // Fetch theme data from IPFS
+      console.log('[MintedGallery] Fetching metadata from:', metadataUri);
       const response = await fetch(metadataUri);
       if (!response.ok) throw new Error('Failed to fetch theme from IPFS');
       
       const metadata = await response.json();
+      console.log('[MintedGallery] Metadata received:', metadata);
       
-      // Metadata structure: { name, description, image, properties: { theme: {...} } }
-      const themeData = metadata.properties?.theme || metadata.theme;
+      // Try multiple paths for theme data
+      const themeData = 
+        metadata.properties?.theme || 
+        metadata.theme || 
+        metadata.properties?.files?.[0]?.theme;
       
       if (!themeData) {
-        throw new Error('Invalid theme data in metadata');
+        console.error('[MintedGallery] Invalid metadata structure:', metadata);
+        throw new Error('Theme data not found in metadata. Please re-mint this NFT with the latest version.');
       }
+      
+      console.log('[MintedGallery] Applying theme:', themeData);
       
       // Apply theme to store
       setTheme(themeData);
@@ -121,7 +134,7 @@ export default function MintedGallerySection() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       console.error('[MintedGallery] Error applying theme:', error);
-      toast.error('Failed to apply theme');
+      toast.error(error instanceof Error ? error.message : 'Failed to apply theme');
     }
   }
 
@@ -186,6 +199,22 @@ export default function MintedGallerySection() {
             My Mints {onlyMyMints && `(${totalCount})`}
           </Button>
 
+          {/* WCC Themes Toggle */}
+          <Button
+            variant={showWccOnly ? 'default' : 'outline'}
+            onClick={() => {
+              setShowWccOnly(!showWccOnly);
+              setPage(1);
+            }}
+            className={showWccOnly 
+              ? 'bg-purple-500 hover:bg-purple-600' 
+              : 'border-white/10 text-white hover:bg-white/5'
+            }
+          >
+            <img src="/lovable-uploads/WCC.png" alt="WCC" className="w-4 h-4 mr-1" />
+            WCC Themes {showWccOnly && `(${totalCount})`}
+          </Button>
+
           {/* Blockchain Filter */}
           <Select
             value={selectedBlockchain}
@@ -246,14 +275,23 @@ export default function MintedGallerySection() {
           No minted themes found
         </div>
       ) : (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {items.map((item) => (
             <Card
               key={item.id}
               className="overflow-hidden bg-white/5 border-white/10 hover:bg-white/10 hover:border-purple-500/50 transition-all group"
             >
               {/* Preview Image */}
-              <div className="aspect-[4/3] bg-black/20 overflow-hidden">
+              <div className="relative aspect-[2/1] bg-black/20 overflow-hidden">
+                {/* WCC Badge */}
+                <div className="absolute top-2 right-2 z-10">
+                  <img 
+                    src="/lovable-uploads/WCC.png" 
+                    alt="WCC" 
+                    className="w-8 h-8 rounded-full bg-black/50 p-1 backdrop-blur-sm"
+                  />
+                </div>
+                
                 {item.image_url ? (
                   <img
                     src={item.image_url}

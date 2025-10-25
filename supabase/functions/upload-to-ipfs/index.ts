@@ -152,12 +152,14 @@ Deno.serve(async (req: Request) => {
       symbol: "WCC",
       description: description ?? "Custom wallet theme created with Wallet Coast Customs",
       image: toGatewayUrl(imageCid), // HTTP URL for Solscan display
+      external_url: "https://walletcoastcustoms.com",
       attributes: [
         { trait_type: "Theme Name", value: themeName },
         { trait_type: "Schema Version", value: "wcc-theme-v1" },
         { trait_type: "Created At", value: new Date().toISOString() },
       ],
       properties: {
+        theme: themeData, // ✅ Full theme JSON for Apply button
         category: "image",
         files: [
           { uri: toIpfsUri(imageCid), type: "image/png" },
