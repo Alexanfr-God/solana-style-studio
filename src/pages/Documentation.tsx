@@ -169,53 +169,98 @@ const sections = [{
   content: <>
         <Card className="bg-black/40 border-white/5 shadow-lg">
           <CardContent className="p-6 max-h-[70vh] overflow-y-auto scrollbar-custom">
-            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🎨 How Minting Will Work</h3>
+            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🎨 How Minting Works Now</h3>
             
-            <p className="mb-4">When a user finalizes their wallet design in the WCC editor, they'll be able to mint it as a fully functional NFT — unique, dynamic, and ready for use in the Web3 space.</p>
+            <p className="mb-4">Users can now mint their wallet designs as fully functional NFTs on Solana Devnet — each theme is unique, on-chain, and immediately applicable to the wallet interface.</p>
             
-            <p className="mb-4">Each wallet skin NFT includes two key layers:</p>
+            <h3 className="text-lg font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">📦 What Gets Minted</h3>
             
-            <p className="mb-4"><strong>🖼️ Visual Layer (PNG)</strong></p>
-            <p className="mb-4">This is the skin's artwork — the cover image displayed on marketplaces, collections, and galleries. It shows exactly how the wallet interface will look.</p>
+            <p className="mb-4">Each wallet theme NFT contains two essential components:</p>
             
-            <p className="mb-4"><strong>🧬 Data Layer (JSON)</strong></p>
-            <p className="mb-4">Embedded inside the NFT is a structured data file that defines the entire skin:</p>
+            <p className="mb-2"><strong>🖼️ Visual Preview (PNG)</strong></p>
+            <p className="mb-4">A rendered snapshot of the wallet interface with the applied theme — this is what users see in NFT galleries and marketplaces.</p>
             
-            <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li>Background and text colors</li>
-              <li>Fonts and button styles</li>
-              <li>Element positioning</li>
-              <li>Mask design (v3) or full UI structure (v2)</li>
-              <li>Animations, icons, and theme logic</li>
-              <li>Theme version (v2 or v3 only)</li>
-            </ul>
-            
-            <p className="mb-4">This JSON layer isn't just metadata — it's a blueprint for rendering a live, functional wallet interface.</p>
-            
-            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🛠️ Minting Options</h3>
-            <p className="mb-4">Users will be able to choose between:</p>
+            <p className="mb-2"><strong>🧬 Theme Data (JSON via IPFS)</strong></p>
+            <p className="mb-4">The complete theme configuration stored on IPFS, including:</p>
             
             <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li><strong>🔹 1-of-1 unique skin</strong> — a one-of-a-kind wallet experience</li>
-              <li><strong>🔹 Mass minting (e.g., 10,000 editions)</strong> — ideal for community drops, collabs, and meme-based projects</li>
+              <li>Color palettes (backgrounds, text, accents)</li>
+              <li>Typography settings (fonts, sizes, weights)</li>
+              <li>UI element styles (buttons, cards, borders)</li>
+              <li>Layer configurations (home, login, wallet screens)</li>
+              <li>Background images and masks</li>
+              <li>Animation and effect settings</li>
+              <li>Theme version identifier (v2/v3 architecture)</li>
             </ul>
             
-            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🌐 Custom Collection Pages</h3>
-            <p className="mb-4">For large-scale mints, WCC will automatically generate a public mint page, where anyone can browse and mint a skin from the collection.</p>
+            <h3 className="text-lg font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">⚙️ Current Mint Flow</h3>
             
-            <p className="mb-4">Users can even set a custom domain for their drop, such as:</p>
-            <code className="block bg-black/30 p-2 rounded mb-4">wocacu/collection/solana.app</code>
+            <div className="space-y-3 mb-4">
+              <div className="flex items-start gap-3">
+                <span className="text-purple-400 font-bold">1.</span>
+                <div>
+                  <p className="font-semibold">User customizes their wallet theme</p>
+                  <p className="text-sm text-white/70">Using AI palette extraction, manual color editor, or preset themes</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <span className="text-purple-400 font-bold">2.</span>
+                <div>
+                  <p className="font-semibold">Theme is uploaded to IPFS</p>
+                  <p className="text-sm text-white/70">Complete JSON structure stored immutably on decentralized storage</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <span className="text-purple-400 font-bold">3.</span>
+                <div>
+                  <p className="font-semibold">User connects wallet and signs transaction</p>
+                  <p className="text-sm text-white/70">Phantom/Solflare wallet integration for seamless minting</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <span className="text-purple-400 font-bold">4.</span>
+                <div>
+                  <p className="font-semibold">NFT is minted on Solana</p>
+                  <p className="text-sm text-white/70">Metaplex standard with embedded IPFS links to theme data</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <span className="text-purple-400 font-bold">5.</span>
+                <div>
+                  <p className="font-semibold">Theme appears in Minted Gallery</p>
+                  <p className="text-sm text-white/70">Users can browse, filter, and apply any minted theme instantly</p>
+                </div>
+              </div>
+            </div>
             
-            <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🚀 What's Next</h3>
-            <p className="mb-4">Our goal is to build the infrastructure where these NFTs aren't just collectibles —
-            they become live wallet themes, fully usable inside supported Web3 wallets.</p>
+            <h3 className="text-lg font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🔄 Apply Theme Feature</h3>
+            <p className="mb-4">Any minted theme NFT can be applied to the wallet with one click:</p>
             
-            <p className="mb-4">On marketplaces, they act as visual assets.<br />
-            Inside wallets, they unlock identity, emotion, and true personalization.</p>
+            <ul className="list-disc pl-5 mb-4 space-y-2">
+              <li><strong>Smart loading:</strong> Theme data is fetched from IPFS with caching for faster subsequent loads</li>
+              <li><strong>Validation:</strong> Theme structure is checked for compatibility before application</li>
+              <li><strong>Live preview:</strong> Changes apply instantly to the wallet interface</li>
+              <li><strong>Fallback support:</strong> Older NFT formats (v1) are automatically detected and handled</li>
+            </ul>
+            
+            <h3 className="text-lg font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">🎯 Current Status</h3>
+            <p className="mb-4">The minting system is <strong>live on Devnet</strong> and fully functional. Users can:</p>
+            
+            <ul className="list-disc pl-5 mb-4 space-y-2">
+              <li>✅ Create and customize wallet themes</li>
+              <li>✅ Mint themes as Solana NFTs</li>
+              <li>✅ Browse minted themes in the gallery</li>
+              <li>✅ Apply any theme instantly</li>
+              <li>✅ View theme metadata and ownership</li>
+            </ul>
             
             <p className="font-semibold text-lg text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
               This isn't just art.<br />
-              This is <strong>programmable wallet fashion</strong>.
+              This is <strong>programmable wallet identity</strong> — live and on-chain.
             </p>
           </CardContent>
         </Card>
