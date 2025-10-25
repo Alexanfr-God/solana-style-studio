@@ -101,14 +101,42 @@ export default function MintedGallerySection() {
   }
 
   async function handleApplyTheme(metadataUri: string, themeName: string) {
+    const loadingToast = toast.loading('📥 Loading from IPFS...');
+    
     try {
-      toast.info('📥 Loading theme from IPFS...');
+      // Check localStorage cache first (TTL: 24 hours)
+      const cacheKey = `ipfs_cache_${metadataUri}`;
+      const cached = localStorage.getItem(cacheKey);
+      let metadata;
       
-      console.log('[MintedGallery] Fetching metadata from:', metadataUri);
-      const response = await fetch(metadataUri);
-      if (!response.ok) throw new Error('Failed to fetch theme from IPFS');
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        
+        // Use cache if less than 24 hours old
+        if (age < 24 * 60 * 60 * 1000) {
+          console.log('[MintedGallery] Using cached metadata');
+          metadata = data;
+          toast.loading('📦 Loading from cache...', { id: loadingToast });
+        }
+      }
       
-      const metadata = await response.json();
+      // Fetch from IPFS if not cached
+      if (!metadata) {
+        console.log('[MintedGallery] Fetching metadata from:', metadataUri);
+        const response = await fetch(metadataUri);
+        if (!response.ok) throw new Error(`IPFS fetch failed: ${response.statusText}`);
+        
+        metadata = await response.json();
+        
+        // Cache the metadata
+        localStorage.setItem(cacheKey, JSON.stringify({
+          data: metadata,
+          timestamp: Date.now()
+        }));
+      }
+      
+      toast.loading('🔍 Parsing theme data...', { id: loadingToast });
       console.log('[MintedGallery] Metadata received:', metadata);
       
       // Try multiple paths for theme data (new and legacy NFTs)
@@ -120,6 +148,8 @@ export default function MintedGallerySection() {
       // Fallback: fetch from wcc_theme_uri for legacy NFTs
       if (!themeData && metadata.wcc_theme_uri) {
         console.log('[MintedGallery] Fetching legacy theme from:', metadata.wcc_theme_uri);
+        toast.loading('🔄 Loading legacy format...', { id: loadingToast });
+        
         const legacyResponse = await fetch(metadata.wcc_theme_uri);
         if (legacyResponse.ok) {
           themeData = await legacyResponse.json();
@@ -128,15 +158,26 @@ export default function MintedGallerySection() {
       
       if (!themeData) {
         console.error('[MintedGallery] Invalid metadata structure:', metadata);
-        throw new Error('Theme data not found. This NFT may need to be re-minted with the latest version.');
+        throw new Error('Theme data not found in NFT metadata. This NFT may need to be re-minted.');
       }
       
-      // Basic validation
-      if (typeof themeData !== 'object' || !themeData.homeLayer) {
-        throw new Error('Invalid theme structure. Missing required properties.');
+      // Enhanced validation - check required layers
+      toast.loading('✅ Validating theme structure...', { id: loadingToast });
+      
+      const requiredLayers = ['homeLayer', 'loginLayer'];
+      const missingLayers = requiredLayers.filter(layer => !themeData[layer]);
+      
+      if (missingLayers.length > 0) {
+        throw new Error(`Invalid theme: missing ${missingLayers.join(', ')}. This NFT needs to be re-minted.`);
       }
       
-      console.log('[MintedGallery] Applying theme:', themeData);
+      // Validate layer structure
+      if (typeof themeData.homeLayer !== 'object' || typeof themeData.loginLayer !== 'object') {
+        throw new Error('Invalid theme structure: layers must be objects.');
+      }
+      
+      console.log('[MintedGallery] Theme validation passed:', themeData);
+      toast.loading('🎨 Applying theme...', { id: loadingToast });
       
       // Clear any preview and apply theme
       const store = useThemeStore.getState();
@@ -144,13 +185,16 @@ export default function MintedGallerySection() {
       setTheme(themeData);
       setActiveThemeId(themeName);
       
-      toast.success(`✅ "${themeName}" applied successfully!`);
+      toast.success(`✨ "${themeName}" applied successfully!`, { id: loadingToast });
       
       // Scroll to preview
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       console.error('[MintedGallery] Error applying theme:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to apply theme. Check console for details.');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to apply theme. See console for details.',
+        { id: loadingToast }
+      );
     }
   }
 
