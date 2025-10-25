@@ -172,6 +172,7 @@ export type Database = {
       }
       minted_themes: {
         Row: {
+          blockchain: string
           created_at: string
           id: string
           image_url: string | null
@@ -184,6 +185,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          blockchain?: string
           created_at?: string
           id?: string
           image_url?: string | null
@@ -196,6 +198,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          blockchain?: string
           created_at?: string
           id?: string
           image_url?: string | null

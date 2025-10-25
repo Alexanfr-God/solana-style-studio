@@ -32,6 +32,12 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
   const { caipNetwork } = useAppKitNetwork();
   
   const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL') => {
+    // Prevent double-click / concurrent mints
+    if (isExporting) {
+      console.log('[MintFlow] ⚠️ Mint already in progress, ignoring click');
+      return;
+    }
+    
     setDialogOpen(false);
     
     // Пока поддерживаем только Solana
@@ -187,20 +193,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
 
       console.log('[MintFlow] 3️⃣ Transaction sent:', signature);
 
-      // Step 9: Confirm transaction
-      toast.info('⏳ Confirming transaction...');
-      await connection.confirmTransaction({
-        signature,
-        blockhash: buildData.recentBlockhash,
-        lastValidBlockHeight: buildData.lastValidBlockHeight
-      }, 'confirmed');
-
-      console.log('[MintFlow] ✅ Transaction confirmed!', {
-        signature,
-        explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
-      });
-
-      // Step 10: Save mint record to database
+      // Step 8.5: Save to database IMMEDIATELY (before confirmation)
       console.log('[MintFlow] 💾 Saving mint record to database...');
       try {
         const { error: insertError } = await supabase
@@ -212,18 +205,32 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
             metadata_uri: ipfsData.metadataUri,
             theme_name: themeName,
             image_url: previewImageUrl,
-            network: 'devnet'
+            network: 'devnet',
+            blockchain: 'solana'
           });
         
         if (insertError) {
           console.error('[MintFlow] ⚠️ Failed to save mint record:', insertError);
-          // Don't block mint success, just log
+          // Don't block mint, just log
         } else {
           console.log('[MintFlow] ✅ Mint record saved to database');
         }
       } catch (dbError) {
         console.error('[MintFlow] ⚠️ Database error:', dbError);
       }
+
+      // Step 9: Confirm transaction (may timeout, but NFT is already in DB)
+      toast.info('⏳ Confirming transaction...');
+      await connection.confirmTransaction({
+        signature,
+        blockhash: buildData.recentBlockhash,
+        lastValidBlockHeight: buildData.lastValidBlockHeight
+      }, 'confirmed');
+
+      console.log('[MintFlow] ✅ Transaction confirmed!', {
+        signature,
+        explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+      });
 
       // Step 11: Show success
       const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=devnet`;

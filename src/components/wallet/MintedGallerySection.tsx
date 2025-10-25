@@ -29,6 +29,8 @@ export default function MintedGallerySection() {
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyMyMints, setOnlyMyMints] = useState(false);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [selectedBlockchain, setSelectedBlockchain] = useState<'all' | 'solana' | 'ethereum'>('all');
+  const [selectedNetwork, setSelectedNetwork] = useState<'all' | 'devnet' | 'mainnet'>('all');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,15 +39,24 @@ export default function MintedGallerySection() {
 
   useEffect(() => {
     fetchMints();
-  }, [searchQuery, onlyMyMints, sortOrder, page, address]);
+  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, page, address]);
 
   async function fetchMints() {
     setIsLoading(true);
     try {
       let query = supabase
         .from('minted_themes')
-        .select('*', { count: 'exact' })
-        .eq('network', 'devnet');
+        .select('*', { count: 'exact' });
+
+      // Filter by blockchain
+      if (selectedBlockchain !== 'all') {
+        query = query.eq('blockchain', selectedBlockchain);
+      }
+
+      // Filter by network
+      if (selectedNetwork !== 'all') {
+        query = query.eq('network', selectedNetwork);
+      }
 
       // Search
       if (searchQuery.trim()) {
@@ -174,6 +185,42 @@ export default function MintedGallerySection() {
           >
             My Mints {onlyMyMints && `(${totalCount})`}
           </Button>
+
+          {/* Blockchain Filter */}
+          <Select
+            value={selectedBlockchain}
+            onValueChange={(value: any) => {
+              setSelectedBlockchain(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-40 bg-white/5 border-white/10 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Chains</SelectItem>
+              <SelectItem value="solana">🟣 Solana</SelectItem>
+              <SelectItem value="ethereum">⬨ Ethereum</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Network Filter */}
+          <Select
+            value={selectedNetwork}
+            onValueChange={(value: any) => {
+              setSelectedNetwork(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-40 bg-white/5 border-white/10 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Networks</SelectItem>
+              <SelectItem value="devnet">Devnet</SelectItem>
+              <SelectItem value="mainnet">Mainnet</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Sort */}
