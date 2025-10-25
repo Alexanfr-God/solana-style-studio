@@ -199,15 +199,21 @@ export default function MintedGallerySection() {
       // Enhanced validation - check required layers
       toast.loading('✅ Validating theme structure...', { id: loadingToast });
       
-      const requiredLayers = ['homeLayer', 'loginLayer'];
+      const requiredLayers = ['homeLayer', 'lockLayer'];
       const missingLayers = requiredLayers.filter(layer => !themeData[layer]);
       
       if (missingLayers.length > 0) {
-        throw new Error(`Invalid theme: missing ${missingLayers.join(', ')}. This NFT needs to be re-minted.`);
+        const availableLayers = Object.keys(themeData).filter(k => k.includes('Layer')).join(', ');
+        console.error('[MintedGallery] Missing layers:', missingLayers);
+        console.log('[MintedGallery] Available layers:', availableLayers);
+        throw new Error(
+          `Invalid theme structure: missing ${missingLayers.join(', ')}. ` +
+          `Found layers: ${availableLayers || 'none'}. This NFT needs to be re-minted.`
+        );
       }
       
       // Validate layer structure
-      if (typeof themeData.homeLayer !== 'object' || typeof themeData.loginLayer !== 'object') {
+      if (typeof themeData.homeLayer !== 'object' || typeof themeData.lockLayer !== 'object') {
         throw new Error('Invalid theme structure: layers must be objects.');
       }
       
