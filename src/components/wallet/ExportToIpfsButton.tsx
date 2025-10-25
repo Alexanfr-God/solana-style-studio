@@ -196,7 +196,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
 
       toast.info('📤 Sending transaction to Solana...');
       const signature = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
+        skipPreflight: true,  // Skip simulation - memo makes each tx unique
         preflightCommitment: 'confirmed'
       });
 
@@ -220,9 +220,10 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
         
         if (insertError) {
           console.error('[MintFlow] ⚠️ Failed to save mint record:', insertError);
-          // Don't block mint, just log
+          toast.error(`⚠️ NFT minted but failed to save to gallery: ${insertError.message}`);
         } else {
           console.log('[MintFlow] ✅ Mint record saved to database');
+          toast.success('✅ NFT added to gallery!');
         }
       } catch (dbError) {
         console.error('[MintFlow] ⚠️ Database error:', dbError);

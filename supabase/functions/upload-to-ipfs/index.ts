@@ -151,7 +151,7 @@ Deno.serve(async (req: Request) => {
       name: `WCC: ${themeName}`,
       symbol: "WCC",
       description: description ?? "Custom wallet theme created with Wallet Coast Customs",
-      image: toIpfsUri(imageCid),
+      image: toGatewayUrl(imageCid), // HTTP URL for Solscan display
       attributes: [
         { trait_type: "Theme Name", value: themeName },
         { trait_type: "Schema Version", value: "wcc-theme-v1" },
