@@ -22,3 +22,36 @@ export const defaultWalletStyle: WalletStyle = {
   fontFamily: 'Inter, sans-serif',
   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
 };
+
+export const defaultLockLayerStyle = {
+  backgroundColor: '#181818',
+  backgroundImage: '',
+  title: {
+    textColor: '#FFFFFF',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '18px',
+    fontWeight: '500'
+  },
+  passwordInput: {
+    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+    textColor: '#FFFFFF',
+    fontFamily: 'Inter, sans-serif',
+    borderRadius: '12px',
+    border: 'none',
+    placeholderColor: '#9CA3AF',
+    iconEyeColor: '#9CA3AF'
+  },
+  unlockButton: {
+    backgroundColor: '#9945FF',
+    textColor: '#FFFFFF',
+    fontFamily: 'Inter, sans-serif',
+    borderRadius: '14px',
+    fontSize: '16px',
+    fontWeight: '600'
+  },
+  forgotPassword: {
+    textColor: '#9CA3AF',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '14px'
+  }
+};

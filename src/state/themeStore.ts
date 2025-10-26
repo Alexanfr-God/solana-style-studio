@@ -101,9 +101,35 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       console.warn(`[STORE:theme] Theme comparison failed (#${updateCounter}), proceeding with update`);
     }
     
+    // Deep merge lockLayer with defaults
+    const { defaultLockLayerStyle } = require('@/constants/defaultWalletStyles');
+    const mergedTheme = {
+      ...theme,
+      lockLayer: theme?.lockLayer ? {
+        ...defaultLockLayerStyle,
+        ...theme.lockLayer,
+        passwordInput: {
+          ...defaultLockLayerStyle.passwordInput,
+          ...(theme.lockLayer.passwordInput || {})
+        },
+        unlockButton: {
+          ...defaultLockLayerStyle.unlockButton,
+          ...(theme.lockLayer.unlockButton || {})
+        },
+        title: {
+          ...defaultLockLayerStyle.title,
+          ...(theme.lockLayer.title || {})
+        },
+        forgotPassword: {
+          ...defaultLockLayerStyle.forgotPassword,
+          ...(theme.lockLayer.forgotPassword || {})
+        }
+      } : defaultLockLayerStyle
+    };
+    
     set({
       _busy: true,
-      theme,
+      theme: mergedTheme,
       error: null
     });
     
@@ -112,11 +138,15 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }, 0);
     
     console.log(`[STORE:theme] ✅ Theme set successfully (#${updateCounter})`);
-    console.log('[STORE:theme] Theme preview keys:', theme ? Object.keys(theme).slice(0, 5) : []);
+    console.log('[STORE:theme] lockLayer merged:', {
+      hasLockLayer: !!mergedTheme.lockLayer,
+      passwordInputBg: mergedTheme.lockLayer?.passwordInput?.backgroundColor,
+      unlockButtonBg: mergedTheme.lockLayer?.unlockButton?.backgroundColor
+    });
     
     // Dispatch event for runtime mapping engine
     window.dispatchEvent(new CustomEvent('theme-updated', { 
-      detail: { theme } 
+      detail: { theme: mergedTheme } 
     }));
   },
 
