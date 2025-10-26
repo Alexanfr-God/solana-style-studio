@@ -65,6 +65,22 @@ const hasBackgroundImageAtSameNode = (theme: any, jsonPath: string): boolean => 
   return Boolean(bgImg && String(bgImg).trim() !== '');
 };
 
+/**
+ * Get fallback value for lockLayer elements when theme value is undefined
+ */
+const getFallbackForLockLayer = (jsonPath: string): any => {
+  const defaults: Record<string, any> = {
+    '/lockLayer/passwordInput/backgroundColor': 'rgba(30, 30, 30, 0.8)',
+    '/lockLayer/passwordInput/textColor': '#FFFFFF',
+    '/lockLayer/unlockButton/backgroundColor': '#9945FF',
+    '/lockLayer/unlockButton/textColor': '#FFFFFF',
+    '/lockLayer/title/textColor': '#FFFFFF',
+    '/lockLayer/forgotPassword/textColor': '#9CA3AF'
+  };
+  
+  return defaults[jsonPath];
+};
+
 // ============================================================================
 // ЕДИНЫЙ МЭППЕР - применяет значение к DOM элементу
 // ============================================================================
@@ -226,7 +242,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         const value = getByPath(theme, mapping.json_path);
         
         // 🛡️ Protection: Don't overwrite inline styles if theme value is undefined
-        // BUT: Always apply lockLayer styles (never skip)
+        // BUT: Always apply lockLayer styles with fallback values
         if (value === null || value === undefined) {
           const isLockPath = mapping.json_path?.startsWith('/lockLayer');
           
@@ -249,8 +265,26 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
                 continue;
               }
             }
+            continue; // Skip non-lockLayer paths with undefined values
           }
-          continue;
+          
+          // ✅ For lockLayer: apply fallback values instead of skipping
+          if (isLockPath) {
+            const fallbackValue = getFallbackForLockLayer(mapping.json_path);
+            if (fallbackValue !== undefined) {
+              domElements.forEach((el) => {
+                if (el instanceof HTMLElement) {
+                  console.log('[Runtime] 🔧 Applying lockLayer fallback:', {
+                    selector: mapping.selector,
+                    jsonPath: mapping.json_path,
+                    fallbackValue
+                  });
+                  applyValueToNodeUnified(el, mapping.json_path, fallbackValue, theme);
+                }
+              });
+            }
+            continue;
+          }
         }
         
         domElements.forEach((el) => {
