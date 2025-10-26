@@ -80,6 +80,15 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   // Direct access to live theme - no stale snapshots
   const lockLayer = theme?.lockLayer || {};
 
+  // 🔍 ДИАГНОСТИКА: Что именно приходит в lockLayer?
+  console.log('[LockLayer DEBUG]', {
+    hasTheme: !!theme,
+    hasLockLayer: !!theme?.lockLayer,
+    passwordInputBg: lockLayer.passwordInput?.backgroundColor,
+    unlockButtonBg: lockLayer.unlockButton?.backgroundColor,
+    fullLockLayer: lockLayer
+  });
+
   // Load elements from Supabase (no side effects)
   const { elements, loading, error } = useWalletElements();
 
