@@ -203,7 +203,26 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         if (domElements.length === 0) continue;
         
         const value = getByPath(theme, mapping.json_path);
-        if (value === null || value === undefined) continue;
+        
+        // 🛡️ Protection: Don't overwrite inline styles if theme value is undefined
+        if (value === null || value === undefined) {
+          const domElement = walletRoot.querySelector(mapping.selector);
+          if (domElement instanceof HTMLElement) {
+            const key = getKeyFromPath(mapping.json_path);
+            const cssProperty = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+            const inlineStyle = domElement.style.getPropertyValue(cssProperty);
+            
+            if (inlineStyle) {
+              console.log('[Runtime] 🛡️ Skipping (inline style present):', {
+                selector: mapping.selector,
+                jsonPath: mapping.json_path,
+                inlineValue: inlineStyle
+              });
+              continue;
+            }
+          }
+          continue;
+        }
         
         domElements.forEach((el) => {
           if (el instanceof HTMLElement) {
