@@ -205,14 +205,16 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         const value = getByPath(theme, mapping.json_path);
         if (value === null || value === undefined) continue;
         
+        console.log('[Runtime] 🎨 Applying styles:', {
+          totalMappings: mappings.length,
+          foundElements: domElements.length,
+          selector: mapping.selector,
+          value: value,
+          lockLayerVisible: !!document.querySelector('[data-element-id="unlock-screen-container"]')
+        });
+        
         domElements.forEach((el) => {
           if (el instanceof HTMLElement) {
-            console.log('[Runtime] 🎨 Applying:', {
-              selector: mapping.selector,
-              jsonPath: mapping.json_path,
-              key: getKeyFromPath(mapping.json_path),
-              value: value
-            });
             applyValueToNodeUnified(el, mapping.json_path, value, theme);
           }
         });
@@ -363,12 +365,40 @@ export function setupMappingWatcher(getTheme: () => any) {
   
   window.addEventListener('theme-updated', handleThemeUpdate as EventListener);
   
+  // 🔄 Watch for Lock Screen DOM changes
+  const lockScreenObserver = new MutationObserver((mutations) => {
+    const lockScreenAdded = mutations.some(m => 
+      Array.from(m.addedNodes).some(node => 
+        node instanceof HTMLElement && 
+        node.getAttribute('data-element-id') === 'unlock-screen-container'
+      )
+    );
+    
+    if (lockScreenAdded && lastTheme) {
+      console.log('[Runtime] 🔄 Lock Screen mounted, reapplying theme');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          applyThemeToDOM(lastTheme);
+        });
+      });
+    }
+  });
+
+  const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);
+  if (walletRoot) {
+    lockScreenObserver.observe(walletRoot, { 
+      childList: true, 
+      subtree: true 
+    });
+  }
+  
   console.log('[Runtime] 👀 Mapping watcher initialized');
   checkAndApply();
   
   return () => {
     clearInterval(interval);
     window.removeEventListener('theme-updated', handleThemeUpdate as EventListener);
+    lockScreenObserver.disconnect();
     console.log('[Runtime] 🛑 Mapping watcher stopped');
   };
 }
