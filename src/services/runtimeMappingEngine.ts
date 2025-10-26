@@ -92,14 +92,21 @@ export function applyValueToNodeUnified(
   }
 
   if (key === 'backgroundcolor') {
+    const isLockLayer = jsonPath.includes('/lockLayer/');
+    const important = isLockLayer ? 'important' : '';
+    
     if (isGradient) {
-      el.style.background = String(value);
+      el.style.setProperty('background', String(value), important);
       el.style.removeProperty('background-color');
-      console.log('[Runtime] ✅ Applied gradient');
+      console.log('[Runtime] ✅ Applied gradient', isLockLayer ? '(!important)' : '');
     } else {
-      el.style.backgroundColor = String(value);
+      el.style.setProperty('background-color', String(value), important);
       el.style.removeProperty('background');
-      console.log('[Runtime] ✅ Applied backgroundColor');
+      console.log('[Runtime] ✅ Applied backgroundColor', isLockLayer ? '(!important)' : '');
+    }
+    
+    if (isLockLayer) {
+      el.setAttribute('data-wcc-inline', '1');
     }
     return;
   }
@@ -120,14 +127,28 @@ export function applyValueToNodeUnified(
   }
 
   if (key === 'textcolor' || key === 'color') {
-    el.style.color = String(value);
-    console.log('[Runtime] ✅ Applied textColor');
+    const isLockLayer = jsonPath.includes('/lockLayer/');
+    const important = isLockLayer ? 'important' : '';
+    
+    el.style.setProperty('color', String(value), important);
+    console.log('[Runtime] ✅ Applied textColor', isLockLayer ? '(!important)' : '');
+    
+    if (isLockLayer) {
+      el.setAttribute('data-wcc-inline', '1');
+    }
     return;
   }
 
   if (key === 'bordercolor') {
-    el.style.borderColor = String(value);
-    console.log('[Runtime] ✅ Applied borderColor');
+    const isLockLayer = jsonPath.includes('/lockLayer/');
+    const important = isLockLayer ? 'important' : '';
+    
+    el.style.setProperty('border-color', String(value), important);
+    console.log('[Runtime] ✅ Applied borderColor', isLockLayer ? '(!important)' : '');
+    
+    if (isLockLayer) {
+      el.setAttribute('data-wcc-inline', '1');
+    }
     return;
   }
 
@@ -205,20 +226,28 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         const value = getByPath(theme, mapping.json_path);
         
         // 🛡️ Protection: Don't overwrite inline styles if theme value is undefined
+        // BUT: Always apply lockLayer styles (never skip)
         if (value === null || value === undefined) {
-          const domElement = walletRoot.querySelector(mapping.selector);
-          if (domElement instanceof HTMLElement) {
-            const key = getKeyFromPath(mapping.json_path);
-            const cssProperty = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-            const inlineStyle = domElement.style.getPropertyValue(cssProperty);
-            
-            if (inlineStyle) {
-              console.log('[Runtime] 🛡️ Skipping (inline style present):', {
-                selector: mapping.selector,
-                jsonPath: mapping.json_path,
-                inlineValue: inlineStyle
-              });
-              continue;
+          const isLockPath = mapping.json_path?.startsWith('/lockLayer');
+          
+          if (!isLockPath) {
+            const domElement = walletRoot.querySelector(mapping.selector);
+            if (domElement instanceof HTMLElement) {
+              const key = getKeyFromPath(mapping.json_path);
+              const cssProperty = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+              const inlineStyle = domElement.style.getPropertyValue(cssProperty);
+              const isOurs = domElement.getAttribute('data-wcc-inline') === '1';
+              
+              // Skip only if: NOT lockLayer, has inline style, and it's NOT ours
+              if (inlineStyle && !isOurs) {
+                console.log('[Runtime] 🛡️ Skip foreign inline:', {
+                  selector: mapping.selector,
+                  jsonPath: mapping.json_path,
+                  cssProperty,
+                  inlineStyle
+                });
+                continue;
+              }
             }
           }
           continue;
@@ -249,6 +278,32 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
     }
     
     console.log('[Runtime] ✅ Full apply complete:', results.filter(r => r.success).length);
+    
+    // 🔁 Reapply lockLayer to catch late React commits
+    const reapplyLockLayer = () => {
+      const lockMappings = (mappings as any[]).filter((m: any) => 
+        m.json_path?.startsWith('/lockLayer')
+      );
+      
+      for (const m of lockMappings) {
+        const nodes = walletRoot?.querySelectorAll(m.selector);
+        if (!nodes) continue;
+        
+        const val = getByPath(theme, m.json_path);
+        if (val == null) continue;
+        
+        nodes.forEach((n) => {
+          if (n instanceof HTMLElement) {
+            applyValueToNodeUnified(n, m.json_path, val, theme);
+          }
+        });
+      }
+      console.log('[Runtime] 🔁 lockLayer re-applied');
+    };
+    
+    // Apply on next frame and after 120ms delay
+    requestAnimationFrame(() => reapplyLockLayer());
+    setTimeout(() => reapplyLockLayer(), 120);
     
   } catch (error) {
     console.error('[Runtime] Fatal error:', error);
