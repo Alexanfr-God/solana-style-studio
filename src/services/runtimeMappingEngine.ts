@@ -329,10 +329,23 @@ export function setupMappingWatcher(getTheme: () => any) {
     if (!theme) return;
     lastTheme = theme;
     
-    // ✅ НОВАЯ ЛОГИКА: forceFullApply = true → полный apply БЕЗ блокировки
+    // Check if Lock Layer is currently visible
+    const isLockLayerVisible = !!document.querySelector('[data-element-id="unlock-screen-container"]');
+    
+    // ✅ FORCED full apply with double RAF for Lock Layer
     if (forceFullApply) {
-      console.log('[Runtime] 🔄 FORCED full apply (Manual mode)');
-      applyThemeToDOM(theme);
+      if (isLockLayerVisible) {
+        // 🔄 Double RAF ensures React renders before we apply styles
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            console.log('[Runtime] 🔄 FORCED full apply (Lock Layer, double RAF)');
+            applyThemeToDOM(theme);
+          });
+        });
+      } else {
+        console.log('[Runtime] 🔄 FORCED full apply (Manual mode)');
+        applyThemeToDOM(theme);
+      }
       return;
     }
     

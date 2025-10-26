@@ -56,16 +56,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : []
   });
 
-  // Apply runtime mappings when theme changes
-  useEffect(() => {
-    if (theme && Object.keys(theme).length > 0) {
-      console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
-      // ✅ FIXED: Use requestAnimationFrame to sync with browser rendering (no race condition)
-      requestAnimationFrame(() => {
-        applyThemeToDOM(theme);
-      });
-    }
-  }, [theme, activeThemeId]);
 
   // FIXED: Better theme validation and fallback handling
   const previewData = useMemo(() => {
