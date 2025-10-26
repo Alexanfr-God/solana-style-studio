@@ -67,82 +67,18 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     }
   }, [theme, activeThemeId]);
 
-  // FIXED: Better theme validation and fallback handling
-  const previewData = useMemo(() => {
-    // Validate theme structure
-    if (!theme || typeof theme !== 'object') {
-      console.warn('[WPC] ⚠️ Invalid theme, using defaults');
-      return {
-        lockLayer: {
-          backgroundColor: '#181818',
-          title: {
-            fontFamily: 'Inter',
-            textColor: '#FFFFFF',
-            fontSize: '28px',
-            fontWeight: 'bold'
-          },
-          passwordInput: {
-            backgroundColor: 'rgba(30,30,30,0.8)',
-            textColor: '#FFFFFF',
-            fontFamily: 'Inter',
-            borderRadius: '12px',
-            border: 'none',
-            iconEyeColor: '#aaa'
-          },
-          forgotPassword: {
-            fontFamily: 'Inter',
-            textColor: '#aaa',
-            fontSize: '15px'
-          },
-          unlockButton: {
-            backgroundColor: '#13e163',
-            textColor: '#FFFFFF',
-            fontFamily: 'Inter',
-            borderRadius: '14px',
-            fontWeight: '600',
-            fontSize: '19px'
-          }
-        }
-      };
+  // Sync runtime mappings when lockLayer mounts
+  useEffect(() => {
+    if (currentLayer === 'lockLayer' && theme?.lockLayer) {
+      console.log('[LockLayerSync] Applying theme on mount/switch');
+      requestAnimationFrame(() => {
+        applyThemeToDOM(theme);
+      });
     }
-    
-    const lockLayer = theme.lockLayer || {};
-    console.log('[WPC] lockLayer structure:', lockLayer);
-    
-    return {
-      lockLayer: {
-        backgroundColor: lockLayer.backgroundColor || '#181818',
-        backgroundImage: lockLayer.backgroundImage,
-        title: {
-          fontFamily: lockLayer.title?.fontFamily || 'Inter',
-          textColor: lockLayer.title?.textColor || '#FFFFFF',
-          fontSize: lockLayer.title?.fontSize || '28px',
-          fontWeight: lockLayer.title?.fontWeight || 'bold'
-        },
-        passwordInput: {
-          backgroundColor: lockLayer.passwordInput?.backgroundColor || 'rgba(30,30,30,0.8)',
-          textColor: lockLayer.passwordInput?.textColor || '#FFFFFF',
-          fontFamily: lockLayer.passwordInput?.fontFamily || 'Inter',
-          borderRadius: lockLayer.passwordInput?.borderRadius || '12px',
-          border: lockLayer.passwordInput?.border || 'none',
-          iconEyeColor: lockLayer.passwordInput?.iconEyeColor || '#aaa'
-        },
-        forgotPassword: {
-          fontFamily: lockLayer.forgotPassword?.fontFamily || 'Inter',
-          textColor: lockLayer.forgotPassword?.textColor || '#aaa',
-          fontSize: lockLayer.forgotPassword?.fontSize || '15px'
-        },
-        unlockButton: {
-          backgroundColor: lockLayer.unlockButton?.backgroundColor || '#13e163',
-          textColor: lockLayer.unlockButton?.textColor || '#FFFFFF',
-          fontFamily: lockLayer.unlockButton?.fontFamily || 'Inter',
-          borderRadius: lockLayer.unlockButton?.borderRadius || '14px',
-          fontWeight: lockLayer.unlockButton?.fontWeight || '600',
-          fontSize: lockLayer.unlockButton?.fontSize || '19px'
-        }
-      }
-    };
-  }, [theme]);
+  }, [currentLayer, theme?.lockLayer]);
+
+  // Direct access to live theme - no stale snapshots
+  const lockLayer = theme?.lockLayer || {};
 
   // Load elements from Supabase (no side effects)
   const { elements, loading, error } = useWalletElements();
@@ -168,8 +104,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
       className="relative w-full h-full flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
       style={{
-        backgroundColor: previewData.lockLayer.backgroundColor,
-        backgroundImage: previewData.lockLayer.backgroundImage ? `url(${previewData.lockLayer.backgroundImage})` : undefined,
+        backgroundColor: lockLayer.backgroundColor,
+        backgroundImage: lockLayer.backgroundImage ? `url(${lockLayer.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -189,10 +125,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="text-center font-medium text-white text-lg login-password-title" 
             data-element-id="login-password-title"
             style={{
-              fontFamily: previewData.lockLayer.title.fontFamily,
-              color: previewData.lockLayer.title.textColor,
-              fontSize: previewData.lockLayer.title.fontSize,
-              fontWeight: previewData.lockLayer.title.fontWeight
+              fontFamily: lockLayer.title?.fontFamily,
+              color: lockLayer.title?.textColor,
+              fontSize: lockLayer.title?.fontSize,
+              fontWeight: lockLayer.title?.fontWeight
             }}
           >
             <span 
@@ -216,11 +152,11 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
               data-element-id="login-password-input"
               style={{
-                backgroundColor: previewData.lockLayer.passwordInput.backgroundColor,
-                color: previewData.lockLayer.passwordInput.textColor,
-                fontFamily: previewData.lockLayer.passwordInput.fontFamily,
-                borderRadius: previewData.lockLayer.passwordInput.borderRadius,
-                border: previewData.lockLayer.passwordInput.border
+                backgroundColor: lockLayer.passwordInput?.backgroundColor,
+                color: lockLayer.passwordInput?.textColor,
+                fontFamily: lockLayer.passwordInput?.fontFamily,
+                borderRadius: lockLayer.passwordInput?.borderRadius,
+                border: lockLayer.passwordInput?.border
               }}
             />
             {password && (
@@ -230,7 +166,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white login-show-password"
                 data-element-id="login-show-password"
                 style={{
-                  color: previewData.lockLayer.passwordInput.iconEyeColor
+                  color: lockLayer.passwordInput?.iconEyeColor
                 }}
               >
                 {showPassword ? (
@@ -251,9 +187,9 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
               data-element-id="login-forgot-password"
               style={{ 
-                fontFamily: previewData.lockLayer.forgotPassword.fontFamily,
-                color: previewData.lockLayer.forgotPassword.textColor,
-                fontSize: previewData.lockLayer.forgotPassword.fontSize
+                fontFamily: lockLayer.forgotPassword?.fontFamily,
+                color: lockLayer.forgotPassword?.textColor,
+                fontSize: lockLayer.forgotPassword?.fontSize
               }}
             >
               <span 
@@ -270,12 +206,12 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
             data-element-id="login-unlock-button"
             style={{
-              backgroundColor: previewData.lockLayer.unlockButton.backgroundColor,
-              color: previewData.lockLayer.unlockButton.textColor,
-              fontFamily: previewData.lockLayer.unlockButton.fontFamily,
-              borderRadius: previewData.lockLayer.unlockButton.borderRadius,
-              fontWeight: previewData.lockLayer.unlockButton.fontWeight,
-              fontSize: previewData.lockLayer.unlockButton.fontSize
+              backgroundColor: lockLayer.unlockButton?.backgroundColor,
+              color: lockLayer.unlockButton?.textColor,
+              fontFamily: lockLayer.unlockButton?.fontFamily,
+              borderRadius: lockLayer.unlockButton?.borderRadius,
+              fontWeight: lockLayer.unlockButton?.fontWeight,
+              fontSize: lockLayer.unlockButton?.fontSize
             }}
             onClick={handleUnlock}
           >
