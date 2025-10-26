@@ -116,7 +116,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     
     // Dispatch event for runtime mapping engine
     window.dispatchEvent(new CustomEvent('theme-updated', { 
-      detail: { theme, forceFullApply: true } 
+      detail: { theme } 
     }));
   },
 

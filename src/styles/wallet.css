@@ -84,33 +84,3 @@
   height: 20px;
   flex-shrink: 0;
 }
-
-/* Lock Layer fallback styles - structural only, colors from theme JSON */
-[data-element-id="unlock-screen-container"] {
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-[data-element-id="login-password-input"] {
-  border: none;
-  outline: none;
-}
-
-[data-element-id="login-password-title"] {
-  font-family: 'Inter', sans-serif;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-[data-element-id="login-forgot-password"] {
-  font-family: 'Inter', sans-serif;
-  font-size: 15px;
-}
-
-[data-element-id="login-unlock-button"] {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 19px;
-  border-radius: 14px;
-}
