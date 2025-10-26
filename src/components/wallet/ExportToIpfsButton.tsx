@@ -32,7 +32,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
   const { address, isConnected } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
   
-  const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL') => {
+  const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL', customName: string) => {
     // Prevent double-click / concurrent mints
     if (isExporting) {
       console.log('[MintFlow] ⚠️ Mint already in progress, ignoring click');
@@ -83,7 +83,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       
       // Step 1: Get current theme from store
       const currentTheme = useThemeStore.getState().theme;
-      const themeName = themeId || useThemeStore.getState().activeThemeId || 'custom-theme';
+      const themeName = customName || 'Untitled Theme';
       
       // Step 2: Resolve preview image URL (cascade through layers)
       const previewImageUrl = resolvePreviewImageUrl(currentTheme);
