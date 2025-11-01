@@ -65,22 +65,6 @@ const hasBackgroundImageAtSameNode = (theme: any, jsonPath: string): boolean => 
   return Boolean(bgImg && String(bgImg).trim() !== '');
 };
 
-/**
- * Get fallback value for lockLayer elements when theme value is undefined
- */
-const getFallbackForLockLayer = (jsonPath: string): any => {
-  const defaults: Record<string, any> = {
-    '/lockLayer/passwordInput/backgroundColor': 'rgba(30, 30, 30, 0.8)',
-    '/lockLayer/passwordInput/textColor': '#FFFFFF',
-    '/lockLayer/unlockButton/backgroundColor': '#9945FF',
-    '/lockLayer/unlockButton/textColor': '#FFFFFF',
-    '/lockLayer/title/textColor': '#FFFFFF',
-    '/lockLayer/forgotPassword/textColor': '#9CA3AF'
-  };
-  
-  return defaults[jsonPath];
-};
-
 // ============================================================================
 // ЕДИНЫЙ МЭППЕР - применяет значение к DOM элементу
 // ============================================================================
@@ -242,49 +226,8 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         const value = getByPath(theme, mapping.json_path);
         
         // 🛡️ Protection: Don't overwrite inline styles if theme value is undefined
-        // BUT: Always apply lockLayer styles with fallback values
         if (value === null || value === undefined) {
-          const isLockPath = mapping.json_path?.startsWith('/lockLayer');
-          
-          if (!isLockPath) {
-            const domElement = walletRoot.querySelector(mapping.selector);
-            if (domElement instanceof HTMLElement) {
-              const key = getKeyFromPath(mapping.json_path);
-              const cssProperty = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-              const inlineStyle = domElement.style.getPropertyValue(cssProperty);
-              const isOurs = domElement.getAttribute('data-wcc-inline') === '1';
-              
-              // Skip only if: NOT lockLayer, has inline style, and it's NOT ours
-              if (inlineStyle && !isOurs) {
-                console.log('[Runtime] 🛡️ Skip foreign inline:', {
-                  selector: mapping.selector,
-                  jsonPath: mapping.json_path,
-                  cssProperty,
-                  inlineStyle
-                });
-                continue;
-              }
-            }
-            continue; // Skip non-lockLayer paths with undefined values
-          }
-          
-          // ✅ For lockLayer: apply fallback values instead of skipping
-          if (isLockPath) {
-            const fallbackValue = getFallbackForLockLayer(mapping.json_path);
-            if (fallbackValue !== undefined) {
-              domElements.forEach((el) => {
-                if (el instanceof HTMLElement) {
-                  console.log('[Runtime] 🔧 Applying lockLayer fallback:', {
-                    selector: mapping.selector,
-                    jsonPath: mapping.json_path,
-                    fallbackValue
-                  });
-                  applyValueToNodeUnified(el, mapping.json_path, fallbackValue, theme);
-                }
-              });
-            }
-            continue;
-          }
+          continue;
         }
         
         domElements.forEach((el) => {

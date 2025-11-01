@@ -13,6 +13,7 @@ import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
 import { ManualColorEditor } from './ManualColorEditor';
 import { AiDomScannerButton } from '@/components/admin/AiDomScannerButton';
+import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -48,6 +49,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   // Read theme from SoT without writing back
   const theme = useThemeStore(state => state.theme);
   const activeThemeId = useThemeStore(state => state.activeThemeId);
+  const { getLockLayer } = useWalletTheme();
+  const lockLayer = getLockLayer();
 
   console.log('[RENDER WalletPreviewContainer]', { 
     activeThemeId, 
@@ -60,33 +63,31 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   useEffect(() => {
     if (theme && Object.keys(theme).length > 0) {
       console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
-      // ✅ FIXED: Use requestAnimationFrame to sync with browser rendering (no race condition)
       requestAnimationFrame(() => {
         applyThemeToDOM(theme);
       });
     }
   }, [theme, activeThemeId]);
 
-  // Sync runtime mappings when lockLayer mounts
+  // 🔥 Force apply theme to DOM when lockLayer mounts or theme changes
   useEffect(() => {
-    if (currentLayer === 'lockLayer' && theme?.lockLayer) {
-      console.log('[LockLayerSync] Applying theme on mount/switch');
-      requestAnimationFrame(() => {
+    if (currentLayer === 'lockLayer' && theme) {
+      console.log('[WalletPreview] 🔒 LockLayer mounted/changed, forcing DOM sync...');
+      // Принудительная аппликация через 50ms (дать React отрендерить DOM)
+      const timer = setTimeout(() => {
         applyThemeToDOM(theme);
-      });
+        console.log('[WalletPreview] ✅ DOM sync complete');
+      }, 50);
+      return () => clearTimeout(timer);
     }
-  }, [currentLayer, theme?.lockLayer]);
-
-  // Direct access to live theme - no stale snapshots
-  const lockLayer = theme?.lockLayer || {};
+  }, [currentLayer, theme]);
 
   // 🔍 ДИАГНОСТИКА: Что именно приходит в lockLayer?
-  console.log('[LockLayer DEBUG]', {
-    hasTheme: !!theme,
-    hasLockLayer: !!theme?.lockLayer,
+  console.log('[LockLayer DEBUG] Using hook:', {
     passwordInputBg: lockLayer.passwordInput?.backgroundColor,
     unlockButtonBg: lockLayer.unlockButton?.backgroundColor,
-    fullLockLayer: lockLayer
+    titleColor: lockLayer.title?.textColor,
+    hasFallbacks: true
   });
 
   // Load elements from Supabase (no side effects)
