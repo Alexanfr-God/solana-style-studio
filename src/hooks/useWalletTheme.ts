@@ -208,22 +208,22 @@ export const useWalletTheme = () => {
         fontWeight: lockLayer.title?.fontWeight || '600'
       },
       passwordInput: {
-        backgroundColor: lockLayer.passwordInput?.backgroundColor,
-        textColor: lockLayer.passwordInput?.textColor,
-        iconEyeColor: lockLayer.passwordInput?.iconEyeColor,
-        placeholderColor: lockLayer.passwordInput?.placeholderColor,
+        backgroundColor: lockLayer.passwordInput?.backgroundColor || '#1c1c1c',
+        textColor: lockLayer.passwordInput?.textColor || '#ffffff',
+        iconEyeColor: lockLayer.passwordInput?.iconEyeColor || '#9CA3AF',
+        placeholderColor: lockLayer.passwordInput?.placeholderColor || '#6B7280',
         fontFamily: lockLayer.passwordInput?.fontFamily || 'Inter, system-ui, sans-serif',
         borderRadius: lockLayer.passwordInput?.borderRadius || '12px',
         border: lockLayer.passwordInput?.border || 'none'
       },
       forgotPassword: {
-        textColor: lockLayer.forgotPassword?.textColor,
+        textColor: lockLayer.forgotPassword?.textColor || '#9CA3AF',
         fontFamily: lockLayer.forgotPassword?.fontFamily || 'Inter, system-ui, sans-serif',
         fontSize: lockLayer.forgotPassword?.fontSize || '14px'
       },
       unlockButton: {
-        backgroundColor: lockLayer.unlockButton?.backgroundColor,
-        textColor: lockLayer.unlockButton?.textColor,
+        backgroundColor: lockLayer.unlockButton?.backgroundColor || '#9945FF',
+        textColor: lockLayer.unlockButton?.textColor || '#ffffff',
         fontFamily: lockLayer.unlockButton?.fontFamily || 'Inter, system-ui, sans-serif',
         fontWeight: lockLayer.unlockButton?.fontWeight || '700',
         fontSize: lockLayer.unlockButton?.fontSize || '16px',
