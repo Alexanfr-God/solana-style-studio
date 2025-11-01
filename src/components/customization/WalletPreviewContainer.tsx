@@ -135,10 +135,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="text-center font-medium text-white text-lg login-password-title" 
             data-element-id="login-password-title"
             style={{
-              fontFamily: lockLayer.title?.fontFamily,
-              color: lockLayer.title?.textColor,
-              fontSize: lockLayer.title?.fontSize,
-              fontWeight: lockLayer.title?.fontWeight
+              fontFamily: 'var(--wcc-lock-title-font, Inter, system-ui, sans-serif)',
+              color: 'var(--wcc-lock-title-fg, #ffffff)',
+              fontSize: 'var(--wcc-lock-title-size, 18px)',
+              fontWeight: 'var(--wcc-lock-title-weight, 600)'
             }}
           >
             <span 
@@ -162,11 +162,11 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
               data-element-id="login-password-input"
               style={{
-                backgroundColor: lockLayer.passwordInput?.backgroundColor,
-                color: lockLayer.passwordInput?.textColor,
-                fontFamily: lockLayer.passwordInput?.fontFamily,
-                borderRadius: lockLayer.passwordInput?.borderRadius,
-                border: lockLayer.passwordInput?.border
+                backgroundColor: 'var(--wcc-lock-password-bg, #1c1c1c)',
+                color: 'var(--wcc-lock-password-fg, #ffffff)',
+                fontFamily: 'var(--wcc-lock-password-font, Inter, system-ui, sans-serif)',
+                borderRadius: 'var(--wcc-lock-password-radius, 12px)',
+                border: 'var(--wcc-lock-password-border, none)'
               }}
             />
             {password && (
@@ -176,7 +176,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white login-show-password"
                 data-element-id="login-show-password"
                 style={{
-                  color: lockLayer.passwordInput?.iconEyeColor
+                  color: 'var(--wcc-lock-password-icon, #9CA3AF)'
                 }}
               >
                 {showPassword ? (
@@ -197,9 +197,9 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
               data-element-id="login-forgot-password"
               style={{ 
-                fontFamily: lockLayer.forgotPassword?.fontFamily,
-                color: lockLayer.forgotPassword?.textColor,
-                fontSize: lockLayer.forgotPassword?.fontSize
+                fontFamily: 'var(--wcc-lock-forgot-font, Inter, system-ui, sans-serif)',
+                color: 'var(--wcc-lock-forgot-fg, #9CA3AF)',
+                fontSize: 'var(--wcc-lock-forgot-size, 14px)'
               }}
             >
               <span 
@@ -216,12 +216,12 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
             data-element-id="login-unlock-button"
             style={{
-              backgroundColor: lockLayer.unlockButton?.backgroundColor,
-              color: lockLayer.unlockButton?.textColor,
-              fontFamily: lockLayer.unlockButton?.fontFamily,
-              borderRadius: lockLayer.unlockButton?.borderRadius,
-              fontWeight: lockLayer.unlockButton?.fontWeight,
-              fontSize: lockLayer.unlockButton?.fontSize
+              backgroundColor: 'var(--wcc-lock-unlock-bg, #9945FF)',
+              color: 'var(--wcc-lock-unlock-fg, #ffffff)',
+              fontFamily: 'var(--wcc-lock-unlock-font, Inter, system-ui, sans-serif)',
+              borderRadius: 'var(--wcc-lock-unlock-radius, 12px)',
+              fontWeight: 'var(--wcc-lock-unlock-weight, 700)',
+              fontSize: 'var(--wcc-lock-unlock-size, 16px)'
             }}
             onClick={handleUnlock}
           >

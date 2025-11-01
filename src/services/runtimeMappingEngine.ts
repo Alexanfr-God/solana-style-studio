@@ -196,10 +196,68 @@ export function applyValueToNodeUnified(
 }
 
 // ============================================================================
+// CSS Variables Writer (lockLayer)
+// ============================================================================
+
+function writeLockLayerVars(theme: any): void {
+  const root = document.documentElement;
+  const lockLayer = theme?.lockLayer;
+  
+  if (!lockLayer) {
+    console.log('[Runtime] ⚠️ No lockLayer in theme');
+    return;
+  }
+  
+  // Password Input
+  if (lockLayer.passwordInput) {
+    const { backgroundColor, textColor, iconEyeColor, placeholderColor, fontFamily, borderRadius, border } = lockLayer.passwordInput;
+    if (backgroundColor) root.style.setProperty('--wcc-lock-password-bg', backgroundColor);
+    if (textColor) root.style.setProperty('--wcc-lock-password-fg', textColor);
+    if (iconEyeColor) root.style.setProperty('--wcc-lock-password-icon', iconEyeColor);
+    if (placeholderColor) root.style.setProperty('--wcc-lock-password-placeholder', placeholderColor);
+    if (fontFamily) root.style.setProperty('--wcc-lock-password-font', fontFamily);
+    if (borderRadius) root.style.setProperty('--wcc-lock-password-radius', borderRadius);
+    if (border) root.style.setProperty('--wcc-lock-password-border', border);
+  }
+  
+  // Unlock Button
+  if (lockLayer.unlockButton) {
+    const { backgroundColor, textColor, fontFamily, fontWeight, fontSize, borderRadius } = lockLayer.unlockButton;
+    if (backgroundColor) root.style.setProperty('--wcc-lock-unlock-bg', backgroundColor);
+    if (textColor) root.style.setProperty('--wcc-lock-unlock-fg', textColor);
+    if (fontFamily) root.style.setProperty('--wcc-lock-unlock-font', fontFamily);
+    if (fontWeight) root.style.setProperty('--wcc-lock-unlock-weight', fontWeight);
+    if (fontSize) root.style.setProperty('--wcc-lock-unlock-size', fontSize);
+    if (borderRadius) root.style.setProperty('--wcc-lock-unlock-radius', borderRadius);
+  }
+  
+  // Title
+  if (lockLayer.title) {
+    const { textColor, fontFamily, fontSize, fontWeight } = lockLayer.title;
+    if (textColor) root.style.setProperty('--wcc-lock-title-fg', textColor);
+    if (fontFamily) root.style.setProperty('--wcc-lock-title-font', fontFamily);
+    if (fontSize) root.style.setProperty('--wcc-lock-title-size', fontSize);
+    if (fontWeight) root.style.setProperty('--wcc-lock-title-weight', fontWeight);
+  }
+  
+  // Forgot Password
+  if (lockLayer.forgotPassword) {
+    const { textColor, fontFamily, fontSize } = lockLayer.forgotPassword;
+    if (textColor) root.style.setProperty('--wcc-lock-forgot-fg', textColor);
+    if (fontFamily) root.style.setProperty('--wcc-lock-forgot-font', fontFamily);
+    if (fontSize) root.style.setProperty('--wcc-lock-forgot-size', fontSize);
+  }
+  
+  console.log('[Runtime] 🎨 CSS Variables written for lockLayer');
+}
+
+// ============================================================================
 // Apply theme to DOM (полное применение)
 // ============================================================================
 
 export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
+  // ✅ Write CSS Variables first
+  writeLockLayerVars(theme);
   const results: AppliedStyle[] = [];
   
   try {
@@ -295,6 +353,11 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
 
 function applyStyleToPath(theme: any, jsonPath: string) {
   try {
+    // ✅ Update CSS Variables if lockLayer path
+    if (jsonPath.startsWith('/lockLayer')) {
+      writeLockLayerVars(theme);
+    }
+    
     console.log('[Runtime] 🎯 Targeted update:', jsonPath);
     
     const mappings = jsonBridge.getAllMappings();
