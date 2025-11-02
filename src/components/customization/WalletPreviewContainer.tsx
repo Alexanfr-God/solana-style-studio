@@ -135,10 +135,9 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="text-center font-medium text-white text-lg login-password-title" 
             data-element-id="login-password-title"
             style={{
-              fontFamily: 'var(--wcc-lock-title-font, Inter, system-ui, sans-serif)',
-              color: 'var(--wcc-lock-title-fg, #ffffff)',
-              fontSize: 'var(--wcc-lock-title-size, 18px)',
-              fontWeight: 'var(--wcc-lock-title-weight, 600)'
+              fontFamily: lockLayer.title?.fontFamily || 'Inter, system-ui, sans-serif',
+              fontSize: lockLayer.title?.fontSize || '18px',
+              fontWeight: lockLayer.title?.fontWeight || '600'
             }}
           >
             <span 
