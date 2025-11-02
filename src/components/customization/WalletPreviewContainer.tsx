@@ -342,9 +342,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             )}
             
             {/* Visual Element Selection System */}
-            <AdvancedInteractiveElementSelector
-              isActive={isEditMode}
-              onElementSelect={(element) => {
+          <AdvancedInteractiveElementSelector
+            isActive={isEditMode}
+            currentLayer={currentLayer}
+            onElementSelect={(element) => {
                 updateSelectedElement(element);
                 console.log('✅ Element selected:', {
                   name: element.name,
