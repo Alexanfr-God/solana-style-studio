@@ -195,69 +195,14 @@ export function applyValueToNodeUnified(
   console.log('[Runtime] ⚠️ unmapped key', { key, jsonPath, value });
 }
 
-// ============================================================================
-// CSS Variables Writer (lockLayer)
-// ============================================================================
-
-function writeLockLayerVars(theme: any): void {
-  const root = document.documentElement;
-  const lockLayer = theme?.lockLayer;
-  
-  if (!lockLayer) {
-    console.log('[Runtime] ⚠️ No lockLayer in theme');
-    return;
-  }
-  
-  // Password Input
-  if (lockLayer.passwordInput) {
-    const { backgroundColor, textColor, iconEyeColor, placeholderColor, fontFamily, borderRadius, border } = lockLayer.passwordInput;
-    if (backgroundColor) root.style.setProperty('--wcc-lock-password-bg', backgroundColor);
-    if (textColor) root.style.setProperty('--wcc-lock-password-fg', textColor);
-    if (iconEyeColor) root.style.setProperty('--wcc-lock-password-icon', iconEyeColor);
-    if (placeholderColor) root.style.setProperty('--wcc-lock-password-placeholder', placeholderColor);
-    if (fontFamily) root.style.setProperty('--wcc-lock-password-font', fontFamily);
-    if (borderRadius) root.style.setProperty('--wcc-lock-password-radius', borderRadius);
-    if (border) root.style.setProperty('--wcc-lock-password-border', border);
-  }
-  
-  // Unlock Button
-  if (lockLayer.unlockButton) {
-    const { backgroundColor, textColor, fontFamily, fontWeight, fontSize, borderRadius } = lockLayer.unlockButton;
-    if (backgroundColor) root.style.setProperty('--wcc-lock-unlock-bg', backgroundColor);
-    if (textColor) root.style.setProperty('--wcc-lock-unlock-fg', textColor);
-    if (fontFamily) root.style.setProperty('--wcc-lock-unlock-font', fontFamily);
-    if (fontWeight) root.style.setProperty('--wcc-lock-unlock-weight', fontWeight);
-    if (fontSize) root.style.setProperty('--wcc-lock-unlock-size', fontSize);
-    if (borderRadius) root.style.setProperty('--wcc-lock-unlock-radius', borderRadius);
-  }
-  
-  // Title
-  if (lockLayer.title) {
-    const { textColor, fontFamily, fontSize, fontWeight } = lockLayer.title;
-    if (textColor) root.style.setProperty('--wcc-lock-title-fg', textColor);
-    if (fontFamily) root.style.setProperty('--wcc-lock-title-font', fontFamily);
-    if (fontSize) root.style.setProperty('--wcc-lock-title-size', fontSize);
-    if (fontWeight) root.style.setProperty('--wcc-lock-title-weight', fontWeight);
-  }
-  
-  // Forgot Password
-  if (lockLayer.forgotPassword) {
-    const { textColor, fontFamily, fontSize } = lockLayer.forgotPassword;
-    if (textColor) root.style.setProperty('--wcc-lock-forgot-fg', textColor);
-    if (fontFamily) root.style.setProperty('--wcc-lock-forgot-font', fontFamily);
-    if (fontSize) root.style.setProperty('--wcc-lock-forgot-size', fontSize);
-  }
-  
-  console.log('[Runtime] 🎨 CSS Variables written for lockLayer');
-}
+// 🗑️ Removed: writeLockLayerVars (CSS Variables) - now using only inline !important styles
 
 // ============================================================================
 // Apply theme to DOM (полное применение)
 // ============================================================================
 
 export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
-  // ✅ Write CSS Variables first
-  writeLockLayerVars(theme);
+  // 🗑️ Removed: writeLockLayerVars call
   const results: AppliedStyle[] = [];
   
   try {
@@ -314,31 +259,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
     
     console.log('[Runtime] ✅ Full apply complete:', results.filter(r => r.success).length);
     
-    // 🔁 Reapply lockLayer to catch late React commits
-    const reapplyLockLayer = () => {
-      const lockMappings = (mappings as any[]).filter((m: any) => 
-        m.json_path?.startsWith('/lockLayer')
-      );
-      
-      for (const m of lockMappings) {
-        const nodes = walletRoot?.querySelectorAll(m.selector);
-        if (!nodes) continue;
-        
-        const val = getByPath(theme, m.json_path);
-        if (val == null) continue;
-        
-        nodes.forEach((n) => {
-          if (n instanceof HTMLElement) {
-            applyValueToNodeUnified(n, m.json_path, val, theme);
-          }
-        });
-      }
-      console.log('[Runtime] 🔁 lockLayer re-applied');
-    };
-    
-    // Apply on next frame and after 120ms delay
-    requestAnimationFrame(() => reapplyLockLayer());
-    setTimeout(() => reapplyLockLayer(), 120);
+    // 🗑️ Removed: reapplyLockLayer logic
     
   } catch (error) {
     console.error('[Runtime] Fatal error:', error);
@@ -353,10 +274,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
 
 function applyStyleToPath(theme: any, jsonPath: string) {
   try {
-    // ✅ Update CSS Variables if lockLayer path
-    if (jsonPath.startsWith('/lockLayer')) {
-      writeLockLayerVars(theme);
-    }
+    // 🗑️ Removed: writeLockLayerVars call
     
     console.log('[Runtime] 🎯 Targeted update:', jsonPath);
     

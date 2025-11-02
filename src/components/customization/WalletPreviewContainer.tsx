@@ -162,11 +162,9 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
               data-element-id="login-password-input"
               style={{
-                backgroundColor: 'var(--wcc-lock-password-bg, #1c1c1c)',
-                color: 'var(--wcc-lock-password-fg, #ffffff)',
-                fontFamily: 'var(--wcc-lock-password-font, Inter, system-ui, sans-serif)',
-                borderRadius: 'var(--wcc-lock-password-radius, 12px)',
-                border: 'var(--wcc-lock-password-border, none)'
+                fontFamily: lockLayer.passwordInput?.fontFamily || 'Inter, system-ui, sans-serif',
+                borderRadius: lockLayer.passwordInput?.borderRadius || '12px',
+                border: lockLayer.passwordInput?.border || 'none'
               }}
             />
             {password && (
@@ -175,9 +173,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white login-show-password"
                 data-element-id="login-show-password"
-                style={{
-                  color: 'var(--wcc-lock-password-icon, #9CA3AF)'
-                }}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 unlock-password-toggle-icon" data-element-id="unlock-password-toggle-icon" />
@@ -197,9 +192,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
               data-element-id="login-forgot-password"
               style={{ 
-                fontFamily: 'var(--wcc-lock-forgot-font, Inter, system-ui, sans-serif)',
-                color: 'var(--wcc-lock-forgot-fg, #9CA3AF)',
-                fontSize: 'var(--wcc-lock-forgot-size, 14px)'
+                fontFamily: lockLayer.forgotPassword?.fontFamily || 'Inter, system-ui, sans-serif',
+                fontSize: lockLayer.forgotPassword?.fontSize || '14px'
               }}
             >
               <span 
@@ -216,12 +210,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
             data-element-id="login-unlock-button"
             style={{
-              backgroundColor: 'var(--wcc-lock-unlock-bg, #9945FF)',
-              color: 'var(--wcc-lock-unlock-fg, #ffffff)',
-              fontFamily: 'var(--wcc-lock-unlock-font, Inter, system-ui, sans-serif)',
-              borderRadius: 'var(--wcc-lock-unlock-radius, 12px)',
-              fontWeight: 'var(--wcc-lock-unlock-weight, 700)',
-              fontSize: 'var(--wcc-lock-unlock-size, 16px)'
+              fontFamily: lockLayer.unlockButton?.fontFamily || 'Inter, system-ui, sans-serif',
+              borderRadius: lockLayer.unlockButton?.borderRadius || '12px',
+              fontWeight: lockLayer.unlockButton?.fontWeight || '700',
+              fontSize: lockLayer.unlockButton?.fontSize || '16px'
             }}
             onClick={handleUnlock}
           >
