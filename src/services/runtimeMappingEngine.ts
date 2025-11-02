@@ -208,7 +208,8 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
     // 1) Load all mappings once
     await jsonBridge.loadElementMappings();
     const mappings = jsonBridge.getAllMappings() || [];
-    console.log('[RME:START]', { totalMappings: mappings.length });
+    const lockLayerPaths = mappings.filter((m: any) => m.json_path?.startsWith('/lockLayer/')).length;
+    console.log('[RME:START]', { totalMappings: mappings.length, lockLayerPaths });
     
     if (mappings.length === 0) {
       console.log('[RME:DONE]');

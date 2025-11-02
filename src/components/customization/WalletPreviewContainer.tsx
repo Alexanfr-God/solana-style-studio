@@ -114,7 +114,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
       className="relative w-full h-full flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
       style={{
-        backgroundColor: lockLayer.backgroundColor,
         backgroundImage: lockLayer.backgroundImage ? `url(${lockLayer.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
