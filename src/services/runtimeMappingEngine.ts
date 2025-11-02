@@ -99,10 +99,12 @@ export function applyValueToNodeUnified(
       el.style.setProperty('background', String(value), important);
       el.style.removeProperty('background-color');
       console.log('[Runtime] ✅ Applied gradient', isLockLayer ? '(!important)' : '');
+      if (isLockLayer) console.log('[RME:WRITE]', { jsonPath, cssProp: 'background', value });
     } else {
       el.style.setProperty('background-color', String(value), important);
       el.style.removeProperty('background');
       console.log('[Runtime] ✅ Applied backgroundColor', isLockLayer ? '(!important)' : '');
+      if (isLockLayer) console.log('[RME:WRITE]', { jsonPath, cssProp: 'background-color', value });
     }
     
     if (isLockLayer) {
@@ -132,6 +134,7 @@ export function applyValueToNodeUnified(
     
     el.style.setProperty('color', String(value), important);
     console.log('[Runtime] ✅ Applied textColor', isLockLayer ? '(!important)' : '');
+    if (isLockLayer) console.log('[RME:WRITE]', { jsonPath, cssProp: 'color', value });
     
     if (isLockLayer) {
       el.setAttribute('data-wcc-inline', '1');
@@ -226,9 +229,22 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
     for (const m of mappings as any[]) {
       if (!m?.selector || !m?.json_path) continue;
       
+      // 🔍 TRACE для lockLayer (диагностика)
+      const isLockPath = m.json_path.startsWith('/lockLayer/');
+      
       try {
         const els = walletRoot.querySelectorAll(m.selector);
         const value = getByPath(theme, m.json_path);
+        
+        // Trace lockLayer paths before checking value
+        if (isLockPath) {
+          console.log('[RME:TRACE]', {
+            path: m.json_path,
+            selector: m.selector,
+            value,
+            domCount: els.length
+          });
+        }
         
         // Skip if value is undefined
         if (value === null || value === undefined) {
