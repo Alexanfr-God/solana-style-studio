@@ -57,6 +57,26 @@ interface ThemeState {
   getActiveTheme: () => any; // Compatibility adapter
 }
 
+/**
+ * Deep merge utility - preserves nested objects instead of overwriting
+ */
+function deepMerge(target: any, source: any): any {
+  if (!source) return target;
+  if (!target) return source;
+  
+  const output = { ...target };
+  
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      output[key] = deepMerge(target[key] || {}, source[key]);
+    } else {
+      output[key] = source[key];
+    }
+  }
+  
+  return output;
+}
+
 let updateCounter = 0;
 
 export const useThemeStore = create<ThemeState>()((set, get) => ({
@@ -97,9 +117,12 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       unlockButtonBg: theme?.lockLayer?.unlockButton?.backgroundColor
     });
     
+    // ✅ Deep merge: preserve existing keys that are not overwritten
+    const mergedTheme = deepMerge(state.theme, theme);
+    
     try {
       const currentThemeStr = JSON.stringify(state.theme);
-      const newThemeStr = JSON.stringify(theme);
+      const newThemeStr = JSON.stringify(mergedTheme);
       
       if (currentThemeStr === newThemeStr) {
         console.log(`[STORE:theme] 🔄 Theme unchanged (#${updateCounter}), skipping update`);
@@ -109,9 +132,14 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       console.warn(`[STORE:theme] Theme comparison failed (#${updateCounter}), proceeding with update`);
     }
     
+    console.log('[ThemeStore] 📦 Merged theme lockLayer:', {
+      hasLockLayer: !!mergedTheme?.lockLayer,
+      lockLayerKeys: mergedTheme?.lockLayer ? Object.keys(mergedTheme.lockLayer) : []
+    });
+    
     set({
       _busy: true,
-      theme,
+      theme: mergedTheme,
       error: null
     });
     
@@ -120,11 +148,11 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }, 0);
     
     console.log(`[STORE:theme] ✅ Theme set successfully (#${updateCounter})`);
-    console.log('[STORE:theme] Theme preview keys:', theme ? Object.keys(theme).slice(0, 5) : []);
+    console.log('[STORE:theme] Theme preview keys:', mergedTheme ? Object.keys(mergedTheme).slice(0, 5) : []);
     
     // ✅ Apply theme to DOM immediately (event-driven, no polling)
     const { applyThemeToDOM } = await import('@/services/runtimeMappingEngine');
-    applyThemeToDOM(theme);
+    applyThemeToDOM(mergedTheme);
   },
 
   updateThemeValue: async (
