@@ -14,16 +14,16 @@
     "iconClose": { "color": "#FFFFFF", "type": "x" }
   },
   "lockLayer": {
-    "backgroundColor": "#21cc4e",
+    "backgroundColor": "rgba(75, 85, 99, 0.8)",
     "title": {
-      "textColor": "#2421cc",
+      "textColor": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "28px"
     },
     "passwordInput": {
-      "backgroundColor": "#2421cc",
-      "textColor": "#cc21cc",
+      "backgroundColor": "rgba(75, 85, 99, 0.8)",
+      "textColor": "#FFFFFF",
       "placeholderColor": "#9CA3AF",
       "borderRadius": "12px",
       "border": "none",
@@ -31,12 +31,12 @@
       "iconEyeColor": "#9CA3AF"
     },
     "forgotPassword": {
-      "textColor": "#2421cc",
+      "textColor": "#9CA3AF",
       "fontFamily": "Inter, sans-serif",
       "fontSize": "15px"
     },
     "unlockButton": {
-      "backgroundColor": "#2421cc",
+      "backgroundColor": "#6B7280",
       "textColor": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "600",

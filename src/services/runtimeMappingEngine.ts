@@ -99,12 +99,10 @@ export function applyValueToNodeUnified(
       el.style.setProperty('background', String(value), important);
       el.style.removeProperty('background-color');
       console.log('[Runtime] ✅ Applied gradient', isLockLayer ? '(!important)' : '');
-      if (isLockLayer) console.log('[RME:WRITE]', { jsonPath, cssProp: 'background', value });
     } else {
       el.style.setProperty('background-color', String(value), important);
       el.style.removeProperty('background');
       console.log('[Runtime] ✅ Applied backgroundColor', isLockLayer ? '(!important)' : '');
-      if (isLockLayer) console.log('[RME:WRITE]', { jsonPath, cssProp: 'background-color', value });
     }
     
     if (isLockLayer) {
@@ -134,7 +132,6 @@ export function applyValueToNodeUnified(
     
     el.style.setProperty('color', String(value), important);
     console.log('[Runtime] ✅ Applied textColor', isLockLayer ? '(!important)' : '');
-    if (isLockLayer) console.log('[RME:WRITE]', { jsonPath, cssProp: 'color', value });
     
     if (isLockLayer) {
       el.setAttribute('data-wcc-inline', '1');
@@ -211,11 +208,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
     // 1) Load all mappings once
     await jsonBridge.loadElementMappings();
     const mappings = jsonBridge.getAllMappings() || [];
-    const lockLayerMappings = mappings.filter((m: any) => m.json_path?.startsWith('/lockLayer/'));
-    console.log('[RME:START]', { 
-      totalMappings: mappings.length,
-      lockLayerPaths: lockLayerMappings.length 
-    });
+    console.log('[RME:START]', { totalMappings: mappings.length });
     
     if (mappings.length === 0) {
       console.log('[RME:DONE]');
@@ -233,22 +226,9 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
     for (const m of mappings as any[]) {
       if (!m?.selector || !m?.json_path) continue;
       
-      // 🔍 TRACE для lockLayer (диагностика)
-      const isLockPath = m.json_path.startsWith('/lockLayer/');
-      
       try {
         const els = walletRoot.querySelectorAll(m.selector);
         const value = getByPath(theme, m.json_path);
-        
-        // Trace lockLayer paths before checking value
-        if (isLockPath) {
-          console.log('[RME:TRACE]', {
-            path: m.json_path,
-            selector: m.selector,
-            value,
-            domCount: els.length
-          });
-        }
         
         // Skip if value is undefined
         if (value === null || value === undefined) {
@@ -286,11 +266,7 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
       }
     }
     
-    const lockLayerApplied = results.filter(r => r.elementId.startsWith('lock-')).length;
-    console.log('[RME:DONE]', { 
-      totalApplied: results.length, 
-      lockLayerApplied 
-    });
+    console.log('[RME:DONE]');
     
   } catch (error) {
     console.error('[RME:ERROR]', error);

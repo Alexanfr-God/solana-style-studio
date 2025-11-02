@@ -59,7 +59,28 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : []
   });
 
-  // Theme application is handled by AppBootstrap only (no duplicate applies)
+  // Apply runtime mappings when theme changes
+  useEffect(() => {
+    if (theme && Object.keys(theme).length > 0) {
+      console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
+      requestAnimationFrame(() => {
+        applyThemeToDOM(theme);
+      });
+    }
+  }, [theme, activeThemeId]);
+
+  // 🔥 Force apply theme to DOM when lockLayer mounts or theme changes
+  useEffect(() => {
+    if (currentLayer === 'lockLayer' && theme) {
+      console.log('[WalletPreview] 🔒 LockLayer mounted/changed, forcing DOM sync...');
+      // Принудительная аппликация через 50ms (дать React отрендерить DOM)
+      const timer = setTimeout(() => {
+        applyThemeToDOM(theme);
+        console.log('[WalletPreview] ✅ DOM sync complete');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [currentLayer, theme]);
 
   // 🔍 ДИАГНОСТИКА: Что именно приходит в lockLayer?
   console.log('[LockLayer DEBUG] Using hook:', {
@@ -93,6 +114,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
       className="relative w-full h-full flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
       style={{
+        backgroundColor: lockLayer.backgroundColor,
         backgroundImage: lockLayer.backgroundImage ? `url(${lockLayer.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
