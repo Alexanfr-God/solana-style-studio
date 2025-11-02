@@ -1,13 +1,14 @@
 
 import { useEffect, useState } from 'react';
+import { useThemeStore } from '@/state/themeStore';
 
 // Компонент для инициализации темы по умолчанию
 export default function AppBootstrap() {
   const [storeLoaded, setStoreLoaded] = useState(false);
   const [storeInstanceId, setStoreInstanceId] = useState<string>('loading');
 
+  // Load theme store and mappings once on mount
   useEffect(() => {
-    // Динамический импорт store внутри useEffect
     const loadThemeStore = async () => {
       try {
         const themeStoreModule = await import('@/state/themeStore');
@@ -15,14 +16,13 @@ export default function AppBootstrap() {
         setStoreLoaded(true);
         console.log('[Bootstrap] Theme store loaded, instance ID:', themeStoreModule.THEME_STORE_INSTANCE_ID);
         
-        // Загружаем defaultTheme.json только один раз при старте
+        // Load default theme once at startup
         try {
           console.log('[Bootstrap] Starting to load default theme');
           const response = await fetch('/themes/defaultTheme.json');
           if (response.ok) {
             const defaultTheme = await response.json();
             console.log('[Bootstrap] Loading default theme');
-            // Используем getState() вместо хука для получения setTheme
             themeStoreModule.useThemeStore.getState().setTheme(defaultTheme);
           } else {
             console.warn('[Bootstrap] Failed to load default theme');
@@ -48,6 +48,18 @@ export default function AppBootstrap() {
 
     loadThemeStore();
   }, []);
+
+  // Apply theme to DOM when theme.id changes (one-shot, no polling)
+  const theme = useThemeStore(s => s.theme);
+  useEffect(() => {
+    if (!theme?.id) return;
+    
+    (async () => {
+      console.log('[Bootstrap] 🎨 Theme changed, applying to DOM:', theme.id);
+      const { applyThemeToDOM } = await import('@/services/runtimeMappingEngine');
+      await applyThemeToDOM(theme);
+    })();
+  }, [theme?.id]);
 
   // Диагностический лог
   useEffect(() => {
