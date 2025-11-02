@@ -89,14 +89,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     console.log(`[STORE:theme setTheme] (#${updateCounter}) instanceId:`, THEME_STORE_INSTANCE_ID, 'from:', callStack?.split('\n')[2]);
     console.log('[STORE:theme setTheme]', theme && Object.keys(theme));
     
-    // 🔍 ДИАГНОСТИКА: Что приходит в setTheme?
-    console.log('[ThemeStore] setTheme called:', {
-      hasLockLayer: !!theme?.lockLayer,
-      lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : [],
-      passwordInputBg: theme?.lockLayer?.passwordInput?.backgroundColor,
-      unlockButtonBg: theme?.lockLayer?.unlockButton?.backgroundColor
-    });
-    
     try {
       const currentThemeStr = JSON.stringify(state.theme);
       const newThemeStr = JSON.stringify(theme);
@@ -124,7 +116,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     
     // Dispatch event for runtime mapping engine
     window.dispatchEvent(new CustomEvent('theme-updated', { 
-      detail: { theme } 
+      detail: { theme, forceFullApply: true } 
     }));
   },
 

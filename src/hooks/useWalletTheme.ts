@@ -38,39 +38,6 @@ interface TokenCardDescription {
   textAlign?: string;
 }
 
-export interface LockLayerTheme {
-  backgroundColor?: string;
-  backgroundImage?: string;
-  title?: {
-    textColor?: string;
-    fontFamily?: string;
-    fontSize?: string;
-    fontWeight?: string;
-  };
-  passwordInput?: {
-    backgroundColor?: string;
-    textColor?: string;
-    iconEyeColor?: string;
-    placeholderColor?: string;
-    fontFamily?: string;
-    borderRadius?: string;
-    border?: string;
-  };
-  forgotPassword?: {
-    textColor?: string;
-    fontFamily?: string;
-    fontSize?: string;
-  };
-  unlockButton?: {
-    backgroundColor?: string;
-    textColor?: string;
-    fontFamily?: string;
-    fontWeight?: string;
-    fontSize?: string;
-    borderRadius?: string;
-  };
-}
-
 interface WalletTheme {
   globalSearchInput?: GlobalSearchInput;
   lockLayer?: any;
@@ -176,6 +143,7 @@ export const useWalletTheme = () => {
     };
   };
 
+  const getLockLayer = () => theme.lockLayer || {};
   const getAvatarHeader = () => theme.avatarHeader || {};
   const getSidebarLayer = () => theme.sidebarLayer || {};
   const getHomeLayer = () => theme.homeLayer || {};
@@ -193,44 +161,6 @@ export const useWalletTheme = () => {
   const getBottomNavigation = () => theme.homeLayer?.footer || {};
 
   const getActionButtons = () => theme.homeLayer?.actionButtons || {};
-
-  const getLockLayer = (): LockLayerTheme => {
-    const lockLayer = theme?.lockLayer || {};
-    
-    // 🛡️ Мягкие fallback: ТОЛЬКО типографика и радиусы (не цвета!)
-    return {
-      backgroundColor: lockLayer.backgroundColor,
-      backgroundImage: lockLayer.backgroundImage,
-      title: {
-        textColor: lockLayer.title?.textColor,
-        fontFamily: lockLayer.title?.fontFamily || 'Inter, system-ui, sans-serif',
-        fontSize: lockLayer.title?.fontSize || '20px',
-        fontWeight: lockLayer.title?.fontWeight || '600'
-      },
-    passwordInput: {
-      backgroundColor: lockLayer.passwordInput?.backgroundColor,
-      textColor: lockLayer.passwordInput?.textColor,
-      iconEyeColor: lockLayer.passwordInput?.iconEyeColor || '#9CA3AF',
-      placeholderColor: lockLayer.passwordInput?.placeholderColor || '#6B7280',
-      fontFamily: lockLayer.passwordInput?.fontFamily || 'Inter, system-ui, sans-serif',
-      borderRadius: lockLayer.passwordInput?.borderRadius || '12px',
-      border: lockLayer.passwordInput?.border || 'none'
-    },
-    forgotPassword: {
-      textColor: lockLayer.forgotPassword?.textColor,
-      fontFamily: lockLayer.forgotPassword?.fontFamily || 'Inter, system-ui, sans-serif',
-      fontSize: lockLayer.forgotPassword?.fontSize || '14px'
-    },
-    unlockButton: {
-      backgroundColor: lockLayer.unlockButton?.backgroundColor,
-      textColor: lockLayer.unlockButton?.textColor,
-      fontFamily: lockLayer.unlockButton?.fontFamily || 'Inter, system-ui, sans-serif',
-      fontWeight: lockLayer.unlockButton?.fontWeight || '700',
-      fontSize: lockLayer.unlockButton?.fontSize || '16px',
-      borderRadius: lockLayer.unlockButton?.borderRadius || '12px'
-    }
-    };
-  };
 
   const getTransition = (type: string = 'default') => {
     return theme.global?.transition || 'all 0.2s ease';

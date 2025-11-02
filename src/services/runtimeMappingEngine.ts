@@ -92,21 +92,14 @@ export function applyValueToNodeUnified(
   }
 
   if (key === 'backgroundcolor') {
-    const isLockLayer = jsonPath.includes('/lockLayer/');
-    const important = isLockLayer ? 'important' : '';
-    
     if (isGradient) {
-      el.style.setProperty('background', String(value), important);
+      el.style.background = String(value);
       el.style.removeProperty('background-color');
-      console.log('[Runtime] ✅ Applied gradient', isLockLayer ? '(!important)' : '');
+      console.log('[Runtime] ✅ Applied gradient');
     } else {
-      el.style.setProperty('background-color', String(value), important);
+      el.style.backgroundColor = String(value);
       el.style.removeProperty('background');
-      console.log('[Runtime] ✅ Applied backgroundColor', isLockLayer ? '(!important)' : '');
-    }
-    
-    if (isLockLayer) {
-      el.setAttribute('data-wcc-inline', '1');
+      console.log('[Runtime] ✅ Applied backgroundColor');
     }
     return;
   }
@@ -127,28 +120,14 @@ export function applyValueToNodeUnified(
   }
 
   if (key === 'textcolor' || key === 'color') {
-    const isLockLayer = jsonPath.includes('/lockLayer/');
-    const important = isLockLayer ? 'important' : '';
-    
-    el.style.setProperty('color', String(value), important);
-    console.log('[Runtime] ✅ Applied textColor', isLockLayer ? '(!important)' : '');
-    
-    if (isLockLayer) {
-      el.setAttribute('data-wcc-inline', '1');
-    }
+    el.style.color = String(value);
+    console.log('[Runtime] ✅ Applied textColor');
     return;
   }
 
   if (key === 'bordercolor') {
-    const isLockLayer = jsonPath.includes('/lockLayer/');
-    const important = isLockLayer ? 'important' : '';
-    
-    el.style.setProperty('border-color', String(value), important);
-    console.log('[Runtime] ✅ Applied borderColor', isLockLayer ? '(!important)' : '');
-    
-    if (isLockLayer) {
-      el.setAttribute('data-wcc-inline', '1');
-    }
+    el.style.borderColor = String(value);
+    console.log('[Runtime] ✅ Applied borderColor');
     return;
   }
 
@@ -195,14 +174,11 @@ export function applyValueToNodeUnified(
   console.log('[Runtime] ⚠️ unmapped key', { key, jsonPath, value });
 }
 
-// 🗑️ Removed: writeLockLayerVars (CSS Variables) - now using only inline !important styles
-
 // ============================================================================
 // Apply theme to DOM (полное применение)
 // ============================================================================
 
 export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
-  // 🗑️ Removed: writeLockLayerVars call
   const results: AppliedStyle[] = [];
   
   try {
@@ -227,20 +203,18 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         if (domElements.length === 0) continue;
         
         const value = getByPath(theme, mapping.json_path);
+        if (value === null || value === undefined) continue;
         
-        // 🛡️ Protection: Don't overwrite inline styles if theme value is undefined
-        if (value === null || value === undefined) {
-          continue;
-        }
+        console.log('[Runtime] 🎨 Applying styles:', {
+          totalMappings: mappings.length,
+          foundElements: domElements.length,
+          selector: mapping.selector,
+          value: value,
+          lockLayerVisible: !!document.querySelector('[data-element-id="unlock-screen-container"]')
+        });
         
         domElements.forEach((el) => {
           if (el instanceof HTMLElement) {
-            console.log('[Runtime] 🎨 Applying:', {
-              selector: mapping.selector,
-              jsonPath: mapping.json_path,
-              key: getKeyFromPath(mapping.json_path),
-              value: value
-            });
             applyValueToNodeUnified(el, mapping.json_path, value, theme);
           }
         });
@@ -259,8 +233,6 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
     
     console.log('[Runtime] ✅ Full apply complete:', results.filter(r => r.success).length);
     
-    // 🗑️ Removed: reapplyLockLayer logic
-    
   } catch (error) {
     console.error('[Runtime] Fatal error:', error);
   }
@@ -274,8 +246,6 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
 
 function applyStyleToPath(theme: any, jsonPath: string) {
   try {
-    // 🗑️ Removed: writeLockLayerVars call
-    
     console.log('[Runtime] 🎯 Targeted update:', jsonPath);
     
     const mappings = jsonBridge.getAllMappings();
@@ -361,10 +331,23 @@ export function setupMappingWatcher(getTheme: () => any) {
     if (!theme) return;
     lastTheme = theme;
     
-    // ✅ НОВАЯ ЛОГИКА: forceFullApply = true → полный apply БЕЗ блокировки
+    // Check if Lock Layer is currently visible
+    const isLockLayerVisible = !!document.querySelector('[data-element-id="unlock-screen-container"]');
+    
+    // ✅ FORCED full apply with double RAF for Lock Layer
     if (forceFullApply) {
-      console.log('[Runtime] 🔄 FORCED full apply (Manual mode)');
-      applyThemeToDOM(theme);
+      if (isLockLayerVisible) {
+        // 🔄 Double RAF ensures React renders before we apply styles
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            console.log('[Runtime] 🔄 FORCED full apply (Lock Layer, double RAF)');
+            applyThemeToDOM(theme);
+          });
+        });
+      } else {
+        console.log('[Runtime] 🔄 FORCED full apply (Manual mode)');
+        applyThemeToDOM(theme);
+      }
       return;
     }
     
@@ -382,12 +365,40 @@ export function setupMappingWatcher(getTheme: () => any) {
   
   window.addEventListener('theme-updated', handleThemeUpdate as EventListener);
   
+  // 🔄 Watch for Lock Screen DOM changes
+  const lockScreenObserver = new MutationObserver((mutations) => {
+    const lockScreenAdded = mutations.some(m => 
+      Array.from(m.addedNodes).some(node => 
+        node instanceof HTMLElement && 
+        node.getAttribute('data-element-id') === 'unlock-screen-container'
+      )
+    );
+    
+    if (lockScreenAdded && lastTheme) {
+      console.log('[Runtime] 🔄 Lock Screen mounted, reapplying theme');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          applyThemeToDOM(lastTheme);
+        });
+      });
+    }
+  });
+
+  const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);
+  if (walletRoot) {
+    lockScreenObserver.observe(walletRoot, { 
+      childList: true, 
+      subtree: true 
+    });
+  }
+  
   console.log('[Runtime] 👀 Mapping watcher initialized');
   checkAndApply();
   
   return () => {
     clearInterval(interval);
     window.removeEventListener('theme-updated', handleThemeUpdate as EventListener);
+    lockScreenObserver.disconnect();
     console.log('[Runtime] 🛑 Mapping watcher stopped');
   };
 }

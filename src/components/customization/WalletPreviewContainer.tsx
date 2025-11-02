@@ -13,7 +13,6 @@ import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
 import { ManualColorEditor } from './ManualColorEditor';
 import { AiDomScannerButton } from '@/components/admin/AiDomScannerButton';
-import { useWalletTheme } from '@/hooks/useWalletTheme';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -49,8 +48,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   // Read theme from SoT without writing back
   const theme = useThemeStore(state => state.theme);
   const activeThemeId = useThemeStore(state => state.activeThemeId);
-  const { getLockLayer } = useWalletTheme();
-  const lockLayer = getLockLayer();
 
   console.log('[RENDER WalletPreviewContainer]', { 
     activeThemeId, 
@@ -59,36 +56,83 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : []
   });
 
-  // Apply runtime mappings when theme changes
-  useEffect(() => {
-    if (theme && Object.keys(theme).length > 0) {
-      console.log('[WalletPreview] Applying runtime mappings for theme:', activeThemeId);
-      requestAnimationFrame(() => {
-        applyThemeToDOM(theme);
-      });
-    }
-  }, [theme, activeThemeId]);
 
-  // 🔥 Force apply theme to DOM when lockLayer mounts or theme changes
-  useEffect(() => {
-    if (currentLayer === 'lockLayer' && theme) {
-      console.log('[WalletPreview] 🔒 LockLayer mounted/changed, forcing DOM sync...');
-      // Принудительная аппликация через 50ms (дать React отрендерить DOM)
-      const timer = setTimeout(() => {
-        applyThemeToDOM(theme);
-        console.log('[WalletPreview] ✅ DOM sync complete');
-      }, 50);
-      return () => clearTimeout(timer);
+  // FIXED: Better theme validation and fallback handling
+  const previewData = useMemo(() => {
+    // Validate theme structure
+    if (!theme || typeof theme !== 'object') {
+      console.warn('[WPC] ⚠️ Invalid theme, using defaults');
+      return {
+        lockLayer: {
+          backgroundColor: '#181818',
+          title: {
+            fontFamily: 'Inter',
+            textColor: '#FFFFFF',
+            fontSize: '28px',
+            fontWeight: 'bold'
+          },
+          passwordInput: {
+            backgroundColor: 'rgba(30,30,30,0.8)',
+            textColor: '#FFFFFF',
+            fontFamily: 'Inter',
+            borderRadius: '12px',
+            border: 'none',
+            iconEyeColor: '#aaa'
+          },
+          forgotPassword: {
+            fontFamily: 'Inter',
+            textColor: '#aaa',
+            fontSize: '15px'
+          },
+          unlockButton: {
+            backgroundColor: '#13e163',
+            textColor: '#FFFFFF',
+            fontFamily: 'Inter',
+            borderRadius: '14px',
+            fontWeight: '600',
+            fontSize: '19px'
+          }
+        }
+      };
     }
-  }, [currentLayer, theme]);
-
-  // 🔍 ДИАГНОСТИКА: Что именно приходит в lockLayer?
-  console.log('[LockLayer DEBUG] Using hook:', {
-    passwordInputBg: lockLayer.passwordInput?.backgroundColor,
-    unlockButtonBg: lockLayer.unlockButton?.backgroundColor,
-    titleColor: lockLayer.title?.textColor,
-    hasFallbacks: true
-  });
+    
+    const lockLayer = theme.lockLayer || {};
+    console.log('[WPC] lockLayer structure:', lockLayer);
+    
+    return {
+      lockLayer: {
+        backgroundColor: lockLayer.backgroundColor || '#181818',
+        backgroundImage: lockLayer.backgroundImage,
+        title: {
+          fontFamily: lockLayer.title?.fontFamily || 'Inter',
+          textColor: lockLayer.title?.textColor || '#FFFFFF',
+          fontSize: lockLayer.title?.fontSize || '28px',
+          fontWeight: lockLayer.title?.fontWeight || 'bold'
+        },
+        passwordInput: {
+          backgroundColor: lockLayer.passwordInput?.backgroundColor || 'rgba(30,30,30,0.8)',
+          textColor: lockLayer.passwordInput?.textColor || '#FFFFFF',
+          fontFamily: lockLayer.passwordInput?.fontFamily || 'Inter',
+          borderRadius: lockLayer.passwordInput?.borderRadius || '12px',
+          border: lockLayer.passwordInput?.border || 'none',
+          iconEyeColor: lockLayer.passwordInput?.iconEyeColor || '#aaa'
+        },
+        forgotPassword: {
+          fontFamily: lockLayer.forgotPassword?.fontFamily || 'Inter',
+          textColor: lockLayer.forgotPassword?.textColor || '#aaa',
+          fontSize: lockLayer.forgotPassword?.fontSize || '15px'
+        },
+        unlockButton: {
+          backgroundColor: lockLayer.unlockButton?.backgroundColor || '#13e163',
+          textColor: lockLayer.unlockButton?.textColor || '#FFFFFF',
+          fontFamily: lockLayer.unlockButton?.fontFamily || 'Inter',
+          borderRadius: lockLayer.unlockButton?.borderRadius || '14px',
+          fontWeight: lockLayer.unlockButton?.fontWeight || '600',
+          fontSize: lockLayer.unlockButton?.fontSize || '19px'
+        }
+      }
+    };
+  }, [theme]);
 
   // Load elements from Supabase (no side effects)
   const { elements, loading, error } = useWalletElements();
@@ -113,13 +157,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     <div 
       className="relative w-full h-full flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
-      style={{
-        backgroundColor: lockLayer.backgroundColor,
-        backgroundImage: lockLayer.backgroundImage ? `url(${lockLayer.backgroundImage})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
     >
       {/* Login Form - Bottom Section */}
       <div 
@@ -134,12 +171,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           <h2 
             className="text-center font-medium text-white text-lg login-password-title" 
             data-element-id="login-password-title"
-            style={{
-              fontFamily: 'var(--wcc-lock-title-font, Inter, system-ui, sans-serif)',
-              color: 'var(--wcc-lock-title-fg, #ffffff)',
-              fontSize: 'var(--wcc-lock-title-size, 18px)',
-              fontWeight: 'var(--wcc-lock-title-weight, 600)'
-            }}
           >
             <span 
               className="unlock-password-title-text"
@@ -161,11 +192,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               placeholder="Password"
               className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
               data-element-id="login-password-input"
-              style={{
-                fontFamily: lockLayer.passwordInput?.fontFamily || 'Inter, system-ui, sans-serif',
-                borderRadius: lockLayer.passwordInput?.borderRadius || '12px',
-                border: lockLayer.passwordInput?.border || 'none'
-              }}
             />
             {password && (
               <button
@@ -191,10 +217,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             <button
               className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
               data-element-id="login-forgot-password"
-              style={{ 
-                fontFamily: lockLayer.forgotPassword?.fontFamily || 'Inter, system-ui, sans-serif',
-                fontSize: lockLayer.forgotPassword?.fontSize || '14px'
-              }}
             >
               <span 
                 className="unlock-forgot-text"
@@ -209,12 +231,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           <button
             className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
             data-element-id="login-unlock-button"
-            style={{
-              fontFamily: lockLayer.unlockButton?.fontFamily || 'Inter, system-ui, sans-serif',
-              borderRadius: lockLayer.unlockButton?.borderRadius || '12px',
-              fontWeight: lockLayer.unlockButton?.fontWeight || '700',
-              fontSize: lockLayer.unlockButton?.fontSize || '16px'
-            }}
             onClick={handleUnlock}
           >
             <span 
