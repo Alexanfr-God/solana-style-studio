@@ -211,7 +211,11 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
     // 1) Load all mappings once
     await jsonBridge.loadElementMappings();
     const mappings = jsonBridge.getAllMappings() || [];
-    console.log('[RME:START]', { totalMappings: mappings.length });
+    const lockLayerMappings = mappings.filter((m: any) => m.json_path?.startsWith('/lockLayer/'));
+    console.log('[RME:START]', { 
+      totalMappings: mappings.length,
+      lockLayerPaths: lockLayerMappings.length 
+    });
     
     if (mappings.length === 0) {
       console.log('[RME:DONE]');
@@ -282,7 +286,11 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
       }
     }
     
-    console.log('[RME:DONE]');
+    const lockLayerApplied = results.filter(r => r.elementId.startsWith('lock-')).length;
+    console.log('[RME:DONE]', { 
+      totalApplied: results.length, 
+      lockLayerApplied 
+    });
     
   } catch (error) {
     console.error('[RME:ERROR]', error);

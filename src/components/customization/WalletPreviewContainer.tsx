@@ -59,18 +59,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : []
   });
 
-  // Apply runtime mappings when theme or layer changes (no timers)
-  useEffect(() => {
-    if (!theme || Object.keys(theme).length === 0) return;
-    
-    console.log('[WalletPreview] Theme/Layer changed, applying runtime mappings:', {
-      activeThemeId,
-      currentLayer,
-      hasLockLayer: !!theme.lockLayer
-    });
-    
-    applyThemeToDOM(theme);
-  }, [theme, activeThemeId, currentLayer]);
+  // Theme application is handled by AppBootstrap only (no duplicate applies)
 
   // 🔍 ДИАГНОСТИКА: Что именно приходит в lockLayer?
   console.log('[LockLayer DEBUG] Using hook:', {
@@ -104,7 +93,6 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
       className="relative w-full h-full flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
       style={{
-        backgroundColor: lockLayer.backgroundColor,
         backgroundImage: lockLayer.backgroundImage ? `url(${lockLayer.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
