@@ -114,6 +114,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
       className="relative w-full h-full flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
       style={{
+        backgroundColor: lockLayer.backgroundColor,
         backgroundImage: lockLayer.backgroundImage ? `url(${lockLayer.backgroundImage})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -134,9 +135,10 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="text-center font-medium text-white text-lg login-password-title" 
             data-element-id="login-password-title"
             style={{
-              fontFamily: lockLayer.title?.fontFamily || 'Inter, system-ui, sans-serif',
-              fontSize: lockLayer.title?.fontSize || '18px',
-              fontWeight: lockLayer.title?.fontWeight || '600'
+              fontFamily: 'var(--wcc-lock-title-font, Inter, system-ui, sans-serif)',
+              color: 'var(--wcc-lock-title-fg, #ffffff)',
+              fontSize: 'var(--wcc-lock-title-size, 18px)',
+              fontWeight: 'var(--wcc-lock-title-weight, 600)'
             }}
           >
             <span 
@@ -342,10 +344,9 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             )}
             
             {/* Visual Element Selection System */}
-          <AdvancedInteractiveElementSelector
-            isActive={isEditMode}
-            currentLayer={currentLayer}
-            onElementSelect={(element) => {
+            <AdvancedInteractiveElementSelector
+              isActive={isEditMode}
+              onElementSelect={(element) => {
                 updateSelectedElement(element);
                 console.log('✅ Element selected:', {
                   name: element.name,

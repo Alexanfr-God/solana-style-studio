@@ -202,75 +202,67 @@ export function applyValueToNodeUnified(
 // ============================================================================
 
 export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
+  // 🗑️ Removed: writeLockLayerVars call
   const results: AppliedStyle[] = [];
   
   try {
-    // 1) Load all mappings once
     await jsonBridge.loadElementMappings();
-    const mappings = jsonBridge.getAllMappings() || [];
-    const lockLayerPaths = mappings.filter((m: any) => m.json_path?.startsWith('/lockLayer/')).length;
-    console.log('[RME:START]', { totalMappings: mappings.length, lockLayerPaths });
+    const mappings = jsonBridge.getAllMappings();
     
-    if (mappings.length === 0) {
-      console.log('[RME:DONE]');
-      return results;
-    }
+    console.log('[Runtime] 🔄 Full apply:', mappings.length, 'mappings');
+    
+    if (mappings.length === 0) return results;
     
     const walletRoot = document.querySelector(WALLET_ROOT_SELECTOR);
     if (!walletRoot) {
-      console.warn('[RME] ⚠️ Wallet container not found');
-      console.log('[RME:DONE]');
+      console.warn('[Runtime] Wallet container not found');
       return results;
     }
     
-    // 2) Apply all valid mappings
-    for (const m of mappings as any[]) {
-      if (!m?.selector || !m?.json_path) continue;
+    for (const mapping of mappings as any[]) {
+      if (!mapping.selector || !mapping.json_path) continue;
       
       try {
-        const els = walletRoot.querySelectorAll(m.selector);
-        const value = getByPath(theme, m.json_path);
+        const domElements = walletRoot.querySelectorAll(mapping.selector);
+        if (domElements.length === 0) continue;
         
-        // Skip if value is undefined
+        const value = getByPath(theme, mapping.json_path);
+        
+        // 🛡️ Protection: Don't overwrite inline styles if theme value is undefined
         if (value === null || value === undefined) {
-          console.log('[RME:SKIP]', { 
-            path: m.json_path, 
-            selector: m.selector, 
-            reason: 'undefined_value', 
-            found: els.length 
-          });
           continue;
         }
         
-        els.forEach((el: Element) => {
+        domElements.forEach((el) => {
           if (el instanceof HTMLElement) {
-            applyValueToNodeUnified(el, m.json_path, value, theme);
+            console.log('[Runtime] 🎨 Applying:', {
+              selector: mapping.selector,
+              jsonPath: mapping.json_path,
+              key: getKeyFromPath(mapping.json_path),
+              value: value
+            });
+            applyValueToNodeUnified(el, mapping.json_path, value, theme);
           }
         });
         
-        console.log('[RME:APPLY]', { 
-          path: m.json_path, 
-          selector: m.selector, 
-          value, 
-          count: els.length 
-        });
-        
         results.push({
-          elementId: m.id,
-          selector: m.selector,
-          appliedProperties: [getKeyFromPath(m.json_path)],
+          elementId: mapping.id,
+          selector: mapping.selector,
+          appliedProperties: [getKeyFromPath(mapping.json_path)],
           success: true
         });
         
       } catch (err) {
-        console.error('[RME] ❌ Error for', m.name, err);
+        console.error('[Runtime] Error for', mapping.name, err);
       }
     }
     
-    console.log('[RME:DONE]');
+    console.log('[Runtime] ✅ Full apply complete:', results.filter(r => r.success).length);
+    
+    // 🗑️ Removed: reapplyLockLayer logic
     
   } catch (error) {
-    console.error('[RME:ERROR]', error);
+    console.error('[Runtime] Fatal error:', error);
   }
   
   return results;
@@ -336,44 +328,68 @@ function applyStyleToPath(theme: any, jsonPath: string) {
 }
 
 // ============================================================================
-// Event-driven theme update handler (для Manual Editor)
+// Watch for theme changes (с защитой от эхо)
 // ============================================================================
 
 let lastManualEditAt = 0;
 
-/**
- * Handle targeted updates from Manual Editor
- * @internal Used by theme-updated event for targeted style updates
- */
-function handleThemeUpdateEvent(event: CustomEvent) {
-  const { theme, updatedPath, forceFullApply } = event.detail;
+export function setupMappingWatcher(getTheme: () => any) {
+  let lastTheme: any = null;
   
-  if (!theme) return;
+  const checkAndApply = () => {
+    const currentTheme = getTheme();
+    
+    // 🛡️ Skip full apply if recent manual edit
+    const timeSinceEdit = Date.now() - lastManualEditAt;
+    if (timeSinceEdit < 500) {
+      console.log('[Runtime] ⏭️ Skipping full apply (recent manual edit, elapsed:', timeSinceEdit, 'ms)');
+      return;
+    }
+    
+    if (currentTheme && currentTheme !== lastTheme) {
+      lastTheme = currentTheme;
+      console.log('[Runtime] 🔄 Theme changed, applying full theme');
+      applyThemeToDOM(currentTheme);
+    }
+  };
   
-  // ✅ forceFullApply = true → full apply (Manual mode)
-  if (forceFullApply) {
-    console.log('[RME] 🔄 FORCED full apply (Manual mode)');
-    applyThemeToDOM(theme);
-    return;
-  }
+  const interval = setInterval(checkAndApply, 500);
   
-  // 🎯 Targeted update for specific path
-  if (updatedPath) {
-    lastManualEditAt = Date.now();
-    console.log('[RME] 🎯 Targeted update:', { updatedPath });
-    applyStyleToPath(theme, updatedPath);
-    return;
-  }
+  const handleThemeUpdate = (event: CustomEvent) => {
+    const { theme, updatedPath, forceFullApply } = event.detail;
+    
+    if (!theme) return;
+    lastTheme = theme;
+    
+    // ✅ НОВАЯ ЛОГИКА: forceFullApply = true → полный apply БЕЗ блокировки
+    if (forceFullApply) {
+      console.log('[Runtime] 🔄 FORCED full apply (Manual mode)');
+      applyThemeToDOM(theme);
+      return;
+    }
+    
+    if (updatedPath) {
+      // 🎯 Точечное обновление (старое поведение)
+      lastManualEditAt = Date.now();
+      console.log('[Runtime] 🎨 Targeted update:', { updatedPath });
+      applyStyleToPath(theme, updatedPath);
+    } else {
+      // 🔄 Полное обновление (GitHub или другие источники)
+      console.log('[Runtime] 🔄 Full theme apply');
+      applyThemeToDOM(theme);
+    }
+  };
   
-  // 🔄 Full apply (fallback)
-  console.log('[RME] 🔄 Full theme apply');
-  applyThemeToDOM(theme);
-}
-
-// Register event listener once
-if (typeof window !== 'undefined') {
-  window.addEventListener('theme-updated', handleThemeUpdateEvent as EventListener);
-  console.log('[RME] ✅ Event listener registered');
+  window.addEventListener('theme-updated', handleThemeUpdate as EventListener);
+  
+  console.log('[Runtime] 👀 Mapping watcher initialized');
+  checkAndApply();
+  
+  return () => {
+    clearInterval(interval);
+    window.removeEventListener('theme-updated', handleThemeUpdate as EventListener);
+    console.log('[Runtime] 🛑 Mapping watcher stopped');
+  };
 }
 
 

@@ -7,7 +7,6 @@ import { useEditModeManager } from '@/hooks/useEditModeManager';
 
 interface AdvancedInteractiveElementSelectorProps {
   isActive: boolean;
-  currentLayer: string;
   onElementSelect: (element: WalletElement) => void;
   onExit: () => void;
   containerRef: React.RefObject<HTMLElement>;
@@ -15,7 +14,6 @@ interface AdvancedInteractiveElementSelectorProps {
 
 export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveElementSelectorProps> = ({
   isActive,
-  currentLayer,
   onElementSelect,
   onExit,
   containerRef
@@ -87,15 +85,12 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
 
       if (walletElementsMapper.isElementCustomizable(elementAtPoint)) {
         const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
-        if (elementInfo && elementInfo.screen === currentLayer) {
+        if (elementInfo) {
           setHoveredElement(elementInfo, elementAtPoint);
           const position = getElementPosition(elementAtPoint);
           setHoveredPosition(position);
-          console.log(`🎯 Hovering over: ${elementInfo.name} (layer: ${currentLayer})`);
+          console.log(`🎯 Hovering over: ${elementInfo.name} (${elementInfo.selector})`);
           console.log('  Position set to:', position);
-        } else {
-          setHoveredElement(null, null);
-          setHoveredPosition(null);
         }
       } else {
         setHoveredElement(null, null);
@@ -110,19 +105,18 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
       if (!elementAtPoint || !container.contains(elementAtPoint)) return;
 
       if (walletElementsMapper.isElementCustomizable(elementAtPoint)) {
-        const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
+        // Prevent default behavior and stop propagation to block normal wallet actions
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         
-        if (elementInfo && elementInfo.screen === currentLayer) {
-          // Prevent default behavior and stop propagation to block normal wallet actions
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          
+        const elementInfo = walletElementsMapper.getElementInfo(elementAtPoint);
+        if (elementInfo) {
           selectElement(elementInfo, elementAtPoint);
           const position = getElementPosition(elementAtPoint);
           setSelectedPosition(position);
           onElementSelect(elementInfo);
-          console.log('✅ Element selected (layer:', currentLayer, '):', elementInfo.name);
+          console.log('✅ Advanced Element selected:', elementInfo.name, elementInfo.selector);
           console.log('  Selected position set to:', position);
         }
       }
@@ -169,7 +163,7 @@ export const AdvancedInteractiveElementSelector: React.FC<AdvancedInteractiveEle
       window.removeEventListener('resize', handleResize);
       container.removeEventListener('scroll', handleScroll, true);
     };
-  }, [isActive, currentLayer, containerRef, onElementSelect, selectElement, setHoveredElement, state.hoveredDomElement, state.selectedDomElement]);
+  }, [isActive, containerRef, onElementSelect, selectElement, setHoveredElement, state.hoveredDomElement, state.selectedDomElement]);
 
   // Clear states when edit mode is deactivated
   useEffect(() => {

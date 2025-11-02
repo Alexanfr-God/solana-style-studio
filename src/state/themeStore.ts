@@ -76,7 +76,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     console.log('[STORE:theme] 🎯 Active theme ID set to:', themeId);
   },
 
-  setTheme: async (theme: any) => {
+  setTheme: (theme: any) => {
     const state = get();
     
     if (state._busy) {
@@ -122,9 +122,10 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     console.log(`[STORE:theme] ✅ Theme set successfully (#${updateCounter})`);
     console.log('[STORE:theme] Theme preview keys:', theme ? Object.keys(theme).slice(0, 5) : []);
     
-    // ✅ Apply theme to DOM immediately (event-driven, no polling)
-    const { applyThemeToDOM } = await import('@/services/runtimeMappingEngine');
-    applyThemeToDOM(theme);
+    // Dispatch event for runtime mapping engine
+    window.dispatchEvent(new CustomEvent('theme-updated', { 
+      detail: { theme } 
+    }));
   },
 
   updateThemeValue: async (

@@ -31,14 +31,18 @@ export default function AppBootstrap() {
           console.error('[Bootstrap] Error loading default theme:', error);
         }
 
-        // Load element mappings for Runtime Mapping Engine
+        // Подключаем Runtime Mapping Engine для автоматического обновления DOM
         try {
+          const { setupMappingWatcher } = await import('@/services/runtimeMappingEngine');
+          setupMappingWatcher(() => themeStoreModule.useThemeStore.getState().theme);
+          console.log('[Bootstrap] 🔌 Runtime Mapping Engine connected');
+          
+          // Загружаем маппинги элементов для Runtime Engine
           const { jsonBridge } = await import('@/services/jsonBridgeService');
           await jsonBridge.loadElementMappings();
           console.log('[Bootstrap] 🗺️ Element mappings loaded:', jsonBridge.getAllMappings().length);
-          console.log('[Bootstrap] ✅ Runtime Mapping Engine ready (event-driven)');
         } catch (error) {
-          console.error('[Bootstrap] ❌ Failed to load element mappings:', error);
+          console.error('[Bootstrap] ❌ Failed to connect Runtime Mapping Engine:', error);
         }
       } catch (error) {
         console.error('[Bootstrap] Failed to import theme store:', error);
