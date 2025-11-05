@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAiScannerStore } from '@/stores/aiScannerStore';
 import { WalletCanvasRenderer } from './WalletCanvasRenderer';
 import { WalletConnectionPrompt } from './WalletConnectionPrompt';
 import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export const WalletPreviewCanvas = () => {
@@ -16,14 +17,21 @@ export const WalletPreviewCanvas = () => {
     isWalletConnected 
   } = useAiScannerStore();
   
+  const [isConnecting, setIsConnecting] = useState(false);
+  
   const walletTypes: Array<'WCC' | 'MetaMask' | 'Phantom'> = ['MetaMask', 'Phantom'];
   
   const handleConnect = async () => {
     if (walletType === 'MetaMask' || walletType === 'Phantom') {
+      setIsConnecting(true);
       try {
         await aiScanOrchestrator.connectWallet(walletType);
+        toast.success(`✅ Connected to ${walletType}`);
       } catch (error) {
         console.error('Connection failed:', error);
+        // Error toast is already shown by orchestrator with detailed message
+      } finally {
+        setIsConnecting(false);
       }
     }
   };
@@ -49,8 +57,8 @@ export const WalletPreviewCanvas = () => {
           ))}
           
           {!isWalletConnected && (
-            <Button size="sm" onClick={handleConnect}>
-              Connect
+            <Button size="sm" onClick={handleConnect} disabled={isConnecting}>
+              {isConnecting ? 'Connecting...' : 'Connect'}
             </Button>
           )}
         </div>

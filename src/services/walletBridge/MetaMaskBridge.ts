@@ -7,18 +7,18 @@ import type { WalletBridgeAPI, WalletDOMStructure, WalletElement, CSSStyleRecord
 export class MetaMaskBridge implements WalletBridgeAPI {
   private connected = false;
   private pendingRequests = new Map<string, { resolve: Function; reject: Function; timeout: NodeJS.Timeout }>();
+  private readonly REQUEST_TIMEOUT = 15000; // 15 seconds
   
   constructor() {
     // Listen for responses from content script
     window.addEventListener('message', this.handleMessage.bind(this));
-    console.log('[MetaMaskBridge] 🔧 Initialized, listening for extension messages');
   }
   
   async connect(walletType: 'MetaMask'): Promise<boolean> {
-    console.log('[MetaMaskBridge] 🔌 Connecting to MetaMask extension...');
+    console.log('[MetaMaskBridge] 🔌 Connecting to MetaMask...');
     
     try {
-      // Send PING to check if extension is available
+      // Step 1: Check if extension is installed and responding
       const response = await this.sendRequest('ping', {});
       
       if (response.status === 'ok') {
@@ -27,23 +27,32 @@ export class MetaMaskBridge implements WalletBridgeAPI {
         return true;
       }
       
-      throw new Error('MetaMask extension not responding');
+      throw new Error('MetaMask extension did not respond correctly');
       
     } catch (error) {
       console.error('[MetaMaskBridge] ❌ Connection failed:', error);
-      throw new Error('MetaMask extension not available. Please install the WCC MetaMask Bridge extension.');
+      
+      // Provide helpful error messages
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          throw new Error('MetaMask extension is not responding. Please ensure:\n1. The WCC MetaMask Bridge extension is installed\n2. MetaMask popup is open\n3. You are on the MetaMask extension page');
+        }
+      }
+      
+      throw new Error('Failed to connect to MetaMask. Please ensure the WCC MetaMask Bridge extension is installed and MetaMask is open.');
     }
   }
   
   disconnect(): void {
+    console.log('[MetaMaskBridge] 🔌 Disconnecting...');
     this.connected = false;
-    // Cancel all pending requests
+    
+    // Reject all pending requests
     this.pendingRequests.forEach(({ reject, timeout }) => {
       clearTimeout(timeout);
       reject(new Error('Bridge disconnected'));
     });
     this.pendingRequests.clear();
-    console.log('[MetaMaskBridge] 🔌 Disconnected');
   }
   
   isConnected(): boolean {
@@ -51,103 +60,179 @@ export class MetaMaskBridge implements WalletBridgeAPI {
   }
   
   async fetchDOM(): Promise<WalletDOMStructure> {
+    this.ensureConnected();
     console.log('[MetaMaskBridge] 📡 Fetching DOM from MetaMask...');
-    const response = await this.sendRequest('fetchDOM', {});
     
-    if (!response.dom) {
-      throw new Error('Invalid DOM response from extension');
+    try {
+      const response = await this.sendRequest('fetchDOM', {});
+      return response.dom;
+    } catch (error) {
+      console.error('[MetaMaskBridge] ❌ fetchDOM failed:', error);
+      throw new Error(`Failed to fetch DOM: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    
-    console.log(`[MetaMaskBridge] ✅ Fetched ${response.dom.allElements?.length || 0} elements`);
-    return response.dom;
   }
   
   async fetchScreenshot(screen: string): Promise<string | null> {
+    this.ensureConnected();
     console.log('[MetaMaskBridge] 📸 Capturing screenshot...');
-    const response = await this.sendRequest('fetchScreenshot', { screen });
-    return response.screenshot || null;
+    
+    try {
+      const response = await this.sendRequest('fetchScreenshot', { screen });
+      return response.screenshot;
+    } catch (error) {
+      console.error('[MetaMaskBridge] ❌ fetchScreenshot failed:', error);
+      // Non-critical - return null instead of throwing
+      return null;
+    }
   }
   
   async navigate(screen: string): Promise<boolean> {
-    console.log(`[MetaMaskBridge] 🧭 Navigating to ${screen}...`);
-    const response = await this.sendRequest('navigate', { screen });
-    return response.success === true;
+    this.ensureConnected();
+    console.log('[MetaMaskBridge] 🧭 Navigating to:', screen);
+    
+    try {
+      const response = await this.sendRequest('navigate', { screen });
+      return response.success || false;
+    } catch (error) {
+      console.error('[MetaMaskBridge] ❌ navigate failed:', error);
+      return false;
+    }
   }
   
   async getCurrentScreen(): Promise<string> {
-    const response = await this.sendRequest('getCurrentScreen', {});
-    return response.screen || 'unknown';
+    this.ensureConnected();
+    
+    try {
+      const response = await this.sendRequest('getCurrentScreen', {});
+      return response.screen || 'home';
+    } catch (error) {
+      console.error('[MetaMaskBridge] ❌ getCurrentScreen failed:', error);
+      return 'home';
+    }
   }
   
   async getElementsTree(): Promise<WalletElement[]> {
-    const dom = await this.fetchDOM();
-    return dom.allElements;
+    this.ensureConnected();
+    
+    try {
+      const domStructure = await this.fetchDOM();
+      return domStructure.allElements;
+    } catch (error) {
+      console.error('[MetaMaskBridge] ❌ getElementsTree failed:', error);
+      return [];
+    }
   }
   
   async getElementStyle(selector: string): Promise<CSSStyleRecord> {
-    console.log(`[MetaMaskBridge] 🎨 Getting styles for ${selector}...`);
-    const response = await this.sendRequest('getElementStyle', { selector });
-    return response.styles || {};
+    this.ensureConnected();
+    console.log('[MetaMaskBridge] 🎨 Getting styles for:', selector);
+    
+    try {
+      const response = await this.sendRequest('getElementStyle', { selector });
+      return response.styles;
+    } catch (error) {
+      console.error('[MetaMaskBridge] ❌ getElementStyle failed:', error);
+      throw new Error(`Failed to get element style: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
   
   async clickElement(selector: string): Promise<boolean> {
-    console.log(`[MetaMaskBridge] 👆 Clicking element ${selector}...`);
-    const response = await this.sendRequest('clickElement', { selector });
-    return response.success === true;
+    this.ensureConnected();
+    console.log('[MetaMaskBridge] 👆 Clicking element:', selector);
+    
+    try {
+      const response = await this.sendRequest('clickElement', { selector });
+      return response.success || false;
+    } catch (error) {
+      console.error('[MetaMaskBridge] ❌ clickElement failed:', error);
+      return false;
+    }
   }
   
   /**
-   * Send request to content script via postMessage
+   * Static method to check if extension is available
    */
-  private async sendRequest(method: string, params: any): Promise<any> {
-    if (!this.connected && method !== 'ping') {
-      throw new Error('Bridge not connected. Call connect() first.');
+  static async checkExtensionAvailability(): Promise<{
+    available: boolean;
+    error?: string;
+    suggestion?: string;
+  }> {
+    return new Promise((resolve) => {
+      const testBridge = new MetaMaskBridge();
+      const timeoutId = setTimeout(() => {
+        resolve({
+          available: false,
+          error: 'Extension not responding',
+          suggestion: 'Install the WCC MetaMask Bridge extension from packages/metamask-bridge-extension'
+        });
+      }, 3000);
+      
+      // Try to ping
+      const messageHandler = (event: MessageEvent) => {
+        const msg = event.data;
+        if (msg.source === 'wallet-bridge' && msg.type === 'WALLET_RES') {
+          clearTimeout(timeoutId);
+          window.removeEventListener('message', messageHandler);
+          resolve({ available: true });
+        }
+      };
+      
+      window.addEventListener('message', messageHandler);
+      
+      // Send ping
+      window.postMessage({
+        source: 'wcc-admin',
+        type: 'WALLET_REQ',
+        id: 'availability-check',
+        method: 'ping',
+        params: {}
+      }, '*');
+    });
+  }
+  
+  // Private methods
+  
+  private ensureConnected(): void {
+    if (!this.connected) {
+      throw new Error('Not connected to MetaMask. Please call connect() first.');
     }
-    
+  }
+  
+  private async sendRequest(method: string, params: any): Promise<any> {
     return new Promise((resolve, reject) => {
       const id = crypto.randomUUID();
       
-      // Timeout after 10 seconds
+      // Set timeout
       const timeout = setTimeout(() => {
-        if (this.pendingRequests.has(id)) {
-          this.pendingRequests.delete(id);
-          reject(new Error(`Request timeout: ${method}`));
-        }
-      }, 10000);
+        this.pendingRequests.delete(id);
+        reject(new Error(`Request timeout: ${method} (${this.REQUEST_TIMEOUT}ms)`));
+      }, this.REQUEST_TIMEOUT);
       
-      // Store promise handlers
+      // Store promise handlers with timeout
       this.pendingRequests.set(id, { resolve, reject, timeout });
       
       // Send message to content script (via extension background)
-      const message: BridgeMessage = {
+      console.log(`[MetaMaskBridge] 📤 Sending request: ${method} (${id})`);
+      window.postMessage({
         source: 'wcc-admin',
         type: 'WALLET_REQ',
         id,
         method,
         params
-      };
-      
-      console.log(`[MetaMaskBridge] 📤 Sending request:`, { id, method });
-      window.postMessage(message, '*');
+      }, '*');
     });
   }
   
-  /**
-   * Handle response from content script
-   */
   private handleMessage(event: MessageEvent) {
     const msg = event.data as BridgeMessage;
     
-    // Only process messages from wallet-bridge
+    // Only handle wallet-bridge responses
     if (msg.source !== 'wallet-bridge' || msg.type !== 'WALLET_RES') {
       return;
     }
     
-    console.log(`[MetaMaskBridge] 📥 Received response:`, { id: msg.id, hasError: !!msg.error });
-    
     const pending = this.pendingRequests.get(msg.id);
     if (!pending) {
-      console.warn(`[MetaMaskBridge] ⚠️ No pending request for ID: ${msg.id}`);
       return;
     }
     
@@ -155,7 +240,8 @@ export class MetaMaskBridge implements WalletBridgeAPI {
     clearTimeout(pending.timeout);
     this.pendingRequests.delete(msg.id);
     
-    // Resolve or reject based on response
+    console.log(`[MetaMaskBridge] 📥 Received response: ${msg.id}`);
+    
     if (msg.error) {
       pending.reject(new Error(msg.error));
     } else {
