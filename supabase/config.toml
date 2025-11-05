@@ -93,3 +93,6 @@ verify_jwt = false
 [functions.ai-element-commentary]
 verify_jwt = false
 
+[functions.ai-vision-analyze]
+verify_jwt = false
+

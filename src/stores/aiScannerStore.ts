@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export type ScanMode = 'vision' | 'snapshot' | 'json-build' | 'verify';
 export type ElementStatus = 'found' | 'copied' | 'verified';
-export type LogType = 'scanning' | 'found' | 'snapshot' | 'verified' | 'error';
+export type LogType = 'scanning' | 'found' | 'snapshot' | 'verified' | 'error' | 'vision';
 
 export interface ElementItem {
   id: string;
@@ -23,6 +23,9 @@ export interface ElementItem {
     bg?: string;
   };
   domElement?: HTMLElement;
+  // AI Vision insights
+  aiComment?: string; // AI-generated description
+  aiConfidence?: number; // 0-1 confidence score
 }
 
 export interface ScanLogEntry {
@@ -59,6 +62,9 @@ interface AiScannerState {
   
   // Progress
   progress: { current: number; total: number; path: string };
+  
+  // AI Vision summary
+  aiSummary?: string;
   
   // AI Commentary
   aiComments: AiComment[];
@@ -122,33 +128,50 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
   },
   
   exportJSON: () => {
-    const { foundElements, currentScreen, walletType } = get();
+    const state = get();
+    
+    // Calculate coverage
+    const verifiedCount = state.foundElements.filter(el => el.status === 'verified').length;
+    const coverage = state.foundElements.length > 0 
+      ? Math.round((verifiedCount / state.foundElements.length) * 100)
+      : 0;
     
     const exportData = {
       meta: {
-        source: walletType,
-        scanMode: 'visual+DOM',
+        source: state.walletType,
+        scanMode: state.scanMode,
+        screen: state.currentScreen,
         timestamp: new Date().toISOString(),
-        screen: currentScreen
+        totalElements: state.foundElements.length,
+        verifiedElements: verifiedCount,
+        coverage: `${coverage}%`,
+        aiSummary: state.aiSummary || 'No AI analysis available'
       },
-      elements: foundElements.map(el => ({
+      elements: state.foundElements.map(el => ({
         id: el.id,
         role: el.role,
         type: el.type,
+        status: el.status,
         style: el.style,
-        metrics: el.metrics
-      }))
+        metrics: el.metrics,
+        // Include AI insights if available
+        ...(el.aiComment && { aiComment: el.aiComment }),
+        ...(el.aiConfidence && { aiConfidence: el.aiConfidence })
+      })),
+      comments: state.foundElements
+        .filter(el => el.aiComment)
+        .map(el => `${el.role}: ${el.aiComment}`)
     };
     
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${walletType}-${currentScreen}-scan-${Date.now()}.json`;
+    a.download = `${state.walletType}-${state.currentScreen}-scan-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     
-    get().addLog('verified', '✅', 'JSON exported successfully');
+    get().addLog('verified', '✅', `JSON exported with ${coverage}% coverage`);
   },
   
   addLog: (type, icon, message, details) => {

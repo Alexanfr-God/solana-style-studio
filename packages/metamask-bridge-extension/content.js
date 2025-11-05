@@ -127,15 +127,36 @@ async function fetchDOMStructure() {
 }
 
 /**
- * Capture screenshot of current page
+ * Capture screenshot of current page via Chrome API
  */
 async function captureScreenshot() {
-  console.log('[Content] 📸 Capturing screenshot...');
-  
-  // Note: html2canvas would need to be bundled with the extension
-  // For now, return null - implement later with proper screenshot library
-  console.warn('[Content] ⚠️ Screenshot capture not yet implemented');
-  return null;
+  try {
+    console.log('[Content] 📸 Requesting screenshot from background...');
+    
+    // Send message to background script to capture via chrome.tabs API
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: 'captureScreenshot' },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('[Content] Screenshot error:', chrome.runtime.lastError);
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          
+          if (response && response.dataUrl) {
+            console.log('[Content] ✅ Screenshot captured');
+            resolve(response.dataUrl);
+          } else {
+            reject(new Error('No screenshot data received'));
+          }
+        }
+      );
+    });
+  } catch (error) {
+    console.error('[Content] ❌ Screenshot capture failed:', error);
+    throw error;
+  }
 }
 
 /**

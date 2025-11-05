@@ -81,8 +81,8 @@ class AiScanOrchestrator {
       // Phase 1: Fetch Real DOM from external wallet
       await this.fetchRealDOM();
       
-      // Phase 2: Vision Analysis (optional - can be skipped for now)
-      // await this.runVisionAnalysis();
+      // Phase 2: AI Vision Analysis
+      await this.runVisionAnalysis();
       
       // Phase 3: Snapshot Capture (elements already have styles from fetchDOM)
       await this.runSnapshotCapture();
@@ -166,53 +166,95 @@ class AiScanOrchestrator {
   }
   
   /**
-   * Phase 1 Alternative: Vision Analysis - AI analyzes DOM structure (local WCC only)
+   * Phase 2: AI Vision Analysis
+   * Captures screenshot and uses AI to identify element types/roles
    */
   private async runVisionAnalysis() {
     const store = this.store.getState();
     
-    console.log('[AiScanOrchestrator] 🟢 Phase 1: Vision Analysis');
+    console.log('[AiScanOrchestrator] 🟢 Phase 2: Vision Analysis (AI-powered)');
     store.setScanMode('vision');
-    store.addLog('scanning', '🟢', `Scanning ${this.currentScreen} layer: analyzing DOM structure...`);
+    store.addLog('vision', '🟢', 'Starting AI vision analysis...');
     
     try {
-      // Call AI DOM Scanner service
-      const result = await scanDomWithAI(undefined, this.currentScreen);
+      // 1. Capture screenshot from bridge
+      console.log('[AiScanOrchestrator] 📸 Capturing screenshot...');
+      store.addLog('vision', '🟢', 'Capturing wallet screenshot...');
       
-      if (!result.success) {
-        throw new Error('AI DOM scan failed');
+      const screenshotDataUrl = await this.bridge!.fetchScreenshot('home');
+      
+      if (!screenshotDataUrl) {
+        console.warn('[AiScanOrchestrator] ⚠️ No screenshot available, skipping AI vision');
+        store.addLog('error', '❌', 'Screenshot unavailable, skipping AI vision');
+        return; // Non-blocking - continue without AI vision
       }
       
-      console.log(`[AiScanOrchestrator] ✅ Vision Analysis: found ${result.totalProcessed} elements`);
-      store.addLog('found', '🔵', `Found ${result.totalProcessed} elements in DOM`);
+      console.log('[AiScanOrchestrator] ✅ Screenshot captured');
+      store.addLog('vision', '🟢', 'Screenshot captured, analyzing with AI...');
       
-      // Add found elements to store
-      result.mappings?.forEach((mapping, index) => {
-        const element: ElementItem = {
-          id: mapping.element_id,
-          role: mapping.element_id.replace(/-/g, '.'),
-          type: this.detectElementType(mapping.element_id),
-          status: 'found',
-          style: {},
-        };
-        
-        store.addElement(element);
-        
-        if (index < 5) { // Log first 5 elements
-          store.addLog('found', '🔵', `Found ${mapping.element_id} → confidence: ${Math.round((mapping.confidence || 0) * 100)}%`);
+      // 2. Import supabase client
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // 3. Call ai-vision-analyze edge function
+      const { data, error } = await supabase.functions.invoke('ai-vision-analyze', {
+        body: { 
+          screenshotDataUrl,
+          walletType: 'MetaMask' 
         }
       });
       
-      if (result.totalProcessed > 5) {
-        store.addLog('found', '🔵', `... and ${result.totalProcessed - 5} more elements`);
+      if (error) {
+        throw new Error(`AI Vision analysis failed: ${error.message}`);
       }
       
-      // Small delay for visual effect
+      if (!data?.success) {
+        throw new Error(data?.error || 'AI Vision analysis failed');
+      }
+      
+      console.log('[AiScanOrchestrator] 🤖 AI analyzed', data.elements?.length || 0, 'elements');
+      store.addLog('vision', '🟢', `AI identified ${data.elements?.length || 0} elements`);
+      
+      // 4. Enrich existing elements with AI insights
+      let enrichedCount = 0;
+      
+      if (data.elements && Array.isArray(data.elements)) {
+        data.elements.forEach((aiElement: any) => {
+          // Try to match AI element with existing DOM elements
+          const matchingElements = store.foundElements.filter(domEl => {
+            // Match by type or role keywords
+            const roleKeyword = aiElement.role?.split('.')[1]?.toLowerCase() || '';
+            const roleMatch = domEl.role.toLowerCase().includes(roleKeyword);
+            const typeMatch = domEl.type === aiElement.type;
+            return roleMatch || typeMatch;
+          });
+          
+          if (matchingElements.length > 0) {
+            // Update first matching element
+            const element = matchingElements[0];
+            store.updateElement(element.id, {
+              type: aiElement.type, // AI-determined type
+              aiComment: aiElement.description,
+              aiConfidence: aiElement.confidence
+            });
+            enrichedCount++;
+            
+            console.log(`[AiScanOrchestrator] 💡 Enriched ${element.id} → ${aiElement.description}`);
+          }
+        });
+      }
+      
+      console.log(`[AiScanOrchestrator] ✅ Vision Analysis: ${enrichedCount}/${data.elements?.length || 0} elements enriched`);
+      store.addLog('vision', '🟢', `Enriched ${enrichedCount} elements with AI insights`);
+      
+      // Store AI summary for JSON export
+      (store as any).aiSummary = data.summary;
+      
       await this.delay(500);
       
     } catch (error) {
-      console.error('[AiScanOrchestrator] ❌ Vision Analysis failed:', error);
-      throw new Error(`Vision Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('[AiScanOrchestrator] ❌ Vision analysis failed:', error);
+      store.addLog('error', '❌', `Vision analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Continue without AI insights (non-blocking)
     }
   }
   
