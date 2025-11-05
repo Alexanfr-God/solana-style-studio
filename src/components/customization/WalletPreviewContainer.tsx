@@ -157,6 +157,14 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     <div 
       className="relative w-full h-full flex flex-col justify-end unlock-screen-container" 
       data-element-id="unlock-screen-container"
+      style={{
+        backgroundColor: previewData.lockLayer.backgroundColor,
+        backgroundImage: previewData.lockLayer.backgroundImage 
+          ? `url(${previewData.lockLayer.backgroundImage})` 
+          : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
     >
       {/* Login Form - Bottom Section */}
       <div 
@@ -169,8 +177,14 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
         >
           {/* Password Title */}
           <h2 
-            className="text-center font-medium text-white text-lg login-password-title" 
+            className="text-center font-medium text-lg login-password-title" 
             data-element-id="login-password-title"
+            style={{
+              color: previewData.lockLayer.title.textColor,
+              fontFamily: previewData.lockLayer.title.fontFamily,
+              fontSize: previewData.lockLayer.title.fontSize,
+              fontWeight: previewData.lockLayer.title.fontWeight
+            }}
           >
             <span 
               className="unlock-password-title-text"
@@ -190,8 +204,14 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full px-4 py-2.5 rounded-xl text-white placeholder-gray-400 border-none outline-none text-sm login-password-input"
+              className="w-full px-4 py-2.5 border-none outline-none text-sm login-password-input"
               data-element-id="login-password-input"
+              style={{
+                backgroundColor: previewData.lockLayer.passwordInput.backgroundColor,
+                color: previewData.lockLayer.passwordInput.textColor,
+                fontFamily: previewData.lockLayer.passwordInput.fontFamily,
+                borderRadius: previewData.lockLayer.passwordInput.borderRadius
+              }}
             />
             {password && (
               <button
@@ -215,8 +235,13 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             data-element-id="unlock-forgot-container"
           >
             <button
-              className="text-gray-400 hover:text-gray-300 text-sm login-forgot-password"
+              className="hover:opacity-80 text-sm login-forgot-password"
               data-element-id="login-forgot-password"
+              style={{
+                color: previewData.lockLayer.forgotPassword.textColor,
+                fontFamily: previewData.lockLayer.forgotPassword.fontFamily,
+                fontSize: previewData.lockLayer.forgotPassword.fontSize
+              }}
             >
               <span 
                 className="unlock-forgot-text"
@@ -229,9 +254,17 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           
           {/* Unlock Button */}
           <button
-            className="w-full py-3 font-bold text-white rounded-xl transition-colors hover:opacity-90 login-unlock-button"
+            className="w-full py-3 transition-colors hover:opacity-90 login-unlock-button"
             data-element-id="login-unlock-button"
             onClick={handleUnlock}
+            style={{
+              backgroundColor: previewData.lockLayer.unlockButton.backgroundColor,
+              color: previewData.lockLayer.unlockButton.textColor,
+              fontFamily: previewData.lockLayer.unlockButton.fontFamily,
+              fontSize: previewData.lockLayer.unlockButton.fontSize,
+              fontWeight: previewData.lockLayer.unlockButton.fontWeight,
+              borderRadius: previewData.lockLayer.unlockButton.borderRadius
+            }}
           >
             <span 
               className="unlock-button-text"
