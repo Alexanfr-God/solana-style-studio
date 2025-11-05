@@ -5,10 +5,12 @@ import { WalletPreviewCanvas } from '@/components/admin/scanner/WalletPreviewCan
 import { ScanLogsPanel } from '@/components/admin/scanner/ScanLogsPanel';
 import { DevToolsPanel } from '@/components/admin/scanner/DevToolsPanel';
 import { AiCommentaryPanel } from '@/components/admin/scanner/AiCommentaryPanel';
+import { ManualEditorPanel } from '@/components/admin/scanner/ManualEditorPanel';
 import { FoundElementsList } from '@/components/admin/scanner/FoundElementsList';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const AdminAiScannerPage = () => {
   return (
@@ -31,37 +33,58 @@ const AdminAiScannerPage = () => {
 
       {/* Main 3-column layout */}
       <div className="container mx-auto p-4">
-        <div className="grid grid-cols-[280px_1fr_320px] gap-4 h-[calc(100vh-120px)]">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="grid grid-cols-[280px_1fr_320px] gap-4 h-[calc(100vh-120px)]"
+        >
           {/* Left Panel - Controls & Flow */}
-          <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="border rounded-lg bg-card overflow-hidden flex flex-col shadow-sm"
+          >
             <ScanControlPanel />
             <div className="border-t flex-1 overflow-auto">
               <ScanFlowVisualization />
             </div>
-          </div>
+          </motion.div>
 
           {/* Center Panel - Preview & Logs */}
-          <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="border rounded-lg bg-card overflow-hidden flex flex-col shadow-sm"
+          >
             <div className="flex-1 overflow-hidden">
               <WalletPreviewCanvas />
             </div>
             <ScanLogsPanel />
-          </div>
+          </motion.div>
 
           {/* Right Panel - DevTools & AI Commentary */}
-          <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
-            <div className="p-4 border-b">
-              <h3 className="text-sm font-semibold text-foreground/80">Analysis</h3>
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="border rounded-lg bg-card overflow-hidden flex flex-col shadow-sm"
+          >
+            <div className="p-4 border-b bg-gradient-to-r from-background to-muted/20">
+              <h3 className="text-sm font-semibold text-foreground/80">Analysis Tools</h3>
             </div>
             <div className="flex-1 overflow-auto">
               <DevToolsPanel />
               <div className="px-4">
                 <AiCommentaryPanel />
+                <ManualEditorPanel />
               </div>
               <FoundElementsList />
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );
