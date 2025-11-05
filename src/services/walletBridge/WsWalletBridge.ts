@@ -4,11 +4,16 @@
  */
 
 import type { WalletBridgeAPI, WalletDOMStructure, WalletElement, CSSStyleRecord } from './WalletBridge';
+import { useAiScannerStore } from '@/stores/aiScannerStore';
 
 export class WsWalletBridge implements WalletBridgeAPI {
   private ws: WebSocket | null = null;
-  private messageQueue: Array<{ resolve: (value: any) => void; reject: (reason?: any) => void; type: string }> = [];
+  private messageQueue: Array<{ resolve: (value: any) => void; reject: (reason?: any) => void; type: string; sentAt: number }> = [];
   private connectionPromise: Promise<boolean> | null = null;
+  private latencies: number[] = [];
+  private messageCount: number = 0;
+  private lastMessageTime: number | null = null;
+  private throughputInterval: NodeJS.Timeout | null = null;
   
   private WS_URL = 'ws://localhost:3001';
   
@@ -30,6 +35,9 @@ export class WsWalletBridge implements WalletBridgeAPI {
       this.ws.onopen = () => {
         clearTimeout(timeout);
         console.log('[WsWalletBridge] ✅ Connected to WS server');
+        
+        useAiScannerStore.getState().updateWsMetrics({ isConnected: true });
+        this.startThroughputTracking();
         
         // Send hello
         this.sendMessage({
@@ -53,6 +61,8 @@ export class WsWalletBridge implements WalletBridgeAPI {
       
       this.ws.onclose = () => {
         console.log('[WsWalletBridge] 🔴 Disconnected from WS server');
+        useAiScannerStore.getState().updateWsMetrics({ isConnected: false });
+        this.stopThroughputTracking();
         this.ws = null;
         this.connectionPromise = null;
       };
@@ -66,6 +76,7 @@ export class WsWalletBridge implements WalletBridgeAPI {
       this.ws.close();
       this.ws = null;
     }
+    this.stopThroughputTracking();
     this.connectionPromise = null;
     this.messageQueue = [];
   }
@@ -93,7 +104,8 @@ export class WsWalletBridge implements WalletBridgeAPI {
           clearTimeout(timeout);
           reject(error);
         },
-        type: 'uiMap'
+        type: 'uiMap',
+        sentAt: Date.now()
       });
       
       this.sendMessage({ type: 'getUIMap' });
@@ -145,7 +157,8 @@ export class WsWalletBridge implements WalletBridgeAPI {
           clearTimeout(timeout);
           reject(error);
         },
-        type: 'screenshot'
+        type: 'screenshot',
+        sentAt: Date.now()
       });
       
       this.sendMessage({ type: 'getScreenshot', screen });
@@ -171,7 +184,8 @@ export class WsWalletBridge implements WalletBridgeAPI {
           clearTimeout(timeout);
           reject(error);
         },
-        type: 'applyAck'
+        type: 'applyAck',
+        sentAt: Date.now()
       });
       
       this.sendMessage({ 
@@ -195,14 +209,30 @@ export class WsWalletBridge implements WalletBridgeAPI {
   private handleMessage(event: MessageEvent): void {
     try {
       const message = JSON.parse(event.data);
+      const receiveTime = Date.now();
+      
       console.log('[WsWalletBridge] 📨 Received:', message.type);
+      
+      // Track message count
+      this.messageCount++;
+      this.lastMessageTime = receiveTime;
+      
+      // Update metrics
+      useAiScannerStore.getState().updateWsMetrics({
+        lastMessageTime: receiveTime
+      });
       
       // Find waiting promise for this message type
       const queueIndex = this.messageQueue.findIndex(q => q.type === message.type);
       
       if (queueIndex !== -1) {
-        const { resolve, reject } = this.messageQueue[queueIndex];
+        const queueItem = this.messageQueue[queueIndex];
+        const { resolve, reject, sentAt } = queueItem;
         this.messageQueue.splice(queueIndex, 1);
+        
+        // Track latency
+        const latency = receiveTime - sentAt;
+        this.trackLatency(latency);
         
         if (message.type === 'uiMap') {
           resolve(message.data);
@@ -222,6 +252,13 @@ export class WsWalletBridge implements WalletBridgeAPI {
         console.log('[WsWalletBridge] ✅ Server assigned client ID:', message.clientId);
       } else if (message.type === 'pong') {
         console.log('[WsWalletBridge] 🏓 Pong received');
+      } else if (message.type === 'metrics') {
+        // Update metrics from server
+        if (message.data.connectedClients !== undefined) {
+          useAiScannerStore.getState().updateWsMetrics({
+            connectedClients: message.data.connectedClients
+          });
+        }
       }
       
     } catch (error) {
@@ -262,5 +299,35 @@ export class WsWalletBridge implements WalletBridgeAPI {
     if (role.includes('icon')) return 'svg';
     if (role.includes('card') || role.includes('display')) return 'div';
     return 'div';
+  }
+  
+  private trackLatency(latency: number): void {
+    this.latencies.push(latency);
+    // Keep only last 10 latencies
+    if (this.latencies.length > 10) {
+      this.latencies.shift();
+    }
+    
+    const avgLatency = Math.round(
+      this.latencies.reduce((a, b) => a + b, 0) / this.latencies.length
+    );
+    
+    useAiScannerStore.getState().updateWsMetrics({ avgLatency });
+  }
+  
+  private startThroughputTracking(): void {
+    this.messageCount = 0;
+    this.throughputInterval = setInterval(() => {
+      const throughput = this.messageCount;
+      this.messageCount = 0;
+      useAiScannerStore.getState().updateWsMetrics({ throughput });
+    }, 60000); // Every minute
+  }
+  
+  private stopThroughputTracking(): void {
+    if (this.throughputInterval) {
+      clearInterval(this.throughputInterval);
+      this.throughputInterval = null;
+    }
   }
 }

@@ -27,6 +27,33 @@ const wss = new WebSocketServer({ server: httpServer });
 // Connected clients registry
 const clients = new Map();
 let clientIdCounter = 0;
+let messageStats = {
+  total: 0,
+  lastMinute: 0
+};
+
+// Reset message counter every minute
+setInterval(() => {
+  messageStats.lastMinute = 0;
+}, 60000);
+
+// Broadcast metrics to all clients every 5 seconds
+setInterval(() => {
+  const metricsMessage = JSON.stringify({
+    type: 'metrics',
+    data: {
+      connectedClients: wss.clients.size,
+      throughput: messageStats.lastMinute,
+      timestamp: Date.now()
+    }
+  });
+  
+  wss.clients.forEach((client) => {
+    if (client.readyState === 1) { // 1 = OPEN
+      client.send(metricsMessage);
+    }
+  });
+}, 5000);
 
 wss.on('connection', (ws, req) => {
   const clientId = ++clientIdCounter;
@@ -53,6 +80,10 @@ wss.on('connection', (ws, req) => {
       }
       
       console.log(`[WS] 📨 Client #${clientId} (${clients.get(ws)?.source || 'unknown'}):`, message.type);
+      
+      // Track message stats
+      messageStats.total++;
+      messageStats.lastMinute++;
       
       // Broadcast to all other clients
       let broadcastCount = 0;

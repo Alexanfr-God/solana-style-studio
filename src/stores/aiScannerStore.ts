@@ -43,6 +43,14 @@ export interface AiComment {
   timestamp: number;
 }
 
+export interface WsMetrics {
+  connectedClients: number;
+  avgLatency: number | null;
+  throughput: number;
+  isConnected: boolean;
+  lastMessageTime: number | null;
+}
+
 interface AiScannerState {
   // Scan process
   isScanning: boolean;
@@ -69,6 +77,9 @@ interface AiScannerState {
   // AI Commentary
   aiComments: AiComment[];
   
+  // WS Metrics
+  wsMetrics: WsMetrics | null;
+  
   // Actions
   startScan: (screen?: 'login' | 'home') => void;
   stopScan: () => void;
@@ -82,6 +93,7 @@ interface AiScannerState {
   setScanMode: (mode: ScanMode) => void;
   clearLogs: () => void;
   setWalletType: (type: 'WS' | 'MetaMask' | 'Phantom') => void;
+  updateWsMetrics: (metrics: Partial<WsMetrics>) => void;
 }
 
 export const useAiScannerStore = create<AiScannerState>((set, get) => ({
@@ -97,6 +109,7 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
   isWalletConnected: false, // Changed to false - requires explicit connection
   progress: { current: 0, total: 0, path: '' },
   aiComments: [],
+  wsMetrics: null,
   
   // Actions
   startScan: (screen = 'home') => {
@@ -225,5 +238,20 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
     } else {
       get().addLog('error', '❌', 'Wallet disconnected');
     }
+  },
+  
+  updateWsMetrics: (metrics) => {
+    set(state => ({
+      wsMetrics: {
+        ...(state.wsMetrics || {
+          connectedClients: 0,
+          avgLatency: null,
+          throughput: 0,
+          isConnected: false,
+          lastMessageTime: null
+        }),
+        ...metrics
+      }
+    }));
   }
 }));

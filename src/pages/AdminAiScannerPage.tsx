@@ -7,6 +7,7 @@ import { DevToolsPanel } from '@/components/admin/scanner/DevToolsPanel';
 import { AiCommentaryPanel } from '@/components/admin/scanner/AiCommentaryPanel';
 import { ManualEditorPanel } from '@/components/admin/scanner/ManualEditorPanel';
 import { FoundElementsList } from '@/components/admin/scanner/FoundElementsList';
+import { MonitoringPanel } from '@/components/admin/scanner/MonitoringPanel';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -49,6 +50,7 @@ const AdminAiScannerPage = () => {
             <ScanControlPanel />
             <div className="border-t flex-1 overflow-auto">
               <ScanFlowVisualization />
+              <MonitoringPanel />
             </div>
           </motion.div>
 

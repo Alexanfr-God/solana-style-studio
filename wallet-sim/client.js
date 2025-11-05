@@ -206,12 +206,36 @@ function sendScreenshot() {
 function applyTheme(themeData) {
   try {
     log('🎨 Applying theme data...');
-    
-    // In real wallet, this would apply CSS vars
-    // For demo, just log the theme
     console.log('Theme data:', themeData);
     
-    // Mock visual feedback
+    // Apply actual CSS vars from theme data
+    if (themeData && themeData.elements) {
+      themeData.elements.forEach((element) => {
+        const el = document.querySelector(element.selector);
+        if (el && element.style) {
+          // Apply styles
+          if (element.style.bg) {
+            el.style.backgroundColor = element.style.bg;
+          }
+          if (element.style.color) {
+            el.style.color = element.style.color;
+          }
+          if (element.style.radius) {
+            el.style.borderRadius = element.style.radius;
+          }
+          if (element.style.font) {
+            el.style.fontFamily = element.style.font;
+          }
+          if (element.style.fontSize) {
+            el.style.fontSize = element.style.fontSize;
+          }
+          
+          log(`✅ Applied styles to ${element.role}`, 'received');
+        }
+      });
+    }
+    
+    // Visual feedback
     walletFrame.style.transition = 'all 0.3s';
     walletFrame.style.transform = 'scale(0.98)';
     setTimeout(() => {
@@ -221,17 +245,19 @@ function applyTheme(themeData) {
     sendMessage({
       type: 'applyAck',
       ok: true,
-      message: 'Theme applied successfully'
+      message: 'Theme applied successfully',
+      timestamp: Date.now()
     });
     
-    log('✅ Theme applied', 'sent');
+    log('✅ Theme applied with live preview', 'sent');
     
   } catch (error) {
     log(`❌ Failed to apply theme: ${error.message}`);
     sendMessage({
       type: 'applyAck',
       ok: false,
-      error: error.message
+      error: error.message,
+      timestamp: Date.now()
     });
   }
 }
