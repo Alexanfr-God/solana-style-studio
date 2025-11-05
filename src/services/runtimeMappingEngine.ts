@@ -203,8 +203,8 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         if (domElements.length === 0) continue;
         
         const value = getByPath(theme, mapping.json_path);
-        // Skip if value is null, undefined, or empty string (to allow fallback)
-        if (value === null || value === undefined || value === '') continue;
+        // Skip if value is null or undefined
+        if (value === null || value === undefined) continue;
         
         console.log('[Runtime] 🎨 Applying styles:', {
           totalMappings: mappings.length,
@@ -307,25 +307,6 @@ let lastManualEditAt = 0;
 export function setupMappingWatcher(getTheme: () => any) {
   let lastTheme: any = null;
   
-  const checkAndApply = () => {
-    const currentTheme = getTheme();
-    
-    // 🛡️ Skip full apply if recent manual edit
-    const timeSinceEdit = Date.now() - lastManualEditAt;
-    if (timeSinceEdit < 500) {
-      console.log('[Runtime] ⏭️ Skipping full apply (recent manual edit, elapsed:', timeSinceEdit, 'ms)');
-      return;
-    }
-    
-    if (currentTheme && currentTheme !== lastTheme) {
-      lastTheme = currentTheme;
-      console.log('[Runtime] 🔄 Theme changed, applying full theme');
-      applyThemeToDOM(currentTheme);
-    }
-  };
-  
-  const interval = setInterval(checkAndApply, 500);
-  
   const handleThemeUpdate = (event: CustomEvent) => {
     const { theme, updatedPath, forceFullApply } = event.detail;
     
@@ -393,11 +374,17 @@ export function setupMappingWatcher(getTheme: () => any) {
     });
   }
   
-  console.log('[Runtime] 👀 Mapping watcher initialized');
-  checkAndApply();
+  // ✅ Initial theme apply on load
+  const initialTheme = getTheme();
+  if (initialTheme) {
+    console.log('[Runtime] 🔄 Initial theme apply');
+    applyThemeToDOM(initialTheme);
+    lastTheme = initialTheme;
+  }
+  
+  console.log('[Runtime] 👀 Mapping watcher initialized (event-driven only)');
   
   return () => {
-    clearInterval(interval);
     window.removeEventListener('theme-updated', handleThemeUpdate as EventListener);
     lockScreenObserver.disconnect();
     console.log('[Runtime] 🛑 Mapping watcher stopped');
