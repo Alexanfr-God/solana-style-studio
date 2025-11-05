@@ -85,47 +85,7 @@
   flex-shrink: 0;
 }
 
-/* Lock Layer fallback styles */
-:where([data-element-id="unlock-screen-container"]) {
-  background-color: rgba(75, 85, 99, 0.8);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-:where([data-element-id="login-password-input"]) {
-  background-color: rgba(75, 85, 99, 0.8);
-  color: #FFFFFF;
-  border: none;
-  outline: none;
-}
-
+/* Lock Layer styles - only placeholder customization */
 [data-element-id="login-password-input"]::placeholder {
   color: var(--placeholder-color, #9CA3AF);
-}
-
-:where([data-element-id="login-password-title"]) {
-  color: #FFFFFF;
-  font-family: 'Inter', sans-serif;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-:where([data-element-id="login-forgot-password"]) {
-  color: #9CA3AF;
-  font-family: 'Inter', sans-serif;
-  font-size: 15px;
-}
-
-:where([data-element-id="login-unlock-button"]) {
-  background-color: #6B7280;
-  color: #FFFFFF;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 19px;
-  border-radius: 14px;
-}
-
-:where([data-element-id="login-show-password"]) {
-  color: #9CA3AF;
 }
