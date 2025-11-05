@@ -56,6 +56,41 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     lockLayerKeys: theme?.lockLayer ? Object.keys(theme.lockLayer) : []
   });
 
+  // Default lockLayer styles (matching removed CSS fallback values)
+  const DEFAULT_LOCK_LAYER_STYLES = {
+    backgroundColor: 'rgba(19, 19, 19, 0.95)',
+    backgroundImage: undefined,
+    title: {
+      fontFamily: 'Inter, sans-serif',
+      textColor: '#FFFFFF',
+      fontSize: '28px',
+      fontWeight: 'bold'
+    },
+    passwordInput: {
+      backgroundColor: 'rgba(75, 85, 99, 0.8)',
+      textColor: '#FFFFFF',
+      fontFamily: 'Inter, sans-serif',
+      borderRadius: '12px',
+      border: 'none',
+      placeholderColor: '#9CA3AF'
+    },
+    forgotPassword: {
+      fontFamily: 'Inter, sans-serif',
+      textColor: '#9CA3AF',
+      fontSize: '15px'
+    },
+    unlockButton: {
+      backgroundColor: '#6B7280',
+      textColor: '#FFFFFF',
+      fontFamily: 'Inter, sans-serif',
+      borderRadius: '14px',
+      fontWeight: '600',
+      fontSize: '19px'
+    },
+    showPassword: {
+      textColor: '#9CA3AF'
+    }
+  };
 
   // FIXED: Better theme validation and fallback handling
   const previewData = useMemo(() => {
@@ -63,36 +98,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     if (!theme || typeof theme !== 'object') {
       console.warn('[WPC] ⚠️ Invalid theme, using defaults');
       return {
-        lockLayer: {
-          backgroundColor: '#181818',
-          title: {
-            fontFamily: 'Inter',
-            textColor: '#FFFFFF',
-            fontSize: '28px',
-            fontWeight: 'bold'
-          },
-          passwordInput: {
-            backgroundColor: 'rgba(30,30,30,0.8)',
-            textColor: '#FFFFFF',
-            fontFamily: 'Inter',
-            borderRadius: '12px',
-            border: 'none',
-            iconEyeColor: '#aaa'
-          },
-          forgotPassword: {
-            fontFamily: 'Inter',
-            textColor: '#aaa',
-            fontSize: '15px'
-          },
-          unlockButton: {
-            backgroundColor: '#13e163',
-            textColor: '#FFFFFF',
-            fontFamily: 'Inter',
-            borderRadius: '14px',
-            fontWeight: '600',
-            fontSize: '19px'
-          }
-        }
+        lockLayer: DEFAULT_LOCK_LAYER_STYLES
       };
     }
     
@@ -101,34 +107,37 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     
     return {
       lockLayer: {
-        backgroundColor: lockLayer.backgroundColor || '#181818',
-        backgroundImage: lockLayer.backgroundImage,
+        backgroundColor: lockLayer.backgroundColor || DEFAULT_LOCK_LAYER_STYLES.backgroundColor,
+        backgroundImage: lockLayer.backgroundImage || DEFAULT_LOCK_LAYER_STYLES.backgroundImage,
         title: {
-          fontFamily: lockLayer.title?.fontFamily || 'Inter',
-          textColor: lockLayer.title?.textColor || '#FFFFFF',
-          fontSize: lockLayer.title?.fontSize || '28px',
-          fontWeight: lockLayer.title?.fontWeight || 'bold'
+          fontFamily: lockLayer.title?.fontFamily || DEFAULT_LOCK_LAYER_STYLES.title.fontFamily,
+          textColor: lockLayer.title?.textColor || DEFAULT_LOCK_LAYER_STYLES.title.textColor,
+          fontSize: lockLayer.title?.fontSize || DEFAULT_LOCK_LAYER_STYLES.title.fontSize,
+          fontWeight: lockLayer.title?.fontWeight || DEFAULT_LOCK_LAYER_STYLES.title.fontWeight
         },
         passwordInput: {
-          backgroundColor: lockLayer.passwordInput?.backgroundColor || 'rgba(30,30,30,0.8)',
-          textColor: lockLayer.passwordInput?.textColor || '#FFFFFF',
-          fontFamily: lockLayer.passwordInput?.fontFamily || 'Inter',
-          borderRadius: lockLayer.passwordInput?.borderRadius || '12px',
-          border: lockLayer.passwordInput?.border || 'none',
-          iconEyeColor: lockLayer.passwordInput?.iconEyeColor || '#aaa'
+          backgroundColor: lockLayer.passwordInput?.backgroundColor || DEFAULT_LOCK_LAYER_STYLES.passwordInput.backgroundColor,
+          textColor: lockLayer.passwordInput?.textColor || DEFAULT_LOCK_LAYER_STYLES.passwordInput.textColor,
+          fontFamily: lockLayer.passwordInput?.fontFamily || DEFAULT_LOCK_LAYER_STYLES.passwordInput.fontFamily,
+          borderRadius: lockLayer.passwordInput?.borderRadius || DEFAULT_LOCK_LAYER_STYLES.passwordInput.borderRadius,
+          border: lockLayer.passwordInput?.border || DEFAULT_LOCK_LAYER_STYLES.passwordInput.border,
+          placeholderColor: lockLayer.passwordInput?.placeholderColor || DEFAULT_LOCK_LAYER_STYLES.passwordInput.placeholderColor
         },
         forgotPassword: {
-          fontFamily: lockLayer.forgotPassword?.fontFamily || 'Inter',
-          textColor: lockLayer.forgotPassword?.textColor || '#aaa',
-          fontSize: lockLayer.forgotPassword?.fontSize || '15px'
+          fontFamily: lockLayer.forgotPassword?.fontFamily || DEFAULT_LOCK_LAYER_STYLES.forgotPassword.fontFamily,
+          textColor: lockLayer.forgotPassword?.textColor || DEFAULT_LOCK_LAYER_STYLES.forgotPassword.textColor,
+          fontSize: lockLayer.forgotPassword?.fontSize || DEFAULT_LOCK_LAYER_STYLES.forgotPassword.fontSize
         },
         unlockButton: {
-          backgroundColor: lockLayer.unlockButton?.backgroundColor || '#13e163',
-          textColor: lockLayer.unlockButton?.textColor || '#FFFFFF',
-          fontFamily: lockLayer.unlockButton?.fontFamily || 'Inter',
-          borderRadius: lockLayer.unlockButton?.borderRadius || '14px',
-          fontWeight: lockLayer.unlockButton?.fontWeight || '600',
-          fontSize: lockLayer.unlockButton?.fontSize || '19px'
+          backgroundColor: lockLayer.unlockButton?.backgroundColor || DEFAULT_LOCK_LAYER_STYLES.unlockButton.backgroundColor,
+          textColor: lockLayer.unlockButton?.textColor || DEFAULT_LOCK_LAYER_STYLES.unlockButton.textColor,
+          fontFamily: lockLayer.unlockButton?.fontFamily || DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontFamily,
+          borderRadius: lockLayer.unlockButton?.borderRadius || DEFAULT_LOCK_LAYER_STYLES.unlockButton.borderRadius,
+          fontWeight: lockLayer.unlockButton?.fontWeight || DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontWeight,
+          fontSize: lockLayer.unlockButton?.fontSize || DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontSize
+        },
+        showPassword: {
+          textColor: lockLayer.showPassword?.textColor || DEFAULT_LOCK_LAYER_STYLES.showPassword.textColor
         }
       }
     };
