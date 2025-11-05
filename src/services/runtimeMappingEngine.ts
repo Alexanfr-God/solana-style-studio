@@ -203,7 +203,8 @@ export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
         if (domElements.length === 0) continue;
         
         const value = getByPath(theme, mapping.json_path);
-        if (value === null || value === undefined) continue;
+        // Skip if value is null, undefined, or empty string (to allow fallback)
+        if (value === null || value === undefined || value === '') continue;
         
         console.log('[Runtime] 🎨 Applying styles:', {
           totalMappings: mappings.length,

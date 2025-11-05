@@ -107,37 +107,37 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     
     return {
       lockLayer: {
-        backgroundColor: lockLayer.backgroundColor || DEFAULT_LOCK_LAYER_STYLES.backgroundColor,
-        backgroundImage: lockLayer.backgroundImage || DEFAULT_LOCK_LAYER_STYLES.backgroundImage,
+        backgroundColor: lockLayer.backgroundColor ?? DEFAULT_LOCK_LAYER_STYLES.backgroundColor,
+        backgroundImage: lockLayer.backgroundImage ?? DEFAULT_LOCK_LAYER_STYLES.backgroundImage,
         title: {
-          fontFamily: lockLayer.title?.fontFamily || DEFAULT_LOCK_LAYER_STYLES.title.fontFamily,
-          textColor: lockLayer.title?.textColor || DEFAULT_LOCK_LAYER_STYLES.title.textColor,
-          fontSize: lockLayer.title?.fontSize || DEFAULT_LOCK_LAYER_STYLES.title.fontSize,
-          fontWeight: lockLayer.title?.fontWeight || DEFAULT_LOCK_LAYER_STYLES.title.fontWeight
+          fontFamily: lockLayer.title?.fontFamily ?? DEFAULT_LOCK_LAYER_STYLES.title.fontFamily,
+          textColor: lockLayer.title?.textColor ?? DEFAULT_LOCK_LAYER_STYLES.title.textColor,
+          fontSize: lockLayer.title?.fontSize ?? DEFAULT_LOCK_LAYER_STYLES.title.fontSize,
+          fontWeight: lockLayer.title?.fontWeight ?? DEFAULT_LOCK_LAYER_STYLES.title.fontWeight
         },
         passwordInput: {
-          backgroundColor: lockLayer.passwordInput?.backgroundColor || DEFAULT_LOCK_LAYER_STYLES.passwordInput.backgroundColor,
-          textColor: lockLayer.passwordInput?.textColor || DEFAULT_LOCK_LAYER_STYLES.passwordInput.textColor,
-          fontFamily: lockLayer.passwordInput?.fontFamily || DEFAULT_LOCK_LAYER_STYLES.passwordInput.fontFamily,
-          borderRadius: lockLayer.passwordInput?.borderRadius || DEFAULT_LOCK_LAYER_STYLES.passwordInput.borderRadius,
-          border: lockLayer.passwordInput?.border || DEFAULT_LOCK_LAYER_STYLES.passwordInput.border,
-          placeholderColor: lockLayer.passwordInput?.placeholderColor || DEFAULT_LOCK_LAYER_STYLES.passwordInput.placeholderColor
+          backgroundColor: lockLayer.passwordInput?.backgroundColor ?? DEFAULT_LOCK_LAYER_STYLES.passwordInput.backgroundColor,
+          textColor: lockLayer.passwordInput?.textColor ?? DEFAULT_LOCK_LAYER_STYLES.passwordInput.textColor,
+          fontFamily: lockLayer.passwordInput?.fontFamily ?? DEFAULT_LOCK_LAYER_STYLES.passwordInput.fontFamily,
+          borderRadius: lockLayer.passwordInput?.borderRadius ?? DEFAULT_LOCK_LAYER_STYLES.passwordInput.borderRadius,
+          border: lockLayer.passwordInput?.border ?? DEFAULT_LOCK_LAYER_STYLES.passwordInput.border,
+          placeholderColor: lockLayer.passwordInput?.placeholderColor ?? DEFAULT_LOCK_LAYER_STYLES.passwordInput.placeholderColor
         },
         forgotPassword: {
-          fontFamily: lockLayer.forgotPassword?.fontFamily || DEFAULT_LOCK_LAYER_STYLES.forgotPassword.fontFamily,
-          textColor: lockLayer.forgotPassword?.textColor || DEFAULT_LOCK_LAYER_STYLES.forgotPassword.textColor,
-          fontSize: lockLayer.forgotPassword?.fontSize || DEFAULT_LOCK_LAYER_STYLES.forgotPassword.fontSize
+          fontFamily: lockLayer.forgotPassword?.fontFamily ?? DEFAULT_LOCK_LAYER_STYLES.forgotPassword.fontFamily,
+          textColor: lockLayer.forgotPassword?.textColor ?? DEFAULT_LOCK_LAYER_STYLES.forgotPassword.textColor,
+          fontSize: lockLayer.forgotPassword?.fontSize ?? DEFAULT_LOCK_LAYER_STYLES.forgotPassword.fontSize
         },
         unlockButton: {
-          backgroundColor: lockLayer.unlockButton?.backgroundColor || DEFAULT_LOCK_LAYER_STYLES.unlockButton.backgroundColor,
-          textColor: lockLayer.unlockButton?.textColor || DEFAULT_LOCK_LAYER_STYLES.unlockButton.textColor,
-          fontFamily: lockLayer.unlockButton?.fontFamily || DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontFamily,
-          borderRadius: lockLayer.unlockButton?.borderRadius || DEFAULT_LOCK_LAYER_STYLES.unlockButton.borderRadius,
-          fontWeight: lockLayer.unlockButton?.fontWeight || DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontWeight,
-          fontSize: lockLayer.unlockButton?.fontSize || DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontSize
+          backgroundColor: lockLayer.unlockButton?.backgroundColor ?? DEFAULT_LOCK_LAYER_STYLES.unlockButton.backgroundColor,
+          textColor: lockLayer.unlockButton?.textColor ?? DEFAULT_LOCK_LAYER_STYLES.unlockButton.textColor,
+          fontFamily: lockLayer.unlockButton?.fontFamily ?? DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontFamily,
+          borderRadius: lockLayer.unlockButton?.borderRadius ?? DEFAULT_LOCK_LAYER_STYLES.unlockButton.borderRadius,
+          fontWeight: lockLayer.unlockButton?.fontWeight ?? DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontWeight,
+          fontSize: lockLayer.unlockButton?.fontSize ?? DEFAULT_LOCK_LAYER_STYLES.unlockButton.fontSize
         },
         showPassword: {
-          textColor: lockLayer.showPassword?.textColor || DEFAULT_LOCK_LAYER_STYLES.showPassword.textColor
+          textColor: lockLayer.showPassword?.textColor ?? DEFAULT_LOCK_LAYER_STYLES.showPassword.textColor
         }
       }
     };
