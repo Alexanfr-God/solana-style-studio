@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WCC Wallet Simulator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #1e1e2e 0%, #0f0f1a 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .header {
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: pulse 2s infinite;
+    }
+    
+    .status-dot.connected {
+      background: #22c55e;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .wallet-frame {
+      width: 360px;
+      height: 600px;
+      background: linear-gradient(180deg, #2d2d3f 0%, #1a1a2e 100%);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      position: relative;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .wallet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .wallet-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .balance-card {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .balance-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 8px;
+    }
+    
+    .balance-amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    
+    .balance-usd {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .address-display {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 24px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      color: rgba(255, 255, 255, 0.7);
+      text-align: center;
+    }
+    
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .action-btn {
+      background: rgb(59, 130, 246);
+      border: none;
+      border-radius: 12px;
+      padding: 16px 12px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+    
+    .action-btn.secondary {
+      background: rgba(168, 85, 247, 0.9);
+    }
+    
+    .action-btn.tertiary {
+      background: rgba(16, 185, 129, 0.9);
+    }
+    
+    .icon {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .assets-section {
+      margin-top: 24px;
+    }
+    
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 12px;
+    }
+    
+    .asset-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .asset-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .asset-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    
+    .asset-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .asset-balance {
+      text-align: right;
+    }
+    
+    .asset-amount {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .asset-value {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .logs {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+    
+    .log-entry {
+      margin-bottom: 4px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .log-entry.sent {
+      color: #3b82f6;
+    }
+    
+    .log-entry.received {
+      color: #22c55e;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Disconnected from WCC Server</span>
+    </div>
+    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5);">
+      <strong>WCC Wallet Simulator</strong> • ws://localhost:3001
+    </div>
+  </div>
+  
+  <div class="wallet-frame" id="walletFrame">
+    <div class="wallet-header">
+      <div class="wallet-title">My Wallet</div>
+      <div style="width: 32px; height: 32px; background: rgba(59, 130, 246, 0.2); border-radius: 50%;"></div>
+    </div>
+    
+    <div class="balance-card" data-wcc-role="balance.card">
+      <div class="balance-label">Total Balance</div>
+      <div class="balance-amount" data-wcc-role="balance.amount">$4,521.89</div>
+      <div class="balance-usd">2.45 ETH</div>
+    </div>
+    
+    <div class="address-display" data-wcc-role="address.display">
+      0x742d...3a8f
+    </div>
+    
+    <div class="action-buttons">
+      <button class="action-btn" data-wcc-role="button.send">
+        <span class="icon">↑</span>
+        <span>Send</span>
+      </button>
+      <button class="action-btn secondary" data-wcc-role="button.receive">
+        <span class="icon">↓</span>
+        <span>Receive</span>
+      </button>
+      <button class="action-btn tertiary" data-wcc-role="button.buy">
+        <span class="icon">+</span>
+        <span>Buy</span>
+      </button>
+    </div>
+    
+    <div class="assets-section">
+      <div class="section-title">Assets</div>
+      
+      <div class="asset-item" data-wcc-role="asset.eth">
+        <div class="asset-info">
+          <div class="asset-icon">Ξ</div>
+          <div class="asset-name">Ethereum</div>
+        </div>
+        <div class="asset-balance">
+          <div class="asset-amount">2.45 ETH</div>
+          <div class="asset-value">$4,521.89</div>
+        </div>
+      </div>
+      
+      <div class="asset-item" data-wcc-role="asset.usdt">
+        <div class="asset-info">
+          <div class="asset-icon">₮</div>
+          <div class="asset-name">USDT</div>
+        </div>
+        <div class="asset-balance">
+          <div class="asset-amount">1,250 USDT</div>
+          <div class="asset-value">$1,250.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="logs" id="logs">
+    <div class="log-entry">📡 Wallet Simulator initialized</div>
+  </div>
+  
+  <script src="client.js"></script>
+</body>
+</html>

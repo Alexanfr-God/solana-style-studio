@@ -4,11 +4,11 @@ import { useAiScannerStore } from '@/stores/aiScannerStore';
 import { cn } from '@/lib/utils';
 
 const FLOW_STEPS = [
-  { id: 'connect', label: 'Connect Wallet', icon: '🔌' },
+  { id: 'connect', label: 'Connect', icon: '🔌' },
   { id: 'vision', label: 'Fetch DOM', icon: '📡' },
-  { id: 'snapshot', label: 'Snapshot', icon: '🔵' },
-  { id: 'json-build', label: 'JSON-Build', icon: '🟣' },
-  { id: 'verify', label: 'Verify', icon: '✅' }
+  { id: 'snapshot', label: 'Vision', icon: '👁️' },
+  { id: 'json-build', label: 'Snapshot', icon: '📸' },
+  { id: 'verify', label: 'JSON', icon: '📦' }
 ] as const;
 
 export const ScanFlowVisualization = () => {

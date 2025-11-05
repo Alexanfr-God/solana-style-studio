@@ -19,20 +19,22 @@ export const WalletPreviewCanvas = () => {
   
   const [isConnecting, setIsConnecting] = useState(false);
   
-  const walletTypes: Array<'WCC' | 'MetaMask' | 'Phantom'> = ['MetaMask', 'Phantom'];
+  const walletTypes: Array<'WS' | 'MetaMask' | 'Phantom'> = ['WS', 'MetaMask', 'Phantom'];
   
   const handleConnect = async () => {
-    if (walletType === 'MetaMask' || walletType === 'Phantom') {
-      setIsConnecting(true);
-      try {
+    setIsConnecting(true);
+    try {
+      if (walletType === 'WS') {
+        await aiScanOrchestrator.connectWallet('WS');
+      } else if (walletType === 'MetaMask' || walletType === 'Phantom') {
         await aiScanOrchestrator.connectWallet(walletType);
-        toast.success(`✅ Connected to ${walletType}`);
-      } catch (error) {
-        console.error('Connection failed:', error);
-        // Error toast is already shown by orchestrator with detailed message
-      } finally {
-        setIsConnecting(false);
       }
+      toast.success(`✅ Connected to ${walletType}`);
+    } catch (error) {
+      console.error('Connection failed:', error);
+      // Error toast is already shown by orchestrator with detailed message
+    } finally {
+      setIsConnecting(false);
     }
   };
   

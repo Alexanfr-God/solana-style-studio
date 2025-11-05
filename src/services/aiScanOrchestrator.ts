@@ -15,7 +15,7 @@ class AiScanOrchestrator {
   /**
    * Connect to external wallet via Bridge
    */
-  async connectWallet(walletType: 'MetaMask' | 'Phantom') {
+  async connectWallet(walletType: 'MetaMask' | 'Phantom' | 'WS') {
     console.log(`[AiScanOrchestrator] 🔌 Connecting to ${walletType}...`);
     
     const store = this.store.getState();
@@ -23,13 +23,18 @@ class AiScanOrchestrator {
     
     try {
       this.bridge = WalletBridgeFactory.create(walletType);
-      const connected = await this.bridge.connect(walletType);
+      
+      // For WS bridge, just connect without wallet type parameter
+      const connected = walletType === 'WS' 
+        ? await this.bridge.connect('MetaMask') // Dummy parameter for interface compatibility
+        : await this.bridge.connect(walletType);
       
       if (!connected) {
         throw new Error(`Failed to connect to ${walletType}`);
       }
       
       store.setWalletConnected(true);
+      store.setWalletType(walletType);
       store.addLog('verified', '✅', `Connected to ${walletType} successfully`);
       
       toast.success(`✅ Connected to ${walletType}`);
