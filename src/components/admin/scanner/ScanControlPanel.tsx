@@ -43,29 +43,88 @@ export const ScanControlPanel = () => {
   };
   
   const handleSmokeTest = async () => {
+    const store = useAiScannerStore.getState();
+    
     try {
-      addLog('scanning', '🟢', 'Running smoke test...');
+      addLog('scanning', '🟢', '🧪 Starting comprehensive smoke test...');
+      toast.info('🧪 Running smoke test...');
       
-      // 1. Connect
+      // Test 1: Connect to wallet
+      addLog('scanning', '🟢', 'Test 1/5: Connecting to wallet...');
       if (!isWalletConnected) {
         await handleConnect();
-        addLog('verified', '✅', 'Step 1: Connected');
+        
+        // Verify connection
+        const connected = useAiScannerStore.getState().isWalletConnected;
+        if (!connected) {
+          throw new Error('Connection verification failed');
+        }
+        addLog('verified', '✅', 'Test 1/5: Connection ✓');
+      } else {
+        addLog('verified', '✅', 'Test 1/5: Already connected ✓');
       }
       
-      // 2. Start scan (will fetch DOM)
+      // Wait for connection to settle
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Test 2: Fetch DOM
+      addLog('scanning', '🟢', 'Test 2/5: Fetching DOM structure...');
       await handleStartScan();
-      addLog('verified', '✅', 'Step 2: Scan completed');
       
-      // 3. Export
+      // Wait for scan to complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const elementsFound = useAiScannerStore.getState().foundElements.length;
+      if (elementsFound < 10) {
+        throw new Error(`Not enough elements found: ${elementsFound} (expected > 10)`);
+      }
+      addLog('verified', '✅', `Test 2/5: Fetched ${elementsFound} elements ✓`);
+      
+      // Test 3: Get Element Style (first element)
+      addLog('scanning', '🟢', 'Test 3/5: Extracting element styles...');
+      const firstElement = useAiScannerStore.getState().foundElements[0];
+      if (firstElement && firstElement.metrics) {
+        addLog('verified', '✅', `Test 3/5: Styles extracted (${firstElement.metrics.width}×${firstElement.metrics.height}px) ✓`);
+      } else {
+        throw new Error('No element metrics available');
+      }
+      
+      // Test 4: Vision Analysis
+      addLog('scanning', '🟢', 'Test 4/5: Checking AI Vision analysis...');
+      const aiSummary = (useAiScannerStore.getState() as any).aiSummary;
+      const elementsWithAI = useAiScannerStore.getState().foundElements.filter(el => el.aiComment);
+      
+      if (elementsWithAI.length > 0) {
+        addLog('verified', '✅', `Test 4/5: AI enriched ${elementsWithAI.length} elements ✓`);
+      } else {
+        addLog('error', '❌', 'Test 4/5: AI Vision skipped (non-critical)');
+      }
+      
+      // Test 5: Export JSON
+      addLog('scanning', '🟢', 'Test 5/5: Exporting JSON with metadata...');
       exportJSON();
-      addLog('verified', '✅', 'Step 3: Exported JSON');
+      addLog('verified', '✅', 'Test 5/5: JSON exported successfully ✓');
       
-      addLog('verified', '✅', '🎉 Smoke test PASSED');
-      toast.success('✅ Smoke test passed!');
+      // Final summary
+      const summary = `
+🎉 Smoke Test PASSED
+━━━━━━━━━━━━━━━━━━
+✅ Connection: OK
+✅ DOM Fetch: ${elementsFound} elements
+✅ Style Extraction: OK
+${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.length} enriched
+✅ JSON Export: OK
+━━━━━━━━━━━━━━━━━━
+`;
+      
+      addLog('verified', '✅', summary);
+      toast.success('🎉 All smoke tests passed!', { duration: 5000 });
       
     } catch (error) {
-      addLog('error', '❌', `Smoke test FAILED: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      toast.error('❌ Smoke test failed');
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      addLog('error', '❌', `❌ Smoke test FAILED: ${errorMsg}`);
+      toast.error(`❌ Smoke test failed: ${errorMsg}`, { duration: 5000 });
+      console.error('[SmokeTest] Error:', error);
     }
   };
   
