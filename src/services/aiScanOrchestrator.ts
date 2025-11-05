@@ -3,16 +3,73 @@ import type { ElementItem, ScanMode } from '@/stores/aiScannerStore';
 import { scanDomWithAI } from '@/services/aiDomScannerService';
 import { runThemeProbeInPreview } from '@/agents/mcp/ThemeProbeBridge';
 import { ValidationService } from '@/agents/discovery/ValidationService';
+import { WalletBridgeFactory } from '@/services/walletBridge/WalletBridgeFactory';
+import type { WalletBridgeAPI } from '@/services/walletBridge/WalletBridge';
 import { toast } from 'sonner';
 
 class AiScanOrchestrator {
   private store = useAiScannerStore;
   private currentScreen: 'login' | 'home' | 'send' | 'receive' | 'buy' | 'apps' = 'home';
+  private bridge: WalletBridgeAPI | null = null;
+  
+  /**
+   * Connect to external wallet via Bridge
+   */
+  async connectWallet(walletType: 'MetaMask' | 'Phantom') {
+    console.log(`[AiScanOrchestrator] 🔌 Connecting to ${walletType}...`);
+    
+    const store = this.store.getState();
+    store.addLog('scanning', '🟢', `Connecting to ${walletType}...`);
+    
+    try {
+      this.bridge = WalletBridgeFactory.create(walletType);
+      const connected = await this.bridge.connect(walletType);
+      
+      if (!connected) {
+        throw new Error(`Failed to connect to ${walletType}`);
+      }
+      
+      store.setWalletConnected(true);
+      store.addLog('verified', '✅', `Connected to ${walletType} successfully`);
+      
+      toast.success(`✅ Connected to ${walletType}`);
+      return true;
+      
+    } catch (error) {
+      console.error('[AiScanOrchestrator] ❌ Connection failed:', error);
+      store.addLog('error', '❌', `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      store.setWalletConnected(false);
+      
+      toast.error(`❌ Failed to connect to ${walletType}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Disconnect from wallet
+   */
+  disconnectWallet() {
+    if (this.bridge) {
+      this.bridge.disconnect();
+      this.bridge = null;
+    }
+    
+    const store = this.store.getState();
+    store.setWalletConnected(false);
+    store.addLog('scanning', '🟢', 'Wallet disconnected');
+  }
   
   /**
    * Start the complete AI scan process
    */
   async startScan(screen: 'login' | 'home' = 'home') {
+    // Check if wallet is connected
+    if (!this.bridge?.isConnected()) {
+      const error = '❌ Wallet not connected! Please connect to a wallet first.';
+      console.error('[AiScanOrchestrator]', error);
+      toast.error(error);
+      throw new Error(error);
+    }
     this.currentScreen = screen;
     const store = this.store.getState();
     
@@ -21,16 +78,19 @@ class AiScanOrchestrator {
     try {
       store.startScan(screen);
       
-      // Phase 1: Vision Analysis
-      await this.runVisionAnalysis();
+      // Phase 1: Fetch Real DOM from external wallet
+      await this.fetchRealDOM();
       
-      // Phase 2: Snapshot Capture
+      // Phase 2: Vision Analysis (optional - can be skipped for now)
+      // await this.runVisionAnalysis();
+      
+      // Phase 3: Snapshot Capture (elements already have styles from fetchDOM)
       await this.runSnapshotCapture();
       
-      // Phase 3: JSON Build
+      // Phase 4: JSON Build
       await this.buildJSON();
       
-      // Phase 4: Verify
+      // Phase 5: Verify
       await this.verifyMapping();
       
       // Complete
@@ -49,7 +109,64 @@ class AiScanOrchestrator {
   }
   
   /**
-   * Phase 1: Vision Analysis - AI analyzes DOM structure
+   * Phase 1: Fetch Real DOM from external wallet via Bridge
+   */
+  private async fetchRealDOM() {
+    const store = this.store.getState();
+    
+    console.log('[AiScanOrchestrator] 📡 Fetching DOM from external wallet...');
+    store.setScanMode('vision');
+    store.addLog('scanning', '🟢', 'Fetching DOM structure from wallet...');
+    
+    try {
+      const domStructure = await this.bridge!.fetchDOM();
+      
+      console.log(`[AiScanOrchestrator] ✅ Fetched ${domStructure.allElements.length} elements`);
+      store.addLog('found', '🔵', `Fetched ${domStructure.allElements.length} elements from ${domStructure.walletType}`);
+      
+      // Convert WalletElement[] to ElementItem[]
+      domStructure.allElements.forEach((walletEl, index) => {
+        const element: ElementItem = {
+          id: walletEl.id || `element-${index}`,
+          role: walletEl.selector,
+          type: this.detectTypeFromTag(walletEl.tag),
+          status: 'found',
+          style: {
+            bg: walletEl.styles.backgroundColor,
+            radius: walletEl.styles.borderRadius,
+            border: walletEl.styles.border,
+            text: walletEl.text
+          },
+          metrics: {
+            width: walletEl.rect.width,
+            height: walletEl.rect.height,
+            bg: walletEl.styles.backgroundColor,
+            font: walletEl.styles.fontFamily,
+            radius: walletEl.styles.borderRadius
+          }
+        };
+        
+        store.addElement(element);
+        
+        if (index < 3) { // Log first 3
+          store.addLog('found', '🔵', `Found ${walletEl.tag}.${walletEl.classes.join('.')} → ${walletEl.text.substring(0, 20)}`);
+        }
+      });
+      
+      if (domStructure.allElements.length > 3) {
+        store.addLog('found', '🔵', `... and ${domStructure.allElements.length - 3} more elements`);
+      }
+      
+      await this.delay(500);
+      
+    } catch (error) {
+      console.error('[AiScanOrchestrator] ❌ Failed to fetch DOM:', error);
+      throw new Error(`Failed to fetch DOM: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  
+  /**
+   * Phase 1 Alternative: Vision Analysis - AI analyzes DOM structure (local WCC only)
    */
   private async runVisionAnalysis() {
     const store = this.store.getState();
@@ -100,56 +217,35 @@ class AiScanOrchestrator {
   }
   
   /**
-   * Phase 2: Snapshot Capture - Capture DOM elements and styles
+   * Phase 2: Snapshot Capture - Elements already have styles from fetchDOM
    */
   private async runSnapshotCapture() {
     const store = this.store.getState();
     
-    console.log('[AiScanOrchestrator] 🔵 Phase 2: Snapshot Capture');
+    console.log('[AiScanOrchestrator] 🔵 Phase 2: Snapshot Capture (via Bridge)');
     store.setScanMode('snapshot');
-    store.addLog('snapshot', '🟣', 'Capturing element snapshots and analyzing styles...');
+    store.addLog('snapshot', '🟣', 'Capturing element styles from wallet...');
     
     try {
-      const elements = store.foundElements;
-      let capturedCount = 0;
+      // Elements already have styles from fetchDOM()
+      // Just mark them as copied
       
-      // Capture styles for each element
-      for (const element of elements) {
-        const domElement = this.findDomElement(element.id);
-        
-        if (domElement) {
-          const computed = window.getComputedStyle(domElement);
-          const metrics = {
-            width: domElement.offsetWidth,
-            height: domElement.offsetHeight,
-            radius: computed.borderRadius,
-            font: computed.fontFamily,
-            bg: computed.backgroundColor,
-          };
-          
-          const style = {
-            bg: computed.backgroundColor,
-            radius: computed.borderRadius,
-            text: domElement.textContent?.trim().substring(0, 20) || '',
-            border: computed.border,
-          };
-          
-          store.updateElement(element.id, { 
-            metrics, 
-            style,
-            status: 'copied',
-            domElement 
-          });
-          
+      let capturedCount = 0;
+      for (const element of store.foundElements.slice(0, 20)) { // Limit to 20 for performance
+        try {
+          // Already has styles from fetchDOM, so just mark as copied
+          store.updateElement(element.id, { status: 'copied' });
           capturedCount++;
+        } catch (err) {
+          console.warn(`Failed to capture ${element.id}:`, err);
         }
       }
       
       console.log(`[AiScanOrchestrator] ✅ Snapshot Capture: ${capturedCount} elements captured`);
-      store.addLog('snapshot', '🟣', `Captured styles and metrics for ${capturedCount} elements`);
+      store.addLog('snapshot', '🟣', `Captured styles for ${capturedCount} elements`);
       
       // Log a sample element
-      if (elements.length > 0) {
+      if (store.foundElements.length > 0) {
         const sample = store.foundElements[0];
         if (sample.metrics) {
           store.addLog('snapshot', '🟣', 
@@ -310,6 +406,14 @@ class AiScanOrchestrator {
     if (elementId.includes('input') || elementId.includes('search')) return 'input';
     if (elementId.includes('icon')) return 'icon';
     if (elementId.includes('background') || elementId.includes('bg')) return 'background';
+    return 'button'; // default
+  }
+  
+  private detectTypeFromTag(tag: string): ElementItem['type'] {
+    if (tag === 'button') return 'button';
+    if (tag === 'input' || tag === 'textarea') return 'input';
+    if (tag === 'svg' || tag === 'img') return 'icon';
+    if (tag === 'div' && tag.includes('background')) return 'background';
     return 'button'; // default
   }
   

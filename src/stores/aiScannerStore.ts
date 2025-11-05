@@ -55,6 +55,7 @@ interface AiScannerState {
   // Wallet connection
   walletType: 'WCC' | 'MetaMask' | 'Phantom';
   isWalletConnected: boolean;
+  setWalletConnected: (connected: boolean) => void;
   
   // Progress
   progress: { current: number; total: number; path: string };
@@ -87,7 +88,7 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
   currentElement: null,
   scanLogs: [],
   walletType: 'WCC',
-  isWalletConnected: true,
+  isWalletConnected: false, // Changed to false - requires explicit connection
   progress: { current: 0, total: 0, path: '' },
   aiComments: [],
   
@@ -192,5 +193,14 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
   setWalletType: (type) => {
     set({ walletType: type });
     get().addLog('scanning', '🟢', `Switched to ${type} wallet`);
+  },
+  
+  setWalletConnected: (connected) => {
+    set({ isWalletConnected: connected });
+    if (connected) {
+      get().addLog('verified', '✅', 'Wallet connected successfully');
+    } else {
+      get().addLog('error', '❌', 'Wallet disconnected');
+    }
   }
 }));

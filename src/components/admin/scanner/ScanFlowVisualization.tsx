@@ -4,14 +4,29 @@ import { useAiScannerStore } from '@/stores/aiScannerStore';
 import { cn } from '@/lib/utils';
 
 const FLOW_STEPS = [
-  { id: 'vision', label: 'Vision', icon: '🟢' },
+  { id: 'connect', label: 'Connect Wallet', icon: '🔌' },
+  { id: 'vision', label: 'Fetch DOM', icon: '📡' },
   { id: 'snapshot', label: 'Snapshot', icon: '🔵' },
   { id: 'json-build', label: 'JSON-Build', icon: '🟣' },
   { id: 'verify', label: 'Verify', icon: '✅' }
 ] as const;
 
 export const ScanFlowVisualization = () => {
-  const { scanMode, isScanning } = useAiScannerStore();
+  const { scanMode, isScanning, isWalletConnected } = useAiScannerStore();
+  
+  const getStepStatus = (stepId: string) => {
+    if (stepId === 'connect') {
+      return isWalletConnected ? 'completed' : 'pending';
+    }
+    
+    if (!isScanning) return 'pending';
+    if (scanMode === stepId) return 'active';
+    
+    const stepIndex = FLOW_STEPS.findIndex(s => s.id === stepId);
+    const currentIndex = FLOW_STEPS.findIndex(s => s.id === scanMode);
+    
+    return stepIndex < currentIndex ? 'completed' : 'pending';
+  };
   
   return (
     <div className="p-4 space-y-4">
@@ -19,8 +34,9 @@ export const ScanFlowVisualization = () => {
       
       <div className="relative space-y-6">
         {FLOW_STEPS.map((step, index) => {
-          const isActive = scanMode === step.id;
-          const isPassed = FLOW_STEPS.findIndex(s => s.id === scanMode) > index;
+          const status = getStepStatus(step.id);
+          const isActive = status === 'active';
+          const isPassed = status === 'completed';
           
           return (
             <div key={step.id} className="relative">
@@ -38,31 +54,31 @@ export const ScanFlowVisualization = () => {
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ 
-                  scale: isActive && isScanning ? [1, 1.1, 1] : 1,
+                  scale: isActive ? [1, 1.1, 1] : 1,
                   opacity: 1
                 }}
                 transition={{ 
-                  duration: isActive && isScanning ? 1.5 : 0.3,
-                  repeat: isActive && isScanning ? Infinity : 0
+                  duration: isActive ? 1.5 : 0.3,
+                  repeat: isActive ? Infinity : 0
                 }}
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-lg border transition-all",
-                  isActive && isScanning && "bg-primary/10 border-primary shadow-lg",
+                  isActive && "bg-primary/10 border-primary shadow-lg",
                   isPassed && "bg-muted/50",
-                  !isActive && !isPassed && "bg-background"
+                  status === 'pending' && "bg-background"
                 )}
               >
                 <div className={cn(
                   "flex items-center justify-center w-9 h-9 rounded-full text-lg",
-                  isActive && isScanning && "bg-primary/20",
+                  isActive && "bg-primary/20",
                   isPassed && "bg-muted"
                 )}>
                   {step.icon}
                 </div>
                 <span className={cn(
                   "font-medium text-sm",
-                  isActive && isScanning && "text-primary",
-                  !isActive && !isPassed && "text-muted-foreground"
+                  isActive && "text-primary",
+                  status === 'pending' && "text-muted-foreground"
                 )}>
                   {step.label}
                 </span>

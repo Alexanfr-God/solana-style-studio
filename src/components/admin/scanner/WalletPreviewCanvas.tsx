@@ -1,20 +1,39 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useAiScannerStore } from '@/stores/aiScannerStore';
-import { ElementHighlight } from './ElementHighlight';
+import { WalletCanvasRenderer } from './WalletCanvasRenderer';
+import { WalletConnectionPrompt } from './WalletConnectionPrompt';
+import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
 import { cn } from '@/lib/utils';
 
 export const WalletPreviewCanvas = () => {
-  const { walletType, setWalletType, foundElements, currentScreen } = useAiScannerStore();
+  const { 
+    walletType, 
+    setWalletType, 
+    foundElements, 
+    currentScreen,
+    isWalletConnected 
+  } = useAiScannerStore();
   
-  const walletTypes: Array<'WCC' | 'MetaMask' | 'Phantom'> = ['WCC', 'MetaMask', 'Phantom'];
+  const walletTypes: Array<'WCC' | 'MetaMask' | 'Phantom'> = ['MetaMask', 'Phantom'];
+  
+  const handleConnect = async () => {
+    if (walletType === 'MetaMask' || walletType === 'Phantom') {
+      try {
+        await aiScanOrchestrator.connectWallet(walletType);
+      } catch (error) {
+        console.error('Connection failed:', error);
+      }
+    }
+  };
   
   return (
     <div className="relative h-full flex flex-col">
       {/* Wallet selector */}
       <div className="flex items-center justify-between p-4 border-b bg-background/50">
-        <h3 className="text-sm font-semibold">Preview - {currentScreen}</h3>
-        <div className="flex gap-2">
+        <h3 className="text-sm font-semibold">External Wallet - {currentScreen}</h3>
+        <div className="flex gap-2 items-center">
           {walletTypes.map(type => (
             <Badge
               key={type}
@@ -28,23 +47,28 @@ export const WalletPreviewCanvas = () => {
               {type}
             </Badge>
           ))}
+          
+          {!isWalletConnected && (
+            <Button size="sm" onClick={handleConnect}>
+              Connect
+            </Button>
+          )}
         </div>
       </div>
       
-      {/* Wallet Preview iframe */}
-      <div className="flex-1 relative overflow-hidden bg-muted/20">
-        <iframe
-          src="/?enableThemeProbe=1"
-          className="w-full h-full rounded-lg border-0"
-          title="Wallet Preview"
-        />
-        
-        {/* Element highlights overlay */}
-        <div className="absolute inset-0 pointer-events-none">
-          {foundElements.map(el => (
-            <ElementHighlight key={el.id} element={el} />
-          ))}
-        </div>
+      {/* Canvas Renderer or Connection Prompt */}
+      <div className="flex-1 relative overflow-hidden">
+        {!isWalletConnected ? (
+          <WalletConnectionPrompt 
+            onConnect={handleConnect} 
+            walletType={walletType as 'MetaMask' | 'Phantom'}
+          />
+        ) : (
+          <WalletCanvasRenderer 
+            elements={foundElements}
+            walletType={walletType}
+          />
+        )}
       </div>
     </div>
   );
