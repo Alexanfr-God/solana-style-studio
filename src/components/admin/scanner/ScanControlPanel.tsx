@@ -2,17 +2,27 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Square, ChevronRight, RefreshCw, Download } from 'lucide-react';
 import { useAiScannerStore } from '@/stores/aiScannerStore';
+import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
 
 export const ScanControlPanel = () => {
   const { 
     isScanning, 
-    startScan, 
     stopScan, 
-    nextLayer, 
-    reviewPass2, 
     exportJSON,
     currentLayer
   } = useAiScannerStore();
+  
+  const handleStartScan = async () => {
+    await aiScanOrchestrator.startScan('home');
+  };
+  
+  const handleNextLayer = async () => {
+    await aiScanOrchestrator.nextLayer();
+  };
+  
+  const handleReviewPass2 = async () => {
+    await aiScanOrchestrator.reviewPass2();
+  };
   
   return (
     <div className="space-y-3 p-4">
@@ -20,7 +30,7 @@ export const ScanControlPanel = () => {
       
       {!isScanning ? (
         <Button 
-          onClick={() => startScan('home')} 
+          onClick={handleStartScan} 
           className="w-full gap-2"
           size="sm"
         >
@@ -40,7 +50,7 @@ export const ScanControlPanel = () => {
       )}
       
       <Button 
-        onClick={nextLayer} 
+        onClick={handleNextLayer} 
         variant="outline" 
         className="w-full gap-2"
         size="sm"
@@ -51,7 +61,7 @@ export const ScanControlPanel = () => {
       </Button>
       
       <Button 
-        onClick={reviewPass2} 
+        onClick={handleReviewPass2} 
         variant="outline" 
         className="w-full gap-2"
         size="sm"

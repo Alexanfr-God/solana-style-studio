@@ -3,6 +3,9 @@ import { ScanControlPanel } from '@/components/admin/scanner/ScanControlPanel';
 import { ScanFlowVisualization } from '@/components/admin/scanner/ScanFlowVisualization';
 import { WalletPreviewCanvas } from '@/components/admin/scanner/WalletPreviewCanvas';
 import { ScanLogsPanel } from '@/components/admin/scanner/ScanLogsPanel';
+import { DevToolsPanel } from '@/components/admin/scanner/DevToolsPanel';
+import { AiCommentaryPanel } from '@/components/admin/scanner/AiCommentaryPanel';
+import { FoundElementsList } from '@/components/admin/scanner/FoundElementsList';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -48,41 +51,14 @@ const AdminAiScannerPage = () => {
           {/* Right Panel - DevTools & AI Commentary */}
           <div className="border rounded-lg bg-card overflow-hidden flex flex-col">
             <div className="p-4 border-b">
-              <h3 className="text-sm font-semibold text-foreground/80">DevTools</h3>
+              <h3 className="text-sm font-semibold text-foreground/80">Analysis</h3>
             </div>
-            <div className="flex-1 overflow-auto p-4">
-              <div className="space-y-4">
-                {/* DevTools Panel - Placeholder */}
-                <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground text-center">
-                    Select an element to view metrics
-                  </p>
-                </div>
-                
-                {/* AI Commentary - Placeholder */}
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-2">AI Commentary</h4>
-                  <p className="text-sm text-muted-foreground">
-                    AI analysis will appear here during scanning...
-                  </p>
-                </div>
-                
-                {/* Manual Editor - Placeholder */}
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-2">Vision Tools</h4>
-                  <div className="space-y-2">
-                    <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                      GPT-Vision
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                      DevTools-API
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                      Snapshot Analyzer
-                    </Button>
-                  </div>
-                </div>
+            <div className="flex-1 overflow-auto">
+              <DevToolsPanel />
+              <div className="px-4">
+                <AiCommentaryPanel />
               </div>
+              <FoundElementsList />
             </div>
           </div>
         </div>
