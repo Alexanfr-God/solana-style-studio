@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical } from 'lucide-react';
 import { useAiScannerStore } from '@/stores/aiScannerStore';
 import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
+import { WalletConnectionPrompt } from './WalletConnectionPrompt';
 import { toast } from 'sonner';
 
 export const ScanControlPanel = () => {
@@ -10,19 +12,23 @@ export const ScanControlPanel = () => {
     isScanning,
     isWalletConnected,
     walletType,
+    targetMode,
     stopScan, 
     exportJSON,
     currentLayer,
-    addLog
+    addLog,
+    setTargetMode
   } = useAiScannerStore();
   
+  const [selectedWallet, setSelectedWallet] = useState<'MetaMask' | 'Phantom' | 'WS'>('MetaMask');
+  
   const handleConnect = async () => {
-    if (walletType === 'MetaMask' || walletType === 'Phantom') {
-      try {
-        await aiScanOrchestrator.connectWallet(walletType);
-      } catch (error) {
-        console.error('Connection failed:', error);
-      }
+    try {
+      await aiScanOrchestrator.connectWallet(selectedWallet);
+      toast.success(`✅ Connected to ${selectedWallet}`);
+    } catch (error) {
+      console.error('Connection failed:', error);
+      toast.error(`❌ Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
@@ -136,7 +142,47 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
     <div className="space-y-3 p-4">
       <h3 className="text-sm font-semibold text-foreground/80 mb-4">Scan Controls</h3>
       
-      {!isScanning ? (
+      {/* Mode Toggle */}
+      <div className="flex gap-2 mb-4">
+        <Button 
+          variant={targetMode === 'local' ? 'default' : 'outline'}
+          onClick={() => setTargetMode('local')}
+          size="sm"
+          className="flex-1"
+        >
+          Local Wallet
+        </Button>
+        <Button 
+          variant={targetMode === 'external' ? 'default' : 'outline'}
+          onClick={() => setTargetMode('external')}
+          size="sm"
+          className="flex-1"
+        >
+          External Wallet
+        </Button>
+      </div>
+      
+      {/* Wallet Selector (External Mode Only) */}
+      {targetMode === 'external' && (
+        <Select value={selectedWallet} onValueChange={(value) => setSelectedWallet(value as any)}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select wallet" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="MetaMask">MetaMask (Chrome)</SelectItem>
+            <SelectItem value="Phantom">Phantom (Chrome)</SelectItem>
+            <SelectItem value="WS">Web Wallet (WebSocket)</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+      
+      {/* Connection Prompt or Scan Button */}
+      {targetMode === 'external' && !isWalletConnected ? (
+        <WalletConnectionPrompt 
+          onConnect={handleConnect} 
+          walletType={selectedWallet as 'MetaMask' | 'Phantom'} 
+        />
+      ) : !isScanning ? (
         <Button 
           onClick={handleStartScan} 
           className="w-full gap-2"

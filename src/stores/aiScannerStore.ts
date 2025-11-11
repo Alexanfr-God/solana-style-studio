@@ -58,6 +58,9 @@ interface AiScannerState {
   currentLayer: number;
   scanMode: ScanMode;
   
+  // Scan target mode
+  targetMode: 'local' | 'external';
+  
   // Results
   foundElements: ElementItem[];
   currentElement: ElementItem | null;
@@ -94,6 +97,7 @@ interface AiScannerState {
   clearLogs: () => void;
   setWalletType: (type: 'WS' | 'MetaMask' | 'Phantom') => void;
   updateWsMetrics: (metrics: Partial<WsMetrics>) => void;
+  setTargetMode: (mode: 'local' | 'external') => void;
 }
 
 export const useAiScannerStore = create<AiScannerState>((set, get) => ({
@@ -110,6 +114,7 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
   progress: { current: 0, total: 0, path: '' },
   aiComments: [],
   wsMetrics: null,
+  targetMode: 'local',
   
   // Actions
   startScan: (screen = 'home') => {
@@ -253,5 +258,10 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
         ...metrics
       }
     }));
+  },
+  
+  setTargetMode: (mode) => {
+    set({ targetMode: mode });
+    get().addLog('scanning', '🟢', `Switched to ${mode} mode`);
   }
 }));

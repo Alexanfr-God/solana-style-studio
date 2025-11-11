@@ -65,19 +65,24 @@ class AiScanOrchestrator {
   }
   
   /**
-   * Start the complete AI scan process (using local WalletContainer)
+   * Start the complete AI scan process
    */
   async startScan(screen: 'login' | 'home' = 'home') {
     this.currentScreen = screen;
     const store = this.store.getState();
+    const { targetMode } = store;
     
-    console.log(`[AiScanOrchestrator] 🚀 Starting scan on ${screen} screen (local WalletContainer)`);
+    console.log(`[AiScanOrchestrator] 🚀 Starting ${targetMode} scan on ${screen} screen`);
     
     try {
       store.startScan(screen);
       
-      // Phase 1: Scan Local DOM (WalletContainer)
-      await this.scanLocalDOM();
+      // Phase 1: Scan DOM (local or external based on mode)
+      if (targetMode === 'local') {
+        await this.scanLocalDOM();
+      } else {
+        await this.scanExternalDOM();
+      }
       
       // Phase 2: AI Vision Analysis
       await this.runVisionAnalysis();
@@ -173,6 +178,67 @@ class AiScanOrchestrator {
       
     } catch (error) {
       console.error('[AiScanOrchestrator] ❌ Failed to scan local DOM:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Phase 1b: Scan EXTERNAL wallet (MetaMask, Phantom) via Bridge
+   */
+  private async scanExternalDOM() {
+    const store = this.store.getState();
+    
+    if (!this.bridge?.isConnected()) {
+      throw new Error('External wallet not connected. Please connect first.');
+    }
+    
+    console.log('[AiScanOrchestrator] 📡 Scanning external wallet DOM...');
+    store.setScanMode('vision');
+    store.addLog('scanning', '🟢', 'Scanning external wallet...');
+    
+    try {
+      const domStructure = await this.bridge.fetchDOM();
+      
+      console.log(`[AiScanOrchestrator] ✅ Found ${domStructure.allElements.length} elements`);
+      store.addLog('found', '🔵', `Found ${domStructure.allElements.length} elements`);
+      
+      // Convert to ElementItem[]
+      domStructure.allElements.forEach((el, index) => {
+        const element: ElementItem = {
+          id: el.id,
+          role: el.tag,
+          type: this.detectElementType(el.tag),
+          status: 'found',
+          style: {
+            bg: el.styles.backgroundColor || 'transparent',
+            radius: el.styles.borderRadius || '0px',
+            border: el.styles.border || 'none',
+            text: el.text
+          },
+          metrics: {
+            width: el.rect.width,
+            height: el.rect.height,
+            bg: el.styles.backgroundColor,
+            font: el.styles.fontFamily,
+            radius: el.styles.borderRadius
+          }
+        };
+        
+        store.addElement(element);
+        
+        if (index < 5) {
+          store.addLog('found', '🔵', `${el.selector} → ${el.text}`);
+        }
+      });
+      
+      if (domStructure.allElements.length > 5) {
+        store.addLog('found', '🔵', `... and ${domStructure.allElements.length - 5} more`);
+      }
+      
+      await this.delay(500);
+      
+    } catch (error) {
+      console.error('[AiScanOrchestrator] ❌ Failed to scan external DOM:', error);
       throw error;
     }
   }
