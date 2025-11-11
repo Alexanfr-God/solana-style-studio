@@ -65,31 +65,24 @@ class AiScanOrchestrator {
   }
   
   /**
-   * Start the complete AI scan process
+   * Start the complete AI scan process (using local WalletContainer)
    */
   async startScan(screen: 'login' | 'home' = 'home') {
-    // Check if wallet is connected
-    if (!this.bridge?.isConnected()) {
-      const error = '❌ Wallet not connected! Please connect to a wallet first.';
-      console.error('[AiScanOrchestrator]', error);
-      toast.error(error);
-      throw new Error(error);
-    }
     this.currentScreen = screen;
     const store = this.store.getState();
     
-    console.log(`[AiScanOrchestrator] 🚀 Starting scan on ${screen} screen`);
+    console.log(`[AiScanOrchestrator] 🚀 Starting scan on ${screen} screen (local WalletContainer)`);
     
     try {
       store.startScan(screen);
       
-      // Phase 1: Fetch Real DOM from external wallet
-      await this.fetchRealDOM();
+      // Phase 1: Scan Local DOM (WalletContainer)
+      await this.scanLocalDOM();
       
       // Phase 2: AI Vision Analysis
       await this.runVisionAnalysis();
       
-      // Phase 3: Snapshot Capture (elements already have styles from fetchDOM)
+      // Phase 3: Snapshot Capture (elements already have styles from scanLocalDOM)
       await this.runSnapshotCapture();
       
       // Phase 4: JSON Build
@@ -114,59 +107,73 @@ class AiScanOrchestrator {
   }
   
   /**
-   * Phase 1: Fetch Real DOM from external wallet via Bridge
+   * Phase 1: Scan Local WalletContainer DOM (not external wallet!)
    */
-  private async fetchRealDOM() {
+  private async scanLocalDOM() {
     const store = this.store.getState();
     
-    console.log('[AiScanOrchestrator] 📡 Fetching DOM from external wallet...');
+    console.log('[AiScanOrchestrator] 📡 Scanning local WalletContainer DOM...');
     store.setScanMode('vision');
-    store.addLog('scanning', '🟢', 'Fetching DOM structure from wallet...');
+    store.addLog('scanning', '🟢', 'Scanning local wallet DOM...');
     
     try {
-      const domStructure = await this.bridge!.fetchDOM();
+      // Find wallet-root in current document
+      const walletRoot = document.querySelector('[data-wallet-root]') as HTMLElement;
       
-      console.log(`[AiScanOrchestrator] ✅ Fetched ${domStructure.allElements.length} elements`);
-      store.addLog('found', '🔵', `Fetched ${domStructure.allElements.length} elements from ${domStructure.walletType}`);
+      if (!walletRoot) {
+        throw new Error('WalletContainer not found! Make sure [data-wallet-root] exists.');
+      }
       
-      // Convert WalletElement[] to ElementItem[]
-      domStructure.allElements.forEach((walletEl, index) => {
+      // Collect all elements with data-element-id
+      const elements = walletRoot.querySelectorAll('[data-element-id]');
+      
+      console.log(`[AiScanOrchestrator] ✅ Found ${elements.length} elements in local DOM`);
+      store.addLog('found', '🔵', `Found ${elements.length} elements in WalletContainer`);
+      
+      // Convert to ElementItem[]
+      elements.forEach((el, index) => {
+        const htmlEl = el as HTMLElement;
+        const elementId = htmlEl.getAttribute('data-element-id') || `element-${index}`;
+        const computedStyle = window.getComputedStyle(htmlEl);
+        const rect = htmlEl.getBoundingClientRect();
+        
         const element: ElementItem = {
-          id: walletEl.id || `element-${index}`,
-          role: walletEl.selector,
-          type: this.detectTypeFromTag(walletEl.tag),
+          id: elementId,
+          role: elementId,
+          type: this.detectElementType(elementId),
           status: 'found',
           style: {
-            bg: walletEl.styles.backgroundColor,
-            radius: walletEl.styles.borderRadius,
-            border: walletEl.styles.border,
-            text: walletEl.text
+            bg: computedStyle.backgroundColor,
+            radius: computedStyle.borderRadius,
+            border: computedStyle.border,
+            text: htmlEl.textContent?.trim().substring(0, 50) || ''
           },
           metrics: {
-            width: walletEl.rect.width,
-            height: walletEl.rect.height,
-            bg: walletEl.styles.backgroundColor,
-            font: walletEl.styles.fontFamily,
-            radius: walletEl.styles.borderRadius
-          }
+            width: rect.width,
+            height: rect.height,
+            bg: computedStyle.backgroundColor,
+            font: computedStyle.fontFamily,
+            radius: computedStyle.borderRadius
+          },
+          domElement: htmlEl
         };
         
         store.addElement(element);
         
-        if (index < 3) { // Log first 3
-          store.addLog('found', '🔵', `Found ${walletEl.tag}.${walletEl.classes.join('.')} → ${walletEl.text.substring(0, 20)}`);
+        if (index < 5) {
+          store.addLog('found', '🔵', `${elementId} → ${element.style.text}`);
         }
       });
       
-      if (domStructure.allElements.length > 3) {
-        store.addLog('found', '🔵', `... and ${domStructure.allElements.length - 3} more elements`);
+      if (elements.length > 5) {
+        store.addLog('found', '🔵', `... and ${elements.length - 5} more elements`);
       }
       
       await this.delay(500);
       
     } catch (error) {
-      console.error('[AiScanOrchestrator] ❌ Failed to fetch DOM:', error);
-      throw new Error(`Failed to fetch DOM: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('[AiScanOrchestrator] ❌ Failed to scan local DOM:', error);
+      throw error;
     }
   }
   
@@ -182,16 +189,31 @@ class AiScanOrchestrator {
     store.addLog('vision', '🟢', 'Starting AI vision analysis...');
     
     try {
-      // 1. Capture screenshot from bridge
+      // 1. Capture screenshot from local WalletContainer
       console.log('[AiScanOrchestrator] 📸 Capturing screenshot...');
       store.addLog('vision', '🟢', 'Capturing wallet screenshot...');
       
-      const screenshotDataUrl = await this.bridge!.fetchScreenshot('home');
+      const walletRoot = document.querySelector('[data-wallet-root]') as HTMLElement;
+      if (!walletRoot) {
+        console.warn('[AiScanOrchestrator] ⚠️ WalletContainer not found, skipping AI vision');
+        store.addLog('error', '❌', 'WalletContainer not found, skipping AI vision');
+        return;
+      }
+      
+      // Use html2canvas to capture screenshot
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(walletRoot, {
+        backgroundColor: null,
+        scale: 2,
+        logging: false
+      });
+      
+      const screenshotDataUrl = canvas.toDataURL('image/png');
       
       if (!screenshotDataUrl) {
         console.warn('[AiScanOrchestrator] ⚠️ No screenshot available, skipping AI vision');
         store.addLog('error', '❌', 'Screenshot unavailable, skipping AI vision');
-        return; // Non-blocking - continue without AI vision
+        return;
       }
       
       console.log('[AiScanOrchestrator] ✅ Screenshot captured');

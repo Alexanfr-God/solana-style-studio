@@ -1,84 +1,31 @@
-import React, { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { useAiScannerStore } from '@/stores/aiScannerStore';
-import { WalletCanvasRenderer } from './WalletCanvasRenderer';
-import { WalletConnectionPrompt } from './WalletConnectionPrompt';
-import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import WalletContainer from '@/components/wallet/WalletContainer';
+import { ElementHighlight } from './ElementHighlight';
 
 export const WalletPreviewCanvas = () => {
-  const { 
-    walletType, 
-    setWalletType, 
-    foundElements, 
-    currentScreen,
-    isWalletConnected 
-  } = useAiScannerStore();
-  
-  const [isConnecting, setIsConnecting] = useState(false);
-  
-  const walletTypes: Array<'WS' | 'MetaMask' | 'Phantom'> = ['WS', 'MetaMask', 'Phantom'];
-  
-  const handleConnect = async () => {
-    setIsConnecting(true);
-    try {
-      if (walletType === 'WS') {
-        await aiScanOrchestrator.connectWallet('WS');
-      } else if (walletType === 'MetaMask' || walletType === 'Phantom') {
-        await aiScanOrchestrator.connectWallet(walletType);
-      }
-      toast.success(`✅ Connected to ${walletType}`);
-    } catch (error) {
-      console.error('Connection failed:', error);
-      // Error toast is already shown by orchestrator with detailed message
-    } finally {
-      setIsConnecting(false);
-    }
-  };
+  const { foundElements, currentScreen } = useAiScannerStore();
   
   return (
     <div className="relative h-full flex flex-col">
-      {/* Wallet selector */}
+      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-background/50">
-        <h3 className="text-sm font-semibold">External Wallet - {currentScreen}</h3>
-        <div className="flex gap-2 items-center">
-          {walletTypes.map(type => (
-            <Badge
-              key={type}
-              variant={walletType === type ? 'default' : 'outline'}
-              className={cn(
-                "cursor-pointer transition-all",
-                walletType === type && "shadow-sm"
-              )}
-              onClick={() => setWalletType(type)}
-            >
-              {type}
-            </Badge>
-          ))}
-          
-          {!isWalletConnected && (
-            <Button size="sm" onClick={handleConnect} disabled={isConnecting}>
-              {isConnecting ? 'Connecting...' : 'Connect'}
-            </Button>
-          )}
+        <h3 className="text-sm font-semibold">Local WalletContainer - {currentScreen}</h3>
+        <div className="text-xs text-muted-foreground">
+          {foundElements.length} elements found
         </div>
       </div>
       
-      {/* Canvas Renderer or Connection Prompt */}
-      <div className="flex-1 relative overflow-hidden">
-        {!isWalletConnected ? (
-          <WalletConnectionPrompt 
-            onConnect={handleConnect} 
-            walletType={walletType as 'MetaMask' | 'Phantom'}
-          />
-        ) : (
-          <WalletCanvasRenderer 
-            elements={foundElements}
-            walletType={walletType}
-          />
-        )}
+      {/* WalletContainer Preview with Element Highlights */}
+      <div className="flex-1 relative overflow-auto bg-muted/20 flex items-center justify-center p-8">
+        <div className="relative" data-wallet-container>
+          <WalletContainer />
+          
+          {/* Overlay element highlights */}
+          {foundElements.map(element => (
+            <ElementHighlight key={element.id} element={element} />
+          ))}
+        </div>
       </div>
     </div>
   );

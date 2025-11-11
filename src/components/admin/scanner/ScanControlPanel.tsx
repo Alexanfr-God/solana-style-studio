@@ -28,9 +28,13 @@ export const ScanControlPanel = () => {
   
   const handleStartScan = async () => {
     try {
+      console.log('[ScanControlPanel] 🚀 Starting scan...');
+      addLog('scanning', '🟢', 'Starting AI scan of WalletContainer...');
       await aiScanOrchestrator.startScan('home');
+      toast.success('✅ Scan completed successfully!');
     } catch (error) {
-      console.error('Scan failed:', error);
+      console.error('[ScanControlPanel] ❌ Scan failed:', error);
+      toast.error(`❌ Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
@@ -132,24 +136,11 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
     <div className="space-y-3 p-4">
       <h3 className="text-sm font-semibold text-foreground/80 mb-4">Scan Controls</h3>
       
-      {!isWalletConnected && (
-        <Button 
-          onClick={handleConnect} 
-          className="w-full gap-2"
-          size="sm"
-          variant="default"
-        >
-          <Wallet className="h-4 w-4" />
-          Connect Wallet
-        </Button>
-      )}
-      
       {!isScanning ? (
         <Button 
           onClick={handleStartScan} 
           className="w-full gap-2"
           size="sm"
-          disabled={!isWalletConnected}
         >
           <Play className="h-4 w-4" />
           Start Scan
