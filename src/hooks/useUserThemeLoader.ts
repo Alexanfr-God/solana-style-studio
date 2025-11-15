@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const useUserThemeLoader = () => {
   const { walletProfile, isAuthenticated } = useExtendedWallet();
-  const { setTheme, setLoading } = useThemeStore();
+  const { setTheme, setLoading, lastUserUpdateTime } = useThemeStore();
   
   useEffect(() => {
     const loadUserTheme = async () => {
@@ -38,6 +38,16 @@ export const useUserThemeLoader = () => {
         }
         
         if (data?.theme_data) {
+          // ✅ NEW: Check if theme was recently updated by user
+          const timeSinceLastUpdate = Date.now() - lastUserUpdateTime;
+          const DEBOUNCE_MS = 3000; // 3 seconds
+          
+          if (timeSinceLastUpdate < DEBOUNCE_MS) {
+            console.log(`[UserThemeLoader] ⏸️ SKIPPING DB load - theme was updated ${timeSinceLastUpdate}ms ago by user`);
+            console.log('[UserThemeLoader] This prevents race condition overwriting user selection');
+            return;
+          }
+          
           console.log('[UserThemeLoader] ⚠️ ABOUT TO OVERWRITE THEME FROM DB');
           console.log('[UserThemeLoader] Current activeThemeId:', useThemeStore.getState().activeThemeId);
           console.log('[UserThemeLoader] DB theme version:', data.version);
