@@ -155,7 +155,14 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   }, [elements]);
 
   const handleUnlock = () => {
+    console.log('🔓 [WPC] handleUnlock CALLED');
+    console.log('🔓 [WPC] Current layer BEFORE:', currentLayer);
+    console.log('🔓 [WPC] showAccountSidebar BEFORE:', useWalletCustomizationStore.getState().showAccountSidebar);
+    
     unlockWallet();
+    
+    console.log('🔓 [WPC] Current layer AFTER:', useWalletCustomizationStore.getState().currentLayer);
+    console.log('🔓 [WPC] showAccountSidebar AFTER:', useWalletCustomizationStore.getState().showAccountSidebar);
   };
 
   const handleLock = () => {

@@ -54,6 +54,8 @@ const WalletHomeLayer = () => {
   };
 
   const handleAvatarClick = () => {
+    console.log('👤 [HomeLayer] handleAvatarClick CALLED');
+    console.log('👤 [HomeLayer] Opening Account Sidebar');
     setShowAccountSidebar(true);
   };
 
