@@ -372,21 +372,26 @@ export function setupMappingWatcher(getTheme: () => any) {
       )
     );
     
-    if (lockScreenAdded && lastTheme) {
+    if (lockScreenAdded) {
+      // ✅ FIX: Get theme directly from store instead of potentially outdated lastTheme
+      const currentTheme = useThemeStore.getState().theme;
+      
+      if (!currentTheme) {
+        console.warn('[Runtime] ⚠️ No theme in store, skipping Lock Screen theme application');
+        return;
+      }
+      
       // ✅ DIAGNOSTIC LOGS
       console.log('👁️ [RME MutationObserver] Lock Screen detected!');
-      console.log('👁️ [RME MutationObserver] lastTheme name:', lastTheme?.name);
-      console.log('👁️ [RME MutationObserver] lastTheme lockLayer bg:', lastTheme?.lockLayer?.backgroundColor);
-      console.log('👁️ [RME MutationObserver] lastTheme lockLayer bgImage:', lastTheme?.lockLayer?.backgroundImage);
+      console.log('👁️ [RME MutationObserver] Applying theme from store:', currentTheme?.name);
+      console.log('👁️ [RME MutationObserver] Theme lockLayer bg:', currentTheme?.lockLayer?.backgroundColor);
+      console.log('👁️ [RME MutationObserver] Theme lockLayer bgImage:', currentTheme?.lockLayer?.backgroundImage);
+      console.log('👁️ [RME MutationObserver] (Previous lastTheme was:', lastTheme?.name, ')');
       
-      const currentStoreTheme = useThemeStore.getState().theme;
-      console.log('👁️ [RME MutationObserver] Current ThemeStore theme name:', currentStoreTheme?.name);
-      console.log('👁️ [RME MutationObserver] Current ThemeStore theme lockLayer bg:', currentStoreTheme?.lockLayer?.backgroundColor);
-      
-      console.log('[Runtime] 🔄 Lock Screen mounted, reapplying theme');
+      console.log('[Runtime] 🔄 Lock Screen mounted, reapplying theme from store');
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          applyThemeToDOM(lastTheme);
+          applyThemeToDOM(currentTheme);
         });
       });
     }
