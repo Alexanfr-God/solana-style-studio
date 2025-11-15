@@ -35,6 +35,9 @@ interface ThemeState {
   // Circuit breaker
   _busy: boolean;
   
+  // Race condition protection
+  lastUserUpdateTime: number;
+  
   // Actions
   setTheme: (theme: any) => void;
   setActiveThemeId: (themeId: string | null) => void;
@@ -69,6 +72,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   isLoading: false,
   error: null,
   _busy: false,
+  lastUserUpdateTime: 0,
 
   setActiveThemeId: (themeId: string | null) => {
     console.log('[STORE:theme setActive]', themeId, 'instanceId:', THEME_STORE_INSTANCE_ID);
@@ -111,7 +115,8 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     set({
       _busy: true,
       theme,
-      error: null
+      error: null,
+      lastUserUpdateTime: Date.now()
     });
     
     setTimeout(() => {

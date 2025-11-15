@@ -8,6 +8,8 @@ import { useThemeStore, THEME_STORE_INSTANCE_ID } from '@/state/themeStore';
 import { CUST_STORE_INSTANCE_ID } from '@/stores/customizationStore';
 import { toast } from 'sonner';
 import { withRenderGuard } from '@/utils/guard';
+import { supabase } from '@/integrations/supabase/client';
+import { useExtendedWallet } from '@/context/WalletContextProvider';
 
 const ThemeSelectorCoverflow: React.FC = () => {
   const guard = withRenderGuard("ThemeSelectorCoverflow");
@@ -31,6 +33,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
   } = useThemeSelector();
   
   const { setTheme, setActiveThemeId } = useThemeStore();
+  const { walletProfile } = useExtendedWallet();
   const [loadingThemes, setLoadingThemes] = useState<Set<string>>(new Set());
   
   const [isApplying, setIsApplying] = useState(false);
@@ -50,8 +53,8 @@ const ThemeSelectorCoverflow: React.FC = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // FIXED: Simplified theme application with proper error handling
-  const applyJsonTheme = useCallback((themeData: any, themeId: string) => {
+  // FIXED: Simplified theme application with proper error handling + immediate DB save
+  const applyJsonTheme = useCallback(async (themeData: any, themeId: string) => {
     console.log('[CF] 🎯 USER ACTION - Applying theme:', themeId);
     console.log('[CF] applyJsonTheme START', { themeId, hasData: !!themeData });
     
@@ -75,11 +78,34 @@ const ThemeSelectorCoverflow: React.FC = () => {
       
       console.log('[CF] ✅ Theme applied BY USER to themeStore');
       
+      // ✅ NEW: Immediately save to DB to prevent race condition
+      if (walletProfile?.wallet_address) {
+        console.log('[CF] 💾 Saving theme to DB immediately...');
+        const { error } = await supabase
+          .from('user_themes')
+          .upsert({
+            user_id: walletProfile.wallet_address,
+            theme_data: themeData,
+            version: 1,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
+        
+        if (error) {
+          console.error('[CF] ❌ Failed to save theme to DB:', error);
+        } else {
+          console.log('[CF] ✅ Theme saved to DB successfully');
+        }
+      } else {
+        console.log('[CF] ℹ️ No wallet connected, skipping DB save');
+      }
+      
     } catch (error) {
       console.error('[CF] 💥 Error applying theme:', error);
       throw error;
     }
-  }, [setTheme, setActiveThemeId]);
+  }, [setTheme, setActiveThemeId, walletProfile?.wallet_address]);
 
   // Apply active theme when initialized
   useEffect(() => {
