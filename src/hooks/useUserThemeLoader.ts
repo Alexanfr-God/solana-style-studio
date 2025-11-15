@@ -38,10 +38,16 @@ export const useUserThemeLoader = () => {
         }
         
         if (data?.theme_data) {
-          console.log('[UserThemeLoader] ✅ User theme loaded from DB');
-          console.log('[UserThemeLoader] Theme version:', data.version);
-          console.log('[UserThemeLoader] Theme keys:', Object.keys(data.theme_data).slice(0, 5));
+          console.log('[UserThemeLoader] ⚠️ ABOUT TO OVERWRITE THEME FROM DB');
+          console.log('[UserThemeLoader] Current activeThemeId:', useThemeStore.getState().activeThemeId);
+          console.log('[UserThemeLoader] DB theme version:', data.version);
+          console.log('[UserThemeLoader] DB theme keys:', Object.keys(data.theme_data as any).slice(0, 5));
+          console.log('[UserThemeLoader] DB lockLayer bg:', (data.theme_data as any)?.lockLayer?.backgroundColor);
+          console.log('[UserThemeLoader] DB lockLayer bgImage:', (data.theme_data as any)?.lockLayer?.backgroundImage);
+          
           setTheme(data.theme_data);
+          
+          console.log('[UserThemeLoader] ✅ Theme overwritten from DB');
         } else {
           console.log('[UserThemeLoader] ℹ️ No user theme found, keeping default');
         }

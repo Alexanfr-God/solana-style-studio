@@ -52,6 +52,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
 
   // FIXED: Simplified theme application with proper error handling
   const applyJsonTheme = useCallback((themeData: any, themeId: string) => {
+    console.log('[CF] 🎯 USER ACTION - Applying theme:', themeId);
     console.log('[CF] applyJsonTheme START', { themeId, hasData: !!themeData });
     
     if (!themeData || typeof themeData !== 'object') {
@@ -64,13 +65,15 @@ const ThemeSelectorCoverflow: React.FC = () => {
       hasLockLayer: !!themeData.lockLayer,
       hasHomeLayer: !!themeData.homeLayer
     });
+    console.log('[CF] Theme lockLayer bg:', themeData.lockLayer?.backgroundColor);
+    console.log('[CF] Theme lockLayer bgImage:', themeData.lockLayer?.backgroundImage);
     
     try {
       // Apply to themeStore (single source of truth)
       setTheme(themeData);
       setActiveThemeId(themeId);
       
-      console.log('[CF] ✅ Theme applied successfully to themeStore');
+      console.log('[CF] ✅ Theme applied BY USER to themeStore');
       
     } catch (error) {
       console.error('[CF] 💥 Error applying theme:', error);
