@@ -179,6 +179,13 @@ export function applyValueToNodeUnified(
 // ============================================================================
 
 export async function applyThemeToDOM(theme: any): Promise<AppliedStyle[]> {
+  // ✅ DIAGNOSTIC LOGS
+  console.log('🔥 [RME] applyThemeToDOM CALLED');
+  console.log('🔥 [RME] Theme name:', theme?.name);
+  console.log('🔥 [RME] Theme lockLayer bg:', theme?.lockLayer?.backgroundColor);
+  console.log('🔥 [RME] Theme lockLayer bgImage:', theme?.lockLayer?.backgroundImage);
+  console.log('🔥 [RME] Call stack:', new Error().stack?.split('\n').slice(1, 4).join('\n'));
+  
   const results: AppliedStyle[] = [];
   
   try {
@@ -310,8 +317,17 @@ export function setupMappingWatcher(getTheme: () => any) {
   const handleThemeUpdate = (event: CustomEvent) => {
     const { theme, updatedPath, forceFullApply } = event.detail;
     
+    // ✅ DIAGNOSTIC LOGS
+    console.log('🎯 [RME] theme-updated EVENT received');
+    console.log('🎯 [RME] Event theme name:', theme?.name);
+    console.log('🎯 [RME] Event theme lockLayer bg:', theme?.lockLayer?.backgroundColor);
+    console.log('🎯 [RME] Previous lastTheme name:', lastTheme?.name);
+    console.log('🎯 [RME] forceFullApply:', forceFullApply);
+    console.log('🎯 [RME] updatedPath:', updatedPath);
+    
     if (!theme) return;
     lastTheme = theme;
+    console.log('🎯 [RME] lastTheme UPDATED to:', theme?.name);
     
     // Check if Lock Layer is currently visible
     const isLockLayerVisible = !!document.querySelector('[data-element-id="unlock-screen-container"]');
@@ -357,6 +373,16 @@ export function setupMappingWatcher(getTheme: () => any) {
     );
     
     if (lockScreenAdded && lastTheme) {
+      // ✅ DIAGNOSTIC LOGS
+      console.log('👁️ [RME MutationObserver] Lock Screen detected!');
+      console.log('👁️ [RME MutationObserver] lastTheme name:', lastTheme?.name);
+      console.log('👁️ [RME MutationObserver] lastTheme lockLayer bg:', lastTheme?.lockLayer?.backgroundColor);
+      console.log('👁️ [RME MutationObserver] lastTheme lockLayer bgImage:', lastTheme?.lockLayer?.backgroundImage);
+      
+      const currentStoreTheme = useThemeStore.getState().theme;
+      console.log('👁️ [RME MutationObserver] Current ThemeStore theme name:', currentStoreTheme?.name);
+      console.log('👁️ [RME MutationObserver] Current ThemeStore theme lockLayer bg:', currentStoreTheme?.lockLayer?.backgroundColor);
+      
       console.log('[Runtime] 🔄 Lock Screen mounted, reapplying theme');
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
