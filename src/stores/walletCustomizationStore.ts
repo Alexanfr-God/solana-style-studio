@@ -176,7 +176,16 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
 
   setCurrentLayer: (layer) => set({ currentLayer: layer }),
   
-  unlockWallet: () => set({ currentLayer: 'wallet' }),
+  unlockWallet: () => {
+    console.log('🔐 [STORE] unlockWallet CALLED');
+    console.log('🔐 [STORE] BEFORE - currentLayer:', get().currentLayer);
+    console.log('🔐 [STORE] BEFORE - showAccountSidebar:', get().showAccountSidebar);
+    
+    set({ currentLayer: 'wallet' });
+    
+    console.log('🔐 [STORE] AFTER - currentLayer:', get().currentLayer);
+    console.log('🔐 [STORE] AFTER - showAccountSidebar:', get().showAccountSidebar);
+  },
 
   // Manual-only style updates (no auto-sync with useThemeStore)
   setWalletStyle: (newStyle) => {
@@ -279,7 +288,13 @@ export const useWalletCustomizationStore = create<WalletCustomizationState>((set
   setUploadedImage: (imageUrl) => set({ uploadedImage: imageUrl }),
 
   setActiveAccount: (accountId) => set({ activeAccountId: accountId }),
-  setShowAccountSidebar: (show) => set({ showAccountSidebar: show }),
+  setShowAccountSidebar: (show) => {
+    const callStack = new Error().stack;
+    console.log('👥 [STORE] setShowAccountSidebar CALLED with:', show);
+    console.log('👥 [STORE] Call stack:', callStack?.split('\n').slice(1, 4).join('\n'));
+    
+    set({ showAccountSidebar: show });
+  },
   setShowAccountDropdown: (show) => set({ showAccountDropdown: show }),
 
   getStyleForComponent: (component: string) => {
