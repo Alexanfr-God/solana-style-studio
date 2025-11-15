@@ -86,8 +86,15 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     
     updateCounter++;
     const callStack = new Error().stack;
-    console.log(`[STORE:theme setTheme] (#${updateCounter}) instanceId:`, THEME_STORE_INSTANCE_ID, 'from:', callStack?.split('\n')[2]);
-    console.log('[STORE:theme setTheme]', theme && Object.keys(theme));
+    const callerInfo = callStack?.split('\n')[2] || 'unknown';
+    
+    console.log(`[STORE:theme] 🔥 setTheme called (#${updateCounter})`);
+    console.log(`[STORE:theme] 📞 Called from:`, callerInfo);
+    console.log(`[STORE:theme] Instance ID:`, THEME_STORE_INSTANCE_ID);
+    console.log(`[STORE:theme] Current activeThemeId:`, state.activeThemeId);
+    console.log('[STORE:theme] Theme keys:', theme && Object.keys(theme).slice(0, 5));
+    console.log('[STORE:theme] lockLayer bg:', theme?.lockLayer?.backgroundColor);
+    console.log('[STORE:theme] lockLayer bgImage:', theme?.lockLayer?.backgroundImage);
     
     try {
       const currentThemeStr = JSON.stringify(state.theme);
@@ -112,7 +119,6 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     }, 0);
     
     console.log(`[STORE:theme] ✅ Theme set successfully (#${updateCounter})`);
-    console.log('[STORE:theme] Theme preview keys:', theme ? Object.keys(theme).slice(0, 5) : []);
     
     // Dispatch event for runtime mapping engine
     window.dispatchEvent(new CustomEvent('theme-updated', { 
