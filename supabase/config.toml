@@ -96,7 +96,7 @@ verify_jwt = false
 [functions.ai-vision-analyze]
 verify_jwt = false
 
-[functions.rate-nft]
+[functions.rate_nft]
 verify_jwt = false
 
 [functions.create-listing]
