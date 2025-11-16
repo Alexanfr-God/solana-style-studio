@@ -1,0 +1,164 @@
+/**
+ * Finalize Auction Handler
+ */
+
+import type { FinalizeAuctionRequest, ApiResponse } from '../types.ts';
+import { validateFinalizeAuction, canFinalizeAuction } from '../utils/validation.ts';
+import { fetchAuction, updateAuction, updateNFT } from '../utils/database.ts';
+import { STUB_MODE } from '../utils/constants.ts';
+
+export async function handleFinalizeAuction(
+  request: FinalizeAuctionRequest
+): Promise<ApiResponse> {
+  console.log('[finalize-auction] 🎯 Request:', request);
+
+  try {
+    // Validate input
+    validateFinalizeAuction(request);
+
+    const { auction_id } = request;
+
+    console.log('[finalize-auction] 📡 Fetching auction...');
+
+    // Fetch auction
+    const auction = await fetchAuction(auction_id, 'active');
+    if (!auction) {
+      throw new Error('Auction not found or already finalized');
+    }
+
+    // Validate finalization
+    canFinalizeAuction(auction);
+
+    // Check if there's a winner
+    if (!auction.winner_wallet) {
+      console.log('[finalize-auction] ⚠️ No bids, cancelling auction');
+
+      // No winner, cancel auction
+      await updateAuction(auction_id, {
+        status: 'cancelled'
+      });
+
+      // Update NFT
+      await updateNFT(auction.nft_mint, {
+        is_listed: false,
+        price_lamports: null
+      });
+
+      return {
+        success: true,
+        data: {
+          result: 'cancelled',
+          message: 'No bids received, auction cancelled'
+        }
+      };
+    }
+
+    console.log('[finalize-auction] ✅ Winner found:', auction.winner_wallet);
+
+    // Generate transaction signature
+    const txSignature = STUB_MODE
+      ? `stub_auction_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      : null; // In production, this would be the actual Solana transaction signature
+
+    if (STUB_MODE) {
+      console.log('[finalize-auction] 💰 Processing payment (STUB MODE)...');
+    } else {
+      console.log('[finalize-auction] 💰 Processing Solana transaction...');
+      // TODO: Implement Solana transaction
+      // - Transfer NFT to winner
+      // - Transfer SOL to seller (minus marketplace fee)
+    }
+
+    console.log('[finalize-auction] 🔄 Finalizing auction...');
+
+    // Update auction as finished
+    await updateAuction(auction_id, {
+      status: 'finished',
+      tx_signature: txSignature
+    });
+
+    console.log('[finalize-auction] ✅ Auction finalized');
+    console.log('[finalize-auction] 🔄 Transferring NFT to winner...');
+
+    // Update NFT (transfer to winner)
+    await updateNFT(auction.nft_mint, {
+      owner_address: auction.winner_wallet,
+      is_listed: false,
+      price_lamports: null
+    });
+
+    console.log('[finalize-auction] ✅ Success' + (STUB_MODE ? ' (STUB MODE)' : ''));
+
+    return {
+      success: true,
+      data: {
+        result: 'sold',
+        winner: auction.winner_wallet,
+        final_price: auction.current_price_lamports,
+        tx_signature: txSignature,
+        ...(STUB_MODE && {
+          warning: 'STUB MODE: No real blockchain transaction'
+        })
+      }
+    };
+  } catch (error) {
+    console.error('[finalize-auction] ❌ Error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Auto-finalize expired auctions (called by cron)
+ */
+export async function autoFinalizeExpiredAuctions(): Promise<ApiResponse> {
+  console.log('[auto-finalize] 🔄 Starting auto-finalize...');
+
+  try {
+    const { fetchExpiredAuctions } = await import('../utils/database.ts');
+    const expiredAuctions = await fetchExpiredAuctions();
+
+    console.log(`[auto-finalize] Found ${expiredAuctions.length} expired auctions`);
+
+    const results = {
+      total: expiredAuctions.length,
+      finalized: 0,
+      cancelled: 0,
+      errors: 0
+    };
+
+    for (const auction of expiredAuctions) {
+      try {
+        const result = await handleFinalizeAuction({ auction_id: auction.id });
+        
+        if (result.success) {
+          if (result.data?.result === 'sold') {
+            results.finalized++;
+          } else if (result.data?.result === 'cancelled') {
+            results.cancelled++;
+          }
+        } else {
+          results.errors++;
+        }
+      } catch (error) {
+        console.error(`[auto-finalize] Failed to finalize ${auction.id}:`, error);
+        results.errors++;
+      }
+    }
+
+    console.log('[auto-finalize] ✅ Completed:', results);
+
+    return {
+      success: true,
+      data: results
+    };
+  } catch (error) {
+    console.error('[auto-finalize] ❌ Error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
