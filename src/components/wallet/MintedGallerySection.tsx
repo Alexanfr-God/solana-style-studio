@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { ExternalLink, Sparkles } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
+import { ChainBadge } from '@/components/nft/ChainBadge';
 
 // Convert IPFS URI to HTTP gateway URL
 function ipfsToHttp(uri: string): string {
@@ -30,6 +31,7 @@ type MintRow = {
   id: string;
   created_at: string;
   network: string;
+  blockchain: string;
   tx_sig: string;
   mint_address: string;
   owner_address: string;
@@ -384,14 +386,24 @@ export default function MintedGallerySection() {
             >
               {/* Preview Image */}
               <div className="relative aspect-[2/1] bg-black/20 overflow-hidden">
-              {/* WCC Badge */}
+              {/* Top-right badges */}
               <div className="absolute top-2 right-2 z-10 flex gap-1">
+                {/* Chain Badge */}
+                <ChainBadge 
+                  chain={(item.blockchain || 'solana') as 'solana' | 'ethereum'} 
+                  network={item.network as 'devnet' | 'mainnet'}
+                  size="sm"
+                  animated={true}
+                />
+                
+                {/* WCC Logo Badge */}
                 <img 
                   src="/lovable-uploads/WCC.png" 
                   alt="WCC" 
                   className="w-8 h-8 rounded-full bg-black/50 p-1 backdrop-blur-sm"
                 />
-                {/* Legacy v1 indicator for old NFTs without properties.theme */}
+                
+                {/* V1 Legacy Indicator Badge */}
                 {!item.metadata_uri?.includes('properties') && (
                   <div className="w-8 h-8 rounded-full bg-orange-500/80 backdrop-blur-sm flex items-center justify-center">
                     <span className="text-[10px] font-bold text-white">v1</span>
