@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { ExternalLink, Sparkles } from 'lucide-react';
+import { ExternalLink, Sparkles, Tag, ShoppingBag } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
 import { ChainBadge } from '@/components/nft/ChainBadge';
 import { RatingStars } from '@/components/nft/RatingStars';
+import { ListNftModal } from '@/components/nft/ListNftModal';
+import { BuyNftModal } from '@/components/nft/BuyNftModal';
+import { MARKETPLACE_CONFIG } from '@/config/marketplace';
 
 // Convert IPFS URI to HTTP gateway URL
 function ipfsToHttp(uri: string): string {
@@ -41,6 +44,9 @@ type MintRow = {
   image_url?: string | null;
   rating_avg?: number;
   rating_count?: number;
+  is_listed?: boolean;
+  price_lamports?: number;
+  listing_id?: string;
 };
 
 export default function MintedGallerySection() {
@@ -55,15 +61,21 @@ export default function MintedGallerySection() {
   const [selectedNetwork, setSelectedNetwork] = useState<'all' | 'devnet' | 'mainnet'>('all');
   const [showWccOnly, setShowWccOnly] = useState(false);
   const [minRating, setMinRating] = useState<number>(0);
+  const [showListedOnly, setShowListedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Marketplace modals
+  const [listModalOpen, setListModalOpen] = useState(false);
+  const [buyModalOpen, setBuyModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MintRow | null>(null);
   
   const pageSize = 24;
 
   useEffect(() => {
     fetchMints();
-  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, page, address]);
+  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, page, address]);
 
   async function fetchMints() {
     setIsLoading(true);
@@ -103,6 +115,11 @@ export default function MintedGallerySection() {
       // Filter by minimum rating
       if (minRating > 0) {
         query = query.gte('rating_avg', minRating);
+      }
+
+      // Filter listed only
+      if (showListedOnly) {
+        query = query.eq('is_listed', true);
       }
 
       // Sort
