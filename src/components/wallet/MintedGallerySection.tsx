@@ -9,6 +9,7 @@ import { ExternalLink, Sparkles } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
 import { ChainBadge } from '@/components/nft/ChainBadge';
+import { RatingStars } from '@/components/nft/RatingStars';
 
 // Convert IPFS URI to HTTP gateway URL
 function ipfsToHttp(uri: string): string {
@@ -38,6 +39,8 @@ type MintRow = {
   metadata_uri: string;
   theme_name?: string | null;
   image_url?: string | null;
+  rating_avg?: number;
+  rating_count?: number;
 };
 
 export default function MintedGallerySection() {
@@ -47,10 +50,11 @@ export default function MintedGallerySection() {
   const [items, setItems] = useState<MintRow[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyMyMints, setOnlyMyMints] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'rating'>('newest');
   const [selectedBlockchain, setSelectedBlockchain] = useState<'all' | 'solana' | 'ethereum'>('all');
   const [selectedNetwork, setSelectedNetwork] = useState<'all' | 'devnet' | 'mainnet'>('all');
   const [showWccOnly, setShowWccOnly] = useState(false);
+  const [minRating, setMinRating] = useState<number>(0);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +63,7 @@ export default function MintedGallerySection() {
 
   useEffect(() => {
     fetchMints();
-  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, page, address]);
+  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, page, address]);
 
   async function fetchMints() {
     setIsLoading(true);
@@ -96,10 +100,19 @@ export default function MintedGallerySection() {
         query = query.ilike('theme_name', 'WCC:%');
       }
 
+      // Filter by minimum rating
+      if (minRating > 0) {
+        query = query.gte('rating_avg', minRating);
+      }
+
       // Sort
-      query = query.order('created_at', { 
-        ascending: sortOrder === 'oldest' 
-      });
+      if (sortOrder === 'rating') {
+        query = query.order('rating_avg', { ascending: false, nullsFirst: false });
+      } else {
+        query = query.order('created_at', { 
+          ascending: sortOrder === 'oldest' 
+        });
+      }
 
       // Pagination
       const from = (page - 1) * pageSize;
@@ -241,6 +254,32 @@ export default function MintedGallerySection() {
     }
   }
 
+  async function handleRateNFT(nftMint: string, rating: number) {
+    if (!address) {
+      toast.error('Connect wallet to rate NFTs');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('rate-nft', {
+        body: {
+          nft_mint: nftMint,
+          user_wallet: address,
+          rating
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Rated ${rating} ⭐`);
+      // Refresh mints to get updated rating
+      fetchMints();
+    } catch (error) {
+      console.error('[Rate NFT] Error:', error);
+      toast.error('Failed to rate NFT');
+    }
+  }
+
   function formatAddress(addr: string, head = 4, tail = 4) {
     if (addr.length <= head + tail) return addr;
     return `${addr.slice(0, head)}…${addr.slice(-tail)}`;
@@ -353,12 +392,35 @@ export default function MintedGallerySection() {
               <SelectItem value="mainnet">Mainnet</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Min Rating Filter */}
+          <Select
+            value={minRating.toString()}
+            onValueChange={(value) => {
+              setMinRating(Number(value));
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-40 bg-white/5 border-white/10 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">All Ratings</SelectItem>
+              <SelectItem value="2">⭐ 2+ Stars</SelectItem>
+              <SelectItem value="3">⭐⭐ 3+ Stars</SelectItem>
+              <SelectItem value="4">⭐⭐⭐ 4+ Stars</SelectItem>
+              <SelectItem value="4.5">⭐⭐⭐⭐ 4.5+ Stars</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Sort */}
+        {/* Sort Order */}
         <Select
           value={sortOrder}
-          onValueChange={(value: 'newest' | 'oldest') => setSortOrder(value)}
+          onValueChange={(value: any) => {
+            setSortOrder(value);
+            setPage(1);
+          }}
         >
           <SelectTrigger className="w-40 bg-white/5 border-white/10 text-white">
             <SelectValue />
@@ -366,6 +428,7 @@ export default function MintedGallerySection() {
           <SelectContent>
             <SelectItem value="newest">Newest First</SelectItem>
             <SelectItem value="oldest">Oldest First</SelectItem>
+            <SelectItem value="rating">Rating ↓</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -426,9 +489,32 @@ export default function MintedGallerySection() {
 
               {/* Info */}
               <div className="p-4 space-y-2">
-                <h3 className="font-semibold text-white truncate">
-                  {item.theme_name || 'Unnamed Theme'}
-                </h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-white truncate flex-1">
+                    {item.theme_name || 'Unnamed Theme'}
+                  </h3>
+                  
+                  {/* Rating Display (readonly) */}
+                  <RatingStars
+                    value={item.rating_avg || 0}
+                    count={item.rating_count || 0}
+                    readonly={true}
+                    size="sm"
+                    showCount={true}
+                  />
+                </div>
+                
+                {/* Interactive Rating */}
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <span className="text-xs text-gray-400">Rate this NFT:</span>
+                  <RatingStars
+                    value={item.rating_avg || 0}
+                    onChange={(rating) => handleRateNFT(item.mint_address, rating)}
+                    readonly={false}
+                    size="sm"
+                    showCount={false}
+                  />
+                </div>
                 
                 <div className="text-xs text-gray-400 space-y-1">
                   <div>

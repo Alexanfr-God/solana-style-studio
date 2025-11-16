@@ -96,3 +96,6 @@ verify_jwt = false
 [functions.ai-vision-analyze]
 verify_jwt = false
 
+[functions.rate-nft]
+verify_jwt = false
+
