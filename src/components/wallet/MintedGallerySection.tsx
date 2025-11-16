@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { ExternalLink, Sparkles, Tag, ShoppingBag } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
-import { ChainBadge } from '@/components/nft/ChainBadge';
+import { RibbonBadge } from '@/components/nft/RibbonBadge';
 import { RatingStars } from '@/components/nft/RatingStars';
 import { ListNftModal } from '@/components/nft/ListNftModal';
 import { BuyNftModal } from '@/components/nft/BuyNftModal';
@@ -567,7 +567,7 @@ export default function MintedGallerySection() {
               className="overflow-hidden bg-white/5 border-white/10 hover:bg-white/10 hover:border-purple-500/50 transition-all group"
             >
               {/* Preview Image */}
-              <div className="relative aspect-[2/1] bg-black/20 overflow-hidden">
+              <div className="relative w-full h-[220px] sm:h-[240px] lg:h-[260px] bg-black/20 overflow-hidden rounded-t-xl">
               {/* For Sale Badge */}
               {item.is_listed && (
                 <div className="absolute top-2 left-2 z-10 bg-green-500/90 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
@@ -576,36 +576,33 @@ export default function MintedGallerySection() {
                 </div>
               )}
               
-              {/* Top-right badges */}
-              <div className="absolute top-2 right-2 z-10 flex gap-1">
-                {/* Chain Badge */}
-                <ChainBadge 
-                  chain={(item.blockchain || 'solana') as 'solana' | 'ethereum'} 
-                  network={item.network as 'devnet' | 'mainnet'}
-                  size="sm"
-                  animated={true}
-                />
-                
-                {/* WCC Logo Badge */}
+              {/* Ribbon Badge - single chain indicator in top-right corner */}
+              <RibbonBadge 
+                chain={(item.blockchain || 'solana') as 'solana' | 'ethereum'}
+                network={item.network as 'devnet' | 'mainnet'}
+              />
+
+              {/* WCC Logo - moved to bottom-left corner */}
+              <div className="absolute bottom-2 left-2 z-10">
                 <img 
                   src="/lovable-uploads/WCC.png" 
                   alt="WCC" 
-                  className="w-8 h-8 rounded-full bg-black/50 p-1 backdrop-blur-sm"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black/30 p-1 backdrop-blur-sm opacity-60 hover:opacity-90 transition-opacity"
                 />
-                
-                {/* V1 Legacy Indicator Badge */}
-                {!item.metadata_uri?.includes('properties') && (
-                  <div className="w-8 h-8 rounded-full bg-orange-500/80 backdrop-blur-sm flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-white">v1</span>
-                  </div>
-                )}
               </div>
+
+              {/* V1 Legacy Badge - moved next to WCC */}
+              {!item.metadata_uri?.includes('properties') && (
+                <div className="absolute bottom-2 left-9 sm:left-10 z-10 px-1.5 py-0.5 rounded bg-orange-500/60 backdrop-blur-sm">
+                  <span className="text-[8px] sm:text-[9px] font-semibold text-white uppercase tracking-wide">Legacy</span>
+                </div>
+              )}
                 
                 {item.image_url ? (
                   <img
                     src={item.image_url}
                     alt={item.theme_name || 'Theme'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white/30">
