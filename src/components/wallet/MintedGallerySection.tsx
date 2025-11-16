@@ -278,7 +278,7 @@ export default function MintedGallerySection() {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('rate-nft', {
+      const { data, error } = await supabase.functions.invoke('rate-nft', {
         body: {
           nft_mint: nftMint,
           user_wallet: address,
@@ -289,8 +289,18 @@ export default function MintedGallerySection() {
       if (error) throw error;
 
       toast.success(`Rated ${rating} ⭐`);
-      // Refresh mints to get updated rating
-      fetchMints();
+      
+      // Optimize: update only this card if API returned updated_stats
+      if (data?.updated_stats) {
+        setItems(prev => prev.map(item => 
+          item.mint_address === nftMint 
+            ? { ...item, rating_avg: data.updated_stats.rating_avg, rating_count: data.updated_stats.rating_count }
+            : item
+        ));
+      } else {
+        // Fallback: refresh all cards
+        fetchMints();
+      }
     } catch (error) {
       console.error('[Rate NFT] Error:', error);
       toast.error('Failed to rate NFT');
