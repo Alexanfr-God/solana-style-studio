@@ -108,3 +108,6 @@ verify_jwt = false
 [functions.cancel-listing]
 verify_jwt = false
 
+[functions.auction]
+verify_jwt = false
+
