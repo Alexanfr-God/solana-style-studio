@@ -315,7 +315,7 @@ export default function MintedGallerySection() {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('create-listing', {
+      const { error } = await supabase.functions.invoke('create_listing', {
         body: {
           nft_mint: nftMint,
           seller_wallet: address,
@@ -340,7 +340,7 @@ export default function MintedGallerySection() {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('buy-nft', {
+      const { error } = await supabase.functions.invoke('buy_nft', {
         body: {
           listing_id: listingId,
           buyer_wallet: address
@@ -366,7 +366,7 @@ export default function MintedGallerySection() {
     if (!confirm('Cancel this listing?')) return;
 
     try {
-      const { error } = await supabase.functions.invoke('cancel-listing', {
+      const { error } = await supabase.functions.invoke('cancel_listing', {
         body: {
           listing_id: listingId,
           seller_wallet: address

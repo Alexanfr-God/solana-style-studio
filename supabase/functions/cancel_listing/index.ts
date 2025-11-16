@@ -13,7 +13,7 @@ serve(async (req) => {
   try {
     const { listing_id, seller_wallet } = await req.json();
     
-    console.log('[cancel-listing] 🎯 Request:', { listing_id, seller_wallet });
+    console.log('[cancel_listing] 🎯 Request:', { listing_id, seller_wallet });
     
     if (!listing_id || !seller_wallet) {
       throw new Error('Missing required fields: listing_id, seller_wallet');
@@ -26,7 +26,7 @@ serve(async (req) => {
       throw new Error('Missing Supabase configuration');
     }
     
-    console.log('[cancel-listing] 📡 Fetching listing...');
+    console.log('[cancel_listing] 📡 Fetching listing...');
     
     // Get listing
     const listingResponse = await fetch(
@@ -56,8 +56,8 @@ serve(async (req) => {
       throw new Error('Only the seller can cancel this listing');
     }
     
-    console.log('[cancel-listing] ✅ Listing found');
-    console.log('[cancel-listing] 🔄 Cancelling listing...');
+    console.log('[cancel_listing] ✅ Listing found');
+    console.log('[cancel_listing] 🔄 Cancelling listing...');
     
     // Update listing as cancelled
     const updateListingResponse = await fetch(
@@ -78,12 +78,12 @@ serve(async (req) => {
     
     if (!updateListingResponse.ok) {
       const error = await updateListingResponse.text();
-      console.error('[cancel-listing] ❌ Failed to update listing:', error);
+      console.error('[cancel_listing] ❌ Failed to update listing:', error);
       throw new Error(`Failed to update listing: ${error}`);
     }
     
-    console.log('[cancel-listing] ✅ Listing cancelled');
-    console.log('[cancel-listing] 🔄 Updating NFT status...');
+    console.log('[cancel_listing] ✅ Listing cancelled');
+    console.log('[cancel_listing] 🔄 Updating NFT status...');
     
     // Update minted_themes
     const updateNftResponse = await fetch(
@@ -105,18 +105,18 @@ serve(async (req) => {
     
     if (!updateNftResponse.ok) {
       const error = await updateNftResponse.text();
-      console.error('[cancel-listing] ❌ Failed to update NFT:', error);
+      console.error('[cancel_listing] ❌ Failed to update NFT:', error);
       throw new Error(`Failed to update NFT: ${error}`);
     }
     
-    console.log('[cancel-listing] ✅ Success');
+    console.log('[cancel_listing] ✅ Success');
     
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[cancel-listing] ❌ Error:', error);
+    console.error('[cancel_listing] ❌ Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

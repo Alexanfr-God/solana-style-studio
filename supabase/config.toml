@@ -99,13 +99,13 @@ verify_jwt = false
 [functions.rate_nft]
 verify_jwt = false
 
-[functions.create-listing]
+[functions.create_listing]
 verify_jwt = false
 
-[functions.buy-nft]
+[functions.buy_nft]
 verify_jwt = false
 
-[functions.cancel-listing]
+[functions.cancel_listing]
 verify_jwt = false
 
 [functions.auction]
