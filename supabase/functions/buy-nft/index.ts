@@ -1,5 +1,4 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,84 +13,112 @@ serve(async (req) => {
   try {
     const { listing_id, buyer_wallet } = await req.json();
     
-    console.log('[buy-nft] Request:', { listing_id, buyer_wallet });
+    console.log('[buy-nft] 🎯 Request:', { listing_id, buyer_wallet });
     
     if (!listing_id || !buyer_wallet) {
       throw new Error('Missing required fields: listing_id, buyer_wallet');
     }
     
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !serviceKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+    
+    console.log('[buy-nft] 📡 Fetching listing...');
     
     // Get listing
-    const { data: listing, error: fetchError } = await supabase
-      .from('nft_listings')
-      .select('*')
-      .eq('id', listing_id)
-      .eq('status', 'active')
-      .single();
+    const listingResponse = await fetch(
+      `${supabaseUrl}/rest/v1/nft_listings?id=eq.${listing_id}&status=eq.active&select=*`,
+      {
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+        }
+      }
+    );
     
-    if (fetchError || !listing) {
-      console.error('[buy-nft] Listing not found:', fetchError);
+    if (!listingResponse.ok) {
+      throw new Error('Failed to fetch listing');
+    }
+    
+    const listings = await listingResponse.json();
+    
+    if (listings.length === 0) {
       throw new Error('Listing not found or inactive');
     }
     
-    // Validation
+    const listing = listings[0];
+    
+    // Validation: buyer cannot be seller
     if (listing.seller_wallet === buyer_wallet) {
       throw new Error('Cannot buy your own NFT');
     }
     
-    // ===== STUB VERSION: No real Solana transactions =====
-    // TODO: Replace with actual Solana transaction:
-    // 1. Transfer price_lamports * 0.9 to seller_wallet
-    // 2. Transfer price_lamports * 0.1 to PLATFORM_FEE_WALLET
-    // 3. Transfer NFT ownership from seller to buyer
+    console.log('[buy-nft] ✅ Listing found');
+    console.log('[buy-nft] 💰 Processing purchase (STUB MODE)...');
     
-    const stub_tx_signature = `stub_${Date.now()}_${listing_id.slice(0, 8)}`;
+    // STUB: In production, here would be Solana transaction
+    const stubTxSignature = `stub_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    console.log('[buy-nft] STUB MODE: Simulating purchase:', {
-      nft_mint: listing.nft_mint,
-      price_lamports: listing.price_lamports,
-      seller_receives: listing.seller_receives_lamports,
-      platform_fee: listing.fee_lamports,
-      buyer: buyer_wallet
-    });
+    console.log('[buy-nft] 🔄 Updating listing to sold...');
     
     // Update listing as sold
-    const { error: updateListingError } = await supabase
-      .from('nft_listings')
-      .update({
-        status: 'sold',
-        buyer_wallet,
-        tx_signature: stub_tx_signature,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', listing_id);
+    const updateListingResponse = await fetch(
+      `${supabaseUrl}/rest/v1/nft_listings?id=eq.${listing_id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'sold',
+          buyer_wallet,
+          tx_signature: stubTxSignature,
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
     
-    if (updateListingError) {
-      console.error('[buy-nft] Update listing error:', updateListingError);
-      throw updateListingError;
+    if (!updateListingResponse.ok) {
+      const error = await updateListingResponse.text();
+      console.error('[buy-nft] ❌ Failed to update listing:', error);
+      throw new Error(`Failed to update listing: ${error}`);
     }
     
-    // Update owner in minted_themes
-    const { error: updateOwnerError } = await supabase
-      .from('minted_themes')
-      .update({
-        owner_address: buyer_wallet,
-        is_listed: false,
-        price_lamports: null,
-        listing_id: null
-      })
-      .eq('mint_address', listing.nft_mint);
+    console.log('[buy-nft] ✅ Listing marked as sold');
+    console.log('[buy-nft] 🔄 Updating NFT owner...');
     
-    if (updateOwnerError) {
-      console.error('[buy-nft] Update owner error:', updateOwnerError);
-      throw updateOwnerError;
+    // Update minted_themes
+    const updateNftResponse = await fetch(
+      `${supabaseUrl}/rest/v1/minted_themes?mint_address=eq.${listing.nft_mint}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          owner_address: buyer_wallet,
+          is_listed: false,
+          price_lamports: null,
+          listing_id: null
+        })
+      }
+    );
+    
+    if (!updateNftResponse.ok) {
+      const error = await updateNftResponse.text();
+      console.error('[buy-nft] ❌ Failed to update NFT:', error);
+      throw new Error(`Failed to update NFT: ${error}`);
     }
     
-    console.log('[buy-nft] Success:', stub_tx_signature);
+    console.log('[buy-nft] ✅ Purchase complete (STUB MODE)');
+    console.log('[buy-nft] ⚠️ Note: No actual blockchain transaction was made');
     
     return new Response(
       JSON.stringify({ 
