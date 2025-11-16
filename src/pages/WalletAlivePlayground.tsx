@@ -12,14 +12,19 @@ import { useUserThemeLoader } from '@/hooks/useUserThemeLoader';
 import ExportToIpfsButton from '@/components/wallet/ExportToIpfsButton';
 import { useThemeStore } from '@/state/themeStore';
 import MintedGallerySection from '@/components/wallet/MintedGallerySection';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import { MessageCircle } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const WalletAlivePlayground = () => {
   // Load user theme from database when wallet connects
   useUserThemeLoader();
   
   const activeThemeId = useThemeStore(state => state.activeThemeId);
+  const isMobile = useIsMobile();
   
   const [selectedElementFromPreview, setSelectedElementFromPreview] = useState<string>('');
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const handleElementSelectFromPreview = (elementSelector: string) => {
     setSelectedElementFromPreview(elementSelector);
@@ -33,15 +38,32 @@ const WalletAlivePlayground = () => {
         {/* Header */}
         <Header />
         
-        {/* Fixed Chat Panel - Right Side */}
-        <div className="fixed right-4 top-20 bottom-4 w-[360px] z-40">
+        {/* Mobile: Floating Chat Button + Drawer */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setIsChatOpen(true)}
+            className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
+            aria-label="Open chat"
+          >
+            <MessageCircle className="w-6 h-6 text-white" />
+          </button>
+          
+          <Drawer open={isChatOpen} onOpenChange={setIsChatOpen}>
+            <DrawerContent className="h-[85vh]">
+              <ThemeChat />
+            </DrawerContent>
+          </Drawer>
+        </div>
+        
+        {/* Desktop: Fixed Chat Panel - Right Side */}
+        <div className="hidden md:block fixed right-4 top-20 bottom-4 w-[360px] z-40">
           <div className="h-full rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm shadow-xl overflow-hidden">
             <ThemeChat />
           </div>
         </div>
         
-        {/* Main Content - with right padding to avoid chat overlap */}
-        <main className="flex-grow pt-20 pb-6 px-6 pr-[392px]">
+        {/* Main Content - responsive padding */}
+        <main className="flex-grow pt-20 pb-6 px-4 sm:px-6 md:pr-[392px]">
           <div className="max-w-full mx-auto">
             {/* Title Section */}
             <div className="text-center mb-8">
