@@ -278,7 +278,7 @@ export default function MintedGallerySection() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('rate-nft', {
+      const { data, error } = await supabase.functions.invoke('rate_nft', {
         body: {
           nft_mint: nftMint,
           user_wallet: address,

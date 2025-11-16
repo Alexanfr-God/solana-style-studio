@@ -23,7 +23,7 @@ serve(async (req) => {
 
     // Validate required fields
     if (!nft_mint || !user_wallet || rating === undefined) {
-      console.error('[rate-nft] Missing required fields:', { nft_mint, user_wallet, rating });
+      console.error('[rate_nft] Missing required fields:', { nft_mint, user_wallet, rating });
       return new Response(
         JSON.stringify({ error: 'Missing required fields: nft_mint, user_wallet, rating' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -32,14 +32,14 @@ serve(async (req) => {
 
     // Validate rating range
     if (typeof rating !== 'number' || rating < 1 || rating > 5) {
-      console.error('[rate-nft] Invalid rating value:', rating);
+      console.error('[rate_nft] Invalid rating value:', rating);
       return new Response(
         JSON.stringify({ error: 'Rating must be a number between 1 and 5' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[rate-nft] Processing rating:', { nft_mint, user_wallet, rating });
+    console.log('[rate_nft] Processing rating:', { nft_mint, user_wallet, rating });
 
     // UPSERT rating (insert new or update existing)
     const { data, error } = await supabase
@@ -56,14 +56,14 @@ serve(async (req) => {
       .single();
 
     if (error) {
-      console.error('[rate-nft] Database error:', error);
+      console.error('[rate_nft] Database error:', error);
       return new Response(
         JSON.stringify({ error: 'Failed to save rating', details: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[rate-nft] Rating saved successfully:', data);
+    console.log('[rate_nft] Rating saved successfully:', data);
 
     // Fetch updated statistics (calculated by trigger)
     const { data: nftData, error: nftError } = await supabase
@@ -73,10 +73,10 @@ serve(async (req) => {
       .maybeSingle();
 
     if (nftError) {
-      console.warn('[rate-nft] Failed to fetch updated stats:', nftError);
+      console.warn('[rate_nft] Failed to fetch updated stats:', nftError);
     }
 
-    console.log('[rate-nft] Updated stats:', nftData);
+    console.log('[rate_nft] Updated stats:', nftData);
 
     // Return success response
     return new Response(
@@ -90,7 +90,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[rate-nft] Unexpected error:', error);
+    console.error('[rate_nft] Unexpected error:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 
