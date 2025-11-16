@@ -13,7 +13,7 @@ serve(async (req) => {
   try {
     const { listing_id, buyer_wallet } = await req.json();
     
-    console.log('[buy-nft] 🎯 Request:', { listing_id, buyer_wallet });
+    console.log('[buy_nft] 🎯 Request:', { listing_id, buyer_wallet });
     
     if (!listing_id || !buyer_wallet) {
       throw new Error('Missing required fields: listing_id, buyer_wallet');
@@ -26,7 +26,7 @@ serve(async (req) => {
       throw new Error('Missing Supabase configuration');
     }
     
-    console.log('[buy-nft] 📡 Fetching listing...');
+    console.log('[buy_nft] 📡 Fetching listing...');
     
     // Get listing
     const listingResponse = await fetch(
@@ -56,13 +56,13 @@ serve(async (req) => {
       throw new Error('Cannot buy your own NFT');
     }
     
-    console.log('[buy-nft] ✅ Listing found');
-    console.log('[buy-nft] 💰 Processing purchase (STUB MODE)...');
+    console.log('[buy_nft] ✅ Listing found');
+    console.log('[buy_nft] 💰 Processing purchase (STUB MODE)...');
     
     // STUB: In production, here would be Solana transaction
     const stubTxSignature = `stub_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    console.log('[buy-nft] 🔄 Updating listing to sold...');
+    console.log('[buy_nft] 🔄 Updating listing to sold...');
     
     // Update listing as sold
     const updateListingResponse = await fetch(
@@ -85,12 +85,12 @@ serve(async (req) => {
     
     if (!updateListingResponse.ok) {
       const error = await updateListingResponse.text();
-      console.error('[buy-nft] ❌ Failed to update listing:', error);
+      console.error('[buy_nft] ❌ Failed to update listing:', error);
       throw new Error(`Failed to update listing: ${error}`);
     }
     
-    console.log('[buy-nft] ✅ Listing marked as sold');
-    console.log('[buy-nft] 🔄 Updating NFT owner...');
+    console.log('[buy_nft] ✅ Listing marked as sold');
+    console.log('[buy_nft] 🔄 Updating NFT owner...');
     
     // Update minted_themes
     const updateNftResponse = await fetch(
@@ -113,12 +113,12 @@ serve(async (req) => {
     
     if (!updateNftResponse.ok) {
       const error = await updateNftResponse.text();
-      console.error('[buy-nft] ❌ Failed to update NFT:', error);
+      console.error('[buy_nft] ❌ Failed to update NFT:', error);
       throw new Error(`Failed to update NFT: ${error}`);
     }
     
-    console.log('[buy-nft] ✅ Purchase complete (STUB MODE)');
-    console.log('[buy-nft] ⚠️ Note: No actual blockchain transaction was made');
+    console.log('[buy_nft] ✅ Purchase complete (STUB MODE)');
+    console.log('[buy_nft] ⚠️ Note: No actual blockchain transaction was made');
     
     return new Response(
       JSON.stringify({ 
@@ -129,7 +129,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[buy-nft] Error:', error);
+    console.error('[buy_nft] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

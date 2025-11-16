@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     const { nft_mint, seller_wallet, price_lamports } = await req.json();
     
-    console.log('[create-listing] 🎯 Request:', { nft_mint, seller_wallet, price_lamports });
+    console.log('[create_listing] 🎯 Request:', { nft_mint, seller_wallet, price_lamports });
     
     // Validation
     if (!nft_mint || !seller_wallet || !price_lamports) {
@@ -33,7 +33,7 @@ serve(async (req) => {
       throw new Error('Missing Supabase configuration');
     }
     
-    console.log('[create-listing] 📡 Checking NFT ownership...');
+    console.log('[create_listing] 📡 Checking NFT ownership...');
     
     // Check NFT ownership and listing status
     const nftResponse = await fetch(
@@ -66,8 +66,8 @@ serve(async (req) => {
       throw new Error('NFT is already listed');
     }
     
-    console.log('[create-listing] ✅ Ownership verified');
-    console.log('[create-listing] 💾 Creating listing...');
+    console.log('[create_listing] ✅ Ownership verified');
+    console.log('[create_listing] 💾 Creating listing...');
     
     // Create listing
     const listingResponse = await fetch(`${supabaseUrl}/rest/v1/nft_listings`, {
@@ -88,15 +88,15 @@ serve(async (req) => {
     
     if (!listingResponse.ok) {
       const error = await listingResponse.text();
-      console.error('[create-listing] ❌ Failed to create listing:', error);
+      console.error('[create_listing] ❌ Failed to create listing:', error);
       throw new Error(`Failed to create listing: ${error}`);
     }
     
     const listings = await listingResponse.json();
     const listing = listings[0];
     
-    console.log('[create-listing] ✅ Listing created:', listing.id);
-    console.log('[create-listing] 🔄 Updating NFT status...');
+    console.log('[create_listing] ✅ Listing created:', listing.id);
+    console.log('[create_listing] 🔄 Updating NFT status...');
     
     // Update minted_themes
     const updateResponse = await fetch(
@@ -118,18 +118,18 @@ serve(async (req) => {
     
     if (!updateResponse.ok) {
       const error = await updateResponse.text();
-      console.error('[create-listing] ❌ Failed to update NFT:', error);
+      console.error('[create_listing] ❌ Failed to update NFT:', error);
       throw new Error(`Failed to update NFT: ${error}`);
     }
     
-    console.log('[create-listing] ✅ Success');
+    console.log('[create_listing] ✅ Success');
     
     return new Response(
       JSON.stringify({ success: true, listing }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[create-listing] Error:', error);
+    console.error('[create_listing] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
