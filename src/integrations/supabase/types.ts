@@ -176,10 +176,13 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          is_listed: boolean | null
+          listing_id: string | null
           metadata_uri: string
           mint_address: string
           network: string
           owner_address: string
+          price_lamports: number | null
           rating_avg: number | null
           rating_count: number | null
           theme_name: string | null
@@ -191,10 +194,13 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_listed?: boolean | null
+          listing_id?: string | null
           metadata_uri: string
           mint_address: string
           network?: string
           owner_address: string
+          price_lamports?: number | null
           rating_avg?: number | null
           rating_count?: number | null
           theme_name?: string | null
@@ -206,15 +212,71 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_listed?: boolean | null
+          listing_id?: string | null
           metadata_uri?: string
           mint_address?: string
           network?: string
           owner_address?: string
+          price_lamports?: number | null
           rating_avg?: number | null
           rating_count?: number | null
           theme_name?: string | null
           tx_sig?: string
           user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "minted_themes_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "nft_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nft_listings: {
+        Row: {
+          buyer_wallet: string | null
+          created_at: string
+          currency: string
+          fee_lamports: number | null
+          id: string
+          nft_mint: string
+          price_lamports: number
+          seller_receives_lamports: number | null
+          seller_wallet: string
+          status: string
+          tx_signature: string | null
+          updated_at: string
+        }
+        Insert: {
+          buyer_wallet?: string | null
+          created_at?: string
+          currency?: string
+          fee_lamports?: number | null
+          id?: string
+          nft_mint: string
+          price_lamports: number
+          seller_receives_lamports?: number | null
+          seller_wallet: string
+          status?: string
+          tx_signature?: string | null
+          updated_at?: string
+        }
+        Update: {
+          buyer_wallet?: string | null
+          created_at?: string
+          currency?: string
+          fee_lamports?: number | null
+          id?: string
+          nft_mint?: string
+          price_lamports?: number
+          seller_receives_lamports?: number | null
+          seller_wallet?: string
+          status?: string
+          tx_signature?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
