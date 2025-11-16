@@ -1,5 +1,4 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,50 +12,40 @@ serve(async (req) => {
   }
 
   try {
-    const { nft_mint, user_wallet, rating } = await req.json();
+    const body = await req.json();
     
-    console.log('[rate-nft] Request:', { nft_mint, user_wallet, rating });
+    console.log('[rate-nft] ✅ MINIMAL TEST VERSION');
+    console.log('[rate-nft] Request received:', body);
+    console.log('[rate-nft] Method:', req.method);
+    console.log('[rate-nft] Headers:', Object.fromEntries(req.headers.entries()));
+    
+    const { nft_mint, user_wallet, rating } = body;
     
     // Validation
     if (!nft_mint || !user_wallet || !rating) {
+      console.log('[rate-nft] ❌ Validation failed: missing fields');
       throw new Error('Missing required fields: nft_mint, user_wallet, rating');
     }
     
     if (rating < 1 || rating > 5) {
+      console.log('[rate-nft] ❌ Validation failed: invalid rating');
       throw new Error('Rating must be between 1 and 5');
     }
     
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-    
-    // Upsert rating (insert or update if exists)
-    const { error: upsertError } = await supabase
-      .from('nft_ratings')
-      .upsert({
-        nft_mint,
-        user_wallet,
-        rating,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'nft_mint,user_wallet'
-      });
-    
-    if (upsertError) {
-      console.error('[rate-nft] Upsert error:', upsertError);
-      throw upsertError;
-    }
-    
-    // Stats will be updated automatically via trigger
-    console.log('[rate-nft] Success:', { nft_mint, user_wallet, rating });
+    console.log('[rate-nft] ✅ Validation passed');
+    console.log('[rate-nft] ⚠️ SKIPPING DATABASE OPERATIONS (test mode)');
+    console.log('[rate-nft] Would upsert:', { nft_mint, user_wallet, rating });
     
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Minimal test version works - function deployed successfully!',
+        received: { nft_mint, user_wallet, rating }
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[rate-nft] Error:', error);
+    console.error('[rate-nft] ❌ Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
