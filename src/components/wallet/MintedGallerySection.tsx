@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { ExternalLink, Sparkles } from 'lucide-react';
+import { ExternalLink, Sparkles, Tag, ShoppingBag } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
 import { ChainBadge } from '@/components/nft/ChainBadge';
 import { RatingStars } from '@/components/nft/RatingStars';
+import { ListNftModal } from '@/components/nft/ListNftModal';
+import { BuyNftModal } from '@/components/nft/BuyNftModal';
+import { MARKETPLACE_CONFIG } from '@/config/marketplace';
 
 // Convert IPFS URI to HTTP gateway URL
 function ipfsToHttp(uri: string): string {
@@ -41,6 +44,9 @@ type MintRow = {
   image_url?: string | null;
   rating_avg?: number;
   rating_count?: number;
+  is_listed?: boolean;
+  price_lamports?: number;
+  listing_id?: string;
 };
 
 export default function MintedGallerySection() {
@@ -55,15 +61,21 @@ export default function MintedGallerySection() {
   const [selectedNetwork, setSelectedNetwork] = useState<'all' | 'devnet' | 'mainnet'>('all');
   const [showWccOnly, setShowWccOnly] = useState(false);
   const [minRating, setMinRating] = useState<number>(0);
+  const [showListedOnly, setShowListedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Marketplace modals
+  const [listModalOpen, setListModalOpen] = useState(false);
+  const [buyModalOpen, setBuyModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MintRow | null>(null);
   
   const pageSize = 24;
 
   useEffect(() => {
     fetchMints();
-  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, page, address]);
+  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, page, address]);
 
   async function fetchMints() {
     setIsLoading(true);
@@ -103,6 +115,11 @@ export default function MintedGallerySection() {
       // Filter by minimum rating
       if (minRating > 0) {
         query = query.gte('rating_avg', minRating);
+      }
+
+      // Filter listed only
+      if (showListedOnly) {
+        query = query.eq('is_listed', true);
       }
 
       // Sort
@@ -280,6 +297,92 @@ export default function MintedGallerySection() {
     }
   }
 
+  // Marketplace functions
+  async function handleCreateListing(nftMint: string, priceLamports: number) {
+    if (!address) {
+      toast.error('Connect wallet to list NFTs');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('create-listing', {
+        body: {
+          nft_mint: nftMint,
+          seller_wallet: address,
+          price_lamports: priceLamports
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('🏷️ NFT listed for sale!');
+      fetchMints();
+    } catch (error) {
+      console.error('[Create Listing] Error:', error);
+      toast.error(error.message || 'Failed to create listing');
+    }
+  }
+
+  async function handleBuyNFT(listingId: string) {
+    if (!address) {
+      toast.error('Connect wallet to buy NFTs');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('buy-nft', {
+        body: {
+          listing_id: listingId,
+          buyer_wallet: address
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('🎉 NFT purchased successfully!');
+      fetchMints();
+    } catch (error) {
+      console.error('[Buy NFT] Error:', error);
+      toast.error(error.message || 'Failed to buy NFT');
+    }
+  }
+
+  async function handleCancelListing(listingId: string) {
+    if (!address) {
+      toast.error('Connect wallet to cancel listing');
+      return;
+    }
+
+    if (!confirm('Cancel this listing?')) return;
+
+    try {
+      const { error } = await supabase.functions.invoke('cancel-listing', {
+        body: {
+          listing_id: listingId,
+          seller_wallet: address
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('Listing cancelled');
+      fetchMints();
+    } catch (error) {
+      console.error('[Cancel Listing] Error:', error);
+      toast.error(error.message || 'Failed to cancel listing');
+    }
+  }
+
+  function openListModal(item: MintRow) {
+    setSelectedItem(item);
+    setListModalOpen(true);
+  }
+
+  function openBuyModal(item: MintRow) {
+    setSelectedItem(item);
+    setBuyModalOpen(true);
+  }
+
   function formatAddress(addr: string, head = 4, tail = 4) {
     if (addr.length <= head + tail) return addr;
     return `${addr.slice(0, head)}…${addr.slice(-tail)}`;
@@ -355,6 +458,22 @@ export default function MintedGallerySection() {
           >
             <img src="/lovable-uploads/WCC.png" alt="WCC" className="w-4 h-4 mr-1" />
             WCC Themes {showWccOnly && `(${totalCount})`}
+          </Button>
+
+          {/* For Sale Toggle */}
+          <Button
+            variant={showListedOnly ? 'default' : 'outline'}
+            onClick={() => {
+              setShowListedOnly(!showListedOnly);
+              setPage(1);
+            }}
+            className={showListedOnly 
+              ? 'bg-green-500 hover:bg-green-600' 
+              : 'border-white/10 text-white hover:bg-white/5'
+            }
+          >
+            <ShoppingBag className="w-4 h-4 mr-1" />
+            For Sale {showListedOnly && `(${totalCount})`}
           </Button>
 
           {/* Blockchain Filter */}
@@ -449,6 +568,14 @@ export default function MintedGallerySection() {
             >
               {/* Preview Image */}
               <div className="relative aspect-[2/1] bg-black/20 overflow-hidden">
+              {/* For Sale Badge */}
+              {item.is_listed && (
+                <div className="absolute top-2 left-2 z-10 bg-green-500/90 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  <span>FOR SALE</span>
+                </div>
+              )}
+              
               {/* Top-right badges */}
               <div className="absolute top-2 right-2 z-10 flex gap-1">
                 {/* Chain Badge */}
@@ -558,6 +685,57 @@ export default function MintedGallerySection() {
                     <span className="hidden sm:inline truncate">Apply</span>
                   </Button>
                 </div>
+
+                {/* Marketplace Actions */}
+                <div className="mt-2 space-y-1.5 pt-2 border-t border-white/5">
+                  {/* If current user is owner */}
+                  {item.owner_address === address && (
+                    <>
+                      {!item.is_listed ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-white/10 text-white hover:bg-green-500/20 hover:border-green-500/50"
+                          onClick={() => openListModal(item)}
+                        >
+                          <Tag className="mr-1.5 h-3 w-3" />
+                          List for Sale
+                        </Button>
+                      ) : (
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
+                            onClick={() => handleCancelListing(item.listing_id!)}
+                          >
+                            ❌ Cancel
+                          </Button>
+                          <div className="flex-1 text-center text-xs text-green-400 font-semibold flex items-center justify-center">
+                            💎 {MARKETPLACE_CONFIG.formatPrice(item.price_lamports!)} SOL
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* If listed and not owner */}
+                  {item.is_listed && item.owner_address !== address && (
+                    <>
+                      <div className="text-center text-lg font-bold text-green-400 py-1">
+                        💎 {MARKETPLACE_CONFIG.formatPrice(item.price_lamports!)} SOL
+                      </div>
+                      <Button
+                        size="sm"
+                        className="w-full bg-green-500 hover:bg-green-600"
+                        onClick={() => openBuyModal(item)}
+                      >
+                        <ShoppingBag className="mr-1.5 h-3 w-3" />
+                        Buy Now
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </Card>
           ))}
@@ -589,6 +767,40 @@ export default function MintedGallerySection() {
             Next
           </Button>
         </div>
+      )}
+
+      {/* Modals */}
+      {selectedItem && (
+        <>
+          <ListNftModal
+            nftMint={selectedItem.mint_address}
+            nftName={selectedItem.theme_name || 'Unnamed Theme'}
+            currentPrice={selectedItem.price_lamports}
+            isOpen={listModalOpen}
+            onClose={() => {
+              setListModalOpen(false);
+              setSelectedItem(null);
+            }}
+            onConfirm={(priceLamports) => handleCreateListing(selectedItem.mint_address, priceLamports)}
+          />
+
+          <BuyNftModal
+            listing={{
+              id: selectedItem.listing_id!,
+              nft_mint: selectedItem.mint_address,
+              price_lamports: selectedItem.price_lamports!,
+              seller_wallet: selectedItem.owner_address
+            }}
+            nftName={selectedItem.theme_name || 'Unnamed Theme'}
+            nftImage={selectedItem.image_url || undefined}
+            isOpen={buyModalOpen}
+            onClose={() => {
+              setBuyModalOpen(false);
+              setSelectedItem(null);
+            }}
+            onConfirm={() => handleBuyNFT(selectedItem.listing_id!)}
+          />
+        </>
       )}
     </section>
   );
