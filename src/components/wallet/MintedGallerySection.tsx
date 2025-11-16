@@ -460,6 +460,22 @@ export default function MintedGallerySection() {
             WCC Themes {showWccOnly && `(${totalCount})`}
           </Button>
 
+          {/* For Sale Toggle */}
+          <Button
+            variant={showListedOnly ? 'default' : 'outline'}
+            onClick={() => {
+              setShowListedOnly(!showListedOnly);
+              setPage(1);
+            }}
+            className={showListedOnly 
+              ? 'bg-green-500 hover:bg-green-600' 
+              : 'border-white/10 text-white hover:bg-white/5'
+            }
+          >
+            <ShoppingBag className="w-4 h-4 mr-1" />
+            For Sale {showListedOnly && `(${totalCount})`}
+          </Button>
+
           {/* Blockchain Filter */}
           <Select
             value={selectedBlockchain}
