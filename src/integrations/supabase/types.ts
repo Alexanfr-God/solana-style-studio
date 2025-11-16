@@ -180,6 +180,8 @@ export type Database = {
           mint_address: string
           network: string
           owner_address: string
+          rating_avg: number | null
+          rating_count: number | null
           theme_name: string | null
           tx_sig: string
           user_id: string | null
@@ -193,6 +195,8 @@ export type Database = {
           mint_address: string
           network?: string
           owner_address: string
+          rating_avg?: number | null
+          rating_count?: number | null
           theme_name?: string | null
           tx_sig: string
           user_id?: string | null
@@ -206,9 +210,38 @@ export type Database = {
           mint_address?: string
           network?: string
           owner_address?: string
+          rating_avg?: number | null
+          rating_count?: number | null
           theme_name?: string | null
           tx_sig?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      nft_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          nft_mint: string
+          rating: number
+          updated_at: string
+          user_wallet: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nft_mint: string
+          rating: number
+          updated_at?: string
+          user_wallet: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nft_mint?: string
+          rating?: number
+          updated_at?: string
+          user_wallet?: string
         }
         Relationships: []
       }
@@ -453,6 +486,10 @@ export type Database = {
       strip_screen_prefix: {
         Args: { _id: string; _screen: string }
         Returns: string
+      }
+      update_nft_rating_stats: {
+        Args: { p_nft_mint: string }
+        Returns: undefined
       }
       upsert_ai_vision_mappings: {
         Args: { element_ids: string[]; json_paths: string[] }
