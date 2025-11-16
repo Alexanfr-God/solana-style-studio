@@ -297,6 +297,92 @@ export default function MintedGallerySection() {
     }
   }
 
+  // Marketplace functions
+  async function handleCreateListing(nftMint: string, priceLamports: number) {
+    if (!address) {
+      toast.error('Connect wallet to list NFTs');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('create-listing', {
+        body: {
+          nft_mint: nftMint,
+          seller_wallet: address,
+          price_lamports: priceLamports
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('🏷️ NFT listed for sale!');
+      fetchMints();
+    } catch (error) {
+      console.error('[Create Listing] Error:', error);
+      toast.error(error.message || 'Failed to create listing');
+    }
+  }
+
+  async function handleBuyNFT(listingId: string) {
+    if (!address) {
+      toast.error('Connect wallet to buy NFTs');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('buy-nft', {
+        body: {
+          listing_id: listingId,
+          buyer_wallet: address
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('🎉 NFT purchased successfully!');
+      fetchMints();
+    } catch (error) {
+      console.error('[Buy NFT] Error:', error);
+      toast.error(error.message || 'Failed to buy NFT');
+    }
+  }
+
+  async function handleCancelListing(listingId: string) {
+    if (!address) {
+      toast.error('Connect wallet to cancel listing');
+      return;
+    }
+
+    if (!confirm('Cancel this listing?')) return;
+
+    try {
+      const { error } = await supabase.functions.invoke('cancel-listing', {
+        body: {
+          listing_id: listingId,
+          seller_wallet: address
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('Listing cancelled');
+      fetchMints();
+    } catch (error) {
+      console.error('[Cancel Listing] Error:', error);
+      toast.error(error.message || 'Failed to cancel listing');
+    }
+  }
+
+  function openListModal(item: MintRow) {
+    setSelectedItem(item);
+    setListModalOpen(true);
+  }
+
+  function openBuyModal(item: MintRow) {
+    setSelectedItem(item);
+    setBuyModalOpen(true);
+  }
+
   function formatAddress(addr: string, head = 4, tail = 4) {
     if (addr.length <= head + tail) return addr;
     return `${addr.slice(0, head)}…${addr.slice(-tail)}`;
