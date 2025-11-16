@@ -94,12 +94,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
 
   // FIXED: Better theme validation and fallback handling
   const previewData = useMemo(() => {
-    console.log('🔄 [WPC useMemo] ==================== RECALCULATING previewData ====================');
-    console.log('🔄 [WPC useMemo] Timestamp:', Date.now());
-    console.log('🔄 [WPC useMemo] Theme name:', theme?.name);
-    console.log('🔄 [WPC useMemo] lockLayer.passwordInput?.backgroundColor:', theme?.lockLayer?.passwordInput?.backgroundColor);
-    console.log('🔄 [WPC useMemo] lockLayer.unlockButton?.backgroundColor:', theme?.lockLayer?.unlockButton?.backgroundColor);
-    console.log('🔄 [WPC useMemo] lockLayer.backgroundColor:', theme?.lockLayer?.backgroundColor);
+    console.log('[WPC] previewData recalculated for theme:', theme?.name);
     
     // Validate theme structure
     if (!theme || typeof theme !== 'object') {
@@ -229,33 +224,20 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="relative unlock-password-field-container"
             data-element-id="unlock-password-field-container"
           >
-            {(() => {
-              const inputStyle = {
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full px-4 py-2.5 border-none outline-none text-sm login-password-input"
+              data-element-id="login-password-input"
+              style={{
                 backgroundColor: previewData.lockLayer.passwordInput.backgroundColor,
                 color: previewData.lockLayer.passwordInput.textColor,
                 fontFamily: previewData.lockLayer.passwordInput.fontFamily,
                 borderRadius: previewData.lockLayer.passwordInput.borderRadius
-              };
-              
-              console.log('🎨 [WPC] Applying INLINE styles to INPUT:', {
-                timestamp: Date.now(),
-                backgroundColor: inputStyle.backgroundColor,
-                color: inputStyle.color,
-                borderRadius: inputStyle.borderRadius
-              });
-              
-              return (
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Password"
-                  className="w-full px-4 py-2.5 border-none outline-none text-sm login-password-input"
-                  data-element-id="login-password-input"
-                  style={inputStyle}
-                />
-              );
-            })()}
+              }}
+            />
             {password && (
               <button
                 type="button"
@@ -296,39 +278,26 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           </div>
           
           {/* Unlock Button */}
-          {(() => {
-            const buttonStyle = {
+          <button
+            className="w-full py-3 transition-colors hover:opacity-90 login-unlock-button"
+            data-element-id="login-unlock-button"
+            onClick={handleUnlock}
+            style={{
               backgroundColor: previewData.lockLayer.unlockButton.backgroundColor,
               color: previewData.lockLayer.unlockButton.textColor,
               fontFamily: previewData.lockLayer.unlockButton.fontFamily,
               fontSize: previewData.lockLayer.unlockButton.fontSize,
               fontWeight: previewData.lockLayer.unlockButton.fontWeight,
               borderRadius: previewData.lockLayer.unlockButton.borderRadius
-            };
-            
-            console.log('🎨 [WPC] Applying INLINE styles to UNLOCK BUTTON:', {
-              timestamp: Date.now(),
-              backgroundColor: buttonStyle.backgroundColor,
-              color: buttonStyle.color,
-              fontSize: buttonStyle.fontSize
-            });
-            
-            return (
-              <button
-                className="w-full py-3 transition-colors hover:opacity-90 login-unlock-button"
-                data-element-id="login-unlock-button"
-                onClick={handleUnlock}
-                style={buttonStyle}
-              >
-                <span 
-                  className="unlock-button-text"
-                  data-element-id="unlock-button-text"
-                >
-                  Unlock
-                </span>
-              </button>
-            );
-          })()}
+            }}
+          >
+            <span 
+              className="unlock-button-text"
+              data-element-id="unlock-button-text"
+            >
+              Unlock
+            </span>
+          </button>
         </div>
       </div>
     </div>
