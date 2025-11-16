@@ -123,7 +123,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        tx_signature: stub_tx_signature,
+        tx_signature: stubTxSignature,
         warning: 'STUB MODE: No real blockchain transaction' 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
