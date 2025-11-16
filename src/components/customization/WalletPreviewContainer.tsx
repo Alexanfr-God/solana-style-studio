@@ -94,6 +94,13 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
 
   // FIXED: Better theme validation and fallback handling
   const previewData = useMemo(() => {
+    console.log('🔄 [WPC useMemo] ==================== RECALCULATING previewData ====================');
+    console.log('🔄 [WPC useMemo] Timestamp:', Date.now());
+    console.log('🔄 [WPC useMemo] Theme name:', theme?.name);
+    console.log('🔄 [WPC useMemo] lockLayer.passwordInput?.backgroundColor:', theme?.lockLayer?.passwordInput?.backgroundColor);
+    console.log('🔄 [WPC useMemo] lockLayer.unlockButton?.backgroundColor:', theme?.lockLayer?.unlockButton?.backgroundColor);
+    console.log('🔄 [WPC useMemo] lockLayer.backgroundColor:', theme?.lockLayer?.backgroundColor);
+    
     // Validate theme structure
     if (!theme || typeof theme !== 'object') {
       console.warn('[WPC] ⚠️ Invalid theme, using defaults');
@@ -105,7 +112,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     const lockLayer = theme.lockLayer || {};
     console.log('[WPC] lockLayer structure:', lockLayer);
     
-    return {
+    const result = {
       lockLayer: {
         backgroundColor: lockLayer.backgroundColor || DEFAULT_LOCK_LAYER_STYLES.backgroundColor,
         backgroundImage: lockLayer.backgroundImage || DEFAULT_LOCK_LAYER_STYLES.backgroundImage,
@@ -141,6 +148,13 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
         }
       }
     };
+    
+    console.log('🔄 [WPC useMemo] Result passwordInput.backgroundColor:', result.lockLayer.passwordInput.backgroundColor);
+    console.log('🔄 [WPC useMemo] Result unlockButton.backgroundColor:', result.lockLayer.unlockButton.backgroundColor);
+    console.log('🔄 [WPC useMemo] Result lockLayer.backgroundColor:', result.lockLayer.backgroundColor);
+    console.log('🔄 [WPC useMemo] ==================== END RECALCULATION ====================');
+    
+    return result;
   }, [theme]);
 
   // Load elements from Supabase (no side effects)
@@ -215,20 +229,33 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             className="relative unlock-password-field-container"
             data-element-id="unlock-password-field-container"
           >
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full px-4 py-2.5 border-none outline-none text-sm login-password-input"
-              data-element-id="login-password-input"
-              style={{
+            {(() => {
+              const inputStyle = {
                 backgroundColor: previewData.lockLayer.passwordInput.backgroundColor,
                 color: previewData.lockLayer.passwordInput.textColor,
                 fontFamily: previewData.lockLayer.passwordInput.fontFamily,
                 borderRadius: previewData.lockLayer.passwordInput.borderRadius
-              }}
-            />
+              };
+              
+              console.log('🎨 [WPC] Applying INLINE styles to INPUT:', {
+                timestamp: Date.now(),
+                backgroundColor: inputStyle.backgroundColor,
+                color: inputStyle.color,
+                borderRadius: inputStyle.borderRadius
+              });
+              
+              return (
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full px-4 py-2.5 border-none outline-none text-sm login-password-input"
+                  data-element-id="login-password-input"
+                  style={inputStyle}
+                />
+              );
+            })()}
             {password && (
               <button
                 type="button"
@@ -269,26 +296,39 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           </div>
           
           {/* Unlock Button */}
-          <button
-            className="w-full py-3 transition-colors hover:opacity-90 login-unlock-button"
-            data-element-id="login-unlock-button"
-            onClick={handleUnlock}
-            style={{
+          {(() => {
+            const buttonStyle = {
               backgroundColor: previewData.lockLayer.unlockButton.backgroundColor,
               color: previewData.lockLayer.unlockButton.textColor,
               fontFamily: previewData.lockLayer.unlockButton.fontFamily,
               fontSize: previewData.lockLayer.unlockButton.fontSize,
               fontWeight: previewData.lockLayer.unlockButton.fontWeight,
               borderRadius: previewData.lockLayer.unlockButton.borderRadius
-            }}
-          >
-            <span 
-              className="unlock-button-text"
-              data-element-id="unlock-button-text"
-            >
-              Unlock
-            </span>
-          </button>
+            };
+            
+            console.log('🎨 [WPC] Applying INLINE styles to UNLOCK BUTTON:', {
+              timestamp: Date.now(),
+              backgroundColor: buttonStyle.backgroundColor,
+              color: buttonStyle.color,
+              fontSize: buttonStyle.fontSize
+            });
+            
+            return (
+              <button
+                className="w-full py-3 transition-colors hover:opacity-90 login-unlock-button"
+                data-element-id="login-unlock-button"
+                onClick={handleUnlock}
+                style={buttonStyle}
+              >
+                <span 
+                  className="unlock-button-text"
+                  data-element-id="unlock-button-text"
+                >
+                  Unlock
+                </span>
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>
