@@ -10,6 +10,7 @@ import {
   PublicKey, 
   Keypair,
   Transaction,
+  TransactionInstruction,
   SystemProgram,
   LAMPORTS_PER_SOL
 } from "npm:@solana/web3.js@1.98.2";
@@ -27,7 +28,18 @@ import {
   createCreateMetadataAccountV3Instruction,
   PROGRAM_ID as MPL_TOKEN_METADATA_PROGRAM_ID,
 } from "npm:@metaplex-foundation/mpl-token-metadata@^2.0.0";
-import { createMemoInstruction } from "npm:@solana/spl-memo@0.2.5";
+
+// Memo program ID
+const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
+
+// Create memo instruction without external package
+function createMemoInstruction(memo: string, signers: PublicKey[]): TransactionInstruction {
+  return new TransactionInstruction({
+    keys: signers.map(signer => ({ pubkey: signer, isSigner: true, isWritable: false })),
+    programId: MEMO_PROGRAM_ID,
+    data: Buffer.from(memo, 'utf-8'),
+  });
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

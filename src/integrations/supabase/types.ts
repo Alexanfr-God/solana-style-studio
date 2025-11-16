@@ -235,6 +235,83 @@ export type Database = {
           },
         ]
       }
+      nft_auctions: {
+        Row: {
+          created_at: string
+          currency: string
+          current_price_lamports: number
+          end_at: string
+          id: string
+          nft_mint: string
+          seller_wallet: string
+          start_price_lamports: number
+          status: string
+          tx_signature: string | null
+          updated_at: string
+          winner_wallet: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          current_price_lamports: number
+          end_at: string
+          id?: string
+          nft_mint: string
+          seller_wallet: string
+          start_price_lamports: number
+          status?: string
+          tx_signature?: string | null
+          updated_at?: string
+          winner_wallet?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          current_price_lamports?: number
+          end_at?: string
+          id?: string
+          nft_mint?: string
+          seller_wallet?: string
+          start_price_lamports?: number
+          status?: string
+          tx_signature?: string | null
+          updated_at?: string
+          winner_wallet?: string | null
+        }
+        Relationships: []
+      }
+      nft_bids: {
+        Row: {
+          auction_id: string
+          bid_price_lamports: number
+          bidder_wallet: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          auction_id: string
+          bid_price_lamports: number
+          bidder_wallet: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          auction_id?: string
+          bid_price_lamports?: number
+          bidder_wallet?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nft_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "nft_auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nft_listings: {
         Row: {
           buyer_wallet: string | null
