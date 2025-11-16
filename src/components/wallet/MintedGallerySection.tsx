@@ -677,6 +677,57 @@ export default function MintedGallerySection() {
                     <span className="hidden sm:inline truncate">Apply</span>
                   </Button>
                 </div>
+
+                {/* Marketplace Actions */}
+                <div className="mt-2 space-y-1.5 pt-2 border-t border-white/5">
+                  {/* If current user is owner */}
+                  {item.owner_address === address && (
+                    <>
+                      {!item.is_listed ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-white/10 text-white hover:bg-green-500/20 hover:border-green-500/50"
+                          onClick={() => openListModal(item)}
+                        >
+                          <Tag className="mr-1.5 h-3 w-3" />
+                          List for Sale
+                        </Button>
+                      ) : (
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/20"
+                            onClick={() => handleCancelListing(item.listing_id!)}
+                          >
+                            ❌ Cancel
+                          </Button>
+                          <div className="flex-1 text-center text-xs text-green-400 font-semibold flex items-center justify-center">
+                            💎 {MARKETPLACE_CONFIG.formatPrice(item.price_lamports!)} SOL
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* If listed and not owner */}
+                  {item.is_listed && item.owner_address !== address && (
+                    <>
+                      <div className="text-center text-lg font-bold text-green-400 py-1">
+                        💎 {MARKETPLACE_CONFIG.formatPrice(item.price_lamports!)} SOL
+                      </div>
+                      <Button
+                        size="sm"
+                        className="w-full bg-green-500 hover:bg-green-600"
+                        onClick={() => openBuyModal(item)}
+                      >
+                        <ShoppingBag className="mr-1.5 h-3 w-3" />
+                        Buy Now
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </Card>
           ))}
