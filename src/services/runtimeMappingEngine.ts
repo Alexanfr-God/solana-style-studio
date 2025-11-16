@@ -332,6 +332,15 @@ export function setupMappingWatcher(getTheme: () => any) {
     // Check if Lock Layer is currently visible
     const isLockLayerVisible = !!document.querySelector('[data-element-id="unlock-screen-container"]');
     
+    // ✅ FORCED full apply on full theme change (when no updatedPath specified)
+    if (!updatedPath) {
+      console.log('[Runtime] 🔄 Full theme change detected, forcing reapply');
+      requestAnimationFrame(() => {
+        applyThemeToDOM(theme);
+      });
+      return;
+    }
+    
     // ✅ FORCED full apply with double RAF for Lock Layer
     if (forceFullApply) {
       if (isLockLayerVisible) {
