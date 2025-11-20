@@ -13,6 +13,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuctionPanel } from '@/components/auction/AuctionPanel';
+import { BidsHistoryChart } from '@/components/auction/BidsHistoryChart';
+import { BidsHistoryList } from '@/components/auction/BidsHistoryList';
 import { RatingStars } from '@/components/nft/RatingStars';
 import { ChainBadge } from '@/components/nft/ChainBadge';
 import { useAuctionByNft } from '@/hooks/useAuction';
@@ -248,6 +250,26 @@ export default function NftDetailPage() {
               userWallet={address}
               isListed={nft.is_listed || false}
             />
+
+            {/* Bids History (only show if auction exists) */}
+            {auction && (
+              <Tabs defaultValue="chart" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-muted">
+                  <TabsTrigger value="chart" className="data-[state=active]:bg-background">
+                    Price Chart
+                  </TabsTrigger>
+                  <TabsTrigger value="list" className="data-[state=active]:bg-background">
+                    All Bids
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="chart" className="mt-4">
+                  <BidsHistoryChart auctionId={auction.id} />
+                </TabsContent>
+                <TabsContent value="list" className="mt-4">
+                  <BidsHistoryList auctionId={auction.id} />
+                </TabsContent>
+              </Tabs>
+            )}
           </div>
         </div>
       </div>
