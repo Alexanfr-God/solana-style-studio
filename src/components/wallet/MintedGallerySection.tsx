@@ -410,6 +410,9 @@ export default function MintedGallerySection() {
       if (error) throw error;
 
       toast.success('🏷️ NFT listed for sale!');
+      
+      // Wait for DB propagation then refresh
+      await new Promise(resolve => setTimeout(resolve, 800));
       fetchMints();
     } catch (error) {
       console.error('[Create Listing] Error:', error);
@@ -900,6 +903,18 @@ export default function MintedGallerySection() {
 
                 {/* Marketplace Actions */}
                 <div className="mt-2 space-y-1.5 pt-2 border-t border-white/5">
+                  {/* If active auction - show Place Bid for non-owners */}
+                  {item.auction_status === 'active' && item.owner_address !== address && (
+                    <Button
+                      size="sm"
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      onClick={() => navigate(`/nft/${item.mint_address}`)}
+                    >
+                      <Gavel className="mr-1.5 h-3 w-3" />
+                      Place Bid
+                    </Button>
+                  )}
+
                   {/* If current user is owner */}
                   {item.owner_address === address && (
                     <>
@@ -927,7 +942,7 @@ export default function MintedGallerySection() {
                             Start Auction
                           </Button>
                         </div>
-                      ) : (
+                      ) : item.is_listed && item.listing_id ? (
                         <div className="flex gap-1.5">
                           <Button
                             size="sm"
@@ -941,7 +956,11 @@ export default function MintedGallerySection() {
                             💎 {MARKETPLACE_CONFIG.formatPrice(item.price_lamports!)} SOL
                           </div>
                         </div>
-                      )}
+                      ) : item.auction_status === 'active' ? (
+                        <div className="text-center text-sm text-purple-400 py-2">
+                          🔨 Your auction is live
+                        </div>
+                      ) : null}
                     </>
                   )}
                   
