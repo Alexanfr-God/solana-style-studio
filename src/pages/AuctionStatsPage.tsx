@@ -41,9 +41,51 @@ export default function AuctionStatsPage() {
   const [popularNFTs, setPopularNFTs] = useState<PopularNFT[]>([]);
   const [bidTrends, setBidTrends] = useState<BidTrend[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   useEffect(() => {
     fetchStatistics();
+
+    // Subscribe to real-time updates for bids
+    const bidsChannel = supabase
+      .channel('auction-stats-bids')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'nft_bids'
+        },
+        (payload) => {
+          console.log('[AuctionStats] Bid change detected:', payload);
+          setLastUpdate(new Date());
+          fetchStatistics();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to real-time updates for auctions
+    const auctionsChannel = supabase
+      .channel('auction-stats-auctions')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'nft_auctions'
+        },
+        (payload) => {
+          console.log('[AuctionStats] Auction change detected:', payload);
+          setLastUpdate(new Date());
+          fetchStatistics();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(bidsChannel);
+      supabase.removeChannel(auctionsChannel);
+    };
   }, []);
 
   async function fetchStatistics() {
@@ -170,12 +212,21 @@ export default function AuctionStatsPage() {
             <div className="p-3 rounded-lg bg-primary/20">
               <TrendingUp className="w-8 h-8 text-primary" />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-4xl font-bold text-foreground">
                 Auction Statistics
               </h1>
-              <p className="text-muted-foreground mt-1">
-                Analytics and insights for NFT auctions
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-muted-foreground">
+                  Analytics and insights for NFT auctions
+                </p>
+                <div className="flex items-center gap-1 px-2 py-1 rounded bg-green-500/20 text-green-400 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  Live
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Last updated: {lastUpdate.toLocaleTimeString()}
               </p>
             </div>
           </div>

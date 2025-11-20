@@ -84,6 +84,44 @@ export default function MintedGallerySection() {
 
   useEffect(() => {
     fetchMints();
+
+    // Subscribe to real-time updates for gallery
+    const mintedThemesChannel = supabase
+      .channel('gallery-minted-themes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'minted_themes'
+        },
+        (payload) => {
+          console.log('[Gallery] New NFT minted:', payload);
+          fetchMints();
+        }
+      )
+      .subscribe();
+
+    const auctionsChannel = supabase
+      .channel('gallery-auctions')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'nft_auctions'
+        },
+        (payload) => {
+          console.log('[Gallery] Auction updated:', payload);
+          fetchMints();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(mintedThemesChannel);
+      supabase.removeChannel(auctionsChannel);
+    };
   }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, auctionFilter, page, address]);
 
   async function fetchMints() {
