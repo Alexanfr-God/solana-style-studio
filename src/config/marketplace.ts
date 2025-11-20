@@ -8,9 +8,12 @@ export const MARKETPLACE_CONFIG = {
   // Platform fee in basis points (1000 = 10%)
   PLATFORM_FEE_BPS: 1000,
   
-  // Platform wallet address (Solana)
-  // TODO: Replace with actual platform wallet
-  PLATFORM_FEE_WALLET: 'PLATFORM_WALLET_ADDRESS_PLACEHOLDER',
+  // Royalty fee in basis points (500 = 5%)
+  ROYALTY_FEE_BPS: 500,
+  
+  // Platform wallet address (Solana) - loaded from environment/secrets
+  // This will be set dynamically from TREASURY_WALLET secret
+  PLATFORM_FEE_WALLET: '', // Set dynamically in edge functions
   
   // Price limits (in lamports)
   MIN_LISTING_PRICE_LAMPORTS: 100_000_000, // 0.1 SOL

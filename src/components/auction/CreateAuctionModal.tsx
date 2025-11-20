@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { z } from 'zod';
-import { Gavel, Calendar } from 'lucide-react';
+import { Gavel, Calendar, Wallet } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -24,8 +24,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateAuction } from '@/hooks/useAuction';
+import { useSolanaBalance } from '@/hooks/useSolanaBalance';
 import { calculateEndTime, formatDate, solToLamports } from '@/utils/auctionUtils';
 import type { CreateAuctionParams } from '@/types/auction';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface CreateAuctionModalProps {
   open: boolean;
@@ -70,6 +73,11 @@ export function CreateAuctionModal({
   const [errors, setErrors] = useState<{ startPrice?: string; duration?: string }>({});
 
   const { mutate: createAuction, isPending } = useCreateAuction();
+  const { balanceSOL, isLoading: isLoadingBalance } = useSolanaBalance(sellerWallet);
+
+  // Minimum balance needed for auction creation (~0.01 SOL for transaction fees)
+  const minBalanceRequired = 0.01;
+  const hasEnoughBalance = balanceSOL >= minBalanceRequired;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +131,31 @@ export function CreateAuctionModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Wallet Balance Info */}
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/50">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Your Balance:</span>
+            </div>
+            {isLoadingBalance ? (
+              <span className="text-sm text-muted-foreground">Loading...</span>
+            ) : (
+              <span className={`text-sm font-medium ${!hasEnoughBalance ? 'text-destructive' : 'text-foreground'}`}>
+                {balanceSOL.toFixed(4)} SOL
+              </span>
+            )}
+          </div>
+
+          {/* Low Balance Warning */}
+          {!isLoadingBalance && !hasEnoughBalance && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Insufficient SOL balance for transaction fees. You need at least {minBalanceRequired} SOL.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Starting Price */}
           <div className="space-y-2">
             <Label htmlFor="startPrice" className="text-foreground">
@@ -201,7 +234,7 @@ export function CreateAuctionModal({
             </Button>
             <Button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || !hasEnoughBalance || isLoadingBalance}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isPending ? 'Creating...' : 'Create Auction'}

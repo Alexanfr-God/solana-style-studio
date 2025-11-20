@@ -5,7 +5,7 @@
 
 import { useState, useMemo } from 'react';
 import { z } from 'zod';
-import { Gavel, AlertCircle } from 'lucide-react';
+import { Gavel, AlertCircle, Wallet } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePlaceBid } from '@/hooks/useAuction';
+import { useSolanaBalance } from '@/hooks/useSolanaBalance';
 import {
   calculateMinBid,
   formatSOL,
@@ -26,6 +27,7 @@ import {
   formatWalletAddress
 } from '@/utils/auctionUtils';
 import type { Auction } from '@/types/auction';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 interface PlaceBidModalProps {
   open: boolean;
@@ -46,6 +48,7 @@ export function PlaceBidModal({
   const [error, setError] = useState('');
 
   const { mutate: placeBid, isPending } = usePlaceBid();
+  const { balance, balanceSOL, isLoading: isLoadingBalance, hasEnoughFor } = useSolanaBalance(bidderWallet);
 
   const minBidLamports = calculateMinBid(auction.current_price_lamports);
   const minBidSOL = lamportsToSOL(minBidLamports);
@@ -85,6 +88,13 @@ export function PlaceBidModal({
 
     const bidLamports = solToLamports(parseFloat(bidAmount));
 
+    // Check Solana balance
+    if (!hasEnoughFor(bidLamports)) {
+      const needed = (bidLamports / LAMPORTS_PER_SOL) + 0.01; // Add transaction fee
+      setError(`Insufficient SOL balance. You need ${needed.toFixed(4)} SOL but have ${balanceSOL.toFixed(4)} SOL`);
+      return;
+    }
+
     placeBid({
       auction_id: auction.id,
       bidder_wallet: bidderWallet,
@@ -116,6 +126,21 @@ export function PlaceBidModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Wallet Balance Info */}
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/50">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Your Balance:</span>
+            </div>
+            {isLoadingBalance ? (
+              <span className="text-sm text-muted-foreground">Loading...</span>
+            ) : (
+              <span className={`text-sm font-medium ${balanceSOL < 0.1 ? 'text-destructive' : 'text-foreground'}`}>
+                {balanceSOL.toFixed(4)} SOL
+              </span>
+            )}
+          </div>
+
           {/* Current Info */}
           <div className="space-y-2 p-4 rounded-lg bg-muted/30">
             <div className="flex justify-between text-sm">
