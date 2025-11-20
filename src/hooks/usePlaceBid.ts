@@ -66,7 +66,7 @@ export function usePlaceBid() {
       // 4. Call edge function with transaction signature
       const { data, error } = await supabase.functions.invoke('auction', {
         body: {
-          action: 'place_bid',
+          action: 'bid',
           auction_id,
           bidder_wallet: address,
           bid_price_lamports,
