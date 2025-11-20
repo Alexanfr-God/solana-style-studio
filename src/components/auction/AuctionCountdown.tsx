@@ -40,6 +40,20 @@ export function AuctionCountdown({ endAt, compact = false }: AuctionCountdownPro
     return () => clearInterval(interval);
   }, [endAt]);
 
+  // Calculate urgency level for color indication
+  const totalHours = timeLeft.total / (1000 * 60 * 60);
+  const getUrgencyColor = () => {
+    if (totalHours > 24) {
+      return 'text-green-400'; // > 24h = green
+    } else if (totalHours > 1) {
+      return 'text-yellow-400'; // < 24h but > 1h = yellow
+    } else {
+      return 'text-red-400 animate-pulse'; // < 1h = red with pulse
+    }
+  };
+
+  const urgencyColor = getUrgencyColor();
+
   if (timeLeft.total <= 0) {
     return (
       <div className="flex items-center gap-1 text-xs text-gray-400">
@@ -52,7 +66,7 @@ export function AuctionCountdown({ endAt, compact = false }: AuctionCountdownPro
   if (compact) {
     // Compact format for gallery cards
     return (
-      <div className="flex items-center gap-1 text-xs font-semibold text-white">
+      <div className={`flex items-center gap-1 text-xs font-semibold ${urgencyColor}`}>
         <Clock className="w-3 h-3" />
         {timeLeft.days > 0 && <span>{timeLeft.days}d</span>}
         <span>{String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}</span>
@@ -63,24 +77,24 @@ export function AuctionCountdown({ endAt, compact = false }: AuctionCountdownPro
   // Full format
   return (
     <div className="flex items-center gap-2">
-      <Clock className="w-4 h-4 text-primary" />
+      <Clock className={`w-4 h-4 ${urgencyColor}`} />
       <div className="flex gap-2 text-sm font-mono">
         {timeLeft.days > 0 && (
           <span className="flex flex-col items-center">
-            <span className="font-bold text-foreground">{timeLeft.days}</span>
+            <span className={`font-bold ${urgencyColor}`}>{timeLeft.days}</span>
             <span className="text-xs text-muted-foreground">days</span>
           </span>
         )}
         <span className="flex flex-col items-center">
-          <span className="font-bold text-foreground">{String(timeLeft.hours).padStart(2, '0')}</span>
+          <span className={`font-bold ${urgencyColor}`}>{String(timeLeft.hours).padStart(2, '0')}</span>
           <span className="text-xs text-muted-foreground">hrs</span>
         </span>
         <span className="flex flex-col items-center">
-          <span className="font-bold text-foreground">{String(timeLeft.minutes).padStart(2, '0')}</span>
+          <span className={`font-bold ${urgencyColor}`}>{String(timeLeft.minutes).padStart(2, '0')}</span>
           <span className="text-xs text-muted-foreground">min</span>
         </span>
         <span className="flex flex-col items-center">
-          <span className="font-bold text-foreground">{String(timeLeft.seconds).padStart(2, '0')}</span>
+          <span className={`font-bold ${urgencyColor}`}>{String(timeLeft.seconds).padStart(2, '0')}</span>
           <span className="text-xs text-muted-foreground">sec</span>
         </span>
       </div>
