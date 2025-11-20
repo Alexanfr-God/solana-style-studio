@@ -29,5 +29,5 @@ export const CORS_HEADERS = {
   'Content-Type': 'application/json'
 };
 
-// Stub mode
-export const STUB_MODE = true; // Set to false when Solana integration is ready
+// Stub mode (set to false to enable real Solana transactions)
+export const STUB_MODE = Deno.env.get('AUCTION_STUB_MODE') !== 'false';
