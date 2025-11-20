@@ -2,11 +2,12 @@
  * Finalize Auction Handler
  */
 
-import type { FinalizeAuctionRequest, ApiResponse } from '../types.ts';
+import type { FinalizeAuctionRequest, ApiResponse, Bid } from '../types.ts';
 import { validateFinalizeAuction, canFinalizeAuction } from '../utils/validation.ts';
 import { fetchAuction, updateAuction, updateNFT } from '../utils/database.ts';
 import { STUB_MODE } from '../utils/constants.ts';
-import { finalizeAuctionOnChain, calculateFees } from '../utils/solana.ts';
+import { finalizeAuctionOnChain, calculateFees, getConnection, getEscrowKeypair } from '../utils/solana.ts';
+import { PublicKey, Transaction, SystemProgram } from 'https://esm.sh/@solana/web3.js@1.98.2';
 
 export async function handleFinalizeAuction(
   request: FinalizeAuctionRequest
@@ -113,7 +114,13 @@ export async function handleFinalizeAuction(
       price_lamports: null
     });
 
+    console.log('[finalize-auction] 🔄 Processing refunds for losing bidders...');
+
+    // Refund SOL to all losing bidders
+    const refundResults = await refundLosingBidders(auction_id, auction.winner_wallet);
+
     console.log('[finalize-auction] ✅ Success' + (STUB_MODE ? ' (STUB MODE)' : ''));
+    console.log(`[finalize-auction] Refunded ${refundResults.refunded} losing bids`);
 
     const fees = calculateFees(auction.current_price_lamports);
 
@@ -125,6 +132,7 @@ export async function handleFinalizeAuction(
         final_price: auction.current_price_lamports,
         nft_transfer_signature: nftTransferSignature,
         sol_payment_signature: solPaymentSignature,
+        refunds: refundResults,
         fees: {
           platform_fee: fees.platformFee,
           royalty_fee: fees.royaltyFee,
@@ -141,6 +149,105 @@ export async function handleFinalizeAuction(
       success: false,
       error: error.message
     };
+  }
+}
+
+/**
+ * Refund SOL to all losing bidders
+ */
+async function refundLosingBidders(
+  auctionId: string, 
+  winnerWallet: string
+): Promise<{ refunded: number; failed: number; errors: string[] }> {
+  const results = {
+    refunded: 0,
+    failed: 0,
+    errors: [] as string[]
+  };
+
+  try {
+    // Import Supabase utilities
+    const { fetchWithHeaders } = await import('../utils/database.ts');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    
+    // Fetch all non-refunded bids except winner's
+    const response = await fetchWithHeaders(
+      `${SUPABASE_URL}/rest/v1/nft_bids?auction_id=eq.${auctionId}&bidder_wallet=neq.${winnerWallet}&refunded=eq.false&select=*`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch losing bids: ${response.statusText}`);
+    }
+
+    const losingBids: Bid[] = await response.json();
+    
+    console.log(`[refund] Found ${losingBids.length} bids to refund`);
+
+    if (losingBids.length === 0) {
+      return results;
+    }
+
+    // Get connection and escrow keypair
+    const connection = getConnection();
+    const escrowKeypair = getEscrowKeypair();
+
+    // Process each refund
+    for (const bid of losingBids) {
+      try {
+        console.log(`[refund] Processing refund for ${bid.bidder_wallet}: ${bid.bid_price_lamports} lamports`);
+
+        // Create refund transaction
+        const transaction = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: escrowKeypair.publicKey,
+            toPubkey: new PublicKey(bid.bidder_wallet),
+            lamports: bid.bid_price_lamports,
+          })
+        );
+
+        // Get recent blockhash
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = escrowKeypair.publicKey;
+
+        // Sign and send
+        transaction.sign(escrowKeypair);
+        const signature = await connection.sendRawTransaction(transaction.serialize());
+        
+        // Confirm transaction
+        await connection.confirmTransaction(signature, 'confirmed');
+
+        // Update bid record
+        const updateResponse = await fetchWithHeaders(
+          `${SUPABASE_URL}/rest/v1/nft_bids?id=eq.${bid.id}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({
+              refunded: true,
+              refund_tx_signature: signature
+            })
+          }
+        );
+
+        if (!updateResponse.ok) {
+          throw new Error(`Failed to update bid ${bid.id}: ${updateResponse.statusText}`);
+        }
+
+        console.log(`[refund] ✅ Refunded to ${bid.bidder_wallet}: ${signature}`);
+        results.refunded++;
+      } catch (error) {
+        console.error(`[refund] ❌ Failed to refund bid ${bid.id}:`, error);
+        results.failed++;
+        results.errors.push(`${bid.bidder_wallet}: ${error.message}`);
+      }
+    }
+
+    console.log('[refund] Complete:', results);
+    return results;
+  } catch (error) {
+    console.error('[refund] ❌ Error processing refunds:', error);
+    results.errors.push(error.message);
+    return results;
   }
 }
 

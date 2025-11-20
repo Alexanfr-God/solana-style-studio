@@ -287,6 +287,9 @@ export type Database = {
           bidder_wallet: string
           created_at: string
           id: string
+          refund_tx_signature: string | null
+          refunded: boolean | null
+          tx_signature: string | null
         }
         Insert: {
           auction_id: string
@@ -294,6 +297,9 @@ export type Database = {
           bidder_wallet: string
           created_at?: string
           id?: string
+          refund_tx_signature?: string | null
+          refunded?: boolean | null
+          tx_signature?: string | null
         }
         Update: {
           auction_id?: string
@@ -301,6 +307,9 @@ export type Database = {
           bidder_wallet?: string
           created_at?: string
           id?: string
+          refund_tx_signature?: string | null
+          refunded?: boolean | null
+          tx_signature?: string | null
         }
         Relationships: [
           {
