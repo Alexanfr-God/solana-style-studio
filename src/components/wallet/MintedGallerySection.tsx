@@ -49,6 +49,8 @@ type MintRow = {
   is_listed?: boolean;
   price_lamports?: number;
   listing_id?: string;
+  auction_status?: 'active' | 'finished' | 'cancelled' | null;
+  auction_id?: string | null;
 };
 
 export default function MintedGallerySection() {
@@ -65,6 +67,7 @@ export default function MintedGallerySection() {
   const [showWccOnly, setShowWccOnly] = useState(false);
   const [minRating, setMinRating] = useState<number>(0);
   const [showListedOnly, setShowListedOnly] = useState(false);
+  const [auctionFilter, setAuctionFilter] = useState<'all' | 'active' | 'finished' | 'none'>('all');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -79,11 +82,12 @@ export default function MintedGallerySection() {
 
   useEffect(() => {
     fetchMints();
-  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, page, address]);
+  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, auctionFilter, page, address]);
 
   async function fetchMints() {
     setIsLoading(true);
     try {
+      // First, get all minted themes
       let query = supabase
         .from('minted_themes')
         .select('*', { count: 'exact' });
@@ -143,7 +147,41 @@ export default function MintedGallerySection() {
 
       if (error) throw error;
 
-      setItems(data || []);
+      // Now get auction status for each NFT
+      const mintAddresses = (data || []).map(item => item.mint_address);
+      
+      let auctionsData: any[] = [];
+      if (mintAddresses.length > 0) {
+        const { data: auctions } = await supabase
+          .from('nft_auctions')
+          .select('nft_mint, status, id')
+          .in('nft_mint', mintAddresses)
+          .order('created_at', { ascending: false });
+        
+        auctionsData = auctions || [];
+      }
+
+      // Merge auction data with mint data
+      const itemsWithAuctions = (data || []).map(item => {
+        const auction = auctionsData.find(a => a.nft_mint === item.mint_address);
+        return {
+          ...item,
+          auction_status: auction?.status || null,
+          auction_id: auction?.id || null,
+        };
+      });
+
+      // Apply auction filter
+      let filteredItems = itemsWithAuctions;
+      if (auctionFilter !== 'all') {
+        if (auctionFilter === 'none') {
+          filteredItems = itemsWithAuctions.filter(item => !item.auction_status);
+        } else {
+          filteredItems = itemsWithAuctions.filter(item => item.auction_status === auctionFilter);
+        }
+      }
+
+      setItems(filteredItems);
       setTotalCount(count || 0);
     } catch (error) {
       console.error('[MintedGallery] Error fetching mints:', error);
@@ -490,6 +528,25 @@ export default function MintedGallerySection() {
             For Sale {showListedOnly && `(${totalCount})`}
           </Button>
 
+          {/* Auction Filter */}
+          <Select
+            value={auctionFilter}
+            onValueChange={(value: any) => {
+              setAuctionFilter(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-44 bg-white/5 border-white/10 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Auctions</SelectItem>
+              <SelectItem value="active">🔥 Active</SelectItem>
+              <SelectItem value="finished">✅ Finished</SelectItem>
+              <SelectItem value="none">🚫 No Auction</SelectItem>
+            </SelectContent>
+          </Select>
+
           {/* Blockchain Filter */}
           <Select
             value={selectedBlockchain}
@@ -612,6 +669,21 @@ export default function MintedGallerySection() {
               {!item.metadata_uri?.includes('properties') && (
                 <div className="absolute bottom-2 left-9 sm:left-10 z-10 px-1.5 py-0.5 rounded bg-orange-500/60 backdrop-blur-sm">
                   <span className="text-[8px] sm:text-[9px] font-semibold text-white uppercase tracking-wide">Legacy</span>
+                </div>
+              )}
+
+              {/* Auction Status Badge */}
+              {item.auction_status === 'active' && (
+                <div className="absolute top-2 left-2 z-10 px-2 py-1 rounded bg-red-500/80 backdrop-blur-sm">
+                  <span className="text-xs font-semibold text-white flex items-center gap-1">
+                    <Gavel className="w-3 h-3" />
+                    LIVE AUCTION
+                  </span>
+                </div>
+              )}
+              {item.auction_status === 'finished' && (
+                <div className="absolute top-2 left-2 z-10 px-2 py-1 rounded bg-gray-500/80 backdrop-blur-sm">
+                  <span className="text-xs font-semibold text-white">ENDED</span>
                 </div>
               )}
                 
