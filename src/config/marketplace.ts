@@ -15,6 +15,9 @@ export const MARKETPLACE_CONFIG = {
   // This will be set dynamically from TREASURY_WALLET secret
   PLATFORM_FEE_WALLET: '', // Set dynamically in edge functions
   
+  // Escrow wallet for holding NFTs during auctions (same as platform wallet for MVP)
+  ESCROW_WALLET: '', // Set dynamically from TREASURY_WALLET secret
+  
   // Price limits (in lamports)
   MIN_LISTING_PRICE_LAMPORTS: 100_000_000, // 0.1 SOL
   MAX_LISTING_PRICE_LAMPORTS: 1_000_000_000_000, // 1000 SOL

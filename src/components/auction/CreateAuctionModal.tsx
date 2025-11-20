@@ -25,7 +25,9 @@ import {
 } from '@/components/ui/select';
 import { useCreateAuction } from '@/hooks/useAuction';
 import { useSolanaBalance } from '@/hooks/useSolanaBalance';
+import { useNftEscrow } from '@/hooks/useNftEscrow';
 import { calculateEndTime, formatDate, solToLamports } from '@/utils/auctionUtils';
+import { toast } from 'sonner';
 import type { CreateAuctionParams } from '@/types/auction';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -71,15 +73,17 @@ export function CreateAuctionModal({
   const [startPrice, setStartPrice] = useState('');
   const [duration, setDuration] = useState<number>(72); // 3 days default
   const [errors, setErrors] = useState<{ startPrice?: string; duration?: string }>({});
+  const [escrowSignature, setEscrowSignature] = useState<string | null>(null);
 
   const { mutate: createAuction, isPending } = useCreateAuction();
   const { balanceSOL, isLoading: isLoadingBalance } = useSolanaBalance(sellerWallet);
+  const { escrowNft, isEscrowing } = useNftEscrow();
 
   // Minimum balance needed for auction creation (~0.01 SOL for transaction fees)
   const minBalanceRequired = 0.01;
   const hasEnoughBalance = balanceSOL >= minBalanceRequired;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
 
@@ -99,20 +103,58 @@ export function CreateAuctionModal({
       return;
     }
 
-    const params: CreateAuctionParams = {
-      nft_mint: nftMint,
-      seller_wallet: sellerWallet,
-      start_price_lamports: solToLamports(parseFloat(startPrice)),
-      duration_hours: duration
-    };
+    // Check balance
+    if (!hasEnoughBalance) {
+      toast.error('Insufficient SOL balance for transaction fees');
+      return;
+    }
 
-    createAuction(params, {
-      onSuccess: () => {
-        onOpenChange(false);
-        setStartPrice('');
-        setDuration(72);
-      }
-    });
+    try {
+      // Step 1: Escrow NFT first
+      console.log('[CreateAuction] Step 1: Escrowing NFT...');
+      toast.info('Transferring NFT to escrow...');
+      
+      const signature = await escrowNft({
+        nftMint,
+        fromWallet: sellerWallet
+      });
+
+      console.log('[CreateAuction] ✅ NFT escrowed, signature:', signature);
+      setEscrowSignature(signature);
+
+      // Step 2: Create auction in database
+      console.log('[CreateAuction] Step 2: Creating auction...');
+      const params: CreateAuctionParams = {
+        nft_mint: nftMint,
+        seller_wallet: sellerWallet,
+        start_price_lamports: solToLamports(parseFloat(startPrice)),
+        duration_hours: duration
+      };
+
+      createAuction(params, {
+        onSuccess: () => {
+          toast.success('Auction created successfully!');
+          onOpenChange(false);
+          setStartPrice('');
+          setDuration(72);
+          setEscrowSignature(null);
+        },
+        onError: (error: any) => {
+          console.error('[CreateAuction] ❌ Auction creation failed:', error);
+          
+          // If escrow succeeded but auction creation failed
+          if (escrowSignature) {
+            console.error('[CreateAuction] ⚠️ NFT was escrowed but auction creation failed!');
+            toast.error('NFT is in escrow but auction creation failed. Please contact support.');
+          } else {
+            toast.error(error.message || 'Failed to create auction');
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('[CreateAuction] ❌ Error:', error);
+      toast.error(error.message || 'Failed to escrow NFT');
+    }
   };
 
   const endTime = duration ? calculateEndTime(duration) : null;
@@ -234,10 +276,10 @@ export function CreateAuctionModal({
             </Button>
             <Button
               type="submit"
-              disabled={isPending || !hasEnoughBalance || isLoadingBalance}
+              disabled={isPending || isEscrowing || !hasEnoughBalance || isLoadingBalance}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {isPending ? 'Creating...' : 'Create Auction'}
+              {isEscrowing ? 'Transferring NFT...' : isPending ? 'Creating Auction...' : 'Create Auction'}
             </Button>
           </div>
         </form>
