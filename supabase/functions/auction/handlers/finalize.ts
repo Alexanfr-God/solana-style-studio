@@ -6,6 +6,7 @@ import type { FinalizeAuctionRequest, ApiResponse } from '../types.ts';
 import { validateFinalizeAuction, canFinalizeAuction } from '../utils/validation.ts';
 import { fetchAuction, updateAuction, updateNFT } from '../utils/database.ts';
 import { STUB_MODE } from '../utils/constants.ts';
+import { finalizeAuctionOnChain, calculateFees } from '../utils/solana.ts';
 
 export async function handleFinalizeAuction(
   request: FinalizeAuctionRequest
@@ -55,18 +56,43 @@ export async function handleFinalizeAuction(
 
     console.log('[finalize-auction] ✅ Winner found:', auction.winner_wallet);
 
-    // Generate transaction signature
-    const txSignature = STUB_MODE
-      ? `stub_auction_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      : null; // In production, this would be the actual Solana transaction signature
+    let nftTransferSignature: string;
+    let solPaymentSignature: string;
 
     if (STUB_MODE) {
       console.log('[finalize-auction] 💰 Processing payment (STUB MODE)...');
+      
+      // Stub mode: generate fake signatures
+      nftTransferSignature = `stub_nft_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      solPaymentSignature = `stub_sol_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Calculate fees for logging
+      const fees = calculateFees(auction.current_price_lamports);
+      console.log('[finalize-auction] Platform fee:', fees.platformFee, 'lamports');
+      console.log('[finalize-auction] Royalty fee:', fees.royaltyFee, 'lamports');
+      console.log('[finalize-auction] Seller receives:', fees.sellerReceives, 'lamports');
     } else {
-      console.log('[finalize-auction] 💰 Processing Solana transaction...');
-      // TODO: Implement Solana transaction
-      // - Transfer NFT to winner
-      // - Transfer SOL to seller (minus marketplace fee)
+      console.log('[finalize-auction] 💰 Processing Solana blockchain transactions...');
+      
+      try {
+        // Execute blockchain transactions
+        const result = await finalizeAuctionOnChain(
+          auction.nft_mint,
+          auction.winner_wallet,
+          auction.seller_wallet,
+          auction.current_price_lamports
+        );
+        
+        nftTransferSignature = result.nftTransferSignature;
+        solPaymentSignature = result.solPaymentSignature;
+        
+        console.log('[finalize-auction] ✅ Blockchain transactions completed');
+        console.log('[finalize-auction] NFT transfer:', nftTransferSignature);
+        console.log('[finalize-auction] SOL payment:', solPaymentSignature);
+      } catch (error) {
+        console.error('[finalize-auction] ❌ Blockchain transaction failed:', error);
+        throw new Error(`Blockchain transaction failed: ${error.message}`);
+      }
     }
 
     console.log('[finalize-auction] 🔄 Finalizing auction...');
@@ -74,7 +100,7 @@ export async function handleFinalizeAuction(
     // Update auction as finished
     await updateAuction(auction_id, {
       status: 'finished',
-      tx_signature: txSignature
+      tx_signature: nftTransferSignature // Store NFT transfer signature as main tx
     });
 
     console.log('[finalize-auction] ✅ Auction finalized');
@@ -89,13 +115,21 @@ export async function handleFinalizeAuction(
 
     console.log('[finalize-auction] ✅ Success' + (STUB_MODE ? ' (STUB MODE)' : ''));
 
+    const fees = calculateFees(auction.current_price_lamports);
+
     return {
       success: true,
       data: {
         result: 'sold',
         winner: auction.winner_wallet,
         final_price: auction.current_price_lamports,
-        tx_signature: txSignature,
+        nft_transfer_signature: nftTransferSignature,
+        sol_payment_signature: solPaymentSignature,
+        fees: {
+          platform_fee: fees.platformFee,
+          royalty_fee: fees.royaltyFee,
+          seller_receives: fees.sellerReceives
+        },
         ...(STUB_MODE && {
           warning: 'STUB MODE: No real blockchain transaction'
         })
