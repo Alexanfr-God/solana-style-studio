@@ -145,6 +145,7 @@ export async function createBid(data: {
   auction_id: string;
   bidder_wallet: string;
   bid_price_lamports: number;
+  tx_signature?: string;
 }): Promise<Bid> {
   const response = await fetch(
     `${supabaseUrl}/rest/v1/nft_bids`,

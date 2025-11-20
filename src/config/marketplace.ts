@@ -18,6 +18,11 @@ export const MARKETPLACE_CONFIG = {
   // Escrow wallet for holding NFTs during auctions (same as platform wallet for MVP)
   ESCROW_WALLET: '', // Set dynamically from escrow_wallet secret
   
+  // Escrow wallet PUBLIC key (safe to expose, used for client-side transfers)
+  // This should be set to match your escrow_wallet secret's public key
+  // Get it by running: solana-keygen pubkey <path-to-keypair.json>
+  ESCROW_WALLET_PUBLIC_KEY: 'HzVB3L8hRALUq37WRNbj3RDjfm2fYRBVJQvxMYCQ6Qfx', // TODO: Update with actual escrow public key
+  
   // Price limits (in lamports)
   MIN_LISTING_PRICE_LAMPORTS: 100_000_000, // 0.1 SOL
   MAX_LISTING_PRICE_LAMPORTS: 1_000_000_000_000, // 1000 SOL

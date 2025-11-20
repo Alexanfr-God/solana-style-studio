@@ -10,6 +10,7 @@ import {
   updateAuction,
   updateNFT
 } from '../utils/database.ts';
+import { getConnection, getEscrowKeypair } from '../utils/solana.ts';
 
 export async function handlePlaceBid(
   request: PlaceBidRequest
@@ -20,7 +21,57 @@ export async function handlePlaceBid(
     // Validate input
     validatePlaceBid(request);
 
-    const { auction_id, bidder_wallet, bid_price_lamports } = request;
+    const { auction_id, bidder_wallet, bid_price_lamports, tx_signature } = request;
+
+    // Validate transaction signature
+    if (!tx_signature) {
+      throw new Error('Transaction signature is required');
+    }
+
+    console.log('[place-bid] 🔍 Verifying SOL transfer...');
+
+    // Verify transaction on-chain
+    const connection = getConnection();
+    const txInfo = await connection.getTransaction(tx_signature, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (!txInfo) {
+      throw new Error('Transaction not found on blockchain');
+    }
+
+    // Get escrow wallet address
+    const escrowKeypair = getEscrowKeypair();
+    const escrowPublicKey = escrowKeypair.publicKey.toString();
+
+    // Verify transaction details
+    let validTransfer = false;
+    const postBalances = txInfo.meta?.postBalances || [];
+    const preBalances = txInfo.meta?.preBalances || [];
+    const accountKeys = txInfo.transaction.message.staticAccountKeys || [];
+
+    // Find escrow account index
+    const escrowIndex = accountKeys.findIndex(key => key.toString() === escrowPublicKey);
+    
+    if (escrowIndex !== -1) {
+      const balanceChange = postBalances[escrowIndex] - preBalances[escrowIndex];
+      
+      // Check if the balance change matches the bid amount (allow small variance for fees)
+      if (Math.abs(balanceChange - bid_price_lamports) < 1000) {
+        validTransfer = true;
+        console.log('[place-bid] ✅ Valid transfer verified:', balanceChange, 'lamports');
+      } else {
+        console.error('[place-bid] ❌ Balance mismatch:', {
+          expected: bid_price_lamports,
+          actual: balanceChange
+        });
+      }
+    }
+
+    if (!validTransfer) {
+      throw new Error('Invalid SOL transfer to escrow. Amount does not match bid.');
+    }
 
     console.log('[place-bid] 📡 Fetching auction...');
 
@@ -36,11 +87,12 @@ export async function handlePlaceBid(
     console.log('[place-bid] ✅ Auction valid');
     console.log('[place-bid] 💾 Saving bid...');
 
-    // Create bid
+    // Create bid with transaction signature
     const bid = await createBid({
       auction_id,
       bidder_wallet,
-      bid_price_lamports
+      bid_price_lamports,
+      tx_signature
     });
 
     console.log('[place-bid] ✅ Bid saved:', bid.id);

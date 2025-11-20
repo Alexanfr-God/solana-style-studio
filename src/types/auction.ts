@@ -25,6 +25,9 @@ export interface Bid {
   bidder_wallet: string;
   bid_price_lamports: number;
   created_at: string;
+  tx_signature?: string | null;
+  refunded?: boolean;
+  refund_tx_signature?: string | null;
 }
 
 export interface AuctionWithBids extends Auction {
