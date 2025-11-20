@@ -678,7 +678,7 @@ export default function MintedGallerySection() {
               {/* Auction Status Badge */}
               {item.auction_status === 'active' && item.auction_end_at && (
                 <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-                  <div className="px-2 py-1 rounded bg-red-500/90 backdrop-blur-sm">
+                  <div className="px-2 py-1 rounded bg-red-500/90 backdrop-blur-sm animate-pulse">
                     <span className="text-xs font-semibold text-white flex items-center gap-1">
                       <Gavel className="w-3 h-3" />
                       LIVE AUCTION
