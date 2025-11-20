@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { usePlaceBid } from '@/hooks/useAuction';
+import { usePlaceBid } from '@/hooks/usePlaceBid';
 import { useSolanaBalance } from '@/hooks/useSolanaBalance';
 import {
   calculateMinBid,
@@ -47,7 +47,7 @@ export function PlaceBidModal({
   const [bidAmount, setBidAmount] = useState('');
   const [error, setError] = useState('');
 
-  const { mutate: placeBid, isPending } = usePlaceBid();
+  const { placeBid, isPlacing } = usePlaceBid();
   const { balance, balanceSOL, isLoading: isLoadingBalance, hasEnoughFor } = useSolanaBalance(bidderWallet);
 
   const minBidLamports = calculateMinBid(auction.current_price_lamports);
@@ -68,7 +68,7 @@ export function PlaceBidModal({
       })
   }), [minBidSOL, minBidLamports]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -95,19 +95,17 @@ export function PlaceBidModal({
       return;
     }
 
-    placeBid({
-      auction_id: auction.id,
-      bidder_wallet: bidderWallet,
-      bid_price_lamports: bidLamports
-    }, {
-      onSuccess: () => {
-        onOpenChange(false);
-        setBidAmount('');
-      },
-      onError: (err) => {
-        setError(err.message);
-      }
-    });
+    try {
+      await placeBid({
+        auction_id: auction.id,
+        bid_price_lamports: bidLamports
+      });
+      
+      onOpenChange(false);
+      setBidAmount('');
+    } catch (err: any) {
+      setError(err.message || 'Failed to place bid');
+    }
   };
 
   const bidAmountValue = bidAmount ? parseFloat(bidAmount) : 0;
@@ -174,7 +172,7 @@ export function PlaceBidModal({
                 setError('');
               }}
               className="bg-background border-border text-foreground"
-              disabled={isPending || isSeller}
+              disabled={isPlacing || isSeller}
             />
             {error && (
               <p className="text-sm text-destructive">{error}</p>
@@ -231,17 +229,17 @@ export function PlaceBidModal({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isPending}
+              disabled={isPlacing}
               className="flex-1"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={isPending || isSeller || !bidAmount}
+              disabled={isPlacing || isSeller || !bidAmount}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {isPending ? 'Placing Bid...' : 'Place Bid'}
+              {isPlacing ? 'Placing Bid...' : 'Place Bid'}
             </Button>
           </div>
         </form>
