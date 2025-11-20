@@ -1,10 +1,10 @@
 /**
- * Place Bid Hook with SOL Escrow
+ * Place Bid Hook with SOL Escrow (AppKit Integration)
  */
 
 import { useState } from 'react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { Transaction, SystemProgram, PublicKey } from '@solana/web3.js';
+import { Transaction, SystemProgram, PublicKey, Connection } from '@solana/web3.js';
+import { useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MARKETPLACE_CONFIG } from '@/config/marketplace';
@@ -15,15 +15,19 @@ interface PlaceBidParams {
 }
 
 export function usePlaceBid() {
-  const { connection } = useConnection();
-  const { publicKey, signTransaction } = useWallet();
+  const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider('solana');
   const [isPlacing, setIsPlacing] = useState(false);
 
   const placeBid = async ({ auction_id, bid_price_lamports }: PlaceBidParams) => {
-    if (!publicKey || !signTransaction) {
+    if (!isConnected || !address || !walletProvider) {
       toast.error('Please connect your wallet');
       throw new Error('Wallet not connected');
     }
+
+    // Type assertion for walletProvider
+    const provider = walletProvider as any;
+    const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
 
     setIsPlacing(true);
 
@@ -33,6 +37,7 @@ export function usePlaceBid() {
       toast.info('Transferring SOL to escrow...');
 
       // 1. Create SOL transfer transaction to escrow
+      const publicKey = new PublicKey(address);
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: publicKey,
@@ -46,8 +51,8 @@ export function usePlaceBid() {
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
 
-      // 2. Sign and send transaction
-      const signedTx = await signTransaction(transaction);
+      // 2. Sign and send transaction using AppKit provider
+      const signedTx = await provider.signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
 
       toast.info('Confirming transaction...');
@@ -63,7 +68,7 @@ export function usePlaceBid() {
         body: {
           action: 'place_bid',
           auction_id,
-          bidder_wallet: publicKey.toString(),
+          bidder_wallet: address,
           bid_price_lamports,
           tx_signature: signature,
         },

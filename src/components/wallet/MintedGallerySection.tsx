@@ -416,17 +416,79 @@ export default function MintedGallerySection() {
     }
   }
 
-  async function handleBuyNFT(listingId: string) {
+  async function handleBuyNFT(item: MintRow) {
     if (!address) {
       toast.error('Connect wallet to buy NFTs');
       return;
     }
 
+    if (!item.listing_id) {
+      toast.error('No active listing found');
+      return;
+    }
+
     try {
+      // Dynamic imports
+      const { useAppKitProvider } = await import('@reown/appkit/react');
+      const { Connection, PublicKey, Transaction, SystemProgram } = await import('@solana/web3.js');
+
+      // Get wallet provider - must be called at component level
+      const appKitState = useAppKitProvider('solana');
+      const walletProvider = appKitState.walletProvider as any;
+      
+      if (!walletProvider) {
+        toast.error('Wallet provider not available');
+        return;
+      }
+
+      toast.info('💰 Preparing SOL transfer...');
+
+      // Create Solana connection
+      const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
+      
+      // Get seller address from listing
+      const sellerPublicKey = new PublicKey(item.owner_address);
+      const buyerPublicKey = new PublicKey(address);
+      const priceLamports = item.price_lamports || 0;
+
+      // Create SOL transfer transaction
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: buyerPublicKey,
+          toPubkey: sellerPublicKey,
+          lamports: priceLamports,
+        })
+      );
+
+      // Get recent blockhash
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = buyerPublicKey;
+
+      toast.info('✍️ Please sign the transaction...');
+
+      // Sign transaction
+      const signedTx = await walletProvider.signTransaction(transaction);
+      
+      toast.info('📡 Sending transaction...');
+
+      // Send transaction
+      const signature = await connection.sendRawTransaction(signedTx.serialize());
+
+      toast.info('⏳ Confirming transaction...');
+
+      // Wait for confirmation
+      await connection.confirmTransaction(signature, 'confirmed');
+
+      toast.success('✅ Payment sent!');
+      toast.info('🔄 Updating ownership...');
+
+      // Call edge function to finalize purchase
       const { error } = await supabase.functions.invoke('buy_nft', {
         body: {
-          listing_id: listingId,
-          buyer_wallet: address
+          listing_id: item.listing_id,
+          buyer_wallet: address,
+          tx_signature: signature,
         }
       });
 
@@ -434,7 +496,7 @@ export default function MintedGallerySection() {
 
       toast.success('🎉 NFT purchased successfully!');
       fetchMints();
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Buy NFT] Error:', error);
       toast.error(error.message || 'Failed to buy NFT');
     }
@@ -845,7 +907,7 @@ export default function MintedGallerySection() {
                   {/* If current user is owner */}
                   {item.owner_address === address && (
                     <>
-                      {!item.is_listed ? (
+                      {!item.is_listed && item.auction_status !== 'active' ? (
                         <div className="flex gap-1.5">
                           <Button
                             size="sm"
@@ -887,8 +949,8 @@ export default function MintedGallerySection() {
                     </>
                   )}
                   
-                  {/* If listed and not owner */}
-                  {item.is_listed && item.owner_address !== address && (
+                  {/* If listed and not owner (but not in active auction) */}
+                  {item.is_listed && item.listing_id && item.owner_address !== address && item.auction_status !== 'active' && (
                     <>
                       <div className="text-center text-lg font-bold text-green-400 py-1">
                         💎 {MARKETPLACE_CONFIG.formatPrice(item.price_lamports!)} SOL
@@ -966,7 +1028,7 @@ export default function MintedGallerySection() {
               setBuyModalOpen(false);
               setSelectedItem(null);
             }}
-            onConfirm={() => handleBuyNFT(selectedItem.listing_id!)}
+            onConfirm={() => handleBuyNFT(selectedItem)}
           />
           
           {address && (
