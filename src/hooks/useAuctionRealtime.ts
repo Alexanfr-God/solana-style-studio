@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 /**
  * Subscribe to real-time auction updates for a specific NFT
@@ -65,13 +66,11 @@ export function useAuctionRealtime(auctionId: string | undefined) {
           
           // Show toast for auction status changes
           if (payload.eventType === 'UPDATE' && payload.new.status !== payload.old.status) {
-            import('sonner').then(({ toast }) => {
-              if (payload.new.status === 'finished') {
-                toast.success('🏁 Auction ended!', { duration: 5000 });
-              } else if (payload.new.status === 'cancelled') {
-                toast.warning('⚠️ Auction cancelled', { duration: 5000 });
-              }
-            });
+            if (payload.new.status === 'finished') {
+              toast.success('🏁 Auction ended!', { duration: 5000 });
+            } else if (payload.new.status === 'cancelled') {
+              toast.warning('⚠️ Auction cancelled', { duration: 5000 });
+            }
           }
           
           // Invalidate auction query
@@ -113,11 +112,8 @@ export function useBidsRealtime(auctionId: string | undefined) {
           const bidderWallet = payload.new.bidder_wallet;
           const shortAddress = `${bidderWallet.slice(0, 4)}...${bidderWallet.slice(-4)}`;
           
-          // Use dynamic import to avoid circular dependency
-          import('sonner').then(({ toast }) => {
-            toast.info(`🔔 New bid: ${bidPrice.toFixed(4)} SOL by ${shortAddress}`, {
-              duration: 5000,
-            });
+          toast.info(`🔔 New bid: ${bidPrice.toFixed(4)} SOL by ${shortAddress}`, {
+            duration: 5000,
           });
           
           // Invalidate bids and auction queries (auction updates current_price)
