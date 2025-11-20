@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppKitAccount } from '@reown/appkit/react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { ExternalLink, Sparkles, Tag, ShoppingBag } from 'lucide-react';
+import { ExternalLink, Sparkles, Tag, ShoppingBag, Gavel } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
 import { RibbonBadge } from '@/components/nft/RibbonBadge';
 import { RatingStars } from '@/components/nft/RatingStars';
 import { ListNftModal } from '@/components/nft/ListNftModal';
 import { BuyNftModal } from '@/components/nft/BuyNftModal';
+import { CreateAuctionModal } from '@/components/auction/CreateAuctionModal';
 import { MARKETPLACE_CONFIG } from '@/config/marketplace';
 
 // Convert IPFS URI to HTTP gateway URL
@@ -50,6 +52,7 @@ type MintRow = {
 };
 
 export default function MintedGallerySection() {
+  const navigate = useNavigate();
   const { address } = useAppKitAccount();
   const { setTheme, setActiveThemeId } = useThemeStore();
   
@@ -69,6 +72,7 @@ export default function MintedGallerySection() {
   // Marketplace modals
   const [listModalOpen, setListModalOpen] = useState(false);
   const [buyModalOpen, setBuyModalOpen] = useState(false);
+  const [createAuctionModalOpen, setCreateAuctionModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MintRow | null>(null);
   
   const pageSize = 24;
@@ -577,7 +581,10 @@ export default function MintedGallerySection() {
               className="overflow-hidden bg-white/5 border-white/10 hover:bg-white/10 hover:border-purple-500/50 transition-all group"
             >
               {/* Preview Image */}
-              <div className="relative w-full h-[220px] sm:h-[240px] lg:h-[260px] bg-black/20 overflow-hidden rounded-t-xl">
+              <div 
+                className="relative w-full h-[220px] sm:h-[240px] lg:h-[260px] bg-black/20 overflow-hidden rounded-t-xl cursor-pointer"
+                onClick={() => navigate(`/nft/${item.mint_address}`)}
+              >
               {/* For Sale Badge */}
               {item.is_listed && (
                 <div className="absolute top-2 left-2 z-10 bg-green-500/90 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
@@ -699,15 +706,29 @@ export default function MintedGallerySection() {
                   {item.owner_address === address && (
                     <>
                       {!item.is_listed ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full border-white/10 text-white hover:bg-green-500/20 hover:border-green-500/50"
-                          onClick={() => openListModal(item)}
-                        >
-                          <Tag className="mr-1.5 h-3 w-3" />
-                          List for Sale
-                        </Button>
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 border-white/10 text-white hover:bg-green-500/20 hover:border-green-500/50"
+                            onClick={() => openListModal(item)}
+                          >
+                            <Tag className="mr-1.5 h-3 w-3" />
+                            List for Sale
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/50"
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setCreateAuctionModalOpen(true);
+                            }}
+                          >
+                            <Gavel className="mr-1.5 h-3 w-3" />
+                            Start Auction
+                          </Button>
+                        </div>
                       ) : (
                         <div className="flex gap-1.5">
                           <Button
@@ -807,6 +828,19 @@ export default function MintedGallerySection() {
             }}
             onConfirm={() => handleBuyNFT(selectedItem.listing_id!)}
           />
+          
+          {address && (
+            <CreateAuctionModal
+              open={createAuctionModalOpen}
+              onOpenChange={(open) => {
+                setCreateAuctionModalOpen(open);
+                if (!open) setSelectedItem(null);
+              }}
+              nftMint={selectedItem.mint_address}
+              sellerWallet={address}
+              nftName={selectedItem.theme_name || undefined}
+            />
+          )}
         </>
       )}
     </section>
