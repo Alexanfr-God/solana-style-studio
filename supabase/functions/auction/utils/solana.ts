@@ -32,19 +32,19 @@ export function getConnection(): Connection {
  * Get escrow wallet keypair from environment
  */
 function getEscrowKeypair(): Keypair {
-  const treasuryWalletPrivateKey = Deno.env.get('TREASURY_WALLET');
+  const escrowWalletPrivateKey = Deno.env.get('escrow_wallet');
   
-  if (!treasuryWalletPrivateKey) {
-    throw new Error('TREASURY_WALLET secret not configured');
+  if (!escrowWalletPrivateKey) {
+    throw new Error('escrow_wallet secret not configured');
   }
 
   try {
     // Parse the private key (expects base58 or array of numbers)
-    const secretKey = JSON.parse(treasuryWalletPrivateKey);
+    const secretKey = JSON.parse(escrowWalletPrivateKey);
     return Keypair.fromSecretKey(new Uint8Array(secretKey));
   } catch (error) {
-    console.error('[solana] Failed to parse TREASURY_WALLET:', error);
-    throw new Error('Invalid TREASURY_WALLET format');
+    console.error('[solana] Failed to parse escrow_wallet:', error);
+    throw new Error('Invalid escrow_wallet format');
   }
 }
 
