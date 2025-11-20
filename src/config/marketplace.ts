@@ -12,11 +12,11 @@ export const MARKETPLACE_CONFIG = {
   ROYALTY_FEE_BPS: 500,
   
   // Platform wallet address (Solana) - loaded from environment/secrets
-  // This will be set dynamically from TREASURY_WALLET secret
+  // This will be set dynamically from escrow_wallet secret
   PLATFORM_FEE_WALLET: '', // Set dynamically in edge functions
   
   // Escrow wallet for holding NFTs during auctions (same as platform wallet for MVP)
-  ESCROW_WALLET: '', // Set dynamically from TREASURY_WALLET secret
+  ESCROW_WALLET: '', // Set dynamically from escrow_wallet secret
   
   // Price limits (in lamports)
   MIN_LISTING_PRICE_LAMPORTS: 100_000_000, // 0.1 SOL
