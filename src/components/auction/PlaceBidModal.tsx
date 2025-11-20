@@ -82,7 +82,12 @@ export function PlaceBidModal({
     const result = placeBidSchema.safeParse({ bidAmount });
 
     if (!result.success) {
-      setError(result.error.errors[0].message);
+      const errorMsg = result.error.errors[0].message;
+      setError(errorMsg);
+      // Auto-fill minimum bid on validation error
+      if (errorMsg.includes('Minimum bid')) {
+        setBidAmount(minBidSOL.toFixed(4));
+      }
       return;
     }
 
@@ -160,26 +165,43 @@ export function PlaceBidModal({
             <Label htmlFor="bidAmount" className="text-foreground">
               Your Bid (SOL) <span className="text-destructive">*</span>
             </Label>
-            <Input
-              id="bidAmount"
-              type="number"
-              step="0.01"
-              min={minBidSOL}
-              placeholder={minBidSOL.toFixed(4)}
-              value={bidAmount}
-              onChange={(e) => {
-                setBidAmount(e.target.value);
-                setError('');
-              }}
-              className="bg-background border-border text-foreground"
-              disabled={isPlacing || isSeller}
-            />
+            <div className="relative">
+              <Input
+                id="bidAmount"
+                type="number"
+                step="0.01"
+                min={minBidSOL}
+                placeholder={`Min: ${minBidSOL.toFixed(4)} SOL`}
+                value={bidAmount}
+                onChange={(e) => {
+                  setBidAmount(e.target.value);
+                  setError('');
+                }}
+                className="bg-background border-border text-foreground pr-20"
+                disabled={isPlacing || isSeller}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-xs text-primary hover:text-primary/80"
+                onClick={() => setBidAmount(minBidSOL.toFixed(4))}
+                disabled={isPlacing || isSeller}
+              >
+                Min
+              </Button>
+            </div>
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-destructive font-medium">{error}</p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Minimum bid: {formatSOL(minBidLamports, 4)} SOL (+10%)
-            </p>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                Minimum: {formatSOL(minBidLamports, 4)} SOL
+              </span>
+              <span className="text-primary font-medium">
+                (+10% increment)
+              </span>
+            </div>
           </div>
 
           {/* Bid Breakdown */}
