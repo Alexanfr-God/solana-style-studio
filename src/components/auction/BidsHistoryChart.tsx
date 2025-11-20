@@ -8,7 +8,6 @@ import { Card } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
 import { useAuctionBids } from '@/hooks/useAuction';
 import { lamportsToSOL, formatWalletAddress } from '@/utils/auctionUtils';
-import type { Bid } from '@/types/auction';
 
 interface BidsHistoryChartProps {
   auctionId: string;
