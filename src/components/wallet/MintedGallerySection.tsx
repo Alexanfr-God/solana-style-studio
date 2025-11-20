@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { ExternalLink, Sparkles, Tag, ShoppingBag, Gavel } from 'lucide-react';
+import { ExternalLink, Sparkles, Tag, ShoppingBag, Gavel, Clock } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
 import { toast } from 'sonner';
 import { RibbonBadge } from '@/components/nft/RibbonBadge';
@@ -458,15 +458,27 @@ export default function MintedGallerySection() {
   return (
     <section className="mt-16 pt-12 border-t border-white/10">
       {/* Header */}
-      <div className="mb-8 text-center">
-        <h2 className="text-3xl font-bold text-white mb-2">
-          <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-            Minted Gallery
-          </span>
-        </h2>
-        <p className="text-gray-400">
-          Explore NFT themes minted on Solana Devnet
-        </p>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-center flex-1">
+            <h2 className="text-3xl font-bold text-white mb-2">
+              <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                Minted Gallery
+              </span>
+            </h2>
+            <p className="text-gray-400">
+              Explore NFT themes minted on Solana Devnet
+            </p>
+          </div>
+          <Button
+            onClick={() => navigate('/ending-soon')}
+            variant="outline"
+            className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300 animate-pulse"
+          >
+            <Clock className="w-4 h-4 mr-2" />
+            Ending Soon
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
