@@ -63,6 +63,17 @@ export function useAuctionRealtime(auctionId: string | undefined) {
         (payload: RealtimePostgresChangesPayload<any>) => {
           console.log('[Auction Realtime] Auction update:', payload);
           
+          // Show toast for auction status changes
+          if (payload.eventType === 'UPDATE' && payload.new.status !== payload.old.status) {
+            import('sonner').then(({ toast }) => {
+              if (payload.new.status === 'finished') {
+                toast.success('🏁 Auction ended!', { duration: 5000 });
+              } else if (payload.new.status === 'cancelled') {
+                toast.warning('⚠️ Auction cancelled', { duration: 5000 });
+              }
+            });
+          }
+          
           // Invalidate auction query
           queryClient.invalidateQueries({ queryKey: ['auction', auctionId] });
         }
@@ -96,6 +107,18 @@ export function useBidsRealtime(auctionId: string | undefined) {
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
           console.log('[Bids Realtime] New bid:', payload);
+          
+          // Show toast notification for new bid
+          const bidPrice = payload.new.bid_price_lamports / 1_000_000_000;
+          const bidderWallet = payload.new.bidder_wallet;
+          const shortAddress = `${bidderWallet.slice(0, 4)}...${bidderWallet.slice(-4)}`;
+          
+          // Use dynamic import to avoid circular dependency
+          import('sonner').then(({ toast }) => {
+            toast.info(`🔔 New bid: ${bidPrice.toFixed(4)} SOL by ${shortAddress}`, {
+              duration: 5000,
+            });
+          });
           
           // Invalidate bids and auction queries (auction updates current_price)
           queryClient.invalidateQueries({ queryKey: ['auction', 'bids', auctionId] });

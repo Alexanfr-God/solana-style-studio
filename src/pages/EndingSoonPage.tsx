@@ -35,12 +35,38 @@ export default function EndingSoonPage() {
   useEffect(() => {
     fetchEndingSoonAuctions();
 
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(() => {
-      fetchEndingSoonAuctions();
-    }, 30000);
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('ending-soon-auctions')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'nft_auctions'
+        },
+        (payload) => {
+          console.log('[EndingSoon] Auction change detected:', payload);
+          fetchEndingSoonAuctions();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'nft_bids'
+        },
+        (payload) => {
+          console.log('[EndingSoon] New bid detected:', payload);
+          fetchEndingSoonAuctions();
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchEndingSoonAuctions() {
@@ -138,13 +164,19 @@ export default function EndingSoonPage() {
             <div className="p-3 rounded-lg bg-red-500/20">
               <Clock className="w-8 h-8 text-red-400" />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-4xl font-bold text-foreground">
                 Ending Soon
               </h1>
-              <p className="text-muted-foreground mt-1">
-                Auctions ending within the next 24 hours
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-muted-foreground">
+                  Auctions ending within the next 24 hours
+                </p>
+                <div className="flex items-center gap-1 px-2 py-1 rounded bg-green-500/20 text-green-400 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  Live Updates
+                </div>
+              </div>
             </div>
           </div>
 
