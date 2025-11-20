@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppKitAccount } from '@reown/appkit/react';
+import { useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +58,7 @@ type MintRow = {
 export default function MintedGallerySection() {
   const navigate = useNavigate();
   const { address } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider('solana');
   const { setTheme, setActiveThemeId } = useThemeStore();
   
   const [items, setItems] = useState<MintRow[]>([]);
@@ -429,13 +430,8 @@ export default function MintedGallerySection() {
 
     try {
       // Dynamic imports
-      const { useAppKitProvider } = await import('@reown/appkit/react');
       const { Connection, PublicKey, Transaction, SystemProgram } = await import('@solana/web3.js');
 
-      // Get wallet provider - must be called at component level
-      const appKitState = useAppKitProvider('solana');
-      const walletProvider = appKitState.walletProvider as any;
-      
       if (!walletProvider) {
         toast.error('Wallet provider not available');
         return;
@@ -467,8 +463,8 @@ export default function MintedGallerySection() {
 
       toast.info('✍️ Please sign the transaction...');
 
-      // Sign transaction
-      const signedTx = await walletProvider.signTransaction(transaction);
+      // Sign transaction (type assertion for Solana wallet provider)
+      const signedTx = await (walletProvider as any).signTransaction(transaction);
       
       toast.info('📡 Sending transaction...');
 
