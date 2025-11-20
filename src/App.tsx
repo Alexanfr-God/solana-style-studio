@@ -14,6 +14,7 @@ import NotFound from '@/pages/NotFound';
 import AdminPanel from '@/components/admin/AdminPanel';
 import AiVisionPage from '@/pages/AiVisionPage';
 import AdminAiScannerPage from '@/pages/AdminAiScannerPage';
+import NftDetailPage from '@/pages/NftDetailPage';
 import { EffectsProvider } from '@/contexts/EffectsContext';
 import AppBootstrap from '@/components/AppBootstrap';
 
@@ -33,6 +34,7 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<WalletAlivePlayground />} />
+              <Route path="/nft/:mintAddress" element={<NftDetailPage />} />
               <Route path="/docs" element={<Documentation />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/admin/ai-vision" element={<AiVisionPage />} />
