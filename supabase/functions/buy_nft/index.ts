@@ -74,12 +74,34 @@ serve(async (req) => {
     console.log('[buy_nft] 💰 Price:', listing.price_lamports, 'lamports');
     console.log('[buy_nft] 🔍 Verifying buyer → escrow transaction...');
 
-    // Parse escrow keypair
-    const escrowSecretKey = bs58.decode(escrowWalletSecret);
+    // Parse escrow keypair strictly as base58
+    let escrowSecretKey: Uint8Array;
+
+    try {
+      escrowSecretKey = bs58.decode(escrowWalletSecret);
+    } catch (e) {
+      throw new Error(
+        `Failed to decode escrow_wallet as base58: ${e instanceof Error ? e.message : String(e)}`
+      );
+    }
+
+    // Validate key size (must be 64 bytes for Solana keypair)
+    if (escrowSecretKey.length !== 64) {
+      throw new Error(
+        `Invalid escrow_wallet secret key size: ${escrowSecretKey.length} bytes (expected 64). ` +
+        `Make sure escrow_wallet is a base58-encoded 64-byte Solana keypair, not a public key and not a 32-byte secret.`
+      );
+    }
+
     const escrowKeypair = Keypair.fromSecretKey(escrowSecretKey);
     const escrowPublicKey = escrowKeypair.publicKey.toString();
 
-    console.log('[buy_nft] 🏦 Escrow wallet:', escrowPublicKey);
+    console.log('[buy_nft] 🏦 Escrow wallet public key:', escrowPublicKey);
+
+    // Validate: buyer cannot be escrow itself
+    if (buyer_wallet === escrowPublicKey) {
+      throw new Error('Cannot purchase NFT using the escrow wallet itself. Please use a different wallet.');
+    }
 
     // Verify the transaction on Solana blockchain
     const solanaRpcUrl = 'https://api.devnet.solana.com';
