@@ -481,6 +481,19 @@ export default function MintedGallerySection() {
 
       // Wait for confirmation
       await connection.confirmTransaction(signature, 'confirmed');
+      
+      // Verify transaction status
+      console.log('🔍 Verifying transaction status...');
+      const txStatus = await connection.getSignatureStatus(signature);
+      if (txStatus.value?.err) {
+        throw new Error('Transaction failed on blockchain: ' + JSON.stringify(txStatus.value.err));
+      }
+      
+      if (!txStatus.value?.confirmationStatus) {
+        throw new Error('Transaction confirmation status unknown');
+      }
+      
+      console.log('✅ Transaction confirmed on blockchain:', signature);
 
       toast.success('✅ Payment sent!');
       toast.info('🔄 Updating ownership...');
