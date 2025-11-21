@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { RibbonBadge } from '@/components/nft/RibbonBadge';
 import { RatingStars } from '@/components/nft/RatingStars';
 import { ListNftModal } from '@/components/nft/ListNftModal';
-import { BuyNftModal } from '@/components/nft/BuyNftModal';
+import { BuyNftModal } from './BuyNftModal';
 import { CreateAuctionModal } from '@/components/auction/CreateAuctionModal';
 import { AuctionCountdown } from '@/components/auction/AuctionCountdown';
 import { MARKETPLACE_CONFIG } from '@/config/marketplace';
@@ -76,10 +76,12 @@ export default function MintedGallerySection() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Marketplace modals
-  const [listModalOpen, setListModalOpen] = useState(false);
-  const [buyModalOpen, setBuyModalOpen] = useState(false);
-  const [createAuctionModalOpen, setCreateAuctionModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MintRow | null>(null);
+  const [listModalOpen, setListModalOpen] = useState(false);
+  const [auctionModalOpen, setAuctionModalOpen] = useState(false);
+  const [buyModalOpen, setBuyModalOpen] = useState(false);
+  const [bidModalOpen, setBidModalOpen] = useState(false);
+  const [isProcessingBuy, setIsProcessingBuy] = useState(false);
   
   const pageSize = 24;
 
@@ -420,16 +422,15 @@ export default function MintedGallerySection() {
     }
   }
 
-  async function handleBuyNFT(item: MintRow) {
-    if (!address) {
-      toast.error('Connect wallet to buy NFTs');
-      return;
-    }
+  async function handleBuyNFT() {
+    if (!address || !selectedItem) return;
 
-    if (!item.listing_id) {
+    if (!selectedItem.listing_id) {
       toast.error('No active listing found');
       return;
     }
+
+    setIsProcessingBuy(true);
 
     try {
       // Dynamic imports
@@ -445,16 +446,18 @@ export default function MintedGallerySection() {
       // Create Solana connection
       const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
       
-      // Get seller address from listing
-      const sellerPublicKey = new PublicKey(item.owner_address);
+      // Transfer to ESCROW wallet (not seller directly)
+      const escrowPublicKey = new PublicKey(MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
       const buyerPublicKey = new PublicKey(address);
-      const priceLamports = item.price_lamports || 0;
+      const priceLamports = selectedItem.price_lamports || 0;
 
-      // Create SOL transfer transaction
+      console.log('[Buy NFT] 💵 Transferring', priceLamports, 'lamports to escrow:', MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
+
+      // Create SOL transfer transaction to ESCROW
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: buyerPublicKey,
-          toPubkey: sellerPublicKey,
+          toPubkey: escrowPublicKey,
           lamports: priceLamports,
         })
       );
@@ -485,7 +488,7 @@ export default function MintedGallerySection() {
       // Call edge function to finalize purchase
       const { error } = await supabase.functions.invoke('buy_nft', {
         body: {
-          listing_id: item.listing_id,
+          listing_id: selectedItem.listing_id,
           buyer_wallet: address,
           tx_signature: signature,
         }
@@ -494,10 +497,13 @@ export default function MintedGallerySection() {
       if (error) throw error;
 
       toast.success('🎉 NFT purchased successfully!');
+      setBuyModalOpen(false);
       fetchMints();
     } catch (error: any) {
       console.error('[Buy NFT] Error:', error);
       toast.error(error.message || 'Failed to buy NFT');
+    } finally {
+      setIsProcessingBuy(false);
     }
   }
 
@@ -935,7 +941,7 @@ export default function MintedGallerySection() {
                             className="flex-1 border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/50"
                             onClick={() => {
                               setSelectedItem(item);
-                              setCreateAuctionModalOpen(true);
+                              setAuctionModalOpen(true);
                             }}
                           >
                             <Gavel className="mr-1.5 h-3 w-3" />
@@ -1030,27 +1036,22 @@ export default function MintedGallerySection() {
           />
 
           <BuyNftModal
-            listing={{
-              id: selectedItem.listing_id!,
-              nft_mint: selectedItem.mint_address,
-              price_lamports: selectedItem.price_lamports!,
-              seller_wallet: selectedItem.owner_address
-            }}
-            nftName={selectedItem.theme_name || 'Unnamed Theme'}
-            nftImage={selectedItem.image_url || undefined}
             isOpen={buyModalOpen}
             onClose={() => {
               setBuyModalOpen(false);
               setSelectedItem(null);
             }}
-            onConfirm={() => handleBuyNFT(selectedItem)}
+            onConfirm={handleBuyNFT}
+            priceLamports={selectedItem.price_lamports!}
+            nftName={selectedItem.theme_name || 'Unnamed Theme'}
+            isProcessing={isProcessingBuy}
           />
           
-          {address && (
+          {address && selectedItem && (
             <CreateAuctionModal
-              open={createAuctionModalOpen}
+              open={auctionModalOpen}
               onOpenChange={(open) => {
-                setCreateAuctionModalOpen(open);
+                setAuctionModalOpen(open);
                 if (!open) setSelectedItem(null);
               }}
               nftMint={selectedItem.mint_address}

@@ -1,4 +1,17 @@
+/**
+ * Buy NFT Edge Function with Escrow & 10% Commission
+ * 
+ * Flow:
+ * 1. Buyer transfers 100% to escrow wallet
+ * 2. Verify buyer → escrow transaction
+ * 3. Escrow transfers 90% to seller
+ * 4. 10% remains as platform commission
+ * 5. Update database
+ */
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { Connection, Keypair, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from 'npm:@solana/web3.js@1.98.2';
+import bs58 from 'npm:bs58@6.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,9 +34,10 @@ serve(async (req) => {
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const escrowWalletSecret = Deno.env.get('escrow_wallet');
     
-    if (!supabaseUrl || !serviceKey) {
-      throw new Error('Missing Supabase configuration');
+    if (!supabaseUrl || !serviceKey || !escrowWalletSecret) {
+      throw new Error('Missing environment configuration');
     }
     
     console.log('[buy_nft] 📡 Fetching listing...');
@@ -57,10 +71,20 @@ serve(async (req) => {
     }
     
     console.log('[buy_nft] ✅ Listing found');
-    console.log('[buy_nft] 🔍 Verifying transaction on-chain...');
+    console.log('[buy_nft] 💰 Price:', listing.price_lamports, 'lamports');
+    console.log('[buy_nft] 🔍 Verifying buyer → escrow transaction...');
+
+    // Parse escrow keypair
+    const escrowSecretKey = bs58.decode(escrowWalletSecret);
+    const escrowKeypair = Keypair.fromSecretKey(escrowSecretKey);
+    const escrowPublicKey = escrowKeypair.publicKey.toString();
+
+    console.log('[buy_nft] 🏦 Escrow wallet:', escrowPublicKey);
 
     // Verify the transaction on Solana blockchain
     const solanaRpcUrl = 'https://api.devnet.solana.com';
+    const connection = new Connection(solanaRpcUrl, 'confirmed');
+    
     const txResponse = await fetch(solanaRpcUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -92,9 +116,9 @@ serve(async (req) => {
     const preBalances = meta.preBalances;
     const postBalances = meta.postBalances;
 
-    // Find buyer and seller account indices
+    // Find buyer and escrow account indices
     let buyerFound = false;
-    let sellerFound = false;
+    let escrowFound = false;
     let transferredAmount = 0;
 
     for (let i = 0; i < accountKeys.length; i++) {
@@ -104,25 +128,68 @@ serve(async (req) => {
         buyerFound = true;
         const buyerDecrease = preBalances[i] - postBalances[i];
         transferredAmount = buyerDecrease;
+        console.log('[buy_nft] 👤 Buyer decreased:', buyerDecrease, 'lamports');
       }
       
-      if (key === listing.seller_wallet) {
-        sellerFound = true;
-        const sellerIncrease = postBalances[i] - preBalances[i];
-        // Verify seller received the expected amount
-        if (sellerIncrease < listing.price_lamports * 0.99) { // Allow 1% tolerance for fees
-          throw new Error('Seller did not receive expected amount');
+      if (key === escrowPublicKey) {
+        escrowFound = true;
+        const escrowIncrease = postBalances[i] - preBalances[i];
+        console.log('[buy_nft] 🏦 Escrow increased:', escrowIncrease, 'lamports');
+        
+        // Verify escrow received the expected amount (with small tolerance for network fees)
+        if (escrowIncrease < listing.price_lamports * 0.95) {
+          throw new Error(`Escrow received ${escrowIncrease} but expected ${listing.price_lamports}`);
         }
       }
     }
 
-    if (!buyerFound || !sellerFound) {
-      throw new Error('Transaction does not involve buyer and seller');
+    if (!buyerFound) {
+      throw new Error('Buyer wallet not found in transaction');
+    }
+    
+    if (!escrowFound) {
+      throw new Error('Escrow wallet not found in transaction - payment must go to escrow first');
     }
 
-    console.log('[buy_nft] ✅ Transaction verified on-chain');
-    console.log('[buy_nft] 💰 Amount transferred:', transferredAmount, 'lamports');
-    console.log('[buy_nft] 🔄 Updating listing to sold...');
+    console.log('[buy_nft] ✅ Buyer → Escrow transfer verified!');
+    console.log('[buy_nft] 💸 Now transferring 90% to seller...');
+
+    // Calculate amounts
+    const sellerAmount = Math.floor(listing.price_lamports * 0.9);  // 90% to seller
+    const platformFee = listing.price_lamports - sellerAmount;       // 10% stays in escrow
+
+    console.log('[buy_nft] 💰 Seller gets:', sellerAmount, 'lamports');
+    console.log('[buy_nft] 💎 Platform fee:', platformFee, 'lamports');
+
+    // Create transaction: Escrow → Seller (90%)
+    const sellerPubkey = new PublicKey(listing.seller_wallet);
+    
+    const escrowToSellerTx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: escrowKeypair.publicKey,
+        toPubkey: sellerPubkey,
+        lamports: sellerAmount,
+      })
+    );
+
+    // Get recent blockhash
+    const { blockhash } = await connection.getLatestBlockhash();
+    escrowToSellerTx.recentBlockhash = blockhash;
+    escrowToSellerTx.feePayer = escrowKeypair.publicKey;
+
+    // Sign with escrow keypair
+    escrowToSellerTx.sign(escrowKeypair);
+
+    // Send escrow → seller transaction
+    const sellerTxSignature = await connection.sendRawTransaction(escrowToSellerTx.serialize());
+    
+    console.log('[buy_nft] 📡 Escrow → Seller tx sent:', sellerTxSignature);
+
+    // Wait for confirmation
+    await connection.confirmTransaction(sellerTxSignature, 'confirmed');
+
+    console.log('[buy_nft] ✅ Seller payment confirmed!');
+    console.log('[buy_nft] 🔄 Updating database...');
     
     // Update listing as sold
     const updateListingResponse = await fetch(
@@ -138,6 +205,8 @@ serve(async (req) => {
           status: 'sold',
           buyer_wallet,
           tx_signature,
+          fee_lamports: platformFee,
+          seller_receives_lamports: sellerAmount,
           updated_at: new Date().toISOString()
         })
       }
@@ -150,7 +219,6 @@ serve(async (req) => {
     }
     
     console.log('[buy_nft] ✅ Listing marked as sold');
-    console.log('[buy_nft] 🔄 Updating NFT owner...');
     
     // Update minted_themes
     const updateNftResponse = await fetch(
@@ -177,19 +245,26 @@ serve(async (req) => {
       throw new Error(`Failed to update NFT: ${error}`);
     }
     
-    console.log('[buy_nft] ✅ Purchase complete!');
-    console.log('[buy_nft] 🎉 Blockchain transaction verified and NFT ownership transferred');
+    console.log('[buy_nft] ✅ NFT ownership updated!');
+    console.log('[buy_nft] 🎉 Purchase complete!');
+    console.log('[buy_nft] 📊 Summary:');
+    console.log('  - Buyer paid:', listing.price_lamports, 'lamports');
+    console.log('  - Seller received:', sellerAmount, 'lamports (90%)');
+    console.log('  - Platform fee:', platformFee, 'lamports (10%)');
     
     return new Response(
       JSON.stringify({ 
         success: true, 
         tx_signature,
-        message: 'NFT purchased successfully'
+        seller_tx_signature: sellerTxSignature,
+        seller_received: sellerAmount,
+        platform_fee: platformFee,
+        message: 'NFT purchased successfully with 10% platform fee'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[buy_nft] Error:', error);
+    console.error('[buy_nft] ❌ Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
