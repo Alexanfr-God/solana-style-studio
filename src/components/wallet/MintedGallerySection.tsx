@@ -430,6 +430,18 @@ export default function MintedGallerySection() {
       return;
     }
 
+    // Get listing details to find seller wallet
+    const { data: listing, error: listingError } = await supabase
+      .from('nft_listings')
+      .select('*')
+      .eq('id', selectedItem.listing_id)
+      .single();
+
+    if (listingError || !listing) {
+      toast.error('Failed to load listing details');
+      return;
+    }
+
     setIsProcessingBuy(true);
 
     try {
@@ -441,29 +453,46 @@ export default function MintedGallerySection() {
         return;
       }
 
-      toast.info('💰 Preparing SOL transfer...');
+      toast.info('💰 Preparing payment with platform fee...');
 
       // Create Solana connection
       const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
       
-      // Transfer to ESCROW wallet (not seller directly)
-      const escrowPublicKey = new PublicKey(MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
+      // Calculate amounts: 90% to seller, 10% to escrow
+      const priceLamports = listing.price_lamports;
+      const sellerLamports = Math.floor(priceLamports * 0.9);
+      const feeLamports = priceLamports - sellerLamports;
+
       const buyerPublicKey = new PublicKey(address);
-      const priceLamports = selectedItem.price_lamports || 0;
+      const sellerPublicKey = new PublicKey(listing.seller_wallet);
+      const escrowPublicKey = new PublicKey(MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
 
-      console.log('[Buy NFT] 💵 Transferring', priceLamports, 'lamports to escrow:', MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
+      console.log('[Buy NFT] Creating transaction with TWO transfers...');
+      console.log('[Buy NFT] Buyer:', address);
+      console.log('[Buy NFT] Seller:', listing.seller_wallet);
+      console.log('[Buy NFT] Escrow:', MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
+      console.log('[Buy NFT] Total price:', priceLamports, 'lamports');
+      console.log('[Buy NFT] Seller gets (90%):', sellerLamports, 'lamports');
+      console.log('[Buy NFT] Platform fee (10%):', feeLamports, 'lamports');
 
-      // Create SOL transfer transaction to ESCROW
+      // Create transaction with TWO transfers in ONE transaction:
+      // 1. 90% to seller
+      // 2. 10% to escrow (platform fee)
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: buyerPublicKey,
+          toPubkey: sellerPublicKey,
+          lamports: sellerLamports,
+        }),
+        SystemProgram.transfer({
+          fromPubkey: buyerPublicKey,
           toPubkey: escrowPublicKey,
-          lamports: priceLamports,
+          lamports: feeLamports,
         })
       );
 
       // Get recent blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = buyerPublicKey;
 
@@ -475,31 +504,42 @@ export default function MintedGallerySection() {
       toast.info('📡 Sending transaction...');
 
       // Send transaction
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      const signature = await connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        maxRetries: 3,
+      });
 
       toast.info('⏳ Confirming transaction...');
 
       // Wait for confirmation
-      await connection.confirmTransaction(signature, 'confirmed');
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
+
+      if (confirmation.value.err) {
+        throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+      }
       
       // Verify transaction status
-      console.log('🔍 Verifying transaction status...');
+      console.log('[Buy NFT] 🔍 Verifying transaction status...');
       const txStatus = await connection.getSignatureStatus(signature);
       if (txStatus.value?.err) {
-        throw new Error('Transaction failed on blockchain: ' + JSON.stringify(txStatus.value.err));
+        throw new Error('Transaction verification failed: ' + JSON.stringify(txStatus.value.err));
       }
       
       if (!txStatus.value?.confirmationStatus) {
-        throw new Error('Transaction confirmation status unknown');
+        throw new Error('Transaction not confirmed');
       }
       
-      console.log('✅ Transaction confirmed on blockchain:', signature);
+      console.log('[Buy NFT] ✅ Transaction confirmed on-chain');
 
       toast.success('✅ Payment sent!');
-      toast.info('🔄 Updating ownership...');
+      toast.info('🔄 Verifying and updating ownership...');
 
-      // Call edge function to finalize purchase
-      const { error } = await supabase.functions.invoke('buy_nft', {
+      // Call edge function to verify and finalize purchase
+      const { data, error } = await supabase.functions.invoke('buy_nft', {
         body: {
           listing_id: selectedItem.listing_id,
           buyer_wallet: address,
@@ -508,6 +548,8 @@ export default function MintedGallerySection() {
       });
 
       if (error) throw error;
+
+      console.log('[Buy NFT] ✅ Purchase completed:', data);
 
       toast.success('🎉 NFT purchased successfully!');
       setBuyModalOpen(false);
