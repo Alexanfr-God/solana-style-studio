@@ -71,7 +71,7 @@ export function BuyNftModal({
           </div>
 
           <div className="rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
-            💡 Funds will be securely processed through our escrow wallet
+            💡 You will pay 100% ({priceSOL.toFixed(4)} SOL). In a single transaction, 90% goes to the seller and 10% is the platform fee.
           </div>
         </div>
 

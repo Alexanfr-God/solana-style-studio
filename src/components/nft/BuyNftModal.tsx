@@ -103,13 +103,13 @@ export const BuyNftModal: React.FC<BuyNftModalProps> = ({
             </div>
           </div>
 
-          {/* Stub Warning */}
-          <div className="bg-orange-500/10 border border-orange-500/30 rounded p-3">
+          {/* Info */}
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded p-3">
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-orange-400 mt-0.5" />
-              <div className="text-xs text-orange-300">
-                <div className="font-semibold mb-1">Demo Mode</div>
-                <p>This is a stub transaction. No real SOL will be transferred. Ownership will be updated in the database for testing purposes.</p>
+              <AlertCircle className="h-4 w-4 text-blue-400 mt-0.5" />
+              <div className="text-xs text-blue-300">
+                <div className="font-semibold mb-1">Payment Process</div>
+                <p>You will pay 100% of the price. In a single transaction, 90% goes directly to the seller and 10% is the platform fee.</p>
               </div>
             </div>
           </div>
