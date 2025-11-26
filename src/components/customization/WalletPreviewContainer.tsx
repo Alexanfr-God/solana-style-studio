@@ -13,6 +13,7 @@ import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
 import { ManualColorEditor } from './ManualColorEditor';
 import { AiDomScannerButton } from '@/components/admin/AiDomScannerButton';
+import { WalletPreviewModeSelector } from './WalletPreviewModeSelector';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -336,26 +337,8 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             )}
           </div>
           
-          {/* Wallet Selector */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant={selectedWallet === 'phantom' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedWallet('phantom')}
-              className="text-xs"
-            >
-              WCC
-            </Button>
-            <Button
-              variant={selectedWallet === 'metamask' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedWallet('metamask')}
-              className="text-xs"
-              disabled
-            >
-              MetaMask
-            </Button>
-          </div>
+          {/* Wallet Preview Mode Selector */}
+          <WalletPreviewModeSelector />
         </div>
         
         {/* Wallet container */}
