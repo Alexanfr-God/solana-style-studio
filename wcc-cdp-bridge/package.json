@@ -1,0 +1,26 @@
+{
+  "name": "wcc-cdp-bridge",
+  "version": "1.0.0",
+  "description": "CDP Bridge Server for WCC - connects Chrome with MetaMask/Phantom to WCC Admin",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "chrome-devtools-protocol",
+    "puppeteer",
+    "websocket",
+    "wallet",
+    "metamask",
+    "phantom"
+  ],
+  "author": "WCC Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1",
+    "puppeteer-core": "^21.6.1",
+    "chrome-launcher": "^1.1.0",
+    "cors": "^2.8.5"
+  }
+}
