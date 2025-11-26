@@ -11,6 +11,8 @@ const http = require('http');
 const puppeteer = require('puppeteer-core');
 const { launch } = require('chrome-launcher');
 const cors = require('cors');
+const path = require('path');
+const os = require('os');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +30,9 @@ app.use(express.json());
 const PORT = 4000;
 const METAMASK_ID = process.env.METAMASK_ID || 'nkbihfbeogaeaoehlefnkodbefgpgknn';
 const PHANTOM_ID = process.env.PHANTOM_ID || 'bfnaelmomeimhlpmgjnjophhpkkoljpa';
+
+// Chrome profile path - allows extensions!
+const CHROME_PROFILE_PATH = path.join(os.homedir(), 'Desktop', 'wcc-cdp-bridge', 'chrome-profile');
 
 // State
 let chromeInstance = null;
@@ -56,48 +61,107 @@ io.on('connection', (socket) => {
 
       // If browser already running, close it
       if (browser) {
-        await browser.close();
+        try {
+          await browser.close();
+        } catch (e) {
+          console.log('Browser already closed');
+        }
         browser = null;
         currentPage = null;
       }
 
       if (chromeInstance) {
-        await chromeInstance.kill();
+        try {
+          await chromeInstance.kill();
+        } catch (e) {
+          console.log('Chrome already killed');
+        }
         chromeInstance = null;
       }
 
-      // Launch Chrome with debugging port
+      socket.emit('log', `Using profile: ${CHROME_PROFILE_PATH}`);
+
+      // Launch Chrome with debugging port AND user profile
       chromeInstance = await launch({
         chromeFlags: [
-          '--remote-debugging-port=9222',
           '--no-first-run',
           '--no-default-browser-check',
+          `--user-data-dir=${CHROME_PROFILE_PATH}`,
+          '--profile-directory=Default',
+          '--disable-background-networking',
+          '--disable-client-side-phishing-detection',
+          '--disable-default-apps',
+          '--disable-hang-monitor',
+          '--disable-popup-blocking',
+          '--disable-prompt-on-repost',
+          '--disable-sync',
+          '--disable-translate',
+          '--metrics-recording-only',
+          '--safebrowsing-disable-auto-update',
+          '--disable-blink-features=AutomationControlled',
+          '--disable-infobars',
+          '--excludeSwitches=enable-automation',
         ],
       });
 
-      socket.emit('log', 'Chrome launched, connecting via CDP...');
+      // ВАЖНО: Используем порт от chrome-launcher!
+      const cdpPort = chromeInstance.port;
+      socket.emit('log', `Chrome launched on port ${cdpPort}, connecting via CDP...`);
+      console.log(`🚀 Chrome running on port: ${cdpPort}`);
 
-      // Connect Puppeteer to Chrome
+      // Connect Puppeteer using the ACTUAL port from chrome-launcher
       browser = await puppeteer.connect({
-        browserWSEndpoint: `ws://localhost:9222/devtools/browser`,
+        browserURL: `http://localhost:${cdpPort}`,
         defaultViewport: { width: 400, height: 600 }
       });
 
-      socket.emit('log', 'Connected to Chrome via CDP');
+      socket.emit('log', 'Connected to Chrome via CDP ✅');
+      socket.emit('log', '');
+      socket.emit('log', '📌 ВАЖНО: Теперь установи MetaMask в этом Chrome!');
+      socket.emit('log', '1. Открой metamask.io/download');
+      socket.emit('log', '2. Установи расширение');
+      socket.emit('log', '3. Создай/восстанови кошелёк');
+      socket.emit('log', '4. Потом нажми Scan DOM');
 
-      // Open wallet popup
+      // Open a blank page for now
+      currentPage = await browser.newPage();
+      await currentPage.goto('https://metamask.io/download/', { waitUntil: 'networkidle2' });
+
+      socket.emit('log', '');
+      socket.emit('log', '✅ Готово! Chrome открыт на metamask.io/download');
+
+    } catch (error) {
+      console.error('❌ Error starting Chrome:', error);
+      socket.emit('log', `Error: ${error.message}`);
+    }
+  });
+
+  // Open MetaMask popup (after extension is installed)
+  socket.on('openWalletPopup', async (data) => {
+    const { walletType = 'metamask' } = data || {};
+    
+    try {
+      if (!browser) {
+        socket.emit('log', 'Error: Start Chrome first!');
+        return;
+      }
+
       const extensionId = walletType === 'phantom' ? PHANTOM_ID : METAMASK_ID;
       const popupUrl = `chrome-extension://${extensionId}/popup.html`;
       
       socket.emit('log', `Opening ${walletType} popup...`);
       currentPage = await browser.newPage();
-      await currentPage.goto(popupUrl, { waitUntil: 'networkidle2' });
-
-      socket.emit('log', `${walletType} popup opened successfully`);
-      socket.emit('log', 'Ready to scan DOM');
+      
+      try {
+        await currentPage.goto(popupUrl, { waitUntil: 'networkidle2', timeout: 10000 });
+        socket.emit('log', `${walletType} popup opened successfully ✅`);
+      } catch (e) {
+        socket.emit('log', `⚠️ Не удалось открыть popup. Убедись что MetaMask установлен!`);
+        socket.emit('log', `Extension ID: ${extensionId}`);
+      }
 
     } catch (error) {
-      console.error('❌ Error starting Chrome:', error);
+      console.error('❌ Error opening wallet:', error);
       socket.emit('log', `Error: ${error.message}`);
     }
   });
@@ -126,7 +190,7 @@ io.on('connection', (socket) => {
       const dataUrl = `data:image/png;base64,${screenshot}`;
       socket.emit('screenshot', { dataUrl });
 
-      socket.emit('log', 'Scan complete');
+      socket.emit('log', 'Scan complete ✅');
 
     } catch (error) {
       console.error('❌ Error scanning DOM:', error);
@@ -151,7 +215,6 @@ io.on('connection', (socket) => {
 
       // Inject CSS into page
       await currentPage.evaluate((rules) => {
-        // Create or update style tag
         let styleTag = document.getElementById('wcc-theme');
         if (!styleTag) {
           styleTag = document.createElement('style');
@@ -161,7 +224,7 @@ io.on('connection', (socket) => {
         styleTag.textContent = rules.join('\n');
       }, cssRules);
 
-      socket.emit('log', 'Theme CSS injected successfully');
+      socket.emit('log', 'Theme CSS injected successfully ✅');
       socket.emit('themeApplied', { ok: true });
 
     } catch (error) {
@@ -184,10 +247,10 @@ server.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║                                                            ║
-║          🚀 WCC CDP Bridge Server                         ║
+║          🚀 WCC CDP Bridge Server v2.0                    ║
 ║                                                            ║
-║          Server running on: http://localhost:${PORT}        ║
-║          WebSocket ready for connections                   ║
+║          Server: http://localhost:${PORT}                   ║
+║          Profile: ${CHROME_PROFILE_PATH}
 ║                                                            ║
 ║          Ready to connect WCC Admin Panel!                 ║
 ║                                                            ║
@@ -200,11 +263,11 @@ process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down CDP Bridge...');
   
   if (browser) {
-    await browser.close();
+    try { await browser.close(); } catch (e) {}
   }
   
   if (chromeInstance) {
-    await chromeInstance.kill();
+    try { await chromeInstance.kill(); } catch (e) {}
   }
   
   process.exit(0);
