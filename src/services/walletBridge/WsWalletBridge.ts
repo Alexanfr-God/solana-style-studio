@@ -1,10 +1,20 @@
 /**
  * WebSocket-based Wallet Bridge
- * Connects to WS server and communicates with wallet clients
+ * Connects to WS server and communicates with wallet/extension clients
+ * Supports both legacy wallet protocol and new WCC Bridge SDK protocol
  */
 
 import type { WalletBridgeAPI, WalletDOMStructure, WalletElement, CSSStyleRecord } from './WalletBridge';
+import type { WCCBridgeMessage, ExtensionUISnapshot } from '../wcc-bridge-sdk/protocol';
 import { useAiScannerStore } from '@/stores/aiScannerStore';
+
+// Message types for extension bridge
+export type ExtensionMessageType = 
+  | 'EXTENSION_UI_SNAPSHOT'
+  | 'EXTENSION_UI_UPDATE' 
+  | 'EXTENSION_SCREEN_CHANGE'
+  | 'EXTENSION_CONNECTED'
+  | 'EXTENSION_DISCONNECTED';
 
 export class WsWalletBridge implements WalletBridgeAPI {
   private ws: WebSocket | null = null;
@@ -261,6 +271,23 @@ export class WsWalletBridge implements WalletBridgeAPI {
         }
       }
       
+      // Handle WCC Bridge SDK messages (extension bridge)
+      if (message.payload) {
+        const payload = message.payload;
+        if (payload.type === 'EXTENSION_UI_SNAPSHOT') {
+          console.log('[WsWalletBridge] 📸 Extension snapshot received:', payload.extension);
+          // Convert extension snapshot to wallet DOM structure
+          const queueItem = this.messageQueue.find(q => q.type === 'uiMap');
+          if (queueItem) {
+            queueItem.resolve(this.convertExtensionSnapshotToDOM(payload));
+          }
+        } else if (payload.type === 'EXTENSION_CONNECTED') {
+          console.log('[WsWalletBridge] 🔌 Extension connected:', payload.extension);
+        } else if (payload.type === 'EXTENSION_SCREEN_CHANGE') {
+          console.log('[WsWalletBridge] 📱 Screen changed:', payload.previousScreen, '→', payload.currentScreen);
+        }
+      }
+      
     } catch (error) {
       console.error('[WsWalletBridge] ❌ Failed to parse message:', error);
     }
@@ -289,6 +316,26 @@ export class WsWalletBridge implements WalletBridgeAPI {
       walletType: uiMapData.walletType || 'unknown',
       currentScreen: uiMapData.screen || 'home',
       timestamp: Date.now(),
+      allElements: elements
+    };
+  }
+  
+  private convertExtensionSnapshotToDOM(snapshot: any): WalletDOMStructure {
+    const elements: WalletElement[] = (snapshot.ui?.elements || []).map((el: any) => ({
+      id: el.id,
+      tag: el.tag,
+      classes: el.classes || [],
+      text: el.text || '',
+      selector: el.selector,
+      isVisible: el.isVisible ?? true,
+      rect: el.rect || { x: 0, y: 0, width: 0, height: 0 },
+      styles: el.styles || {}
+    }));
+    
+    return {
+      walletType: snapshot.extension || 'extension',
+      currentScreen: snapshot.screen || 'HOME',
+      timestamp: snapshot.timestamp || Date.now(),
       allElements: elements
     };
   }
