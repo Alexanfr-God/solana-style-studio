@@ -87,42 +87,62 @@ function formatValidationErrors(ajvErrors: any[]): ValidationError[] {
   });
 }
 
-async function callOpenAI(systemPrompt: string, userContext: string): Promise<Operation[]> {
-  const openAiKey = Deno.env.get('OPENA_API_KEY');
-  if (!openAiKey) {
-    throw new Error('OPENA_API_KEY not configured');
+async function callLovableAI(systemPrompt: string, userContext: string): Promise<Operation[]> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) {
+    throw new Error('LOVABLE_API_KEY not configured');
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openAiKey}`,
+      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'google/gemini-2.5-flash',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userContext }
       ],
-      temperature: 0.1,
-      response_format: { type: "json_object" }
+      // Note: Gemini does not support temperature or response_format
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    const errorText = await response.text();
+    console.error('❌ Lovable AI error:', response.status, errorText);
+    
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded, please try again later');
+    }
+    if (response.status === 402) {
+      throw new Error('AI credits exhausted, please add funds');
+    }
+    throw new Error(`Lovable AI error: ${response.status}`);
   }
 
   const result = await response.json();
   const content = result.choices[0]?.message?.content;
   
   if (!content) {
-    throw new Error('No response from OpenAI');
+    throw new Error('No response from Lovable AI');
   }
 
-  const parsed = JSON.parse(content);
-  return parsed.patch || [];
+  // Parse JSON from response (may contain markdown code blocks)
+  let jsonStr = content;
+  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch) {
+    jsonStr = jsonMatch[1].trim();
+  }
+  
+  try {
+    const parsed = JSON.parse(jsonStr);
+    return parsed.patch || [];
+  } catch (parseError) {
+    console.error('❌ Failed to parse AI response:', content);
+    throw new Error('Failed to parse AI response as JSON');
+  }
 }
 
 /**
@@ -523,14 +543,14 @@ ${presetContext ? `Apply the style inspiration from the provided preset context.
 Current theme structure (all layers):
 ${JSON.stringify(currentTheme, null, 2)}`;
 
-    // 6. Call OpenAI
-    console.log('🤖 Calling OpenAI...');
+    // 6. Call Lovable AI (Gemini 2.5 Flash)
+    console.log('🤖 Calling Lovable AI (Gemini)...');
     const aiStartTime = performance.now();
     
-    const patchOperations = await callOpenAI(systemPrompt, userContext);
+    const patchOperations = await callLovableAI(systemPrompt, userContext);
     
     const aiEndTime = performance.now();
-    console.log(`🤖 OpenAI completed in ${(aiEndTime - aiStartTime).toFixed(2)}ms`);
+    console.log(`🤖 Lovable AI completed in ${(aiEndTime - aiStartTime).toFixed(2)}ms`);
     console.log(`📏 Generated patch with ${patchOperations.length} operations`);
 
     // 7. Validate patch by applying to copy
