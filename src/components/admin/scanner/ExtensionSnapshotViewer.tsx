@@ -1,0 +1,70 @@
+import React from 'react';
+import { useAiScannerStore } from '@/stores/aiScannerStore';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Plug, Clock, Layers } from 'lucide-react';
+
+export const ExtensionSnapshotViewer = () => {
+  const { extensionSnapshot, lastExtensionMessage } = useAiScannerStore();
+  
+  if (!extensionSnapshot) {
+    return (
+      <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 text-center">
+        <Plug className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+        <p className="text-sm text-muted-foreground">
+          Waiting for extension bridge connection...
+        </p>
+        <p className="text-xs text-muted-foreground/70 mt-1">
+          Connect ProtonVPN or other extension with WCC SDK
+        </p>
+      </div>
+    );
+  }
+  
+  const elementsCount = extensionSnapshot.ui?.elements?.length || 0;
+  const timeAgo = lastExtensionMessage 
+    ? Math.round((Date.now() - lastExtensionMessage) / 1000)
+    : null;
+  
+  return (
+    <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">
+            {extensionSnapshot.extension}
+          </Badge>
+          <Badge variant="secondary" className="text-xs">
+            {extensionSnapshot.screen}
+          </Badge>
+        </div>
+        {timeAgo !== null && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {timeAgo}s ago
+          </span>
+        )}
+      </div>
+      
+      {/* Stats */}
+      <div className="flex gap-4 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Layers className="h-3 w-3" />
+          {elementsCount} elements
+        </span>
+        {extensionSnapshot.state && (
+          <span>
+            State: {Object.keys(extensionSnapshot.state).length} keys
+          </span>
+        )}
+      </div>
+      
+      {/* Raw JSON */}
+      <ScrollArea className="h-48 rounded border border-border/50 bg-background/50">
+        <pre className="p-2 text-xs font-mono text-foreground/80 whitespace-pre-wrap">
+          {JSON.stringify(extensionSnapshot, null, 2)}
+        </pre>
+      </ScrollArea>
+    </div>
+  );
+};
