@@ -74,6 +74,17 @@ export interface WsMetrics {
   lastMessageTime: number | null;
 }
 
+// Bridge-specific metrics
+export interface BridgeConnectionState {
+  isConnected: boolean;
+  extensionName: string | null;
+  extensionVersion: string | null;
+  connectedAt: number | null;
+  lastHeartbeat: number | null;
+  lastSnapshotSize: number | null;
+  messagesReceived: number;
+}
+
 interface AiScannerState {
   // Scan process
   isScanning: boolean;
@@ -88,6 +99,7 @@ interface AiScannerState {
   // Extension bridge state
   extensionSnapshot: ExtensionUISnapshot | null;
   lastExtensionMessage: number | null;
+  bridgeConnection: BridgeConnectionState;
   
   // Results
   foundElements: ElementItem[];
@@ -128,6 +140,7 @@ interface AiScannerState {
   setTargetMode: (mode: 'local' | 'external') => void;
   setScanSource: (source: ScanSource) => void;
   setExtensionSnapshot: (snapshot: ExtensionUISnapshot) => void;
+  updateBridgeConnection: (state: Partial<BridgeConnectionState>) => void;
 }
 
 export const useAiScannerStore = create<AiScannerState>((set, get) => ({
@@ -148,6 +161,15 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
   scanSource: 'local',
   extensionSnapshot: null,
   lastExtensionMessage: null,
+  bridgeConnection: {
+    isConnected: false,
+    extensionName: null,
+    extensionVersion: null,
+    connectedAt: null,
+    lastHeartbeat: null,
+    lastSnapshotSize: null,
+    messagesReceived: 0,
+  },
   
   // Actions
   startScan: (screen = 'home') => {
@@ -309,5 +331,21 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
       lastExtensionMessage: Date.now()
     });
     get().addLog('snapshot', '🔵', `Extension snapshot received: ${snapshot.extension} - ${snapshot.screen}`);
+  },
+  
+  updateBridgeConnection: (state) => {
+    const prevState = get().bridgeConnection;
+    
+    set({
+      bridgeConnection: {
+        ...prevState,
+        ...state
+      }
+    });
+    
+    // Если расширение подключилось, логируем
+    if (state.extensionName && !prevState.extensionName) {
+      get().addLog('verified', '✅', `Extension bridge connected: ${state.extensionName}`);
+    }
   }
 }));
