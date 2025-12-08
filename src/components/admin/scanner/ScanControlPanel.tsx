@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical } from 'lucide-react';
-import { useAiScannerStore } from '@/stores/aiScannerStore';
+import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical, Plug } from 'lucide-react';
+import { useAiScannerStore, ScanSource } from '@/stores/aiScannerStore';
 import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
 import { WalletConnectionPrompt } from './WalletConnectionPrompt';
+import { ExtensionSnapshotViewer } from './ExtensionSnapshotViewer';
 import { toast } from 'sonner';
 
 export const ScanControlPanel = () => {
@@ -13,11 +14,13 @@ export const ScanControlPanel = () => {
     isWalletConnected,
     walletType,
     targetMode,
+    scanSource,
     stopScan, 
     exportJSON,
     currentLayer,
     addLog,
-    setTargetMode
+    setTargetMode,
+    setScanSource
   } = useAiScannerStore();
   
   const [selectedWallet, setSelectedWallet] = useState<'MetaMask' | 'Phantom' | 'WS'>('MetaMask');
@@ -142,28 +145,42 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
     <div className="space-y-3 p-4">
       <h3 className="text-sm font-semibold text-foreground/80 mb-4">Scan Controls</h3>
       
-      {/* Mode Toggle */}
-      <div className="flex gap-2 mb-4">
+      {/* Scan Source Toggle */}
+      <div className="flex gap-1 mb-4">
         <Button 
-          variant={targetMode === 'local' ? 'default' : 'outline'}
-          onClick={() => setTargetMode('local')}
+          variant={scanSource === 'local' ? 'default' : 'outline'}
+          onClick={() => { setScanSource('local'); setTargetMode('local'); }}
           size="sm"
-          className="flex-1"
+          className="flex-1 text-xs px-2"
         >
-          Local Wallet
+          Local
         </Button>
         <Button 
-          variant={targetMode === 'external' ? 'default' : 'outline'}
-          onClick={() => setTargetMode('external')}
+          variant={scanSource === 'external' ? 'default' : 'outline'}
+          onClick={() => { setScanSource('external'); setTargetMode('external'); }}
           size="sm"
-          className="flex-1"
+          className="flex-1 text-xs px-2"
         >
-          External Wallet
+          External
+        </Button>
+        <Button 
+          variant={scanSource === 'extension-bridge' ? 'default' : 'outline'}
+          onClick={() => setScanSource('extension-bridge')}
+          size="sm"
+          className="flex-1 text-xs px-2 gap-1"
+        >
+          <Plug className="h-3 w-3" />
+          Bridge
         </Button>
       </div>
       
+      {/* Extension Bridge Mode */}
+      {scanSource === 'extension-bridge' && (
+        <ExtensionSnapshotViewer />
+      )}
+      
       {/* Wallet Selector (External Mode Only) */}
-      {targetMode === 'external' && (
+      {scanSource === 'external' && (
         <Select value={selectedWallet} onValueChange={(value) => setSelectedWallet(value as any)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select wallet" />
@@ -177,7 +194,7 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
       )}
       
       {/* Connection Prompt or Scan Button */}
-      {targetMode === 'external' && !isWalletConnected ? (
+      {scanSource !== 'extension-bridge' && scanSource === 'external' && !isWalletConnected ? (
         <WalletConnectionPrompt 
           onConnect={handleConnect} 
           walletType={selectedWallet as 'MetaMask' | 'Phantom'} 

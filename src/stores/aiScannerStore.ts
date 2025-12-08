@@ -3,6 +3,29 @@ import { create } from 'zustand';
 export type ScanMode = 'vision' | 'snapshot' | 'json-build' | 'verify';
 export type ElementStatus = 'found' | 'copied' | 'verified';
 export type LogType = 'scanning' | 'found' | 'snapshot' | 'verified' | 'error' | 'vision';
+export type ScanSource = 'local' | 'external' | 'extension-bridge';
+
+export interface ExtensionUISnapshot {
+  type: string;
+  extension: string;
+  version?: string;
+  timestamp: number;
+  screen: string;
+  state?: Record<string, unknown>;
+  ui?: {
+    elements?: Array<{
+      id: string;
+      selector: string;
+      tagName: string;
+      className?: string;
+      textContent?: string;
+      attributes?: Record<string, string>;
+      rect?: { x: number; y: number; width: number; height: number };
+      styles?: Record<string, string>;
+    }>;
+    theme?: Record<string, string>;
+  };
+}
 
 export interface ElementItem {
   id: string;
@@ -60,6 +83,11 @@ interface AiScannerState {
   
   // Scan target mode
   targetMode: 'local' | 'external';
+  scanSource: ScanSource;
+  
+  // Extension bridge state
+  extensionSnapshot: ExtensionUISnapshot | null;
+  lastExtensionMessage: number | null;
   
   // Results
   foundElements: ElementItem[];
@@ -98,6 +126,8 @@ interface AiScannerState {
   setWalletType: (type: 'WS' | 'MetaMask' | 'Phantom') => void;
   updateWsMetrics: (metrics: Partial<WsMetrics>) => void;
   setTargetMode: (mode: 'local' | 'external') => void;
+  setScanSource: (source: ScanSource) => void;
+  setExtensionSnapshot: (snapshot: ExtensionUISnapshot) => void;
 }
 
 export const useAiScannerStore = create<AiScannerState>((set, get) => ({
@@ -115,6 +145,9 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
   aiComments: [],
   wsMetrics: null,
   targetMode: 'local',
+  scanSource: 'local',
+  extensionSnapshot: null,
+  lastExtensionMessage: null,
   
   // Actions
   startScan: (screen = 'home') => {
@@ -263,5 +296,18 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
   setTargetMode: (mode) => {
     set({ targetMode: mode });
     get().addLog('scanning', '🟢', `Switched to ${mode} mode`);
+  },
+  
+  setScanSource: (source) => {
+    set({ scanSource: source });
+    get().addLog('scanning', '🟢', `Scan source: ${source}`);
+  },
+  
+  setExtensionSnapshot: (snapshot) => {
+    set({ 
+      extensionSnapshot: snapshot,
+      lastExtensionMessage: Date.now()
+    });
+    get().addLog('snapshot', '🔵', `Extension snapshot received: ${snapshot.extension} - ${snapshot.screen}`);
   }
 }));
