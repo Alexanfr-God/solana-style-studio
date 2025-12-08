@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical, Plug } from 'lucide-react';
+import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical, Plug, Loader2 } from 'lucide-react';
 import { useAiScannerStore, ScanSource } from '@/stores/aiScannerStore';
 import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
 import { WalletConnectionPrompt } from './WalletConnectionPrompt';
 import { ExtensionSnapshotViewer } from './ExtensionSnapshotViewer';
+import { extensionBridgeClient, EXTENSION_BRIDGE_WS_URL } from '@/services/extensionBridge';
 import { toast } from 'sonner';
 
 export const ScanControlPanel = () => {
@@ -15,15 +16,18 @@ export const ScanControlPanel = () => {
     walletType,
     targetMode,
     scanSource,
+    bridgeConnection,
     stopScan, 
     exportJSON,
     currentLayer,
     addLog,
     setTargetMode,
-    setScanSource
+    setScanSource,
+    updateBridgeConnection
   } = useAiScannerStore();
   
   const [selectedWallet, setSelectedWallet] = useState<'MetaMask' | 'Phantom' | 'WS'>('MetaMask');
+  const [isConnectingBridge, setIsConnectingBridge] = useState(false);
   
   const handleConnect = async () => {
     try {
@@ -176,7 +180,37 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
       
       {/* Extension Bridge Mode */}
       {scanSource === 'extension-bridge' && (
-        <ExtensionSnapshotViewer />
+        <div className="space-y-3">
+          {/* Connect Bridge Button */}
+          <Button
+            onClick={async () => {
+              setIsConnectingBridge(true);
+              addLog('scanning', '🟢', `Connecting to bridge: ${EXTENSION_BRIDGE_WS_URL}`);
+              const connected = await extensionBridgeClient.connect();
+              setIsConnectingBridge(false);
+              if (connected) {
+                updateBridgeConnection({ isConnected: true });
+                toast.success('Connected to extension bridge');
+              } else {
+                toast.error('Failed to connect. Run: node scripts/extension-bridge-server.js');
+              }
+            }}
+            disabled={isConnectingBridge || bridgeConnection.isConnected}
+            variant={bridgeConnection.isConnected ? 'secondary' : 'default'}
+            size="sm"
+            className="w-full"
+          >
+            {isConnectingBridge ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Connecting...</>
+            ) : bridgeConnection.isConnected ? (
+              <><Plug className="h-4 w-4 mr-2" /> Bridge Connected</>
+            ) : (
+              <><Plug className="h-4 w-4 mr-2" /> Connect Bridge</>
+            )}
+          </Button>
+          
+          <ExtensionSnapshotViewer />
+        </div>
       )}
       
       {/* Wallet Selector (External Mode Only) */}

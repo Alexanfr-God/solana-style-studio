@@ -70,16 +70,19 @@ class AiScanOrchestrator {
   async startScan(screen: 'login' | 'home' = 'home') {
     this.currentScreen = screen;
     const store = this.store.getState();
-    const { targetMode } = store;
+    const { targetMode, scanSource, bridgeConnection, extensionSnapshot } = store;
     
-    console.log(`[AiScanOrchestrator] 🚀 Starting ${targetMode} scan on ${screen} screen`);
+    console.log(`[AiScanOrchestrator] 🚀 Starting ${scanSource} scan on ${screen} screen`);
     
     try {
       store.startScan(screen);
       
-      // Phase 1: Scan DOM (local or external based on mode)
-      if (targetMode === 'local') {
+      // Phase 1: Scan DOM based on mode
+      if (scanSource === 'local') {
         await this.scanLocalDOM();
+      } else if (scanSource === 'extension-bridge') {
+        // Для extension-bridge используем snapshot из store
+        await this.scanBridgeSnapshot();
       } else {
         await this.scanExternalDOM();
       }
@@ -183,7 +186,85 @@ class AiScanOrchestrator {
   }
   
   /**
-   * Phase 1b: Scan EXTERNAL wallet (MetaMask, Phantom) via Bridge
+   * Phase 1b: Scan Extension Bridge snapshot (ProtonVPN, etc.)
+   */
+  private async scanBridgeSnapshot() {
+    const store = this.store.getState();
+    const { extensionSnapshot, bridgeConnection } = store;
+    
+    console.log('[AiScanOrchestrator] 📡 Scanning extension bridge snapshot...');
+    store.setScanMode('vision');
+    store.addLog('scanning', '🟢', 'Scanning extension bridge snapshot...');
+    
+    // Проверяем наличие снапшота
+    if (!extensionSnapshot) {
+      // Проверяем подключение к bridge
+      if (!bridgeConnection.isConnected) {
+        store.addLog('error', '❌', 'Extension bridge not connected. Connect first.');
+        throw new Error('Extension bridge not connected. Please connect the bridge server first.');
+      }
+      
+      // Bridge подключен, но снапшота нет
+      store.addLog('error', '❌', 'No snapshots received from extension. Open the extension popup.');
+      throw new Error('No snapshots received from extension. Please open the extension popup to capture UI.');
+    }
+    
+    try {
+      const elements = extensionSnapshot.ui?.elements || [];
+      
+      console.log(`[AiScanOrchestrator] ✅ Found ${elements.length} elements in extension snapshot`);
+      store.addLog('found', '🔵', `Found ${elements.length} elements from ${extensionSnapshot.extension}`);
+      store.addLog('found', '🔵', `Screen: ${extensionSnapshot.screen}`);
+      
+      // Convert to ElementItem[]
+      elements.forEach((el, index) => {
+        const element: ElementItem = {
+          id: el.id || `ext-${index}`,
+          role: el.tagName || 'div',
+          type: this.detectElementType(el.tagName || 'div'),
+          status: 'found',
+          style: {
+            bg: el.styles?.backgroundColor || 'transparent',
+            radius: el.styles?.borderRadius || '0px',
+            border: el.styles?.border || 'none',
+            text: el.textContent || ''
+          },
+          metrics: {
+            width: el.rect?.width || 0,
+            height: el.rect?.height || 0,
+            bg: el.styles?.backgroundColor,
+            font: el.styles?.fontFamily,
+            radius: el.styles?.borderRadius
+          }
+        };
+        
+        store.addElement(element);
+        
+        if (index < 5) {
+          store.addLog('found', '🔵', `${el.selector} → ${el.textContent || '(no text)'}`);
+        }
+      });
+      
+      if (elements.length > 5) {
+        store.addLog('found', '🔵', `... and ${elements.length - 5} more elements`);
+      }
+      
+      // Логируем тему если есть
+      if (extensionSnapshot.ui?.theme) {
+        const themeKeys = Object.keys(extensionSnapshot.ui.theme);
+        store.addLog('snapshot', '🟣', `Theme extracted: ${themeKeys.length} color variables`);
+      }
+      
+      await this.delay(500);
+      
+    } catch (error) {
+      console.error('[AiScanOrchestrator] ❌ Failed to scan bridge snapshot:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Phase 1c: Scan EXTERNAL wallet (MetaMask, Phantom) via Bridge
    */
   private async scanExternalDOM() {
     const store = this.store.getState();
