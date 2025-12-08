@@ -114,3 +114,6 @@ verify_jwt = false
 [functions.get-escrow-pubkey]
 verify_jwt = false
 
+[functions.generate-poster]
+verify_jwt = false
+

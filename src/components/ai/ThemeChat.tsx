@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw, Loader2 } from 'lucide-react';
+import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw, Loader2, Sparkles } from 'lucide-react';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { FileUploadService } from '@/services/fileUploadService';
 import { LlmPatchService, type PatchRequest } from '@/services/llmPatchService';
@@ -35,6 +35,7 @@ const ThemeChat = () => {
   const [inputValue, setInputValue] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [authStatus, setAuthStatus] = useState<'checking' | 'wallet-connected' | 'authenticated' | 'disconnected'>('checking');
   const [chatMode, setChatMode] = useState<ChatMode>('general');
   const [applied, setApplied] = useState<Record<string, boolean>>({});
@@ -515,12 +516,98 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
     }
   };
 
+  // Generate poster with AI
+  const handleGeneratePoster = async (prompt: string) => {
+    setIsGenerating(true);
+    addMessage(`🎨 Generating poster: "${prompt}"...`, 'assistant');
+
+    try {
+      const supabase = (await import('@/integrations/supabase/client')).supabase;
+      const { data, error } = await supabase.functions.invoke('generate-poster', {
+        body: { 
+          prompt,
+          userId: walletProfile?.wallet_address 
+        }
+      });
+
+      if (error) {
+        console.error('[generate-poster] Error:', error);
+        addMessage(`❌ Generation failed: ${error.message}`, 'assistant');
+        toast.error('Failed to generate poster');
+        return;
+      }
+
+      if (!data?.success || !data?.imageUrl) {
+        console.error('[generate-poster] No image:', data);
+        addMessage(`❌ ${data?.error || 'Failed to generate image. Try a different prompt.'}`, 'assistant');
+        toast.error(data?.error || 'Generation failed');
+        return;
+      }
+
+      console.log('[generate-poster] ✅ Success:', data.imageUrl);
+      
+      // Add system message with apply buttons (same as uploaded images)
+      addMessage('', 'system', undefined, undefined, data.imageUrl);
+      addMessage(
+        `✅ Poster generated! Click buttons above to apply it as background.`,
+        'assistant',
+        data.imageUrl
+      );
+      
+      toast.success('🎨 Poster generated successfully!');
+
+    } catch (error) {
+      console.error('[generate-poster] Fatal error:', error);
+      addMessage(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
+      toast.error('Failed to generate poster');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Check if message is a generation command
+  const isGenerationCommand = (message: string): boolean => {
+    const lowerMsg = message.toLowerCase().trim();
+    return (
+      lowerMsg.startsWith('/poster ') ||
+      lowerMsg.startsWith('/generate ') ||
+      lowerMsg.startsWith('generate poster') ||
+      lowerMsg.startsWith('create poster') ||
+      lowerMsg.startsWith('создай постер') ||
+      lowerMsg.startsWith('сгенерируй') ||
+      lowerMsg.includes('generate a poster') ||
+      lowerMsg.includes('generate wallpaper') ||
+      lowerMsg.includes('create a wallpaper')
+    );
+  };
+
+  // Extract prompt from generation command
+  const extractGenerationPrompt = (message: string): string => {
+    const lowerMsg = message.toLowerCase().trim();
+    if (lowerMsg.startsWith('/poster ')) return message.slice(8).trim();
+    if (lowerMsg.startsWith('/generate ')) return message.slice(10).trim();
+    if (lowerMsg.startsWith('generate poster')) return message.slice(15).trim();
+    if (lowerMsg.startsWith('create poster')) return message.slice(13).trim();
+    if (lowerMsg.startsWith('создай постер')) return message.slice(13).trim();
+    if (lowerMsg.startsWith('сгенерируй')) return message.slice(10).trim();
+    return message;
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
     
     const userMessage = inputValue;
-    addMessage(userMessage, 'user');
     setInputValue('');
+
+    // Check if it's a generation command
+    if (isGenerationCommand(userMessage)) {
+      addMessage(userMessage, 'user');
+      const prompt = extractGenerationPrompt(userMessage);
+      await handleGeneratePoster(prompt);
+      return;
+    }
+
+    addMessage(userMessage, 'user');
     setIsProcessing(true);
 
     try {
@@ -712,6 +799,10 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
                     <p>• "Make the background darker"</p>
                     <p>• "Change button colors to blue"</p>
                     <p>• "Upload an image → Auto-apply as background"</p>
+                    <p className="text-purple-400 font-medium mt-2">🎨 AI Poster Generation:</p>
+                    <p>• "/poster cyberpunk city with neon lights"</p>
+                    <p>• "/generate cosmic galaxy nebula"</p>
+                    <p>• "create poster abstract blockchain network"</p>
                   </>
                 ) : (
                   <>
@@ -900,8 +991,8 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={authStatus === 'authenticated' ? "Ask me to customize your wallet..." : "Connect wallet first..."}
               className="bg-white/5 border-white/20 text-white placeholder:text-white/40"
-              onKeyPress={(e) => e.key === 'Enter' && !isProcessing && handleSendMessage()}
-              disabled={isProcessing || isAuthenticating}
+              onKeyPress={(e) => e.key === 'Enter' && !isProcessing && !isGenerating && handleSendMessage()}
+              disabled={isProcessing || isGenerating || isAuthenticating}
             />
           </div>
           
@@ -922,6 +1013,27 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
             title="Upload image"
           >
             <Upload className={`h-4 w-4 ${isUploading ? 'animate-spin' : ''}`} />
+          </Button>
+
+          <Button
+            onClick={() => {
+              setInputValue('/poster ');
+              // Focus input after setting value
+              setTimeout(() => {
+                const input = document.querySelector('input[placeholder*="customize"]') as HTMLInputElement;
+                if (input) {
+                  input.focus();
+                  input.setSelectionRange(input.value.length, input.value.length);
+                }
+              }, 50);
+            }}
+            disabled={isGenerating}
+            variant="outline"
+            size="icon"
+            className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 hover:from-purple-500/30 hover:to-pink-500/30 disabled:opacity-50"
+            title="Generate AI poster"
+          >
+            <Sparkles className={`h-4 w-4 text-purple-400 ${isGenerating ? 'animate-pulse' : ''}`} />
           </Button>
           
           <Button
