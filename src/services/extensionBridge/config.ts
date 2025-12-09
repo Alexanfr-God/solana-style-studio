@@ -3,14 +3,19 @@
  * URL для подключения расширений к WCC Admin
  */
 
-// WebSocket URL для локальной разработки
-// Расширения подключаются к этому endpoint
+// Supabase Edge Function URL for extension bridge
+// Extensions connect to this HTTP endpoint (no local server needed!)
+export const getExtensionBridgeApiUrl = (): string => {
+  return 'https://opxordptvpvzmhakvdde.supabase.co/functions/v1/extension-bridge';
+};
+
+// Legacy WebSocket URL (for local development only)
 export const EXTENSION_BRIDGE_WS_URL = 
   typeof window !== 'undefined' && (window as any).EXTENSION_BRIDGE_WS_URL
     ? (window as any).EXTENSION_BRIDGE_WS_URL
     : 'ws://localhost:4000/extension-bridge';
 
-// Альтернативные порты если основной занят
+// Альтернативные порты если основной занят (legacy)
 export const EXTENSION_BRIDGE_FALLBACK_PORTS = [4000, 4001, 4002, 3999];
 
 // Timeout для ожидания подключения расширения (ms)

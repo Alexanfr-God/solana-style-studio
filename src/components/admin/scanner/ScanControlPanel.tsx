@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical, Plug, Loader2 } from 'lucide-react';
+import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical, Plug, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useAiScannerStore, ScanSource } from '@/stores/aiScannerStore';
 import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
 import { WalletConnectionPrompt } from './WalletConnectionPrompt';
 import { ExtensionSnapshotViewer } from './ExtensionSnapshotViewer';
-import { extensionBridgeClient, EXTENSION_BRIDGE_WS_URL } from '@/services/extensionBridge';
+import { realtimeBridgeClient, getExtensionBridgeUrl } from '@/services/extensionBridge';
 import { toast } from 'sonner';
 
 export const ScanControlPanel = () => {
@@ -28,6 +28,15 @@ export const ScanControlPanel = () => {
   
   const [selectedWallet, setSelectedWallet] = useState<'MetaMask' | 'Phantom' | 'WS'>('MetaMask');
   const [isConnectingBridge, setIsConnectingBridge] = useState(false);
+  const [bridgeUrl] = useState(() => getExtensionBridgeUrl());
+  
+  // Listen to bridge state changes
+  useEffect(() => {
+    const unsubscribe = realtimeBridgeClient.subscribe((state) => {
+      console.log('[ScanControlPanel] Bridge state changed:', state);
+    });
+    return unsubscribe;
+  }, []);
   
   const handleConnect = async () => {
     try {
@@ -181,18 +190,32 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
       {/* Extension Bridge Mode */}
       {scanSource === 'extension-bridge' && (
         <div className="space-y-3">
+          {/* Bridge URL Info */}
+          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+            <div className="font-medium mb-1">Bridge Endpoint:</div>
+            <code className="text-[10px] break-all">{bridgeUrl}</code>
+          </div>
+          
           {/* Connect Bridge Button */}
           <Button
             onClick={async () => {
               setIsConnectingBridge(true);
-              addLog('scanning', '🟢', `Connecting to bridge: ${EXTENSION_BRIDGE_WS_URL}`);
-              const connected = await extensionBridgeClient.connect();
-              setIsConnectingBridge(false);
-              if (connected) {
-                updateBridgeConnection({ isConnected: true });
-                toast.success('Connected to extension bridge');
-              } else {
-                toast.error('Failed to connect. Run: node scripts/extension-bridge-server.js');
+              addLog('scanning', '🟢', `Connecting to bridge: ${bridgeUrl}`);
+              
+              try {
+                const connected = await realtimeBridgeClient.connect();
+                setIsConnectingBridge(false);
+                
+                if (connected) {
+                  updateBridgeConnection({ isConnected: true });
+                  toast.success('Connected to extension bridge');
+                } else {
+                  toast.error('Bridge connection failed. Check if Edge Function is deployed.');
+                }
+              } catch (error) {
+                setIsConnectingBridge(false);
+                const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                toast.error(`Bridge error: ${errorMsg}`);
               }
             }}
             disabled={isConnectingBridge || bridgeConnection.isConnected}
@@ -203,11 +226,26 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
             {isConnectingBridge ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Connecting...</>
             ) : bridgeConnection.isConnected ? (
-              <><Plug className="h-4 w-4 mr-2" /> Bridge Connected</>
+              <><CheckCircle className="h-4 w-4 mr-2 text-green-500" /> Bridge Connected</>
             ) : (
               <><Plug className="h-4 w-4 mr-2" /> Connect Bridge</>
             )}
           </Button>
+          
+          {/* Connection Status */}
+          {bridgeConnection.isConnected && (
+            <div className="text-xs space-y-1 p-2 bg-green-500/10 border border-green-500/20 rounded">
+              <div className="flex items-center gap-1 text-green-600">
+                <CheckCircle className="h-3 w-3" />
+                <span>Bridge active, waiting for extension...</span>
+              </div>
+              {bridgeConnection.extensionName && (
+                <div className="text-green-700">
+                  Extension: {bridgeConnection.extensionName} v{bridgeConnection.extensionVersion}
+                </div>
+              )}
+            </div>
+          )}
           
           <ExtensionSnapshotViewer />
         </div>
