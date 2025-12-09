@@ -117,3 +117,5 @@ verify_jwt = false
 [functions.generate-poster]
 verify_jwt = false
 
+[functions.extension-bridge]
+verify_jwt = false

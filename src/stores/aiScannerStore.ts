@@ -81,7 +81,10 @@ export interface BridgeConnectionState {
   extensionVersion: string | null;
   connectedAt: number | null;
   lastHeartbeat: number | null;
+  lastSnapshotAt: number | null;
   lastSnapshotSize: number | null;
+  lastScreen: string | null;
+  snapshotCount: number;
   messagesReceived: number;
 }
 
@@ -167,7 +170,10 @@ export const useAiScannerStore = create<AiScannerState>((set, get) => ({
     extensionVersion: null,
     connectedAt: null,
     lastHeartbeat: null,
+    lastSnapshotAt: null,
     lastSnapshotSize: null,
+    lastScreen: null,
+    snapshotCount: 0,
     messagesReceived: 0,
   },
   
