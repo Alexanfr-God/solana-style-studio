@@ -220,6 +220,11 @@ class RealtimeBridgeClient {
           console.log(`[RealtimeBridge] 🤝 Extension connected: ${ext.name} v${ext.version}`);
           store.addLog('verified', '✅', `Extension connected: ${ext.name} v${ext.version}`);
           store.setWalletConnected(true);
+          store.updateBridgeConnection({
+            extensionName: ext.name,
+            extensionVersion: ext.version,
+            connectedAt: ext.connectedAt,
+          });
           
           this.notifyListeners();
         }
@@ -227,8 +232,17 @@ class RealtimeBridgeClient {
       
       // Check for new snapshot
       if (data.hasSnapshot && data.lastSnapshotAt !== this.state.lastSnapshotAt) {
-        this.handleSnapshot(data.lastSnapshotFrom, data.snapshot);
+        this.handleSnapshot(data.lastSnapshotFrom, data.snapshot, data.lastScreen);
         this.state.lastSnapshotAt = data.lastSnapshotAt;
+        
+        // Update bridge connection state with snapshot info
+        const store = useAiScannerStore.getState();
+        store.updateBridgeConnection({
+          lastSnapshotAt: data.lastSnapshotAt,
+          lastSnapshotSize: JSON.stringify(data.snapshot).length,
+          lastScreen: data.lastScreen,
+          snapshotCount: data.snapshotCount || 1,
+        });
       }
       
     } catch (error) {
@@ -237,19 +251,21 @@ class RealtimeBridgeClient {
     }
   }
   
-  private handleSnapshot(extension: string, snapshot: any): void {
+  private handleSnapshot(extension: string, snapshot: any, screen?: string): void {
     const store = useAiScannerStore.getState();
     
     const snapshotSize = JSON.stringify(snapshot).length;
-    console.log(`[RealtimeBridge] 📸 Snapshot received from ${extension}, ${snapshotSize} bytes`);
-    store.addLog('snapshot', '🔵', `Snapshot: ${extension} (${snapshotSize} bytes)`);
+    const screenName = screen || snapshot.screen || 'unknown';
+    
+    console.log(`[RealtimeBridge] 📸 Snapshot received from ${extension} (screen: ${screenName}, ${snapshotSize} bytes)`);
+    store.addLog('snapshot', '🔵', `Snapshot from ${extension} (screen: ${screenName}, ${snapshotSize} bytes)`);
     
     // Convert to ExtensionUISnapshot format
     const uiSnapshot: ExtensionUISnapshot = {
       type: 'EXTENSION_UI_SNAPSHOT',
       extension: extension,
       timestamp: Date.now(),
-      screen: snapshot.screen || 'unknown',
+      screen: screenName,
       ui: {
         elements: snapshot.elements?.map((el: any) => ({
           id: el.id,
@@ -262,6 +278,8 @@ class RealtimeBridgeClient {
         })),
         theme: snapshot.theme,
       },
+      // Keep the raw snapshot for debugging
+      state: snapshot,
     };
     
     store.setExtensionSnapshot(uiSnapshot);

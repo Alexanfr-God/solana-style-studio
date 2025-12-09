@@ -190,10 +190,16 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
       {/* Extension Bridge Mode */}
       {scanSource === 'extension-bridge' && (
         <div className="space-y-3">
-          {/* Bridge URL Info */}
-          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-            <div className="font-medium mb-1">Bridge Endpoint:</div>
-            <code className="text-[10px] break-all">{bridgeUrl}</code>
+          {/* Bridge Endpoints Info */}
+          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded space-y-2">
+            <div>
+              <div className="font-medium text-foreground/80">State Endpoint (GET):</div>
+              <code className="text-[10px] break-all block mt-0.5">{bridgeUrl}</code>
+            </div>
+            <div>
+              <div className="font-medium text-foreground/80">Snapshot Endpoint (POST):</div>
+              <code className="text-[10px] break-all block mt-0.5">{bridgeUrl}/snapshot</code>
+            </div>
           </div>
           
           {/* Connect Bridge Button */}
@@ -208,13 +214,16 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
                 
                 if (connected) {
                   updateBridgeConnection({ isConnected: true });
+                  addLog('verified', '✅', 'Extension bridge connected');
                   toast.success('Connected to extension bridge');
                 } else {
+                  addLog('error', '❌', 'Bridge connection failed');
                   toast.error('Bridge connection failed. Check if Edge Function is deployed.');
                 }
               } catch (error) {
                 setIsConnectingBridge(false);
                 const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                addLog('error', '❌', `Bridge error: ${errorMsg}`);
                 toast.error(`Bridge error: ${errorMsg}`);
               }
             }}
@@ -235,13 +244,22 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
           {/* Connection Status */}
           {bridgeConnection.isConnected && (
             <div className="text-xs space-y-1 p-2 bg-green-500/10 border border-green-500/20 rounded">
-              <div className="flex items-center gap-1 text-green-600">
-                <CheckCircle className="h-3 w-3" />
-                <span>Bridge active, waiting for extension...</span>
-              </div>
-              {bridgeConnection.extensionName && (
-                <div className="text-green-700">
-                  Extension: {bridgeConnection.extensionName} v{bridgeConnection.extensionVersion}
+              {bridgeConnection.extensionName ? (
+                <>
+                  <div className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="h-3 w-3" />
+                    <span>Extension connected: {bridgeConnection.extensionName}</span>
+                  </div>
+                  {bridgeConnection.lastSnapshotAt && (
+                    <div className="text-green-700/80">
+                      Last snapshot: {Math.round((Date.now() - bridgeConnection.lastSnapshotAt) / 1000)}s ago
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-1 text-amber-600">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Bridge active, waiting for extension...</span>
                 </div>
               )}
             </div>
