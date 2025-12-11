@@ -141,7 +141,7 @@ const MultichainWalletButton: React.FC = () => {
     }
   }, [address, solanaProvider]);
 
-  // Enhanced wallet detection function
+  // Enhanced wallet detection function for EVM
   const detectWalletProvider = useCallback(() => {
     const ethereum = (window as any).ethereum;
     
@@ -157,6 +157,38 @@ const MultichainWalletButton: React.FC = () => {
     
     return 'unknown_evm';
   }, []);
+
+  // Enhanced wallet detection function for Solana
+  const detectSolanaWalletProvider = useCallback(() => {
+    // Check connected wallet name from AppKit first
+    const connectedWalletName = (appKit as any)?.getWalletInfo?.()?.name?.toLowerCase() || '';
+    
+    console.log('🔍 Solana wallet detection:', {
+      connectedWalletName,
+      hasWindowSolana: !!(window as any).solana,
+      hasWindowPhantom: !!(window as any).phantom,
+      solanaIsPhantom: (window as any).solana?.isPhantom,
+      solanaIsSolflare: (window as any).solana?.isSolflare
+    });
+    
+    if (connectedWalletName.includes('phantom')) return 'phantom';
+    if (connectedWalletName.includes('solflare')) return 'solflare';
+    if (connectedWalletName.includes('trust')) return 'trust';
+    if (connectedWalletName.includes('coinbase')) return 'coinbase';
+    if (connectedWalletName.includes('metamask')) return 'metamask_snaps';
+    if (connectedWalletName.includes('backpack')) return 'backpack';
+    
+    // Fallback: check window objects
+    const solana = (window as any).solana;
+    const phantom = (window as any).phantom?.solana;
+    
+    if (phantom?.isPhantom || solana?.isPhantom) return 'phantom';
+    if (solana?.isSolflare) return 'solflare';
+    if (solana?.isBackpack) return 'backpack';
+    if ((window as any).ethereum?.isMetaMask) return 'metamask_snaps';
+    
+    return 'solana_wallet';
+  }, [appKit]);
 
   const handleAuthentication = useCallback(async () => {
     if (!address || !isAppKitReady() || isAuthenticating) {
@@ -188,7 +220,7 @@ const MultichainWalletButton: React.FC = () => {
       const chainType: ChainType = isSolana ? 'solana' : 'evm';
 
       // Detect wallet provider
-      const walletProvider = chainType === 'solana' ? 'phantom' : detectWalletProvider();
+      const walletProvider = chainType === 'solana' ? detectSolanaWalletProvider() : detectWalletProvider();
       
       console.log('🔍 Starting authentication:', { 
         address: address.slice(0, 10) + '...', 
@@ -268,7 +300,7 @@ const MultichainWalletButton: React.FC = () => {
     } finally {
       setIsAuthenticating(false);
     }
-  }, [address, caipNetwork, isAuthenticating, setIsAuthenticating, setAuthSession, signMessage, detectWalletProvider]);
+  }, [address, caipNetwork, isAuthenticating, setIsAuthenticating, setAuthSession, signMessage, detectWalletProvider, detectSolanaWalletProvider]);
 
   const handleConnect = useCallback(async () => {
     if (!isAppKitReady() || !appKit) {
@@ -278,6 +310,20 @@ const MultichainWalletButton: React.FC = () => {
     }
 
     try {
+      // Clean up any stuck Phantom connections to prevent "Connection declined" error
+      const phantom = (window as any).phantom?.solana || (window as any).solana;
+      if (phantom?.isConnected) {
+        try {
+          await phantom.disconnect();
+          console.log('🧹 Cleaned up existing Phantom connection');
+        } catch (e) {
+          // Ignore cleanup errors - wallet might not support disconnect or already disconnected
+        }
+      }
+      
+      // Small delay to let cleanup finish
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       console.log('🔗 Opening wallet selection modal...');
       await appKit.open();
       console.log('✅ Wallet modal opened successfully');
