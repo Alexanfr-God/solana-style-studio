@@ -140,6 +140,33 @@ export type Database = {
         }
         Relationships: []
       }
+      extension_bridge_snapshots: {
+        Row: {
+          created_at: string | null
+          elements_count: number | null
+          extension_id: string
+          id: string
+          screen: string | null
+          snapshot: Json
+        }
+        Insert: {
+          created_at?: string | null
+          elements_count?: number | null
+          extension_id: string
+          id?: string
+          screen?: string | null
+          snapshot: Json
+        }
+        Update: {
+          created_at?: string | null
+          elements_count?: number | null
+          extension_id?: string
+          id?: string
+          screen?: string | null
+          snapshot?: Json
+        }
+        Relationships: []
+      }
       icon_variants: {
         Row: {
           created_at: string | null
