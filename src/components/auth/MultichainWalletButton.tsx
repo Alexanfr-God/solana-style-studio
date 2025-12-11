@@ -310,20 +310,6 @@ const MultichainWalletButton: React.FC = () => {
     }
 
     try {
-      // Clean up any stuck Phantom connections to prevent "Connection declined" error
-      const phantom = (window as any).phantom?.solana || (window as any).solana;
-      if (phantom?.isConnected) {
-        try {
-          await phantom.disconnect();
-          console.log('🧹 Cleaned up existing Phantom connection');
-        } catch (e) {
-          // Ignore cleanup errors - wallet might not support disconnect or already disconnected
-        }
-      }
-      
-      // Small delay to let cleanup finish
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       console.log('🔗 Opening wallet selection modal...');
       await appKit.open();
       console.log('✅ Wallet modal opened successfully');
