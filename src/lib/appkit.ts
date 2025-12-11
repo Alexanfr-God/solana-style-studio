@@ -116,14 +116,9 @@ export async function initializeAppKit() {
       ]
     });
 
-    // Force disconnect all wallets on startup to ensure clean state
-    try {
-      console.log('🔌 Force disconnecting all wallets...');
-      await modal.disconnect();
-      console.log('✅ All wallets disconnected');
-    } catch (error) {
-      console.log('⚠️ No wallets were connected to disconnect:', error);
-    }
+    // Note: Force disconnect removed - it was preventing Phantom from working properly
+    // Let users maintain their session between page reloads
+    console.log('🔗 AppKit ready - keeping existing wallet sessions');
 
     isInitialized = true;
     console.log('✅ AppKit initialized successfully');

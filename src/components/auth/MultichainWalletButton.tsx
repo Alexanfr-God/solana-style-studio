@@ -1,8 +1,8 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAppKit, useAppKitAccount, useAppKitNetwork, useDisconnect } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount, useAppKitNetwork, useDisconnect, useAppKitProvider } from '@reown/appkit/react';
 import { requestNonce, verifySignature, type ChainType } from '@/services/walletAuthService';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { isAppKitReady } from '@/lib/appkit';
@@ -17,35 +17,59 @@ const MultichainWalletButton: React.FC = () => {
     walletProfile
   } = useExtendedWallet();
 
+  // Debounce for nonce requests - prevent multiple rapid auth attempts
+  const lastNonceRequestRef = useRef<number>(0);
+  const NONCE_DEBOUNCE_MS = 3000;
+
   // Always call hooks (React rules)
   const appKit = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
   const { disconnect } = useDisconnect();
+  const { walletProvider: solanaProvider } = useAppKitProvider<any>('solana');
 
-  // Real message signing function with improved EVM support
+  // Real message signing function with improved Solana/AppKit support
   const signMessage = useCallback(async (message: string, chainType: ChainType): Promise<string> => {
     try {
-      console.log('🖊️ Starting message signing:', { chainType, message: message.slice(0, 50) + '...' });
+      console.log('🖊️ Starting message signing:', { 
+        chainType, 
+        message: message.slice(0, 50) + '...',
+        hasSolanaProvider: !!solanaProvider,
+        hasWindowSolana: !!(window as any).solana
+      });
       
       if (chainType === 'solana') {
-        // For Solana use direct wallet access (AppKit doesn't expose signMessage directly)
         console.log('📝 Using Solana signing method');
+        const encodedMessage = new TextEncoder().encode(message);
         
-        const solanaWallet = (window as any).solana;
-        if (!solanaWallet?.signMessage) {
-          throw new Error('Solana wallet does not support message signing or is not connected');
+        // Try AppKit provider first (WalletConnect compatible)
+        if (solanaProvider?.signMessage) {
+          try {
+            console.log('🔐 Trying AppKit Solana provider...');
+            const signedMessage = await solanaProvider.signMessage(encodedMessage);
+            const signature = Array.from(signedMessage.signature || signedMessage)
+              .map((b: number) => b.toString(16).padStart(2, '0'))
+              .join('');
+            console.log('✅ Solana message signed via AppKit provider');
+            return signature;
+          } catch (appKitError: any) {
+            console.log('⚠️ AppKit Solana provider failed:', appKitError.message);
+          }
         }
         
-        const encodedMessage = new TextEncoder().encode(message);
-        const signedMessage = await solanaWallet.signMessage(encodedMessage);
+        // Fallback to window.solana (direct Phantom/Solflare injection)
+        const solanaWallet = (window as any).solana;
+        if (solanaWallet?.signMessage) {
+          console.log('🔐 Trying window.solana fallback...');
+          const signedMessage = await solanaWallet.signMessage(encodedMessage);
+          const signature = Array.from(signedMessage.signature)
+            .map((b: number) => b.toString(16).padStart(2, '0'))
+            .join('');
+          console.log('✅ Solana message signed via window.solana');
+          return signature;
+        }
         
-        // Convert signature to hex string
-        const signature = Array.from(signedMessage.signature)
-          .map((b: number) => b.toString(16).padStart(2, '0'))
-          .join('');
-        console.log('✅ Solana message signed successfully');
-        return signature;
+        throw new Error('No Solana signing method available. Please reconnect your wallet.');
       } else {
         // For EVM - try multiple signing methods
         console.log('📝 Using EVM signing method');
@@ -63,7 +87,7 @@ const MultichainWalletButton: React.FC = () => {
           });
           console.log('✅ EVM message signed with personal_sign');
           return signature;
-        } catch (personalSignError) {
+        } catch (personalSignError: any) {
           console.log('⚠️ personal_sign failed, trying eth_sign...', personalSignError.message);
           
           // Fallback to eth_sign
@@ -75,7 +99,7 @@ const MultichainWalletButton: React.FC = () => {
             });
             console.log('✅ EVM message signed with eth_sign');
             return signature;
-          } catch (ethSignError) {
+          } catch (ethSignError: any) {
             console.log('⚠️ eth_sign failed, trying eth_signTypedData_v4...', ethSignError.message);
             
             // Last resort: eth_signTypedData_v4
@@ -104,11 +128,18 @@ const MultichainWalletButton: React.FC = () => {
           }
         }
       }
-    } catch (error) {
-      console.error('❌ Failed to sign message with all methods:', error);
+    } catch (error: any) {
+      console.error('❌ Failed to sign message:', error);
+      // Better error classification for user feedback
+      if (error.message?.includes('User rejected') || 
+          error.code === 4001 || 
+          error.message?.includes('cancelled') ||
+          error.message?.includes('denied')) {
+        throw new Error('USER_REJECTED');
+      }
       throw error;
     }
-  }, [address, appKit]);
+  }, [address, solanaProvider]);
 
   // Enhanced wallet detection function
   const detectWalletProvider = useCallback(() => {
@@ -136,6 +167,15 @@ const MultichainWalletButton: React.FC = () => {
       });
       return;
     }
+
+    // Debounce: prevent multiple rapid nonce requests
+    const now = Date.now();
+    if (now - lastNonceRequestRef.current < NONCE_DEBOUNCE_MS) {
+      console.log('⏳ Throttling nonce request, too soon since last attempt');
+      toast.info('Please wait a moment before trying again');
+      return;
+    }
+    lastNonceRequestRef.current = now;
 
     setIsAuthenticating(true);
     
@@ -216,8 +256,12 @@ const MultichainWalletButton: React.FC = () => {
     } catch (error: any) {
       console.error('❌ Authentication failed:', error);
       
-      if (error.message?.includes('reject') || error.message?.includes('cancel') || error.message?.includes('denied')) {
+      if (error.message === 'USER_REJECTED') {
+        toast.error('You rejected the signature request. Click "Sign Message" to try again.');
+      } else if (error.message?.includes('reject') || error.message?.includes('cancel') || error.message?.includes('denied')) {
         toast.error('Signature rejected. Please try again.');
+      } else if (error.message?.includes('No Solana signing method')) {
+        toast.error('Wallet disconnected. Please reconnect and try again.');
       } else {
         toast.error(`Authentication failed: ${error?.message || 'Unknown error'}`);
       }
