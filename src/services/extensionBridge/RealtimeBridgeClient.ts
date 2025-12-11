@@ -209,40 +209,48 @@ class RealtimeBridgeClient {
       
       const data = await response.json();
       
-      // Check for new extension
-      if (data.extensions && data.extensions.length > 0) {
-        const ext = data.extensions[0];
-        if (this.state.extensionName !== ext.name) {
-          this.state.extensionName = ext.name;
-          this.state.extensionVersion = ext.version;
+      // Check for new extension from snapshot
+      if (data.hasSnapshot && data.lastSnapshotFrom) {
+        const extName = data.lastSnapshotFrom;
+        if (this.state.extensionName !== extName) {
+          this.state.extensionName = extName;
           
           const store = useAiScannerStore.getState();
-          console.log(`[RealtimeBridge] 🤝 Extension connected: ${ext.name} v${ext.version}`);
-          store.addLog('verified', '✅', `Extension connected: ${ext.name} v${ext.version}`);
+          console.log(`[RealtimeBridge] 🤝 Extension detected: ${extName}`);
+          store.addLog('verified', '✅', `Extension detected: ${extName}`);
           store.setWalletConnected(true);
           store.updateBridgeConnection({
-            extensionName: ext.name,
-            extensionVersion: ext.version,
-            connectedAt: ext.connectedAt,
+            extensionName: extName,
           });
           
           this.notifyListeners();
         }
       }
       
-      // Check for new snapshot
-      if (data.hasSnapshot && data.lastSnapshotAt !== this.state.lastSnapshotAt) {
+      // Check for new snapshot (compare timestamps)
+      const newSnapshotAt = data.lastSnapshotAt ? new Date(data.lastSnapshotAt).getTime() : null;
+      
+      if (data.hasSnapshot && newSnapshotAt && newSnapshotAt !== this.state.lastSnapshotAt) {
+        // Calculate elements count from snapshot
+        const elementsCount = data.snapshot?.elements?.length || 0;
+        
+        console.log(`[RealtimeBridge] 📸 New snapshot detected from ${data.lastSnapshotFrom}: ${elementsCount} elements`);
+        
         this.handleSnapshot(data.lastSnapshotFrom, data.snapshot, data.lastScreen);
-        this.state.lastSnapshotAt = data.lastSnapshotAt;
+        this.state.lastSnapshotAt = newSnapshotAt;
         
         // Update bridge connection state with snapshot info
         const store = useAiScannerStore.getState();
         store.updateBridgeConnection({
-          lastSnapshotAt: data.lastSnapshotAt,
+          lastSnapshotAt: newSnapshotAt,
           lastSnapshotSize: JSON.stringify(data.snapshot).length,
           lastScreen: data.lastScreen,
           snapshotCount: data.snapshotCount || 1,
+          extensionName: data.lastSnapshotFrom,
         });
+        
+        // Log snapshot receipt to scan logs
+        store.addLog('snapshot', '🔵', `Snapshot received from extension: ${data.lastSnapshotFrom}, elements: ${elementsCount}`);
       }
       
     } catch (error) {
