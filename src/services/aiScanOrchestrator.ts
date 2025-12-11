@@ -187,6 +187,7 @@ class AiScanOrchestrator {
   
   /**
    * Phase 1b: Scan Extension Bridge snapshot (ProtonVPN, etc.)
+   * Supports both store snapshot and raw snapshot from DB
    */
   private async scanBridgeSnapshot() {
     const store = this.store.getState();
@@ -196,38 +197,71 @@ class AiScanOrchestrator {
     store.setScanMode('vision');
     store.addLog('scanning', '🟢', 'Scanning extension bridge snapshot...');
     
-    // Проверяем наличие снапшота
+    // Check if bridge is connected
+    if (!bridgeConnection.isConnected) {
+      store.addLog('error', '❌', 'Extension bridge not connected. Connect first.');
+      throw new Error('Extension bridge not connected. Please connect the bridge server first.');
+    }
+    
+    // Check snapshot freshness (30 seconds max)
+    const MAX_SNAPSHOT_AGE_MS = 30000;
+    const snapshotAge = bridgeConnection.lastSnapshotAt 
+      ? Date.now() - bridgeConnection.lastSnapshotAt 
+      : Infinity;
+    
+    // Check if we have a valid snapshot
     if (!extensionSnapshot) {
-      // Проверяем подключение к bridge
-      if (!bridgeConnection.isConnected) {
-        store.addLog('error', '❌', 'Extension bridge not connected. Connect first.');
-        throw new Error('Extension bridge not connected. Please connect the bridge server first.');
-      }
-      
-      // Bridge подключен, но снапшота нет
       store.addLog('error', '❌', 'No snapshots received from extension. Open the extension popup.');
       throw new Error('No snapshots received from extension. Please open the extension popup to capture UI.');
     }
     
+    // Warn if snapshot is stale but still use it
+    if (snapshotAge > MAX_SNAPSHOT_AGE_MS) {
+      store.addLog('scanning', '🟢', `⚠️ Snapshot is ${Math.round(snapshotAge / 1000)}s old (stale), using anyway...`);
+    }
+    
     try {
-      const elements = extensionSnapshot.ui?.elements || [];
+      // Get elements from snapshot - support both formats
+      // Format 1: extensionSnapshot.ui.elements (converted format)
+      // Format 2: extensionSnapshot.state.elements (raw Proton format)
+      let elements: any[] = [];
+      let rawSnapshot = extensionSnapshot.state as any;
+      
+      if (rawSnapshot?.elements && Array.isArray(rawSnapshot.elements)) {
+        // Raw Proton format: { elements: [{ tag, id, classes, text }, ...] }
+        elements = rawSnapshot.elements;
+        store.addLog('snapshot', '🔵', `Using extension snapshot as WalletDOMStructure source.`);
+      } else if (extensionSnapshot.ui?.elements) {
+        elements = extensionSnapshot.ui.elements;
+      }
+      
+      const extensionId = extensionSnapshot.extension || bridgeConnection.extensionName || 'unknown';
+      const screenName = extensionSnapshot.screen || bridgeConnection.lastScreen || 'unknown';
       
       console.log(`[AiScanOrchestrator] ✅ Found ${elements.length} elements in extension snapshot`);
-      store.addLog('found', '🔵', `Found ${elements.length} elements from ${extensionSnapshot.extension}`);
-      store.addLog('found', '🔵', `Screen: ${extensionSnapshot.screen}`);
+      store.addLog('found', '🔵', `Snapshot received from extension: ${extensionId}, elements: ${elements.length}`);
+      store.addLog('found', '🔵', `Screen: ${screenName}`);
       
-      // Convert to ElementItem[]
-      elements.forEach((el, index) => {
+      // Convert to ElementItem[] - handle both formats
+      elements.forEach((el: any, index: number) => {
+        // Support Proton format: { tag, id, classes, text }
+        // Support converted format: { tagName, id, className, textContent }
+        const tag = el.tag || el.tagName || 'div';
+        const text = el.text || el.textContent || '';
+        const classes = el.classes 
+          ? (Array.isArray(el.classes) ? el.classes.join(' ') : el.classes)
+          : (el.className || '');
+        
         const element: ElementItem = {
           id: el.id || `ext-${index}`,
-          role: el.tagName || 'div',
-          type: this.detectElementType(el.tagName || 'div'),
+          role: `${tag.toLowerCase()}${el.id ? '#' + el.id : ''}`,
+          type: this.detectTypeFromTag(tag),
           status: 'found',
           style: {
             bg: el.styles?.backgroundColor || 'transparent',
             radius: el.styles?.borderRadius || '0px',
             border: el.styles?.border || 'none',
-            text: el.textContent || ''
+            text: text.substring(0, 50)
           },
           metrics: {
             width: el.rect?.width || 0,
@@ -241,7 +275,7 @@ class AiScanOrchestrator {
         store.addElement(element);
         
         if (index < 5) {
-          store.addLog('found', '🔵', `${el.selector} → ${el.textContent || '(no text)'}`);
+          store.addLog('found', '🔵', `${tag}${el.id ? '#' + el.id : ''} ${classes ? '.' + classes.split(' ')[0] : ''} → "${text.substring(0, 30) || '(no text)'}"`);
         }
       });
       
@@ -249,9 +283,10 @@ class AiScanOrchestrator {
         store.addLog('found', '🔵', `... and ${elements.length - 5} more elements`);
       }
       
-      // Логируем тему если есть
-      if (extensionSnapshot.ui?.theme) {
-        const themeKeys = Object.keys(extensionSnapshot.ui.theme);
+      // Log theme if available
+      const theme = extensionSnapshot.ui?.theme || rawSnapshot?.theme;
+      if (theme) {
+        const themeKeys = Object.keys(theme);
         store.addLog('snapshot', '🟣', `Theme extracted: ${themeKeys.length} color variables`);
       }
       
@@ -261,6 +296,17 @@ class AiScanOrchestrator {
       console.error('[AiScanOrchestrator] ❌ Failed to scan bridge snapshot:', error);
       throw error;
     }
+  }
+  
+  /**
+   * Detect element type from HTML tag
+   */
+  private detectTypeFromTag(tag: string): 'button' | 'input' | 'icon' | 'background' {
+    const tagLower = tag.toLowerCase();
+    if (tagLower === 'button' || tagLower === 'a') return 'button';
+    if (tagLower === 'input' || tagLower === 'textarea' || tagLower === 'select') return 'input';
+    if (tagLower === 'svg' || tagLower === 'img' || tagLower === 'i') return 'icon';
+    return 'background';
   }
   
   /**
@@ -625,13 +671,6 @@ class AiScanOrchestrator {
     return 'button'; // default
   }
   
-  private detectTypeFromTag(tag: string): ElementItem['type'] {
-    if (tag === 'button') return 'button';
-    if (tag === 'input' || tag === 'textarea') return 'input';
-    if (tag === 'svg' || tag === 'img') return 'icon';
-    if (tag === 'div' && tag.includes('background')) return 'background';
-    return 'button'; // default
-  }
   
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
