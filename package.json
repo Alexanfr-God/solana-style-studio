@@ -70,7 +70,7 @@
     "input-otp": "^1.2.4",
     "lucide-react": "^0.539.0",
     "next-themes": "^0.3.0",
-    "nft.storage": "^7.1.1",
+    "nft.storage": "7.2.0",
     "process": "^0.11.10",
     "react": "^19.0.0",
     "react-best-gradient-color-picker": "^3.0.14",

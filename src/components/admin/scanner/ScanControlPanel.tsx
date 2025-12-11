@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical, Plug, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Play, Square, ChevronRight, RefreshCw, Download, Wallet, FlaskConical, Plug, Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useAiScannerStore, ScanSource } from '@/stores/aiScannerStore';
 import { aiScanOrchestrator } from '@/services/aiScanOrchestrator';
 import { WalletConnectionPrompt } from './WalletConnectionPrompt';
 import { ExtensionSnapshotViewer } from './ExtensionSnapshotViewer';
+import { BridgeDebugPanel } from './BridgeDebugPanel';
 import { realtimeBridgeClient, getExtensionBridgeUrl } from '@/services/extensionBridge';
 import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 
 export const ScanControlPanel = () => {
   const { 
@@ -243,16 +245,38 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
           
           {/* Connection Status */}
           {bridgeConnection.isConnected && (
-            <div className="text-xs space-y-1 p-2 bg-green-500/10 border border-green-500/20 rounded">
+            <div className="text-xs space-y-1.5 p-2 bg-green-500/10 border border-green-500/20 rounded">
               {bridgeConnection.extensionName ? (
                 <>
                   <div className="flex items-center gap-1 text-green-600">
                     <CheckCircle className="h-3 w-3" />
-                    <span>Extension connected: {bridgeConnection.extensionName}</span>
+                    <span>Extension: <strong>{bridgeConnection.extensionName}</strong></span>
                   </div>
-                  {bridgeConnection.lastSnapshotAt && (
-                    <div className="text-green-700/80">
-                      Last snapshot: {Math.round((Date.now() - bridgeConnection.lastSnapshotAt) / 1000)}s ago
+                  {bridgeConnection.lastSnapshotAt ? (
+                    <div className={`flex items-center gap-1 ${
+                      (Date.now() - bridgeConnection.lastSnapshotAt) > 30000 
+                        ? 'text-amber-600' 
+                        : 'text-green-700/80'
+                    }`}>
+                      {(Date.now() - bridgeConnection.lastSnapshotAt) > 30000 && (
+                        <AlertTriangle className="h-3 w-3" />
+                      )}
+                      <span>
+                        Last snapshot: {bridgeConnection.lastScreen || 'unknown'} ({formatDistanceToNow(bridgeConnection.lastSnapshotAt)} ago)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-amber-600">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Waiting for snapshot...</span>
+                    </div>
+                  )}
+                  {bridgeConnection.snapshotCount !== undefined && bridgeConnection.snapshotCount > 0 && (
+                    <div className="text-muted-foreground">
+                      Elements: {Array.isArray(useAiScannerStore.getState().extensionSnapshot?.state?.elements) 
+                        ? (useAiScannerStore.getState().extensionSnapshot?.state?.elements as unknown[]).length 
+                        : 0} | 
+                      Total snapshots: {bridgeConnection.snapshotCount}
                     </div>
                   )}
                 </>
@@ -266,6 +290,7 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
           )}
           
           <ExtensionSnapshotViewer />
+          <BridgeDebugPanel />
         </div>
       )}
       
