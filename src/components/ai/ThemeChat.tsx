@@ -518,6 +518,13 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
 
   // Generate poster with AI
   const handleGeneratePoster = async (prompt: string) => {
+    // Check wallet authentication
+    if (!walletProfile?.wallet_address) {
+      addMessage('⚠️ Please connect your wallet first to generate posters', 'assistant');
+      toast.error('Wallet not connected');
+      return;
+    }
+    
     setIsGenerating(true);
     addMessage(`🎨 Generating poster: "${prompt}"...`, 'assistant');
 
@@ -569,7 +576,9 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
   const isGenerationCommand = (message: string): boolean => {
     const lowerMsg = message.toLowerCase().trim();
     return (
+      lowerMsg === '/poster' ||
       lowerMsg.startsWith('/poster ') ||
+      lowerMsg === '/generate' ||
       lowerMsg.startsWith('/generate ') ||
       lowerMsg.startsWith('generate poster') ||
       lowerMsg.startsWith('create poster') ||
@@ -601,8 +610,17 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
 
     // Check if it's a generation command
     if (isGenerationCommand(userMessage)) {
-      addMessage(userMessage, 'user');
       const prompt = extractGenerationPrompt(userMessage);
+      
+      // Validate prompt is not empty
+      if (!prompt.trim()) {
+        addMessage(userMessage, 'user');
+        addMessage('⚠️ Please provide a description for the poster. Example: "/poster cyberpunk city with neon lights"', 'assistant');
+        toast.warning('Enter a description after /poster');
+        return;
+      }
+      
+      addMessage(userMessage, 'user');
       await handleGeneratePoster(prompt);
       return;
     }
@@ -1017,7 +1035,13 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
 
           <Button
             onClick={() => {
-              setInputValue('/poster ');
+              if (inputValue.trim()) {
+                // If there's text, prepend /poster command
+                setInputValue(`/poster ${inputValue.trim()}`);
+              } else {
+                // If empty, just add the command
+                setInputValue('/poster ');
+              }
               // Focus input after setting value
               setTimeout(() => {
                 const input = document.querySelector('input[placeholder*="customize"]') as HTMLInputElement;
@@ -1027,7 +1051,7 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
                 }
               }, 50);
             }}
-            disabled={isGenerating}
+            disabled={isGenerating || authStatus !== 'authenticated'}
             variant="outline"
             size="icon"
             className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 hover:from-purple-500/30 hover:to-pink-500/30 disabled:opacity-50"
