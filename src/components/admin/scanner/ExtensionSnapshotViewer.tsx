@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAiScannerStore } from '@/stores/aiScannerStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plug, Clock, Layers, Eye, Code, ChevronDown } from 'lucide-react';
+import { Plug, Clock, Layers, Eye, Code, ChevronDown, RefreshCw, Loader2 } from 'lucide-react';
+import { realtimeBridgeClient } from '@/services/extensionBridge';
 
 export const ExtensionSnapshotViewer = () => {
   const { extensionSnapshot, lastExtensionMessage } = useAiScannerStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await realtimeBridgeClient.requestSnapshot();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
   
   if (!extensionSnapshot) {
     return (
@@ -28,7 +37,6 @@ export const ExtensionSnapshotViewer = () => {
     : null;
   
   // Get screenshot from snapshot (may be nested in different places)
-  // Use type assertion since screenshot is dynamically added by SDK
   const snapshotAny = extensionSnapshot as any;
   const screenshot = snapshotAny?.screenshot || 
                      snapshotAny?.state?.screenshot || 
@@ -46,12 +54,27 @@ export const ExtensionSnapshotViewer = () => {
             {extensionSnapshot.screen}
           </Badge>
         </div>
-        {timeAgo !== null && (
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {timeAgo}s ago
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {timeAgo !== null && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {timeAgo}s ago
+            </span>
+          )}
+          <Button
+            onClick={handleRefresh}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
       </div>
       
       {/* Stats */}
