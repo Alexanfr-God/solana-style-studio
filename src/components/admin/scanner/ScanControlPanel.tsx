@@ -289,6 +289,55 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
             </div>
           )}
           
+          {/* Test Snapshot Button */}
+          <Button
+            onClick={async () => {
+              addLog('scanning', '🟢', 'Sending test snapshot...');
+              try {
+                const testSnapshot = {
+                  extension: 'test-vpn',
+                  screen: 'popup',
+                  ts: Date.now(),
+                  snapshot: {
+                    elements: [
+                      { tag: 'BUTTON', id: 'connect', classes: ['btn-primary'], text: 'Connect VPN' },
+                      { tag: 'DIV', id: 'status', classes: ['status-indicator'], text: 'Disconnected' },
+                      { tag: 'SPAN', id: 'server', classes: ['server-label'], text: 'US-East-1' },
+                    ],
+                    theme: { background: '#1a1a2e', color: '#ffffff', accent: '#6366f1' },
+                    title: 'Test VPN Extension'
+                  }
+                };
+                
+                const response = await fetch(`${bridgeUrl}/snapshot`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(testSnapshot)
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                  addLog('verified', '✅', `Test snapshot sent! ID: ${result.id}`);
+                  toast.success('Test snapshot sent!');
+                  // Trigger refresh
+                  await realtimeBridgeClient.requestSnapshot();
+                } else {
+                  throw new Error(result.error || 'Failed to send snapshot');
+                }
+              } catch (error) {
+                const msg = error instanceof Error ? error.message : 'Unknown error';
+                addLog('error', '❌', `Test snapshot failed: ${msg}`);
+                toast.error(`Failed: ${msg}`);
+              }
+            }}
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+          >
+            <FlaskConical className="h-4 w-4" />
+            Send Test Snapshot
+          </Button>
+          
           <ExtensionSnapshotViewer />
           <BridgeDebugPanel />
         </div>
