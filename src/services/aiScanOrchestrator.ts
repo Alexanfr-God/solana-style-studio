@@ -530,6 +530,28 @@ class AiScanOrchestrator {
   private async buildJSON() {
     const store = this.store.getState();
     
+    // Skip ThemeProbe for extension-bridge mode - no local wallet DOM
+    if (store.scanSource === 'extension-bridge') {
+      console.log('[AiScanOrchestrator] 🟣 Phase 3: JSON Build (extension-bridge mode)');
+      store.setScanMode('json-build');
+      store.addLog('scanning', '🟣', 'Extension bridge mode - using snapshot data directly');
+      
+      // Use theme from extension snapshot
+      const { extensionSnapshot } = store;
+      const theme = extensionSnapshot?.ui?.theme || extensionSnapshot?.state?.theme;
+      if (theme) {
+        store.addLog('scanning', '🟣', `Theme colors: ${Object.keys(theme).length} variables`);
+      }
+      
+      // Mark elements as verified (no JSON path mapping needed for external extensions)
+      store.foundElements.forEach(el => {
+        store.updateElement(el.id, { status: 'verified' });
+      });
+      
+      await this.delay(500);
+      return; // Exit early, skip ThemeProbe
+    }
+    
     console.log('[AiScanOrchestrator] 🟣 Phase 3: JSON Build');
     store.setScanMode('json-build');
     store.addLog('scanning', '🟣', 'Building JSON mappings with ThemeProbe...');

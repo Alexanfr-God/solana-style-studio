@@ -37,6 +37,34 @@ export class DOMScanner {
   }
   
   /**
+   * Capture screenshot of the extension popup as base64 PNG
+   * Uses html2canvas library
+   */
+  async captureScreenshot(): Promise<string | null> {
+    try {
+      const root = document.querySelector(this.rootSelector) as HTMLElement || document.body;
+      
+      // Dynamic import of html2canvas
+      const html2canvas = (await import('html2canvas')).default;
+      
+      const canvas = await html2canvas(root, {
+        backgroundColor: null,
+        scale: 2, // Higher quality
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        width: Math.min(root.scrollWidth, 800),
+        height: Math.min(root.scrollHeight, 600)
+      });
+      
+      return canvas.toDataURL('image/png');
+    } catch (error) {
+      console.error('[DOMScanner] Screenshot capture failed:', error);
+      return null;
+    }
+  }
+  
+  /**
    * Сканирует DOM и создаёт полный снапшот
    */
   scan(): ExtensionUISnapshot {
