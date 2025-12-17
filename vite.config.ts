@@ -36,6 +36,8 @@ export default defineConfig(({ mode }) => ({
       '@irys/sdk',
       'arbundles',
       '@toruslabs/eccrypto',
+      'usb',
+      '@trezor/transport',
     ],
     include: [
       'react',
@@ -43,7 +45,6 @@ export default defineConfig(({ mode }) => ({
       'zustand',
       'use-sync-external-store',
       '@tanstack/react-query',
-      '@solana/wallet-adapter-wallets',
       '@solana/wallet-adapter-react',
       '@solana/wallet-adapter-base',
       '@solana/web3.js',
