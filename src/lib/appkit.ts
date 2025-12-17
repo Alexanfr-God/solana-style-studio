@@ -3,23 +3,6 @@ import { SolanaAdapter } from '@reown/appkit-adapter-solana/react'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
 import { mainnet, arbitrum, polygon, base, optimism, sepolia, bsc, avalanche, fantom, gnosis, zkSync } from 'viem/chains'
-import { 
-  PhantomWalletAdapter, 
-  SolflareWalletAdapter,
-  TorusWalletAdapter,
-  LedgerWalletAdapter,
-  Coin98WalletAdapter,
-  TrustWalletAdapter,
-  CloverWalletAdapter,
-  BitpieWalletAdapter,
-  BitKeepWalletAdapter,
-  NightlyWalletAdapter,
-  MathWalletAdapter,
-  TokenPocketWalletAdapter,
-  SafePalWalletAdapter,
-  CoinbaseWalletAdapter,
-  SolongWalletAdapter
-} from '@solana/wallet-adapter-wallets'
 import { supabase } from '@/integrations/supabase/client'
 
 // Global AppKit state
@@ -49,25 +32,9 @@ export async function initializeAppKit() {
     const projectId = data.projectId;
     console.log('🔗 Initializing AppKit with Project ID:', projectId.slice(0, 8) + '...');
 
-    // Set up Solana adapter with all popular wallets
+    // Set up Solana adapter - AppKit auto-discovers installed wallets
     solanaWeb3JsAdapter = new SolanaAdapter({
-      wallets: [
-        new PhantomWalletAdapter(),
-        new SolflareWalletAdapter(),
-        new TorusWalletAdapter(),
-        new LedgerWalletAdapter(),
-        new Coin98WalletAdapter(),
-        new TrustWalletAdapter(),
-        new CloverWalletAdapter(),
-        new BitpieWalletAdapter(),
-        new BitKeepWalletAdapter(),
-        new NightlyWalletAdapter(),
-        new MathWalletAdapter(),
-        new TokenPocketWalletAdapter(),
-        new SafePalWalletAdapter(),
-        new CoinbaseWalletAdapter(),
-        new SolongWalletAdapter()
-      ]
+      wallets: []
     });
 
     // Set up Wagmi adapter for EVM chains with more networks

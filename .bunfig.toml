@@ -8,3 +8,7 @@ peer = true
 
 [install.scopes]
 "*" = { production = false }
+
+# Don't trust any packages to run postinstall scripts
+[install.trustedDependencies]
+# Empty - no packages trusted to run scripts
