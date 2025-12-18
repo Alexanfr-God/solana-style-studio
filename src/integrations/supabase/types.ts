@@ -204,6 +204,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_listed: boolean | null
+          is_verified: boolean | null
           listing_id: string | null
           metadata_uri: string
           mint_address: string
@@ -222,6 +223,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_listed?: boolean | null
+          is_verified?: boolean | null
           listing_id?: string | null
           metadata_uri: string
           mint_address: string
@@ -240,6 +242,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_listed?: boolean | null
+          is_verified?: boolean | null
           listing_id?: string | null
           metadata_uri?: string
           mint_address?: string

@@ -202,10 +202,11 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
 
       console.log('[MintFlow] 3️⃣ Transaction sent:', signature);
 
-      // Step 8.5: Save to database IMMEDIATELY (before confirmation)
-      console.log('[MintFlow] 💾 Saving mint record to database...');
+      // Step 8.5: Save to database with is_verified: false (will verify after confirmation)
+      console.log('[MintFlow] 💾 Saving mint record to database (unverified)...');
+      let insertedRecordId: string | null = null;
       try {
-        const { error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from('minted_themes')
           .insert({
             tx_sig: signature,
@@ -215,32 +216,58 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
             theme_name: themeName,
             image_url: previewImageUrl,
             network: 'devnet',
-            blockchain: 'solana'
-          });
+            blockchain: 'solana',
+            is_verified: false  // Will be set to true after confirmation
+          })
+          .select('id')
+          .single();
         
         if (insertError) {
-          console.error('[MintFlow] ⚠️ Failed to save mint record:', insertError);
-          toast.error(`⚠️ NFT minted but failed to save to gallery: ${insertError.message}`);
+          // Check if duplicate mint_address (already minted)
+          if (insertError.code === '23505') {
+            console.log('[MintFlow] ⚠️ Duplicate mint_address, skipping insert');
+          } else {
+            console.error('[MintFlow] ⚠️ Failed to save mint record:', insertError);
+          }
         } else {
-          console.log('[MintFlow] ✅ Mint record saved to database');
-          toast.success('✅ NFT added to gallery!');
+          insertedRecordId = insertData?.id || null;
+          console.log('[MintFlow] ✅ Mint record saved (pending verification)');
         }
       } catch (dbError) {
         console.error('[MintFlow] ⚠️ Database error:', dbError);
       }
 
-      // Step 9: Confirm transaction (may timeout, but NFT is already in DB)
+      // Step 9: Confirm transaction
       toast.info('⏳ Confirming transaction...');
-      await connection.confirmTransaction({
-        signature,
-        blockhash: buildData.recentBlockhash,
-        lastValidBlockHeight: buildData.lastValidBlockHeight
-      }, 'confirmed');
+      try {
+        await connection.confirmTransaction({
+          signature,
+          blockhash: buildData.recentBlockhash,
+          lastValidBlockHeight: buildData.lastValidBlockHeight
+        }, 'confirmed');
 
-      console.log('[MintFlow] ✅ Transaction confirmed!', {
-        signature,
-        explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
-      });
+        console.log('[MintFlow] ✅ Transaction confirmed!', {
+          signature,
+          explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+        });
+
+        // Step 9.5: Mark as verified in database AFTER successful confirmation
+        const { error: updateError } = await supabase
+          .from('minted_themes')
+          .update({ is_verified: true })
+          .eq('mint_address', buildData.mintAddress);
+        
+        if (updateError) {
+          console.error('[MintFlow] ⚠️ Failed to verify mint record:', updateError);
+        } else {
+          console.log('[MintFlow] ✅ Mint record verified in database');
+          toast.success('✅ NFT verified and added to gallery!');
+        }
+      } catch (confirmError) {
+        console.error('[MintFlow] ⚠️ Transaction confirmation failed:', confirmError);
+        // Don't throw - the tx might still succeed, just timeout
+        toast.warning('⚠️ Transaction sent but confirmation timed out. Check explorer.');
+      }
 
       // Step 11: Show success
       const explorerUrl = `https://explorer.solana.com/tx/${signature}?cluster=devnet`;

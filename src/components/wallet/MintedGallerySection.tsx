@@ -130,10 +130,11 @@ export default function MintedGallerySection() {
   async function fetchMints() {
     setIsLoading(true);
     try {
-      // First, get all minted themes
+      // First, get all verified minted themes (only show confirmed NFTs)
       let query = supabase
         .from('minted_themes')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact' })
+        .eq('is_verified', true);  // Only show verified/confirmed NFTs
 
       // Filter by blockchain
       if (selectedBlockchain !== 'all') {
