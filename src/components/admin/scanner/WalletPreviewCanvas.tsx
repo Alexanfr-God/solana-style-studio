@@ -83,11 +83,14 @@ export const WalletPreviewCanvas = () => {
       );
     }
 
+    // Get current element from store for selection highlight
+    const currentElementId = foundElements.find(el => el.status === 'found')?.id;
+    
     return (
       <BridgeSnapshotCanvas
         snapshot={bridgeSnapshot}
         onElementClick={handleBridgeElementClick}
-        selectedElementId={foundElements.find(el => el.id)?.id}
+        selectedElementId={currentElementId}
       />
     );
   }
