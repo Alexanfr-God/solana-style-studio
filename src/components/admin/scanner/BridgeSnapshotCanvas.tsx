@@ -78,6 +78,12 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
           <Badge variant="outline" className="text-xs">
             {snapshot.screen}
           </Badge>
+          {/* TEST DATA badge */}
+          {snapshot.extensionId.includes('test') && (
+            <Badge variant="outline" className="text-xs text-amber-500 border-amber-500/50 bg-amber-500/10">
+              TEST DATA
+            </Badge>
+          )}
         </div>
         <Button
           variant="ghost"
@@ -258,7 +264,7 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
               >
                 <div className="bg-popover border rounded-md shadow-lg p-2 text-xs max-w-[200px]">
                   <div className="font-mono text-cyan-400 truncate">
-                    {hoveredElement.selector}
+                    {hoveredElement.selector || hoveredElement.id || `${hoveredElement.tag}-unknown`}
                   </div>
                   <div className="text-muted-foreground mt-1">
                     <span className="text-purple-400">{hoveredElement.tag}</span>
@@ -268,9 +274,11 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="text-muted-foreground/70 mt-1">
-                    {Math.round(hoveredElement.rect.width)}×{Math.round(hoveredElement.rect.height)}
-                  </div>
+                  {hoveredElement.rect && (
+                    <div className="text-muted-foreground/70 mt-1">
+                      {Math.round(hoveredElement.rect.width)}×{Math.round(hoveredElement.rect.height)}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}

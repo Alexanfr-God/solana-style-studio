@@ -10,6 +10,7 @@ import { BridgeDebugPanel } from './BridgeDebugPanel';
 import { realtimeBridgeClient, getExtensionBridgeUrl } from '@/services/extensionBridge';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 export const ScanControlPanel = () => {
   const { 
@@ -292,7 +293,7 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
           {/* Test Snapshot Button */}
           <Button
             onClick={async () => {
-              addLog('scanning', '🟢', 'Sending test snapshot...');
+              addLog('scanning', '🟢', 'Sending test snapshot with full data...');
               try {
                 const testSnapshot = {
                   extension: 'test-vpn',
@@ -300,12 +301,35 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
                   ts: Date.now(),
                   snapshot: {
                     elements: [
-                      { tag: 'BUTTON', id: 'connect', classes: ['btn-primary'], text: 'Connect VPN' },
-                      { tag: 'DIV', id: 'status', classes: ['status-indicator'], text: 'Disconnected' },
-                      { tag: 'SPAN', id: 'server', classes: ['server-label'], text: 'US-East-1' },
+                      { 
+                        tag: 'BUTTON', 
+                        id: 'connect', 
+                        selector: 'button#connect.btn-primary',
+                        classes: ['btn-primary'], 
+                        text: 'Connect VPN',
+                        rect: { x: 20, y: 300, width: 280, height: 44 }
+                      },
+                      { 
+                        tag: 'DIV', 
+                        id: 'status', 
+                        selector: 'div#status.status-indicator',
+                        classes: ['status-indicator'], 
+                        text: 'Disconnected',
+                        rect: { x: 20, y: 120, width: 280, height: 32 }
+                      },
+                      { 
+                        tag: 'SPAN', 
+                        id: 'server', 
+                        selector: 'span#server.server-label',
+                        classes: ['server-label'], 
+                        text: 'US-East-1',
+                        rect: { x: 20, y: 180, width: 200, height: 24 }
+                      },
                     ],
                     theme: { background: '#1a1a2e', color: '#ffffff', accent: '#6366f1' },
-                    title: 'Test VPN Extension'
+                    title: 'Test VPN Extension',
+                    viewport: { width: 320, height: 480 },
+                    devicePixelRatio: 2
                   }
                 };
                 
@@ -318,8 +342,7 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
                 const result = await response.json();
                 if (response.ok) {
                   addLog('verified', '✅', `Test snapshot sent! ID: ${result.id}`);
-                  toast.success('Test snapshot sent!');
-                  // Trigger refresh
+                  toast.success('Test snapshot sent with rect data!');
                   await realtimeBridgeClient.requestSnapshot();
                 } else {
                   throw new Error(result.error || 'Failed to send snapshot');
@@ -336,6 +359,33 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
           >
             <FlaskConical className="h-4 w-4" />
             Send Test Snapshot
+          </Button>
+          
+          {/* Clear Test Snapshots Button */}
+          <Button
+            onClick={async () => {
+              try {
+                const { error } = await supabase
+                  .from('extension_bridge_snapshots')
+                  .delete()
+                  .eq('extension_id', 'test-vpn');
+                
+                if (error) throw error;
+                
+                addLog('verified', '✅', 'Test snapshots cleared from database');
+                toast.success('Test snapshots cleared!');
+                await realtimeBridgeClient.requestSnapshot();
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : 'Unknown error';
+                toast.error(`Failed to clear: ${msg}`);
+              }
+            }}
+            variant="ghost"
+            size="sm"
+            className="w-full gap-2 text-amber-600 hover:text-amber-700"
+          >
+            <XCircle className="h-4 w-4" />
+            Clear Test Snapshots
           </Button>
           
           <ExtensionSnapshotViewer />

@@ -114,18 +114,31 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
       }
 
       const snapshotData = data.snapshot as any;
+      const rawElements = snapshotData?.elements || [];
+      
+      // Normalize elements with fallback values for selector and rect
+      const normalizedElements: BridgeElement[] = rawElements.map((el: any, index: number) => ({
+        id: el.id || `element-${index}`,
+        selector: el.selector || el.id || `${el.tag || 'UNKNOWN'}-${index}`,
+        tag: el.tag || 'UNKNOWN',
+        text: el.text,
+        rect: el.rect || { x: 0, y: 0, width: 0, height: 0 },
+        styles: el.styles,
+        className: el.classes?.join(' ') || el.className,
+        attributes: el.attributes,
+      }));
       
       setSnapshot({
         id: data.id,
         extensionId: data.extension_id,
         screen: data.screen || 'unknown',
-        elements: snapshotData?.elements || [],
+        elements: normalizedElements,
         screenshotDataUrl: snapshotData?.screenshotDataUrl,
         viewport: snapshotData?.viewport,
         devicePixelRatio: snapshotData?.devicePixelRatio,
         timestamp: new Date(data.created_at || '').getTime(),
         elementsCount: data.elements_count || 0,
-        rawData: snapshotData, // Keep raw for debugging
+        rawData: snapshotData,
       });
     } catch (err: any) {
       console.error('[useBridgeSnapshot] Error fetching snapshot:', err);
