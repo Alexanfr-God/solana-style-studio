@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Circle, CheckCircle2, AlertCircle } from 'lucide-react';
 
-const statusConfig = {
+const statusConfig: Record<string, { color: string; icon: typeof Circle; label: string }> = {
   found: {
     color: 'text-blue-500 border-blue-500 bg-blue-500/10',
     icon: Circle,
