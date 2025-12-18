@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BridgeSnapshot, BridgeElement } from '@/hooks/useBridgeSnapshot';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Plug, Image, Box, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Plug, Image, Box, Clock, Code, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface BridgeSnapshotCanvasProps {
   snapshot: BridgeSnapshot;
@@ -19,14 +21,13 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredElement, setHoveredElement] = useState<BridgeElement | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [showRawJson, setShowRawJson] = useState(false);
 
   // Canvas dimensions - account for devicePixelRatio
   const dpr = snapshot.devicePixelRatio || 1;
   const viewportWidth = snapshot.viewport?.width || 400;
   const viewportHeight = snapshot.viewport?.height || 600;
   
-  // The screenshot is captured at DPR resolution, but represents viewport size
-  // We display at viewport size, scaled to fit container
   const maxWidth = 420;
   const maxHeight = 650;
   const scale = Math.min(maxWidth / viewportWidth, maxHeight / viewportHeight, 1);
@@ -48,6 +49,14 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
     [snapshot.elements]
   );
 
+  // Calculate age
+  const ageMs = Date.now() - snapshot.timestamp;
+  const isStale = ageMs > 60000; // > 1 minute
+  const hasScreenshot = !!snapshot.screenshotDataUrl;
+  const hasViewport = !!snapshot.viewport;
+  const hasElements = snapshot.elements.length > 0;
+  const hasValidRects = validElements.length > 0;
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!containerRef.current || !hoveredElement) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -57,15 +66,10 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
     });
   }, [hoveredElement]);
 
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString();
-  };
-
   return (
     <div className="relative h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-500/10 to-cyan-500/10">
+      <div className="flex items-center justify-between p-3 border-b bg-gradient-to-r from-purple-500/10 to-cyan-500/10">
         <div className="flex items-center gap-2">
           <Plug className="h-4 w-4 text-purple-500" />
           <h3 className="text-sm font-semibold">
@@ -75,26 +79,78 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
             {snapshot.screen}
           </Badge>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Box className="h-3 w-3" />
-            {validElements.length} elements
-          </span>
-          {snapshot.screenshotDataUrl && (
-            <span className="flex items-center gap-1 text-green-500">
-              <Image className="h-3 w-3" />
-              Screenshot
-            </span>
-          )}
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {formatTime(snapshot.timestamp)}
-          </span>
-          <span className="text-muted-foreground">
-            DPR: {dpr}x
-          </span>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1 text-xs"
+          onClick={() => setShowRawJson(!showRawJson)}
+        >
+          <Code className="h-3 w-3" />
+          Raw JSON
+        </Button>
       </div>
+
+      {/* Data Indicators */}
+      <div className="px-3 py-2 border-b bg-muted/30 flex flex-wrap items-center gap-3 text-xs">
+        {/* Screenshot indicator */}
+        <span className={cn(
+          "flex items-center gap-1",
+          hasScreenshot ? "text-green-500" : "text-amber-500"
+        )}>
+          {hasScreenshot ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+          Screenshot: {hasScreenshot ? 'present' : 'missing'}
+        </span>
+
+        {/* Elements count */}
+        <span className={cn(
+          "flex items-center gap-1",
+          hasValidRects ? "text-green-500" : hasElements ? "text-amber-500" : "text-red-500"
+        )}>
+          <Box className="h-3 w-3" />
+          Elements: {validElements.length}/{snapshot.elements.length}
+          {hasElements && !hasValidRects && " (no rects)"}
+        </span>
+
+        {/* Timestamp age */}
+        <span className={cn(
+          "flex items-center gap-1",
+          isStale ? "text-amber-500" : "text-muted-foreground"
+        )}>
+          {isStale && <AlertTriangle className="h-3 w-3" />}
+          <Clock className="h-3 w-3" />
+          {formatDistanceToNow(snapshot.timestamp)} ago
+        </span>
+
+        {/* DPR */}
+        <span className="text-muted-foreground">
+          DPR: {dpr}x
+        </span>
+      </div>
+
+      {/* Warning if no screenshot */}
+      {!hasScreenshot && (
+        <div className="px-3 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-center gap-2 text-xs text-amber-600">
+          <AlertTriangle className="h-4 w-4" />
+          <span>No <code className="bg-amber-500/20 px-1 rounded">screenshotDataUrl</code> in snapshot payload. Showing wireframe fallback.</span>
+        </div>
+      )}
+
+      {/* Raw JSON Modal */}
+      {showRawJson && (
+        <div className="absolute inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
+          <div className="flex items-center justify-between p-3 border-b">
+            <h4 className="text-sm font-semibold">Raw Snapshot JSON</h4>
+            <Button variant="ghost" size="sm" onClick={() => setShowRawJson(false)}>
+              Close
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto p-3">
+            <pre className="text-xs font-mono bg-muted/50 p-3 rounded overflow-x-auto">
+              {JSON.stringify(snapshot.rawData || snapshot, null, 2)}
+            </pre>
+          </div>
+        </div>
+      )}
 
       {/* Canvas Area */}
       <div 
@@ -110,7 +166,7 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
           }}
         >
           {/* Background: Screenshot or Wireframe */}
-          {snapshot.screenshotDataUrl ? (
+          {hasScreenshot ? (
             <img
               src={snapshot.screenshotDataUrl}
               alt="Extension Screenshot"
@@ -127,7 +183,16 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
                 `,
                 backgroundSize: '20px 20px',
               }}
-            />
+            >
+              {/* Wireframe fallback: render element boxes with labels */}
+              {snapshot.elements.map((el, i) => {
+                const hasRect = el.rect && el.rect.width > 0 && el.rect.height > 0;
+                if (hasRect) return null; // Will be rendered as overlay
+                
+                // For elements without rect, show in a list
+                return null;
+              })}
+            </div>
           )}
 
           {/* Element Overlays */}
@@ -165,7 +230,16 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
                 onClick={() => onElementClick?.(element)}
                 onMouseEnter={() => setHoveredElement(element)}
                 onMouseLeave={() => setHoveredElement(null)}
-              />
+              >
+                {/* Show label on wireframe mode */}
+                {!hasScreenshot && rect.height > 16 && (
+                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-1">
+                    <span className="text-[9px] text-white/70 truncate">
+                      {element.tag}
+                    </span>
+                  </div>
+                )}
+              </motion.div>
             );
           })}
 
@@ -210,7 +284,7 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
           Viewport: {viewportWidth}×{viewportHeight} @{dpr}x
         </span>
         <span>
-          Scale: {Math.round(scale * 100)}% | {validElements.length} elements
+          Scale: {Math.round(scale * 100)}% | {validElements.length} clickable
         </span>
       </div>
     </div>
