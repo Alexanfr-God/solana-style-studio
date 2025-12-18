@@ -46,15 +46,15 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (dbError) {
-        if (dbError.code === 'PGRST116') {
-          // No rows found - not an error
-          setSnapshot(null);
-          return;
-        }
         throw dbError;
+      }
+
+      if (!data) {
+        setSnapshot(null);
+        return;
       }
 
       if (data) {

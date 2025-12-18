@@ -20,17 +20,19 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
   const [hoveredElement, setHoveredElement] = useState<BridgeElement | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-  // Canvas dimensions
-  const canvasWidth = snapshot.viewport?.width || 400;
-  const canvasHeight = snapshot.viewport?.height || 600;
-
-  // Scale factor for fitting in container
+  // Canvas dimensions - account for devicePixelRatio
+  const dpr = snapshot.devicePixelRatio || 1;
+  const viewportWidth = snapshot.viewport?.width || 400;
+  const viewportHeight = snapshot.viewport?.height || 600;
+  
+  // The screenshot is captured at DPR resolution, but represents viewport size
+  // We display at viewport size, scaled to fit container
   const maxWidth = 420;
   const maxHeight = 650;
-  const scale = Math.min(maxWidth / canvasWidth, maxHeight / canvasHeight, 1);
+  const scale = Math.min(maxWidth / viewportWidth, maxHeight / viewportHeight, 1);
 
-  const scaledWidth = canvasWidth * scale;
-  const scaledHeight = canvasHeight * scale;
+  const scaledWidth = viewportWidth * scale;
+  const scaledHeight = viewportHeight * scale;
 
   // Scale element rect to canvas
   const scaleRect = useCallback((rect: BridgeElement['rect']) => ({
@@ -87,6 +89,9 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {formatTime(snapshot.timestamp)}
+          </span>
+          <span className="text-muted-foreground">
+            DPR: {dpr}x
           </span>
         </div>
       </div>
@@ -202,11 +207,10 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
       {/* Footer Stats */}
       <div className="px-4 py-2 border-t bg-muted/30 flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Viewport: {canvasWidth}×{canvasHeight}
-          {snapshot.devicePixelRatio && ` @${snapshot.devicePixelRatio}x`}
+          Viewport: {viewportWidth}×{viewportHeight} @{dpr}x
         </span>
         <span>
-          Scale: {Math.round(scale * 100)}%
+          Scale: {Math.round(scale * 100)}% | {validElements.length} elements
         </span>
       </div>
     </div>
