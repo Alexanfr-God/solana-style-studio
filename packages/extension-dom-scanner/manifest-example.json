@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "WCC DOM Scanner Bridge",
+  "version": "1.0.0",
+  "description": "Scans extension DOM and sends to WCC Admin for theming",
+  
+  "permissions": [
+    "activeTab"
+  ],
+  
+  "host_permissions": [
+    "https://opxordptvpvzmhakvdde.supabase.co/*"
+  ],
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "chrome-extension://*/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["content-script.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
