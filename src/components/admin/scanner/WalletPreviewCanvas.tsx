@@ -115,7 +115,7 @@ export const WalletPreviewCanvas = () => {
                 </SelectItem>
               ))}
               {filteredExtensions.length === 0 && (
-                <SelectItem value="" disabled className="text-xs">
+                <SelectItem value="__empty__" disabled className="text-xs">
                   {onlyRealSnapshots ? 'No real snapshots found' : 'No extensions found'}
                 </SelectItem>
               )}
