@@ -20,6 +20,11 @@ interface ExtensionInfo {
 }
 const connectedExtensions = new Map<string, ExtensionInfo>();
 
+// Generate request ID for tracing
+function generateRequestId(): string {
+  return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 // Helper to get path from URL
 function getSubPath(url: URL): string {
   const fullPath = url.pathname;
@@ -28,6 +33,9 @@ function getSubPath(url: URL): string {
 }
 
 serve(async (req) => {
+  const requestId = generateRequestId();
+  const startTime = Date.now();
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -35,8 +43,14 @@ serve(async (req) => {
 
   const url = new URL(req.url);
   const subPath = getSubPath(url);
+  const contentType = req.headers.get('content-type') || 'none';
+  const contentLength = req.headers.get('content-length') || '0';
   
+  console.log(`[ExtensionBridge] ============================================`);
   console.log(`[ExtensionBridge] ${req.method} ${subPath || '/'}`);
+  console.log(`[ExtensionBridge] Request ID: ${requestId}`);
+  console.log(`[ExtensionBridge] Content-Type: ${contentType}`);
+  console.log(`[ExtensionBridge] Content-Length: ${contentLength}`);
   
   try {
     // ============================================================
@@ -70,6 +84,7 @@ serve(async (req) => {
       
       return new Response(JSON.stringify({
         success: true,
+        requestId,
         extensions,
         hasSnapshot: latestSnapshot !== null,
         lastSnapshotFrom: latestSnapshot?.extension_id || null,
@@ -90,13 +105,64 @@ serve(async (req) => {
     // Persists to database for durability
     // ============================================================
     if (req.method === 'POST' && subPath === '/snapshot') {
-      const body = await req.json();
+      console.log(`[ExtensionBridge] 📥 POST /snapshot received`);
+      
+      let body: any;
+      try {
+        const rawBody = await req.text();
+        console.log(`[ExtensionBridge] Raw body size: ${rawBody.length} bytes`);
+        body = JSON.parse(rawBody);
+      } catch (parseError) {
+        console.error(`[ExtensionBridge] ❌ JSON parse error:`, parseError);
+        return new Response(JSON.stringify({
+          ok: false,
+          requestId,
+          error: 'Invalid JSON in request body',
+          hint: 'Ensure Content-Type: application/json and valid JSON body',
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      // Log received fields
+      console.log(`[ExtensionBridge] 📊 Payload analysis:`);
+      console.log(`[ExtensionBridge]   - extension: ${body.extension || 'MISSING'}`);
+      console.log(`[ExtensionBridge]   - screen: ${body.screen || 'not set'}`);
+      console.log(`[ExtensionBridge]   - snapshot present: ${!!body.snapshot}`);
+      
+      if (body.snapshot) {
+        const s = body.snapshot;
+        const elementsTotal = s.elements?.length || 0;
+        const elementsWithRect = s.elements?.filter((e: any) => e.rect && e.rect.width > 0)?.length || 0;
+        const hasScreenshot = !!s.screenshotDataUrl;
+        const screenshotSize = s.screenshotDataUrl?.length || 0;
+        
+        console.log(`[ExtensionBridge]   - snapshot.url: ${s.url || 'MISSING'}`);
+        console.log(`[ExtensionBridge]   - snapshot.viewport: ${JSON.stringify(s.viewport) || 'MISSING'}`);
+        console.log(`[ExtensionBridge]   - snapshot.devicePixelRatio: ${s.devicePixelRatio || 'MISSING'}`);
+        console.log(`[ExtensionBridge]   - hasScreenshotDataUrl: ${hasScreenshot} (${screenshotSize} chars)`);
+        console.log(`[ExtensionBridge]   - elementsTotal: ${elementsTotal}`);
+        console.log(`[ExtensionBridge]   - elementsWithRect: ${elementsWithRect}`);
+        
+        // Warnings for missing critical fields
+        if (!hasScreenshot) {
+          console.warn(`[ExtensionBridge] ⚠️ WARNING: No screenshotDataUrl - canvas will show wireframe only`);
+        }
+        if (elementsWithRect === 0) {
+          console.warn(`[ExtensionBridge] ⚠️ WARNING: No elements have rect - cannot render overlays`);
+        }
+        if (!s.url) {
+          console.warn(`[ExtensionBridge] ⚠️ WARNING: No snapshot.url - cannot verify source`);
+        }
+      }
       
       // Validate required fields
       if (!body.extension) {
-        console.error('[ExtensionBridge] SNAPSHOT rejected: missing extension field');
+        console.error('[ExtensionBridge] ❌ SNAPSHOT rejected: missing extension field');
         return new Response(JSON.stringify({
           ok: false,
+          requestId,
           error: 'Missing required field: extension',
         }), {
           status: 400,
@@ -105,9 +171,10 @@ serve(async (req) => {
       }
       
       if (!body.snapshot) {
-        console.error('[ExtensionBridge] SNAPSHOT rejected: missing snapshot field');
+        console.error('[ExtensionBridge] ❌ SNAPSHOT rejected: missing snapshot field');
         return new Response(JSON.stringify({
           ok: false,
+          requestId,
           error: 'Missing required field: snapshot',
         }), {
           status: 400,
@@ -135,6 +202,7 @@ serve(async (req) => {
         console.error('[ExtensionBridge] ❌ DB insert error:', insertError);
         return new Response(JSON.stringify({
           ok: false,
+          requestId,
           error: `Database error: ${insertError.message}`,
         }), {
           status: 500,
@@ -142,14 +210,23 @@ serve(async (req) => {
         });
       }
       
-      console.log(`[ExtensionBridge] ✅ SNAPSHOT saved to DB: id=${savedSnapshot.id}, extension=${body.extension}, screen=${screen}, elements=${elementsCount}, size=${snapshotSize} bytes`);
+      const duration = Date.now() - startTime;
+      console.log(`[ExtensionBridge] ✅ SNAPSHOT saved to DB in ${duration}ms`);
+      console.log(`[ExtensionBridge]   - id: ${savedSnapshot.id}`);
+      console.log(`[ExtensionBridge]   - extension: ${body.extension}`);
+      console.log(`[ExtensionBridge]   - screen: ${screen}`);
+      console.log(`[ExtensionBridge]   - elements: ${elementsCount}`);
+      console.log(`[ExtensionBridge]   - size: ${snapshotSize} bytes`);
+      console.log(`[ExtensionBridge] ============================================`);
       
       return new Response(JSON.stringify({
         ok: true,
+        requestId,
         id: savedSnapshot.id,
         storedAt: new Date(savedSnapshot.created_at).getTime(),
         snapshotSize,
         elementsCount,
+        duration,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -160,8 +237,24 @@ serve(async (req) => {
     // Handles typed messages: EXT_HELLO, EXT_UI_SNAPSHOT, EXT_PING, EXT_GOODBYE
     // ============================================================
     if (req.method === 'POST' && (subPath === '' || subPath === '/')) {
-      const body = await req.json();
-      console.log('[ExtensionBridge] POST message:', body.type);
+      console.log(`[ExtensionBridge] 📥 POST / (legacy protocol)`);
+      
+      let body: any;
+      try {
+        body = await req.json();
+      } catch (parseError) {
+        console.error(`[ExtensionBridge] ❌ JSON parse error:`, parseError);
+        return new Response(JSON.stringify({
+          success: false,
+          requestId,
+          error: 'Invalid JSON',
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      console.log(`[ExtensionBridge] Message type: ${body.type}`);
       
       switch (body.type) {
         case 'EXT_HELLO': {
@@ -178,6 +271,7 @@ serve(async (req) => {
           
           return new Response(JSON.stringify({
             success: true,
+            requestId,
             type: 'WCC_WELCOME',
             clientId: id,
             message: `Welcome ${extension} v${version}`,
@@ -191,6 +285,15 @@ serve(async (req) => {
           const { extension, screen, snapshot } = body;
           const snapshotSize = JSON.stringify(snapshot).length;
           const elementsCount = snapshot?.elements?.length || 0;
+          const elementsWithRect = snapshot?.elements?.filter((e: any) => e.rect)?.length || 0;
+          
+          console.log(`[ExtensionBridge] 📊 EXT_UI_SNAPSHOT analysis:`);
+          console.log(`[ExtensionBridge]   - extension: ${extension}`);
+          console.log(`[ExtensionBridge]   - screen: ${screen}`);
+          console.log(`[ExtensionBridge]   - snapshot.url: ${snapshot?.url || 'MISSING'}`);
+          console.log(`[ExtensionBridge]   - hasScreenshot: ${!!snapshot?.screenshotDataUrl}`);
+          console.log(`[ExtensionBridge]   - elementsTotal: ${elementsCount}`);
+          console.log(`[ExtensionBridge]   - elementsWithRect: ${elementsWithRect}`);
           
           // Save to database
           const { data: savedSnapshot, error: insertError } = await supabase
@@ -208,6 +311,7 @@ serve(async (req) => {
             console.error('[ExtensionBridge] ❌ DB insert error:', insertError);
             return new Response(JSON.stringify({
               success: false,
+              requestId,
               error: `Database error: ${insertError.message}`,
             }), {
               status: 500,
@@ -215,10 +319,11 @@ serve(async (req) => {
             });
           }
           
-          console.log(`[ExtensionBridge] ✅ SNAPSHOT via message saved to DB: id=${savedSnapshot.id}, extension=${extension}, screen=${screen || 'unknown'}, elements=${elementsCount}`);
+          console.log(`[ExtensionBridge] ✅ SNAPSHOT via EXT_UI_SNAPSHOT saved: id=${savedSnapshot.id}`);
           
           return new Response(JSON.stringify({
             success: true,
+            requestId,
             type: 'WCC_SNAPSHOT_ACK',
             message: 'Snapshot received and saved',
             id: savedSnapshot.id,
@@ -233,6 +338,7 @@ serve(async (req) => {
         case 'EXT_PING': {
           return new Response(JSON.stringify({
             success: true,
+            requestId,
             type: 'WCC_PONG',
             ts: Date.now(),
             originalTs: body.ts,
@@ -252,6 +358,7 @@ serve(async (req) => {
           
           return new Response(JSON.stringify({
             success: true,
+            requestId,
             type: 'WCC_GOODBYE_ACK',
             message: `Goodbye ${extension}`,
           }), {
@@ -263,6 +370,7 @@ serve(async (req) => {
           console.log(`[ExtensionBridge] Unknown message type: ${body.type}`);
           return new Response(JSON.stringify({
             success: false,
+            requestId,
             error: `Unknown message type: ${body.type}`,
           }), {
             status: 400,
@@ -278,8 +386,9 @@ serve(async (req) => {
     if (req.method === 'GET' && subPath === '/info') {
       return new Response(JSON.stringify({
         name: 'WCC Extension Bridge',
-        version: '2.0.0',
+        version: '2.1.0',
         description: 'Persistent bridge for browser extension UI snapshots',
+        requestId,
         endpoints: {
           'GET /': 'Get current bridge state with latest snapshot from DB',
           'GET /state': 'Same as GET /',
@@ -291,7 +400,13 @@ serve(async (req) => {
           extension: 'string (required) - extension name, e.g. "proton-vpn"',
           screen: 'string (optional) - screen name, e.g. "popup"',
           ts: 'number (optional) - timestamp',
-          snapshot: 'object (required) - UI snapshot data with elements array',
+          snapshot: {
+            url: 'string (required) - source URL, e.g. chrome-extension://...',
+            screenshotDataUrl: 'string (optional) - base64 PNG screenshot',
+            viewport: '{ width, height } (required)',
+            devicePixelRatio: 'number (required)',
+            elements: 'array of { tag, id, selector, classes, text, rect: {x,y,width,height}, styles }',
+          },
         },
         example: {
           method: 'POST',
@@ -301,16 +416,18 @@ serve(async (req) => {
             screen: 'popup',
             ts: Date.now(),
             snapshot: {
-              title: 'ProtonVPN',
-              url: 'chrome-extension://...',
+              url: 'chrome-extension://jplgfhpmjnbigmhklmmbgecoobifkmpa/popup.html',
+              viewport: { width: 360, height: 600 },
+              devicePixelRatio: 2,
               elements: [
-                { tag: 'BUTTON', id: 'connect-btn', classes: ['btn', 'primary'], text: 'Connect' },
+                { tag: 'BUTTON', id: 'connect-btn', selector: 'button#connect-btn', classes: ['btn', 'primary'], text: 'Connect', rect: { x: 100, y: 200, width: 120, height: 40 } },
               ],
             },
           },
         },
         response: {
           ok: true,
+          requestId: 'req-abc123',
           id: 'uuid-of-saved-snapshot',
           storedAt: 1733700000000,
           snapshotSize: 1234,
@@ -323,6 +440,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ 
       error: 'Method not allowed or unknown path',
+      requestId,
       path: subPath,
       availablePaths: ['/', '/state', '/snapshot', '/info'],
     }), {
@@ -331,9 +449,10 @@ serve(async (req) => {
     });
     
   } catch (error) {
-    console.error('[ExtensionBridge] Error:', error);
+    console.error(`[ExtensionBridge] ❌ Error:`, error);
     return new Response(JSON.stringify({
       success: false,
+      requestId,
       error: error.message,
     }), {
       status: 500,

@@ -364,6 +364,64 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
             </Button>
           )}
           
+          {/* Manual POST Test Button */}
+          <Button
+            onClick={async () => {
+              addLog('scanning', '🟢', 'Sending Manual POST Test to /snapshot...');
+              try {
+                const testPayload = {
+                  extension: 'manual-test',
+                  screen: 'test',
+                  ts: Date.now(),
+                  snapshot: {
+                    url: 'manual-test://verification',
+                    viewport: { width: 320, height: 480 },
+                    devicePixelRatio: 2,
+                    elements: [
+                      { 
+                        tag: 'DIV', 
+                        id: 'test-1', 
+                        selector: 'div#test-1',
+                        text: 'Manual Test Element',
+                        rect: { x: 10, y: 10, width: 300, height: 50 }
+                      }
+                    ]
+                  }
+                };
+                
+                const startTime = Date.now();
+                const response = await fetch(`${bridgeUrl}/snapshot`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(testPayload)
+                });
+                const duration = Date.now() - startTime;
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                  addLog('verified', '✅', `Manual POST Test SUCCESS in ${duration}ms`);
+                  addLog('verified', '✅', `Response: HTTP ${response.status}, requestId: ${result.requestId}, snapshotId: ${result.id}`);
+                  toast.success(`Endpoint works! requestId: ${result.requestId}`);
+                } else {
+                  addLog('error', '❌', `Manual POST Test FAILED: HTTP ${response.status}`);
+                  addLog('error', '❌', `Error: ${result.error || 'Unknown'}`);
+                  toast.error(`Failed: ${result.error || 'Unknown error'}`);
+                }
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : 'Network error';
+                addLog('error', '❌', `Manual POST Test FAILED: ${msg}`);
+                toast.error(`Request failed: ${msg}`);
+              }
+            }}
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+          >
+            <FlaskConical className="h-4 w-4" />
+            Manual POST Test (verify endpoint)
+          </Button>
+          
           {/* Clear Test Snapshots Button */}
           <Button
             onClick={async () => {
@@ -371,7 +429,7 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
                 const { error, count } = await supabase
                   .from('extension_bridge_snapshots')
                   .delete()
-                  .or('extension_id.eq.test-vpn,extension_id.ilike.%test%');
+                  .or('extension_id.eq.test-vpn,extension_id.ilike.%test%,extension_id.eq.manual-test');
                 
                 if (error) throw error;
                 
@@ -388,7 +446,7 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
             className="w-full gap-2 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
           >
             <XCircle className="h-4 w-4" />
-            Clear Test Snapshots
+            Clear ALL Test Snapshots
           </Button>
           
           <ExtensionSnapshotViewer />
