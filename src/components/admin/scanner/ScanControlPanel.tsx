@@ -290,89 +290,92 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
             </div>
           )}
           
-          {/* Test Snapshot Button */}
-          <Button
-            onClick={async () => {
-              addLog('scanning', '🟢', 'Sending test snapshot with full data...');
-              try {
-                const testSnapshot = {
-                  extension: 'test-vpn',
-                  screen: 'popup',
-                  ts: Date.now(),
-                  snapshot: {
-                    elements: [
-                      { 
-                        tag: 'BUTTON', 
-                        id: 'connect', 
-                        selector: 'button#connect.btn-primary',
-                        classes: ['btn-primary'], 
-                        text: 'Connect VPN',
-                        rect: { x: 20, y: 300, width: 280, height: 44 }
-                      },
-                      { 
-                        tag: 'DIV', 
-                        id: 'status', 
-                        selector: 'div#status.status-indicator',
-                        classes: ['status-indicator'], 
-                        text: 'Disconnected',
-                        rect: { x: 20, y: 120, width: 280, height: 32 }
-                      },
-                      { 
-                        tag: 'SPAN', 
-                        id: 'server', 
-                        selector: 'span#server.server-label',
-                        classes: ['server-label'], 
-                        text: 'US-East-1',
-                        rect: { x: 20, y: 180, width: 200, height: 24 }
-                      },
-                    ],
-                    theme: { background: '#1a1a2e', color: '#ffffff', accent: '#6366f1' },
-                    title: 'Test VPN Extension',
-                    viewport: { width: 320, height: 480 },
-                    devicePixelRatio: 2
+          {/* Test Snapshot Button - DEV only */}
+          {import.meta.env.DEV && (
+            <Button
+              onClick={async () => {
+                addLog('scanning', '🟢', 'Sending test snapshot with full data...');
+                try {
+                  const testSnapshot = {
+                    extension: 'test-vpn',
+                    screen: 'popup',
+                    ts: Date.now(),
+                    snapshot: {
+                      elements: [
+                        { 
+                          tag: 'BUTTON', 
+                          id: 'connect', 
+                          selector: 'button#connect.btn-primary',
+                          classes: ['btn-primary'], 
+                          text: 'Connect VPN',
+                          rect: { x: 20, y: 300, width: 280, height: 44 }
+                        },
+                        { 
+                          tag: 'DIV', 
+                          id: 'status', 
+                          selector: 'div#status.status-indicator',
+                          classes: ['status-indicator'], 
+                          text: 'Disconnected',
+                          rect: { x: 20, y: 120, width: 280, height: 32 }
+                        },
+                        { 
+                          tag: 'SPAN', 
+                          id: 'server', 
+                          selector: 'span#server.server-label',
+                          classes: ['server-label'], 
+                          text: 'US-East-1',
+                          rect: { x: 20, y: 180, width: 200, height: 24 }
+                        },
+                      ],
+                      theme: { background: '#1a1a2e', color: '#ffffff', accent: '#6366f1' },
+                      title: 'Test VPN Extension',
+                      viewport: { width: 320, height: 480 },
+                      devicePixelRatio: 2,
+                      url: 'chrome-extension://test-vpn/popup.html'
+                    }
+                  };
+                  
+                  const response = await fetch(`${bridgeUrl}/snapshot`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testSnapshot)
+                  });
+                  
+                  const result = await response.json();
+                  if (response.ok) {
+                    addLog('verified', '✅', `Test snapshot sent! ID: ${result.id}`);
+                    toast.success('Test snapshot sent with rect data!');
+                    await realtimeBridgeClient.requestSnapshot();
+                  } else {
+                    throw new Error(result.error || 'Failed to send snapshot');
                   }
-                };
-                
-                const response = await fetch(`${bridgeUrl}/snapshot`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(testSnapshot)
-                });
-                
-                const result = await response.json();
-                if (response.ok) {
-                  addLog('verified', '✅', `Test snapshot sent! ID: ${result.id}`);
-                  toast.success('Test snapshot sent with rect data!');
-                  await realtimeBridgeClient.requestSnapshot();
-                } else {
-                  throw new Error(result.error || 'Failed to send snapshot');
+                } catch (error) {
+                  const msg = error instanceof Error ? error.message : 'Unknown error';
+                  addLog('error', '❌', `Test snapshot failed: ${msg}`);
+                  toast.error(`Failed: ${msg}`);
                 }
-              } catch (error) {
-                const msg = error instanceof Error ? error.message : 'Unknown error';
-                addLog('error', '❌', `Test snapshot failed: ${msg}`);
-                toast.error(`Failed: ${msg}`);
-              }
-            }}
-            variant="outline"
-            size="sm"
-            className="w-full gap-2"
-          >
-            <FlaskConical className="h-4 w-4" />
-            Send Test Snapshot
-          </Button>
+              }}
+              variant="outline"
+              size="sm"
+              className="w-full gap-2"
+            >
+              <FlaskConical className="h-4 w-4" />
+              Send Test Snapshot (DEV)
+            </Button>
+          )}
           
           {/* Clear Test Snapshots Button */}
           <Button
             onClick={async () => {
               try {
-                const { error } = await supabase
+                const { error, count } = await supabase
                   .from('extension_bridge_snapshots')
                   .delete()
-                  .eq('extension_id', 'test-vpn');
+                  .or('extension_id.eq.test-vpn,extension_id.ilike.%test%');
                 
                 if (error) throw error;
                 
-                addLog('verified', '✅', 'Test snapshots cleared from database');
+                addLog('verified', '✅', `Cleared test snapshots from database`);
                 toast.success('Test snapshots cleared!');
                 await realtimeBridgeClient.requestSnapshot();
               } catch (err) {
@@ -382,7 +385,7 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
             }}
             variant="ghost"
             size="sm"
-            className="w-full gap-2 text-amber-600 hover:text-amber-700"
+            className="w-full gap-2 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
           >
             <XCircle className="h-4 w-4" />
             Clear Test Snapshots

@@ -18,6 +18,8 @@ export const WalletPreviewCanvas = () => {
     availableExtensions,
     selectedExtension,
     setSelectedExtension,
+    protonForkOnly,
+    setProtonForkOnly,
   } = useBridgeSnapshot();
 
   // Handle element click from bridge canvas
@@ -153,6 +155,8 @@ export const WalletPreviewCanvas = () => {
             snapshot={bridgeSnapshot}
             onElementClick={handleBridgeElementClick}
             selectedElementId={currentElementId}
+            protonForkOnly={protonForkOnly}
+            onProtonForkOnlyChange={setProtonForkOnly}
           />
         </div>
       </div>
