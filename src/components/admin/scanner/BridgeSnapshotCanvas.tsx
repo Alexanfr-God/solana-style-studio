@@ -5,25 +5,29 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Plug, Box, Clock, Code, AlertTriangle, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { Plug, Box, Clock, Code, AlertTriangle, CheckCircle, XCircle, Filter, Zap, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { SnapshotIntegrityPanel, computeIntegrity } from './SnapshotIntegrityPanel';
 import { RawJsonViewer } from './RawJsonViewer';
 
 interface BridgeSnapshotCanvasProps {
-  snapshot: BridgeSnapshot;
+  snapshot: BridgeSnapshot | null;
   onElementClick?: (element: BridgeElement) => void;
   selectedElementId?: string;
-  protonForkOnly?: boolean;
-  onProtonForkOnlyChange?: (value: boolean) => void;
+  onlyRealSnapshots?: boolean;
+  onOnlyRealSnapshotsChange?: (value: boolean) => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
 export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
   snapshot,
   onElementClick,
   selectedElementId,
-  protonForkOnly = false,
-  onProtonForkOnlyChange,
+  onlyRealSnapshots = true,
+  onOnlyRealSnapshotsChange,
+  loading = false,
+  error = null,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredElement, setHoveredElement] = useState<BridgeElement | null>(null);
@@ -34,7 +38,69 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
   // Compute integrity
   const integrity = useMemo(() => computeIntegrity(snapshot), [snapshot]);
 
-  // Canvas dimensions
+  // Waiting state
+  if (!snapshot && (loading || error)) {
+    return (
+      <div className="relative h-full flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-3 border-b bg-gradient-to-r from-cyan-500/10 to-purple-500/10">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-cyan-500" />
+            <h3 className="text-sm font-semibold">Bridge Canvas</h3>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {onOnlyRealSnapshotsChange && (
+              <div className="flex items-center gap-1.5">
+                <Filter className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground">Real Only</span>
+                <Switch
+                  checked={onlyRealSnapshots}
+                  onCheckedChange={onOnlyRealSnapshotsChange}
+                  className="scale-75"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Waiting State */}
+        <div className="flex-1 flex items-center justify-center bg-muted/20">
+          <div className="text-center p-8">
+            {loading ? (
+              <>
+                <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-cyan-500" />
+                <p className="text-lg font-medium text-foreground">Loading snapshot...</p>
+              </>
+            ) : (
+              <>
+                <div className="h-12 w-12 rounded-full bg-cyan-500/20 flex items-center justify-center mx-auto mb-4">
+                  <Zap className="h-6 w-6 text-cyan-500" />
+                </div>
+                <p className="text-lg font-medium text-foreground">Waiting for Playwright snapshot</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Run the Playwright scanner to capture real extension UI
+                </p>
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground font-mono">
+                  cd wcc-cdp-bridge && npm run scan
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!snapshot) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+        No snapshot available
+      </div>
+    );
+  }
+
+  // Canvas dimensions with DPR scaling
   const dpr = snapshot.devicePixelRatio || 1;
   const viewportWidth = snapshot.viewport?.width || 400;
   const viewportHeight = snapshot.viewport?.height || 600;
@@ -46,40 +112,37 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
   const scaledWidth = viewportWidth * scale;
   const scaledHeight = viewportHeight * scale;
 
-  // Scale element rect to canvas
-  const scaleRect = useCallback((rect: BridgeElement['rect']) => ({
+  // Scale element rect to canvas (accounting for DPR if needed)
+  const scaleRect = (rect: BridgeElement['rect']) => ({
     x: rect.x * scale,
     y: rect.y * scale,
     width: rect.width * scale,
     height: rect.height * scale,
-  }), [scale]);
+  });
 
   // Filter valid elements
-  const validElements = useMemo(() => 
-    snapshot.elements.filter(el => el.rect && el.rect.width > 0 && el.rect.height > 0),
-    [snapshot.elements]
-  );
+  const validElements = snapshot.elements.filter(el => el.rect && el.rect.width > 0 && el.rect.height > 0);
 
   // Status flags
   const hasScreenshot = !!snapshot.screenshotDataUrl;
   const hasValidRects = validElements.length > 0;
-  const isProtonFork = integrity?.isProtonFork || false;
-  const isTestData = snapshot.extensionId.includes('test');
+  const isPlaywright = integrity?.isPlaywright || false;
+  const isReal = integrity?.isReal || false;
   const isStale = integrity ? integrity.timestampAge > 60000 : false;
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent) => {
     if (!containerRef.current || !hoveredElement) return;
     const rect = containerRef.current.getBoundingClientRect();
     setTooltipPos({
       x: e.clientX - rect.left + 12,
       y: e.clientY - rect.top - 8,
     });
-  }, [hoveredElement]);
+  };
 
   return (
     <div className="relative h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-gradient-to-r from-purple-500/10 to-cyan-500/10">
+      <div className="flex items-center justify-between p-3 border-b bg-gradient-to-r from-cyan-500/10 to-purple-500/10">
         <div className="flex items-center gap-2">
           <Plug className="h-4 w-4 text-purple-500" />
           <h3 className="text-sm font-semibold truncate max-w-[140px]" title={snapshot.extensionId}>
@@ -89,30 +152,38 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
             {snapshot.screen}
           </Badge>
           
-          {/* Proton Fork Badge */}
-          {isProtonFork && (
-            <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500 bg-green-500/10">
-              ✓ Proton Fork
+          {/* Playwright Badge */}
+          {isPlaywright && (
+            <Badge variant="outline" className="text-[10px] border-cyan-500/50 text-cyan-500 bg-cyan-500/10">
+              <Zap className="h-2.5 w-2.5 mr-0.5" />
+              Playwright
             </Badge>
           )}
           
-          {/* TEST DATA badge */}
-          {isTestData && (
+          {/* Real Badge */}
+          {isReal && !isPlaywright && (
+            <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500 bg-green-500/10">
+              ✓ Real
+            </Badge>
+          )}
+          
+          {/* Test Badge */}
+          {!isReal && (
             <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500/50 bg-amber-500/10">
-              TEST DATA
+              TEST
             </Badge>
           )}
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Proton Fork Only Toggle */}
-          {onProtonForkOnlyChange && (
+          {/* Only Real Snapshots Toggle */}
+          {onOnlyRealSnapshotsChange && (
             <div className="flex items-center gap-1.5">
               <Filter className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">Proton Only</span>
+              <span className="text-[10px] text-muted-foreground">Real Only</span>
               <Switch
-                checked={protonForkOnly}
-                onCheckedChange={onProtonForkOnlyChange}
+                checked={onlyRealSnapshots}
+                onCheckedChange={onOnlyRealSnapshotsChange}
                 className="scale-75"
               />
             </div>
@@ -134,7 +205,7 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
             onClick={() => setShowRawJson(true)}
           >
             <Code className="h-3 w-3" />
-            Raw JSON
+            Raw
           </Button>
         </div>
       </div>
@@ -178,13 +249,6 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
         <div className="px-3 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-center gap-2 text-xs text-amber-600">
           <AlertTriangle className="h-4 w-4" />
           <span>No <code className="bg-amber-500/20 px-1 rounded">screenshotDataUrl</code> — showing wireframe with {validElements.length} element overlays</span>
-        </div>
-      )}
-
-      {!isProtonFork && !isTestData && (
-        <div className="px-3 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-center gap-2 text-xs text-amber-600">
-          <AlertTriangle className="h-4 w-4" />
-          <span>Not from Proton fork popup (expected ID: <code className="bg-amber-500/20 px-1 rounded">{PROTON_FORK_ID}</code>)</span>
         </div>
       )}
 
@@ -238,7 +302,7 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
                 key={`${element.selector}-${index}`}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.01 }}
+                transition={{ delay: index * 0.005 }}
                 className={cn(
                   "absolute cursor-pointer transition-all duration-150",
                   isSelected 
@@ -284,11 +348,11 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
                 exit={{ opacity: 0, y: 5 }}
                 className="absolute z-50 pointer-events-none"
                 style={{
-                  left: Math.min(tooltipPos.x, scaledWidth - 200),
-                  top: Math.min(tooltipPos.y, scaledHeight - 80),
+                  left: Math.min(tooltipPos.x, scaledWidth - 220),
+                  top: Math.min(tooltipPos.y, scaledHeight - 100),
                 }}
               >
-                <div className="bg-popover border rounded-md shadow-lg p-2 text-xs max-w-[200px]">
+                <div className="bg-popover border rounded-md shadow-lg p-2 text-xs max-w-[220px]">
                   <div className="font-mono text-cyan-400 truncate">
                     {hoveredElement.selector || hoveredElement.id || `${hoveredElement.tag}-unknown`}
                   </div>
@@ -296,13 +360,29 @@ export const BridgeSnapshotCanvas: React.FC<BridgeSnapshotCanvasProps> = ({
                     <span className="text-purple-400">{hoveredElement.tag}</span>
                     {hoveredElement.text && (
                       <span className="ml-1 text-foreground truncate block">
-                        "{hoveredElement.text.slice(0, 30)}{hoveredElement.text.length > 30 ? '...' : ''}"
+                        "{hoveredElement.text.slice(0, 40)}{hoveredElement.text.length > 40 ? '...' : ''}"
                       </span>
                     )}
                   </div>
                   {hoveredElement.rect && (
                     <div className="text-muted-foreground/70 mt-1">
-                      {Math.round(hoveredElement.rect.width)}×{Math.round(hoveredElement.rect.height)}
+                      {Math.round(hoveredElement.rect.width)}×{Math.round(hoveredElement.rect.height)} @ ({Math.round(hoveredElement.rect.x)}, {Math.round(hoveredElement.rect.y)})
+                    </div>
+                  )}
+                  {hoveredElement.styles && Object.keys(hoveredElement.styles).length > 0 && (
+                    <div className="mt-1 pt-1 border-t border-border/50 space-y-0.5">
+                      {hoveredElement.styles.backgroundColor && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: hoveredElement.styles.backgroundColor }} />
+                          <span className="text-muted-foreground">bg: {hoveredElement.styles.backgroundColor}</span>
+                        </div>
+                      )}
+                      {hoveredElement.styles.color && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: hoveredElement.styles.color }} />
+                          <span className="text-muted-foreground">color: {hoveredElement.styles.color}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
