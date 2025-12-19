@@ -4,22 +4,26 @@ import WalletContainer from '@/components/wallet/WalletContainer';
 import { ElementHighlight } from './ElementHighlight';
 import { BridgeSnapshotCanvas } from './BridgeSnapshotCanvas';
 import { useBridgeSnapshot, BridgeElement } from '@/hooks/useBridgeSnapshot';
-import { Loader2, RefreshCw, ChevronDown } from 'lucide-react';
+import { Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 export const WalletPreviewCanvas = () => {
   const { foundElements, currentScreen, scanSource, setCurrentElement, addElement } = useAiScannerStore();
   const { 
     snapshot: bridgeSnapshot, 
     loading: bridgeLoading, 
+    error: bridgeError,
     refresh,
     availableExtensions,
     selectedExtension,
     setSelectedExtension,
-    protonForkOnly,
-    setProtonForkOnly,
+    onlyRealSnapshots,
+    setOnlyRealSnapshots,
+    clearTestData,
   } = useBridgeSnapshot();
 
   // Handle element click from bridge canvas
@@ -60,89 +64,92 @@ export const WalletPreviewCanvas = () => {
     return 'background';
   };
 
+  // Handle clear test data
+  const handleClearTestData = async () => {
+    try {
+      const count = await clearTestData();
+      toast.success(`Deleted ${count} test snapshots`);
+    } catch (err) {
+      toast.error('Failed to clear test data');
+    }
+  };
+
   // Bridge Mode
   if (scanSource === 'extension-bridge') {
+    // Filter extensions based on onlyRealSnapshots
+    const filteredExtensions = onlyRealSnapshots 
+      ? availableExtensions.filter(ext => ext.isReal)
+      : availableExtensions;
+
     // Extension selector header
     const ExtensionHeader = () => (
       <div className="flex items-center justify-between p-3 border-b bg-background/50 gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Extension:</span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Snapshot:</span>
           <Select 
             value={selectedExtension || ''} 
             onValueChange={(val) => setSelectedExtension(val || null)}
           >
             <SelectTrigger className="h-7 text-xs min-w-[140px] max-w-[200px]">
-              <SelectValue placeholder="Select extension..." />
+              <SelectValue placeholder="Select snapshot..." />
             </SelectTrigger>
             <SelectContent>
-              {availableExtensions.map(ext => (
+              {filteredExtensions.map(ext => (
                 <SelectItem key={ext.id} value={ext.id} className="text-xs">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
                     <span className="font-medium">{ext.label}</span>
+                    {ext.source === 'playwright' && (
+                      <Badge variant="outline" className="text-[9px] border-cyan-500/50 text-cyan-500 py-0 px-1">
+                        Playwright
+                      </Badge>
+                    )}
+                    {ext.hasScreenshot && (
+                      <Badge variant="outline" className="text-[9px] border-green-500/50 text-green-500 py-0 px-1">
+                        📷
+                      </Badge>
+                    )}
                     <span className="text-muted-foreground text-[10px]">
-                      {formatDistanceToNow(ext.lastSeen, { addSuffix: true })}
+                      {ext.elementsWithRect} els
                     </span>
                   </div>
                 </SelectItem>
               ))}
-              {availableExtensions.length === 0 && (
+              {filteredExtensions.length === 0 && (
                 <SelectItem value="" disabled className="text-xs">
-                  No extensions found
+                  {onlyRealSnapshots ? 'No real snapshots found' : 'No extensions found'}
                 </SelectItem>
               )}
             </SelectContent>
           </Select>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-7 p-0"
-          onClick={() => refresh()}
-          disabled={bridgeLoading}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${bridgeLoading ? 'animate-spin' : ''}`} />
-        </Button>
+        
+        <div className="flex items-center gap-1">
+          {/* Clear Test Data Button */}
+          {!onlyRealSnapshots && availableExtensions.some(e => !e.isReal) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-amber-500 hover:text-amber-600"
+              onClick={handleClearTestData}
+              title="Clear all test snapshots"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Clear Test
+            </Button>
+          )}
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => refresh()}
+            disabled={bridgeLoading}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${bridgeLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
     );
-
-    if (bridgeLoading && !bridgeSnapshot) {
-      return (
-        <div className="relative h-full flex flex-col">
-          <ExtensionHeader />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-              <p className="text-sm">Polling for extension snapshots...</p>
-              <p className="text-xs mt-1">Click "Send UI Snapshot" in your extension</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (!bridgeSnapshot) {
-      return (
-        <div className="relative h-full flex flex-col">
-          <ExtensionHeader />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <p className="text-sm">
-                {selectedExtension 
-                  ? `No snapshots found for "${selectedExtension}"`
-                  : 'No extension snapshots found'
-                }
-              </p>
-              <p className="text-xs mt-1">Open your extension and click "Send UI Snapshot"</p>
-              {availableExtensions.length > 0 && (
-                <p className="text-xs mt-2 text-primary">
-                  {availableExtensions.length} extension(s) available - select from dropdown
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    }
 
     // Get current element from store for selection highlight
     const currentElementId = foundElements.find(el => el.status === 'found')?.id;
@@ -155,8 +162,10 @@ export const WalletPreviewCanvas = () => {
             snapshot={bridgeSnapshot}
             onElementClick={handleBridgeElementClick}
             selectedElementId={currentElementId}
-            protonForkOnly={protonForkOnly}
-            onProtonForkOnlyChange={setProtonForkOnly}
+            onlyRealSnapshots={onlyRealSnapshots}
+            onOnlyRealSnapshotsChange={setOnlyRealSnapshots}
+            loading={bridgeLoading}
+            error={bridgeError}
           />
         </div>
       </div>

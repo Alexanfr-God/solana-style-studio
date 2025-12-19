@@ -1,5 +1,5 @@
 import React from 'react';
-import { BridgeSnapshot } from '@/hooks/useBridgeSnapshot';
+import { BridgeSnapshot, PROTON_FORK_ID } from '@/hooks/useBridgeSnapshot';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { 
@@ -11,17 +11,20 @@ import {
   Clock, 
   Monitor,
   Globe,
-  Fingerprint
+  Fingerprint,
+  Cpu,
+  Zap
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-
-const PROTON_FORK_ID = 'jplgfhpmjnbigmhklmmbgecoobifkmpa';
 
 export interface SnapshotIntegrity {
   extensionId: string;
   extensionName: string | null;
   url: string | null;
+  source: string | null;
   isProtonFork: boolean;
+  isPlaywright: boolean;
+  isReal: boolean;
   hasScreenshotDataUrl: boolean;
   elementsTotal: number;
   elementsWithRect: number;
@@ -33,16 +36,24 @@ export interface SnapshotIntegrity {
 export function computeIntegrity(snapshot: BridgeSnapshot | null): SnapshotIntegrity | null {
   if (!snapshot) return null;
   
-  const url = snapshot.rawData?.url || null;
+  const url = snapshot.url || snapshot.rawData?.url || null;
+  const source = snapshot.meta?.source || snapshot.rawData?.meta?.source || null;
   const elementsWithRect = snapshot.elements.filter(
     el => el.rect && el.rect.width > 0 && el.rect.height > 0
   ).length;
+  
+  const isProtonFork = url ? url.includes(PROTON_FORK_ID) : snapshot.extensionId.includes(PROTON_FORK_ID);
+  const isPlaywright = source === 'playwright';
+  const isReal = isPlaywright || (snapshot.extensionId === 'proton-vpn' && url?.includes('chrome-extension://'));
   
   return {
     extensionId: snapshot.extensionId,
     extensionName: snapshot.rawData?.title || snapshot.rawData?.extensionName || null,
     url,
-    isProtonFork: url ? url.includes(PROTON_FORK_ID) : snapshot.extensionId.includes(PROTON_FORK_ID),
+    source,
+    isProtonFork,
+    isPlaywright,
+    isReal,
     hasScreenshotDataUrl: !!snapshot.screenshotDataUrl,
     elementsTotal: snapshot.elements.length,
     elementsWithRect,
@@ -109,17 +120,19 @@ export const SnapshotIntegrityPanel: React.FC<SnapshotIntegrityPanelProps> = ({
   if (compact) {
     return (
       <div className="flex items-center gap-2 flex-wrap">
-        {/* Proton Fork Badge */}
+        {/* Source Badge */}
         <Badge 
           variant="outline" 
           className={cn(
             "text-[10px]",
-            integrity.isProtonFork 
-              ? "border-green-500/50 text-green-500 bg-green-500/10" 
-              : "border-amber-500/50 text-amber-500 bg-amber-500/10"
+            integrity.isPlaywright 
+              ? "border-cyan-500/50 text-cyan-500 bg-cyan-500/10" 
+              : integrity.isReal
+                ? "border-green-500/50 text-green-500 bg-green-500/10"
+                : "border-amber-500/50 text-amber-500 bg-amber-500/10"
           )}
         >
-          {integrity.isProtonFork ? '✓ Proton Fork' : '⚠ Not Proton Fork'}
+          {integrity.isPlaywright ? '🎭 Playwright' : integrity.isReal ? '✓ Real' : '⚠ Test'}
         </Badge>
         
         {/* Screenshot Badge */}
@@ -140,9 +153,9 @@ export const SnapshotIntegrityPanel: React.FC<SnapshotIntegrityPanelProps> = ({
           variant="outline" 
           className={cn(
             "text-[10px]",
-            integrity.elementsWithRect > 10 
+            integrity.elementsWithRect > 20 
               ? "border-green-500/50 text-green-500 bg-green-500/10" 
-              : integrity.elementsWithRect > 0
+              : integrity.elementsWithRect > 10
                 ? "border-amber-500/50 text-amber-500 bg-amber-500/10"
                 : "border-red-500/50 text-red-500 bg-red-500/10"
           )}
@@ -160,15 +173,31 @@ export const SnapshotIntegrityPanel: React.FC<SnapshotIntegrityPanelProps> = ({
           <Fingerprint className="h-4 w-4 text-purple-500" />
           Snapshot Integrity
         </h4>
-        <Badge 
-          variant={hasValidData ? "default" : "destructive"}
-          className="text-[10px]"
-        >
-          {hasValidData ? 'VALID' : 'INVALID'}
-        </Badge>
+        <div className="flex items-center gap-1">
+          {integrity.isPlaywright && (
+            <Badge className="text-[10px] bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+              <Zap className="h-2.5 w-2.5 mr-0.5" />
+              Playwright
+            </Badge>
+          )}
+          <Badge 
+            variant={hasValidData ? "default" : "destructive"}
+            className="text-[10px]"
+          >
+            {hasValidData ? 'VALID' : 'INVALID'}
+          </Badge>
+        </div>
       </div>
       
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        {/* Source */}
+        <IntegrityItem 
+          label="Source"
+          value={integrity.source || 'unknown'}
+          status={integrity.isPlaywright ? 'success' : integrity.isReal ? 'success' : 'warning'}
+          icon={<Cpu className="h-3 w-3" />}
+        />
+        
         {/* Extension ID */}
         <IntegrityItem 
           label="Extension"
@@ -177,28 +206,12 @@ export const SnapshotIntegrityPanel: React.FC<SnapshotIntegrityPanelProps> = ({
           icon={<Globe className="h-3 w-3" />}
         />
         
-        {/* Extension Name */}
-        {integrity.extensionName && (
-          <IntegrityItem 
-            label="Name"
-            value={integrity.extensionName}
-            status="neutral"
-          />
-        )}
-        
         {/* URL */}
         <IntegrityItem 
           label="URL"
-          value={integrity.url || 'N/A'}
-          status={integrity.isProtonFork ? 'success' : integrity.url ? 'warning' : 'neutral'}
+          value={integrity.url ? integrity.url.replace('chrome-extension://', '').slice(0, 40) + '...' : 'N/A'}
+          status={integrity.url?.includes('chrome-extension://') ? 'success' : 'warning'}
           icon={<Globe className="h-3 w-3" />}
-        />
-        
-        {/* Proton Fork Check */}
-        <IntegrityItem 
-          label="Proton Fork"
-          value={integrity.isProtonFork ? 'Yes' : 'No'}
-          status={integrity.isProtonFork ? 'success' : 'warning'}
         />
         
         {/* Screenshot */}
@@ -214,8 +227,8 @@ export const SnapshotIntegrityPanel: React.FC<SnapshotIntegrityPanelProps> = ({
           label="Elements"
           value={`${integrity.elementsWithRect}/${integrity.elementsTotal} with rect`}
           status={
-            integrity.elementsWithRect > 10 ? 'success' : 
-            integrity.elementsWithRect > 0 ? 'warning' : 'error'
+            integrity.elementsWithRect > 20 ? 'success' : 
+            integrity.elementsWithRect > 10 ? 'warning' : 'error'
           }
           icon={<Box className="h-3 w-3" />}
         />
@@ -247,10 +260,10 @@ export const SnapshotIntegrityPanel: React.FC<SnapshotIntegrityPanelProps> = ({
       </div>
       
       {/* Warnings */}
-      {!integrity.isProtonFork && (
+      {!integrity.isReal && (
         <div className="flex items-center gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded text-amber-600">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-          <span>Not from Proton fork popup (expected: {PROTON_FORK_ID})</span>
+          <span>Test data — use Playwright scanner for real snapshots</span>
         </div>
       )}
       

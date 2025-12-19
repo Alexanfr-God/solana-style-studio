@@ -422,22 +422,28 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
             Manual POST Test (verify endpoint)
           </Button>
           
-          {/* Clear Test Snapshots Button */}
+          {/* Clear Test Data Button */}
           <Button
             onClick={async () => {
               try {
-                const { error, count } = await supabase
+                addLog('scanning', '🟢', 'Clearing test snapshots (test-vpn, manual-test, null source)...');
+                
+                // Delete test snapshots
+                const { data, error } = await supabase
                   .from('extension_bridge_snapshots')
                   .delete()
-                  .or('extension_id.eq.test-vpn,extension_id.ilike.%test%,extension_id.eq.manual-test');
+                  .or('extension_id.eq.test-vpn,extension_id.eq.manual-test,extension_id.ilike.%test%')
+                  .select('id');
                 
                 if (error) throw error;
                 
-                addLog('verified', '✅', `Cleared test snapshots from database`);
-                toast.success('Test snapshots cleared!');
+                const count = data?.length || 0;
+                addLog('verified', '✅', `Cleared ${count} test snapshots from database`);
+                toast.success(`Cleared ${count} test snapshots!`);
                 await realtimeBridgeClient.requestSnapshot();
               } catch (err) {
                 const msg = err instanceof Error ? err.message : 'Unknown error';
+                addLog('error', '❌', `Failed to clear: ${msg}`);
                 toast.error(`Failed to clear: ${msg}`);
               }
             }}
@@ -446,7 +452,7 @@ ${elementsWithAI.length > 0 ? '✅' : '⚠️'} AI Vision: ${elementsWithAI.leng
             className="w-full gap-2 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
           >
             <XCircle className="h-4 w-4" />
-            Clear ALL Test Snapshots
+            Clear Test Data
           </Button>
           
           <ExtensionSnapshotViewer />

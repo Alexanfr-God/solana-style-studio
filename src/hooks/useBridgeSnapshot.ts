@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const PROTON_FORK_ID = 'jplgfhpmjnbigmhklmmbgecoobifkmpa';
 
+// Test extension IDs to filter out
+const TEST_EXTENSION_IDS = ['test-vpn', 'manual-test', 'test'];
+
 export interface BridgeElement {
   id: string;
   selector: string;
@@ -12,6 +15,13 @@ export interface BridgeElement {
   styles?: Record<string, string>;
   className?: string;
   attributes?: Record<string, string>;
+}
+
+export interface SnapshotMeta {
+  source: 'playwright' | 'extension' | 'test' | null;
+  extensionId?: string;
+  capturedAt?: number;
+  userAgent?: string;
 }
 
 export interface BridgeSnapshot {
@@ -25,6 +35,8 @@ export interface BridgeSnapshot {
   timestamp: number;
   elementsCount: number;
   rawData?: any;
+  url?: string;
+  meta?: SnapshotMeta;
 }
 
 export interface ExtensionOption {
@@ -34,6 +46,8 @@ export interface ExtensionOption {
   isProtonFork: boolean;
   hasScreenshot: boolean;
   elementsWithRect: number;
+  source: string | null;
+  isReal: boolean;
 }
 
 interface UseBridgeSnapshotReturn {
@@ -44,8 +58,32 @@ interface UseBridgeSnapshotReturn {
   availableExtensions: ExtensionOption[];
   selectedExtension: string | null;
   setSelectedExtension: (id: string | null) => void;
-  protonForkOnly: boolean;
-  setProtonForkOnly: (value: boolean) => void;
+  onlyRealSnapshots: boolean;
+  setOnlyRealSnapshots: (value: boolean) => void;
+  clearTestData: () => Promise<number>;
+}
+
+// Check if snapshot is "real" (from Playwright or real Proton fork)
+function isRealSnapshot(row: any): boolean {
+  const snapshotData = row.snapshot as any;
+  const meta = snapshotData?.meta;
+  const url = snapshotData?.url || '';
+  const extensionId = row.extension_id || '';
+  
+  // Source = playwright → real
+  if (meta?.source === 'playwright') return true;
+  
+  // Proton VPN extension with chrome-extension:// URL → real
+  if (extensionId === 'proton-vpn' && url.includes('chrome-extension://')) return true;
+  if (url.includes(PROTON_FORK_ID)) return true;
+  
+  // Test extensions → not real
+  if (TEST_EXTENSION_IDS.some(t => extensionId.includes(t))) return false;
+  
+  // Null/missing source and no valid extension info → not real
+  if (!meta?.source && !url.includes('chrome-extension://')) return false;
+  
+  return true;
 }
 
 export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn {
@@ -54,7 +92,7 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
   const [error, setError] = useState<string | null>(null);
   const [availableExtensions, setAvailableExtensions] = useState<ExtensionOption[]>([]);
   const [selectedExtension, setSelectedExtension] = useState<string | null>(null);
-  const [protonForkOnly, setProtonForkOnly] = useState(false);
+  const [onlyRealSnapshots, setOnlyRealSnapshots] = useState(true); // Default ON
 
   // Check if a snapshot is from Proton fork
   const isProtonForkSnapshot = useCallback((row: any): boolean => {
@@ -84,6 +122,8 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
           const elements = snapshotData?.elements || [];
           const elementsWithRect = elements.filter((el: any) => el.rect && el.rect.width > 0).length;
           const isProton = isProtonForkSnapshot(row);
+          const source = snapshotData?.meta?.source || null;
+          const isReal = isRealSnapshot(row);
           
           const existing = extensionMap.get(row.extension_id);
           if (!existing || existing.lastSeen < ts) {
@@ -94,17 +134,21 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
               isProtonFork: isProton,
               hasScreenshot,
               elementsWithRect,
+              source,
+              isReal,
             });
           }
         });
 
         let extensions = Array.from(extensionMap.values())
           .sort((a, b) => {
-            // Sort by: Proton fork first, then by elements with rect, then by lastSeen
+            // Sort by: Real first, then Proton fork, then elements with rect
+            if (a.isReal && !b.isReal) return -1;
+            if (!a.isReal && b.isReal) return 1;
             if (a.isProtonFork && !b.isProtonFork) return -1;
             if (!a.isProtonFork && b.isProtonFork) return 1;
-            if (a.elementsWithRect > 10 && b.elementsWithRect <= 10) return -1;
-            if (a.elementsWithRect <= 10 && b.elementsWithRect > 10) return 1;
+            if (a.elementsWithRect > 20 && b.elementsWithRect <= 20) return -1;
+            if (a.elementsWithRect <= 20 && b.elementsWithRect > 20) return 1;
             if (a.hasScreenshot && !b.hasScreenshot) return -1;
             if (!a.hasScreenshot && b.hasScreenshot) return 1;
             return b.lastSeen - a.lastSeen;
@@ -112,43 +156,46 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
 
         setAvailableExtensions(extensions);
 
-        // Auto-select best extension by validation rules:
-        // 1. hasRectCount > 10
-        // 2. hasScreenshotDataUrl = true (preferred)
-        // 3. url not null
-        // 4. NOT test-* extension
+        // Auto-select best extension
         if (!selectedExtension && extensions.length > 0) {
+          // Filter to real snapshots if enabled
+          const candidates = onlyRealSnapshots 
+            ? extensions.filter(e => e.isReal)
+            : extensions;
+          
           const preferred = 
-            // Priority 1: Proton fork with screenshot + many rects
-            extensions.find(e => e.isProtonFork && e.hasScreenshot && e.elementsWithRect > 10) ||
-            // Priority 2: Proton fork with many rects
-            extensions.find(e => e.isProtonFork && e.elementsWithRect > 10) ||
-            // Priority 3: Any non-test with screenshot + many rects
-            extensions.find(e => !e.id.includes('test') && e.hasScreenshot && e.elementsWithRect > 10) ||
-            // Priority 4: Any non-test with many rects
-            extensions.find(e => !e.id.includes('test') && e.elementsWithRect > 10) ||
-            // Priority 5: Any non-test
-            extensions.find(e => !e.id.includes('test')) ||
-            // Fallback: first available
-            extensions[0];
-          setSelectedExtension(preferred.id);
+            // Priority 1: Real with screenshot + many rects (>20)
+            candidates.find(e => e.isReal && e.hasScreenshot && e.elementsWithRect > 20) ||
+            // Priority 2: Real with many rects
+            candidates.find(e => e.isReal && e.elementsWithRect > 20) ||
+            // Priority 3: Real with screenshot
+            candidates.find(e => e.isReal && e.hasScreenshot) ||
+            // Priority 4: Any real
+            candidates.find(e => e.isReal) ||
+            // Fallback: first available (only if not filtering)
+            (!onlyRealSnapshots ? extensions[0] : null);
+          
+          if (preferred) {
+            setSelectedExtension(preferred.id);
+          }
         }
       }
     } catch (err) {
       console.error('[useBridgeSnapshot] Error fetching extensions:', err);
     }
-  }, [selectedExtension, isProtonForkSnapshot]);
+  }, [selectedExtension, isProtonForkSnapshot, onlyRealSnapshots]);
 
   const fetchLatest = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Fetch more to filter
       let query = supabase
         .from('extension_bridge_snapshots')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(protonForkOnly ? 50 : 1); // Fetch more if filtering
+        .limit(50);
 
       // Filter by selected extension if set
       if (selectedExtension) {
@@ -162,42 +209,47 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
       }
 
       if (!data || data.length === 0) {
+        if (onlyRealSnapshots) {
+          setError('Waiting for Playwright snapshot...');
+        }
         setSnapshot(null);
         return;
       }
 
-      // Find best snapshot
-      let targetRow = data[0];
-      
-      if (protonForkOnly) {
-        // Filter to only Proton fork snapshots
-        const protonSnapshots = data.filter(row => isProtonForkSnapshot(row));
-        
-        if (protonSnapshots.length === 0) {
-          setError('No Proton fork snapshots found');
-          setSnapshot(null);
-          return;
-        }
-        
-        // Prefer snapshots with screenshot and more elements with rect
-        targetRow = protonSnapshots.reduce((best, current) => {
-          const bestData = best.snapshot as any;
-          const currentData = current.snapshot as any;
-          
-          const bestHasScreenshot = !!bestData?.screenshotDataUrl;
-          const currentHasScreenshot = !!currentData?.screenshotDataUrl;
-          
-          const bestRects = (bestData?.elements || []).filter((e: any) => e.rect?.width > 0).length;
-          const currentRects = (currentData?.elements || []).filter((e: any) => e.rect?.width > 0).length;
-          
-          // Prefer screenshot > more rects > newer
-          if (currentHasScreenshot && !bestHasScreenshot) return current;
-          if (!currentHasScreenshot && bestHasScreenshot) return best;
-          if (currentRects > bestRects) return current;
-          if (currentRects < bestRects) return best;
-          return current; // Newer
-        }, protonSnapshots[0]);
+      // Filter based on onlyRealSnapshots
+      let filteredData = onlyRealSnapshots 
+        ? data.filter(row => isRealSnapshot(row))
+        : data;
+
+      if (filteredData.length === 0) {
+        setError('Waiting for Playwright snapshot...');
+        setSnapshot(null);
+        return;
       }
+
+      // Find best snapshot: hasScreenshotDataUrl AND elementsWithRect > 20
+      const targetRow = filteredData.reduce((best, current) => {
+        const bestData = best.snapshot as any;
+        const currentData = current.snapshot as any;
+        
+        const bestHasScreenshot = !!bestData?.screenshotDataUrl;
+        const currentHasScreenshot = !!currentData?.screenshotDataUrl;
+        
+        const bestRects = (bestData?.elements || []).filter((e: any) => e.rect?.width > 0).length;
+        const currentRects = (currentData?.elements || []).filter((e: any) => e.rect?.width > 0).length;
+        
+        // Prefer: screenshot + rects > 20
+        const bestValid = bestHasScreenshot && bestRects > 20;
+        const currentValid = currentHasScreenshot && currentRects > 20;
+        
+        if (currentValid && !bestValid) return current;
+        if (!currentValid && bestValid) return best;
+        if (currentHasScreenshot && !bestHasScreenshot) return current;
+        if (!currentHasScreenshot && bestHasScreenshot) return best;
+        if (currentRects > bestRects) return current;
+        if (currentRects < bestRects) return best;
+        return current; // Newer
+      }, filteredData[0]);
 
       const snapshotData = targetRow.snapshot as any;
       const rawElements = snapshotData?.elements || [];
@@ -225,14 +277,47 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
         timestamp: new Date(targetRow.created_at || '').getTime(),
         elementsCount: targetRow.elements_count || 0,
         rawData: snapshotData,
+        url: snapshotData?.url,
+        meta: {
+          source: snapshotData?.meta?.source || null,
+          extensionId: snapshotData?.meta?.extensionId,
+          capturedAt: snapshotData?.meta?.capturedAt,
+          userAgent: snapshotData?.meta?.userAgent,
+        },
       });
+      setError(null);
     } catch (err: any) {
       console.error('[useBridgeSnapshot] Error fetching snapshot:', err);
       setError(err.message || 'Failed to fetch snapshot');
     } finally {
       setLoading(false);
     }
-  }, [selectedExtension, protonForkOnly, isProtonForkSnapshot]);
+  }, [selectedExtension, onlyRealSnapshots]);
+
+  // Clear test data from database
+  const clearTestData = useCallback(async (): Promise<number> => {
+    try {
+      // Delete test snapshots
+      const { data, error: dbError } = await supabase
+        .from('extension_bridge_snapshots')
+        .delete()
+        .or('extension_id.eq.test-vpn,extension_id.eq.manual-test,extension_id.ilike.%test%')
+        .select('id');
+
+      if (dbError) throw dbError;
+      
+      const deletedCount = data?.length || 0;
+      
+      // Refresh extensions list
+      await fetchExtensions();
+      await fetchLatest();
+      
+      return deletedCount;
+    } catch (err) {
+      console.error('[useBridgeSnapshot] Error clearing test data:', err);
+      throw err;
+    }
+  }, [fetchExtensions, fetchLatest]);
 
   // Fetch extensions on mount
   useEffect(() => {
@@ -254,7 +339,8 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
     availableExtensions,
     selectedExtension,
     setSelectedExtension,
-    protonForkOnly,
-    setProtonForkOnly,
+    onlyRealSnapshots,
+    setOnlyRealSnapshots,
+    clearTestData,
   };
 }
