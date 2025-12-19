@@ -2,16 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-// Register ThemeProbe listener EARLY (before React renders)
-import { registerThemeProbeListener } from './agents/mcp/ThemeProbeListener';
-registerThemeProbeListener();
-
-// Диагностика React дубликатов в dev режиме
-if (import.meta.env.DEV) { 
-  import("./utils/reactDiag").then(m => m.logReactIdentity("main")); 
-}
-
-// Ensure React is available globally for debugging
+// Ensure React is available globally for debugging BEFORE anything else
 if (typeof window !== 'undefined') {
   window.React = React;
 }
@@ -28,7 +19,6 @@ import './polyfills'; // Includes Buffer and process polyfills
 console.log('Main rendering started');
 console.log('React version:', React.version);
 console.log('Screen size:', window.innerWidth, 'x', window.innerHeight);
-console.log('User agent:', navigator.userAgent);
 
 // Initialize AppKit before React rendering
 async function initializeAndRender() {
@@ -37,15 +27,27 @@ async function initializeAndRender() {
     await initializeAppKit();
     console.log('✅ AppKit initialized, starting React render');
     
-    // Wrap App with WalletContextProvider for wallet state management
-      ReactDOM.createRoot(document.getElementById('root')!).render(
-        <WalletContextProvider>
-          <App />
-        </WalletContextProvider>
-      );
+    // Create root and render
+    const root = ReactDOM.createRoot(document.getElementById('root')!);
+    root.render(
+      <WalletContextProvider>
+        <App />
+      </WalletContextProvider>
+    );
+    
+    // Register ThemeProbe listener AFTER React renders
+    // This must happen after React is fully initialized
+    setTimeout(async () => {
+      try {
+        const { registerThemeProbeListener } = await import('./agents/mcp/ThemeProbeListener');
+        registerThemeProbeListener();
+        console.log('✅ ThemeProbeListener registered');
+      } catch (error) {
+        console.warn('ThemeProbeListener registration failed:', error);
+      }
+    }, 100);
     
     console.log('🚀 Application initialized successfully!');
-    console.log('🎯 Ready for wallet customization!');
   } catch (error) {
     console.error('❌ Failed to initialize AppKit:', error);
     

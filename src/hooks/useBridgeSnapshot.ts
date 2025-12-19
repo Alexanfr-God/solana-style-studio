@@ -99,18 +99,37 @@ export function useBridgeSnapshot(pollInterval = 3000): UseBridgeSnapshotReturn 
         });
 
         let extensions = Array.from(extensionMap.values())
-          .sort((a, b) => b.lastSeen - a.lastSeen);
+          .sort((a, b) => {
+            // Sort by: Proton fork first, then by elements with rect, then by lastSeen
+            if (a.isProtonFork && !b.isProtonFork) return -1;
+            if (!a.isProtonFork && b.isProtonFork) return 1;
+            if (a.elementsWithRect > 10 && b.elementsWithRect <= 10) return -1;
+            if (a.elementsWithRect <= 10 && b.elementsWithRect > 10) return 1;
+            if (a.hasScreenshot && !b.hasScreenshot) return -1;
+            if (!a.hasScreenshot && b.hasScreenshot) return 1;
+            return b.lastSeen - a.lastSeen;
+          });
 
         setAvailableExtensions(extensions);
 
-        // Auto-select best extension
+        // Auto-select best extension by validation rules:
+        // 1. hasRectCount > 10
+        // 2. hasScreenshotDataUrl = true (preferred)
+        // 3. url not null
+        // 4. NOT test-* extension
         if (!selectedExtension && extensions.length > 0) {
-          // Prefer: Proton fork with screenshot > Proton fork > non-test with screenshot > any
           const preferred = 
-            extensions.find(e => e.isProtonFork && e.hasScreenshot) ||
-            extensions.find(e => e.isProtonFork) ||
-            extensions.find(e => !e.id.includes('test') && e.hasScreenshot) ||
+            // Priority 1: Proton fork with screenshot + many rects
+            extensions.find(e => e.isProtonFork && e.hasScreenshot && e.elementsWithRect > 10) ||
+            // Priority 2: Proton fork with many rects
+            extensions.find(e => e.isProtonFork && e.elementsWithRect > 10) ||
+            // Priority 3: Any non-test with screenshot + many rects
+            extensions.find(e => !e.id.includes('test') && e.hasScreenshot && e.elementsWithRect > 10) ||
+            // Priority 4: Any non-test with many rects
+            extensions.find(e => !e.id.includes('test') && e.elementsWithRect > 10) ||
+            // Priority 5: Any non-test
             extensions.find(e => !e.id.includes('test')) ||
+            // Fallback: first available
             extensions[0];
           setSelectedExtension(preferred.id);
         }
