@@ -1,0 +1,9 @@
+{
+  "name": "dev.wcc.overlay",
+  "description": "WCC Overlay Bridge Native Messaging Host",
+  "path": "/usr/local/bin/wcc-native-host",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://YOUR_EXTENSION_ID_HERE/"
+  ]
+}
