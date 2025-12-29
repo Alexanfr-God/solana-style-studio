@@ -32,6 +32,61 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
   
   const { address, isConnected } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
+  const { mint: mantleMint, isMinting, switchToMantle } = useEvmMint();
+  
+  // Handle Mantle L2 NFT minting
+  const handleMantleMint = async (customName: string) => {
+    try {
+      setIsExporting(true);
+      
+      // 1. Switch to Mantle network if needed
+      toast.info('Checking Mantle network...');
+      const switched = await switchToMantle(true); // testnet
+      if (!switched) {
+        toast.error('Please switch to Mantle Sepolia network in your wallet');
+        return;
+      }
+      
+      // 2. Upload theme to IPFS
+      const currentTheme = useThemeStore.getState().theme;
+      const themeName = customName || 'Untitled Theme';
+      const previewImageUrl = resolvePreviewImageUrl(currentTheme);
+      
+      toast.info('📤 Uploading theme to IPFS...');
+      const { data: ipfsData, error: ipfsError } = await supabase.functions.invoke('upload-to-ipfs', {
+        body: {
+          themeName,
+          themeData: currentTheme,
+          previewImageUrl,
+          description: 'Custom wallet theme on Mantle L2'
+        }
+      });
+      
+      if (ipfsError || !ipfsData?.success) {
+        throw new Error(ipfsData?.message || 'Failed to upload to IPFS');
+      }
+      
+      toast.success('✅ Uploaded to IPFS!');
+      console.log('[MantleMint] IPFS URI:', ipfsData.metadataUri);
+      
+      // 3. Mint on Mantle
+      const result = await mantleMint(ipfsData.metadataUri, themeName, previewImageUrl);
+      
+      if (result.success) {
+        toast.success(`🎉 NFT Minted on Mantle! TX: ${result.txHash?.slice(0, 10)}...`, { duration: 10000 });
+        
+        if (result.explorerUrl) {
+          console.log('[MantleMint] Explorer:', result.explorerUrl);
+        }
+      }
+      
+    } catch (error) {
+      console.error('[MantleMint] Failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Mantle minting failed');
+    } finally {
+      setIsExporting(false);
+    }
+  };
   
   const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL' | 'MNT', customName: string) => {
     if (isExporting) return;
