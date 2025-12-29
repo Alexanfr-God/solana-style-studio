@@ -7,6 +7,7 @@ import { useThemeStore } from '@/state/themeStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import BlockchainSelectorDialog from './BlockchainSelectorDialog';
+import { useEvmMint } from '@/hooks/useEvmMint';
 
 interface ExportToIpfsButtonProps {
   themeId?: string;
@@ -32,14 +33,9 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
   const { address, isConnected } = useAppKitAccount();
   const { caipNetwork } = useAppKitNetwork();
   
-  const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL', customName: string) => {
-    // Prevent double-click / concurrent mints
-    if (isExporting) {
-      console.log('[MintFlow] ⚠️ Mint already in progress, ignoring click');
-      return;
-    }
+  const handleSelectBlockchain = async (blockchain: 'ETH' | 'SOL' | 'MNT', customName: string) => {
+    if (isExporting) return;
     
-    // Prevent spam (5 sec cooldown)
     const now = Date.now();
     if (now - lastMintTime < 5000) {
       toast.error('⏳ Please wait 5 seconds between mints');
@@ -49,28 +45,26 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
     setLastMintTime(now);
     setDialogOpen(false);
     
-    // Пока поддерживаем только Solana
-    if (blockchain !== 'SOL') {
-      toast.error('Only Solana minting is supported at this time');
-      return;
-    }
-    
-    // Проверка: подключён ли кошелёк
     if (!isConnected || !address) {
       toast.error('Please connect a wallet using the top-right button');
       return;
     }
+
+    // Handle Mantle L2 minting
+    if (blockchain === 'MNT') {
+      await handleMantleMint(customName);
+      return;
+    }
     
-    // Проверка: это Solana сеть?
+    // ETH not supported yet
+    if (blockchain === 'ETH') {
+      toast.error('Ethereum minting coming soon!');
+      return;
+    }
+    
+    // SOL minting (existing flow)
     const networkId = String(caipNetwork?.id || '');
     const isSolana = networkId.includes('solana') || address.length === 44;
-    
-    console.log('[ExportToIpfs] Wallet check:', {
-      address: address.slice(0, 10) + '...',
-      network: caipNetwork?.name,
-      networkId,
-      isSolana
-    });
     
     if (!isSolana) {
       toast.error('Please switch to a Solana network (Devnet/Mainnet)');
