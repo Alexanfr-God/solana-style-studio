@@ -119,3 +119,6 @@ verify_jwt = false
 
 [functions.extension-bridge]
 verify_jwt = false
+
+[functions.mint-nft-mantle]
+verify_jwt = false
