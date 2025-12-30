@@ -1,6 +1,8 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { WagmiProvider } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Ensure React is available globally for debugging BEFORE anything else
 if (typeof window !== 'undefined') {
@@ -9,7 +11,7 @@ if (typeof window !== 'undefined') {
 
 import App from './App.tsx';
 import { WalletContextProvider } from '@/context/WalletContextProvider';
-import { initializeAppKit } from '@/lib/appkit';
+import { initializeAppKit, getWagmiConfig } from '@/lib/appkit';
 // Make sure all CSS imports are in the correct order
 import './styles/index.css'; // This already imports all other CSS files
 import './App.css';
@@ -20,6 +22,9 @@ console.log('Main rendering started');
 console.log('React version:', React.version);
 console.log('Screen size:', window.innerWidth, 'x', window.innerHeight);
 
+// Create QueryClient for React Query
+const queryClient = new QueryClient();
+
 // Initialize AppKit before React rendering
 async function initializeAndRender() {
   try {
@@ -27,12 +32,19 @@ async function initializeAndRender() {
     await initializeAppKit();
     console.log('✅ AppKit initialized, starting React render');
     
-    // Create root and render
+    // Get wagmi config from AppKit adapter
+    const wagmiConfig = getWagmiConfig();
+    
+    // Create root and render with WagmiProvider
     const root = ReactDOM.createRoot(document.getElementById('root')!);
     root.render(
-      <WalletContextProvider>
-        <App />
-      </WalletContextProvider>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <WalletContextProvider>
+            <App />
+          </WalletContextProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
     );
     
     // Register ThemeProbe listener AFTER React renders
