@@ -83,4 +83,5 @@ export async function initializeAppKit() {
 }
 
 export const isAppKitReady = () => isInitialized && modal;
+export const getWagmiConfig = () => wagmiAdapter?.wagmiConfig;
 export { modal, wagmiAdapter, solanaWeb3JsAdapter, mantleMainnet, mantleTestnet }
