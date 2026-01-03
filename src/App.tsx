@@ -17,6 +17,7 @@ import AdminAiScannerPage from '@/pages/AdminAiScannerPage';
 import NftDetailPage from '@/pages/NftDetailPage';
 import EndingSoonPage from '@/pages/EndingSoonPage';
 import AuctionStatsPage from '@/pages/AuctionStatsPage';
+import MaskPlaygroundPage from '@/pages/MaskPlaygroundPage';
 import { EffectsProvider } from '@/contexts/EffectsContext';
 import AppBootstrap from '@/components/AppBootstrap';
 
@@ -39,6 +40,7 @@ function App() {
               <Route path="/nft/:mintAddress" element={<NftDetailPage />} />
               <Route path="/ending-soon" element={<EndingSoonPage />} />
               <Route path="/auction-stats" element={<AuctionStatsPage />} />
+              <Route path="/mask-playground" element={<MaskPlaygroundPage />} />
               <Route path="/docs" element={<Documentation />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/admin/ai-vision" element={<AiVisionPage />} />
