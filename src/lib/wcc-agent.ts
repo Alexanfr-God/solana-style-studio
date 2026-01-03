@@ -133,10 +133,12 @@ export class WCCAgent {
     this.notifyListeners();
   }
 
-  getSnapshot(): AgentSnapshot {
+  getSnapshot(maskImageSize?: { width: number; height: number }): AgentSnapshot {
     return {
       containerRect: { ...this.containerRect },
-      maskRect: this.config.mask ? this.computeMaskRect() : null,
+      maskRect: this.config.mask && maskImageSize 
+        ? this.computeMaskRect(maskImageSize.width, maskImageSize.height) 
+        : null,
       safeRect: this.computeSafeRect(),
     };
   }
@@ -145,19 +147,52 @@ export class WCCAgent {
     return { ...this.config };
   }
 
-  private computeMaskRect(): ContainerRect | null {
-    const { mask } = this.config;
+  computeMaskRect(imageWidth: number, imageHeight: number): ContainerRect | null {
+    const { mask, canvasWidth = 1400, canvasHeight = 1400 } = this.config;
     if (!mask) return null;
 
-    // For now, return container rect scaled
-    // Full mask positioning will be in Step C
     const container = this.containerRect;
-    return {
-      x: container.x + mask.offset.dx,
-      y: container.y + mask.offset.dy,
-      width: container.width * mask.scale,
-      height: container.height * mask.scale,
-    };
+    let width: number, height: number;
+
+    // Calculate dimensions based on fit mode
+    if (mask.fit === 'stretch') {
+      width = container.width * mask.scale;
+      height = container.height * mask.scale;
+    } else if (mask.fit === 'contain') {
+      const containerRatio = container.width / container.height;
+      const imageRatio = imageWidth / imageHeight;
+      if (imageRatio > containerRatio) {
+        width = container.width * mask.scale;
+        height = (container.width / imageRatio) * mask.scale;
+      } else {
+        height = container.height * mask.scale;
+        width = container.height * imageRatio * mask.scale;
+      }
+    } else {
+      // cover - default
+      const containerRatio = container.width / container.height;
+      const imageRatio = imageWidth / imageHeight;
+      if (imageRatio > containerRatio) {
+        height = container.height * mask.scale;
+        width = container.height * imageRatio * mask.scale;
+      } else {
+        width = container.width * mask.scale;
+        height = (container.width / imageRatio) * mask.scale;
+      }
+    }
+
+    // Calculate position based on anchor
+    const anchorX = mask.anchor.x;
+    const anchorY = mask.anchor.y;
+    
+    // Anchor relative to container
+    const containerCenterX = container.x + container.width * anchorX;
+    const containerCenterY = container.y + container.height * anchorY;
+    
+    const x = containerCenterX - width * anchorX + mask.offset.dx;
+    const y = containerCenterY - height * anchorY + mask.offset.dy;
+
+    return { x, y, width, height };
   }
 
   subscribe(listener: () => void): () => void {

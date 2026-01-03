@@ -4,14 +4,15 @@ import { AgentSnapshot, WCCAgentConfig } from '@/lib/wcc-agent';
 interface PlaygroundCanvasProps {
   config: WCCAgentConfig;
   snapshot: AgentSnapshot | null;
+  maskImageUrl?: string | null;
 }
 
-export function PlaygroundCanvas({ config, snapshot }: PlaygroundCanvasProps) {
-  const { canvasWidth = 1400, canvasHeight = 1400, gridEnabled, gridStep = 20, highlightEnabled } = config;
+export function PlaygroundCanvas({ config, snapshot, maskImageUrl }: PlaygroundCanvasProps) {
+  const { canvasWidth = 1400, canvasHeight = 1400, gridEnabled, gridStep = 20, highlightEnabled, mask } = config;
   
   if (!snapshot) return null;
 
-  const { containerRect, safeRect } = snapshot;
+  const { containerRect, safeRect, maskRect } = snapshot;
 
   return (
     <svg
@@ -21,9 +22,10 @@ export function PlaygroundCanvas({ config, snapshot }: PlaygroundCanvasProps) {
       className="bg-background border border-border rounded-lg"
       style={{ maxWidth: '100%', height: 'auto' }}
     >
-      {/* Grid */}
-      {gridEnabled && (
-        <defs>
+      {/* Definitions */}
+      <defs>
+        {/* Grid pattern */}
+        {gridEnabled && (
           <pattern
             id="grid"
             width={gridStep}
@@ -38,8 +40,29 @@ export function PlaygroundCanvas({ config, snapshot }: PlaygroundCanvasProps) {
               opacity="0.3"
             />
           </pattern>
-        </defs>
-      )}
+        )}
+
+        {/* Safe zone hatch pattern */}
+        <pattern
+          id="safe-hatch"
+          width="8"
+          height="8"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(45)"
+        >
+          <line
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="8"
+            stroke="hsl(var(--destructive))"
+            strokeWidth="1"
+            opacity="0.4"
+          />
+        </pattern>
+      </defs>
+
+      {/* Grid */}
       {gridEnabled && (
         <rect width={canvasWidth} height={canvasHeight} fill="url(#grid)" />
       )}
@@ -69,26 +92,6 @@ export function PlaygroundCanvas({ config, snapshot }: PlaygroundCanvasProps) {
       </text>
 
       {/* Safe Zone */}
-      <defs>
-        <pattern
-          id="safe-hatch"
-          width="8"
-          height="8"
-          patternUnits="userSpaceOnUse"
-          patternTransform="rotate(45)"
-        >
-          <line
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="8"
-            stroke="hsl(var(--destructive))"
-            strokeWidth="1"
-            opacity="0.4"
-          />
-        </pattern>
-      </defs>
-      
       <rect
         x={safeRect.x}
         y={safeRect.y}
@@ -114,6 +117,60 @@ export function PlaygroundCanvas({ config, snapshot }: PlaygroundCanvasProps) {
       >
         SAFE ZONE
       </text>
+
+      {/* Mask Image */}
+      {maskRect && maskImageUrl && mask && (
+        <>
+          <image
+            href={maskImageUrl}
+            x={maskRect.x}
+            y={maskRect.y}
+            width={maskRect.width}
+            height={maskRect.height}
+            opacity={mask.opacity}
+            preserveAspectRatio="none"
+          />
+          
+          {/* Mask bounding box */}
+          <rect
+            x={maskRect.x}
+            y={maskRect.y}
+            width={maskRect.width}
+            height={maskRect.height}
+            fill="none"
+            stroke="hsl(var(--chart-2))"
+            strokeWidth="1"
+            strokeDasharray="6 3"
+            opacity="0.8"
+          />
+
+          {/* Anchor point indicator */}
+          <circle
+            cx={maskRect.x + maskRect.width * mask.anchor.x}
+            cy={maskRect.y + maskRect.height * mask.anchor.y}
+            r={6}
+            fill="hsl(var(--chart-2))"
+            stroke="white"
+            strokeWidth="2"
+          />
+          <line
+            x1={maskRect.x + maskRect.width * mask.anchor.x - 10}
+            y1={maskRect.y + maskRect.height * mask.anchor.y}
+            x2={maskRect.x + maskRect.width * mask.anchor.x + 10}
+            y2={maskRect.y + maskRect.height * mask.anchor.y}
+            stroke="white"
+            strokeWidth="2"
+          />
+          <line
+            x1={maskRect.x + maskRect.width * mask.anchor.x}
+            y1={maskRect.y + maskRect.height * mask.anchor.y - 10}
+            x2={maskRect.x + maskRect.width * mask.anchor.x}
+            y2={maskRect.y + maskRect.height * mask.anchor.y + 10}
+            stroke="white"
+            strokeWidth="2"
+          />
+        </>
+      )}
 
       {/* Center crosshair */}
       <line
