@@ -107,20 +107,9 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   }, [setTheme, setActiveThemeId, walletProfile?.wallet_address]);
 
-  // Apply active theme when initialized
-  useEffect(() => {
-    if (activeThemeId && themes.length > 0 && !isLoading) {
-      const activeTheme = themes.find(t => t.id === activeThemeId);
-      if (activeTheme && activeTheme.themeData) {
-        console.log('[CF] Applying initial active theme with data:', activeTheme.name);
-        try {
-          applyJsonTheme(activeTheme.themeData, activeTheme.id);
-        } catch (error) {
-          console.error('[CF] 💥 Error applying initial theme:', error);
-        }
-      }
-    }
-  }, [activeThemeId, themes, isLoading, applyJsonTheme]);
+  // REMOVED: duplicate useEffect that caused race condition
+  // Theme is already applied via handleThemeClick → selectTheme
+  // Double setTheme calls created competing RAF callbacks
 
   // FIXED: Simplified click handler with race condition prevention
   const handleThemeClick = useCallback(async (theme: any) => {

@@ -86,7 +86,7 @@ export function applyValueToNodeUnified(
 
   if (key === 'background') {
     el.style.background = String(value);
-    el.style.removeProperty('background-color');
+    // Do NOT removeProperty('background-color') — prevents race condition
     console.log('[Runtime] ✅ Applied background');
     return;
   }
@@ -94,11 +94,11 @@ export function applyValueToNodeUnified(
   if (key === 'backgroundcolor') {
     if (isGradient) {
       el.style.background = String(value);
-      el.style.removeProperty('background-color');
+      // Do NOT removeProperty('background-color') — React inline styles use it
       console.log('[Runtime] ✅ Applied gradient');
     } else {
       el.style.backgroundColor = String(value);
-      el.style.removeProperty('background');
+      // Do NOT removeProperty('background') — prevents race condition with React
       console.log('[Runtime] ✅ Applied backgroundColor');
     }
     return;
@@ -154,10 +154,8 @@ export function applyValueToNodeUnified(
   if (key === 'containercolor') {
     if (isGradient) {
       el.style.background = String(value);
-      el.style.removeProperty('background-color');
     } else {
       el.style.backgroundColor = String(value);
-      el.style.removeProperty('background');
     }
     console.log('[Runtime] ✅ Applied containerColor');
     return;
@@ -310,6 +308,7 @@ function applyStyleToPath(theme: any, jsonPath: string) {
 // ============================================================================
 
 let lastManualEditAt = 0;
+let pendingRAF: number | null = null;
 
 export function setupMappingWatcher(getTheme: () => any) {
   let lastTheme: any = null;
@@ -317,29 +316,33 @@ export function setupMappingWatcher(getTheme: () => any) {
   const handleThemeUpdate = (event: CustomEvent) => {
     const { theme, updatedPath, forceFullApply } = event.detail;
     
-    // ✅ DIAGNOSTIC LOGS
     console.log('🎯 [RME] theme-updated EVENT received');
     console.log('🎯 [RME] Event theme name:', theme?.name);
-    console.log('🎯 [RME] Event theme lockLayer bg:', theme?.lockLayer?.backgroundColor);
-    console.log('🎯 [RME] Previous lastTheme name:', lastTheme?.name);
     console.log('🎯 [RME] forceFullApply:', forceFullApply);
     console.log('🎯 [RME] updatedPath:', updatedPath);
     
     if (!theme) return;
     lastTheme = theme;
-    console.log('🎯 [RME] lastTheme UPDATED to:', theme?.name);
     
     // Check if Lock Layer is currently visible
     const isLockLayerVisible = !!document.querySelector('[data-element-id="unlock-screen-container"]');
     
-    // ✅ FORCED full apply with double RAF for Lock Layer
+    // ✅ FORCED full apply with RAF cancel to prevent race conditions
     if (forceFullApply) {
+      // Cancel any pending RAF from previous theme switch
+      if (pendingRAF !== null) {
+        cancelAnimationFrame(pendingRAF);
+        pendingRAF = null;
+        console.log('[Runtime] 🚫 Cancelled previous pending RAF');
+      }
+      
       if (isLockLayerVisible) {
-        // 🔄 Double RAF ensures React renders before we apply styles
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
+        // Double RAF ensures React renders before we apply styles
+        pendingRAF = requestAnimationFrame(() => {
+          pendingRAF = requestAnimationFrame(() => {
             console.log('[Runtime] 🔄 FORCED full apply (Lock Layer, double RAF)');
             applyThemeToDOM(theme);
+            pendingRAF = null;
           });
         });
       } else {
