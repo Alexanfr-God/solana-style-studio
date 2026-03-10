@@ -55,11 +55,11 @@ export function useNftEscrow() {
       console.log('[escrow] 🔒 Starting NFT escrow...');
       console.log('[escrow] NFT Mint:', nftMint);
       console.log('[escrow] From:', fromWallet);
-      console.log('[escrow] To Escrow:', MARKETPLACE_CONFIG.ESCROW_WALLET);
+      console.log('[escrow] To Escrow:', MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
 
       const mintPubkey = new PublicKey(nftMint);
       const fromPubkey = new PublicKey(fromWallet);
-      const escrowPubkey = new PublicKey(MARKETPLACE_CONFIG.ESCROW_WALLET);
+      const escrowPubkey = new PublicKey(MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
 
       // Get token accounts
       const fromTokenAccount = await getAssociatedTokenAddress(

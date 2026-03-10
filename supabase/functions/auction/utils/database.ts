@@ -214,3 +214,19 @@ export async function updateNFT(
     throw new Error(`Failed to update NFT: ${error}`);
   }
 }
+
+/**
+ * Generic fetch with service role headers (for use in handlers)
+ */
+export async function fetchWithHeaders(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...headers,
+      ...(options.headers || {}),
+    },
+  });
+}
