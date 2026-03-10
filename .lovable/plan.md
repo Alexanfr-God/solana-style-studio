@@ -1,122 +1,92 @@
 
 
-## Диагностика: почему пропадает окрас на Unlock Button и Search Input
+## Анализ цепочки Buy / Escrow / Auction — найденные баги
 
-### Корневая причина (100%)
+### Критический баг 1: `getEscrowKeypair` не экспортирован
 
-В проекте работают **ДВЕ системы стилизации одновременно** на одних и тех же DOM-элементах:
+В `supabase/functions/auction/utils/solana.ts` функция `getEscrowKeypair` объявлена как `function getEscrowKeypair()` (без `export`), но импортируется в:
+- `handlers/bid.ts` (строка 13)
+- `handlers/finalize.ts` (строка 9)
 
-1. **React inline styles** — через `previewData` в `WalletPreviewContainer.tsx` (строки 236, 287)
-2. **RuntimeMappingEngine** — через DOM-манипуляцию в `runtimeMappingEngine.ts` (строка 100)
+Это вызовет runtime ошибку при любом вызове bid или finalize.
 
-Проблема возникает из-за конфликта при переключении тем:
-
-```text
-Шаг 1: Пользователь кликает на новую тему
-Шаг 2: setTheme(newTheme) обновляет Zustand store
-Шаг 3: React re-render — ставит ПРАВИЛЬНЫЕ inline styles
-Шаг 4: Одновременно dispatched event "theme-updated" с forceFullApply
-Шаг 5: runtimeMappingEngine делает double requestAnimationFrame
-Шаг 6: Через 2 кадра applyThemeToDOM() применяет стили через DOM
-
-НО: между шагами 3 и 6, если в runtimeMappingEngine
-обрабатывается gradient-значение, вызывается:
-  el.style.removeProperty('background-color')  // строка 97
-
-Это УДАЛЯЕТ backgroundColor, который React поставил в шаге 3.
-```
-
-### Конкретный механизм сбоя
-
-В файле `runtimeMappingEngine.ts`, строки 94-105:
-
-```typescript
-if (key === 'backgroundcolor') {
-    if (isGradient) {
-      el.style.background = String(value);
-      el.style.removeProperty('background-color');  // <-- УДАЛЯЕТ React inline style!
-    } else {
-      el.style.backgroundColor = String(value);
-      el.style.removeProperty('background');
-    }
-}
-```
-
-Когда предыдущая тема имела gradient-значение для backgroundColor (например `linear-gradient(...)`), engine вызывает `removeProperty('background-color')`. При переключении на новую тему:
-
-1. React ставит `backgroundColor: "#F2A23A"` (inline)
-2. Старый RAF callback (от предыдущей темы) еще не выполнился
-3. Новый `theme-updated` event запускает НОВЫЙ double RAF
-4. Возникает момент, когда `background-color` удалён, а новый еще не применён
-
-Session replay подтверждает: `background-color` устанавливается в `false` (rrweb обозначение "свойство удалено").
-
-### Вторая причина: useEffect в ThemeSelectorCoverflow
-
-Файл `ThemeSelectorCoverflow.tsx`, строки 110-123:
-
-```typescript
-useEffect(() => {
-    if (activeThemeId && themes.length > 0 && !isLoading) {
-      const activeTheme = themes.find(t => t.id === activeThemeId);
-      if (activeTheme && activeTheme.themeData) {
-        applyJsonTheme(activeTheme.themeData, activeTheme.id);
-      }
-    }
-}, [activeThemeId, themes, isLoading, applyJsonTheme]);
-```
-
-Этот useEffect вызывает `applyJsonTheme` каждый раз при смене `activeThemeId`. Это приводит к ДВОЙНОМУ вызову `setTheme` — первый раз из `selectTheme()`, второй раз из этого useEffect. Хотя `setTheme` имеет проверку на одинаковые данные, каждый вызов отправляет `theme-updated` event с `forceFullApply: true`, создавая гонку RAF callbacks.
+**Исправление:** добавить `export` к `getEscrowKeypair`.
 
 ---
 
-### План исправления
+### Критический баг 2: Несовместимый формат парсинга `escrow_wallet`
 
-#### Шаг 1: Защита от удаления backgroundColor в runtimeMappingEngine.ts
+Две функции парсят секрет `escrow_wallet` **по-разному**:
 
-В `applyValueToNodeUnified` добавить проверку: не удалять `background-color` если элемент имеет React inline style.
+| Файл | Метод | Ожидаемый формат |
+|------|-------|-----------------|
+| `auction/utils/solana.ts` (строка 43) | `JSON.parse()` → `Uint8Array` | JSON массив чисел `[1,2,3...]` |
+| `get-escrow-pubkey/index.ts` (строка 30) | `bs58.decode()` | Base58 строка |
 
+Один из них **гарантированно падает** в зависимости от того, в каком формате хранится секрет.
+
+**Исправление:** унифицировать парсинг — сначала пробовать JSON.parse, если не получилось — bs58.decode. Применить одинаковую логику во всех файлах.
+
+---
+
+### Критический баг 3: `fetchWithHeaders` не экспортируется из `database.ts`
+
+В `finalize.ts` строка 170:
 ```typescript
-if (key === 'backgroundcolor') {
-    if (isGradient) {
-      el.style.background = String(value);
-      // НЕ удалять background-color — React может использовать его
-    } else {
-      el.style.backgroundColor = String(value);
-    }
-}
+const { fetchWithHeaders } = await import('../utils/database.ts');
 ```
 
-#### Шаг 2: Убрать дублирующий useEffect в ThemeSelectorCoverflow.tsx
+Но в `database.ts` **нет функции `fetchWithHeaders`**. Все функции используют локальную переменную `headers` напрямую. Refund всех проигравших биддеров **всегда падает**.
 
-Удалить или переработать useEffect (строки 110-123), который повторно вызывает `applyJsonTheme` при смене `activeThemeId`. Тема уже применяется в `handleThemeClick` -> `selectTheme`. Дублирование создает race condition.
+**Исправление:** добавить экспортируемую функцию `fetchWithHeaders` в `database.ts`.
 
-#### Шаг 3: Добавить debounce/cancel для RAF в runtimeMappingEngine
+---
 
-Отменять предыдущий pending RAF callback при получении нового `theme-updated` event, чтобы старый callback не конфликтовал с новым.
+### Критический баг 4: `useNftEscrow` использует пустой `ESCROW_WALLET`
 
+В `src/hooks/useNftEscrow.ts` строка 62:
 ```typescript
-let pendingRAF: number | null = null;
-
-if (forceFullApply && isLockLayerVisible) {
-    if (pendingRAF) cancelAnimationFrame(pendingRAF);
-    pendingRAF = requestAnimationFrame(() => {
-        pendingRAF = requestAnimationFrame(() => {
-            applyThemeToDOM(theme);
-            pendingRAF = null;
-        });
-    });
-}
+const escrowPubkey = new PublicKey(MARKETPLACE_CONFIG.ESCROW_WALLET);
 ```
 
-### Затронутые файлы
+Но `MARKETPLACE_CONFIG.ESCROW_WALLET = ''` (пустая строка). Это вызывает ошибку `Invalid public key input` при каждом вызове escrow.
 
-| Файл | Изменение |
-|------|-----------|
-| `src/services/runtimeMappingEngine.ts` | Убрать `removeProperty`, добавить RAF cancel |
-| `src/components/customization/ThemeSelectorCoverflow.tsx` | Убрать дублирующий useEffect |
+Нужно использовать `ESCROW_WALLET_PUBLIC_KEY` вместо `ESCROW_WALLET`.
 
-### Ожидаемый результат
+---
 
-После исправления: Unlock Button и Search Input сохраняют свои цвета из JSON-темы при любом переключении, без мерцания и сброса в белый цвет.
+### Баг 5: `transferSOLPayment` — фиктивная функция
+
+В `solana.ts` строки 216-221: `transferSOLPayment` НЕ отправляет реальную транзакцию, а возвращает фейковую подпись. Транзакция создается с `feePayer = winnerPubkey`, но подписывается только escrow. Winner никогда не подписывает.
+
+Это архитектурная проблема — при аукционе SOL уже лежит в escrow (биддер перевел при размещении ставки), поэтому при финализации escrow должен распределить SOL, а не winner.
+
+**Исправление:** переписать `transferSOLPayment` чтобы escrow (у которого есть keypair) отправлял SOL продавцу из своего баланса.
+
+---
+
+### Баг 6: `nft_bids` таблица — нет RLS для UPDATE
+
+Refund-логика пытается делать `PATCH` на `nft_bids`, но RLS не позволяет UPDATE. Однако используется `service_role_key`, поэтому RLS обходится. Это ОК.
+
+---
+
+### План исправлений
+
+#### Файл 1: `supabase/functions/auction/utils/solana.ts`
+- Экспортировать `getEscrowKeypair`
+- Унифицировать парсинг ключа (JSON + bs58 fallback)
+- Переписать `transferSOLPayment`: escrow платит продавцу из своего баланса
+
+#### Файл 2: `supabase/functions/auction/utils/database.ts`
+- Добавить экспортируемую функцию `fetchWithHeaders`
+
+#### Файл 3: `supabase/functions/get-escrow-pubkey/index.ts`
+- Унифицировать парсинг ключа (JSON + bs58 fallback)
+
+#### Файл 4: `src/hooks/useNftEscrow.ts`
+- Заменить `MARKETPLACE_CONFIG.ESCROW_WALLET` на `MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY`
+
+#### Файл 5: `src/config/marketplace.ts`
+- Удалить мертвые поля `PLATFORM_FEE_WALLET` и `ESCROW_WALLET` (пустые строки, вводят в заблуждение)
 
