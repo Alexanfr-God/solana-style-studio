@@ -13,9 +13,11 @@ import {
 import {
   getAssociatedTokenAddress,
   createTransferInstruction,
+  createAssociatedTokenAccountInstruction,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from 'https://esm.sh/@solana/spl-token@0.3.11';
+import bs58 from 'https://esm.sh/bs58@6.0.0';
 
 const SOLANA_RPC_URL = 'https://api.devnet.solana.com';
 const PLATFORM_FEE_BPS = 1000; // 10%
@@ -29,9 +31,31 @@ export function getConnection(): Connection {
 }
 
 /**
+ * Parse escrow wallet secret key (supports JSON array and Base58 formats)
+ */
+function parseSecretKey(raw: string): Uint8Array {
+  // Try JSON array first: [1,2,3,...]
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return new Uint8Array(parsed);
+    }
+  } catch {
+    // Not JSON, try Base58
+  }
+
+  // Try Base58
+  try {
+    return bs58.decode(raw);
+  } catch {
+    throw new Error('escrow_wallet secret is neither valid JSON array nor Base58');
+  }
+}
+
+/**
  * Get escrow wallet keypair from environment
  */
-function getEscrowKeypair(): Keypair {
+export function getEscrowKeypair(): Keypair {
   const escrowWalletPrivateKey = Deno.env.get('escrow_wallet');
   
   if (!escrowWalletPrivateKey) {
@@ -39,9 +63,8 @@ function getEscrowKeypair(): Keypair {
   }
 
   try {
-    // Parse the private key (expects base58 or array of numbers)
-    const secretKey = JSON.parse(escrowWalletPrivateKey);
-    return Keypair.fromSecretKey(new Uint8Array(secretKey));
+    const secretKey = parseSecretKey(escrowWalletPrivateKey);
+    return Keypair.fromSecretKey(secretKey);
   } catch (error) {
     console.error('[solana] Failed to parse escrow_wallet:', error);
     throw new Error('Invalid escrow_wallet format');
@@ -104,12 +127,6 @@ export async function transferNFTFromEscrow(
   const winnerAccountInfo = await connection.getAccountInfo(winnerTokenAccount);
   if (!winnerAccountInfo) {
     console.log('[solana] Creating associated token account for winner...');
-    
-    // Add instruction to create associated token account
-    const { createAssociatedTokenAccountInstruction } = await import(
-      'https://esm.sh/@solana/spl-token@0.3.11'
-    );
-    
     transaction.add(
       createAssociatedTokenAccountInstruction(
         escrowKeypair.publicKey, // payer
@@ -148,77 +165,52 @@ export async function transferNFTFromEscrow(
 }
 
 /**
- * Transfer SOL from winner to seller (with fees to platform)
+ * Transfer SOL from escrow to seller (escrow already holds bidder's SOL)
+ * Platform fee stays in escrow wallet (escrow = platform wallet)
  */
 export async function transferSOLPayment(
-  winnerAddress: string,
+  _winnerAddress: string,
   sellerAddress: string,
   priceLamports: number
 ): Promise<string> {
-  console.log('[solana] Processing SOL payment...');
-  console.log('[solana] Winner:', winnerAddress);
+  console.log('[solana] Processing SOL payment from escrow...');
   console.log('[solana] Seller:', sellerAddress);
   console.log('[solana] Price:', priceLamports, 'lamports');
 
   const connection = getConnection();
   const escrowKeypair = getEscrowKeypair();
-  
-  const winnerPubkey = new PublicKey(winnerAddress);
   const sellerPubkey = new PublicKey(sellerAddress);
-  const platformWalletPubkey = escrowKeypair.publicKey; // Platform wallet = escrow wallet
 
   // Calculate fees
   const { platformFee, royaltyFee, sellerReceives } = calculateFees(priceLamports);
 
-  console.log('[solana] Platform fee:', platformFee, 'lamports');
-  console.log('[solana] Royalty fee:', royaltyFee, 'lamports');
+  console.log('[solana] Platform fee (stays in escrow):', platformFee + royaltyFee, 'lamports');
   console.log('[solana] Seller receives:', sellerReceives, 'lamports');
 
-  // Build transaction
+  // Build transaction: escrow sends seller's share
   const transaction = new Transaction();
 
-  // Transfer to seller (minus fees)
   transaction.add(
     SystemProgram.transfer({
-      fromPubkey: winnerPubkey,
+      fromPubkey: escrowKeypair.publicKey,
       toPubkey: sellerPubkey,
       lamports: sellerReceives,
     })
   );
 
-  // Transfer platform fee
-  transaction.add(
-    SystemProgram.transfer({
-      fromPubkey: winnerPubkey,
-      toPubkey: platformWalletPubkey,
-      lamports: platformFee,
-    })
+  // Send transaction signed by escrow
+  console.log('[solana] Sending SOL payment transaction...');
+  const signature = await sendAndConfirmTransaction(
+    connection,
+    transaction,
+    [escrowKeypair],
+    {
+      commitment: 'confirmed',
+    }
   );
 
-  // Transfer royalty fee (to platform for now, can be to creator later)
-  transaction.add(
-    SystemProgram.transfer({
-      fromPubkey: winnerPubkey,
-      toPubkey: platformWalletPubkey,
-      lamports: royaltyFee,
-    })
-  );
-
-  // Get recent blockhash
-  const { blockhash } = await connection.getLatestBlockhash();
-  transaction.recentBlockhash = blockhash;
-  transaction.feePayer = winnerPubkey;
-
-  // NOTE: This transaction needs to be signed by the winner's wallet
-  // In a real implementation, this would be done client-side
-  // For now, we'll return unsigned transaction or use a different approach
-  
-  console.log('[solana] ⚠️ SOL payment transaction prepared but not sent');
-  console.log('[solana] ⚠️ This requires winner\'s wallet signature (client-side)');
-  
-  // Return a placeholder signature for now
-  // In production, this would be handled differently (winner signs transaction)
-  return `sol_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  console.log('[solana] ✅ SOL payment sent! Signature:', signature);
+  return signature;
 }
 
 /**
@@ -242,7 +234,7 @@ export async function finalizeAuctionOnChain(
       winnerAddress
     );
 
-    // Step 2: Process SOL payment (winner -> seller + fees)
+    // Step 2: Process SOL payment (escrow -> seller minus fees)
     const solPaymentSignature = await transferSOLPayment(
       winnerAddress,
       sellerAddress,

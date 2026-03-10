@@ -11,6 +11,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Parse escrow wallet secret key (supports JSON array and Base58 formats)
+ */
+function parseSecretKey(raw: string): Uint8Array {
+  // Try JSON array first: [1,2,3,...]
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return new Uint8Array(parsed);
+    }
+  } catch {
+    // Not JSON, try Base58
+  }
+
+  // Try Base58
+  try {
+    return bs58.decode(raw);
+  } catch {
+    throw new Error('escrow_wallet secret is neither valid JSON array nor Base58');
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -26,8 +48,8 @@ Deno.serve(async (req) => {
       throw new Error('Escrow wallet not configured');
     }
 
-    // Parse the keypair from the secret
-    const secretKey = bs58.decode(escrowWalletSecret);
+    // Parse the keypair from the secret (unified parsing)
+    const secretKey = parseSecretKey(escrowWalletSecret);
     const keypair = Keypair.fromSecretKey(secretKey);
     const publicKey = keypair.publicKey.toString();
 

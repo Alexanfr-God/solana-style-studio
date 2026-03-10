@@ -11,16 +11,8 @@ export const MARKETPLACE_CONFIG = {
   // Royalty fee in basis points (500 = 5%)
   ROYALTY_FEE_BPS: 500,
   
-  // Platform wallet address (Solana) - loaded from environment/secrets
-  // This will be set dynamically from escrow_wallet secret
-  PLATFORM_FEE_WALLET: '', // Set dynamically in edge functions
-  
-  // Escrow wallet for holding NFTs during auctions (same as platform wallet for MVP)
-  ESCROW_WALLET: '', // Set dynamically from escrow_wallet secret
-  
   // Escrow wallet PUBLIC key (safe to expose, used for client-side transfers)
-  // This should be set to match your escrow_wallet secret's public key
-  // Get it by running: solana-keygen pubkey <path-to-keypair.json>
+  // This should match the public key derived from the escrow_wallet secret
   ESCROW_WALLET_PUBLIC_KEY: 'HzVB3L8hRALUq37WRNbj3RDjfm2fYRBVJQvxMYCQ6Qfx', // TODO: Update with actual escrow public key
   
   // Price limits (in lamports)
