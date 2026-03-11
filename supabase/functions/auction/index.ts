@@ -5,7 +5,7 @@
  * Handles: create, bid, cancel, finalize, auto-finalize
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+const serve = Deno.serve;
 import { CORS_HEADERS } from './utils/constants.ts';
 import { handleCreateAuction } from './handlers/create.ts';
 import { handlePlaceBid } from './handlers/bid.ts';

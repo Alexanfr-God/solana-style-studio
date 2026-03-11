@@ -7,7 +7,7 @@ import { validateFinalizeAuction, canFinalizeAuction } from '../utils/validation
 import { fetchAuction, updateAuction, updateNFT } from '../utils/database.ts';
 import { STUB_MODE } from '../utils/constants.ts';
 import { finalizeAuctionOnChain, calculateFees, getConnection, getEscrowKeypair } from '../utils/solana.ts';
-import { PublicKey, Transaction, SystemProgram } from 'https://esm.sh/@solana/web3.js@1.98.2';
+import { PublicKey, Transaction, SystemProgram } from 'npm:@solana/web3.js@1.98.2';
 
 export async function handleFinalizeAuction(
   request: FinalizeAuctionRequest

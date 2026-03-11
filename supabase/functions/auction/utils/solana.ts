@@ -9,15 +9,15 @@ import {
   SystemProgram,
   Keypair,
   sendAndConfirmTransaction,
-} from 'https://esm.sh/@solana/web3.js@1.98.2';
+} from 'npm:@solana/web3.js@1.98.2';
 import {
   getAssociatedTokenAddress,
   createTransferInstruction,
   createAssociatedTokenAccountInstruction,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-} from 'https://esm.sh/@solana/spl-token@0.3.11';
-import bs58 from 'https://esm.sh/bs58@6.0.0';
+} from 'npm:@solana/spl-token@0.3.11';
+import bs58 from 'npm:bs58@6.0.0';
 
 const SOLANA_RPC_URL = 'https://api.devnet.solana.com';
 const PLATFORM_FEE_BPS = 1000; // 10%
