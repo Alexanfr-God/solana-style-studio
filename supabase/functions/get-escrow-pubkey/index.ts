@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
     }
 
     // Parse the keypair from the secret (unified parsing)
-    const secretKey = parseSecretKey(escrowWalletSecret);
+    const { Keypair } = await getWeb3();
+    const secretKey = await parseSecretKey(escrowWalletSecret);
     const keypair = Keypair.fromSecretKey(secretKey);
     const publicKey = keypair.publicKey.toString();
 
