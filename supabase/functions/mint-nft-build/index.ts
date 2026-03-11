@@ -58,10 +58,9 @@ Deno.serve(async (req: Request) => {
       getMinimumBalanceForRentExemptMint, MINT_SIZE
     } = await import("npm:@solana/spl-token@0.3.11");
 
-    const {
-      createCreateMetadataAccountV3Instruction,
-      PROGRAM_ID as MPL_TOKEN_METADATA_PROGRAM_ID,
-    } = await import("npm:@metaplex-foundation/mpl-token-metadata@^2.0.0");
+    const mplModule = await import("npm:@metaplex-foundation/mpl-token-metadata@^2.0.0");
+    const createCreateMetadataAccountV3Instruction = mplModule.createCreateMetadataAccountV3Instruction;
+    const MPL_TOKEN_METADATA_PROGRAM_ID = mplModule.PROGRAM_ID;
 
     const MEMO_PROGRAM_ID = new PublicKey(MEMO_PROGRAM_ID_STR);
 
