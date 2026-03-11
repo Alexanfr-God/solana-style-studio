@@ -3,8 +3,22 @@
  * Returns the public key of the escrow wallet
  */
 
-import { Keypair } from 'npm:@solana/web3.js@1.98.2';
-import bs58 from 'npm:bs58@6.0.0';
+// Lazy-loaded modules to reduce static bundle size
+let _web3: any = null;
+let _bs58: any = null;
+
+async function getWeb3() {
+  if (!_web3) _web3 = await import('npm:@solana/web3.js@1.98.2');
+  return _web3;
+}
+
+async function getBs58() {
+  if (!_bs58) {
+    const mod = await import('npm:bs58@6.0.0');
+    _bs58 = mod.default || mod;
+  }
+  return _bs58;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,7 +28,7 @@ const corsHeaders = {
 /**
  * Parse escrow wallet secret key (supports JSON array and Base58 formats)
  */
-function parseSecretKey(raw: string): Uint8Array {
+async function parseSecretKey(raw: string): Promise<Uint8Array> {
   // Try JSON array first: [1,2,3,...]
   try {
     const parsed = JSON.parse(raw);
@@ -27,6 +41,7 @@ function parseSecretKey(raw: string): Uint8Array {
 
   // Try Base58
   try {
+    const bs58 = await getBs58();
     return bs58.decode(raw);
   } catch {
     throw new Error('escrow_wallet secret is neither valid JSON array nor Base58');
