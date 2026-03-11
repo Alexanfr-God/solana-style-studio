@@ -1,26 +1,54 @@
 // supabase/functions/mint-nft-solana/index.ts
+import { Buffer } from 'node:buffer';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function jsonResponse(status: number, body: any) {
+function jsonResponse(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
+async function parseSecretKey(raw: string): Promise<Uint8Array> {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return new Uint8Array(parsed);
+  } catch {
+    // fall through to base58
+  }
+
+  try {
+    const bs58Mod = await import('npm:bs58@6.0.0');
+    const bs58 = bs58Mod.default || bs58Mod;
+    return bs58.decode(raw);
+  } catch {
+    throw new Error('SOLANA_DEVNET_KEYPAIR must be valid JSON array or Base58');
+  }
+}
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { metadataUri, recipient, name = 'WCC Theme', symbol = 'WCC' } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const {
+      metadataUri,
+      recipient,
+      name = 'WCC Theme',
+      symbol = 'WCC',
+    } = body as {
+      metadataUri?: string;
+      recipient?: string;
+      name?: string;
+      symbol?: string;
+    };
 
-    // Validation
     if (!metadataUri || !recipient) {
       return jsonResponse(400, {
         success: false,
@@ -28,103 +56,164 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('[mint-nft-solana] 🚀 Start', { metadataUri, recipient, name });
-
-    // Get server wallet keypair
     const keyRaw = Deno.env.get('SOLANA_DEVNET_KEYPAIR');
     if (!keyRaw) {
-      console.error('[mint-nft-solana] ❌ SOLANA_DEVNET_KEYPAIR not set');
       return jsonResponse(500, {
         success: false,
         message: 'Server wallet not configured. Please add SOLANA_DEVNET_KEYPAIR secret.',
       });
     }
 
-    // Import Solana SDK (npm: prefix for Deno)
-    const { Connection, Keypair, PublicKey, clusterApiUrl } = await import('npm:@solana/web3.js@1.98.2');
-    const { Metaplex, keypairIdentity } = await import('npm:@metaplex-foundation/js@0.20.1');
+    const {
+      Connection,
+      Keypair,
+      PublicKey,
+      Transaction,
+      SystemProgram,
+      sendAndConfirmTransaction,
+      LAMPORTS_PER_SOL,
+    } = await import('npm:@solana/web3.js@1.98.2');
 
-    // Parse keypair (support JSON array format)
-    let secretBytes: Uint8Array;
-    const trimmedKey = keyRaw.trim();
-    
-    if (trimmedKey.startsWith('[')) {
-      // JSON array: [1,2,3,...]
-      secretBytes = new Uint8Array(JSON.parse(trimmedKey));
-    } else {
-      // Base58 (requires bs58)
-      const bs58 = await import('npm:bs58@5.0.0');
-      secretBytes = bs58.default.decode(trimmedKey);
+    const {
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      createInitializeMintInstruction,
+      createAssociatedTokenAccountInstruction,
+      createMintToInstruction,
+      createTransferInstruction,
+      getAssociatedTokenAddress,
+      getMinimumBalanceForRentExemptMint,
+      MINT_SIZE,
+    } = await import('npm:@solana/spl-token@0.3.11');
+
+    const mplModule = await import('npm:@metaplex-foundation/mpl-token-metadata@^2.0.0');
+    const createCreateMetadataAccountV3Instruction = mplModule.createCreateMetadataAccountV3Instruction;
+    const MPL_TOKEN_METADATA_PROGRAM_ID = mplModule.PROGRAM_ID;
+
+    const endpoint = Deno.env.get('HELIUS_DEVNET') || 'https://api.devnet.solana.com';
+    const connection = new Connection(endpoint, 'confirmed');
+
+    const payerSecret = await parseSecretKey(keyRaw.trim());
+    const payer = Keypair.fromSecretKey(payerSecret);
+    const recipientPubkey = new PublicKey(recipient);
+
+    const balance = await connection.getBalance(payer.publicKey);
+    if (balance < 0.02 * LAMPORTS_PER_SOL) {
+      return jsonResponse(400, {
+        success: false,
+        message: 'Insufficient server wallet balance on devnet (need at least 0.02 SOL).',
+      });
     }
 
-    const serverWallet = Keypair.fromSecretKey(secretBytes);
-    console.log('[mint-nft-solana] 🔑 Server wallet:', serverWallet.publicKey.toBase58());
+    const mintKeypair = Keypair.generate();
+    const mintAddress = mintKeypair.publicKey;
+    const mintRent = await getMinimumBalanceForRentExemptMint(connection);
 
-    // Connect to Solana (use HELIUS_DEVNET if available)
-    const rpcUrl = Deno.env.get('HELIUS_DEVNET') || clusterApiUrl('devnet');
-    console.log('[mint-nft-solana] 🌐 Using RPC:', rpcUrl);
-    console.log('[mint-nft-solana] 🔍 HELIUS_DEVNET env:', Deno.env.get('HELIUS_DEVNET') ? 'SET' : 'NOT SET');
-    
-    const connection = new Connection(rpcUrl, 'confirmed');
+    const payerAta = await getAssociatedTokenAddress(
+      mintAddress,
+      payer.publicKey,
+      false,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    );
 
-    // Check balance
-    console.log('[mint-nft-solana] 💰 Checking balance for:', serverWallet.publicKey.toBase58());
-    const balance = await connection.getBalance(serverWallet.publicKey);
-    console.log('[mint-nft-solana] 💰 Server balance:', balance / 1e9, 'SOL');
+    const recipientAta = await getAssociatedTokenAddress(
+      mintAddress,
+      recipientPubkey,
+      false,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    );
 
-    // Request airdrop if balance is low
-    if (balance < 0.01 * 1e9) {
-      console.warn('[mint-nft-solana] ⚠️ Low balance, requesting airdrop...');
-      try {
-        const airdropSig = await connection.requestAirdrop(serverWallet.publicKey, 1e9);
-        await connection.confirmTransaction(airdropSig);
-        console.log('[mint-nft-solana] ✅ Airdrop confirmed');
-      } catch (airdropError) {
-        console.error('[mint-nft-solana] ⚠️ Airdrop failed (rate limit?):', airdropError);
-        // Continue anyway, maybe we have enough for the transaction
-      }
+    const tx = new Transaction();
+
+    tx.add(
+      SystemProgram.createAccount({
+        fromPubkey: payer.publicKey,
+        newAccountPubkey: mintAddress,
+        space: MINT_SIZE,
+        lamports: mintRent,
+        programId: TOKEN_PROGRAM_ID,
+      }),
+    );
+
+    tx.add(createInitializeMintInstruction(mintAddress, 0, payer.publicKey, payer.publicKey, TOKEN_PROGRAM_ID));
+
+    tx.add(
+      createAssociatedTokenAccountInstruction(
+        payer.publicKey,
+        payerAta,
+        payer.publicKey,
+        mintAddress,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+      ),
+    );
+
+    tx.add(createMintToInstruction(mintAddress, payerAta, payer.publicKey, 1, [], TOKEN_PROGRAM_ID));
+
+    const [metadataAddress] = PublicKey.findProgramAddressSync(
+      [Buffer.from('metadata'), MPL_TOKEN_METADATA_PROGRAM_ID.toBuffer(), mintAddress.toBuffer()],
+      MPL_TOKEN_METADATA_PROGRAM_ID,
+    );
+
+    tx.add(
+      createCreateMetadataAccountV3Instruction(
+        {
+          metadata: metadataAddress,
+          mint: mintAddress,
+          mintAuthority: payer.publicKey,
+          payer: payer.publicKey,
+          updateAuthority: payer.publicKey,
+        },
+        {
+          createMetadataAccountArgsV3: {
+            data: {
+              name,
+              symbol,
+              uri: metadataUri,
+              sellerFeeBasisPoints: 0,
+              creators: null,
+              collection: null,
+              uses: null,
+            },
+            isMutable: false,
+            collectionDetails: null,
+          },
+        },
+      ),
+    );
+
+    const recipientAtaInfo = await connection.getAccountInfo(recipientAta);
+    if (!recipientAtaInfo) {
+      tx.add(
+        createAssociatedTokenAccountInstruction(
+          payer.publicKey,
+          recipientAta,
+          recipientPubkey,
+          mintAddress,
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+        ),
+      );
     }
 
-    // Initialize Metaplex
-    const metaplex = new Metaplex(connection).use(keypairIdentity(serverWallet));
+    tx.add(createTransferInstruction(payerAta, recipientAta, payer.publicKey, 1, [], TOKEN_PROGRAM_ID));
 
-    // Mint NFT
-    console.log('[mint-nft-solana] 🎨 Minting NFT...');
-    const { nft, response } = await metaplex.nfts().create({
-      uri: metadataUri,
-      name,
-      symbol,
-      sellerFeeBasisPoints: 0,
-      isMutable: false,
-    });
-
-    const mintAddress = nft.address.toBase58();
-    console.log('[mint-nft-solana] ✅ NFT minted:', mintAddress);
-
-    // Transfer to recipient
-    console.log('[mint-nft-solana] 📤 Transferring to:', recipient);
-    const recipientPk = new PublicKey(recipient);
-    
-    const transferResponse = await metaplex.nfts().transfer({
-      nftOrSft: nft,
-      toOwner: recipientPk,
-    });
-
-    console.log('[mint-nft-solana] ✅ Transfer confirmed:', transferResponse.response.signature);
+    const signature = await sendAndConfirmTransaction(connection, tx, [payer, mintKeypair], { commitment: 'confirmed' });
 
     return jsonResponse(200, {
       success: true,
-      mintAddress,
-      signature: response.signature,
-      transferSignature: transferResponse.response.signature,
-      explorerUrl: `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`,
+      mintAddress: mintAddress.toBase58(),
+      signature,
+      transferSignature: signature,
+      explorerUrl: `https://explorer.solana.com/address/${mintAddress.toBase58()}?cluster=devnet`,
       transferredTo: recipient,
     });
-
   } catch (error) {
-    console.error('[mint-nft-solana] ❌ Error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+    console.error('[mint-nft-solana] ❌ Error:', errorMessage);
+
     return jsonResponse(500, {
       success: false,
       message: 'Mint failed',
