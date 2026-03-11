@@ -5,7 +5,6 @@
  * Handles: create, bid, cancel, finalize, auto-finalize
  */
 
-const serve = Deno.serve;
 import { CORS_HEADERS } from './utils/constants.ts';
 import { handleCreateAuction } from './handlers/create.ts';
 import { handlePlaceBid } from './handlers/bid.ts';
@@ -13,7 +12,7 @@ import { handleCancelAuction } from './handlers/cancel.ts';
 import { handleFinalizeAuction, autoFinalizeExpiredAuctions } from './handlers/finalize.ts';
 import type { ApiResponse } from './types.ts';
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: CORS_HEADERS });
