@@ -117,7 +117,7 @@ export async function handleFinalizeAuction(
  * Refund SOL to all losing bidders
  */
 async function refundLosingBidders(
-  auctionId: string, winnerWallet: string
+  auctionId: string, winnerWallet: string, currentPriceLamports: number
 ): Promise<{ refunded: number; failed: number; errors: string[] }> {
   const results = { refunded: 0, failed: 0, errors: [] as string[] };
 
