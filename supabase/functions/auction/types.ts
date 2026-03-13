@@ -15,6 +15,7 @@ export interface Auction {
   end_at: string;
   winner_wallet: string | null;
   tx_signature: string | null;
+  seller_payment_signature: string | null;
   created_at: string;
   updated_at: string;
 }
