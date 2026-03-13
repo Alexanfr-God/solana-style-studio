@@ -2,7 +2,7 @@
  * Auction Module Types
  */
 
-export type AuctionStatus = 'active' | 'finished' | 'cancelled';
+export type AuctionStatus = 'active' | 'finalizing' | 'finished' | 'finalize_failed' | 'cancelled';
 
 export interface Auction {
   id: string;
