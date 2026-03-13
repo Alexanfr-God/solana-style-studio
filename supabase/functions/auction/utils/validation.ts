@@ -46,7 +46,7 @@ export function validateCreateAuction(params: {
       duration_hours < MIN_DURATION_HOURS || 
       duration_hours > MAX_DURATION_HOURS) {
     throw new ValidationError(
-      `Duration must be between ${MIN_DURATION_HOURS} hours (1 day) and ${MAX_DURATION_HOURS} hours (1 year)`
+      `Duration must be between ${MIN_DURATION_HOURS} and ${MAX_DURATION_HOURS} hours`
     );
   }
 }
