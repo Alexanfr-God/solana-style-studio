@@ -157,14 +157,14 @@ export async function transferNFTFromEscrow(nftMint: string, winnerAddress: stri
         { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       ],
       programId: ASSOCIATED_TOKEN_PROGRAM_ID,
-      data: Buffer.alloc(0),
+      data: new Uint8Array(0),
     }));
   }
 
   // SPL Token Transfer: instruction index 3 + u64 amount
-  const transferData = Buffer.alloc(9);
-  transferData.writeUInt8(3, 0);
-  transferData.writeBigUInt64LE(BigInt(1), 1);
+  const transferData = new Uint8Array(9);
+  transferData[0] = 3;
+  new DataView(transferData.buffer).setBigUint64(1, BigInt(1), true);
   transaction.add(new TransactionInstruction({
     keys: [
       { pubkey: escrowTokenAccount, isSigner: false, isWritable: true },
