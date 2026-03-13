@@ -1,0 +1,1 @@
+INSERT INTO public.minted_themes (mint_address, owner_address, metadata_uri, tx_sig, theme_name, is_listed, network) VALUES ('TEST_MINT_RUNBOOK_001', 'SELLER_WALLET_TEST_001', 'https://test.uri/meta.json', 'stub_mint_tx', 'Runbook Test Theme', false, 'devnet') ON CONFLICT DO NOTHING;
