@@ -40,7 +40,8 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Hardcoded escrow public key (must match frontend MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY)
+    // IMPORTANT: Must match ESCROW_WALLET_PUBLIC_KEY in src/config/marketplace.ts
+    // and the public key derived from escrow_wallet secret. Update after running generate-escrow-keypair.
     const ESCROW_PUBLIC_KEY = 'HzVB3L8hRALUq37WRNbj3RDjfm2fYRBVJQvxMYCQ6Qfx';
 
     console.log('[buy_nft] 🏦 Escrow public key:', ESCROW_PUBLIC_KEY);
