@@ -134,7 +134,7 @@ async function refundLosingBidders(
 
     // Exclude only the single winning bid (winner_wallet + current_price_lamports).
     // All other bids — including the winner's earlier lower bids — must be refunded.
-    const currentPrice = auction?.current_price_lamports;
+    const currentPrice = currentPriceLamports;
     let winningBidExcluded = false;
     const losingBids = allBids.filter((bid) => {
       if (
