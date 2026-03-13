@@ -89,7 +89,7 @@ export async function handleFinalizeAuction(
     await updateNFT(auction.nft_mint, { owner_address: auction.winner_wallet, is_listed: false, price_lamports: null });
 
     console.log('[finalize-auction] 🔄 Processing refunds for losing bidders...');
-    const refundResults = await refundLosingBidders(auction_id, auction.winner_wallet);
+    const refundResults = await refundLosingBidders(auction_id, auction.winner_wallet, auction.current_price_lamports);
 
     const fees = calculateFees(auction.current_price_lamports);
     return {
