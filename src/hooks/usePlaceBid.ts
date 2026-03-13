@@ -1,5 +1,6 @@
 /**
  * Place Bid Hook with SOL Escrow (AppKit Integration)
+ * Supports STUB_MODE via VITE_AUCTION_STUB_MODE env var for testing without real SOL transfers.
  */
 
 import { useState } from 'react';
@@ -8,6 +9,8 @@ import { useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MARKETPLACE_CONFIG } from '@/config/marketplace';
+
+const STUB_MODE = import.meta.env.VITE_AUCTION_STUB_MODE === 'true';
 
 interface PlaceBidParams {
   auction_id: string;
@@ -20,50 +23,56 @@ export function usePlaceBid() {
   const [isPlacing, setIsPlacing] = useState(false);
 
   const placeBid = async ({ auction_id, bid_price_lamports }: PlaceBidParams) => {
-    if (!isConnected || !address || !walletProvider) {
+    if (!isConnected || !address) {
       toast.error('Please connect your wallet');
       throw new Error('Wallet not connected');
     }
 
-    // Type assertion for walletProvider
-    const provider = walletProvider as any;
-    const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
-
     setIsPlacing(true);
 
     try {
-      const escrowPublicKey = new PublicKey(MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
+      let signature: string;
 
-      toast.info('Transferring SOL to escrow...');
+      if (STUB_MODE) {
+        // STUB: skip real SOL transfer, use placeholder signature
+        console.log('[usePlaceBid] STUB_MODE: skipping real SOL transfer');
+        toast.info('STUB MODE: Simulating bid...');
+        signature = `stub_client_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      } else {
+        if (!walletProvider) {
+          toast.error('Please connect your wallet');
+          throw new Error('Wallet provider not available');
+        }
 
-      // 1. Create SOL transfer transaction to escrow
-      const publicKey = new PublicKey(address);
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: escrowPublicKey,
-          lamports: bid_price_lamports,
-        })
-      );
+        const provider = walletProvider as any;
+        const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
+        const escrowPublicKey = new PublicKey(MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
 
-      // Get recent blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = publicKey;
+        toast.info('Transferring SOL to escrow...');
 
-      // 2. Sign and send transaction using AppKit provider
-      const signedTx = await provider.signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
+        const publicKey = new PublicKey(address);
+        const transaction = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: escrowPublicKey,
+            lamports: bid_price_lamports,
+          })
+        );
 
-      toast.info('Confirming transaction...');
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = publicKey;
 
-      // 3. Wait for confirmation
-      await connection.confirmTransaction(signature, 'confirmed');
+        const signedTx = await provider.signTransaction(transaction);
+        signature = await connection.sendRawTransaction(signedTx.serialize());
 
-      toast.success('SOL transferred to escrow!');
+        toast.info('Confirming transaction...');
+        await connection.confirmTransaction(signature, 'confirmed');
+        toast.success('SOL transferred to escrow!');
+      }
+
       toast.info('Creating bid...');
 
-      // 4. Call edge function with transaction signature
       const { data, error } = await supabase.functions.invoke('auction', {
         body: {
           action: 'bid',
