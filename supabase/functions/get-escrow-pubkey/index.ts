@@ -63,9 +63,12 @@ Deno.serve(async (req) => {
       throw new Error('Escrow wallet not configured');
     }
 
+    console.log('🔍 Secret length:', escrowWalletSecret.length, 'First 20 chars:', escrowWalletSecret.substring(0, 20));
+
     // Parse the keypair from the secret (unified parsing)
     const { Keypair } = await getWeb3();
     const secretKey = await parseSecretKey(escrowWalletSecret);
+    console.log('🔍 Parsed key length:', secretKey.length);
     const keypair = Keypair.fromSecretKey(secretKey);
     const publicKey = keypair.publicKey.toString();
 

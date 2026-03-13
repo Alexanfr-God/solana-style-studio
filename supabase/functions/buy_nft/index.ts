@@ -42,7 +42,7 @@ serve(async (req) => {
 
     // IMPORTANT: Must match ESCROW_WALLET_PUBLIC_KEY in src/config/marketplace.ts
     // and the public key derived from escrow_wallet secret. Update after running generate-escrow-keypair.
-    const ESCROW_PUBLIC_KEY = 'HzVB3L8hRALUq37WRNbj3RDjfm2fYRBVJQvxMYCQ6Qfx';
+    const ESCROW_PUBLIC_KEY = '4ykPyL9xMWJCCpbk92jrKKp5KWetkL36aCxcDe1mMV9q';
 
     console.log('[buy_nft] 🏦 Escrow public key:', ESCROW_PUBLIC_KEY);
 
