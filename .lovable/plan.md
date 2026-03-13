@@ -1,122 +1,147 @@
 
 
-## Диагностика: почему пропадает окрас на Unlock Button и Search Input
+# Auction System MVP — 6-Stage Implementation Plan
 
-### Корневая причина (100%)
+## Current State
+The auction system is ~80% built. The main blocker is an invalid `escrow_wallet` secret (public address instead of 64-byte keypair). Secondary issues: `bid.ts` ignores STUB_MODE, cancel doesn't return NFT, finalize doesn't send fees to treasury/royalty wallets, no idempotency guard.
 
-В проекте работают **ДВЕ системы стилизации одновременно** на одних и тех же DOM-элементах:
-
-1. **React inline styles** — через `previewData` в `WalletPreviewContainer.tsx` (строки 236, 287)
-2. **RuntimeMappingEngine** — через DOM-манипуляцию в `runtimeMappingEngine.ts` (строка 100)
-
-Проблема возникает из-за конфликта при переключении тем:
-
-```text
-Шаг 1: Пользователь кликает на новую тему
-Шаг 2: setTheme(newTheme) обновляет Zustand store
-Шаг 3: React re-render — ставит ПРАВИЛЬНЫЕ inline styles
-Шаг 4: Одновременно dispatched event "theme-updated" с forceFullApply
-Шаг 5: runtimeMappingEngine делает double requestAnimationFrame
-Шаг 6: Через 2 кадра applyThemeToDOM() применяет стили через DOM
-
-НО: между шагами 3 и 6, если в runtimeMappingEngine
-обрабатывается gradient-значение, вызывается:
-  el.style.removeProperty('background-color')  // строка 97
-
-Это УДАЛЯЕТ backgroundColor, который React поставил в шаге 3.
-```
-
-### Конкретный механизм сбоя
-
-В файле `runtimeMappingEngine.ts`, строки 94-105:
-
-```typescript
-if (key === 'backgroundcolor') {
-    if (isGradient) {
-      el.style.background = String(value);
-      el.style.removeProperty('background-color');  // <-- УДАЛЯЕТ React inline style!
-    } else {
-      el.style.backgroundColor = String(value);
-      el.style.removeProperty('background');
-    }
-}
-```
-
-Когда предыдущая тема имела gradient-значение для backgroundColor (например `linear-gradient(...)`), engine вызывает `removeProperty('background-color')`. При переключении на новую тему:
-
-1. React ставит `backgroundColor: "#F2A23A"` (inline)
-2. Старый RAF callback (от предыдущей темы) еще не выполнился
-3. Новый `theme-updated` event запускает НОВЫЙ double RAF
-4. Возникает момент, когда `background-color` удалён, а новый еще не применён
-
-Session replay подтверждает: `background-color` устанавливается в `false` (rrweb обозначение "свойство удалено").
-
-### Вторая причина: useEffect в ThemeSelectorCoverflow
-
-Файл `ThemeSelectorCoverflow.tsx`, строки 110-123:
-
-```typescript
-useEffect(() => {
-    if (activeThemeId && themes.length > 0 && !isLoading) {
-      const activeTheme = themes.find(t => t.id === activeThemeId);
-      if (activeTheme && activeTheme.themeData) {
-        applyJsonTheme(activeTheme.themeData, activeTheme.id);
-      }
-    }
-}, [activeThemeId, themes, isLoading, applyJsonTheme]);
-```
-
-Этот useEffect вызывает `applyJsonTheme` каждый раз при смене `activeThemeId`. Это приводит к ДВОЙНОМУ вызову `setTheme` — первый раз из `selectTheme()`, второй раз из этого useEffect. Хотя `setTheme` имеет проверку на одинаковые данные, каждый вызов отправляет `theme-updated` event с `forceFullApply: true`, создавая гонку RAF callbacks.
+## Architecture Decision
+Keep the current **custodial escrow** design. No Anchor/PDA rewrite. Minimal patches only.
 
 ---
 
-### План исправления
+## STAGE 1 — Escrow Foundation + Config Consistency
 
-#### Шаг 1: Защита от удаления backgroundColor в runtimeMappingEngine.ts
+**New file**: `supabase/functions/generate-escrow-keypair/index.ts`
+- One-time admin utility edge function
+- Generates a Solana `Keypair` using dynamic `import('npm:@solana/web3.js@1.98.2')`
+- Returns `{ publicKey, secretKeyArray: [...64 bytes...] }`
+- Does NOT store anything — user manually copies the JSON array into `escrow_wallet` secret
 
-В `applyValueToNodeUnified` добавить проверку: не удалять `background-color` если элемент имеет React inline style.
+**Patch**: `supabase/functions/auction/utils/solana.ts`
+- Improve error message in `getEscrowKeypair` to show expected format and actual length when secret is invalid
 
-```typescript
-if (key === 'backgroundcolor') {
-    if (isGradient) {
-      el.style.background = String(value);
-      // НЕ удалять background-color — React может использовать его
-    } else {
-      el.style.backgroundColor = String(value);
-    }
-}
-```
+**Patch**: `src/config/marketplace.ts`
+- Add comment: "After generating a new escrow keypair, update this value to match"
+- No functional change until user actually generates and saves a new key
 
-#### Шаг 2: Убрать дублирующий useEffect в ThemeSelectorCoverflow.tsx
+**Note on `buy_nft/index.ts`**: Line 44 hardcodes `ESCROW_PUBLIC_KEY = 'HzVB3L8hRALUq37WRNbj3RDjfm2fYRBVJQvxMYCQ6Qfx'`. When user updates the escrow keypair, this must also be updated. Will add a comment but not restructure the buy flow.
 
-Удалить или переработать useEffect (строки 110-123), который повторно вызывает `applyJsonTheme` при смене `activeThemeId`. Тема уже применяется в `handleThemeClick` -> `selectTheme`. Дублирование создает race condition.
+**Manual steps after Stage 1**:
+1. Call `generate-escrow-keypair` edge function
+2. Copy the JSON array → save as `escrow_wallet` secret in Supabase dashboard
+3. Copy the public key → update `ESCROW_WALLET_PUBLIC_KEY` in `src/config/marketplace.ts` and `ESCROW_PUBLIC_KEY` in `buy_nft/index.ts`
+4. Fund the new escrow wallet on devnet: `solana airdrop 2 <PUBLIC_KEY> --url devnet`
 
-#### Шаг 3: Добавить debounce/cancel для RAF в runtimeMappingEngine
+---
 
-Отменять предыдущий pending RAF callback при получении нового `theme-updated` event, чтобы старый callback не конфликтовал с новым.
+## STAGE 2 — STUB_MODE for Full Flow Testing
 
-```typescript
-let pendingRAF: number | null = null;
+**Patch**: `supabase/functions/auction/handlers/bid.ts`
+- Import `STUB_MODE` from constants
+- When `STUB_MODE === true`: skip on-chain tx verification, accept any `tx_signature` (or generate placeholder), proceed with DB insert + auction update as normal
 
-if (forceFullApply && isLockLayerVisible) {
-    if (pendingRAF) cancelAnimationFrame(pendingRAF);
-    pendingRAF = requestAnimationFrame(() => {
-        pendingRAF = requestAnimationFrame(() => {
-            applyThemeToDOM(theme);
-            pendingRAF = null;
-        });
-    });
-}
-```
+**Patch**: `src/hooks/usePlaceBid.ts`
+- Add optional STUB_MODE check: if `VITE_AUCTION_STUB_MODE` env var is set, skip real SOL transfer and call edge function with a fake signature
+- Keep real flow as default — stub is opt-in only
 
-### Затронутые файлы
+**No change to `useNftEscrow.ts`**: Creating auction with real NFT escrow is already working. For stub testing, user can create auction via direct edge function call without NFT transfer.
 
-| Файл | Изменение |
-|------|-----------|
-| `src/services/runtimeMappingEngine.ts` | Убрать `removeProperty`, добавить RAF cancel |
-| `src/components/customization/ThemeSelectorCoverflow.tsx` | Убрать дублирующий useEffect |
+**Finalize stub**: Already works — no change needed.
 
-### Ожидаемый результат
+---
 
-После исправления: Unlock Button и Search Input сохраняют свои цвета из JSON-темы при любом переключении, без мерцания и сброса в белый цвет.
+## STAGE 3 — Real Devnet Finalize (NFT + Seller Payout + Refunds)
+
+**DB migration**: Add `seller_payment_signature` column to `nft_auctions` table (text, nullable)
+
+**Patch**: `supabase/functions/auction/handlers/finalize.ts`
+- After `transferSOLPayment`, store `solPaymentSignature` in `nft_auctions.seller_payment_signature`
+- Improve error logging for partial failures — log which step failed
+- Keep auto-refund model as-is (already implemented)
+
+**Patch**: `supabase/functions/auction/utils/solana.ts`
+- No functional changes needed — `transferNFTFromEscrow`, `transferSOLPayment`, and refund logic already exist
+
+**Patch**: `supabase/functions/auction/types.ts`
+- Add `seller_payment_signature` to `Auction` interface
+
+---
+
+## STAGE 4 — Commissions / Treasury / Royalty Payouts
+
+**Patch**: `supabase/functions/auction/utils/solana.ts`
+- Rename/extend `transferSOLPayment` to also send platform fee to `TREASURY_WALLET` and royalty fee to `ROYALTY_WALLET`
+- Or add two new small functions: `transferPlatformFee`, `transferRoyaltyFee`
+- Read `TREASURY_WALLET` from `Deno.env.get('TREASURY_WALLET')` — this secret already exists
+- Add new secret `ROYALTY_WALLET` for royalty recipient (or default to treasury for MVP)
+
+**Patch**: `supabase/functions/auction/handlers/finalize.ts`
+- After seller payout, call platform fee transfer and royalty fee transfer
+- Store all 4 tx signatures (NFT, seller, platform, royalty) in response
+- In STUB_MODE, generate fake signatures for all 4
+- If treasury or royalty wallet is not configured, log warning and skip (don't block finalize)
+
+**DB migration**: Add `platform_fee_signature` and `royalty_fee_signature` columns to `nft_auctions` (text, nullable)
+
+**Secret needed**: `ROYALTY_WALLET` — will prompt user to add it. For MVP, can be same as treasury.
+
+---
+
+## STAGE 5 — Cancel NFT Return + Idempotency Guard
+
+**Patch**: `supabase/functions/auction/handlers/cancel.ts`
+- Import `transferNFTFromEscrow` from solana utils
+- Import `STUB_MODE` from constants
+- Before DB update: transfer NFT from escrow back to seller on-chain (skip in STUB_MODE)
+
+**Patch**: `supabase/functions/auction/handlers/finalize.ts`
+- Before chain operations: update auction status to `'finalizing'`
+- Use conditional update: `PATCH nft_auctions?id=eq.X&status=eq.active` — if no rows affected, another finalize is already running → abort
+- On success: update to `'finished'`
+- On failure: update to `'finalize_failed'` with error info
+
+**Patch**: `supabase/functions/auction/utils/validation.ts`
+- Update `canFinalizeAuction` to also accept `status === 'finalize_failed'` for retry
+
+**Patch**: `supabase/functions/auction/types.ts`
+- Extend `AuctionStatus` to include `'finalizing'` and `'finalize_failed'`
+
+**DB migration**: Add `finalize_error` column to `nft_auctions` (text, nullable)
+
+---
+
+## STAGE 6 — Runbook + Test Matrix + Final Verification
+
+No code changes. Deliverables:
+- STUB_MODE test runbook (step-by-step)
+- Real devnet test runbook (step-by-step)
+- Required secrets checklist
+- Complete file change manifest
+- Risk classification (MVP-acceptable vs production-later)
+
+---
+
+## Files Modified Across All Stages
+
+| File | Stages |
+|------|--------|
+| `supabase/functions/generate-escrow-keypair/index.ts` | 1 (new) |
+| `supabase/functions/auction/utils/solana.ts` | 1, 4 |
+| `supabase/functions/auction/handlers/bid.ts` | 2 |
+| `supabase/functions/auction/handlers/finalize.ts` | 3, 4, 5 |
+| `supabase/functions/auction/handlers/cancel.ts` | 5 |
+| `supabase/functions/auction/utils/validation.ts` | 5 |
+| `supabase/functions/auction/utils/constants.ts` | no change |
+| `supabase/functions/auction/types.ts` | 3, 5 |
+| `src/hooks/usePlaceBid.ts` | 2 |
+| `src/config/marketplace.ts` | 1 (comment only) |
+| `supabase/functions/buy_nft/index.ts` | 1 (comment only) |
+| DB migrations | 3, 4, 5 |
+
+## Secrets Required
+- `escrow_wallet` — valid 64-byte keypair JSON array (user must regenerate)
+- `TREASURY_WALLET` — already exists
+- `ROYALTY_WALLET` — new, needed for Stage 4
+- `AUCTION_STUB_MODE` — set to `'false'` to disable stub mode (defaults to `true`)
 
