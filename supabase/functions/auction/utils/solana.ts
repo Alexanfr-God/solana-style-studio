@@ -206,11 +206,10 @@ export async function transferSOLPayment(_winnerAddress: string, sellerAddress: 
 /**
  * Transfer platform fee from escrow to treasury wallet
  */
-export async function transferPlatformFee(priceLamports: number): Promise<string | null> {
+export async function transferPlatformFee(priceLamports: number): Promise<string> {
   const treasuryWallet = Deno.env.get('TREASURY_WALLET');
   if (!treasuryWallet) {
-    console.warn('[solana] ⚠️ TREASURY_WALLET not configured, skipping platform fee transfer');
-    return null;
+    throw new Error('TREASURY_WALLET secret not configured. Platform fee transfer cannot proceed.');
   }
 
   const { PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction, Connection } = await getWeb3();
