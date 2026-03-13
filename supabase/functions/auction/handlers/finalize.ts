@@ -46,10 +46,10 @@ export async function handleFinalizeAuction(
     // === IDEMPOTENCY GUARD: set status to 'finalizing' ===
     await updateAuction(auction_id, { status: 'finalizing', finalize_error: null });
 
-    let nftTransferSignature: string;
-    let solPaymentSignature: string;
-    let platformFeeSignature: string | null = null;
-    let royaltyFeeSignature: string | null = null;
+  let nftTransferSignature: string;
+  let solPaymentSignature: string;
+  let platformFeeSignature: string;
+  let royaltyFeeSignature: string;
 
     try {
       if (STUB_MODE) {
