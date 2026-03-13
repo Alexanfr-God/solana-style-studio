@@ -18,6 +18,7 @@ export interface Auction {
   seller_payment_signature: string | null;
   platform_fee_signature: string | null;
   royalty_fee_signature: string | null;
+  finalize_error: string | null;
   created_at: string;
   updated_at: string;
 }

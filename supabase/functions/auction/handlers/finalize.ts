@@ -17,8 +17,20 @@ export async function handleFinalizeAuction(
     validateFinalizeAuction(request);
     const { auction_id } = request;
 
-    const auction = await fetchAuction(auction_id, 'active');
-    if (!auction) throw new Error('Auction not found or already finalized');
+    // Fetch auction — accept 'active' only (not already finalizing/finished)
+    const auction = await fetchAuction(auction_id);
+    if (!auction) throw new Error('Auction not found');
+
+    // Idempotency: already done
+    if (auction.status === 'finished') {
+      return { success: true, data: { result: 'already_finalized', message: 'Auction already finalized' } };
+    }
+    if (auction.status === 'finalizing') {
+      return { success: false, error: 'Auction is currently being finalized. Please wait.' };
+    }
+    if (auction.status !== 'active') {
+      throw new Error(`Cannot finalize auction with status: ${auction.status}`);
+    }
 
     canFinalizeAuction(auction);
 
@@ -31,22 +43,25 @@ export async function handleFinalizeAuction(
 
     console.log('[finalize-auction] ✅ Winner found:', auction.winner_wallet);
 
+    // === IDEMPOTENCY GUARD: set status to 'finalizing' ===
+    await updateAuction(auction_id, { status: 'finalizing', finalize_error: null });
+
     let nftTransferSignature: string;
     let solPaymentSignature: string;
     let platformFeeSignature: string | null = null;
     let royaltyFeeSignature: string | null = null;
 
-    if (STUB_MODE) {
-      console.log('[finalize-auction] 💰 Processing payment (STUB MODE)...');
-      nftTransferSignature = `stub_nft_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      solPaymentSignature = `stub_sol_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      platformFeeSignature = `stub_platform_fee_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      royaltyFeeSignature = `stub_royalty_fee_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const fees = calculateFees(auction.current_price_lamports);
-      console.log('[finalize-auction] Fees (stub):', fees);
-    } else {
-      console.log('[finalize-auction] 💰 Processing Solana blockchain transactions...');
-      try {
+    try {
+      if (STUB_MODE) {
+        console.log('[finalize-auction] 💰 Processing payment (STUB MODE)...');
+        nftTransferSignature = `stub_nft_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        solPaymentSignature = `stub_sol_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        platformFeeSignature = `stub_platform_fee_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        royaltyFeeSignature = `stub_royalty_fee_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const fees = calculateFees(auction.current_price_lamports);
+        console.log('[finalize-auction] Fees (stub):', fees);
+      } else {
+        console.log('[finalize-auction] 💰 Processing Solana blockchain transactions...');
         const result = await finalizeAuctionOnChain(
           auction.nft_mint, auction.winner_wallet, auction.seller_wallet, auction.current_price_lamports
         );
@@ -54,19 +69,22 @@ export async function handleFinalizeAuction(
         solPaymentSignature = result.solPaymentSignature;
         platformFeeSignature = result.platformFeeSignature;
         royaltyFeeSignature = result.royaltyFeeSignature;
-      } catch (chainError) {
-        console.error('[finalize-auction] ❌ On-chain finalize failed:', chainError);
-        throw new Error(`On-chain finalization failed: ${chainError.message}`);
       }
+    } catch (chainError) {
+      // On-chain failure: mark as finalize_failed so it can be retried
+      console.error('[finalize-auction] ❌ On-chain finalize failed:', chainError);
+      await updateAuction(auction_id, { status: 'finalize_failed', finalize_error: chainError.message });
+      throw new Error(`On-chain finalization failed: ${chainError.message}`);
     }
 
-    // Store all signatures
+    // Store all signatures and mark finished
     await updateAuction(auction_id, {
       status: 'finished',
       tx_signature: nftTransferSignature,
       seller_payment_signature: solPaymentSignature,
       platform_fee_signature: platformFeeSignature,
       royalty_fee_signature: royaltyFeeSignature,
+      finalize_error: null,
     });
     await updateNFT(auction.nft_mint, { owner_address: auction.winner_wallet, is_listed: false, price_lamports: null });
 
@@ -116,7 +134,6 @@ async function refundLosingBidders(
     if (losingBids.length === 0) return results;
 
     if (STUB_MODE) {
-      // In STUB_MODE, mark all bids as refunded without real transfers
       for (const bid of losingBids) {
         const stubSig = `stub_refund_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         await fetchWithHeaders(`${SUPABASE_URL}/rest/v1/nft_bids?id=eq.${bid.id}`, {
@@ -129,7 +146,6 @@ async function refundLosingBidders(
       return results;
     }
 
-    // Real on-chain refunds
     const { PublicKey, Transaction, SystemProgram } = await import('npm:@solana/web3.js@1.98.2');
     const connection = await getConnection();
     const escrowKeypair = await getEscrowKeypair();
@@ -137,7 +153,6 @@ async function refundLosingBidders(
     for (const bid of losingBids) {
       try {
         console.log(`[refund] Refunding ${bid.bidder_wallet}: ${bid.bid_price_lamports} lamports`);
-
         const transaction = new Transaction().add(
           SystemProgram.transfer({
             fromPubkey: escrowKeypair.publicKey,
@@ -145,7 +160,6 @@ async function refundLosingBidders(
             lamports: bid.bid_price_lamports,
           })
         );
-
         const { blockhash } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = escrowKeypair.publicKey;
@@ -157,7 +171,6 @@ async function refundLosingBidders(
           method: 'PATCH',
           body: JSON.stringify({ refunded: true, refund_tx_signature: signature })
         });
-
         console.log(`[refund] ✅ Refunded to ${bid.bidder_wallet}: ${signature}`);
         results.refunded++;
       } catch (error) {
