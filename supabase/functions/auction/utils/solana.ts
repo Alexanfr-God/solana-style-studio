@@ -68,13 +68,22 @@ export async function getConnection() {
 export async function getEscrowKeypair() {
   const { Keypair } = await getWeb3();
   const escrowWalletPrivateKey = Deno.env.get('escrow_wallet');
-  if (!escrowWalletPrivateKey) throw new Error('escrow_wallet secret not configured');
+  if (!escrowWalletPrivateKey) {
+    throw new Error('escrow_wallet secret not configured. Run generate-escrow-keypair to create one.');
+  }
   try {
     const secretKey = await parseSecretKey(escrowWalletPrivateKey);
+    if (secretKey.length !== 64) {
+      throw new Error(
+        `escrow_wallet secret key must be exactly 64 bytes, got ${secretKey.length}. ` +
+        `Expected format: JSON array of 64 numbers [1,2,3,...] or Base58-encoded 64-byte key. ` +
+        `A public address (32 bytes) will NOT work — the secret must contain the full keypair.`
+      );
+    }
     return Keypair.fromSecretKey(secretKey);
   } catch (error) {
     console.error('[solana] Failed to parse escrow_wallet:', error);
-    throw new Error('Invalid escrow_wallet format');
+    throw error;
   }
 }
 
