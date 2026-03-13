@@ -1,0 +1,1 @@
+ALTER TABLE public.nft_auctions ADD COLUMN IF NOT EXISTS seller_payment_signature text;
