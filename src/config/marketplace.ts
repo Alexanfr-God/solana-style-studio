@@ -15,7 +15,7 @@ export const MARKETPLACE_CONFIG = {
   // IMPORTANT: This must match the public key derived from the escrow_wallet secret in Supabase.
   // After running generate-escrow-keypair, update this value with the returned publicKey.
   // Also update ESCROW_PUBLIC_KEY in supabase/functions/buy_nft/index.ts to match.
-  ESCROW_WALLET_PUBLIC_KEY: 'HzVB3L8hRALUq37WRNbj3RDjfm2fYRBVJQvxMYCQ6Qfx',
+  ESCROW_WALLET_PUBLIC_KEY: '4ykPyL9xMWJCCpbk92jrKKp5KWetkL36aCxcDe1mMV9q',
   
   // Price limits (in lamports)
   MIN_LISTING_PRICE_LAMPORTS: 100_000_000, // 0.1 SOL
