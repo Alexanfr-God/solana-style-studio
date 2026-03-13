@@ -102,7 +102,8 @@ async function getAssociatedTokenAddress(mint: any, owner: any) {
 }
 
 /**
- * Transfer NFT from escrow to winner
+ * Transfer NFT from escrow to winner (idempotent — safe to retry)
+ * Returns the tx signature, or "already_transferred" if the winner already holds the NFT.
  */
 export async function transferNFTFromEscrow(nftMint: string, winnerAddress: string): Promise<string> {
   console.log('[solana] Transferring NFT from escrow to winner...');
@@ -118,6 +119,29 @@ export async function transferNFTFromEscrow(nftMint: string, winnerAddress: stri
 
   const escrowTokenAccount = await getAssociatedTokenAddress(mintPubkey, escrowKeypair.publicKey);
   const winnerTokenAccount = await getAssociatedTokenAddress(mintPubkey, winnerPubkey);
+
+  // --- Idempotency check: is the NFT already with the winner? ---
+  const escrowAccountInfo = await connection.getAccountInfo(escrowTokenAccount);
+  let escrowBalance = 0;
+  if (escrowAccountInfo && escrowAccountInfo.data.length >= 72) {
+    // SPL token account: bytes 64-72 contain the u64 amount (little-endian)
+    escrowBalance = Number(escrowAccountInfo.data.readBigUInt64LE(64));
+  }
+
+  if (escrowBalance === 0) {
+    // Escrow no longer holds the NFT — check if the winner already has it
+    const winnerAccountInfo = await connection.getAccountInfo(winnerTokenAccount);
+    let winnerBalance = 0;
+    if (winnerAccountInfo && winnerAccountInfo.data.length >= 72) {
+      winnerBalance = Number(winnerAccountInfo.data.readBigUInt64LE(64));
+    }
+    if (winnerBalance >= 1) {
+      console.log('[solana] ✅ NFT already in winner ATA — skipping transfer (idempotent retry)');
+      return 'already_transferred';
+    }
+    throw new Error(`NFT ${nftMint} not found in escrow or winner ATA — asset may be lost`);
+  }
+  // --- End idempotency check ---
 
   const transaction = new Transaction();
 
