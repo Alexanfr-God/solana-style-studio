@@ -157,7 +157,7 @@ export async function transferNFTFromEscrow(nftMint: string, winnerAddress: stri
 }
 
 /**
- * Transfer SOL from escrow to seller
+ * Transfer SOL from escrow to seller (net of fees)
  */
 export async function transferSOLPayment(_winnerAddress: string, sellerAddress: string, priceLamports: number): Promise<string> {
   console.log('[solana] Processing SOL payment from escrow...');
@@ -167,6 +167,8 @@ export async function transferSOLPayment(_winnerAddress: string, sellerAddress: 
   const escrowKeypair = await getEscrowKeypair();
   const sellerPubkey = new PublicKey(sellerAddress);
   const { sellerReceives } = calculateFees(priceLamports);
+
+  console.log(`[solana] Seller receives: ${sellerReceives} lamports (from ${priceLamports})`);
 
   const transaction = new Transaction().add(
     SystemProgram.transfer({ fromPubkey: escrowKeypair.publicKey, toPubkey: sellerPubkey, lamports: sellerReceives })
@@ -178,17 +180,80 @@ export async function transferSOLPayment(_winnerAddress: string, sellerAddress: 
 }
 
 /**
- * Finalize auction with blockchain transactions
+ * Transfer platform fee from escrow to treasury wallet
+ */
+export async function transferPlatformFee(priceLamports: number): Promise<string | null> {
+  const treasuryWallet = Deno.env.get('TREASURY_WALLET');
+  if (!treasuryWallet) {
+    console.warn('[solana] ⚠️ TREASURY_WALLET not configured, skipping platform fee transfer');
+    return null;
+  }
+
+  const { PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction, Connection } = await getWeb3();
+  const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+  const escrowKeypair = await getEscrowKeypair();
+  const { platformFee } = calculateFees(priceLamports);
+
+  console.log(`[solana] Sending platform fee: ${platformFee} lamports to ${treasuryWallet}`);
+
+  const transaction = new Transaction().add(
+    SystemProgram.transfer({ fromPubkey: escrowKeypair.publicKey, toPubkey: new PublicKey(treasuryWallet), lamports: platformFee })
+  );
+
+  const signature = await sendAndConfirmTransaction(connection, transaction, [escrowKeypair], { commitment: 'confirmed' });
+  console.log('[solana] ✅ Platform fee sent! Signature:', signature);
+  return signature;
+}
+
+/**
+ * Transfer royalty fee from escrow to royalty wallet
+ */
+export async function transferRoyaltyFee(priceLamports: number): Promise<string | null> {
+  const royaltyWallet = Deno.env.get('ROYALTY_WALLET');
+  if (!royaltyWallet) {
+    console.warn('[solana] ⚠️ ROYALTY_WALLET not configured, skipping royalty fee transfer');
+    return null;
+  }
+
+  const { PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction, Connection } = await getWeb3();
+  const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+  const escrowKeypair = await getEscrowKeypair();
+  const { royaltyFee } = calculateFees(priceLamports);
+
+  console.log(`[solana] Sending royalty fee: ${royaltyFee} lamports to ${royaltyWallet}`);
+
+  const transaction = new Transaction().add(
+    SystemProgram.transfer({ fromPubkey: escrowKeypair.publicKey, toPubkey: new PublicKey(royaltyWallet), lamports: royaltyFee })
+  );
+
+  const signature = await sendAndConfirmTransaction(connection, transaction, [escrowKeypair], { commitment: 'confirmed' });
+  console.log('[solana] ✅ Royalty fee sent! Signature:', signature);
+  return signature;
+}
+
+/**
+ * Finalize auction with blockchain transactions (4 outputs + refunds)
  */
 export async function finalizeAuctionOnChain(
   nftMint: string, winnerAddress: string, sellerAddress: string, priceLamports: number
-): Promise<{ nftTransferSignature: string; solPaymentSignature: string }> {
+): Promise<{
+  nftTransferSignature: string;
+  solPaymentSignature: string;
+  platformFeeSignature: string | null;
+  royaltyFeeSignature: string | null;
+}> {
   console.log('[solana] 🚀 Starting on-chain auction finalization...');
+  const fees = calculateFees(priceLamports);
+  console.log('[solana] Fee breakdown:', fees);
+
   try {
     const nftTransferSignature = await transferNFTFromEscrow(nftMint, winnerAddress);
     const solPaymentSignature = await transferSOLPayment(winnerAddress, sellerAddress, priceLamports);
-    console.log('[solana] ✅ Auction finalized on-chain');
-    return { nftTransferSignature, solPaymentSignature };
+    const platformFeeSignature = await transferPlatformFee(priceLamports);
+    const royaltyFeeSignature = await transferRoyaltyFee(priceLamports);
+
+    console.log('[solana] ✅ Auction finalized on-chain (4 transfers complete)');
+    return { nftTransferSignature, solPaymentSignature, platformFeeSignature, royaltyFeeSignature };
   } catch (error) {
     console.error('[solana] ❌ Blockchain finalization failed:', error);
     throw error;
