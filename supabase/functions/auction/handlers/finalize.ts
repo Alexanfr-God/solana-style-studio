@@ -46,10 +46,10 @@ export async function handleFinalizeAuction(
     // === IDEMPOTENCY GUARD: set status to 'finalizing' ===
     await updateAuction(auction_id, { status: 'finalizing', finalize_error: null });
 
-    let nftTransferSignature: string;
-    let solPaymentSignature: string;
-    let platformFeeSignature: string | null = null;
-    let royaltyFeeSignature: string | null = null;
+  let nftTransferSignature: string;
+  let solPaymentSignature: string;
+  let platformFeeSignature: string;
+  let royaltyFeeSignature: string;
 
     try {
       if (STUB_MODE) {
@@ -89,7 +89,7 @@ export async function handleFinalizeAuction(
     await updateNFT(auction.nft_mint, { owner_address: auction.winner_wallet, is_listed: false, price_lamports: null });
 
     console.log('[finalize-auction] 🔄 Processing refunds for losing bidders...');
-    const refundResults = await refundLosingBidders(auction_id, auction.winner_wallet);
+    const refundResults = await refundLosingBidders(auction_id, auction.winner_wallet, auction.current_price_lamports);
 
     const fees = calculateFees(auction.current_price_lamports);
     return {
@@ -117,19 +117,36 @@ export async function handleFinalizeAuction(
  * Refund SOL to all losing bidders
  */
 async function refundLosingBidders(
-  auctionId: string, winnerWallet: string
+  auctionId: string, winnerWallet: string, currentPriceLamports: number
 ): Promise<{ refunded: number; failed: number; errors: string[] }> {
   const results = { refunded: 0, failed: 0, errors: [] as string[] };
 
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    // Fetch ALL non-refunded bids for this auction
     const response = await fetchWithHeaders(
-      `${SUPABASE_URL}/rest/v1/nft_bids?auction_id=eq.${auctionId}&bidder_wallet=neq.${winnerWallet}&refunded=eq.false&select=*`
+      `${SUPABASE_URL}/rest/v1/nft_bids?auction_id=eq.${auctionId}&refunded=eq.false&select=*`
     );
 
-    if (!response.ok) throw new Error(`Failed to fetch losing bids: ${response.statusText}`);
+    if (!response.ok) throw new Error(`Failed to fetch bids: ${response.statusText}`);
 
-    const losingBids: Bid[] = await response.json();
+    const allBids: Bid[] = await response.json();
+
+    // Exclude only the single winning bid (winner_wallet + current_price_lamports).
+    // All other bids — including the winner's earlier lower bids — must be refunded.
+    const currentPrice = currentPriceLamports;
+    let winningBidExcluded = false;
+    const losingBids = allBids.filter((bid) => {
+      if (
+        !winningBidExcluded &&
+        bid.bidder_wallet === winnerWallet &&
+        bid.bid_price_lamports === currentPrice
+      ) {
+        winningBidExcluded = true;
+        return false; // exclude the winning bid
+      }
+      return true;
+    });
     console.log(`[refund] Found ${losingBids.length} bids to refund`);
     if (losingBids.length === 0) return results;
 

@@ -102,7 +102,8 @@ async function getAssociatedTokenAddress(mint: any, owner: any) {
 }
 
 /**
- * Transfer NFT from escrow to winner
+ * Transfer NFT from escrow to winner (idempotent — safe to retry)
+ * Returns the tx signature, or "already_transferred" if the winner already holds the NFT.
  */
 export async function transferNFTFromEscrow(nftMint: string, winnerAddress: string): Promise<string> {
   console.log('[solana] Transferring NFT from escrow to winner...');
@@ -118,6 +119,29 @@ export async function transferNFTFromEscrow(nftMint: string, winnerAddress: stri
 
   const escrowTokenAccount = await getAssociatedTokenAddress(mintPubkey, escrowKeypair.publicKey);
   const winnerTokenAccount = await getAssociatedTokenAddress(mintPubkey, winnerPubkey);
+
+  // --- Idempotency check: is the NFT already with the winner? ---
+  const escrowAccountInfo = await connection.getAccountInfo(escrowTokenAccount);
+  let escrowBalance = 0;
+  if (escrowAccountInfo && escrowAccountInfo.data.length >= 72) {
+    // SPL token account: bytes 64-72 contain the u64 amount (little-endian)
+    escrowBalance = Number(escrowAccountInfo.data.readBigUInt64LE(64));
+  }
+
+  if (escrowBalance === 0) {
+    // Escrow no longer holds the NFT — check if the winner already has it
+    const winnerAccountInfo = await connection.getAccountInfo(winnerTokenAccount);
+    let winnerBalance = 0;
+    if (winnerAccountInfo && winnerAccountInfo.data.length >= 72) {
+      winnerBalance = Number(winnerAccountInfo.data.readBigUInt64LE(64));
+    }
+    if (winnerBalance >= 1) {
+      console.log('[solana] ✅ NFT already in winner ATA — skipping transfer (idempotent retry)');
+      return 'already_transferred';
+    }
+    throw new Error(`NFT ${nftMint} not found in escrow or winner ATA — asset may be lost`);
+  }
+  // --- End idempotency check ---
 
   const transaction = new Transaction();
 
@@ -182,11 +206,10 @@ export async function transferSOLPayment(_winnerAddress: string, sellerAddress: 
 /**
  * Transfer platform fee from escrow to treasury wallet
  */
-export async function transferPlatformFee(priceLamports: number): Promise<string | null> {
+export async function transferPlatformFee(priceLamports: number): Promise<string> {
   const treasuryWallet = Deno.env.get('TREASURY_WALLET');
   if (!treasuryWallet) {
-    console.warn('[solana] ⚠️ TREASURY_WALLET not configured, skipping platform fee transfer');
-    return null;
+    throw new Error('TREASURY_WALLET secret not configured. Platform fee transfer cannot proceed.');
   }
 
   const { PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction, Connection } = await getWeb3();
@@ -208,11 +231,10 @@ export async function transferPlatformFee(priceLamports: number): Promise<string
 /**
  * Transfer royalty fee from escrow to royalty wallet
  */
-export async function transferRoyaltyFee(priceLamports: number): Promise<string | null> {
+export async function transferRoyaltyFee(priceLamports: number): Promise<string> {
   const royaltyWallet = Deno.env.get('ROYALTY_WALLET');
   if (!royaltyWallet) {
-    console.warn('[solana] ⚠️ ROYALTY_WALLET not configured, skipping royalty fee transfer');
-    return null;
+    throw new Error('ROYALTY_WALLET secret not configured. Royalty fee transfer cannot proceed.');
   }
 
   const { PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction, Connection } = await getWeb3();
@@ -239,15 +261,22 @@ export async function finalizeAuctionOnChain(
 ): Promise<{
   nftTransferSignature: string;
   solPaymentSignature: string;
-  platformFeeSignature: string | null;
-  royaltyFeeSignature: string | null;
+  platformFeeSignature: string;
+  royaltyFeeSignature: string;
 }> {
   console.log('[solana] 🚀 Starting on-chain auction finalization...');
   const fees = calculateFees(priceLamports);
   console.log('[solana] Fee breakdown:', fees);
 
   try {
-    const nftTransferSignature = await transferNFTFromEscrow(nftMint, winnerAddress);
+    const nftTransferResult = await transferNFTFromEscrow(nftMint, winnerAddress);
+    const nftTransferSignature = nftTransferResult === 'already_transferred'
+      ? 'already_transferred'
+      : nftTransferResult;
+    if (nftTransferResult === 'already_transferred') {
+      console.log('[solana] ℹ️ NFT already transferred in a previous attempt, continuing with SOL payouts...');
+    }
+
     const solPaymentSignature = await transferSOLPayment(winnerAddress, sellerAddress, priceLamports);
     const platformFeeSignature = await transferPlatformFee(priceLamports);
     const royaltyFeeSignature = await transferRoyaltyFee(priceLamports);
