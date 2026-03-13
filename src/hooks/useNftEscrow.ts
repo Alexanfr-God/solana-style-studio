@@ -1,15 +1,14 @@
 /**
  * Hook for NFT Escrow Operations
- * Handles transferring NFT to/from escrow during auction lifecycle
+ * Uses AppKit provider (consistent with rest of app)
  */
 
 import { useState } from 'react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { 
   Transaction, 
   PublicKey,
   SystemProgram,
-  LAMPORTS_PER_SOL
+  Connection
 } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress,
@@ -18,6 +17,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction
 } from '@solana/spl-token';
+import { useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
 import { toast } from 'sonner';
 import { MARKETPLACE_CONFIG } from '@/config/marketplace';
 
@@ -32,8 +32,8 @@ export interface ReleaseNftParams {
 }
 
 export function useNftEscrow() {
-  const { connection } = useConnection();
-  const { publicKey, signTransaction } = useWallet();
+  const { address, isConnected } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider('solana');
   const [isEscrowing, setIsEscrowing] = useState(false);
 
   /**
@@ -41,12 +41,16 @@ export function useNftEscrow() {
    * Returns transaction signature on success
    */
   const escrowNft = async ({ nftMint, fromWallet }: EscrowNftParams): Promise<string> => {
-    if (!publicKey || !signTransaction) {
+    if (!isConnected || !address) {
       throw new Error('Wallet not connected');
     }
 
-    if (publicKey.toString() !== fromWallet) {
+    if (address !== fromWallet) {
       throw new Error('Wallet mismatch');
+    }
+
+    if (!walletProvider) {
+      throw new Error('Wallet provider not available');
     }
 
     setIsEscrowing(true);
@@ -56,6 +60,9 @@ export function useNftEscrow() {
       console.log('[escrow] NFT Mint:', nftMint);
       console.log('[escrow] From:', fromWallet);
       console.log('[escrow] To Escrow:', MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY);
+
+      const provider = walletProvider as any;
+      const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
 
       const mintPubkey = new PublicKey(nftMint);
       const fromPubkey = new PublicKey(fromWallet);
@@ -89,7 +96,6 @@ export function useNftEscrow() {
       
       if (!toAccountInfo) {
         console.log('[escrow] Creating escrow token account...');
-        // Create associated token account for escrow
         transaction.add(
           createAssociatedTokenAccountInstruction(
             fromPubkey,
@@ -115,22 +121,18 @@ export function useNftEscrow() {
       );
 
       // Get recent blockhash
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      const { blockhash } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = fromPubkey;
 
-      console.log('[escrow] Signing transaction...');
-      const signed = await signTransaction(transaction);
+      console.log('[escrow] Signing transaction via AppKit...');
+      const signed = await provider.signTransaction(transaction);
 
       console.log('[escrow] Sending transaction...');
       const signature = await connection.sendRawTransaction(signed.serialize());
 
       console.log('[escrow] Confirming transaction...', signature);
-      await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      });
+      await connection.confirmTransaction(signature, 'confirmed');
 
       console.log('[escrow] ✅ NFT escrowed successfully!');
       toast.success('NFT transferred to escrow');
@@ -147,12 +149,10 @@ export function useNftEscrow() {
 
   /**
    * Release NFT from escrow to winner
-   * This should be called by the backend after auction finalization
+   * This is handled server-side during finalization
    */
   const releaseNft = async ({ nftMint, toWallet }: ReleaseNftParams): Promise<string> => {
-    // This will be implemented in Phase 4 (Finalization)
-    // For now, just a placeholder
-    throw new Error('Release NFT not yet implemented - will be done in Phase 4');
+    throw new Error('Release NFT is handled server-side during finalization');
   };
 
   return {

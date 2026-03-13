@@ -1,105 +1,89 @@
 
-
-# STAGE 1 REPORT — Wallet / Secret / Config Foundation
+# STAGE 2 REPORT — Real Create Flow: NFT Must Really Reach Escrow
 
 ## 1. Goal
 
-Eliminate all ambiguity about which secrets and config values exist, what format they must be in, and where they are read.
+Make auction creation only succeed when the NFT is actually escrowed on-chain.
 
-## 2. Wallet / Secret / Config Mapping Table
+## 2. Inputs Required
 
-```text
-┌─────────────────────────────┬────────────────┬──────────────────────────┬─────────────────────────────────────────────────┬─────────────────────────────────┐
-│ Name                        │ Content Type   │ Example Shape            │ Where Read                                      │ What Breaks If Invalid          │
-├─────────────────────────────┼────────────────┼──────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────────────┤
-│ escrow_wallet               │ PRIVATE KEY    │ Base58 ~88 chars OR      │ auction/utils/solana.ts (getEscrowKeypair)      │ All finalize, cancel, refund    │
-│ (Supabase secret)           │ (64-byte       │ JSON array [n,n,...×64]   │ get-escrow-pubkey/index.ts                      │ operations fail                 │
-│                             │ keypair)       │                          │ auction/handlers/bid.ts (verification)          │                                 │
-├─────────────────────────────┼────────────────┼──────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────────────┤
-│ ESCROW_WALLET_PUBLIC_KEY    │ PUBLIC ADDRESS │ "84Wp2wrc..."            │ src/config/marketplace.ts                       │ Client sends NFT/SOL to         │
-│ (hardcoded in frontend)     │ (base58 ~44ch) │                          │ src/hooks/usePlaceBid.ts                        │ wrong address                   │
-│                             │                │                          │ src/hooks/useNftEscrow.ts                       │                                 │
-├─────────────────────────────┼────────────────┼──────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────────────┤
-│ ESCROW_PUBLIC_KEY           │ PUBLIC ADDRESS │ "84Wp2wrc..."            │ supabase/functions/buy_nft/index.ts (hardcoded) │ buy_nft verification fails      │
-│ (hardcoded in buy_nft)      │ (must match    │                          │                                                 │                                 │
-│                             │ escrow_wallet) │                          │                                                 │                                 │
-├─────────────────────────────┼────────────────┼──────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────────────┤
-│ TREASURY_WALLET             │ PUBLIC ADDRESS │ "AbC123...xyz" (~44ch)   │ auction/utils/solana.ts (transferPlatformFee)   │ Platform fee transfer skipped   │
-│ (Supabase secret)           │               │                          │ mint-nft-build/index.ts                         │ (warning logged, not fatal)     │
-├─────────────────────────────┼────────────────┼──────────────────────────┼─────────────────────────────────────────────────┼─────────────────────────────────┤
-│ ROYALTY_WALLET              │ PUBLIC ADDRESS │ "DeF456...xyz" (~44ch)   │ auction/utils/solana.ts (transferRoyaltyFee)    │ Royalty fee transfer skipped    │
-│ (Supabase secret)           │               │                          │                                                 │ (warning logged, not fatal)     │
-└─────────────────────────────┴────────────────┴──────────────────────────┴─────────────────────────────────────────────────┴─────────────────────────────────┘
+- Seller connects wallet via AppKit
+- Seller owns an NFT (minted via the app)
+- Escrow wallet is funded with devnet SOL
+- `AUCTION_STUB_MODE` = `false` in Supabase secrets
+
+## 3. What I Changed
+
+### File 1: `src/hooks/useNftEscrow.ts`
+- **Migrated** from `@solana/wallet-adapter-react` (`useConnection`, `useWallet`) to `@reown/appkit` (`useAppKitAccount`, `useAppKitProvider('solana')`)
+- Now uses same pattern as `usePlaceBid.ts` — consistent wallet stack
+- Creates own `Connection` using `MARKETPLACE_CONFIG.SOLANA_RPC_URL`
+- Signs via `provider.signTransaction()` from AppKit
+
+### File 2: `supabase/functions/auction/handlers/create.ts`
+- **Added** `verifyNftInEscrow()` function that:
+  - Derives escrow's Associated Token Account for the NFT mint
+  - Reads the token account data from Solana RPC
+  - Parses SPL token amount (u64 at offset 64)
+  - Returns `true` only if balance ≥ 1
+- **Added** STUB_MODE bypass: skips verification when `STUB_MODE = true`
+- Auction creation now **fails** if NFT is not actually in escrow
+
+### File 3: `supabase/functions/auction/utils/constants.ts`
+- **Lowered** `MIN_DURATION_HOURS` from `24` to `1` for devnet testing
+
+### File 4: `supabase/functions/auction/utils/validation.ts`
+- **Updated** error message to reflect new minimum duration
+
+## 4. Exact Files Modified
+
+| File | Change |
+|------|--------|
+| `src/hooks/useNftEscrow.ts` | Migrated to AppKit provider |
+| `supabase/functions/auction/handlers/create.ts` | Added on-chain escrow verification |
+| `supabase/functions/auction/utils/constants.ts` | MIN_DURATION_HOURS = 1 |
+| `supabase/functions/auction/utils/validation.ts` | Updated error message |
+
+## 5. Data Flow Now
+
+```
+1. User clicks "Create Auction"
+2. Frontend: useNftEscrow.escrowNft() sends NFT to escrow via AppKit
+3. AppKit signs the SPL token transfer
+4. NFT physically moves to escrow wallet's ATA on devnet
+5. Frontend calls supabase.functions.invoke('auction', { action: 'create', ... })
+6. Backend: verifyNftInEscrow() checks escrow's ATA balance via RPC
+7. If balance >= 1 → create auction row in DB
+8. If balance = 0 → return error "NFT is not in escrow"
 ```
 
-## 3. Key Confirmations
+## 6. How to Test This Stage
 
-| Question | Answer |
-|---|---|
-| Escrow private key secret name? | `escrow_wallet` — already exists in Supabase secrets |
-| Escrow public key config field? | `MARKETPLACE_CONFIG.ESCROW_WALLET_PUBLIC_KEY` in `src/config/marketplace.ts` (currently `84Wp2wrcJofvYP4ovWy39KtkmoYrrtWLtrVgBW6BT9K3`) |
-| Treasury — private or public? | **PUBLIC ADDRESS only**. Code does `new PublicKey(treasuryWallet)` and sends SOL *to* it. No signing needed. |
-| Royalty — private or public? | **PUBLIC ADDRESS only**. Same pattern as treasury. |
-| Must ESCROW_WALLET_PUBLIC_KEY match escrow_wallet? | **YES**. The frontend sends NFTs/SOL to this address. The backend signs outgoing transfers with the private key. If they don't match, funds go to wrong address. |
+1. Ensure `AUCTION_STUB_MODE` is set to `false`
+2. Ensure escrow wallet is funded with devnet SOL
+3. Connect wallet via AppKit
+4. Navigate to a minted NFT you own
+5. Click "Create Auction"
+6. Set price (≥ 0.1 SOL) and duration (1 hour for testing)
+7. Approve the NFT transfer in your wallet
+8. Wait for confirmation
+9. Auction should be created in DB
 
-## 4. Identified Issues (Minimal Patches Needed)
+## 7. Expected Result
 
-### Issue A: `useNftEscrow.ts` uses wrong wallet provider
-- Uses `@solana/wallet-adapter-react` (`useConnection`, `useWallet`)
-- Rest of app uses `@reown/appkit` (`useAppKitProvider('solana')`)
-- **Impact**: NFT escrow step will fail at runtime — wallet-adapter has no connected wallet
-- **Fix**: Rewrite to use AppKit provider (same pattern as `usePlaceBid.ts`)
+- NFT moves from seller to escrow on-chain ✅
+- Backend verifies NFT is in escrow before creating auction ✅
+- Auction record created with correct end_at time ✅
+- If NFT transfer is skipped, create fails with clear error ✅
 
-### Issue B: `useAuctionPayment.ts` uses wrong wallet provider
-- Same problem. Uses `wallet-adapter-react`.
-- **Impact**: Not used in current auction flow (settlement is server-side), so not blocking. But should be fixed for consistency.
-- **Decision**: Fix in Stage 2 alongside useNftEscrow. Low priority since finalize is server-side.
+## 8. Remaining Risks Before Stage 3
 
-### Issue C: `MIN_DURATION_HOURS = 24` too long for devnet testing
-- Frontend `CreateAuctionModal` needs to offer a short duration for testing
-- **Fix in Stage 2**: Add a 1-hour or 5-minute testing option (lower MIN_DURATION_HOURS for devnet)
+- If the NFT transfer succeeds but the backend create call fails, the NFT is stuck in escrow with no auction record (edge case — needs manual recovery)
+- Frontend duration options include 1h, 6h, 12h which are now valid (MIN_DURATION_HOURS=1)
+- Bid flow (`usePlaceBid`) already uses AppKit and is ready for Stage 3
 
-### Issue D: No on-chain escrow verification in create handler
-- `handlers/create.ts` trusts the client that NFT was escrowed
-- **Fix in Stage 2**: Add RPC check
+## Next: Stage 3 — Real Bid Flow
 
-**No code changes in Stage 1** — these are documented for Stage 2+.
+Stage 3 will verify that real SOL bids work on devnet. The bid handler already has on-chain verification logic. Need to confirm it works end-to-end with real transactions.
 
-## 5. Operator Checklist (What You Must Do Before Stage 2)
-
-You need to do these steps manually:
-
-### Step 1: Verify escrow_wallet secret
-The `escrow_wallet` secret already exists. Verify it contains a **64-byte private key** (NOT a public address). You can verify by calling the `get-escrow-pubkey` edge function — if it returns the public key `84Wp2wrcJofvYP4ovWy39KtkmoYrrtWLtrVgBW6BT9K3`, the secret is correct.
-
-### Step 2: Verify TREASURY_WALLET secret
-Must contain a **Solana public address** (~44 characters, base58). This is where platform fees (10%) will be sent. If you don't have a dedicated treasury wallet, you can use any devnet wallet address you control.
-
-### Step 3: Verify ROYALTY_WALLET secret  
-Same as treasury — a **Solana public address**. This receives royalty fees (5%).
-
-### Step 4: Fund the escrow wallet
-Go to https://faucet.solana.com and request 2-5 SOL for address `84Wp2wrcJofvYP4ovWy39KtkmoYrrtWLtrVgBW6BT9K3`. The escrow wallet needs SOL to pay transaction fees when sending NFTs/SOL/refunds.
-
-### Step 5: Set AUCTION_STUB_MODE to false
-In Supabase Dashboard > Settings > Edge Functions > Secrets, add/update `AUCTION_STUB_MODE` with value `false`.
-
-### Step 6: Frontend stub mode
-The frontend checks `VITE_AUCTION_STUB_MODE`. This is currently set via env. Once you confirm the backend is working on real devnet, we will remove the stub check from the frontend code.
-
-## 6. Remaining Risks Before Stage 2
-
-- If `TREASURY_WALLET` or `ROYALTY_WALLET` contain private keys instead of public addresses, the code will fail (it calls `new PublicKey(value)`)
-- If escrow wallet is not funded, all server-side transactions will fail with insufficient balance
-- `useNftEscrow` will not work until patched to use AppKit (Stage 2 fix)
-
-## 7. Next Stage Preview
-
-Stage 2 will:
-1. Fix `useNftEscrow.ts` to use AppKit provider
-2. Add on-chain escrow verification to `handlers/create.ts`
-3. Lower `MIN_DURATION_HOURS` for devnet testing
-4. Test the real NFT escrow + auction creation flow
-
-**Please complete the operator checklist above and confirm, then I will proceed to Stage 2.**
-
+**Confirm Stage 2 is working, then I will proceed to Stage 3.**

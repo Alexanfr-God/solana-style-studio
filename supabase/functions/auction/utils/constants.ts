@@ -7,7 +7,7 @@ export const MIN_START_PRICE_LAMPORTS = 100_000_000; // 0.1 SOL
 export const MIN_BID_INCREMENT_LAMPORTS = 10_000_000; // 0.01 SOL
 
 // Duration (user can choose from 1 day to 1 year)
-export const MIN_DURATION_HOURS = 24; // 1 day
+export const MIN_DURATION_HOURS = 1; // 1 hour (lowered for devnet testing)
 export const MAX_DURATION_HOURS = 8760; // 365 days (1 year)
 
 // Suggested durations for UI
