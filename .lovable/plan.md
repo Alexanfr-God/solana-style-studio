@@ -1,122 +1,89 @@
 
+# STAGE 2 REPORT — Real Create Flow: NFT Must Really Reach Escrow
 
-## Диагностика: почему пропадает окрас на Unlock Button и Search Input
+## 1. Goal
 
-### Корневая причина (100%)
+Make auction creation only succeed when the NFT is actually escrowed on-chain.
 
-В проекте работают **ДВЕ системы стилизации одновременно** на одних и тех же DOM-элементах:
+## 2. Inputs Required
 
-1. **React inline styles** — через `previewData` в `WalletPreviewContainer.tsx` (строки 236, 287)
-2. **RuntimeMappingEngine** — через DOM-манипуляцию в `runtimeMappingEngine.ts` (строка 100)
+- Seller connects wallet via AppKit
+- Seller owns an NFT (minted via the app)
+- Escrow wallet is funded with devnet SOL
+- `AUCTION_STUB_MODE` = `false` in Supabase secrets
 
-Проблема возникает из-за конфликта при переключении тем:
+## 3. What I Changed
 
-```text
-Шаг 1: Пользователь кликает на новую тему
-Шаг 2: setTheme(newTheme) обновляет Zustand store
-Шаг 3: React re-render — ставит ПРАВИЛЬНЫЕ inline styles
-Шаг 4: Одновременно dispatched event "theme-updated" с forceFullApply
-Шаг 5: runtimeMappingEngine делает double requestAnimationFrame
-Шаг 6: Через 2 кадра applyThemeToDOM() применяет стили через DOM
+### File 1: `src/hooks/useNftEscrow.ts`
+- **Migrated** from `@solana/wallet-adapter-react` (`useConnection`, `useWallet`) to `@reown/appkit` (`useAppKitAccount`, `useAppKitProvider('solana')`)
+- Now uses same pattern as `usePlaceBid.ts` — consistent wallet stack
+- Creates own `Connection` using `MARKETPLACE_CONFIG.SOLANA_RPC_URL`
+- Signs via `provider.signTransaction()` from AppKit
 
-НО: между шагами 3 и 6, если в runtimeMappingEngine
-обрабатывается gradient-значение, вызывается:
-  el.style.removeProperty('background-color')  // строка 97
+### File 2: `supabase/functions/auction/handlers/create.ts`
+- **Added** `verifyNftInEscrow()` function that:
+  - Derives escrow's Associated Token Account for the NFT mint
+  - Reads the token account data from Solana RPC
+  - Parses SPL token amount (u64 at offset 64)
+  - Returns `true` only if balance ≥ 1
+- **Added** STUB_MODE bypass: skips verification when `STUB_MODE = true`
+- Auction creation now **fails** if NFT is not actually in escrow
 
-Это УДАЛЯЕТ backgroundColor, который React поставил в шаге 3.
+### File 3: `supabase/functions/auction/utils/constants.ts`
+- **Lowered** `MIN_DURATION_HOURS` from `24` to `1` for devnet testing
+
+### File 4: `supabase/functions/auction/utils/validation.ts`
+- **Updated** error message to reflect new minimum duration
+
+## 4. Exact Files Modified
+
+| File | Change |
+|------|--------|
+| `src/hooks/useNftEscrow.ts` | Migrated to AppKit provider |
+| `supabase/functions/auction/handlers/create.ts` | Added on-chain escrow verification |
+| `supabase/functions/auction/utils/constants.ts` | MIN_DURATION_HOURS = 1 |
+| `supabase/functions/auction/utils/validation.ts` | Updated error message |
+
+## 5. Data Flow Now
+
+```
+1. User clicks "Create Auction"
+2. Frontend: useNftEscrow.escrowNft() sends NFT to escrow via AppKit
+3. AppKit signs the SPL token transfer
+4. NFT physically moves to escrow wallet's ATA on devnet
+5. Frontend calls supabase.functions.invoke('auction', { action: 'create', ... })
+6. Backend: verifyNftInEscrow() checks escrow's ATA balance via RPC
+7. If balance >= 1 → create auction row in DB
+8. If balance = 0 → return error "NFT is not in escrow"
 ```
 
-### Конкретный механизм сбоя
+## 6. How to Test This Stage
 
-В файле `runtimeMappingEngine.ts`, строки 94-105:
+1. Ensure `AUCTION_STUB_MODE` is set to `false`
+2. Ensure escrow wallet is funded with devnet SOL
+3. Connect wallet via AppKit
+4. Navigate to a minted NFT you own
+5. Click "Create Auction"
+6. Set price (≥ 0.1 SOL) and duration (1 hour for testing)
+7. Approve the NFT transfer in your wallet
+8. Wait for confirmation
+9. Auction should be created in DB
 
-```typescript
-if (key === 'backgroundcolor') {
-    if (isGradient) {
-      el.style.background = String(value);
-      el.style.removeProperty('background-color');  // <-- УДАЛЯЕТ React inline style!
-    } else {
-      el.style.backgroundColor = String(value);
-      el.style.removeProperty('background');
-    }
-}
-```
+## 7. Expected Result
 
-Когда предыдущая тема имела gradient-значение для backgroundColor (например `linear-gradient(...)`), engine вызывает `removeProperty('background-color')`. При переключении на новую тему:
+- NFT moves from seller to escrow on-chain ✅
+- Backend verifies NFT is in escrow before creating auction ✅
+- Auction record created with correct end_at time ✅
+- If NFT transfer is skipped, create fails with clear error ✅
 
-1. React ставит `backgroundColor: "#F2A23A"` (inline)
-2. Старый RAF callback (от предыдущей темы) еще не выполнился
-3. Новый `theme-updated` event запускает НОВЫЙ double RAF
-4. Возникает момент, когда `background-color` удалён, а новый еще не применён
+## 8. Remaining Risks Before Stage 3
 
-Session replay подтверждает: `background-color` устанавливается в `false` (rrweb обозначение "свойство удалено").
+- If the NFT transfer succeeds but the backend create call fails, the NFT is stuck in escrow with no auction record (edge case — needs manual recovery)
+- Frontend duration options include 1h, 6h, 12h which are now valid (MIN_DURATION_HOURS=1)
+- Bid flow (`usePlaceBid`) already uses AppKit and is ready for Stage 3
 
-### Вторая причина: useEffect в ThemeSelectorCoverflow
+## Next: Stage 3 — Real Bid Flow
 
-Файл `ThemeSelectorCoverflow.tsx`, строки 110-123:
+Stage 3 will verify that real SOL bids work on devnet. The bid handler already has on-chain verification logic. Need to confirm it works end-to-end with real transactions.
 
-```typescript
-useEffect(() => {
-    if (activeThemeId && themes.length > 0 && !isLoading) {
-      const activeTheme = themes.find(t => t.id === activeThemeId);
-      if (activeTheme && activeTheme.themeData) {
-        applyJsonTheme(activeTheme.themeData, activeTheme.id);
-      }
-    }
-}, [activeThemeId, themes, isLoading, applyJsonTheme]);
-```
-
-Этот useEffect вызывает `applyJsonTheme` каждый раз при смене `activeThemeId`. Это приводит к ДВОЙНОМУ вызову `setTheme` — первый раз из `selectTheme()`, второй раз из этого useEffect. Хотя `setTheme` имеет проверку на одинаковые данные, каждый вызов отправляет `theme-updated` event с `forceFullApply: true`, создавая гонку RAF callbacks.
-
----
-
-### План исправления
-
-#### Шаг 1: Защита от удаления backgroundColor в runtimeMappingEngine.ts
-
-В `applyValueToNodeUnified` добавить проверку: не удалять `background-color` если элемент имеет React inline style.
-
-```typescript
-if (key === 'backgroundcolor') {
-    if (isGradient) {
-      el.style.background = String(value);
-      // НЕ удалять background-color — React может использовать его
-    } else {
-      el.style.backgroundColor = String(value);
-    }
-}
-```
-
-#### Шаг 2: Убрать дублирующий useEffect в ThemeSelectorCoverflow.tsx
-
-Удалить или переработать useEffect (строки 110-123), который повторно вызывает `applyJsonTheme` при смене `activeThemeId`. Тема уже применяется в `handleThemeClick` -> `selectTheme`. Дублирование создает race condition.
-
-#### Шаг 3: Добавить debounce/cancel для RAF в runtimeMappingEngine
-
-Отменять предыдущий pending RAF callback при получении нового `theme-updated` event, чтобы старый callback не конфликтовал с новым.
-
-```typescript
-let pendingRAF: number | null = null;
-
-if (forceFullApply && isLockLayerVisible) {
-    if (pendingRAF) cancelAnimationFrame(pendingRAF);
-    pendingRAF = requestAnimationFrame(() => {
-        pendingRAF = requestAnimationFrame(() => {
-            applyThemeToDOM(theme);
-            pendingRAF = null;
-        });
-    });
-}
-```
-
-### Затронутые файлы
-
-| Файл | Изменение |
-|------|-----------|
-| `src/services/runtimeMappingEngine.ts` | Убрать `removeProperty`, добавить RAF cancel |
-| `src/components/customization/ThemeSelectorCoverflow.tsx` | Убрать дублирующий useEffect |
-
-### Ожидаемый результат
-
-После исправления: Unlock Button и Search Input сохраняют свои цвета из JSON-темы при любом переключении, без мерцания и сброса в белый цвет.
-
+**Confirm Stage 2 is working, then I will proceed to Stage 3.**
