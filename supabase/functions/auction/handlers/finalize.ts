@@ -39,17 +39,27 @@ export async function handleFinalizeAuction(
       nftTransferSignature = `stub_nft_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       solPaymentSignature = `stub_sol_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const fees = calculateFees(auction.current_price_lamports);
-      console.log('[finalize-auction] Fees:', fees);
+      console.log('[finalize-auction] Fees (stub):', fees);
     } else {
       console.log('[finalize-auction] 💰 Processing Solana blockchain transactions...');
-      const result = await finalizeAuctionOnChain(
-        auction.nft_mint, auction.winner_wallet, auction.seller_wallet, auction.current_price_lamports
-      );
-      nftTransferSignature = result.nftTransferSignature;
-      solPaymentSignature = result.solPaymentSignature;
+      try {
+        const result = await finalizeAuctionOnChain(
+          auction.nft_mint, auction.winner_wallet, auction.seller_wallet, auction.current_price_lamports
+        );
+        nftTransferSignature = result.nftTransferSignature;
+        solPaymentSignature = result.solPaymentSignature;
+      } catch (chainError) {
+        console.error('[finalize-auction] ❌ On-chain finalize failed:', chainError);
+        throw new Error(`On-chain finalization failed: ${chainError.message}`);
+      }
     }
 
-    await updateAuction(auction_id, { status: 'finished', tx_signature: nftTransferSignature });
+    // Store both signatures
+    await updateAuction(auction_id, {
+      status: 'finished',
+      tx_signature: nftTransferSignature,
+      seller_payment_signature: solPaymentSignature,
+    });
     await updateNFT(auction.nft_mint, { owner_address: auction.winner_wallet, is_listed: false, price_lamports: null });
 
     console.log('[finalize-auction] 🔄 Processing refunds for losing bidders...');
@@ -95,7 +105,21 @@ async function refundLosingBidders(
     console.log(`[refund] Found ${losingBids.length} bids to refund`);
     if (losingBids.length === 0) return results;
 
-    // Lazy-load web3 only when actually needed for refunds
+    if (STUB_MODE) {
+      // In STUB_MODE, mark all bids as refunded without real transfers
+      for (const bid of losingBids) {
+        const stubSig = `stub_refund_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await fetchWithHeaders(`${SUPABASE_URL}/rest/v1/nft_bids?id=eq.${bid.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ refunded: true, refund_tx_signature: stubSig })
+        });
+        console.log(`[refund] 🧪 STUB refund for ${bid.bidder_wallet}: ${stubSig}`);
+        results.refunded++;
+      }
+      return results;
+    }
+
+    // Real on-chain refunds
     const { PublicKey, Transaction, SystemProgram } = await import('npm:@solana/web3.js@1.98.2');
     const connection = await getConnection();
     const escrowKeypair = await getEscrowKeypair();
