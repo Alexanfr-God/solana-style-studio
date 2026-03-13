@@ -1,0 +1,1 @@
+UPDATE public.nft_auctions SET end_at = now() - interval '1 hour', status = 'finalize_failed', finalize_error = 'Simulated on-chain failure for testing' WHERE id = 'd2d9bb4c-d5e5-4e43-b7eb-03971e0459f1';

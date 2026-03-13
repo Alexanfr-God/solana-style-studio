@@ -28,7 +28,7 @@ export async function handleFinalizeAuction(
     if (auction.status === 'finalizing') {
       return { success: false, error: 'Auction is currently being finalized. Please wait.' };
     }
-    if (auction.status !== 'active') {
+    if (auction.status !== 'active' && auction.status !== 'finalize_failed') {
       throw new Error(`Cannot finalize auction with status: ${auction.status}`);
     }
 
