@@ -123,13 +123,30 @@ async function refundLosingBidders(
 
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    // Fetch ALL non-refunded bids for this auction
     const response = await fetchWithHeaders(
-      `${SUPABASE_URL}/rest/v1/nft_bids?auction_id=eq.${auctionId}&bidder_wallet=neq.${winnerWallet}&refunded=eq.false&select=*`
+      `${SUPABASE_URL}/rest/v1/nft_bids?auction_id=eq.${auctionId}&refunded=eq.false&select=*`
     );
 
-    if (!response.ok) throw new Error(`Failed to fetch losing bids: ${response.statusText}`);
+    if (!response.ok) throw new Error(`Failed to fetch bids: ${response.statusText}`);
 
-    const losingBids: Bid[] = await response.json();
+    const allBids: Bid[] = await response.json();
+
+    // Exclude only the single winning bid (winner_wallet + current_price_lamports).
+    // All other bids — including the winner's earlier lower bids — must be refunded.
+    const currentPrice = auction?.current_price_lamports;
+    let winningBidExcluded = false;
+    const losingBids = allBids.filter((bid) => {
+      if (
+        !winningBidExcluded &&
+        bid.bidder_wallet === winnerWallet &&
+        bid.bid_price_lamports === currentPrice
+      ) {
+        winningBidExcluded = true;
+        return false; // exclude the winning bid
+      }
+      return true;
+    });
     console.log(`[refund] Found ${losingBids.length} bids to refund`);
     if (losingBids.length === 0) return results;
 

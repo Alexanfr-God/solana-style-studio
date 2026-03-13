@@ -261,15 +261,22 @@ export async function finalizeAuctionOnChain(
 ): Promise<{
   nftTransferSignature: string;
   solPaymentSignature: string;
-  platformFeeSignature: string | null;
-  royaltyFeeSignature: string | null;
+  platformFeeSignature: string;
+  royaltyFeeSignature: string;
 }> {
   console.log('[solana] 🚀 Starting on-chain auction finalization...');
   const fees = calculateFees(priceLamports);
   console.log('[solana] Fee breakdown:', fees);
 
   try {
-    const nftTransferSignature = await transferNFTFromEscrow(nftMint, winnerAddress);
+    const nftTransferResult = await transferNFTFromEscrow(nftMint, winnerAddress);
+    const nftTransferSignature = nftTransferResult === 'already_transferred'
+      ? 'already_transferred'
+      : nftTransferResult;
+    if (nftTransferResult === 'already_transferred') {
+      console.log('[solana] ℹ️ NFT already transferred in a previous attempt, continuing with SOL payouts...');
+    }
+
     const solPaymentSignature = await transferSOLPayment(winnerAddress, sellerAddress, priceLamports);
     const platformFeeSignature = await transferPlatformFee(priceLamports);
     const royaltyFeeSignature = await transferRoyaltyFee(priceLamports);
