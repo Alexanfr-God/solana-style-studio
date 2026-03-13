@@ -231,11 +231,10 @@ export async function transferPlatformFee(priceLamports: number): Promise<string
 /**
  * Transfer royalty fee from escrow to royalty wallet
  */
-export async function transferRoyaltyFee(priceLamports: number): Promise<string | null> {
+export async function transferRoyaltyFee(priceLamports: number): Promise<string> {
   const royaltyWallet = Deno.env.get('ROYALTY_WALLET');
   if (!royaltyWallet) {
-    console.warn('[solana] ⚠️ ROYALTY_WALLET not configured, skipping royalty fee transfer');
-    return null;
+    throw new Error('ROYALTY_WALLET secret not configured. Royalty fee transfer cannot proceed.');
   }
 
   const { PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction, Connection } = await getWeb3();
