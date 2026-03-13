@@ -273,6 +273,8 @@ export type Database = {
           end_at: string
           id: string
           nft_mint: string
+          platform_fee_signature: string | null
+          royalty_fee_signature: string | null
           seller_payment_signature: string | null
           seller_wallet: string
           start_price_lamports: number
@@ -288,6 +290,8 @@ export type Database = {
           end_at: string
           id?: string
           nft_mint: string
+          platform_fee_signature?: string | null
+          royalty_fee_signature?: string | null
           seller_payment_signature?: string | null
           seller_wallet: string
           start_price_lamports: number
@@ -303,6 +307,8 @@ export type Database = {
           end_at?: string
           id?: string
           nft_mint?: string
+          platform_fee_signature?: string | null
+          royalty_fee_signature?: string | null
           seller_payment_signature?: string | null
           seller_wallet?: string
           start_price_lamports?: number

@@ -33,11 +33,15 @@ export async function handleFinalizeAuction(
 
     let nftTransferSignature: string;
     let solPaymentSignature: string;
+    let platformFeeSignature: string | null = null;
+    let royaltyFeeSignature: string | null = null;
 
     if (STUB_MODE) {
       console.log('[finalize-auction] 💰 Processing payment (STUB MODE)...');
       nftTransferSignature = `stub_nft_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       solPaymentSignature = `stub_sol_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      platformFeeSignature = `stub_platform_fee_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      royaltyFeeSignature = `stub_royalty_fee_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const fees = calculateFees(auction.current_price_lamports);
       console.log('[finalize-auction] Fees (stub):', fees);
     } else {
@@ -48,17 +52,21 @@ export async function handleFinalizeAuction(
         );
         nftTransferSignature = result.nftTransferSignature;
         solPaymentSignature = result.solPaymentSignature;
+        platformFeeSignature = result.platformFeeSignature;
+        royaltyFeeSignature = result.royaltyFeeSignature;
       } catch (chainError) {
         console.error('[finalize-auction] ❌ On-chain finalize failed:', chainError);
         throw new Error(`On-chain finalization failed: ${chainError.message}`);
       }
     }
 
-    // Store both signatures
+    // Store all signatures
     await updateAuction(auction_id, {
       status: 'finished',
       tx_signature: nftTransferSignature,
       seller_payment_signature: solPaymentSignature,
+      platform_fee_signature: platformFeeSignature,
+      royalty_fee_signature: royaltyFeeSignature,
     });
     await updateNFT(auction.nft_mint, { owner_address: auction.winner_wallet, is_listed: false, price_lamports: null });
 
@@ -74,6 +82,8 @@ export async function handleFinalizeAuction(
         final_price: auction.current_price_lamports,
         nft_transfer_signature: nftTransferSignature,
         sol_payment_signature: solPaymentSignature,
+        platform_fee_signature: platformFeeSignature,
+        royalty_fee_signature: royaltyFeeSignature,
         refunds: refundResults,
         fees: { platform_fee: fees.platformFee, royalty_fee: fees.royaltyFee, seller_receives: fees.sellerReceives },
         ...(STUB_MODE && { warning: 'STUB MODE: No real blockchain transaction' })
