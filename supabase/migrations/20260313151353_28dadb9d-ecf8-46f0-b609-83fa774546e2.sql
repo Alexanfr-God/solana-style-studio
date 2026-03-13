@@ -1,0 +1,1 @@
+UPDATE public.nft_auctions SET end_at = now() - interval '1 hour' WHERE id = 'c3d93f9c-6a73-4148-a002-8150b671230f';
