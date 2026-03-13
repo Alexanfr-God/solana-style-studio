@@ -158,7 +158,7 @@ export function canCancelAuction(auction: Auction, sellerWallet: string, hasBids
  * Check if auction can be finalized
  */
 export function canFinalizeAuction(auction: Auction): void {
-  if (auction.status !== 'active') {
+  if (auction.status !== 'active' && auction.status !== 'finalize_failed') {
     throw new ValidationError('Auction is not active or already finalized');
   }
 
