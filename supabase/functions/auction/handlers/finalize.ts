@@ -36,6 +36,13 @@ export async function handleFinalizeAuction(
       throw new Error(`Cannot finalize auction with status: ${auction.status}`);
     }
 
+    // Block retry if partial settlement already occurred
+    const hasPartialSettlement = auction.tx_signature || auction.seller_payment_signature || 
+      auction.platform_fee_signature || auction.royalty_fee_signature;
+    if (hasPartialSettlement) {
+      return { success: false, error: 'partial_settlement_detected: manual_resolution_required' };
+    }
+
     canFinalizeAuction(auction);
 
     if (!auction.winner_wallet) {
