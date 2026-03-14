@@ -190,7 +190,7 @@ export async function transferNFTFromEscrow(nftMint: string, winnerAddress: stri
     const winnerAccountInfo = await connection.getAccountInfo(winnerTokenAccount);
     let winnerBalance = 0;
     if (winnerAccountInfo && winnerAccountInfo.data.length >= 72) {
-      winnerBalance = Number(winnerAccountInfo.data.readBigUInt64LE(64));
+      winnerBalance = Number(new DataView(winnerAccountInfo.data.buffer, winnerAccountInfo.data.byteOffset).getBigUint64(64, true));
     }
     if (winnerBalance >= 1) {
       console.log('[solana] ✅ NFT already in winner ATA — skipping transfer (idempotent retry)');
