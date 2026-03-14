@@ -6,7 +6,11 @@ import type { FinalizeAuctionRequest, ApiResponse, Bid } from '../types.ts';
 import { validateFinalizeAuction, canFinalizeAuction } from '../utils/validation.ts';
 import { fetchAuction, updateAuction, updateNFT, fetchWithHeaders } from '../utils/database.ts';
 import { STUB_MODE } from '../utils/constants.ts';
-import { finalizeAuctionOnChain, calculateFees, getConnection, getEscrowKeypair } from '../utils/solana.ts';
+import { 
+  calculateFees, validateSettlementPreconditions,
+  transferNFTFromEscrow, transferSOLPayment, transferPlatformFee, transferRoyaltyFee,
+  getConnection, getEscrowKeypair 
+} from '../utils/solana.ts';
 
 export async function handleFinalizeAuction(
   request: FinalizeAuctionRequest
@@ -30,6 +34,13 @@ export async function handleFinalizeAuction(
     }
     if (auction.status !== 'active' && auction.status !== 'finalize_failed') {
       throw new Error(`Cannot finalize auction with status: ${auction.status}`);
+    }
+
+    // Block retry if partial settlement already occurred
+    const hasPartialSettlement = auction.tx_signature || auction.seller_payment_signature || 
+      auction.platform_fee_signature || auction.royalty_fee_signature;
+    if (hasPartialSettlement) {
+      return { success: false, error: 'partial_settlement_detected: manual_resolution_required' };
     }
 
     canFinalizeAuction(auction);
@@ -62,22 +73,53 @@ export async function handleFinalizeAuction(
         console.log('[finalize-auction] Fees (stub):', fees);
       } else {
         console.log('[finalize-auction] 💰 Processing Solana blockchain transactions...');
-        const result = await finalizeAuctionOnChain(
+
+        // Pre-validate all addresses and balances before any transfer
+        await validateSettlementPreconditions(
           auction.nft_mint, auction.winner_wallet, auction.seller_wallet, auction.current_price_lamports
         );
-        nftTransferSignature = result.nftTransferSignature;
-        solPaymentSignature = result.solPaymentSignature;
-        platformFeeSignature = result.platformFeeSignature;
-        royaltyFeeSignature = result.royaltyFeeSignature;
+
+        const completedSteps: string[] = [];
+
+        try {
+          // Step 1: NFT transfer
+          nftTransferSignature = await transferNFTFromEscrow(auction.nft_mint, auction.winner_wallet);
+          await updateAuction(auction_id, { tx_signature: nftTransferSignature });
+          await updateNFT(auction.nft_mint, { owner_address: auction.winner_wallet, is_listed: false, price_lamports: null });
+          completedSteps.push('NFT transfer');
+
+          // Step 2: Seller payout
+          solPaymentSignature = await transferSOLPayment(auction.winner_wallet, auction.seller_wallet, auction.current_price_lamports);
+          await updateAuction(auction_id, { seller_payment_signature: solPaymentSignature });
+          completedSteps.push('seller payout');
+
+          // Step 3: Platform fee
+          platformFeeSignature = await transferPlatformFee(auction.current_price_lamports);
+          await updateAuction(auction_id, { platform_fee_signature: platformFeeSignature });
+          completedSteps.push('platform fee');
+
+          // Step 4: Royalty fee
+          royaltyFeeSignature = await transferRoyaltyFee(auction.current_price_lamports);
+          await updateAuction(auction_id, { royalty_fee_signature: royaltyFeeSignature });
+          completedSteps.push('royalty fee');
+        } catch (stepError) {
+          const partialMsg = completedSteps.length > 0
+            ? `Partial settlement: ${completedSteps.join(', ')} completed. Failed at next step: ${stepError.message}`
+            : `Settlement failed before any transfer: ${stepError.message}`;
+          console.error('[finalize-auction] ❌ ' + partialMsg);
+          await updateAuction(auction_id, { status: 'finalize_failed', finalize_error: partialMsg });
+          throw new Error(partialMsg);
+        }
       }
     } catch (chainError) {
-      // On-chain failure: mark as finalize_failed so it can be retried
       console.error('[finalize-auction] ❌ On-chain finalize failed:', chainError);
-      await updateAuction(auction_id, { status: 'finalize_failed', finalize_error: chainError.message });
+      if (!chainError.message.startsWith('Partial settlement:') && !chainError.message.startsWith('Settlement failed')) {
+        await updateAuction(auction_id, { status: 'finalize_failed', finalize_error: chainError.message });
+      }
       throw new Error(`On-chain finalization failed: ${chainError.message}`);
     }
 
-    // Store all signatures and mark finished
+    // All steps succeeded — mark finished (stub path writes all sigs here; live path already wrote them incrementally)
     await updateAuction(auction_id, {
       status: 'finished',
       tx_signature: nftTransferSignature,
