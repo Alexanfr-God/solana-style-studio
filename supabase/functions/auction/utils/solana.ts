@@ -102,6 +102,63 @@ async function getAssociatedTokenAddress(mint: any, owner: any) {
 }
 
 /**
+ * Pre-validate all settlement preconditions before any on-chain transfer.
+ * If any check fails, finalize must NOT proceed.
+ */
+export async function validateSettlementPreconditions(
+  nftMint: string, winnerAddress: string, sellerAddress: string, priceLamports: number
+): Promise<void> {
+  const { PublicKey } = await getWeb3();
+
+  // Validate all destination addresses
+  const addressChecks = [
+    { name: 'winner_wallet', value: winnerAddress },
+    { name: 'seller_wallet', value: sellerAddress },
+    { name: 'TREASURY_WALLET', value: Deno.env.get('TREASURY_WALLET') },
+    { name: 'ROYALTY_WALLET', value: Deno.env.get('ROYALTY_WALLET') },
+  ];
+  for (const { name, value } of addressChecks) {
+    if (!value) throw new Error(`Pre-validation failed: ${name} is not configured`);
+    try { new PublicKey(value); }
+    catch { throw new Error(`Pre-validation failed: ${name} is not a valid Solana public key: ${value}`); }
+  }
+
+  // Validate escrow keypair
+  const escrowKeypair = await getEscrowKeypair();
+
+  // Validate price
+  if (!priceLamports || priceLamports <= 0) {
+    throw new Error('Pre-validation failed: price_lamports must be > 0');
+  }
+
+  // Check escrow holds NFT
+  const connection = await getConnection();
+  const mintPubkey = new PublicKey(nftMint);
+  const escrowATA = await getAssociatedTokenAddress(mintPubkey, escrowKeypair.publicKey);
+  const ataInfo = await connection.getAccountInfo(escrowATA);
+  let nftBalance = 0;
+  if (ataInfo && ataInfo.data.length >= 72) {
+    nftBalance = Number(new DataView(ataInfo.data.buffer, ataInfo.data.byteOffset).getBigUint64(64, true));
+  }
+  if (nftBalance < 1) {
+    throw new Error(`Pre-validation failed: escrow does not hold NFT ${nftMint}`);
+  }
+
+  // Check escrow SOL balance covers all payouts + buffer
+  const fees = calculateFees(priceLamports);
+  const totalNeeded = fees.sellerReceives + fees.platformFee + fees.royaltyFee + 15_000_000;
+  const escrowBalance = await connection.getBalance(escrowKeypair.publicKey);
+  if (escrowBalance < totalNeeded) {
+    throw new Error(
+      `Pre-validation failed: escrow SOL balance ${escrowBalance} < required ${totalNeeded} ` +
+      `(seller: ${fees.sellerReceives}, platform: ${fees.platformFee}, royalty: ${fees.royaltyFee}, buffer: 15000000)`
+    );
+  }
+
+  console.log('[solana] ✅ All settlement preconditions validated');
+}
+
+/**
  * Transfer NFT from escrow to winner (idempotent — safe to retry)
  * Returns the tx signature, or "already_transferred" if the winner already holds the NFT.
  */
