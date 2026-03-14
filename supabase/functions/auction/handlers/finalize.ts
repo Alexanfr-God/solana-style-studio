@@ -119,11 +119,16 @@ export async function handleFinalizeAuction(
       throw new Error(`On-chain finalization failed: ${chainError.message}`);
     }
 
-    // All steps succeeded — mark finished
+    // All steps succeeded — mark finished (stub path writes all sigs here; live path already wrote them incrementally)
     await updateAuction(auction_id, {
       status: 'finished',
+      tx_signature: nftTransferSignature,
+      seller_payment_signature: solPaymentSignature,
+      platform_fee_signature: platformFeeSignature,
+      royalty_fee_signature: royaltyFeeSignature,
       finalize_error: null,
     });
+    await updateNFT(auction.nft_mint, { owner_address: auction.winner_wallet, is_listed: false, price_lamports: null });
 
     console.log('[finalize-auction] 🔄 Processing refunds for losing bidders...');
     const refundResults = await refundLosingBidders(auction_id, auction.winner_wallet, auction.current_price_lamports);
