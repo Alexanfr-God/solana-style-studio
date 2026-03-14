@@ -182,7 +182,7 @@ export async function transferNFTFromEscrow(nftMint: string, winnerAddress: stri
   let escrowBalance = 0;
   if (escrowAccountInfo && escrowAccountInfo.data.length >= 72) {
     // SPL token account: bytes 64-72 contain the u64 amount (little-endian)
-    escrowBalance = Number(escrowAccountInfo.data.readBigUInt64LE(64));
+    escrowBalance = Number(new DataView(escrowAccountInfo.data.buffer, escrowAccountInfo.data.byteOffset).getBigUint64(64, true));
   }
 
   if (escrowBalance === 0) {
