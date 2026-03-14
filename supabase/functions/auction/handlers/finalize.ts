@@ -6,7 +6,11 @@ import type { FinalizeAuctionRequest, ApiResponse, Bid } from '../types.ts';
 import { validateFinalizeAuction, canFinalizeAuction } from '../utils/validation.ts';
 import { fetchAuction, updateAuction, updateNFT, fetchWithHeaders } from '../utils/database.ts';
 import { STUB_MODE } from '../utils/constants.ts';
-import { finalizeAuctionOnChain, calculateFees, getConnection, getEscrowKeypair } from '../utils/solana.ts';
+import { 
+  calculateFees, validateSettlementPreconditions,
+  transferNFTFromEscrow, transferSOLPayment, transferPlatformFee, transferRoyaltyFee,
+  getConnection, getEscrowKeypair 
+} from '../utils/solana.ts';
 
 export async function handleFinalizeAuction(
   request: FinalizeAuctionRequest
