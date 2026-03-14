@@ -1,89 +1,164 @@
 
-# STAGE 2 REPORT — Real Create Flow: NFT Must Really Reach Escrow
 
-## 1. Goal
+# Stage 4 Hardening Implementation Plan
 
-Make auction creation only succeed when the NFT is actually escrowed on-chain.
+## Summary
+Two files to patch. No DB migration needed.
 
-## 2. Inputs Required
+---
 
-- Seller connects wallet via AppKit
-- Seller owns an NFT (minted via the app)
-- Escrow wallet is funded with devnet SOL
-- `AUCTION_STUB_MODE` = `false` in Supabase secrets
+## File 1: `supabase/functions/auction/utils/solana.ts`
 
-## 3. What I Changed
+**Add `validateSettlementPreconditions` function** (append after `getAssociatedTokenAddress`, before `transferNFTFromEscrow`):
 
-### File 1: `src/hooks/useNftEscrow.ts`
-- **Migrated** from `@solana/wallet-adapter-react` (`useConnection`, `useWallet`) to `@reown/appkit` (`useAppKitAccount`, `useAppKitProvider('solana')`)
-- Now uses same pattern as `usePlaceBid.ts` — consistent wallet stack
-- Creates own `Connection` using `MARKETPLACE_CONFIG.SOLANA_RPC_URL`
-- Signs via `provider.signTransaction()` from AppKit
+```typescript
+export async function validateSettlementPreconditions(
+  nftMint: string, winnerAddress: string, sellerAddress: string, priceLamports: number
+): Promise<void> {
+  const { PublicKey } = await getWeb3();
+  
+  // Validate all destination addresses
+  const addressChecks = [
+    { name: 'winner_wallet', value: winnerAddress },
+    { name: 'seller_wallet', value: sellerAddress },
+    { name: 'TREASURY_WALLET', value: Deno.env.get('TREASURY_WALLET') },
+    { name: 'ROYALTY_WALLET', value: Deno.env.get('ROYALTY_WALLET') },
+  ];
+  for (const { name, value } of addressChecks) {
+    if (!value) throw new Error(`Pre-validation failed: ${name} is not configured`);
+    try { new PublicKey(value); } 
+    catch { throw new Error(`Pre-validation failed: ${name} is not a valid Solana public key: ${value}`); }
+  }
 
-### File 2: `supabase/functions/auction/handlers/create.ts`
-- **Added** `verifyNftInEscrow()` function that:
-  - Derives escrow's Associated Token Account for the NFT mint
-  - Reads the token account data from Solana RPC
-  - Parses SPL token amount (u64 at offset 64)
-  - Returns `true` only if balance ≥ 1
-- **Added** STUB_MODE bypass: skips verification when `STUB_MODE = true`
-- Auction creation now **fails** if NFT is not actually in escrow
+  // Validate escrow keypair
+  const escrowKeypair = await getEscrowKeypair();
 
-### File 3: `supabase/functions/auction/utils/constants.ts`
-- **Lowered** `MIN_DURATION_HOURS` from `24` to `1` for devnet testing
+  // Validate price
+  if (!priceLamports || priceLamports <= 0) {
+    throw new Error('Pre-validation failed: price_lamports must be > 0');
+  }
 
-### File 4: `supabase/functions/auction/utils/validation.ts`
-- **Updated** error message to reflect new minimum duration
+  // Check escrow holds NFT
+  const connection = await getConnection();
+  const mintPubkey = new PublicKey(nftMint);
+  const escrowATA = await getAssociatedTokenAddress(mintPubkey, escrowKeypair.publicKey);
+  const ataInfo = await connection.getAccountInfo(escrowATA);
+  let nftBalance = 0;
+  if (ataInfo && ataInfo.data.length >= 72) {
+    nftBalance = Number(new DataView(ataInfo.data.buffer, ataInfo.data.byteOffset).getBigUint64(64, true));
+  }
+  if (nftBalance < 1) {
+    throw new Error(`Pre-validation failed: escrow does not hold NFT ${nftMint}`);
+  }
 
-## 4. Exact Files Modified
-
-| File | Change |
-|------|--------|
-| `src/hooks/useNftEscrow.ts` | Migrated to AppKit provider |
-| `supabase/functions/auction/handlers/create.ts` | Added on-chain escrow verification |
-| `supabase/functions/auction/utils/constants.ts` | MIN_DURATION_HOURS = 1 |
-| `supabase/functions/auction/utils/validation.ts` | Updated error message |
-
-## 5. Data Flow Now
-
+  // Check escrow SOL balance covers all payouts + buffer
+  const fees = calculateFees(priceLamports);
+  const totalNeeded = fees.sellerReceives + fees.platformFee + fees.royaltyFee + 15_000_000;
+  const escrowBalance = await connection.getBalance(escrowKeypair.publicKey);
+  if (escrowBalance < totalNeeded) {
+    throw new Error(
+      `Pre-validation failed: escrow SOL balance ${escrowBalance} < required ${totalNeeded} ` +
+      `(seller: ${fees.sellerReceives}, platform: ${fees.platformFee}, royalty: ${fees.royaltyFee}, buffer: 15000000)`
+    );
+  }
+}
 ```
-1. User clicks "Create Auction"
-2. Frontend: useNftEscrow.escrowNft() sends NFT to escrow via AppKit
-3. AppKit signs the SPL token transfer
-4. NFT physically moves to escrow wallet's ATA on devnet
-5. Frontend calls supabase.functions.invoke('auction', { action: 'create', ... })
-6. Backend: verifyNftInEscrow() checks escrow's ATA balance via RPC
-7. If balance >= 1 → create auction row in DB
-8. If balance = 0 → return error "NFT is not in escrow"
+
+No other changes to solana.ts. The existing `finalizeAuctionOnChain` function will no longer be called from finalize.ts (but kept for backward compatibility).
+
+---
+
+## File 2: `supabase/functions/auction/handlers/finalize.ts`
+
+**Changes to imports** (line 9): Add individual transfer functions and `validateSettlementPreconditions`:
+
+```typescript
+import { 
+  calculateFees, validateSettlementPreconditions,
+  transferNFTFromEscrow, transferSOLPayment, transferPlatformFee, transferRoyaltyFee,
+  getConnection, getEscrowKeypair 
+} from '../utils/solana.ts';
 ```
 
-## 6. How to Test This Stage
+**Add partial settlement detection** after line 33 (after status checks, before `canFinalizeAuction`):
 
-1. Ensure `AUCTION_STUB_MODE` is set to `false`
-2. Ensure escrow wallet is funded with devnet SOL
-3. Connect wallet via AppKit
-4. Navigate to a minted NFT you own
-5. Click "Create Auction"
-6. Set price (≥ 0.1 SOL) and duration (1 hour for testing)
-7. Approve the NFT transfer in your wallet
-8. Wait for confirmation
-9. Auction should be created in DB
+```typescript
+// Block retry if partial settlement already occurred
+const hasPartialSettlement = auction.tx_signature || auction.seller_payment_signature || 
+  auction.platform_fee_signature || auction.royalty_fee_signature;
+if (hasPartialSettlement) {
+  return { success: false, error: 'partial_settlement_detected: manual_resolution_required' };
+}
+```
 
-## 7. Expected Result
+**Replace the on-chain block** (lines 54-78 non-stub path and lines 80-89 post-settlement DB write):
 
-- NFT moves from seller to escrow on-chain ✅
-- Backend verifies NFT is in escrow before creating auction ✅
-- Auction record created with correct end_at time ✅
-- If NFT transfer is skipped, create fails with clear error ✅
+The non-stub `else` branch (lines 63-72) becomes step-by-step with checkpoints. The catch block and post-settlement write are restructured:
 
-## 8. Remaining Risks Before Stage 3
+```typescript
+try {
+  if (STUB_MODE) {
+    // ... existing stub logic unchanged ...
+  } else {
+    // Pre-validate all addresses and balances before any transfer
+    await validateSettlementPreconditions(
+      auction.nft_mint, auction.winner_wallet, auction.seller_wallet, auction.current_price_lamports
+    );
 
-- If the NFT transfer succeeds but the backend create call fails, the NFT is stuck in escrow with no auction record (edge case — needs manual recovery)
-- Frontend duration options include 1h, 6h, 12h which are now valid (MIN_DURATION_HOURS=1)
-- Bid flow (`usePlaceBid`) already uses AppKit and is ready for Stage 3
+    const completedSteps: string[] = [];
 
-## Next: Stage 3 — Real Bid Flow
+    try {
+      // Step 1: NFT transfer
+      nftTransferSignature = await transferNFTFromEscrow(auction.nft_mint, auction.winner_wallet);
+      await updateAuction(auction_id, { tx_signature: nftTransferSignature });
+      await updateNFT(auction.nft_mint, { owner_address: auction.winner_wallet, is_listed: false, price_lamports: null });
+      completedSteps.push('NFT transfer');
 
-Stage 3 will verify that real SOL bids work on devnet. The bid handler already has on-chain verification logic. Need to confirm it works end-to-end with real transactions.
+      // Step 2: Seller payout
+      solPaymentSignature = await transferSOLPayment(auction.winner_wallet, auction.seller_wallet, auction.current_price_lamports);
+      await updateAuction(auction_id, { seller_payment_signature: solPaymentSignature });
+      completedSteps.push('seller payout');
 
-**Confirm Stage 2 is working, then I will proceed to Stage 3.**
+      // Step 3: Platform fee
+      platformFeeSignature = await transferPlatformFee(auction.current_price_lamports);
+      await updateAuction(auction_id, { platform_fee_signature: platformFeeSignature });
+      completedSteps.push('platform fee');
+
+      // Step 4: Royalty fee
+      royaltyFeeSignature = await transferRoyaltyFee(auction.current_price_lamports);
+      await updateAuction(auction_id, { royalty_fee_signature: royaltyFeeSignature });
+      completedSteps.push('royalty fee');
+    } catch (stepError) {
+      const partialMsg = completedSteps.length > 0
+        ? `Partial settlement: ${completedSteps.join(', ')} completed. Failed at next step: ${stepError.message}`
+        : `Settlement failed before any transfer: ${stepError.message}`;
+      console.error('[finalize-auction] ❌ ' + partialMsg);
+      await updateAuction(auction_id, { status: 'finalize_failed', finalize_error: partialMsg });
+      throw new Error(partialMsg);
+    }
+  }
+} catch (chainError) {
+  console.error('[finalize-auction] ❌ On-chain finalize failed:', chainError);
+  // Only update status if not already set by the step-level catch
+  if (!chainError.message.startsWith('Partial settlement:') && !chainError.message.startsWith('Settlement failed')) {
+    await updateAuction(auction_id, { status: 'finalize_failed', finalize_error: chainError.message });
+  }
+  throw new Error(`On-chain finalization failed: ${chainError.message}`);
+}
+
+// All steps succeeded — mark finished
+await updateAuction(auction_id, { status: 'finished', finalize_error: null });
+```
+
+The `await updateNFT(...)` call on line 89 is removed since it now happens at step 1.
+
+The rest of the handler (refunds + response) stays unchanged.
+
+---
+
+## Verification After Deploy
+
+1. Call finalize on auction `445d571b` — must return `partial_settlement_detected: manual_resolution_required`
+2. Manually reconcile that auction via SQL
+3. Create a new clean auction and run the full happy-path settlement test
+
