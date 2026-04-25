@@ -1,0 +1,237 @@
+{
+  "canvas": {
+    "width": 390,
+    "height": 590,
+    "locked": true
+  },
+  "screen": "password",
+  "elements": [
+    {
+      "id": "ba3af2f4-d8e3-4fd3-b357-dd1cefbd0fea",
+      "type": "container",
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 600,
+      "opacity": 1,
+      "zIndex": 0,
+      "locked": false,
+      "styles": {
+        "backgroundColor": "#1a1a2e",
+        "borderRadius": "0px",
+        "border": "none",
+        "background": "linear-gradient(180deg, #1a1a2e 0%, #111122 100%)"
+      },
+      "content": {},
+      "label": "Background",
+      "anchor": "background",
+      "screen": "password"
+    },
+    {
+      "id": "4ad12462-f04c-4d40-8332-487d58b81c5a",
+      "type": "container",
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 48,
+      "opacity": 1,
+      "zIndex": 1,
+      "locked": false,
+      "styles": {
+        "backgroundColor": "#18181b",
+        "borderRadius": "0px",
+        "border": "none"
+      },
+      "content": {},
+      "label": "Header bar",
+      "anchor": "header",
+      "screen": "password"
+    },
+    {
+      "id": "6c9d10bb-62a7-4f94-91d9-81de37173f0a",
+      "type": "text",
+      "x": 140,
+      "y": 10,
+      "width": 120,
+      "height": 28,
+      "opacity": 1,
+      "zIndex": 2,
+      "locked": false,
+      "styles": {
+        "color": "#ffffff",
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "letterSpacing": "0.02em"
+      },
+      "content": {
+        "text": "phantom"
+      },
+      "label": "phantom",
+      "anchor": "header-title",
+      "screen": "password"
+    },
+    {
+      "id": "161961c9-9e2e-4a22-a59e-19deed295c92",
+      "type": "button",
+      "x": 358,
+      "y": 10,
+      "width": 28,
+      "height": 28,
+      "opacity": 1,
+      "zIndex": 3,
+      "locked": false,
+      "styles": {
+        "backgroundColor": "transparent",
+        "color": "#888888",
+        "borderRadius": "50%",
+        "border": "1px solid #444444",
+        "fontSize": "14px",
+        "fontWeight": "500"
+      },
+      "content": {
+        "text": "?"
+      },
+      "label": "? Button",
+      "anchor": "help-button",
+      "screen": "password"
+    },
+    {
+      "id": "7dbf7785-7906-43ce-8d47-3d77d9e7a7b5",
+      "type": "container",
+      "x": 0,
+      "y": 48,
+      "width": 400,
+      "height": 1,
+      "opacity": 1,
+      "zIndex": 4,
+      "locked": false,
+      "styles": {
+        "backgroundColor": "#2a2a3a",
+        "borderRadius": "0px",
+        "border": "none"
+      },
+      "content": {},
+      "label": "Separator",
+      "anchor": "header-line",
+      "screen": "password"
+    },
+    {
+      "id": "a5fd3c46-76fe-4cb2-afeb-c121bc4d81fd",
+      "type": "image",
+      "x": 130,
+      "y": 100,
+      "width": 140,
+      "height": 150,
+      "opacity": 1,
+      "zIndex": 5,
+      "locked": false,
+      "styles": {
+        "backgroundColor": "transparent",
+        "borderRadius": "0px",
+        "objectFit": "contain"
+      },
+      "content": {
+        "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDI2NyAyMjIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHBhdGggZD0iTTMxLjU5NCAyMjJDNjUuNjY2IDIyMiA5MS4yNzEgMTkyLjQxNCAxMDYuNTUyIDE2OS4wMzRDMTA0LjY5NCAxNzQuMjA3IDEwMy42NjEgMTc5LjM3OSAxMDMuNjYxIDE4NC4zNDVDMTAzLjY2MSAxOTggMTExLjUwOCAyMDcuNzI0IDEyNi45OTUgMjA3LjcyNEMxNDguMjY1IDIwNy43MjQgMTcwLjk3OSAxODkuMTAzIDE4Mi43NDkgMTY5LjAzNEMxODEuOTIzIDE3MS45MzEgMTgxLjUxIDE3NC42MjEgMTgxLjUxIDE3Ny4xMDNDMTgxLjUxIDE4Ni42MjEgMTg2Ljg3OSAxOTIuNjIxIDE5Ny44MjQgMTkyLjYyMUMyMzIuMzA5IDE5Mi42MjEgMjY3IDEzMS41ODYgMjY3IDc4LjIwN0MyNjcgMzYuNjIxIDI0NS45MzcgMCAxOTMuMDc0IDBDMTAwLjE1MSAwIDAgMTEzLjM3OSAwIDE4Ni42MjFDMCAyMTUuMzc5IDE1LjQ4NyAyMjIgMzEuNTk0IDIyMlpNMTYxLjA2NyA3My42NTVDMTYxLjA2NyA2My4zMSAxNjYuODQ5IDU2LjA2OSAxNzUuMzE2IDU2LjA2OUMxODMuNTc1IDU2LjA2OSAxODkuMzU3IDYzLjMxIDE4OS4zNTcgNzMuNjU1QzE4OS4zNTcgODQgMTgzLjU3NSA5MS40NDggMTc1LjMxNiA5MS40NDhDMTY2Ljg0OSA5MS40NDggMTYxLjA2NyA4NCAxNjEuMDY3IDczLjY1NVpNMjA1LjI1OCA3My42NTVDMjA1LjI1OCA2My4zMSAyMTEuMDM5IDU2LjA2OSAyMTkuNTA2IDU2LjA2OUMyMjcuNzY2IDU2LjA2OSAyMzMuNTQ4IDYzLjMxIDIzMy41NDggNzMuNjU1QzIzMy41NDggODQgMjI3Ljc2NiA5MS40NDggMjE5LjUwNiA5MS40NDhDMjExLjAzOSA5MS40NDggMjA1LjI1OCA4NCAyMDUuMjU4IDczLjY1NVoiIGZpbGw9IiNGRkZERjgiLz4KPC9zdmc+Cg=="
+      },
+      "label": "Ghost logo",
+      "anchor": "logo",
+      "screen": "password"
+    },
+    {
+      "id": "5d0053d6-5289-450c-b950-98df686b675f",
+      "type": "text",
+      "x": 40,
+      "y": 290,
+      "width": 320,
+      "height": 36,
+      "opacity": 1,
+      "zIndex": 6,
+      "locked": false,
+      "styles": {
+        "color": "#ffffff",
+        "fontSize": "22px",
+        "fontWeight": "600",
+        "textAlign": "center"
+      },
+      "content": {
+        "text": "Enter your Password"
+      },
+      "label": "Enter Password",
+      "anchor": "title",
+      "screen": "password"
+    },
+    {
+      "id": "db5009e4-aa61-499b-8ebd-2625ec8096b6",
+      "type": "input",
+      "x": 24,
+      "y": 344,
+      "width": 352,
+      "height": 52,
+      "opacity": 1,
+      "zIndex": 7,
+      "locked": false,
+      "styles": {
+        "backgroundColor": "#2c2c3a",
+        "color": "#e8e8e8",
+        "border": "1px solid #3a3a4a",
+        "borderRadius": "12px",
+        "padding": "0 16px",
+        "fontSize": "15px"
+      },
+      "content": {
+        "placeholder": "Password"
+      },
+      "label": "Password input",
+      "anchor": "password-input",
+      "screen": "password"
+    },
+    {
+      "id": "f0868a87-5dfb-4018-94a4-5fb54a0fc67f",
+      "type": "button",
+      "x": 24,
+      "y": 488,
+      "width": 352,
+      "height": 52,
+      "opacity": 1,
+      "zIndex": 8,
+      "locked": false,
+      "styles": {
+        "backgroundColor": "#ab9ff2",
+        "color": "#1a1a2e",
+        "borderRadius": "14px",
+        "fontWeight": "600",
+        "fontSize": "16px"
+      },
+      "content": {
+        "text": "Unlock"
+      },
+      "label": "Unlock",
+      "anchor": "unlock-button",
+      "screen": "password"
+    },
+    {
+      "id": "2e2e88d4-afbd-40c6-9c6e-c9e808afde33",
+      "type": "text",
+      "x": 100,
+      "y": 556,
+      "width": 200,
+      "height": 24,
+      "opacity": 1,
+      "zIndex": 9,
+      "locked": false,
+      "styles": {
+        "color": "#ab9ff2",
+        "fontSize": "14px",
+        "fontWeight": "500",
+        "textAlign": "center"
+      },
+      "content": {
+        "text": "Forgot Password?"
+      },
+      "label": "Forgot Password?",
+      "anchor": "forgot-link",
+      "screen": "password"
+    }
+  ],
+  "publishedAt": "2026-04-25T00:00:00Z"
+}

@@ -14,7 +14,7 @@ import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
 import { ManualColorEditor } from './ManualColorEditor';
 import { AiDomScannerButton } from '@/components/admin/AiDomScannerButton';
 import { WalletPreviewModeSelector, type PreviewMode } from './WalletPreviewModeSelector';
-import { PhantomMockUI } from '@/components/wallet/PhantomMockUI';
+import { DynamicPhantomRenderer } from '@/components/wallet/DynamicPhantomRenderer';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -403,9 +403,9 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
                   : '0 20px 40px rgba(0,0,0,0.3)'
             }}
           >
-            {/* Phantom Mockup (from Overlay Editor) */}
+            {/* Phantom layout published from Overlay Editor */}
             {previewMode === 'phantom' ? (
-              <PhantomMockUI walletStyle={walletStyle} />
+              <DynamicPhantomRenderer />
             ) : currentLayer === 'lockLayer' ? (
               renderLoginScreen()
             ) : (
