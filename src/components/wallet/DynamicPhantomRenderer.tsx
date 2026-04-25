@@ -34,12 +34,18 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {} })
   const [layout, setLayout] = useState<PhantomLayout | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Try local public/ first, fall back to GitHub raw (always up-to-date with Overlay Editor publishes)
+  const GITHUB_RAW = 'https://raw.githubusercontent.com/Alexanfr-God/solana-style-studio/main/public/phantom-layout.json';
+
   useEffect(() => {
-    fetch('/phantom-layout.json', { cache: 'no-store' })
-      .then(r => {
+    const tryFetch = (url: string) =>
+      fetch(url, { cache: 'no-store' }).then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
-      })
+      });
+
+    tryFetch('/phantom-layout.json')
+      .catch(() => tryFetch(GITHUB_RAW))
       .then(setLayout)
       .catch(e => setError(e.message));
   }, []);
