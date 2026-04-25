@@ -689,6 +689,20 @@ serve(async (req) => {
         "fontFamily": "Inter, sans-serif",
         "borderRadius": "14px",
         "transition": "all 0.2s ease"
+      },
+      "phantom": {
+        "root": { "backgroundColor": "#131217" },
+        "header": { "backgroundColor": "#1e1c23" },
+        "networkBadge": { "backgroundColor": "#2a2832", "color": "#ab9ff2", "border": "#3d3850" },
+        "balance": { "color": "#ffffff", "usdColor": "#888888" },
+        "buttons": {
+          "backgroundColor": "#2a2832",
+          "color": "#ab9ff2",
+          "border": "#3d3850",
+          "borderRadius": "12px"
+        },
+        "tokenList": { "rowBackground": "transparent", "textColor": "#e8e8e8", "mutedColor": "#888888" },
+        "tabs": { "activeColor": "#ab9ff2" }
       }
     };
 
