@@ -13,7 +13,8 @@ import { useSmartEdit } from '@/contexts/SmartEditContext';
 import { applyThemeToDOM } from '@/services/runtimeMappingEngine';
 import { ManualColorEditor } from './ManualColorEditor';
 import { AiDomScannerButton } from '@/components/admin/AiDomScannerButton';
-import { WalletPreviewModeSelector } from './WalletPreviewModeSelector';
+import { WalletPreviewModeSelector, type PreviewMode } from './WalletPreviewModeSelector';
+import { PhantomMockUI } from '@/components/wallet/PhantomMockUI';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -31,11 +32,13 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
     isCustomizing,
     currentLayer,
     unlockWallet,
-    setCurrentLayer
+    setCurrentLayer,
+    walletStyle,
   } = useWalletCustomizationStore();
   
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('wcc');
   const walletContainerRef = useRef<HTMLDivElement>(null);
   
   // Smart Edit Context for visual element selection
@@ -338,7 +341,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           </div>
           
           {/* Wallet Preview Mode Selector */}
-          <WalletPreviewModeSelector />
+          <WalletPreviewModeSelector value={previewMode} onChange={setPreviewMode} />
         </div>
         
         {/* Wallet container */}
@@ -381,25 +384,34 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           )}
           
           {/* Wallet Container */}
-          <div 
+          <div
             ref={walletContainerRef}
             data-wallet-container
             className="relative w-96 h-[650px] mx-auto rounded-2xl overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: isCustomizing 
-                ? '0 0 30px rgba(153, 69, 255, 0.4), inset 0 0 20px rgba(153, 69, 255, 0.1)' 
-                : '0 20px 40px rgba(0,0,0,0.3)'
+              background: previewMode === 'phantom'
+                ? '#131217'
+                : 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+              backdropFilter: previewMode === 'phantom' ? 'none' : 'blur(10px)',
+              border: previewMode === 'phantom'
+                ? '1px solid rgba(171,159,242,0.2)'
+                : '1px solid rgba(255,255,255,0.1)',
+              boxShadow: previewMode === 'phantom'
+                ? '0 0 40px rgba(171,159,242,0.15), 0 20px 40px rgba(0,0,0,0.5)'
+                : isCustomizing
+                  ? '0 0 30px rgba(153, 69, 255, 0.4), inset 0 0 20px rgba(153, 69, 255, 0.1)'
+                  : '0 20px 40px rgba(0,0,0,0.3)'
             }}
           >
-            {currentLayer === 'lockLayer' ? (
+            {/* Phantom Mockup (from Overlay Editor) */}
+            {previewMode === 'phantom' ? (
+              <PhantomMockUI walletStyle={walletStyle} />
+            ) : currentLayer === 'lockLayer' ? (
               renderLoginScreen()
             ) : (
               <WalletContainer />
             )}
-            
+
             {/* Visual Element Selection System */}
             <AdvancedInteractiveElementSelector
               isActive={isEditMode}
