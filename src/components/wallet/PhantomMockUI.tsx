@@ -1,4 +1,5 @@
 import React from 'react';
+import { useThemeStore } from '@/state/themeStore';
 import { WalletStyle } from '@/stores/customizationStore';
 
 // Bounding boxes relative to 384×650 container (wacocu wallet card)
@@ -38,23 +39,29 @@ interface Props {
   theme?: PhantomTheme;
 }
 
-function resolveTheme(walletStyle?: Partial<WalletStyle>, theme?: PhantomTheme): Required<PhantomTheme> {
+function resolveTheme(
+  storePhantom: any,
+  walletStyle?: Partial<WalletStyle>,
+  theme?: PhantomTheme,
+): Required<PhantomTheme> {
+  const p = storePhantom ?? {};
   return {
-    backgroundColor:  theme?.backgroundColor  ?? walletStyle?.backgroundColor ?? '#131217',
-    headerBackground: theme?.headerBackground  ?? '#1e1c23',
-    textColor:        theme?.textColor         ?? walletStyle?.textColor        ?? '#ffffff',
-    mutedColor:       theme?.mutedColor        ?? '#888888',
-    accentColor:      theme?.accentColor       ?? walletStyle?.accentColor      ?? '#ab9ff2',
-    buttonBackground: theme?.buttonBackground  ?? walletStyle?.buttonColor      ?? '#2a2832',
-    buttonBorder:     theme?.buttonBorder      ?? '#3d3850',
-    badgeBackground:  theme?.badgeBackground   ?? '#2a2832',
-    badgeBorder:      theme?.badgeBorder       ?? '#3d3850',
-    rowBackground:    theme?.rowBackground     ?? 'transparent',
+    backgroundColor:  theme?.backgroundColor  ?? p.root?.backgroundColor        ?? walletStyle?.backgroundColor ?? '#131217',
+    headerBackground: theme?.headerBackground  ?? p.header?.backgroundColor      ?? '#1e1c23',
+    textColor:        theme?.textColor         ?? p.balance?.color               ?? walletStyle?.textColor        ?? '#ffffff',
+    mutedColor:       theme?.mutedColor        ?? p.tokenList?.mutedColor        ?? '#888888',
+    accentColor:      theme?.accentColor       ?? p.networkBadge?.color          ?? walletStyle?.accentColor      ?? '#ab9ff2',
+    buttonBackground: theme?.buttonBackground  ?? p.buttons?.backgroundColor     ?? walletStyle?.buttonColor      ?? '#2a2832',
+    buttonBorder:     theme?.buttonBorder      ?? p.buttons?.border              ?? '#3d3850',
+    badgeBackground:  theme?.badgeBackground   ?? p.networkBadge?.backgroundColor ?? '#2a2832',
+    badgeBorder:      theme?.badgeBorder       ?? p.networkBadge?.border         ?? '#3d3850',
+    rowBackground:    theme?.rowBackground     ?? p.tokenList?.rowBackground     ?? 'transparent',
   };
 }
 
 export const PhantomMockUI: React.FC<Props> = ({ walletStyle, theme }) => {
-  const t = resolveTheme(walletStyle, theme);
+  const storePhantom = useThemeStore((s) => s.getDisplayTheme()?.phantom);
+  const t = resolveTheme(storePhantom, walletStyle, theme);
 
   return (
     <div

@@ -1,17 +1,22 @@
-
 {
   "name": "Simple Gray Theme",
   "version": "1.0.0",
   "globalSearchInput": {
     "backgroundColor": "#374151",
-    "textColor": "#FFFFFF", 
+    "textColor": "#FFFFFF",
     "placeholderColor": "#9CA3AF",
     "borderRadius": "12px",
     "border": "none",
     "fontFamily": "Inter, sans-serif",
     "fontSize": "15px",
-    "iconSearch": { "color": "#FFFFFF", "type": "search" },
-    "iconClose": { "color": "#FFFFFF", "type": "x" }
+    "iconSearch": {
+      "color": "#FFFFFF",
+      "type": "search"
+    },
+    "iconClose": {
+      "color": "#FFFFFF",
+      "type": "x"
+    }
   },
   "lockLayer": {
     "backgroundColor": "rgba(75, 85, 99, 0.8)",
@@ -95,9 +100,18 @@
     "footer": {
       "backgroundColor": "#374151",
       "footerIcons": {
-        "addIcon": { "color": "#FFFFFF", "type": "plus" },
-        "editIcon": { "color": "#FFFFFF", "type": "pencil" },
-        "settingsIcon": { "color": "#FFFFFF", "type": "settings" }
+        "addIcon": {
+          "color": "#FFFFFF",
+          "type": "plus"
+        },
+        "editIcon": {
+          "color": "#FFFFFF",
+          "type": "pencil"
+        },
+        "settingsIcon": {
+          "color": "#FFFFFF",
+          "type": "settings"
+        }
       }
     }
   },
@@ -285,14 +299,20 @@
       "backgroundPosition": "center"
     },
     "header": {
-      "backIcon": { "color": "#9CA3AF", "type": "arrow-left" },
+      "backIcon": {
+        "color": "#9CA3AF",
+        "type": "arrow-left"
+      },
       "title": {
         "textColor": "#FFFFFF",
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
         "fontSize": "23px"
       },
-      "qrIcon": { "color": "#9CA3AF", "type": "qr-code" }
+      "qrIcon": {
+        "color": "#9CA3AF",
+        "type": "qr-code"
+      }
     },
     "centerContainer": {
       "backgroundColor": "rgba(107, 114, 128, 0.1)",
@@ -327,7 +347,10 @@
         "fontFamily": "Inter, sans-serif",
         "fontWeight": "bold",
         "fontSize": "19px",
-        "icon": { "color": "#9CA3AF", "type": "x" },
+        "icon": {
+          "color": "#9CA3AF",
+          "type": "x"
+        },
         "borderRadius": "16px"
       }
     }
@@ -377,7 +400,10 @@
           "fontWeight": "bold",
           "fontSize": "17px"
         },
-        "icon": { "color": "#FFFFFF", "type": "arrow-left" }
+        "icon": {
+          "color": "#FFFFFF",
+          "type": "arrow-left"
+        }
       },
       "title": {
         "textColor": "#FFFFFF",
@@ -427,7 +453,10 @@
         "fontWeight": "bold",
         "fontSize": "18px",
         "borderRadius": "14px",
-        "icon": { "color": "#FFFFFF", "type": "x" }
+        "icon": {
+          "color": "#FFFFFF",
+          "type": "x"
+        }
       }
     }
   },
@@ -558,8 +587,14 @@
       "borderRadius": "12px",
       "border": "none",
       "fontFamily": "Inter, sans-serif",
-      "iconSearch": { "color": "#FFFFFF", "type": "search" },
-      "iconClose": { "color": "#FFFFFF", "type": "x" }
+      "iconSearch": {
+        "color": "#FFFFFF",
+        "type": "search"
+      },
+      "iconClose": {
+        "color": "#FFFFFF",
+        "type": "x"
+      }
     },
     "searchInputFont": {
       "fontFamily": "Inter, sans-serif",
@@ -571,14 +606,20 @@
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px",
-      "iconTime": { "color": "#FFFFFF", "type": "clock" }
+      "iconTime": {
+        "color": "#FFFFFF",
+        "type": "clock"
+      }
     },
     "trendingLabel": {
       "textColor": "#FFFFFF",
       "fontFamily": "Inter, sans-serif",
       "fontWeight": "bold",
       "fontSize": "17px",
-      "iconTrending": { "color": "#10B981", "type": "trending-up" }
+      "iconTrending": {
+        "color": "#10B981",
+        "type": "trending-up"
+      }
     },
     "tokenTag": {
       "backgroundColor": "rgba(107, 114, 128, 0.2)",
@@ -661,5 +702,36 @@
     "fontFamily": "Inter, sans-serif",
     "borderRadius": "14px",
     "transition": "all 0.2s ease"
+  },
+  "phantom": {
+    "root": {
+      "backgroundColor": "#131217"
+    },
+    "header": {
+      "backgroundColor": "#1e1c23"
+    },
+    "networkBadge": {
+      "backgroundColor": "#2a2832",
+      "color": "#ab9ff2",
+      "border": "#3d3850"
+    },
+    "balance": {
+      "color": "#ffffff",
+      "usdColor": "#888888"
+    },
+    "buttons": {
+      "backgroundColor": "#2a2832",
+      "color": "#ab9ff2",
+      "border": "#3d3850",
+      "borderRadius": "12px"
+    },
+    "tokenList": {
+      "rowBackground": "transparent",
+      "textColor": "#e8e8e8",
+      "mutedColor": "#888888"
+    },
+    "tabs": {
+      "activeColor": "#ab9ff2"
+    }
   }
 }
