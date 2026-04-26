@@ -630,7 +630,9 @@ export default function MintedGallerySection() {
     }).format(date);
   }
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  // When the wallet filter is active, the total reflects the filtered list shown to the user.
+  const effectiveTotal = walletFilter !== 'all' ? items.length : totalCount;
+  const totalPages = Math.max(1, Math.ceil(effectiveTotal / pageSize));
 
   return (
     <section className="mt-16 pt-12 border-t border-white/10">
