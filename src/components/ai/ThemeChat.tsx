@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw, Loader2, Sparkles } from 'lucide-react';
+import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw, Loader2, Sparkles, Ghost } from 'lucide-react';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { FileUploadService } from '@/services/fileUploadService';
 import { LlmPatchService, type PatchRequest } from '@/services/llmPatchService';
@@ -36,6 +36,7 @@ const ThemeChat = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingPhantomTheme, setIsGeneratingPhantomTheme] = useState(false);
   const [authStatus, setAuthStatus] = useState<'checking' | 'wallet-connected' | 'authenticated' | 'disconnected'>('checking');
   const [chatMode, setChatMode] = useState<ChatMode>('general');
   const [applied, setApplied] = useState<Record<string, boolean>>({});
@@ -572,7 +573,94 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
     }
   };
 
-  // Check if message is a generation command
+  // Generate full Phantom theme via AI pipeline
+  const handleGeneratePhantomTheme = async (prompt: string) => {
+    if (!walletProfile?.wallet_address) {
+      addMessage('⚠️ Please connect your wallet first to generate Phantom themes', 'assistant');
+      toast.error('Wallet not connected');
+      return;
+    }
+
+    setIsGeneratingPhantomTheme(true);
+    addMessage(
+      `👻 Generating Phantom theme: "${prompt}"…\n\n` +
+      `Step 1/3: Creating background with DALL-E 3\nStep 2/3: Analyzing colors with GPT-4o Vision\nStep 3/3: Designing elements`,
+      'assistant'
+    );
+
+    try {
+      const supabase = (await import('@/integrations/supabase/client')).supabase;
+      const { data, error } = await supabase.functions.invoke('generate-theme', {
+        body: {
+          prompt,
+          userId: walletProfile.wallet_address,
+          wallet: 'phantom',
+        },
+      });
+
+      if (error) {
+        console.error('[generate-theme] Error:', error);
+        addMessage(`❌ Theme generation failed: ${error.message}`, 'assistant');
+        toast.error('Failed to generate Phantom theme');
+        return;
+      }
+
+      if (!data?.success || !data?.theme) {
+        addMessage(`❌ ${data?.error || 'Theme generation failed. Try a different prompt.'}`, 'assistant');
+        toast.error(data?.error || 'Generation failed');
+        return;
+      }
+
+      const theme = data.theme;
+      console.log('[generate-theme] ✅ Theme received:', theme.theme_name);
+
+      const bgUrl = theme.global?.background?.url;
+      addMessage(
+        `✅ **${theme.theme_name}** generated!\n\n` +
+        `• Background: ${theme.global.background.type}\n` +
+        `• Luminance: ${theme.global.color_analysis.luminance}\n` +
+        `• Accent color: ${theme.global.color_analysis.safe_accent}\n` +
+        `• Elements designed: ${Object.keys(theme.elements).length}\n\n` +
+        `The theme is ready to apply to your Phantom overlay.`,
+        'assistant',
+        bgUrl
+      );
+
+      toast.success(`👻 ${theme.theme_name} generated!`);
+
+    } catch (error) {
+      console.error('[generate-theme] Fatal error:', error);
+      addMessage(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
+      toast.error('Failed to generate Phantom theme');
+    } finally {
+      setIsGeneratingPhantomTheme(false);
+    }
+  };
+
+  // Check if message is a phantom-theme command
+  const isPhantomThemeCommand = (message: string): boolean => {
+    const lowerMsg = message.toLowerCase().trim();
+    return (
+      lowerMsg === '/theme' ||
+      lowerMsg.startsWith('/theme ') ||
+      lowerMsg.startsWith('phantom theme') ||
+      lowerMsg.startsWith('сделай тему') ||
+      lowerMsg.startsWith('create phantom theme') ||
+      lowerMsg.startsWith('generate phantom theme')
+    );
+  };
+
+  const extractPhantomThemePrompt = (message: string): string => {
+    const lowerMsg = message.toLowerCase().trim();
+    if (lowerMsg.startsWith('/theme ')) return message.slice(7).trim();
+    if (lowerMsg.startsWith('phantom theme')) return message.slice(13).trim();
+    if (lowerMsg.startsWith('сделай тему')) return message.slice(11).trim();
+    if (lowerMsg.startsWith('create phantom theme')) return message.slice(20).trim();
+    if (lowerMsg.startsWith('generate phantom theme')) return message.slice(22).trim();
+    return message;
+  };
+
+  // Check if message is a poster generation command
   const isGenerationCommand = (message: string): boolean => {
     const lowerMsg = message.toLowerCase().trim();
     return (
@@ -608,7 +696,20 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
     const userMessage = inputValue;
     setInputValue('');
 
-    // Check if it's a generation command
+    // Check if it's a phantom theme command
+    if (isPhantomThemeCommand(userMessage)) {
+      const prompt = extractPhantomThemePrompt(userMessage);
+      if (!prompt.trim()) {
+        addMessage(userMessage, 'user');
+        addMessage('⚠️ Please describe the theme. Example: "/theme cyberpunk neon green"', 'assistant');
+        return;
+      }
+      addMessage(userMessage, 'user');
+      await handleGeneratePhantomTheme(prompt);
+      return;
+    }
+
+    // Check if it's a poster generation command
     if (isGenerationCommand(userMessage)) {
       const prompt = extractGenerationPrompt(userMessage);
       
@@ -821,6 +922,10 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
                     <p>• "/poster cyberpunk city with neon lights"</p>
                     <p>• "/generate cosmic galaxy nebula"</p>
                     <p>• "create poster abstract blockchain network"</p>
+                    <p className="text-violet-400 font-medium mt-2">👻 Phantom Theme Generation:</p>
+                    <p>• "/theme cyberpunk neon green buttons"</p>
+                    <p>• "/theme glassmorphism white minimal"</p>
+                    <p>• "/theme bitcoin gold luxury"</p>
                   </>
                 ) : (
                   <>
@@ -1009,8 +1114,8 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={authStatus === 'authenticated' ? "Ask me to customize your wallet..." : "Connect wallet first..."}
               className="bg-white/5 border-white/20 text-white placeholder:text-white/40"
-              onKeyPress={(e) => e.key === 'Enter' && !isProcessing && !isGenerating && handleSendMessage()}
-              disabled={isProcessing || isGenerating || isAuthenticating}
+              onKeyPress={(e) => e.key === 'Enter' && !isProcessing && !isGenerating && !isGeneratingPhantomTheme && handleSendMessage()}
+              disabled={isProcessing || isGenerating || isGeneratingPhantomTheme || isAuthenticating}
             />
           </div>
           
@@ -1031,6 +1136,27 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
             title="Upload image"
           >
             <Upload className={`h-4 w-4 ${isUploading ? 'animate-spin' : ''}`} />
+          </Button>
+
+          <Button
+            onClick={() => {
+              if (inputValue.trim()) {
+                setInputValue(`/theme ${inputValue.trim()}`);
+              } else {
+                setInputValue('/theme ');
+              }
+              setTimeout(() => {
+                const input = document.querySelector('input[placeholder*="customize"]') as HTMLInputElement;
+                if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+              }, 50);
+            }}
+            disabled={isGeneratingPhantomTheme || authStatus !== 'authenticated'}
+            variant="outline"
+            size="icon"
+            className="bg-gradient-to-r from-violet-500/20 to-purple-500/20 border-violet-500/30 hover:from-violet-500/30 hover:to-purple-500/30 disabled:opacity-50"
+            title="Generate Phantom theme"
+          >
+            <Ghost className={`h-4 w-4 text-violet-400 ${isGeneratingPhantomTheme ? 'animate-pulse' : ''}`} />
           </Button>
 
           <Button
@@ -1062,7 +1188,7 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
           
           <Button
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isProcessing || isAuthenticating}
+            disabled={!inputValue.trim() || isProcessing || isGeneratingPhantomTheme || isAuthenticating}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
             title="Send message"
           >
