@@ -15,6 +15,7 @@ import { ManualColorEditor } from './ManualColorEditor';
 import { AiDomScannerButton } from '@/components/admin/AiDomScannerButton';
 import { WalletPreviewModeSelector, type PreviewMode } from './WalletPreviewModeSelector';
 import { DynamicPhantomRenderer } from '@/components/wallet/DynamicPhantomRenderer';
+import { usePhantomThemeStore, buildContainerBackground, buildThemeOverrides } from '@/stores/phantomThemeStore';
 
 interface WalletPreviewContainerProps {
   onElementSelect?: (elementSelector: string) => void;
@@ -39,6 +40,12 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [previewMode, setPreviewMode] = useState<PreviewMode>('wcc');
+  const { phantomTheme } = usePhantomThemeStore();
+
+  // Auto-switch to phantom mode when a theme is generated
+  useEffect(() => {
+    if (phantomTheme) setPreviewMode('phantom');
+  }, [phantomTheme]);
   const walletContainerRef = useRef<HTMLDivElement>(null);
   
   // Smart Edit Context for visual element selection
@@ -389,15 +396,19 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             data-wallet-container
             className="relative w-96 h-[650px] mx-auto rounded-2xl overflow-hidden"
             style={{
-              background: previewMode === 'phantom'
-                ? '#131217'
-                : 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+              background: previewMode === 'phantom' && phantomTheme
+                ? buildContainerBackground(phantomTheme)
+                : previewMode === 'phantom'
+                  ? '#131217'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
               backdropFilter: previewMode === 'phantom' ? 'none' : 'blur(10px)',
               border: previewMode === 'phantom'
-                ? '1px solid rgba(171,159,242,0.2)'
+                ? `1px solid ${phantomTheme?.global.color_analysis.safe_accent ?? 'rgba(171,159,242,0.2)'}`
                 : '1px solid rgba(255,255,255,0.1)',
               boxShadow: previewMode === 'phantom'
-                ? '0 0 40px rgba(171,159,242,0.15), 0 20px 40px rgba(0,0,0,0.5)'
+                ? `0 0 40px ${phantomTheme?.global.color_analysis.safe_accent ?? 'rgba(171,159,242,0.15)'}40, 0 20px 40px rgba(0,0,0,0.5)`
                 : isCustomizing
                   ? '0 0 30px rgba(153, 69, 255, 0.4), inset 0 0 20px rgba(153, 69, 255, 0.1)'
                   : '0 20px 40px rgba(0,0,0,0.3)'
@@ -405,7 +416,9 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           >
             {/* Phantom layout published from Overlay Editor */}
             {previewMode === 'phantom' ? (
-              <DynamicPhantomRenderer />
+              <DynamicPhantomRenderer
+                themeOverrides={phantomTheme ? buildThemeOverrides(phantomTheme) : {}}
+              />
             ) : currentLayer === 'lockLayer' ? (
               renderLoginScreen()
             ) : (

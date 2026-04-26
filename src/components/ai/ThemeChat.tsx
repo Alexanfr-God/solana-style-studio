@@ -17,6 +17,7 @@ import { buildExclusiveImageOps } from '@/ai/tools/patchBuilders';
 import { toast } from 'sonner';
 import ColorSchemeCard from './ColorSchemeCard';
 import { ThemeInitButton } from './ThemeInitButton';
+import { usePhantomThemeStore } from '@/stores/phantomThemeStore';
 
 interface Message {
   id: string;
@@ -60,6 +61,7 @@ const ThemeChat = () => {
   const { elements } = useWalletElements();
   const { selectedElement, updateSelectedElement, isEditMode, setIsEditMode } = useSmartEdit();
   const { theme, applyPatch, setTheme } = useThemeStore();
+  const { setPhantomTheme } = usePhantomThemeStore();
 
   // Authentication check
   useEffect(() => {
@@ -613,6 +615,9 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
 
       const theme = data.theme;
       console.log('[generate-theme] ✅ Theme received:', theme.theme_name);
+
+      // Apply theme to Phantom preview immediately
+      setPhantomTheme(theme);
 
       const bgUrl = theme.global?.background?.url;
       addMessage(
