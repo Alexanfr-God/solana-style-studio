@@ -1,71 +1,37 @@
-## NFT Marketplace: Wallet Filter, Wallet Badge & 50/page Pagination
+## Откат бейджа на карточках + сохранение фильтра кошельков
 
-All changes live in `src/components/wallet/MintedGallerySection.tsx` plus two new SVG assets. Fully client-side. No DB changes.
+### Что меняем
 
-### Wallet mapping (single source of truth)
+Файл: `src/components/wallet/MintedGallerySection.tsx`
 
-A small helper inside the component:
-- `solana` → **Phantom**
-- `ethereum` / `mantle` / any EVM → **MetaMask**
+1. **Карточка NFT (bottom-left)** — вернуть значок **WCC**, как было до прошлой итерации.
+   - Убрать вставленный `walletKind`-бейдж (круглый контейнер с Phantom/MetaMask SVG).
+   - Восстановить рендер WCC-логотипа в той же позиции (`absolute bottom-… left-…`), с теми же размерами, что и раньше.
+   - Все текущие отминченные темы — это WCC-скины, поэтому значок WCC должен быть **у всех карточек без исключения**, независимо от `blockchain` (solana/ethereum/mantle).
 
-Used by both the filter bar and the per-card badge so they stay in sync.
+2. **Панель фильтров (над сеткой)** — **оставить как есть**:
+   - Тогл-бар `[ All ] [ 👻 Phantom ] [ 🦊 MetaMask ]` остаётся.
+   - Логика клиентской фильтрации по `blockchain` остаётся (`solana` → Phantom-группа, EVM → MetaMask-группа).
+   - Это заготовка: когда появятся настоящие Phantom-темы, они автоматически попадут в фильтр "Phantom". Сейчас фильтр просто группирует существующие WCC-темы по сети, на которой они отминчены.
+   - Сброс на `page 1` при смене фильтра — оставить.
+   - Пересчёт `totalPages` от длины отфильтрованного списка при `walletFilter !== 'all'` — оставить.
 
-### 1. New filter bar above the grid
+3. **Пагинация 50/страницу** — **не трогаем**, оставляем как сделали.
 
-A new toggle bar rendered **above the existing controls row** (kept alongside the current Blockchain dropdown — the user explicitly chose "Add new filter alongside"):
+### Что НЕ меняем
 
-```text
-[ All ] [ 👻 Phantom ] [ 🦊 MetaMask ]
-```
+- SVG-ассеты `src/assets/phantom-logo.svg` и `src/assets/metamask-logo.svg` остаются — они используются в кнопках фильтра.
+- Существующий dropdown Solana/Ethereum, поиск, сортировка, остальные фильтры — без изменений.
+- БД, edge-функции, типы — без изменений.
 
-- New state: `walletFilter: 'all' | 'phantom' | 'metamask'` (default `all`).
-- Implemented as three buttons styled like the existing pill toggles in the gallery (matching `bg-white/5 border-white/10` look, with active state using `bg-purple-500/20 border-purple-500/50`).
-- Phantom button shows the Phantom ghost SVG; MetaMask button shows the MetaMask fox SVG (16×16 inside the button).
-- Selecting a filter calls `setPage(1)` like the other filters.
-- Filter is **applied client-side** after `fetchMints()` returns, in the same place as `auctionFilter`:
-  - `phantom` → keep items where `blockchain === 'solana'`
-  - `metamask` → keep items where `blockchain !== 'solana'` (covers ethereum + mantle + any future EVM)
-  - `all` → no filter
+### Технические детали
 
-Note: total count for pagination is taken from the filtered list length when `walletFilter !== 'all'` (so "Page X of Y" reflects what the user actually sees). When `walletFilter === 'all'`, the existing server-side `count` is used.
+- В `NftCard` (внутри `MintedGallerySection.tsx`) удалить блок с `getWalletKind(...)` и круглым бейджом в bottom-left, восстановить прежний `<img src={wccLogo} ... />` (или эквивалентный JSX, который был до правки) в той же позиции.
+- Хелпер `getWalletKind` оставить — он всё ещё нужен для логики фильтрации `walletFilter`.
+- Смещение значка Legacy (`left-9`) проверить: если оно подгонялось под новый бейдж — вернуть к исходному значению, чтобы не было визуального сдвига.
 
-### 2. Wallet badge on each NFT card (bottom-left)
+### Итог для пользователя
 
-In the card preview block (around lines 845–852), **replace the existing WCC logo** at the bottom-left with a wallet badge:
-
-- 20×20 circular container, `rounded-full bg-black/40 backdrop-blur-sm` with a 1px white/10 border.
-- Inside: the Phantom or MetaMask SVG, sized 14×14, centered.
-- Tooltip via `title` attribute: `"Designed for Phantom"` or `"Designed for MetaMask"`.
-- The Legacy badge offset (currently `left-9`) stays the same since the badge dimensions match.
-
-The WCC logo is removed from the card (per user's decision).
-
-### 3. Pagination: 50 per page
-
-- Change `const pageSize = 24` → `const pageSize = 50`.
-- Existing pagination block (lines 1053–1075) already provides:
-  - `Previous` button (disabled at page 1)
-  - `Page X of Y` indicator
-  - `Next` button (disabled at last page)
-- No structural change needed there — only the page size constant.
-- When `walletFilter !== 'all'`, `totalPages` is recomputed from filtered length so the indicator stays correct.
-
-### 4. New SVG assets
-
-Two small brand SVGs added under `src/assets/`:
-- `src/assets/phantom-logo.svg` — Phantom's ghost mark on its purple gradient background.
-- `src/assets/metamask-logo.svg` — MetaMask's fox mark.
-
-Both authored as compact inline SVGs (no external fetches), imported into `MintedGallerySection.tsx` as URL strings via Vite's default SVG import.
-
-### Files touched
-
-- `src/components/wallet/MintedGallerySection.tsx` — add `walletFilter` state, render filter bar, swap WCC logo for wallet badge, change `pageSize` to 50, recompute `totalPages` when filter active.
-- `src/assets/phantom-logo.svg` *(new)*
-- `src/assets/metamask-logo.svg` *(new)*
-
-### Out of scope
-
-- No changes to DB schema or edge functions.
-- No changes to the existing Solana/Ethereum dropdown, search, sort, rating, listed/auction filters, or card body/info section.
-- No changes to detail page, modals, or auction logic.
+- На всех карточках minted gallery снова виден логотип **WCC** (как и должно быть — это WCC-скины).
+- Сверху над сеткой по-прежнему есть три кнопки **All / Phantom / MetaMask** для фильтрации — заготовка под будущие Phantom-темы.
+- Пагинация по 50 штук — без изменений.
