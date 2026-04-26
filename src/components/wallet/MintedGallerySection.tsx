@@ -16,6 +16,14 @@ import { BuyNftModal } from './BuyNftModal';
 import { CreateAuctionModal } from '@/components/auction/CreateAuctionModal';
 import { AuctionCountdown } from '@/components/auction/AuctionCountdown';
 import { MARKETPLACE_CONFIG } from '@/config/marketplace';
+import phantomLogo from '@/assets/phantom-logo.svg';
+import metamaskLogo from '@/assets/metamask-logo.svg';
+
+type WalletKind = 'phantom' | 'metamask';
+
+function getWalletKind(blockchain: string | null | undefined): WalletKind {
+  return blockchain === 'solana' ? 'phantom' : 'metamask';
+}
 
 // Convert IPFS URI to HTTP gateway URL
 function ipfsToHttp(uri: string): string {
@@ -71,6 +79,7 @@ export default function MintedGallerySection() {
   const [minRating, setMinRating] = useState<number>(0);
   const [showListedOnly, setShowListedOnly] = useState(false);
   const [auctionFilter, setAuctionFilter] = useState<'all' | 'active' | 'finished' | 'none'>('all');
+  const [walletFilter, setWalletFilter] = useState<'all' | 'phantom' | 'metamask'>('all');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +92,7 @@ export default function MintedGallerySection() {
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
   
-  const pageSize = 24;
+  const pageSize = 50;
 
   useEffect(() => {
     fetchMints();
