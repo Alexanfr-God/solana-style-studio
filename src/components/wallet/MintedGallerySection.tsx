@@ -909,14 +909,23 @@ export default function MintedGallerySection() {
                 network={item.network as 'devnet' | 'mainnet'}
               />
 
-              {/* WCC Logo - moved to bottom-left corner */}
-              <div className="absolute bottom-2 left-2 z-10">
-                <img 
-                  src="/lovable-uploads/WCC.png" 
-                  alt="WCC" 
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black/30 p-1 backdrop-blur-sm opacity-60 hover:opacity-90 transition-opacity"
-                />
-              </div>
+              {/* Wallet badge - indicates which wallet this skin is designed for */}
+              {(() => {
+                const kind = getWalletKind(item.blockchain);
+                const isPhantom = kind === 'phantom';
+                return (
+                  <div
+                    className="absolute bottom-2 left-2 z-10 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center"
+                    title={isPhantom ? 'Designed for Phantom' : 'Designed for MetaMask'}
+                  >
+                    <img
+                      src={isPhantom ? phantomLogo : metamaskLogo}
+                      alt={isPhantom ? 'Phantom' : 'MetaMask'}
+                      className="w-3.5 h-3.5 rounded-full"
+                    />
+                  </div>
+                );
+              })()}
 
               {/* V1 Legacy Badge - moved next to WCC */}
               {!item.metadata_uri?.includes('properties') && (
