@@ -2,14 +2,21 @@ import { PHANTOM_ELEMENT_MAP } from "../../shared/phantomMap.ts";
 import type { ColorAnalysis, BackgroundResult, ElementStyle } from "../../shared/types.ts";
 
 function getOpenAIKey(): string {
-  const key = Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY");
-  if (!key) throw new Error("OPENAI_API_KEY not configured");
+  const key = Deno.env.get("OPENAI_API_KEY")
+    ?? Deno.env.get("OPENA_API_KEY")
+    ?? Deno.env.get("LOVABLE_API_KEY");
+  if (!key) throw new Error("No OpenAI/Lovable API key configured");
   return key;
 }
 
 function getAPIBase(): string {
-  if (Deno.env.get("OPENAI_API_KEY")) return "https://api.openai.com/v1";
+  if (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("OPENA_API_KEY")) return "https://api.openai.com/v1";
   return "https://ai.gateway.lovable.dev/v1";
+}
+
+function getModel(): string {
+  if (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("OPENA_API_KEY")) return "gpt-4o";
+  return "google/gemini-2.5-flash";
 }
 
 function buildFallbackElements(colorAnalysis: ColorAnalysis): Record<string, ElementStyle> {
@@ -158,7 +165,7 @@ Return ONLY valid JSON — no markdown, no explanation. Return an object where e
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: getModel(),
         max_tokens: 3000,
         messages: [
           { role: "system", content: systemPrompt },

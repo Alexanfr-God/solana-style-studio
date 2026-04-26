@@ -54,7 +54,8 @@ serve(async (req) => {
     console.log("[generate-theme] Step 2: analyzing colors...");
     const colorAnalysis = await analyzeColors(
       background.url ?? "",
-      prompt
+      prompt,
+      background
     );
 
     // === STEP 3: ELEMENT DESIGN ===

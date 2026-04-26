@@ -39,8 +39,7 @@ refresh_token_reuse_interval = 10
 [realtime]
 enabled = true
 
-[edge_functions]
-enabled = true
+# [edge_functions] section removed — not valid in this CLI version
 
 [functions.generate-style]
 verify_jwt = true
