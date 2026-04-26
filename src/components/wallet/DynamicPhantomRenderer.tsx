@@ -26,11 +26,12 @@ interface PhantomLayout {
 }
 
 interface Props {
-  // Optional theme overrides keyed by anchor (e.g. "unlock-button": { backgroundColor: "#f00" })
   themeOverrides?: Record<string, Record<string, string>>;
+  // Full generated background for root container (url, gradient, solid)
+  backgroundCSS?: string;
 }
 
-export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {} }) => {
+export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, backgroundCSS }) => {
   const [layout, setLayout] = useState<PhantomLayout | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,11 +85,21 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {} })
         width: '100%',
         height: '100%',
         overflow: 'hidden',
-        backgroundColor: '#131217',
+        // Use generated background if provided, otherwise Phantom default dark
+        ...(backgroundCSS
+          ? { background: backgroundCSS, backgroundSize: 'cover', backgroundPosition: 'center' }
+          : { backgroundColor: '#131217' }),
       }}
     >
       {sorted.map(el => {
         const override = themeOverrides[el.anchor ?? ''] ?? {};
+
+        // Build rich CSS from override — support glassmorphism, neon, gradient
+        const richOverride: React.CSSProperties = { ...override as React.CSSProperties };
+        if (override.backdropFilter) {
+          (richOverride as Record<string, string>).WebkitBackdropFilter = override.backdropFilter;
+        }
+
         const mergedStyles: React.CSSProperties = {
           position: 'absolute',
           left:   Math.round(el.x * scaleX),
@@ -99,7 +110,7 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {} })
           zIndex:  el.zIndex,
           boxSizing: 'border-box',
           ...el.styles as React.CSSProperties,
-          ...override,
+          ...richOverride,
         };
 
         const phantomId = el.anchor ?? el.id;

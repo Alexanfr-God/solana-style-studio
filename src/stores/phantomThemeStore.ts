@@ -66,30 +66,37 @@ export function buildThemeOverrides(theme: WCCOverlayV3): Record<string, Record<
   const toCSS = (el: ElementStyle | undefined): Record<string, string> => {
     if (!el) return {};
     const s = el.style;
-    const result: Record<string, string> = {};
+    const r: Record<string, string> = {};
 
     if (s.type === 'glassmorphism') {
-      result.backgroundColor = s.fill;
-      result.backdropFilter = `blur(${s.blur ?? 12}px)`;
-      result.WebkitBackdropFilter = `blur(${s.blur ?? 12}px)`;
-    } else if (s.type === 'gradient' && s.gradient) {
-      result.background = `linear-gradient(${s.gradient.angle}deg, ${s.gradient.from}, ${s.gradient.to})`;
+      // Real glassmorphism: semi-transparent fill + backdrop-filter blur
+      r.backgroundColor = s.fill.startsWith('rgba') ? s.fill : `${s.fill}${Math.round((s.fill_opacity ?? 0.1) * 255).toString(16).padStart(2,'0')}`;
+      r.backdropFilter = `blur(${s.blur ?? 12}px)`;
+      r.WebkitBackdropFilter = `blur(${s.blur ?? 12}px)`;
+      r.border = s.border_color ? `${s.border_width ?? 1}px solid ${s.border_color}` : '1px solid rgba(255,255,255,0.15)';
     } else if (s.type === 'neon') {
-      result.backgroundColor = s.fill;
-      result.boxShadow = s.border_color ? `0 0 12px ${s.border_color}` : '';
+      r.backgroundColor = s.fill;
+      r.border = s.border_color ? `${s.border_width ?? 1}px solid ${s.border_color}` : 'none';
+      r.boxShadow = s.border_color
+        ? `0 0 8px ${s.border_color}, 0 0 20px ${s.border_color}40, inset 0 0 8px ${s.border_color}20`
+        : '';
+    } else if (s.type === 'gradient' && s.gradient) {
+      r.background = `linear-gradient(${s.gradient.angle}deg, ${s.gradient.from}, ${s.gradient.to})`;
+    } else if (s.type === 'neumorphic') {
+      r.backgroundColor = s.fill;
+      r.boxShadow = '4px 4px 10px rgba(0,0,0,0.3), -4px -4px 10px rgba(255,255,255,0.05)';
     } else if (s.type !== 'transparent') {
-      result.backgroundColor = s.fill;
+      r.backgroundColor = s.fill;
+      if (s.border_color) r.border = `${s.border_width ?? 1}px solid ${s.border_color}`;
     }
 
-    if (s.border_color) result.borderColor = s.border_color;
-    if (s.border_width) result.borderWidth = `${s.border_width}px`;
-    if (s.border_radius) result.borderRadius = `${s.border_radius}px`;
-    if (el.text?.color) result.color = el.text.color;
-    if (el.text?.size) result.fontSize = `${el.text.size}px`;
-    if (el.text?.weight) result.fontWeight = String(el.text.weight);
-    if (typeof s.fill_opacity === 'number' && s.fill_opacity < 1) result.opacity = String(s.fill_opacity + 0.5);
+    if (s.border_radius) r.borderRadius = `${s.border_radius}px`;
+    if (s.shadow) r.boxShadow = `${s.shadow.x}px ${s.shadow.y}px ${s.shadow.radius}px ${s.shadow.spread}px ${s.shadow.color}`;
+    if (el.text?.color) r.color = el.text.color;
+    if (el.text?.size) r.fontSize = `${el.text.size}px`;
+    if (el.text?.weight) r.fontWeight = String(el.text.weight);
 
-    return result;
+    return r;
   };
 
   // Map WCCOverlayV3 IDs → phantom-layout.json anchors

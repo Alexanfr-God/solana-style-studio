@@ -418,6 +418,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
             {previewMode === 'phantom' ? (
               <DynamicPhantomRenderer
                 themeOverrides={phantomTheme ? buildThemeOverrides(phantomTheme) : {}}
+                backgroundCSS={phantomTheme ? buildContainerBackground(phantomTheme) : undefined}
               />
             ) : currentLayer === 'lockLayer' ? (
               renderLoginScreen()
