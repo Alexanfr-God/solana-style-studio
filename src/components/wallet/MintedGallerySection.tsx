@@ -670,6 +670,55 @@ export default function MintedGallerySection() {
         </div>
       </div>
 
+      {/* Wallet filter bar (Phantom / MetaMask) */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-sm text-gray-400 mr-1">Wallet:</span>
+        <Button
+          variant={walletFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setWalletFilter('all');
+            setPage(1);
+          }}
+          className={walletFilter === 'all'
+            ? 'bg-purple-500 hover:bg-purple-600'
+            : 'border-white/10 text-white hover:bg-white/5'
+          }
+        >
+          All
+        </Button>
+        <Button
+          variant={walletFilter === 'phantom' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setWalletFilter('phantom');
+            setPage(1);
+          }}
+          className={walletFilter === 'phantom'
+            ? 'bg-purple-500 hover:bg-purple-600'
+            : 'border-white/10 text-white hover:bg-white/5'
+          }
+        >
+          <img src={phantomLogo} alt="Phantom" className="w-4 h-4 mr-1.5 rounded-full" />
+          Phantom
+        </Button>
+        <Button
+          variant={walletFilter === 'metamask' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setWalletFilter('metamask');
+            setPage(1);
+          }}
+          className={walletFilter === 'metamask'
+            ? 'bg-purple-500 hover:bg-purple-600'
+            : 'border-white/10 text-white hover:bg-white/5'
+          }
+        >
+          <img src={metamaskLogo} alt="MetaMask" className="w-4 h-4 mr-1.5 rounded-full" />
+          MetaMask
+        </Button>
+      </div>
+
       {/* Filters */}
       <div className="mb-6 flex flex-wrap gap-3 items-center justify-between">
         <div className="flex gap-3 flex-wrap items-center">
