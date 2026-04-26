@@ -235,6 +235,13 @@ export default function MintedGallerySection() {
         }
       }
 
+      // Apply wallet filter (client-side: solana => Phantom, EVM => MetaMask)
+      if (walletFilter !== 'all') {
+        filteredItems = filteredItems.filter(item =>
+          getWalletKind(item.blockchain) === walletFilter
+        );
+      }
+
       setItems(filteredItems);
       setTotalCount(count || 0);
     } catch (error) {
