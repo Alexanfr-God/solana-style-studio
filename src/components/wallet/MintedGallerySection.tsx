@@ -134,7 +134,7 @@ export default function MintedGallerySection() {
       supabase.removeChannel(mintedThemesChannel);
       supabase.removeChannel(auctionsChannel);
     };
-  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, auctionFilter, page, address]);
+  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, auctionFilter, walletFilter, page, address]);
 
   async function fetchMints() {
     setIsLoading(true);
