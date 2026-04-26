@@ -16,6 +16,14 @@ import { BuyNftModal } from './BuyNftModal';
 import { CreateAuctionModal } from '@/components/auction/CreateAuctionModal';
 import { AuctionCountdown } from '@/components/auction/AuctionCountdown';
 import { MARKETPLACE_CONFIG } from '@/config/marketplace';
+import phantomLogo from '@/assets/phantom-logo.svg';
+import metamaskLogo from '@/assets/metamask-logo.svg';
+
+type WalletKind = 'phantom' | 'metamask';
+
+function getWalletKind(blockchain: string | null | undefined): WalletKind {
+  return blockchain === 'solana' ? 'phantom' : 'metamask';
+}
 
 // Convert IPFS URI to HTTP gateway URL
 function ipfsToHttp(uri: string): string {
@@ -71,6 +79,7 @@ export default function MintedGallerySection() {
   const [minRating, setMinRating] = useState<number>(0);
   const [showListedOnly, setShowListedOnly] = useState(false);
   const [auctionFilter, setAuctionFilter] = useState<'all' | 'active' | 'finished' | 'none'>('all');
+  const [walletFilter, setWalletFilter] = useState<'all' | 'phantom' | 'metamask'>('all');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +92,7 @@ export default function MintedGallerySection() {
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
   
-  const pageSize = 24;
+  const pageSize = 50;
 
   useEffect(() => {
     fetchMints();
@@ -125,7 +134,7 @@ export default function MintedGallerySection() {
       supabase.removeChannel(mintedThemesChannel);
       supabase.removeChannel(auctionsChannel);
     };
-  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, auctionFilter, page, address]);
+  }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, auctionFilter, walletFilter, page, address]);
 
   async function fetchMints() {
     setIsLoading(true);
@@ -224,6 +233,13 @@ export default function MintedGallerySection() {
         } else {
           filteredItems = itemsWithAuctions.filter(item => item.auction_status === auctionFilter);
         }
+      }
+
+      // Apply wallet filter (client-side: solana => Phantom, EVM => MetaMask)
+      if (walletFilter !== 'all') {
+        filteredItems = filteredItems.filter(item =>
+          getWalletKind(item.blockchain) === walletFilter
+        );
       }
 
       setItems(filteredItems);
@@ -614,7 +630,9 @@ export default function MintedGallerySection() {
     }).format(date);
   }
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  // When the wallet filter is active, the total reflects the filtered list shown to the user.
+  const effectiveTotal = walletFilter !== 'all' ? items.length : totalCount;
+  const totalPages = Math.max(1, Math.ceil(effectiveTotal / pageSize));
 
   return (
     <section className="mt-16 pt-12 border-t border-white/10">
@@ -650,6 +668,55 @@ export default function MintedGallerySection() {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Wallet filter bar (Phantom / MetaMask) */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-sm text-gray-400 mr-1">Wallet:</span>
+        <Button
+          variant={walletFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setWalletFilter('all');
+            setPage(1);
+          }}
+          className={walletFilter === 'all'
+            ? 'bg-purple-500 hover:bg-purple-600'
+            : 'border-white/10 text-white hover:bg-white/5'
+          }
+        >
+          All
+        </Button>
+        <Button
+          variant={walletFilter === 'phantom' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setWalletFilter('phantom');
+            setPage(1);
+          }}
+          className={walletFilter === 'phantom'
+            ? 'bg-purple-500 hover:bg-purple-600'
+            : 'border-white/10 text-white hover:bg-white/5'
+          }
+        >
+          <img src={phantomLogo} alt="Phantom" className="w-4 h-4 mr-1.5 rounded-full" />
+          Phantom
+        </Button>
+        <Button
+          variant={walletFilter === 'metamask' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setWalletFilter('metamask');
+            setPage(1);
+          }}
+          className={walletFilter === 'metamask'
+            ? 'bg-purple-500 hover:bg-purple-600'
+            : 'border-white/10 text-white hover:bg-white/5'
+          }
+        >
+          <img src={metamaskLogo} alt="MetaMask" className="w-4 h-4 mr-1.5 rounded-full" />
+          MetaMask
+        </Button>
       </div>
 
       {/* Filters */}
@@ -842,14 +909,23 @@ export default function MintedGallerySection() {
                 network={item.network as 'devnet' | 'mainnet'}
               />
 
-              {/* WCC Logo - moved to bottom-left corner */}
-              <div className="absolute bottom-2 left-2 z-10">
-                <img 
-                  src="/lovable-uploads/WCC.png" 
-                  alt="WCC" 
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black/30 p-1 backdrop-blur-sm opacity-60 hover:opacity-90 transition-opacity"
-                />
-              </div>
+              {/* Wallet badge - indicates which wallet this skin is designed for */}
+              {(() => {
+                const kind = getWalletKind(item.blockchain);
+                const isPhantom = kind === 'phantom';
+                return (
+                  <div
+                    className="absolute bottom-2 left-2 z-10 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center"
+                    title={isPhantom ? 'Designed for Phantom' : 'Designed for MetaMask'}
+                  >
+                    <img
+                      src={isPhantom ? phantomLogo : metamaskLogo}
+                      alt={isPhantom ? 'Phantom' : 'MetaMask'}
+                      className="w-3.5 h-3.5 rounded-full"
+                    />
+                  </div>
+                );
+              })()}
 
               {/* V1 Legacy Badge - moved next to WCC */}
               {!item.metadata_uri?.includes('properties') && (
