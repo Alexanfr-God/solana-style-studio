@@ -77,6 +77,15 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, b
 
   const sorted = [...elements].sort((a, b) => a.zIndex - b.zIndex);
 
+  // Detect background type and extract URL for <img> rendering
+  const bgImageUrl = backgroundCSS?.startsWith('url(')
+    ? backgroundCSS.slice(4, -1).replace(/^["']|["']$/g, '')
+    : null;
+  const bgGradient = backgroundCSS && backgroundCSS.includes('gradient') ? backgroundCSS : null;
+  const bgColor = backgroundCSS && !bgImageUrl && !bgGradient ? backgroundCSS : null;
+
+  console.log('[DPR] backgroundCSS:', backgroundCSS, '→ url:', bgImageUrl, 'gradient:', !!bgGradient, 'color:', bgColor);
+
   return (
     <div
       data-phantom-id="root"
@@ -85,12 +94,28 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, b
         width: '100%',
         height: '100%',
         overflow: 'hidden',
-        // Use generated background if provided, otherwise Phantom default dark
-        ...(backgroundCSS
-          ? { background: backgroundCSS, backgroundSize: 'cover', backgroundPosition: 'center' }
-          : { backgroundColor: '#131217' }),
+        backgroundColor: bgColor ?? '#131217',
+        ...(bgGradient ? { backgroundImage: bgGradient, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
       }}
     >
+      {/* Background image rendered as <img> to bypass CSS background limitations */}
+      {bgImageUrl && (
+        <img
+          src={bgImageUrl}
+          alt=""
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+          onLoad={() => console.log('[DPR] ✅ Background image loaded:', bgImageUrl.slice(0, 80))}
+          onError={() => console.error('[DPR] ❌ Background image FAILED:', bgImageUrl.slice(0, 80))}
+        />
+      )}
       {sorted.map(el => {
         const override = themeOverrides[el.anchor ?? ''] ?? {};
 

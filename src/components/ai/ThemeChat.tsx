@@ -17,7 +17,7 @@ import { buildExclusiveImageOps } from '@/ai/tools/patchBuilders';
 import { toast } from 'sonner';
 import ColorSchemeCard from './ColorSchemeCard';
 import { ThemeInitButton } from './ThemeInitButton';
-import { usePhantomThemeStore } from '@/stores/phantomThemeStore';
+import { usePhantomThemeStore, type WCCOverlayV3 } from '@/stores/phantomThemeStore';
 
 interface Message {
   id: string;
@@ -169,31 +169,54 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
     }
   };
 
+  // Build a minimal WCCOverlayV3 with just an image background (no AI)
+  const buildImagePhantomTheme = (imageUrl: string): WCCOverlayV3 => ({
+    version: 3,
+    wallet: 'phantom',
+    theme_name: 'Custom Upload',
+    generated_at: new Date().toISOString(),
+    global: {
+      background: { type: 'image', url: imageUrl, blur: 0, opacity: 0.9 },
+      color_analysis: {
+        dominant: ['#131217'],
+        luminance: 'dark',
+        forbidden: [],
+        safe_text: '#ffffff',
+        safe_accent: '#ab9ff2',
+        safe_button_bg: '#ab9ff2',
+        palette: { primary: '#ab9ff2', secondary: '#1a1a2e', neutral: '#888888', highlight: '#ab9ff2' },
+      },
+    },
+    elements: {},
+  });
+
   const onApply = async (targetId: BgTarget['id'], imageUrl: string) => {
-    if (!theme) return;
-    
-    const ops = buildExclusiveImageOps(targetId, imageUrl, theme);
-    if (!ops.length) return;
+    console.log('[onApply] imageUrl:', imageUrl?.slice(0, 100), 'targetId:', targetId);
+    // Always update Phantom preview immediately — this is the JSON overlay
+    setPhantomTheme(buildImagePhantomTheme(imageUrl));
 
-    const patchEntry = {
-      id: `img-apply-${targetId}-${Date.now()}`,
-      operations: ops,
-      userPrompt: `Apply uploaded image to ${targetId}`,
-      pageId: 'ai-chat',
-      timestamp: new Date(),
-      theme: theme
-    };
-
-    console.log(`[STORE] Applied ops: ${ops.length} (img exclusive)`, { targetId, operations: ops });
-    
-    try {
-      await applyPatch(patchEntry);
-      setApplied(prev => ({ ...prev, [targetId]: true }));
-      toast.success(`✅ Image applied to ${targetId}`);
-    } catch (error) {
-      console.error('Failed to apply patch:', error);
-      toast.error('Failed to apply image');
+    // Also patch the WCC theme store if theme is loaded
+    if (theme) {
+      const ops = buildExclusiveImageOps(targetId, imageUrl, theme);
+      if (ops.length) {
+        const patchEntry = {
+          id: `img-apply-${targetId}-${Date.now()}`,
+          operations: ops,
+          userPrompt: `Apply uploaded image to ${targetId}`,
+          pageId: 'ai-chat',
+          timestamp: new Date(),
+          theme: theme,
+        };
+        try {
+          await applyPatch(patchEntry);
+        } catch (error) {
+          console.error('WCC patch failed (non-fatal):', error);
+        }
+      }
     }
+
+    setApplied(prev => ({ ...prev, [targetId]: true }));
+    toast.success(`✅ Image applied — switch to Phantom tab to preview`);
   };
 
   const onReset = async () => {
@@ -516,6 +539,59 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
           `Make ${elementName} more prominent`,
           `Apply theme colors to ${elementName}`
         ];
+    }
+  };
+
+  // Instantly preview uploaded image in Phantom layout (no AI — default colors)
+  const handleApplyImageToPhantom = (imageUrl: string) => {
+    setPhantomTheme(buildImagePhantomTheme(imageUrl));
+    addMessage('👻 Image set as Phantom background. Switch to Phantom preview to see it.', 'assistant');
+    toast.success('Image applied to Phantom preview!');
+  };
+
+  // Run full AI pipeline using uploaded image (skip generation, analyze colors + design elements)
+  const handleAIStyleFromImage = async (imageUrl: string) => {
+    if (!walletProfile?.wallet_address) {
+      addMessage('⚠️ Please connect your wallet first', 'assistant');
+      toast.error('Wallet not connected');
+      return;
+    }
+    setIsGeneratingPhantomTheme(true);
+    addMessage(
+      '👻 Analyzing your image with AI...\n\nStep 1/2: Color analysis with GPT-4o Vision\nStep 2/2: Designing Phantom elements',
+      'assistant'
+    );
+    try {
+      const supabase = (await import('@/integrations/supabase/client')).supabase;
+      const { data, error } = await supabase.functions.invoke('generate-theme', {
+        body: {
+          prompt: 'custom uploaded image',
+          userId: walletProfile.wallet_address,
+          wallet: 'phantom',
+          background: { type: 'url', value: imageUrl },
+        },
+      });
+      if (error || !data?.success || !data?.theme) {
+        addMessage(`❌ AI styling failed: ${error?.message ?? data?.error ?? 'Unknown error'}`, 'assistant');
+        toast.error('Failed to style from image');
+        return;
+      }
+      const theme = data.theme as WCCOverlayV3;
+      setPhantomTheme(theme);
+      addMessage(
+        `✅ **${theme.theme_name}** styled!\n\n` +
+        `• Luminance: ${theme.global.color_analysis.luminance}\n` +
+        `• Accent: ${theme.global.color_analysis.safe_accent}\n` +
+        `• Elements: ${Object.keys(theme.elements).length} designed`,
+        'assistant',
+        imageUrl
+      );
+      toast.success('👻 Phantom theme styled from your image!');
+    } catch (e) {
+      addMessage(`❌ Error: ${e instanceof Error ? e.message : 'Unknown error'}`, 'assistant');
+      toast.error('Failed to style from image');
+    } finally {
+      setIsGeneratingPhantomTheme(false);
     }
   };
 
@@ -1015,7 +1091,7 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
                       </div>
                       
                       {/* Apply Palette & Analyze Colors buttons */}
-                      <div className="flex justify-center mt-3 gap-2">
+                      <div className="flex justify-center mt-3 gap-2 flex-wrap">
                         <Button
                           onClick={() => handleApplyPaletteFromImage(message.uploadedImageUrl!)}
                           disabled={isProcessing || isUploading}
@@ -1026,7 +1102,7 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
                           <Palette className="h-3 w-3 mr-1" />
                           Apply Palette
                         </Button>
-                        
+
                         <Button
                           onClick={() => handleAnalyzeColors(message.uploadedImageUrl!)}
                           disabled={isAnalyzingColors}
@@ -1043,7 +1119,7 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
                             'AI Color Schemes'
                           )}
                         </Button>
-                        
+
                         {/* Reset button - show if any layers are applied */}
                         {Object.values(applied).some(Boolean) && (
                           <Button
@@ -1056,6 +1132,41 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
                             Reset
                           </Button>
                         )}
+                      </div>
+
+                      {/* Phantom preview buttons */}
+                      <div className="mt-3 border-t border-violet-500/20 pt-3">
+                        <div className="text-xs text-violet-300 mb-2 font-medium">👻 Phantom Preview</div>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            onClick={() => handleApplyImageToPhantom(message.uploadedImageUrl!)}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-gradient-to-r from-violet-600/20 to-purple-600/20 border-violet-500/30 hover:from-violet-600/30 hover:to-purple-600/30 font-medium"
+                          >
+                            <Ghost className="h-3 w-3 mr-1 text-violet-400" />
+                            Preview in Phantom
+                          </Button>
+                          <Button
+                            onClick={() => handleAIStyleFromImage(message.uploadedImageUrl!)}
+                            disabled={isGeneratingPhantomTheme}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-gradient-to-r from-violet-600/30 to-pink-600/20 border-violet-500/40 hover:from-violet-600/40 hover:to-pink-600/30 disabled:opacity-50 font-medium"
+                          >
+                            {isGeneratingPhantomTheme ? (
+                              <div className="flex items-center gap-1">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <span>Styling...</span>
+                              </div>
+                            ) : (
+                              <>
+                                <Ghost className="h-3 w-3 mr-1 text-violet-300" />
+                                AI Style for Phantom
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                       
                       {/* AI Color Schemes Display with new component */}

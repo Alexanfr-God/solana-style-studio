@@ -1,108 +1,106 @@
-import { uploadToStorage } from "../utils/storage.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { BackgroundResult, ThemeRequest } from "../../shared/types.ts";
 
-// ── Lovable AI Gateway (DALL-E 3 proxy) ──────────────────────────────────
-async function generateWithLovable(prompt: string): Promise<string> {
+const SYSTEM_PROMPT = `You are a professional digital artist creating stunning wallet backgrounds for crypto apps.
+
+STYLE GUIDELINES:
+- Dark atmospheric themes work best: deep purples, rich blues, blacks
+- Abstract, cosmic, or geometric patterns — NO text, NO UI elements, NO logos, NO letters
+- Cinematic lighting, depth, and atmosphere
+- Minimal center area where wallet UI will overlay on top
+- High contrast with vibrant accent colors for the theme style
+
+TECHNICAL REQUIREMENTS:
+- Portrait orientation (2:3 aspect ratio — taller than wide)
+- Single cohesive image filling the full frame
+- Background layer only — UI sits on top of this image
+- Rich textures, gradients, and depth`;
+
+// ── Gemini image generation via Lovable AI Gateway (working approach) ─────
+async function generateWithGemini(prompt: string, userId: string): Promise<BackgroundResult> {
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
 
-  const dallePrompt = `Abstract atmospheric wallet background for "${prompt}" theme. No text, no UI elements, no logos, no letters. Portrait orientation 2:3. Visually stunning, cinematic lighting, minimal content in center where UI overlays appear.`;
+  const bgPrompt = `Abstract atmospheric wallet background for "${prompt}" theme. Portrait orientation (2:3). No text, no UI elements, no logos, no letters. Cinematic lighting, stunning visuals, dark mood with clear center area for UI overlay.`;
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+  console.log("[step1] Calling Gemini image-preview via Lovable gateway...");
+
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
-      model: "dall-e-3",
-      prompt: dallePrompt,
-      n: 1,
-      size: "1024x1792",
-      quality: "hd",
-      style: "vivid",
+      model: "google/gemini-2.5-flash-image-preview",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Create a wallet background: ${bgPrompt}` },
+      ],
+      modalities: ["image", "text"],
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Lovable DALL-E error ${res.status}: ${err}`);
+    throw new Error(`Gemini gateway error ${res.status}: ${err.slice(0, 300)}`);
   }
+
   const data = await res.json();
-  return data.data[0].url as string;
-}
+  const imageData: string | undefined = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-// ── OpenAI direct (OPENA_API_KEY fallback) ────────────────────────────────
-async function generateWithOpenAI(prompt: string): Promise<string> {
-  const apiKey = Deno.env.get("OPENA_API_KEY") ?? Deno.env.get("OPENAI_API_KEY");
-  if (!apiKey) throw new Error("No OpenAI key");
+  if (!imageData) {
+    throw new Error(`No image in Gemini response: ${JSON.stringify(data).slice(0, 300)}`);
+  }
 
-  const dallePrompt = `Abstract atmospheric wallet background for "${prompt}" theme. No text, no UI elements, no logos. Portrait 2:3. Cinematic lighting, minimal center.`;
+  // Convert base64 → binary and upload to Supabase Storage
+  const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
+  const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
 
-  const res = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "dall-e-3",
-      prompt: dallePrompt,
-      n: 1,
-      size: "1024x1792",
-      quality: "hd",
-      style: "vivid",
-    }),
-  });
-
-  if (!res.ok) throw new Error(`OpenAI DALL-E error ${res.status}`);
-  const data = await res.json();
-  return data.data[0].url as string;
-}
-
-// ── HuggingFace FLUX.1-schnell (free tier) ────────────────────────────────
-async function generateWithHuggingFace(prompt: string): Promise<Uint8Array> {
-  const token = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
-  if (!token) throw new Error("HUGGING_FACE_ACCESS_TOKEN not configured");
-
-  const bgPrompt = `Abstract atmospheric background for "${prompt}" crypto wallet theme. No text, no logos, no UI. Cinematic, portrait orientation, dark moody atmosphere.`;
-
-  const res = await fetch(
-    "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ inputs: bgPrompt, parameters: { num_inference_steps: 4 } }),
-      signal: AbortSignal.timeout(55_000),
-    }
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`HuggingFace error ${res.status}: ${err.slice(0, 200)}`);
+  const userPrefix = userId ? userId.slice(0, 8) : "anon";
+  const path = `backgrounds/${userPrefix}/${Date.now()}.png`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("generated-images")
+    .upload(path, binaryData, { contentType: "image/png", upsert: false });
+
+  if (uploadError) {
+    console.warn("[step1] Storage upload failed, returning base64 directly:", uploadError.message);
+    return { type: "image", url: imageData, blur: 0, opacity: 0.9 };
   }
 
-  const blob = await res.blob();
-  const ab = await blob.arrayBuffer();
-  return new Uint8Array(ab);
+  const { data: { publicUrl } } = supabase.storage.from("generated-images").getPublicUrl(path);
+  console.log("[step1] ✅ Image uploaded:", publicUrl);
+  return { type: "image", url: publicUrl, blur: 0, opacity: 0.9 };
 }
 
 // ── Keyword-based gradient fallback ──────────────────────────────────────
 const GRADIENT_MAP: Record<string, [string, string]> = {
-  cyberpunk: ["#0d0221", "#4a0080"],
-  neon:      ["#001a33", "#003366"],
-  glass:     ["#e8eaf0", "#b0b8d0"],
+  cyberpunk:     ["#0d0221", "#4a0080"],
+  neon:          ["#001a33", "#003366"],
+  glass:         ["#e8eaf0", "#b0b8d0"],
   glassmorphism: ["#dce8f8", "#a8c0e0"],
-  minimal:   ["#f5f5f5", "#d0d0d0"],
-  white:     ["#ffffff", "#e0e8f0"],
-  dark:      ["#0a0a0a", "#1a1a2e"],
-  gold:      ["#1a0a00", "#3d2000"],
-  bitcoin:   ["#1a0800", "#2d1500"],
-  luxury:    ["#0d0d0d", "#2a1a00"],
-  space:     ["#000010", "#0a0025"],
-  cosmic:    ["#020010", "#100030"],
-  galaxy:    ["#000020", "#0d0040"],
-  ocean:     ["#001830", "#002850"],
-  fire:      ["#1a0000", "#3d0500"],
-  forest:    ["#001a00", "#0a2a0a"],
-  synthwave: ["#1a0030", "#0d0040"],
-  vaporwave: ["#ff70d4", "#70d4ff"],
-  pastel:    ["#ffd6e8", "#d6e8ff"],
-  punk:      ["#1a0020", "#350040"],
+  minimal:       ["#f5f5f5", "#d0d0d0"],
+  white:         ["#ffffff", "#e0e8f0"],
+  dark:          ["#0a0a0a", "#1a1a2e"],
+  gold:          ["#1a0a00", "#3d2000"],
+  bitcoin:       ["#1a0800", "#2d1500"],
+  luxury:        ["#0d0d0d", "#2a1a00"],
+  space:         ["#000010", "#0a0025"],
+  cosmic:        ["#020010", "#100030"],
+  galaxy:        ["#000020", "#0d0040"],
+  ocean:         ["#001830", "#002850"],
+  fire:          ["#1a0000", "#3d0500"],
+  forest:        ["#001a00", "#0a2a0a"],
+  synthwave:     ["#1a0030", "#0d0040"],
+  vaporwave:     ["#ff70d4", "#70d4ff"],
+  pastel:        ["#ffd6e8", "#d6e8ff"],
+  punk:          ["#1a0020", "#350040"],
 };
 
 function buildGradientFallback(prompt: string): BackgroundResult {
@@ -127,44 +125,12 @@ export async function generateBackground(
 
   console.log("[step1] Generating image for:", prompt);
 
-  // Try 1: Lovable gateway DALL-E 3
   try {
-    const tempUrl = await generateWithLovable(prompt);
-    console.log("[step1] Lovable DALL-E success, uploading...");
-    const saved = await uploadToStorage(tempUrl, `backgrounds/${userId}/${Date.now()}.png`);
-    return { type: "image", url: saved, blur: 0, opacity: 0.9 };
+    return await generateWithGemini(prompt, userId);
   } catch (e) {
-    console.warn("[step1] Lovable failed:", e);
+    console.warn("[step1] Gemini image generation failed:", e);
   }
 
-  // Try 2: OpenAI direct (OPENA_API_KEY)
-  try {
-    const tempUrl = await generateWithOpenAI(prompt);
-    console.log("[step1] OpenAI DALL-E success, uploading...");
-    const saved = await uploadToStorage(tempUrl, `backgrounds/${userId}/${Date.now()}.png`);
-    return { type: "image", url: saved, blur: 0, opacity: 0.9 };
-  } catch (e) {
-    console.warn("[step1] OpenAI failed:", e);
-  }
-
-  // Try 3: HuggingFace FLUX.1-schnell (returns binary)
-  try {
-    const imgBytes = await generateWithHuggingFace(prompt);
-    console.log("[step1] HuggingFace success, uploading binary...");
-
-    // Upload binary directly to storage
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const path = `backgrounds/${userId}/${Date.now()}_hf.png`;
-    const { error } = await supabase.storage.from("theme-assets").upload(path, imgBytes, { contentType: "image/png", upsert: true });
-    if (error) throw new Error(`Storage upload failed: ${error.message}`);
-    const { data: { publicUrl } } = supabase.storage.from("theme-assets").getPublicUrl(path);
-    return { type: "image", url: publicUrl, blur: 0, opacity: 0.9 };
-  } catch (e) {
-    console.warn("[step1] HuggingFace failed:", e);
-  }
-
-  // Fallback: gradient based on keywords
-  console.log("[step1] All generators failed — using gradient fallback");
+  console.log("[step1] Gemini failed — using gradient fallback");
   return buildGradientFallback(prompt);
 }

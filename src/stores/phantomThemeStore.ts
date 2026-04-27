@@ -132,7 +132,10 @@ export function buildContainerBackground(theme: WCCOverlayV3): string {
   if (bg.type === 'gradient' && bg.gradient) {
     return `linear-gradient(${bg.gradient.angle}deg, ${bg.gradient.from}, ${bg.gradient.to})`;
   }
-  if (bg.url) return `url(${bg.url})`;
+  if (bg.url) {
+    console.log('[buildContainerBackground] image url:', bg.url.slice(0, 100));
+    return `url(${bg.url})`;
+  }
   if (bg.color) return bg.color;
   return '#131217';
 }
