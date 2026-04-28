@@ -551,48 +551,7 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
 
   // Run full AI pipeline using uploaded image (skip generation, analyze colors + design elements)
   const handleAIStyleFromImage = async (imageUrl: string) => {
-    if (!walletProfile?.wallet_address) {
-      addMessage('⚠️ Please connect your wallet first', 'assistant');
-      toast.error('Wallet not connected');
-      return;
-    }
-    setIsGeneratingPhantomTheme(true);
-    addMessage(
-      '👻 Analyzing your image with AI...\n\nStep 1/2: Color analysis with GPT-4o Vision\nStep 2/2: Designing Phantom elements',
-      'assistant'
-    );
-    try {
-      const supabase = (await import('@/integrations/supabase/client')).supabase;
-      const { data, error } = await supabase.functions.invoke('generate-theme', {
-        body: {
-          prompt: 'custom uploaded image',
-          userId: walletProfile.wallet_address,
-          wallet: 'phantom',
-          background: { type: 'url', value: imageUrl },
-        },
-      });
-      if (error || !data?.success || !data?.theme) {
-        addMessage(`❌ AI styling failed: ${error?.message ?? data?.error ?? 'Unknown error'}`, 'assistant');
-        toast.error('Failed to style from image');
-        return;
-      }
-      const theme = data.theme as WCCOverlayV3;
-      setPhantomTheme(theme);
-      addMessage(
-        `✅ **${theme.theme_name}** styled!\n\n` +
-        `• Luminance: ${theme.global.color_analysis.luminance}\n` +
-        `• Accent: ${theme.global.color_analysis.safe_accent}\n` +
-        `• Elements: ${Object.keys(theme.elements).length} designed`,
-        'assistant',
-        imageUrl
-      );
-      toast.success('👻 Phantom theme styled from your image!');
-    } catch (e) {
-      addMessage(`❌ Error: ${e instanceof Error ? e.message : 'Unknown error'}`, 'assistant');
-      toast.error('Failed to style from image');
-    } finally {
-      setIsGeneratingPhantomTheme(false);
-    }
+    await handleGeneratePhantomTheme('custom uploaded image', { type: 'url', value: imageUrl });
   };
 
   // Generate poster with AI
@@ -651,8 +610,8 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
     }
   };
 
-  // Generate full Phantom theme via AI pipeline
-  const handleGeneratePhantomTheme = async (prompt: string) => {
+  // Generate full Phantom theme via multi-agent orchestrator (SSE streaming)
+  const handleGeneratePhantomTheme = async (prompt: string, backgroundOverride?: { type: string; value: string }) => {
     if (!walletProfile?.wallet_address) {
       addMessage('⚠️ Please connect your wallet first to generate Phantom themes', 'assistant');
       toast.error('Wallet not connected');
@@ -660,57 +619,107 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
     }
 
     setIsGeneratingPhantomTheme(true);
+
+    // Show pipeline start message
+    const pipelineMsgId = Date.now().toString();
     addMessage(
-      `👻 Generating Phantom theme: "${prompt}"…\n\n` +
-      `Step 1/3: Creating background with DALL-E 3\nStep 2/3: Analyzing colors with GPT-4o Vision\nStep 3/3: Designing elements`,
+      `👻 Starting 5-agent pipeline for: "${prompt}"…\n\n` +
+      `⏳ Step 1/5: Generating background\n` +
+      `⏳ Step 2/5: Analyzing colors\n` +
+      `⏳ Step 3/5: Designing UI elements\n` +
+      `⏳ Step 4/5: Validating theme\n` +
+      `⏳ Step 5/5: Applying`,
       'assistant'
     );
 
     try {
-      const supabase = (await import('@/integrations/supabase/client')).supabase;
-      const { data, error } = await supabase.functions.invoke('generate-theme', {
-        body: {
+      const SUPABASE_URL = 'https://opxordptvpvzmhakvdde.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9weG9yZHB0dnB2em1oYWt2ZGRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTY2NjgsImV4cCI6MjA2MjI5MjY2OH0.uHDqEycZqhQ02zMvmikDjMXsqeVU792Ei61ceavk6iw';
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/theme-orchestrator`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
           prompt,
           userId: walletProfile.wallet_address,
           wallet: 'phantom',
-        },
+          ...(backgroundOverride ? { background: backgroundOverride } : {}),
+        }),
       });
 
-      if (error) {
-        console.error('[generate-theme] Error:', error);
-        addMessage(`❌ Theme generation failed: ${error.message}`, 'assistant');
-        toast.error('Failed to generate Phantom theme');
-        return;
+      if (!response.ok || !response.body) {
+        const err = await response.text();
+        throw new Error(`Orchestrator error ${response.status}: ${err.slice(0, 200)}`);
       }
 
-      if (!data?.success || !data?.theme) {
-        addMessage(`❌ ${data?.error || 'Theme generation failed. Try a different prompt.'}`, 'assistant');
-        toast.error(data?.error || 'Generation failed');
-        return;
+      // Parse SSE stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      const stepLabels: Record<string, string> = {
+        'background': '🎨 Background',
+        'color-analyst': '🔍 Colors',
+        'designer': '✨ Elements',
+        'validator': '✅ Validation',
+        'applier': '🚀 Applied',
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() ?? '';
+
+        for (const part of parts) {
+          const eventMatch = part.match(/^event:\s*(.+)$/m);
+          const dataMatch = part.match(/^data:\s*(.+)$/m);
+          if (!eventMatch || !dataMatch) continue;
+
+          const eventName = eventMatch[1].trim();
+          let data: any;
+          try { data = JSON.parse(dataMatch[1]); } catch { continue; }
+
+          if (eventName === 'progress') {
+            const label = stepLabels[data.agent] ?? data.agent;
+            if (data.status === 'done') {
+              if (data.agent === 'background' && data.result?.url) {
+                addMessage('', 'system', undefined, undefined, data.result.url);
+                addMessage(`✅ ${label}: background ready`, 'assistant', data.result.url);
+              } else {
+                addMessage(`✅ ${label}: done${data.warnings != null ? ` (${data.warnings} warnings, ${data.fixes} fixes)` : ''}`, 'assistant');
+              }
+            }
+          }
+
+          if (eventName === 'complete' && data.theme) {
+            const theme = data.theme as WCCOverlayV3;
+            setPhantomTheme(theme);
+            addMessage(
+              `🎉 **${theme.theme_name}** ready!\n\n` +
+              `• Background: ${theme.global.background.type}\n` +
+              `• Luminance: ${theme.global.color_analysis.luminance}\n` +
+              `• Accent: ${theme.global.color_analysis.safe_accent}\n` +
+              `• Elements: ${Object.keys(theme.elements).length} styled\n` +
+              `${data.warnings?.length ? `⚠️ ${data.warnings.length} auto-fixed issues` : ''}`,
+              'assistant',
+              theme.global.background.url
+            );
+            toast.success(`👻 ${theme.theme_name} applied!`);
+          }
+
+          if (eventName === 'error') {
+            addMessage(`❌ Pipeline error: ${data.message}`, 'assistant');
+            toast.error('Theme generation failed');
+          }
+        }
       }
-
-      const theme = data.theme;
-      console.log('[generate-theme] ✅ Theme received:', theme.theme_name);
-
-      // Apply theme to Phantom preview immediately
-      setPhantomTheme(theme);
-
-      const bgUrl = theme.global?.background?.url;
-      addMessage(
-        `✅ **${theme.theme_name}** generated!\n\n` +
-        `• Background: ${theme.global.background.type}\n` +
-        `• Luminance: ${theme.global.color_analysis.luminance}\n` +
-        `• Accent color: ${theme.global.color_analysis.safe_accent}\n` +
-        `• Elements designed: ${Object.keys(theme.elements).length}\n\n` +
-        `The theme is ready to apply to your Phantom overlay.`,
-        'assistant',
-        bgUrl
-      );
-
-      toast.success(`👻 ${theme.theme_name} generated!`);
-
     } catch (error) {
-      console.error('[generate-theme] Fatal error:', error);
+      console.error('[orchestrator] Fatal error:', error);
       addMessage(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'assistant');
       toast.error('Failed to generate Phantom theme');
     } finally {
