@@ -117,6 +117,13 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, b
         />
       )}
       {sorted.map(el => {
+        // ── KEY FIX: skip the layout's "background" element when the theme
+        // provides its own image or gradient background.
+        // The phantom-layout.json "background" element (zIndex 0, full-canvas gradient)
+        // renders AFTER the <img> in DOM order, covering it completely.
+        // Skipping it lets the <img> (or gradient on root div) show through.
+        if ((bgImageUrl || bgGradient) && el.anchor === 'background') return null;
+
         const override = themeOverrides[el.anchor ?? ''] ?? {};
 
         // Build rich CSS from override — support glassmorphism, neon, gradient

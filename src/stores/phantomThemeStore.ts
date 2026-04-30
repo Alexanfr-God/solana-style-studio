@@ -123,6 +123,18 @@ export function buildThemeOverrides(theme: WCCOverlayV3): Record<string, Record<
   overrides['enter-password-text'] = textStyle;
   overrides['forgot-password-link'] = { color: ca.safe_accent };
 
+  // ── Auto-transparent layout background when theme owns the background ──
+  // The phantom-layout.json "background" element has a hardcoded gradient (zIndex 0).
+  // It renders AFTER the <img> background in DPR (same zIndex, later DOM = on top).
+  // Force it transparent so the theme's image/gradient shows through.
+  const bg = theme.global.background;
+  if (bg.url || (bg.type === 'gradient' && bg.gradient)) {
+    overrides['background'] = {
+      background: 'none',
+      backgroundColor: 'transparent',
+    };
+  }
+
   return overrides;
 }
 
