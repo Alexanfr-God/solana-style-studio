@@ -44,9 +44,38 @@ export interface ElementStyle {
     border_radius: number;
     shadow?: { color: string; radius: number; spread: number; x: number; y: number };
     gradient?: { from: string; to: string; angle: number };
+    /** CSS filter string e.g. "brightness(1.2) saturate(1.5)" */
+    filter?: string;
+    /** CSS transform string e.g. "skewX(-2deg) scale(1.02)" */
+    transform?: string;
   };
-  text?: { color: string; size: number; weight: number; letter_spacing?: number; opacity: number };
-  animation?: { type: string; duration_ms: number; loop: boolean; color?: string };
+  text?: {
+    color: string;
+    size: number;
+    weight: number;
+    letter_spacing?: number;
+    opacity: number;
+    /** Google Font name e.g. "Orbitron", "Space Grotesk", "Rajdhani" */
+    fontFamily?: string;
+    /** CSS text-transform: uppercase | capitalize | none */
+    textTransform?: string;
+    /** CSS text-shadow e.g. "0 0 10px #ff00ff, 0 0 20px #ff00ff80" */
+    textShadow?: string;
+    /** Line height multiplier e.g. 1.2 */
+    lineHeight?: number;
+  };
+  animation?: {
+    type: string;
+    duration_ms: number;
+    loop: boolean;
+    color?: string;
+    /** Delay before animation starts (ms) — use for stagger effects */
+    delay_ms?: number;
+    /** CSS easing e.g. "ease-in-out" | "cubic-bezier(0.4,0,0.2,1)" */
+    easing?: string;
+    /** Effect intensity 0–1 (scales glow/shimmer magnitude) */
+    intensity?: number;
+  };
   icon?: { tint: string; opacity: number };
 }
 

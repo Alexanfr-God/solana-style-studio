@@ -68,18 +68,17 @@ export function buildThemeOverrides(theme: WCCOverlayV3): Record<string, Record<
     const s = el.style;
     const r: Record<string, string> = {};
 
+    // ── Background / fill ──────────────────────────────────────────────────────
     if (s.type === 'glassmorphism') {
-      // Real glassmorphism: semi-transparent fill + backdrop-filter blur
       r.backgroundColor = s.fill.startsWith('rgba') ? s.fill : `${s.fill}${Math.round((s.fill_opacity ?? 0.1) * 255).toString(16).padStart(2,'0')}`;
-      r.backdropFilter = `blur(${s.blur ?? 12}px)`;
-      r.WebkitBackdropFilter = `blur(${s.blur ?? 12}px)`;
+      r.backdropFilter = `blur(${s.blur ?? 14}px)`;
+      r.WebkitBackdropFilter = `blur(${s.blur ?? 14}px)`;
       r.border = s.border_color ? `${s.border_width ?? 1}px solid ${s.border_color}` : '1px solid rgba(255,255,255,0.15)';
     } else if (s.type === 'neon') {
       r.backgroundColor = s.fill;
       r.border = s.border_color ? `${s.border_width ?? 1}px solid ${s.border_color}` : 'none';
-      r.boxShadow = s.border_color
-        ? `0 0 8px ${s.border_color}, 0 0 20px ${s.border_color}40, inset 0 0 8px ${s.border_color}20`
-        : '';
+      const glowColor = s.border_color ?? s.fill;
+      r.boxShadow = `0 0 8px ${glowColor}, 0 0 20px ${glowColor}40, inset 0 0 8px ${glowColor}20`;
     } else if (s.type === 'gradient' && s.gradient) {
       r.background = `linear-gradient(${s.gradient.angle}deg, ${s.gradient.from}, ${s.gradient.to})`;
     } else if (s.type === 'neumorphic') {
@@ -92,36 +91,106 @@ export function buildThemeOverrides(theme: WCCOverlayV3): Record<string, Record<
 
     if (s.border_radius) r.borderRadius = `${s.border_radius}px`;
     if (s.shadow) r.boxShadow = `${s.shadow.x}px ${s.shadow.y}px ${s.shadow.radius}px ${s.shadow.spread}px ${s.shadow.color}`;
-    if (el.text?.color) r.color = el.text.color;
-    if (el.text?.size) r.fontSize = `${el.text.size}px`;
-    if (el.text?.weight) r.fontWeight = String(el.text.weight);
+
+    // ── Filter / transform ─────────────────────────────────────────────────────
+    if (s.filter)    r.filter = s.filter;
+    if (s.transform) r.transform = s.transform;
+
+    // ── Text ──────────────────────────────────────────────────────────────────
+    if (el.text?.color)          r.color = el.text.color;
+    if (el.text?.size)           r.fontSize = `${el.text.size}px`;
+    if (el.text?.weight)         r.fontWeight = String(el.text.weight);
+    if (el.text?.opacity != null && el.text.opacity < 1)
+                                 r.opacity = String(el.text.opacity);
+    if (el.text?.letter_spacing) r.letterSpacing = `${el.text.letter_spacing}em`;
+    if (el.text?.fontFamily)     r.fontFamily = `'${el.text.fontFamily}', sans-serif`;
+    if (el.text?.textTransform)  r.textTransform = el.text.textTransform;
+    if (el.text?.textShadow)     r.textShadow = el.text.textShadow;
+    if (el.text?.lineHeight)     r.lineHeight = String(el.text.lineHeight);
+
+    // ── Animation (encoded as JSON for DPR to decode) ─────────────────────────
+    if (el.animation && el.animation.type !== 'none' && el.animation.duration_ms > 0) {
+      r['--anim'] = JSON.stringify(el.animation);
+    }
 
     return r;
   };
 
-  // Map WCCOverlayV3 IDs → phantom-layout.json anchors
+  // ── Map WCCOverlayV3 IDs → ALL phantom-layout.json anchors ───────────────────
+  // password screen layout anchors: background, header, header-title, help-button,
+  // header-line, logo, title, password-input, unlock-button, forgot-link
+
+  // background (transparent when theme owns bg — handled separately at bottom)
   if (els['background-layer']) overrides['background'] = { ...toCSS(els['background-layer']) };
-  if (els['header'])           overrides['header'] = toCSS(els['header']);
-  if (els['btn-send'] || els['btn-buy']) {
-    const btnEl = els['btn-buy'] ?? els['btn-send'];
+
+  // header bar
+  if (els['header']) overrides['header'] = toCSS(els['header']);
+
+  // "phantom" text in header → use header text style
+  const headerFont = els['header']?.text?.fontFamily;
+  overrides['header-title'] = {
+    color: ca.safe_text,
+    ...(headerFont ? { fontFamily: `'${headerFont}', sans-serif` } : {}),
+    ...(els['header']?.text?.textShadow ? { textShadow: els['header'].text.textShadow } : {}),
+  };
+
+  // "?" help button → network-badge style (small badge-like)
+  if (els['network-badge']) {
+    overrides['help-button'] = { ...toCSS(els['network-badge']), color: ca.safe_text };
+  }
+
+  // separator line → subtle accent tint
+  overrides['header-line'] = { backgroundColor: `${ca.safe_accent}33` };
+
+  // ghost logo → tint via filter (hue trick on white SVG)
+  if (els['btn-buy']?.icon) {
+    const iconColor = els['btn-buy'].icon.tint;
+    // Convert accent color to a sepia-tint filter effect for white SVGs
+    overrides['logo'] = { filter: `drop-shadow(0 0 12px ${iconColor}) opacity(0.9)` };
+  } else {
+    overrides['logo'] = { filter: `drop-shadow(0 0 10px ${ca.safe_accent}) opacity(0.85)` };
+  }
+
+  // "Enter your Password" title → use balance-sol style (big prominent text)
+  if (els['balance-sol']) {
+    overrides['title'] = {
+      ...toCSS(els['balance-sol']),
+      // Don't carry the float animation to the title — just styling
+      '--anim': '',
+    };
+    // Re-remove the empty anim key
+    if (!overrides['title']['--anim']) delete overrides['title']['--anim'];
+  } else {
+    overrides['title'] = { color: ca.safe_text };
+  }
+
+  // password input → network-badge style (badge-like styling) with safe_text
+  if (els['network-badge']) {
+    overrides['password-input'] = { ...toCSS(els['network-badge']), color: ca.safe_text };
+  }
+
+  // unlock button → btn-buy (the hero CTA element)
+  const btnEl = els['btn-buy'] ?? els['btn-send'];
+  if (btnEl) {
     overrides['unlock-button'] = {
       ...toCSS(btnEl),
-      backgroundColor: btnEl?.style.fill ?? ca.safe_button_bg,
-      color: btnEl?.text?.color ?? ca.safe_text,
-    };
-  }
-  if (els['network-badge']) {
-    overrides['password-input'] = {
-      ...toCSS(els['network-badge']),
-      color: ca.safe_text,
+      backgroundColor: btnEl.style.fill ?? ca.safe_button_bg,
+      color: btnEl.text?.color ?? ca.safe_text,
     };
   }
 
-  // Apply safe_text to text elements
-  const textStyle = { color: ca.safe_text };
-  overrides['phantom-text'] = textStyle;
-  overrides['enter-password-text'] = textStyle;
-  overrides['forgot-password-link'] = { color: ca.safe_accent };
+  // "Forgot Password?" link → safe_accent + elegant font
+  const accentFont = els['account-address']?.text?.fontFamily ?? headerFont;
+  overrides['forgot-link'] = {
+    color: ca.safe_accent,
+    ...(accentFont ? { fontFamily: `'${accentFont}', sans-serif` } : {}),
+  };
+  // Keep legacy key name too
+  overrides['forgot-password-link'] = overrides['forgot-link'];
+
+  // General text fallbacks
+  overrides['phantom-text'] = { color: ca.safe_text };
+  overrides['enter-password-text'] = { color: ca.safe_text };
 
   // ── Auto-transparent layout background when theme owns the background ──
   // The phantom-layout.json "background" element has a hardcoded gradient (zIndex 0).

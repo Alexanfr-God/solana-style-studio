@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-// Matches LayoutElement from @phantom-editor/shared
+// ── Matches LayoutElement from @phantom-editor/shared ─────────────────────────
 interface LayoutElement {
   id: string;
   type: 'container' | 'text' | 'button' | 'input' | 'image';
@@ -27,15 +27,140 @@ interface PhantomLayout {
 
 interface Props {
   themeOverrides?: Record<string, Record<string, string>>;
-  // Full generated background for root container (url, gradient, solid)
+  /** Full generated background for root container (url(...), gradient, solid color) */
   backgroundCSS?: string;
 }
+
+// ── Animation keyframes injected once into document head ──────────────────────
+const DPR_KEYFRAMES = `
+  @keyframes dpr-shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  @keyframes dpr-glow {
+    0%,100% { box-shadow: 0 0 6px var(--dpr-gc,#ab9ff2), 0 0 14px var(--dpr-gc,#ab9ff2)55; }
+    50%     { box-shadow: 0 0 20px var(--dpr-gc,#ab9ff2), 0 0 40px var(--dpr-gc,#ab9ff2)88; }
+  }
+  @keyframes dpr-pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%     { opacity:0.82; transform:scale(0.97); }
+  }
+  @keyframes dpr-float {
+    0%,100% { transform:translateY(0px); }
+    50%     { transform:translateY(-5px); }
+  }
+  @keyframes dpr-bounce {
+    0%,100% { transform:translateY(0); }
+    40%     { transform:translateY(-8px); }
+    60%     { transform:translateY(-4px); }
+  }
+  @keyframes dpr-ripple {
+    0%   { box-shadow:0 0 0 0  var(--dpr-rc,rgba(171,159,242,.45)); }
+    70%  { box-shadow:0 0 0 12px rgba(0,0,0,0); }
+    100% { box-shadow:0 0 0 0  rgba(0,0,0,0); }
+  }
+  @keyframes dpr-neon-flicker {
+    0%,93%,97%,100% { opacity:1; }
+    94%  { opacity:0.7; }
+    96%  { opacity:0.85; }
+    98%  { opacity:0.6; }
+  }
+`;
+
+// ── Google Fonts catalog — family name → encoded URL param ────────────────────
+const FONT_URLS: Record<string, string> = {
+  'Orbitron':           'Orbitron:wght@400;700;900',
+  'Space Grotesk':      'Space+Grotesk:wght@300;400;500;600;700',
+  'Space Mono':         'Space+Mono:wght@400;700',
+  'Exo 2':              'Exo+2:wght@300;400;600;700',
+  'Rajdhani':           'Rajdhani:wght@400;500;600;700',
+  'Audiowide':          'Audiowide',
+  'Press Start 2P':     'Press+Start+2P',
+  'VT323':              'VT323',
+  'Silkscreen':         'Silkscreen',
+  'Playfair Display':   'Playfair+Display:wght@400;700',
+  'Cormorant Garamond': 'Cormorant+Garamond:wght@300;400;600',
+  'Bebas Neue':         'Bebas+Neue',
+  'Anton':              'Anton',
+  'Black Ops One':      'Black+Ops+One',
+  'DM Sans':            'DM+Sans:wght@300;400;500;600',
+  'Manrope':            'Manrope:wght@300;400;500;600;700',
+  'Syne':               'Syne:wght@400;700;800',
+  'Inter':              'Inter:wght@300;400;500;600;700',
+};
+
+// ── Convert animation spec (encoded as JSON in '--anim') → CSS properties ─────
+interface AnimSpec { type: string; duration_ms: number; loop: boolean; color?: string; delay_ms?: number; easing?: string; intensity?: number; }
+
+function animToCSS(raw: string | undefined): React.CSSProperties {
+  if (!raw) return {};
+  let anim: AnimSpec;
+  try { anim = JSON.parse(raw); } catch { return {}; }
+  if (!anim.type || anim.type === 'none' || !anim.duration_ms) return {};
+
+  const dur   = `${anim.duration_ms}ms`;
+  const ease  = anim.easing ?? 'ease-in-out';
+  const iter  = anim.loop ? 'infinite' : '1';
+  const delay = anim.delay_ms ? `${anim.delay_ms}ms` : '0s';
+  const name  = `dpr-${anim.type.replace(/_/g, '-')}`;
+
+  const css: React.CSSProperties & Record<string, string> = {
+    animation: `${name} ${dur} ${ease} ${delay} ${iter}`,
+  };
+
+  // CSS custom props for color-driven animations (glow, ripple)
+  const c = anim.color;
+  if (c) {
+    css['--dpr-gc'] = c;
+    css['--dpr-rc'] = `${c}73`;
+  }
+
+  // Shimmer needs a shimmer gradient baked into backgroundImage
+  if (anim.type === 'shimmer') {
+    const shimColor = c ?? '#ab9ff2';
+    const mag = anim.intensity ?? 0.55;
+    css.backgroundImage = `linear-gradient(90deg, transparent 25%, ${shimColor}${Math.round(mag * 255).toString(16).padStart(2,'0')} 50%, transparent 75%)`;
+    css.backgroundSize = '200% 100%';
+  }
+
+  return css;
+}
+
+// ── Inject keyframes + Google Fonts into document head (idempotent) ───────────
+function ensureStyles(fontFamilies: string[]) {
+  if (typeof document === 'undefined') return;
+
+  // Keyframes (inject once)
+  const KF_ID = 'dpr-keyframes';
+  if (!document.getElementById(KF_ID)) {
+    const style = document.createElement('style');
+    style.id = KF_ID;
+    style.textContent = DPR_KEYFRAMES;
+    document.head.appendChild(style);
+    console.log('[DPR] keyframes injected');
+  }
+
+  // Google Fonts (one <link> per unique family)
+  fontFamilies.forEach(family => {
+    const id = `dpr-font-${family.replace(/\s+/g, '-').toLowerCase()}`;
+    if (document.getElementById(id)) return;
+    const param = FONT_URLS[family];
+    if (!param) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${param}&display=swap`;
+    document.head.appendChild(link);
+    console.log('[DPR] loaded font:', family);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, backgroundCSS }) => {
   const [layout, setLayout] = useState<PhantomLayout | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Try local public/ first, fall back to GitHub raw (always up-to-date with Overlay Editor publishes)
   const GITHUB_RAW = 'https://raw.githubusercontent.com/Alexanfr-God/solana-style-studio/main/public/phantom-layout.json';
 
   useEffect(() => {
@@ -50,6 +175,20 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, b
       .then(setLayout)
       .catch(e => setError(e.message));
   }, []);
+
+  // Inject styles/fonts whenever themeOverrides change
+  useEffect(() => {
+    const fonts = new Set<string>();
+    Object.values(themeOverrides).forEach(o => {
+      const ff = (o as Record<string, string>).fontFamily;
+      if (ff) {
+        // fontFamily is stored as "'Orbitron', sans-serif" — extract the name
+        const match = ff.match(/^'([^']+)'/);
+        if (match) fonts.add(match[1]);
+      }
+    });
+    ensureStyles(Array.from(fonts));
+  }, [themeOverrides]);
 
   if (error) {
     return (
@@ -72,19 +211,19 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, b
   }
 
   const { canvas, elements } = layout;
-  const scaleX = 384 / canvas.width;   // wacocu container is w-96 = 384px
-  const scaleY = 650 / canvas.height;  // wacocu container is h-[650px]
+  const scaleX = 384 / canvas.width;
+  const scaleY = 650 / canvas.height;
 
   const sorted = [...elements].sort((a, b) => a.zIndex - b.zIndex);
 
-  // Detect background type and extract URL for <img> rendering
+  // Detect background type
   const bgImageUrl = backgroundCSS?.startsWith('url(')
     ? backgroundCSS.slice(4, -1).replace(/^["']|["']$/g, '')
     : null;
   const bgGradient = backgroundCSS && backgroundCSS.includes('gradient') ? backgroundCSS : null;
-  const bgColor = backgroundCSS && !bgImageUrl && !bgGradient ? backgroundCSS : null;
+  const bgColor    = backgroundCSS && !bgImageUrl && !bgGradient ? backgroundCSS : null;
 
-  console.log('[DPR] backgroundCSS:', backgroundCSS, '→ url:', bgImageUrl, 'gradient:', !!bgGradient, 'color:', bgColor);
+  console.log('[DPR] backgroundCSS:', backgroundCSS?.slice(0, 60), '→ url:', !!bgImageUrl, 'gradient:', !!bgGradient);
 
   return (
     <div
@@ -98,39 +237,36 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, b
         ...(bgGradient ? { backgroundImage: bgGradient, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
       }}
     >
-      {/* Background image rendered as <img> to bypass CSS background limitations */}
+      {/* Background image as <img> — bypasses CSS background-size/position quirks */}
       {bgImageUrl && (
         <img
           src={bgImageUrl}
           alt=""
           style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            zIndex: 0,
-            pointerEvents: 'none',
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'cover', zIndex: 0, pointerEvents: 'none',
           }}
-          onLoad={() => console.log('[DPR] ✅ Background image loaded:', bgImageUrl.slice(0, 80))}
-          onError={() => console.error('[DPR] ❌ Background image FAILED:', bgImageUrl.slice(0, 80))}
+          onLoad={() => console.log('[DPR] ✅ bg image loaded:', bgImageUrl.slice(0, 70))}
+          onError={() => console.error('[DPR] ❌ bg image FAILED:', bgImageUrl.slice(0, 70))}
         />
       )}
+
       {sorted.map(el => {
-        // ── KEY FIX: skip the layout's "background" element when the theme
-        // provides its own image or gradient background.
-        // The phantom-layout.json "background" element (zIndex 0, full-canvas gradient)
-        // renders AFTER the <img> in DOM order, covering it completely.
-        // Skipping it lets the <img> (or gradient on root div) show through.
+        // ── KEY FIX: skip layout's background element when theme owns the bg ──
         if ((bgImageUrl || bgGradient) && el.anchor === 'background') return null;
 
-        const override = themeOverrides[el.anchor ?? ''] ?? {};
+        const anchor = el.anchor ?? el.id;
+        const override = themeOverrides[anchor] ?? {};
 
-        // Build rich CSS from override — support glassmorphism, neon, gradient
-        const richOverride: React.CSSProperties = { ...override as React.CSSProperties };
+        // Build richOverride from the override object
+        const richOverride: React.CSSProperties & Record<string, string> = { ...override as React.CSSProperties & Record<string, string> };
         if (override.backdropFilter) {
-          (richOverride as Record<string, string>).WebkitBackdropFilter = override.backdropFilter;
+          richOverride.WebkitBackdropFilter = override.backdropFilter;
         }
+
+        // Decode animation spec and merge
+        const animCSS = animToCSS(override['--anim']);
 
         const mergedStyles: React.CSSProperties = {
           position: 'absolute',
@@ -143,9 +279,13 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, b
           boxSizing: 'border-box',
           ...el.styles as React.CSSProperties,
           ...richOverride,
+          ...animCSS,  // animation always wins (overrides static styles)
         };
 
-        const phantomId = el.anchor ?? el.id;
+        // Remove internal keys that shouldn't be inline styles
+        delete (mergedStyles as Record<string, unknown>)['--anim'];
+
+        const phantomId = anchor;
 
         switch (el.type) {
           case 'text':
@@ -192,7 +332,6 @@ export const DynamicPhantomRenderer: React.FC<Props> = ({ themeOverrides = {}, b
                 style={{ ...mergedStyles, objectFit: 'contain' }}
               />
             ) : (
-              // Ghost placeholder when no image src
               <div key={el.id} data-phantom-id={phantomId} style={mergedStyles}>
                 <svg viewBox="0 0 60 60" width="100%" height="100%" fill="none">
                   <path d="M30 5C18.95 5 10 13.95 10 25v25l6.67-5.56 6.66 5.56 6.67-5.56 6.67 5.56 6.66-5.56L50 50V25C50 13.95 41.05 5 30 5z" fill="#ab9ff2"/>
