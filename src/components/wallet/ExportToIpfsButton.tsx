@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThemeStore } from '@/state/themeStore';
-import { usePhantomThemeStore } from '@/stores/phantomThemeStore';
+import { usePhantomThemeStore, type WCCOverlayV3 } from '@/stores/phantomThemeStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import BlockchainSelectorDialog from './BlockchainSelectorDialog';
@@ -13,6 +13,9 @@ import { useEvmMint } from '@/hooks/useEvmMint';
 interface ExportToIpfsButtonProps {
   themeId?: string;
 }
+
+const PLACEHOLDER_1PX_PNG =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
 // Resolve preview image URL from theme layers (cascade fallback)
 function resolvePreviewImageUrl(theme: any): string {
@@ -23,7 +26,17 @@ function resolvePreviewImageUrl(theme: any): string {
   if (theme.buyLayer?.headerContainer?.backgroundImage) return theme.buyLayer.headerContainer.backgroundImage;
   
   console.warn('[ExportToIpfs] No backgroundImage found in theme, using placeholder');
-  return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  return PLACEHOLDER_1PX_PNG;
+}
+
+// Resolve preview image URL from a Phantom (WCCOverlayV3) theme.
+// Returns null if no real background image is present (gradient/color only),
+// so the mint flow doesn't push a 1×1 placeholder into IPFS / DB.
+function resolvePhantomPreviewImageUrl(pt: WCCOverlayV3 | null | undefined): string | null {
+  const url = pt?.global?.background?.url;
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('data:image/png;base64,iVBORw0KGgo')) return null;
+  return url;
 }
 
 const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
@@ -131,16 +144,24 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       setIsExporting(true);
       toast.info('Starting NFT mint process...');
       
-      // Step 1: Get current theme from store
-      const currentTheme = useThemeStore.getState().theme;
+      // Step 1: Detect skin kind UPFRONT and pick the matching theme + preview image
+      const phantomTheme = usePhantomThemeStore.getState().phantomTheme;
+      const wccTheme = useThemeStore.getState().theme;
+      const skinKind: 'wcc' | 'phantom' = phantomTheme ? 'phantom' : 'wcc';
+
+      const themeForMint: any = skinKind === 'phantom' ? phantomTheme : wccTheme;
       const themeName = customName || 'Untitled Theme';
-      
-      // Step 2: Resolve preview image URL (cascade through layers)
-      const previewImageUrl = resolvePreviewImageUrl(currentTheme);
-      
+
+      // Step 2: Resolve preview image URL from the CORRECT store/structure
+      const previewImageUrl: string | null =
+        skinKind === 'phantom'
+          ? resolvePhantomPreviewImageUrl(phantomTheme)
+          : resolvePreviewImageUrl(wccTheme);
+
+      console.log('[ExportToIpfs] skinKind:', skinKind);
       console.log('[ExportToIpfs] Theme:', themeName);
-      console.log('[ExportToIpfs] Preview URL:', previewImageUrl);
-      console.log('[ExportToIpfs] Theme data size:', JSON.stringify(currentTheme).length);
+      console.log('[ExportToIpfs] Preview URL:', previewImageUrl ? previewImageUrl.slice(0, 120) : '(none)');
+      console.log('[ExportToIpfs] Theme data size:', JSON.stringify(themeForMint).length);
       
       // Step 2.5: Check user balance (need at least 0.105 SOL)
       const { Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL } = await import('@solana/web3.js');
@@ -161,9 +182,13 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       const { data: ipfsData, error: ipfsError } = await supabase.functions.invoke('upload-to-ipfs', {
         body: {
           themeName,
-          themeData: currentTheme,
-          previewImageUrl,
-          description: 'Custom wallet theme created with Wallet Coast Customs'
+          themeData: themeForMint,
+          previewImageUrl, // may be null — edge function will skip image upload gracefully
+          skinKind,
+          description:
+            skinKind === 'phantom'
+              ? 'Phantom-native skin minted via Wallet Coast Customs'
+              : 'Custom wallet theme created with Wallet Coast Customs'
         }
       });
       
@@ -255,10 +280,6 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       // Step 8.5: Save to database with is_verified: false (will verify after confirmation)
       console.log('[MintFlow] 💾 Saving mint record to database (unverified)...');
       let insertedRecordId: string | null = null;
-      // Detect skin kind: if a Phantom theme is active in the dedicated store,
-      // this mint is a Phantom-native skin; otherwise it's a WCC skin.
-      const skinKind: 'wcc' | 'phantom' =
-        usePhantomThemeStore.getState().phantomTheme ? 'phantom' : 'wcc';
       console.log('[MintFlow] 🏷️ Detected skin_kind:', skinKind);
       try {
         const { data: insertData, error: insertError } = await supabase
@@ -269,7 +290,9 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
             owner_address: address,
             metadata_uri: ipfsData.metadataUri,
             theme_name: themeName,
-            image_url: previewImageUrl,
+            // Prefer the IPFS-hosted image returned by the edge function;
+            // fall back to the raw preview URL only if it's a real image (not a placeholder).
+            image_url: ipfsData.imageUrl ?? (previewImageUrl ?? null),
             network: 'devnet',
             blockchain: 'solana',
             is_verified: false,  // Will be set to true after confirmation
