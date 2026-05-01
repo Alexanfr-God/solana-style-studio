@@ -213,6 +213,7 @@ export type Database = {
           price_lamports: number | null
           rating_avg: number | null
           rating_count: number | null
+          skin_kind: string
           theme_name: string | null
           tx_sig: string
           user_id: string | null
@@ -232,6 +233,7 @@ export type Database = {
           price_lamports?: number | null
           rating_avg?: number | null
           rating_count?: number | null
+          skin_kind?: string
           theme_name?: string | null
           tx_sig: string
           user_id?: string | null
@@ -251,6 +253,7 @@ export type Database = {
           price_lamports?: number | null
           rating_avg?: number | null
           rating_count?: number | null
+          skin_kind?: string
           theme_name?: string | null
           tx_sig?: string
           user_id?: string | null
