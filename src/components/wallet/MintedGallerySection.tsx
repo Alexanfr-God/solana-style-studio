@@ -140,6 +140,58 @@ export default function MintedGallerySection() {
     };
   }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, auctionFilter, walletFilter, page, address]);
 
+  // Self-heal: on mount, scan unverified records (>60s, <24h) and verify on-chain.
+  // If Solana confirms the tx, mark is_verified=true so it appears in the gallery.
+  useEffect(() => {
+    let cancelled = false;
+    async function selfHeal() {
+      try {
+        const now = Date.now();
+        const cutoffOld = new Date(now - 60_000).toISOString();
+        const cutoffYoung = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+        const { data: stuck } = await supabase
+          .from('minted_themes')
+          .select('id, mint_address, tx_sig, blockchain')
+          .eq('is_verified', false)
+          .eq('blockchain', 'solana')
+          .lte('created_at', cutoffOld)
+          .gte('created_at', cutoffYoung)
+          .limit(20);
+        if (cancelled || !stuck || stuck.length === 0) return;
+
+        console.log('[Gallery self-heal] Checking', stuck.length, 'unverified mints');
+        const { Connection } = await import('@solana/web3.js');
+        const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
+
+        for (const row of stuck) {
+          if (cancelled) return;
+          if (!row.tx_sig) continue;
+          try {
+            const { value } = await connection.getSignatureStatuses([row.tx_sig], {
+              searchTransactionHistory: true,
+            });
+            const st = value?.[0];
+            if (st && !st.err && (st.confirmationStatus === 'confirmed' || st.confirmationStatus === 'finalized')) {
+              const { error } = await supabase
+                .from('minted_themes')
+                .update({ is_verified: true })
+                .eq('id', row.id);
+              if (!error) {
+                console.log('[Gallery self-heal] ✅ Verified', row.mint_address);
+              }
+            }
+          } catch (e) {
+            console.warn('[Gallery self-heal] Skip', row.mint_address, e);
+          }
+        }
+      } catch (e) {
+        console.warn('[Gallery self-heal] Failed:', e);
+      }
+    }
+    selfHeal();
+    return () => { cancelled = true; };
+  }, []);
+
   async function fetchMints() {
     setIsLoading(true);
     try {
