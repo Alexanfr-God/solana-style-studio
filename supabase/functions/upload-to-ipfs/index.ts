@@ -83,47 +83,95 @@ Deno.serve(async (req: Request) => {
 
     // 2. Parse request body
     const body = await req.json().catch(() => ({}));
-    const { previewImageUrl, themeName, description, themeData } = body as {
+    const { previewImageUrl, themeName, description, themeData, skinKind } = body as {
       previewImageUrl?: string;
       themeName?: string;
       description?: string;
       themeData?: any;
+      skinKind?: 'wcc' | 'phantom';
     };
 
     console.log("[upload-to-ipfs] 🚀 Start", {
       hasTheme: !!themeData,
       themeName,
-      previewUrl: previewImageUrl,
+      previewUrl: previewImageUrl ? previewImageUrl.slice(0, 80) : '(none)',
+      skinKind: skinKind ?? 'wcc',
     });
 
-    if (!previewImageUrl || !themeName || !themeData) {
+    if (!themeName || !themeData) {
       console.error("[upload-to-ipfs] ❌ Missing required fields");
       return jsonResponse(400, {
         success: false,
-        message: "previewImageUrl, themeName, and themeData are required",
+        message: "themeName and themeData are required",
       });
     }
 
-    // 3. Download preview image from URL
-    console.log("[upload-to-ipfs] 📥 Downloading preview image...");
-    const imageRes = await fetch(previewImageUrl);
-    if (!imageRes.ok) {
-      throw new Error(`Failed to download preview image: ${imageRes.status} ${imageRes.statusText}`);
-    }
-    const imageBlob = await imageRes.blob();
-    console.log("[upload-to-ipfs] ✅ Image downloaded:", {
-      size: `${(imageBlob.size / 1024).toFixed(2)} KB`,
-      type: imageBlob.type
-    });
+    // 3. Resolve preview image blob (optional, graceful)
+    //    - data: URL → decode base64 locally (Deno fetch on data: is unreliable)
+    //    - http(s):  → fetch
+    //    - missing/error → continue without image, return imageCid: null
+    let imageBlob: Blob | null = null;
+    let imageMime = 'image/png';
 
-    // 4. Upload image to Lighthouse
-    console.log("[upload-to-ipfs] 📤 Uploading image to Lighthouse...");
-    const imageCid = await uploadBlobToLighthouse(
-      imageBlob,
-      `${themeName}.png`,
-      LIGHTHOUSE_API_KEY
-    );
-    console.log("[upload-to-ipfs] ✅ Image uploaded:", { cid: imageCid });
+    if (previewImageUrl) {
+      try {
+        if (previewImageUrl.startsWith('data:')) {
+          const commaIdx = previewImageUrl.indexOf(',');
+          const header = previewImageUrl.slice(5, commaIdx); // e.g. "image/png;base64"
+          const isBase64 = header.includes(';base64');
+          imageMime = header.split(';')[0] || 'image/png';
+          const payload = previewImageUrl.slice(commaIdx + 1);
+          if (isBase64) {
+            const bin = atob(payload);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            imageBlob = new Blob([bytes], { type: imageMime });
+          } else {
+            const bytes = new TextEncoder().encode(decodeURIComponent(payload));
+            imageBlob = new Blob([bytes], { type: imageMime });
+          }
+          console.log("[upload-to-ipfs] ✅ Decoded data: URL image:", {
+            size: `${(imageBlob.size / 1024).toFixed(2)} KB`,
+            type: imageMime,
+          });
+        } else {
+          console.log("[upload-to-ipfs] 📥 Downloading preview image...");
+          const imageRes = await fetch(previewImageUrl);
+          if (!imageRes.ok) {
+            throw new Error(`HTTP ${imageRes.status} ${imageRes.statusText}`);
+          }
+          imageBlob = await imageRes.blob();
+          imageMime = imageBlob.type || 'image/png';
+          console.log("[upload-to-ipfs] ✅ Image downloaded:", {
+            size: `${(imageBlob.size / 1024).toFixed(2)} KB`,
+            type: imageMime,
+          });
+        }
+
+        // Reject 1×1 placeholder (≈ <200 bytes PNG) — not worth pinning
+        if (imageBlob && imageBlob.size < 200) {
+          console.warn("[upload-to-ipfs] ⚠️ Preview image suspiciously tiny — skipping image upload");
+          imageBlob = null;
+        }
+      } catch (e) {
+        console.warn("[upload-to-ipfs] ⚠️ Failed to load preview image, continuing without it:", e);
+        imageBlob = null;
+      }
+    } else {
+      console.log("[upload-to-ipfs] ℹ️ No previewImageUrl provided — skipping image upload");
+    }
+
+    // 4. Upload image to Lighthouse (if we have one)
+    let imageCid: string | null = null;
+    if (imageBlob) {
+      console.log("[upload-to-ipfs] 📤 Uploading image to Lighthouse...");
+      imageCid = await uploadBlobToLighthouse(
+        imageBlob,
+        `${themeName}.${imageMime.split('/')[1] || 'png'}`,
+        LIGHTHOUSE_API_KEY
+      );
+      console.log("[upload-to-ipfs] ✅ Image uploaded:", { cid: imageCid });
+    }
 
     // 5. Upload theme JSON (if provided)
     let themeCid: string | undefined;
@@ -151,24 +199,26 @@ Deno.serve(async (req: Request) => {
       name: `WCC: ${themeName}`,
       symbol: "WCC",
       description: description ?? "Custom wallet theme created with Wallet Coast Customs",
-      image: toGatewayUrl(imageCid), // HTTP URL for Solscan display
+      image: imageCid ? toGatewayUrl(imageCid) : "", // HTTP URL for Solscan display
       external_url: "https://walletcoastcustoms.com",
       attributes: [
         { trait_type: "Theme Name", value: themeName },
         { trait_type: "Schema Version", value: "wcc-theme-v1" },
+        { trait_type: "Skin Kind", value: skinKind ?? "wcc" },
         { trait_type: "Created At", value: new Date().toISOString() },
       ],
       properties: {
         theme: themeData, // ✅ Full theme JSON for Apply button
         category: "image",
         files: [
-          { uri: toIpfsUri(imageCid), type: "image/png" },
+          ...(imageCid ? [{ uri: toIpfsUri(imageCid), type: imageMime }] : []),
           ...(themeCid ? [{ uri: toIpfsUri(themeCid), type: "application/json" }] : []),
         ],
       },
       ...(themeCid && { wcc_theme_uri: toIpfsUri(themeCid) }),
       ...(themeSha256 && { wcc_theme_sha256: themeSha256 }),
       schemaVersion: "wcc-theme-v1",
+      skinKind: skinKind ?? "wcc",
     };
 
     // 7. Upload metadata to Lighthouse
@@ -190,9 +240,9 @@ Deno.serve(async (req: Request) => {
       success: true,
       
       // Primary fields
-      imageCid,
-      imageUri: toIpfsUri(imageCid),
-      imageUrl: toGatewayUrl(imageCid),
+      imageCid: imageCid ?? null,
+      imageUri: imageCid ? toIpfsUri(imageCid) : null,
+      imageUrl: imageCid ? toGatewayUrl(imageCid) : null,
       
       themeCid: themeCid ?? null,
       themeUri: themeCid ? toIpfsUri(themeCid) : null,
@@ -207,7 +257,7 @@ Deno.serve(async (req: Request) => {
       
       // Backward compatibility aliases
       metadata_uri: toIpfsUri(metadataCid),
-      image_url: toGatewayUrl(imageCid),
+      image_url: imageCid ? toGatewayUrl(imageCid) : null,
       theme_cid: themeCid ?? null,
     });
   } catch (error) {
