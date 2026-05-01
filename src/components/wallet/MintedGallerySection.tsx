@@ -50,7 +50,7 @@ type MintRow = {
   created_at: string;
   network: string;
   blockchain: string;
-  skin_kind?: 'wcc' | 'phantom' | null;
+  skin_kind?: string | null;
   tx_sig: string;
   mint_address: string;
   owner_address: string;
@@ -239,10 +239,10 @@ export default function MintedGallerySection() {
         }
       }
 
-      // Apply wallet filter (client-side: solana => Phantom, EVM => MetaMask)
+      // Apply wallet filter (uses skin_kind when present, else blockchain)
       if (walletFilter !== 'all') {
         filteredItems = filteredItems.filter(item =>
-          getWalletKind(item.blockchain) === walletFilter
+          getWalletKind(item) === walletFilter
         );
       }
 
