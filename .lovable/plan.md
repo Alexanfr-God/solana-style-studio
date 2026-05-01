@@ -1,48 +1,78 @@
-## Проблема (диагноз)
+## Проблема
 
-Твой свежий минт **есть в БД и финализирован на Solana devnet**, но не виден в gallery, потому что:
+При минте Phantom-скина в `minted_themes` сохраняется не картинка фона, а 1×1 пиксель placeholder (растягивается как зелёный/однотонный фон). Заодно edge function `upload-to-ipfs` иногда падает с "Failed upload image" — потому что:
 
-1. `MintedGallerySection` фильтрует строго `is_verified=true` (это защита от фантомных НФТ).
-2. В `ExportToIpfsButton.tsx` поле `is_verified` ставится в `true` **только** после успешного `connection.confirmTransaction(...)` в браузере. Этот вызов часто таймаутит на публичном RPC devnet, даже когда tx реально проходит.
-3. Сейчас в БД: `mint_address: 4jGVoY5kC3b4cLZ5E6NnKq3WtqgoQF9EHKe7N7s5qSbY`, `theme_name: "My Custom Theme"`, `tx_sig: 3D16H2gz...`, `is_verified=false`.
-4. Проверка через RPC: tx статус `Ok`, `confirmationStatus: finalized`. Значит минт прошёл, БД просто не дообновилась.
-
-Дополнительно: сейчас нет способа отличить "WCC-скин на Solana" от "Phantom-нативный скин" — все Solana-минты в БД одинаковы, поэтому на карточке всегда WCC-логотип.
+1. **`resolvePreviewImageUrl`** в `ExportToIpfsButton.tsx` ищет фон только в **WCC-структуре** (`theme.lockLayer.backgroundImage`, `homeLayer.backgroundImage` и т.д.).
+2. У **Phantom-темы совершенно другая структура** — фон лежит в `phantomTheme.global.background.url` (из `usePhantomThemeStore`).
+3. В минт-флоу всегда берётся `useThemeStore.getState().theme` (WCC), и Phantom-стор вообще не опрашивается на предмет картинки. Для Phantom-минтов мы передаём WCC-тему + WCC-фон (или placeholder).
+4. Deno `fetch()` на `data:image/png;base64,...` URL отдаёт нестабильный результат → "Failed to download preview image" в логах edge function.
+5. В БД `image_url` записывается тот же placeholder → в Minted Gallery видно зелёный/однотонный фон.
 
 ## Что делаем
 
-### 1. Миграция БД
-- Верифицировать застрявшую запись текущего минта (`UPDATE is_verified=true` для `mint_address = '4jGVoY5kC3b4cLZ5E6NnKq3WtqgoQF9EHKe7N7s5qSbY'`).
-- Добавить колонку `skin_kind text` в `minted_themes` со значениями `'wcc' | 'phantom'`, default `'wcc'` (чтобы все существующие НФТ остались с WCC-значком как сейчас).
-- Для текущего минта проставить `skin_kind = 'phantom'`.
+### 1. `src/components/wallet/ExportToIpfsButton.tsx`
 
-### 2. Mint flow (`src/components/wallet/ExportToIpfsButton.tsx`)
-- При INSERT записи передавать `skin_kind` (из контекста кнопки минта — для Phantom-скинов будет `'phantom'`, для остальных `'wcc'`). Точное место определения типа скина уточнится при реализации (по тому, какой JSON загружен / какой store активен).
-- В блоке после `confirmTransaction`: если confirm упал по таймауту — НЕ молча выходить, а сделать polling `getSignatureStatuses` (до 10 попыток × 3 сек). Если статус `finalized` без ошибки → всё равно выполнять `UPDATE is_verified=true`.
+- Определять `skinKind` **в начале** Solana-флоу (а не только перед insert).
+- Если `skinKind === 'phantom'`:
+  - брать тему из `usePhantomThemeStore.getState().phantomTheme` (а не из WCC store);
+  - резолвить `previewImageUrl` из `phantomTheme.global.background.url`;
+  - если в `global.background` нет `url` (только gradient/color) — ничего не выдумываем, передаём `null` и пропускаем шаг загрузки картинки в IPFS (см. п.2), а в БД пишем `image_url: null`, чтобы галерея не показывала растянутый placeholder.
+- Добавить отдельный `resolvePhantomPreviewImageUrl(phantomTheme)`.
+- В `themeData`, который уходит и в IPFS, и в metadata, для Phantom-минтов передавать **phantom-тему**, а не WCC.
+- Логировать `[ExportToIpfs] skinKind / previewImageUrl / source` для диагностики.
 
-### 3. Self-healing в gallery (`src/components/wallet/MintedGallerySection.tsx`)
-- При загрузке gallery: дополнительно фетчить записи `is_verified=false` старше 60 сек (но не старше 24 ч, чтобы не зацикливаться на безнадёжных).
-- Для каждой такой записи делать `getSignatureStatuses([tx_sig])` через Solana RPC.
-- Если `Ok + finalized` → `UPDATE is_verified=true` → запись автоматически попадает в видимый список после следующего рефетча (realtime-подписка на `minted_themes` уже есть и сама подхватит).
+### 2. `supabase/functions/upload-to-ipfs/index.ts`
 
-### 4. Карточка НФТ
-- Заменить статичный WCC-логотип в нижнем-левом углу на условный значок:
-  - `skin_kind === 'phantom'` → лого Phantom (`@/assets/phantom-logo.svg`)
-  - иначе → WCC (как сейчас)
-- Фильтр сверху "All / Phantom / MetaMask" остаётся, но логику фильтра Phantom расширить: показывать записи, у которых `skin_kind='phantom'` ИЛИ (в режиме совместимости) `blockchain='solana'`. Уточнится при реализации — возможно, лучше переключить чисто на `skin_kind`.
+- Сделать `previewImageUrl` опциональным:
+  - если он отсутствует / является data: URL 1×1 / fetch упал — не падаем всем минтом, а возвращаем `imageCid: null` и в metadata кладём пустой `image: ""` (или дефолтную WCC-обложку, которая лежит в Lighthouse — TBD, спросим у юзера, ниже один вопрос об этом).
+- Перестать пытаться `fetch()` на `data:` URL: если строка начинается с `data:`, декодировать base64 локально и заливать байты напрямую в Lighthouse.
+- Чёткое сообщение об ошибке в `message`, а не общее "Failed upload image".
 
-### 5. TypeScript fix (предусловие)
-В прошлом ответе остались build-ошибки в `src/stores/phantomThemeStore.ts` (отсутствуют поля `shadow`, `filter`, `transform`, `letter_spacing`, `fontFamily`, `textTransform`, `textShadow`, `lineHeight` в типах). Нужно расширить типы, чтобы билд снова собирался.
+### 3. Minted Gallery (`MintedGallerySection.tsx`)
 
-## Тест после имплементации
+- Если `image_url` пустой / совпадает с известным placeholder (1×1 PNG) — показывать **рендер превью из `metadata_uri`** (загружаем JSON, берём `properties.files[0]` или сам `image`) вместо однотонного фона.
+- Fallback: нейтральная плашка "No preview" с иконкой Phantom/WCC, а не зелёный градиент.
 
-1. Открыть gallery → твой минт `4jGVoY5kC3b4cLZ5E6NnKq3WtqgoQF9EHKe7N7s5qSbY` появляется со значком **Phantom**.
-2. Фильтр "Phantom" в баре над сеткой показывает его (и любые будущие phantom-скины).
-3. Сделать новый Phantom-минт → даже если confirm в браузере таймаутит, через ~30 сек запись авто-верифицируется и появляется в gallery.
+### 4. Self-healing для уже залитого Phantom-NFT
+
+- Тот конкретный mint, который сейчас показывает зелёный фон, имеет корректный `metadata_uri` на IPFS. Сделаем разовый UPDATE: после деплоя кода галерея сама подтянет картинку из metadata; **миграция БД не требуется**, но если хочешь — можно дополнительно перезаписать `image_url` из metadata через одноразовый скрипт в галерее (для всех записей с placeholder image_url).
 
 ## Технические детали
 
-- Миграция: `ALTER TABLE public.minted_themes ADD COLUMN skin_kind text NOT NULL DEFAULT 'wcc' CHECK (skin_kind IN ('wcc','phantom'));` + два UPDATE.
-- Polling: `connection.getSignatureStatuses([sig], { searchTransactionHistory: true })`, проверка `value[0].confirmationStatus === 'finalized' && value[0].err === null`.
-- Self-healing вызывается из `useEffect` один раз на mount, без блокировки UI.
-- Никаких изменений в edge-функциях не нужно — вся логика на клиенте.
+```ts
+// resolvePhantomPreviewImageUrl
+function resolvePhantomPreviewImageUrl(pt: PhantomTheme | null): string | null {
+  const url = pt?.global?.background?.url;
+  if (!url) return null;
+  // отсечь 1×1 placeholder
+  if (url.startsWith('data:image/png;base64,iVBORw0KGgo')) return null;
+  return url;
+}
+```
+
+```ts
+// в Solana-флоу
+const phantomTheme = usePhantomThemeStore.getState().phantomTheme;
+const skinKind: 'wcc' | 'phantom' = phantomTheme ? 'phantom' : 'wcc';
+const themeForMint = skinKind === 'phantom' ? phantomTheme : useThemeStore.getState().theme;
+const previewImageUrl = skinKind === 'phantom'
+  ? resolvePhantomPreviewImageUrl(phantomTheme)
+  : resolvePreviewImageUrl(themeForMint);
+```
+
+```ts
+// edge function: data: URL handling
+if (previewImageUrl?.startsWith('data:')) {
+  const [, b64] = previewImageUrl.split(',');
+  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  imageBlob = new Blob([bytes], { type: 'image/png' });
+} else if (previewImageUrl) {
+  const r = await fetch(previewImageUrl);
+  if (!r.ok) { /* graceful fallback, не throw */ }
+  imageBlob = await r.blob();
+}
+```
+
+## Один вопрос перед стартом
+
+Нужно решить, что показывать в галерее, если у Phantom-скина в `global.background` вообще нет картинки (только gradient/color) — это валидный случай.
