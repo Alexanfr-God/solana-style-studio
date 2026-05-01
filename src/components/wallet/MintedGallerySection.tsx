@@ -21,8 +21,11 @@ import metamaskLogo from '@/assets/metamask-logo.svg';
 
 type WalletKind = 'phantom' | 'metamask';
 
-function getWalletKind(blockchain: string | null | undefined): WalletKind {
-  return blockchain === 'solana' ? 'phantom' : 'metamask';
+function getWalletKind(item: { skin_kind?: string | null; blockchain?: string | null }): WalletKind {
+  // Prefer explicit skin_kind, fall back to blockchain heuristic
+  if (item.skin_kind === 'phantom') return 'phantom';
+  if (item.skin_kind === 'wcc') return item.blockchain === 'solana' ? 'phantom' : 'metamask';
+  return item.blockchain === 'solana' ? 'phantom' : 'metamask';
 }
 
 // Convert IPFS URI to HTTP gateway URL
@@ -47,6 +50,7 @@ type MintRow = {
   created_at: string;
   network: string;
   blockchain: string;
+  skin_kind?: string | null;
   tx_sig: string;
   mint_address: string;
   owner_address: string;
@@ -135,6 +139,58 @@ export default function MintedGallerySection() {
       supabase.removeChannel(auctionsChannel);
     };
   }, [searchQuery, onlyMyMints, sortOrder, selectedBlockchain, selectedNetwork, showWccOnly, minRating, showListedOnly, auctionFilter, walletFilter, page, address]);
+
+  // Self-heal: on mount, scan unverified records (>60s, <24h) and verify on-chain.
+  // If Solana confirms the tx, mark is_verified=true so it appears in the gallery.
+  useEffect(() => {
+    let cancelled = false;
+    async function selfHeal() {
+      try {
+        const now = Date.now();
+        const cutoffOld = new Date(now - 60_000).toISOString();
+        const cutoffYoung = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+        const { data: stuck } = await supabase
+          .from('minted_themes')
+          .select('id, mint_address, tx_sig, blockchain')
+          .eq('is_verified', false)
+          .eq('blockchain', 'solana')
+          .lte('created_at', cutoffOld)
+          .gte('created_at', cutoffYoung)
+          .limit(20);
+        if (cancelled || !stuck || stuck.length === 0) return;
+
+        console.log('[Gallery self-heal] Checking', stuck.length, 'unverified mints');
+        const { Connection } = await import('@solana/web3.js');
+        const connection = new Connection(MARKETPLACE_CONFIG.SOLANA_RPC_URL, 'confirmed');
+
+        for (const row of stuck) {
+          if (cancelled) return;
+          if (!row.tx_sig) continue;
+          try {
+            const { value } = await connection.getSignatureStatuses([row.tx_sig], {
+              searchTransactionHistory: true,
+            });
+            const st = value?.[0];
+            if (st && !st.err && (st.confirmationStatus === 'confirmed' || st.confirmationStatus === 'finalized')) {
+              const { error } = await supabase
+                .from('minted_themes')
+                .update({ is_verified: true })
+                .eq('id', row.id);
+              if (!error) {
+                console.log('[Gallery self-heal] ✅ Verified', row.mint_address);
+              }
+            }
+          } catch (e) {
+            console.warn('[Gallery self-heal] Skip', row.mint_address, e);
+          }
+        }
+      } catch (e) {
+        console.warn('[Gallery self-heal] Failed:', e);
+      }
+    }
+    selfHeal();
+    return () => { cancelled = true; };
+  }, []);
 
   async function fetchMints() {
     setIsLoading(true);
@@ -235,10 +291,10 @@ export default function MintedGallerySection() {
         }
       }
 
-      // Apply wallet filter (client-side: solana => Phantom, EVM => MetaMask)
+      // Apply wallet filter (uses skin_kind when present, else blockchain)
       if (walletFilter !== 'all') {
         filteredItems = filteredItems.filter(item =>
-          getWalletKind(item.blockchain) === walletFilter
+          getWalletKind(item) === walletFilter
         );
       }
 
@@ -909,17 +965,30 @@ export default function MintedGallerySection() {
                 network={item.network as 'devnet' | 'mainnet'}
               />
 
-              {/* WCC Logo - all minted themes here are WCC skins */}
-              <div
-                className="absolute bottom-2 left-2 z-10 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center"
-                title="WCC Theme"
-              >
-                <img
-                  src="/lovable-uploads/WCC.png"
-                  alt="WCC"
-                  className="w-3.5 h-3.5 rounded-full"
-                />
-              </div>
+              {/* Skin kind badge: Phantom logo for phantom-native skins, WCC otherwise */}
+              {item.skin_kind === 'phantom' ? (
+                <div
+                  className="absolute bottom-2 left-2 z-10 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center"
+                  title="Phantom Skin"
+                >
+                  <img
+                    src={phantomLogo}
+                    alt="Phantom"
+                    className="w-3.5 h-3.5 rounded-full"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="absolute bottom-2 left-2 z-10 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center"
+                  title="WCC Theme"
+                >
+                  <img
+                    src="/lovable-uploads/WCC.png"
+                    alt="WCC"
+                    className="w-3.5 h-3.5 rounded-full"
+                  />
+                </div>
+              )}
 
               {/* V1 Legacy Badge - moved next to WCC */}
               {!item.metadata_uri?.includes('properties') && (

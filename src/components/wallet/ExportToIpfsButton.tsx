@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThemeStore } from '@/state/themeStore';
+import { usePhantomThemeStore } from '@/stores/phantomThemeStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import BlockchainSelectorDialog from './BlockchainSelectorDialog';
@@ -254,6 +255,11 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
       // Step 8.5: Save to database with is_verified: false (will verify after confirmation)
       console.log('[MintFlow] 💾 Saving mint record to database (unverified)...');
       let insertedRecordId: string | null = null;
+      // Detect skin kind: if a Phantom theme is active in the dedicated store,
+      // this mint is a Phantom-native skin; otherwise it's a WCC skin.
+      const skinKind: 'wcc' | 'phantom' =
+        usePhantomThemeStore.getState().phantomTheme ? 'phantom' : 'wcc';
+      console.log('[MintFlow] 🏷️ Detected skin_kind:', skinKind);
       try {
         const { data: insertData, error: insertError } = await supabase
           .from('minted_themes')
@@ -266,7 +272,8 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
             image_url: previewImageUrl,
             network: 'devnet',
             blockchain: 'solana',
-            is_verified: false  // Will be set to true after confirmation
+            is_verified: false,  // Will be set to true after confirmation
+            skin_kind: skinKind
           })
           .select('id')
           .single();
@@ -288,34 +295,56 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
 
       // Step 9: Confirm transaction
       toast.info('⏳ Confirming transaction...');
+      let confirmed = false;
       try {
         await connection.confirmTransaction({
           signature,
           blockhash: buildData.recentBlockhash,
           lastValidBlockHeight: buildData.lastValidBlockHeight
         }, 'confirmed');
-
+        confirmed = true;
         console.log('[MintFlow] ✅ Transaction confirmed!', {
           signature,
           explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
         });
+      } catch (confirmError) {
+        console.warn('[MintFlow] ⚠️ confirmTransaction timed out, falling back to RPC polling:', confirmError);
+        toast.info('⏳ Confirmation slow — polling Solana for status...');
+        // Fallback: poll signature statuses up to 10 × 3s
+        for (let i = 0; i < 10; i++) {
+          await new Promise(r => setTimeout(r, 3000));
+          try {
+            const { value } = await connection.getSignatureStatuses([signature], {
+              searchTransactionHistory: true
+            });
+            const st = value?.[0];
+            if (st && !st.err && (st.confirmationStatus === 'confirmed' || st.confirmationStatus === 'finalized')) {
+              confirmed = true;
+              console.log('[MintFlow] ✅ Confirmed via polling on attempt', i + 1);
+              break;
+            }
+          } catch (pollErr) {
+            console.warn('[MintFlow] poll attempt failed:', pollErr);
+          }
+        }
+      }
 
-        // Step 9.5: Mark as verified in database AFTER successful confirmation
+      if (confirmed) {
+        // Mark as verified in database
         const { error: updateError } = await supabase
           .from('minted_themes')
           .update({ is_verified: true })
           .eq('mint_address', buildData.mintAddress);
-        
+
         if (updateError) {
           console.error('[MintFlow] ⚠️ Failed to verify mint record:', updateError);
         } else {
           console.log('[MintFlow] ✅ Mint record verified in database');
           toast.success('✅ NFT verified and added to gallery!');
         }
-      } catch (confirmError) {
-        console.error('[MintFlow] ⚠️ Transaction confirmation failed:', confirmError);
-        // Don't throw - the tx might still succeed, just timeout
-        toast.warning('⚠️ Transaction sent but confirmation timed out. Check explorer.');
+      } else {
+        console.warn('[MintFlow] ⚠️ Could not confirm tx after polling. Gallery self-heal will retry.');
+        toast.warning('⚠️ Confirmation timed out. The gallery will auto-verify shortly.');
       }
 
       // Step 11: Show success
