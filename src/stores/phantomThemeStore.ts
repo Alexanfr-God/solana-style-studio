@@ -10,8 +10,21 @@ interface ElementStyle {
     border_width?: number;
     border_radius: number;
     gradient?: { from: string; to: string; angle: number };
+    shadow?: { x: number; y: number; radius: number; spread: number; color: string };
+    filter?: string;
+    transform?: string;
   };
-  text?: { color: string; size: number; weight: number; opacity: number };
+  text?: {
+    color: string;
+    size: number;
+    weight: number;
+    opacity: number;
+    letter_spacing?: number;
+    fontFamily?: string;
+    textTransform?: string;
+    textShadow?: string;
+    lineHeight?: number | string;
+  };
   animation?: { type: string; duration_ms: number; loop: boolean; color?: string };
   icon?: { tint: string; opacity: number };
 }
