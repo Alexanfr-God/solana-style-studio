@@ -66,26 +66,37 @@ export function buildThemeOverrides(theme: WCCOverlayV3): Record<string, Record<
   const toCSS = (el: ElementStyle | undefined): Record<string, string> => {
     if (!el) return {};
     const s = el.style;
+    if (!s) return {};
     const r: Record<string, string> = {};
+
+    // Defensive: normalize fill — AI may return null/undefined/missing fill
+    // Calling .startsWith() on undefined throws "Cannot read properties of undefined"
+    const fill: string = (s.fill && typeof s.fill === 'string') ? s.fill : '';
 
     // ── Background / fill ──────────────────────────────────────────────────────
     if (s.type === 'glassmorphism') {
-      r.backgroundColor = s.fill.startsWith('rgba') ? s.fill : `${s.fill}${Math.round((s.fill_opacity ?? 0.1) * 255).toString(16).padStart(2,'0')}`;
+      // fill may be missing → fall back to semi-transparent white/black
+      const glassFill = fill
+        ? (fill.startsWith('rgba') || fill.startsWith('rgb') || fill.startsWith('#')
+            ? fill
+            : `${fill}${Math.round((s.fill_opacity ?? 0.08) * 255).toString(16).padStart(2,'0')}`)
+        : `rgba(255,255,255,${s.fill_opacity ?? 0.08})`;
+      r.backgroundColor = glassFill;
       r.backdropFilter = `blur(${s.blur ?? 14}px)`;
       r.WebkitBackdropFilter = `blur(${s.blur ?? 14}px)`;
       r.border = s.border_color ? `${s.border_width ?? 1}px solid ${s.border_color}` : '1px solid rgba(255,255,255,0.15)';
     } else if (s.type === 'neon') {
-      r.backgroundColor = s.fill;
+      if (fill) r.backgroundColor = fill;
       r.border = s.border_color ? `${s.border_width ?? 1}px solid ${s.border_color}` : 'none';
-      const glowColor = s.border_color ?? s.fill;
+      const glowColor = s.border_color ?? fill ?? ca.safe_accent;
       r.boxShadow = `0 0 8px ${glowColor}, 0 0 20px ${glowColor}40, inset 0 0 8px ${glowColor}20`;
     } else if (s.type === 'gradient' && s.gradient) {
-      r.background = `linear-gradient(${s.gradient.angle}deg, ${s.gradient.from}, ${s.gradient.to})`;
+      r.background = `linear-gradient(${s.gradient.angle ?? 135}deg, ${s.gradient.from}, ${s.gradient.to})`;
     } else if (s.type === 'neumorphic') {
-      r.backgroundColor = s.fill;
+      if (fill) r.backgroundColor = fill;
       r.boxShadow = '4px 4px 10px rgba(0,0,0,0.3), -4px -4px 10px rgba(255,255,255,0.05)';
     } else if (s.type !== 'transparent') {
-      r.backgroundColor = s.fill;
+      if (fill) r.backgroundColor = fill;
       if (s.border_color) r.border = `${s.border_width ?? 1}px solid ${s.border_color}`;
     }
 

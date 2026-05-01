@@ -69,6 +69,29 @@ export async function runValidator(input: {
     if (!element.style?.border_radius && element.style?.border_radius !== 0) {
       element.style.border_radius = 8;
     }
+
+    // 6. Normalize fill — AI may omit fill or set it to null/undefined.
+    //    buildThemeOverrides calls .startsWith() on fill which crashes on non-strings.
+    if (element.style && (element.style.fill == null || typeof element.style.fill !== "string")) {
+      if (element.style.type === "transparent") {
+        element.style.fill = "transparent";
+      } else if (element.style.type === "glassmorphism") {
+        element.style.fill = `rgba(255,255,255,${element.style.fill_opacity ?? 0.08})`;
+        warnings.push(`${id}: fill was missing for glassmorphism → defaulted to rgba`);
+      } else {
+        element.style.fill = input.colors.palette.neutral;
+        warnings.push(`${id}: fill was missing → defaulted to neutral`);
+      }
+      fixes++;
+    }
+
+    // 7. Normalize gradient fields if gradient type declared but object missing
+    if (element.style?.type === "gradient" && !element.style.gradient) {
+      element.style.type = "solid";
+      element.style.fill = element.style.fill ?? input.colors.safe_button_bg;
+      warnings.push(`${id}: gradient type declared but no gradient object → converted to solid`);
+      fixes++;
+    }
   }
 
   const theme: WCCOverlayV3 = {
