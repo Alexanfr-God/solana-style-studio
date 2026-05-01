@@ -18,6 +18,7 @@ import { AuctionCountdown } from '@/components/auction/AuctionCountdown';
 import { MARKETPLACE_CONFIG } from '@/config/marketplace';
 import phantomLogo from '@/assets/phantom-logo.svg';
 import metamaskLogo from '@/assets/metamask-logo.svg';
+import { GalleryPreviewImage } from './GalleryPreviewImage';
 
 type WalletKind = 'phantom' | 'metamask';
 
@@ -1017,17 +1018,12 @@ export default function MintedGallerySection() {
                 </div>
               )}
                 
-                {item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.theme_name || 'Theme'}
-                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white/30">
-                    No Preview
-                  </div>
-                )}
+                <GalleryPreviewImage
+                  imageUrl={item.image_url}
+                  metadataUri={item.metadata_uri}
+                  alt={item.theme_name || 'Theme'}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                />
               </div>
 
               {/* Info */}
