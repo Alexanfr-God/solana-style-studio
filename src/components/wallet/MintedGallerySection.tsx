@@ -21,8 +21,11 @@ import metamaskLogo from '@/assets/metamask-logo.svg';
 
 type WalletKind = 'phantom' | 'metamask';
 
-function getWalletKind(blockchain: string | null | undefined): WalletKind {
-  return blockchain === 'solana' ? 'phantom' : 'metamask';
+function getWalletKind(item: { skin_kind?: string | null; blockchain?: string | null }): WalletKind {
+  // Prefer explicit skin_kind, fall back to blockchain heuristic
+  if (item.skin_kind === 'phantom') return 'phantom';
+  if (item.skin_kind === 'wcc') return item.blockchain === 'solana' ? 'phantom' : 'metamask';
+  return item.blockchain === 'solana' ? 'phantom' : 'metamask';
 }
 
 // Convert IPFS URI to HTTP gateway URL
@@ -47,6 +50,7 @@ type MintRow = {
   created_at: string;
   network: string;
   blockchain: string;
+  skin_kind?: 'wcc' | 'phantom' | null;
   tx_sig: string;
   mint_address: string;
   owner_address: string;
