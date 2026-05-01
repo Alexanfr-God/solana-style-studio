@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Diamond, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { useThemeStore } from '@/state/themeStore';
-import { usePhantomThemeStore } from '@/stores/phantomThemeStore';
+import { usePhantomThemeStore, type WCCOverlayV3 } from '@/stores/phantomThemeStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
 import BlockchainSelectorDialog from './BlockchainSelectorDialog';
@@ -13,6 +13,9 @@ import { useEvmMint } from '@/hooks/useEvmMint';
 interface ExportToIpfsButtonProps {
   themeId?: string;
 }
+
+const PLACEHOLDER_1PX_PNG =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
 // Resolve preview image URL from theme layers (cascade fallback)
 function resolvePreviewImageUrl(theme: any): string {
@@ -23,7 +26,17 @@ function resolvePreviewImageUrl(theme: any): string {
   if (theme.buyLayer?.headerContainer?.backgroundImage) return theme.buyLayer.headerContainer.backgroundImage;
   
   console.warn('[ExportToIpfs] No backgroundImage found in theme, using placeholder');
-  return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  return PLACEHOLDER_1PX_PNG;
+}
+
+// Resolve preview image URL from a Phantom (WCCOverlayV3) theme.
+// Returns null if no real background image is present (gradient/color only),
+// so the mint flow doesn't push a 1×1 placeholder into IPFS / DB.
+function resolvePhantomPreviewImageUrl(pt: WCCOverlayV3 | null | undefined): string | null {
+  const url = pt?.global?.background?.url;
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('data:image/png;base64,iVBORw0KGgo')) return null;
+  return url;
 }
 
 const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
