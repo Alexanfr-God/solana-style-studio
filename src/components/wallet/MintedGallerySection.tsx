@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card';
 import { ExternalLink, Sparkles, Tag, ShoppingBag, Gavel, Clock, TrendingUp } from 'lucide-react';
 import { useThemeStore } from '@/state/themeStore';
+import { usePhantomThemeStore, type WCCOverlayV3 } from '@/stores/phantomThemeStore';
 import { toast } from 'sonner';
 import { RibbonBadge } from '@/components/nft/RibbonBadge';
 import { RatingStars } from '@/components/nft/RatingStars';
@@ -58,6 +59,7 @@ type MintRow = {
   metadata_uri: string;
   theme_name?: string | null;
   image_url?: string | null;
+  theme_data?: any;
   rating_avg?: number;
   rating_count?: number;
   is_listed?: boolean;
