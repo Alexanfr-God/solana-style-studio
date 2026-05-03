@@ -299,7 +299,7 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
             skin_kind: skinKind,
             // Store the full WCCOverlayV3 theme so useNftOwnership can
             // serve the overlay back when the owner connects their wallet.
-            theme_data: skinKind === 'phantom' ? phantomTheme : null,
+            theme_data: (skinKind === 'phantom' ? phantomTheme : null) as any,
             collection_name: 'WCC'
           })
           .select('id')
