@@ -1134,7 +1134,7 @@ export default function MintedGallerySection() {
                   <Button
                     size="sm"
                     className="flex-1 min-w-0 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-2 text-xs sm:text-sm"
-                    onClick={() => handleApplyTheme(item.metadata_uri, item.theme_name || 'imported-theme')}
+                    onClick={() => handleApplyTheme(item)}
                   >
                     <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 sm:mr-1.5" />
                     <span className="hidden sm:inline truncate">Apply</span>
