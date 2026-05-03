@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 import { withRenderGuard } from '@/utils/guard';
 import { supabase } from '@/integrations/supabase/client';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
+import { usePhantomThemeStore } from '@/stores/phantomThemeStore';
+import { PHANTOM_PRESETS, type PhantomPresetCard } from '@/data/phantomBuiltInThemes';
+import { Ghost, Wallet } from 'lucide-react';
 
 const ThemeSelectorCoverflow: React.FC = () => {
   const guard = withRenderGuard("ThemeSelectorCoverflow");
@@ -37,6 +40,11 @@ const ThemeSelectorCoverflow: React.FC = () => {
   const [loadingThemes, setLoadingThemes] = useState<Set<string>>(new Set());
   
   const [isApplying, setIsApplying] = useState(false);
+
+  // Toggle: WCC presets vs Phantom skins
+  const [kind, setKind] = useState<'wcc' | 'phantom'>('wcc');
+  const [phantomActiveId, setPhantomActiveId] = useState<string>('phantom-original');
+  const setPhantomTheme = usePhantomThemeStore(s => s.setPhantomTheme);
   
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
@@ -150,7 +158,26 @@ const ThemeSelectorCoverflow: React.FC = () => {
     }
   }, [activeThemeId, selectTheme, source, isApplying]);
 
-  const activeTheme = themes.find(t => t.id === activeThemeId);
+  // Phantom click handler
+  const handlePhantomClick = useCallback((card: PhantomPresetCard) => {
+    if (card.isPlaceholder) {
+      toast.info('Coming soon ✨');
+      return;
+    }
+    if (card.id === phantomActiveId) return;
+    if (card.themeData) {
+      setPhantomTheme(card.themeData);
+      setPhantomActiveId(card.id);
+      toast.success(`✅ Applied: ${card.name}`);
+    }
+  }, [phantomActiveId, setPhantomTheme]);
+
+  // Active list / active id depending on kind
+  const phantomList = PHANTOM_PRESETS;
+  const displayList: Array<{ id: string; name: string; description: string; coverUrl: string; isPlaceholder?: boolean }> =
+    kind === 'phantom' ? phantomList : themes;
+  const displayActiveId = kind === 'phantom' ? phantomActiveId : (activeThemeId ?? '');
+  const activeTheme = displayList.find(t => String(t.id) === String(displayActiveId));
 
   if (isLoading) {
     return (
@@ -163,12 +190,45 @@ const ThemeSelectorCoverflow: React.FC = () => {
   return (
     <div className="w-full py-8 space-y-6">
       <div className="text-center space-y-4">
-        <h3 className="text-xl font-semibold text-white">
-          Choose Your Theme
-        </h3>
+        <div className="flex items-center justify-center gap-3">
+          <h3 className="text-xl font-semibold text-white">
+            Choose Your Theme
+          </h3>
+          {/* WCC ↔ Phantom toggle */}
+          <div className="inline-flex items-center rounded-full border border-white/15 bg-black/30 p-0.5">
+            <button
+              type="button"
+              onClick={() => setKind('wcc')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                kind === 'wcc'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow'
+                  : 'text-white/60 hover:text-white/90'
+              }`}
+              aria-pressed={kind === 'wcc'}
+            >
+              <Wallet className="w-3 h-3" />
+              WCC
+            </button>
+            <button
+              type="button"
+              onClick={() => setKind('phantom')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                kind === 'phantom'
+                  ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow'
+                  : 'text-white/60 hover:text-white/90'
+              }`}
+              aria-pressed={kind === 'phantom'}
+            >
+              <Ghost className="w-3 h-3" />
+              Phantom
+            </button>
+          </div>
+        </div>
         
         <p className="text-sm text-white/60 max-w-md mx-auto">
-          Click any theme to apply it immediately
+          {kind === 'phantom'
+            ? 'Phantom-native skins. Click "Original" to preview.'
+            : 'Click any theme to apply it immediately'}
         </p>
         
         {activeTheme && (
@@ -182,7 +242,7 @@ const ThemeSelectorCoverflow: React.FC = () => {
           </div>
         )}
         
-        {source && (
+        {kind === 'wcc' && source && (
           <div className="text-xs text-white/40">
             Data source: {source === 'supabase' ? 'Database' : 'Files (fallback)'}
           </div>
@@ -210,13 +270,12 @@ const ThemeSelectorCoverflow: React.FC = () => {
           <ChevronRight className="h-5 w-5 text-white" />
         </Button>
 
-        <div className="overflow-hidden" ref={emblaRef}>
+        <div className="overflow-hidden" ref={emblaRef} key={kind}>
           <div className="flex items-center gap-4 px-16">
-            {themes.map((theme) => {
-              const isActive = String(theme.id) === String(activeThemeId);
-              const isThemeLoading = loadingThemes.has(theme.id);
-              
-              console.log('[RENDER CoverflowItem]', { id: theme.id, isActive: isActive });
+            {displayList.map((theme) => {
+              const isActive = String(theme.id) === String(displayActiveId);
+              const isThemeLoading = kind === 'wcc' && loadingThemes.has(theme.id);
+              const isPlaceholder = (theme as PhantomPresetCard).isPlaceholder === true;
               
               return (
                 <div
@@ -225,8 +284,12 @@ const ThemeSelectorCoverflow: React.FC = () => {
                     isActive 
                       ? 'scale-110 z-10' 
                       : 'scale-90 opacity-60 hover:opacity-80 hover:scale-95'
-                  } ${isApplying ? 'pointer-events-none' : ''}`}
-                  onClick={() => handleThemeClick(theme)}
+                  } ${isApplying && kind === 'wcc' ? 'pointer-events-none' : ''} ${isPlaceholder ? 'opacity-40 cursor-not-allowed' : ''}`}
+                  onClick={() =>
+                    kind === 'phantom'
+                      ? handlePhantomClick(theme as PhantomPresetCard)
+                      : handleThemeClick(theme)
+                  }
                   data-theme-id={theme.id}
                 >
                   <Card className={`
@@ -256,6 +319,12 @@ const ThemeSelectorCoverflow: React.FC = () => {
                         </div>
                       )}
 
+                      {isPlaceholder && (
+                        <div className="absolute top-2 left-2 bg-white/10 backdrop-blur-sm text-white/80 text-[10px] px-2 py-0.5 rounded-full border border-white/20">
+                          Soon
+                        </div>
+                      )}
+
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
 
@@ -276,16 +345,20 @@ const ThemeSelectorCoverflow: React.FC = () => {
       </div>
 
       <div className="flex justify-center gap-2">
-        {themes.map((theme) => (
+        {displayList.map((theme) => (
           <button
             key={theme.id}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              String(theme.id) === String(activeThemeId)
+              String(theme.id) === String(displayActiveId)
                 ? 'bg-purple-400 w-6' 
                 : 'bg-white/30 hover:bg-white/50'
             }`}
-            onClick={() => !isApplying && handleThemeClick(theme)}
-            disabled={isApplying}
+            onClick={() =>
+              kind === 'phantom'
+                ? handlePhantomClick(theme as PhantomPresetCard)
+                : (!isApplying && handleThemeClick(theme))
+            }
+            disabled={isApplying && kind === 'wcc'}
           />
         ))}
       </div>
