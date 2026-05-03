@@ -1,0 +1,1 @@
+UPDATE public.minted_themes SET is_verified = true WHERE mint_address = 'GzS4v8H6yn57XU1ryg2NR5nAtLt4a1DdnqmZkKK6FF2z';

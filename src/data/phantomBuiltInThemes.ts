@@ -1,4 +1,82 @@
 import type { WCCOverlayV3 } from '@/stores/phantomThemeStore';
+import phantomOriginalCover from '@/assets/phantom-original-cover.jpg';
+
+/**
+ * "Gold BTC" — recently minted Phantom skin (mint GzS4v8H6...).
+ * Theme data is inlined from the on-chain NFT so the click applies instantly
+ * without a network round-trip to IPFS.
+ */
+export const PHANTOM_BUILTIN_GOLD_BTC: WCCOverlayV3 = {
+  version: 3,
+  wallet: 'phantom',
+  theme_name: 'Gold BTC',
+  generated_at: '2026-05-03T17:43:37.880Z',
+  global: {
+    background: {
+      type: 'image',
+      url: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/generated-images/backgrounds/49TycAdY/1777830204705.png',
+      opacity: 0.9,
+      blur: 0,
+      animated: true,
+      animation_preset: 'cosmic-pulse',
+    } as any,
+    color_analysis: {
+      dominant: ['#0a0f30', '#d4a44f', '#4b6b9c'],
+      luminance: 'dark',
+      forbidden: ['#0a0f30', '#0b1033', '#0c1136'],
+      safe_text: '#F5F5F5',
+      safe_accent: '#FF5733',
+      safe_button_bg: '#4b6b9c',
+      palette: {
+        primary: '#d4a44f',
+        secondary: '#4b6b9c',
+        neutral: '#0a0f30',
+        highlight: '#FF5733',
+      },
+    } as any,
+  },
+  elements: {
+    'background-layer': {
+      style: { type: 'transparent', fill: 'transparent', fill_opacity: 0, blur: 20, border_color: 'rgba(212,164,79,0.12)', border_width: 1, border_radius: 0 } as any,
+    },
+    'header': {
+      style: { type: 'glassmorphism', fill: '#FF5733', fill_opacity: 0.05, blur: 20, border_color: 'rgba(212,164,79,0.10)', border_width: 1, border_radius: 0 } as any,
+      text: { color: '#F5F5F5', size: 14, weight: 500, opacity: 1 },
+    },
+    'network-badge': {
+      style: { type: 'solid', fill: 'rgba(75,107,156,0.15)', fill_opacity: 0.15, border_radius: 12 },
+      text: { color: '#F5F5F5', size: 12, weight: 600, opacity: 1 } as any,
+    },
+    'balance-sol': {
+      style: { type: 'solid', fill: 'transparent', fill_opacity: 0, border_radius: 0 },
+      text: { color: '#F5F5F5', size: 40, weight: 800, opacity: 1 } as any,
+    },
+    'balance-usd': {
+      style: { type: 'solid', fill: 'transparent', fill_opacity: 0, border_radius: 0 },
+      text: { color: '#F5F5F5', size: 14, weight: 400, opacity: 0.55 },
+    } as any,
+    'btn-buy': {
+      style: { type: 'gradient', fill: '#0a0f30', fill_opacity: 1, border_radius: 20, gradient: { from: '#4b6b9c', to: '#3a557a', angle: 90 } } as any,
+      text: { color: '#FFFFFF', size: 12, weight: 600, opacity: 1 } as any,
+    },
+    'btn-send': {
+      style: { type: 'gradient', fill: '#0a0f30', fill_opacity: 1, border_radius: 20, gradient: { from: '#4b6b9c', to: '#3a557a', angle: 90 } } as any,
+      text: { color: '#FFFFFF', size: 12, weight: 600, opacity: 1 } as any,
+    },
+    'btn-swap': {
+      style: { type: 'gradient', fill: '#0a0f30', fill_opacity: 1, border_radius: 20, gradient: { from: '#4b6b9c', to: '#3a557a', angle: 90 } } as any,
+      text: { color: '#FFFFFF', size: 12, weight: 600, opacity: 1 } as any,
+    },
+    'btn-receive': {
+      style: { type: 'gradient', fill: '#0a0f30', fill_opacity: 1, border_radius: 20, gradient: { from: '#4b6b9c', to: '#3a557a', angle: 90 } } as any,
+      text: { color: '#FFFFFF', size: 12, weight: 600, opacity: 1 } as any,
+    },
+    'account-address': {
+      style: { type: 'solid', fill: 'rgba(75,107,156,0.15)', fill_opacity: 0.15, border_radius: 8 },
+      text: { color: '#F5F5F5', size: 12, weight: 400, opacity: 1 } as any,
+    },
+  } as any,
+};
 
 /**
  * "Original" Phantom skin — visual baseline that mirrors the default
@@ -115,14 +193,22 @@ export interface PhantomPresetCard {
 
 export const PHANTOM_PRESETS: PhantomPresetCard[] = [
   {
+    id: 'phantom-gold-btc',
+    name: 'Gold BTC',
+    description: 'Recently minted Phantom skin',
+    coverUrl: 'https://gateway.lighthouse.storage/ipfs/QmefA7pxFkmWXLhwhTC35SEuXJBN7EfnWY8t8zcoVnEb44',
+    themeData: PHANTOM_BUILTIN_GOLD_BTC,
+    isPlaceholder: false,
+  },
+  {
     id: 'phantom-original',
     name: 'Original',
     description: 'The default Phantom look',
-    coverUrl: '/placeholder.svg',
+    coverUrl: phantomOriginalCover,
     themeData: PHANTOM_BUILTIN_ORIGINAL,
     isPlaceholder: false,
   },
-  ...Array.from({ length: 19 }, (_, i) => ({
+  ...Array.from({ length: 18 }, (_, i) => ({
     id: `phantom-soon-${i + 1}`,
     name: 'Coming Soon',
     description: 'New Phantom skin in the works',
