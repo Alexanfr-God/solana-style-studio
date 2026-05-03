@@ -2,10 +2,12 @@
  * wccToLayoutDocument
  *
  * Converts a WCCOverlayV3 theme → LayoutDocument that the
- * Phantom Overlay Editor Chrome extension understands.
+ * Phantom Overlay Editor macOS agent understands.
  *
- * The extension renders LayoutElement[] in a Shadow DOM on top of
- * the real Phantom wallet (ws://localhost:3333 → layout:push).
+ * Transport: Supabase Realtime broadcast on channel "wcc:overlay"
+ * (avoids ws:// mixed-content block from HTTPS wacocu.app).
+ * The local sync-server subscribes to the same channel and forwards
+ * as layout:push to the agent via ws://localhost:3333.
  *
  * Anchor positions come from PHANTOM_SCREENS["password"] in
  * packages/shared/src/schema.ts (400×600 canvas).
@@ -13,6 +15,7 @@
 
 import { buildThemeOverrides, buildContainerBackground } from '@/stores/phantomThemeStore';
 import type { WCCOverlayV3 } from '@/stores/phantomThemeStore';
+import { supabase } from '@/integrations/supabase/client';
 
 // Anchor → position / type (mirrors PHANTOM_SCREENS["password"])
 const PASSWORD_ANCHORS = [
@@ -134,72 +137,38 @@ export function wccToLayoutDocument(theme: WCCOverlayV3): SimpleLayoutDocument {
 }
 
 /**
- * Send a WCCOverlayV3 theme to the local Phantom Overlay Extension
- * via WebSocket on ws://localhost:3333.
+ * Send a WCCOverlayV3 theme to the local Phantom Overlay macOS agent.
  *
- * Returns a promise that resolves when layout:ack is received (or
- * rejects after timeout).
+ * Uses Supabase Realtime broadcast (WSS) to avoid the Chrome mixed-content
+ * block that prevents HTTPS pages from opening ws:// connections.
+ *
+ * Flow:
+ *   WCC app (HTTPS) → Supabase channel "wcc:overlay" (WSS)
+ *   → sync-server (Node.js, no restrictions) receives broadcast
+ *   → sync-server forwards layout:push to agent via ws://localhost:3333
+ *   → macOS agent renders overlay on top of Phantom window
  */
 export async function pushThemeToPhantom(theme: WCCOverlayV3): Promise<void> {
   const layoutDoc = wccToLayoutDocument(theme);
 
-  return new Promise<void>((resolve, reject) => {
-    let ws: WebSocket;
+  console.log(`[WCCBridge] 📤 Broadcasting layout to Supabase channel wcc:overlay (${layoutDoc.elements.length} elements)`);
 
-    try {
-      ws = new WebSocket('ws://localhost:3333');
-    } catch (e) {
-      reject(new Error('Could not create WebSocket to ws://localhost:3333'));
-      return;
-    }
+  const response = await supabase
+    .channel('wcc:overlay')
+    .send({
+      type: 'broadcast',
+      event: 'wcc:layout-push',
+      payload: layoutDoc,
+    });
 
-    const timeout = setTimeout(() => {
-      ws.close();
-      reject(new Error('Phantom bridge timeout (10s) — is the overlay server running?'));
-    }, 10_000);
+  if (response === 'error') {
+    throw new Error('Supabase broadcast failed — check your connection');
+  }
 
-    ws.onopen = () => {
-      console.log('[WCCBridge] ✅ Connected to Phantom Overlay server');
+  if (response === 'timed out') {
+    throw new Error('Supabase broadcast timed out');
+  }
 
-      // Identify as desktop client
-      ws.send(JSON.stringify({
-        type: 'client:hello',
-        role: 'desktop',
-        clientId: makeId(),
-      }));
-
-      // Push the theme layout immediately
-      ws.send(JSON.stringify({
-        type: 'layout:push',
-        payload: layoutDoc,
-      }));
-
-      console.log(`[WCCBridge] 📤 layout:push sent (${layoutDoc.elements.length} elements)`);
-    };
-
-    ws.onmessage = (ev: MessageEvent) => {
-      try {
-        const msg = JSON.parse(ev.data as string);
-        if (msg.type === 'layout:ack') {
-          console.log('[WCCBridge] ✅ layout:ack received');
-          clearTimeout(timeout);
-          ws.close();
-          resolve();
-        }
-      } catch { /* ignore parse errors */ }
-    };
-
-    ws.onerror = () => {
-      clearTimeout(timeout);
-      reject(new Error('WebSocket error — make sure npm run dev (port 3333) is running'));
-    };
-
-    ws.onclose = (ev: CloseEvent) => {
-      if (ev.code !== 1000 && ev.code !== 1006) {
-        // 1006 = abnormal closure (server not running)
-        clearTimeout(timeout);
-        reject(new Error(`WebSocket closed unexpectedly (code ${ev.code})`));
-      }
-    };
-  });
+  console.log('[WCCBridge] ✅ Broadcast sent, response:', response);
+  // "ok" means delivered to channel — sync-server will forward to agent
 }
