@@ -311,10 +311,51 @@ export default function MintedGallerySection() {
     }
   }
 
-  async function handleApplyTheme(metadataUri: string, themeName: string) {
+  async function handleApplyTheme(item: MintRow) {
+    const metadataUri = item.metadata_uri;
+    const themeName = item.theme_name || 'imported-theme';
+    const isPhantomSkin = item.skin_kind === 'phantom';
     const loadingToast = toast.loading('📥 Loading from IPFS...');
     
     try {
+      // ─── Phantom skin path ─────────────────────────────────────────────
+      if (isPhantomSkin) {
+        let phantomTheme: WCCOverlayV3 | null = null;
+
+        // 1) Try DB-stored theme_data first (saved at mint time)
+        if (item.theme_data && typeof item.theme_data === 'object') {
+          phantomTheme = item.theme_data as WCCOverlayV3;
+        }
+
+        // 2) Fallback to IPFS metadata.properties.theme
+        if (!phantomTheme) {
+          toast.loading('📥 Loading Phantom skin from IPFS...', { id: loadingToast });
+          const httpUrl = ipfsToHttp(metadataUri);
+          const res = await fetch(httpUrl);
+          if (!res.ok) throw new Error(`IPFS fetch failed: ${res.status}`);
+          const meta = await res.json();
+          phantomTheme = (meta.properties?.theme || meta.theme) as WCCOverlayV3 | null;
+        }
+
+        // 3) Validate Phantom structure
+        if (
+          !phantomTheme ||
+          phantomTheme.version !== 3 ||
+          phantomTheme.wallet !== 'phantom' ||
+          !phantomTheme.global ||
+          !phantomTheme.elements
+        ) {
+          throw new Error('Invalid Phantom skin structure. This NFT may need to be re-minted.');
+        }
+
+        // 4) Apply — WalletPreviewContainer auto-switches to Phantom mode
+        usePhantomThemeStore.getState().setPhantomTheme(phantomTheme);
+        toast.success(`✨ Phantom skin "${themeName}" applied!`, { id: loadingToast });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // ─── WCC path (legacy / default) ──────────────────────────────────
       // Check localStorage cache first (TTL: 24 hours)
       const cacheKey = `ipfs_cache_${metadataUri}`;
       const cached = localStorage.getItem(cacheKey);
