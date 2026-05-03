@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import ColorSchemeCard from './ColorSchemeCard';
 import { ThemeInitButton } from './ThemeInitButton';
 import { usePhantomThemeStore, type WCCOverlayV3 } from '@/stores/phantomThemeStore';
+import { NftThemeApplier } from '@/components/nft/NftThemeApplier';
 
 interface Message {
   id: string;
@@ -1025,6 +1026,13 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
                   </>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* NFT-Gated Themes — shown when wallet owns WCC NFTs */}
+          {authStatus === 'authenticated' && (
+            <div className="border border-violet-500/20 rounded-xl bg-black/20 mb-2">
+              <NftThemeApplier compact={false} />
             </div>
           )}
 
