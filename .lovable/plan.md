@@ -1,56 +1,42 @@
 ## Goal
 
-В `MintedGallerySection` кнопка **Apply** сейчас работает только для WCC-NFT (вызывает `setTheme` для WCC-макета). Для Phantom-NFT (`skin_kind === 'phantom'`) нужно реализовать аналогичное поведение: при клике на Apply тема накидывается на **Phantom-макет** через `usePhantomThemeStore.setPhantomTheme(...)`, а превью переключается в Phantom режим — точно так же, как это делает `NftThemeApplier` и `ThemeChat`.
+В секцию **Choose Your Theme** (`ThemeSelectorCoverflow`) добавить toggle-переключатель **WCC ↔ Phantom**. В режиме Phantom показывать ту же coverflow-карусель из 20 карточек:
+- **#1 — "Original"**: текущая Phantom-тема, которая сейчас на макете (built-in baseline).
+- **#2–#20**: плейсхолдеры "Coming soon" (некликабельные, серые).
 
-## Что меняем
+Клик по Original применяет эту built-in Phantom-тему через `usePhantomThemeStore.setPhantomTheme(...)` — `WalletPreviewContainer` уже автоматически переключится в Phantom-режим.
 
-Только presentation-слой — один файл: `src/components/wallet/MintedGallerySection.tsx`.
+## Изменения (только UI)
 
-### 1. Разветвление `handleApplyTheme` по `skin_kind`
+### 1. Новый файл `src/data/phantomBuiltInThemes.ts`
+- Экспортирует `PHANTOM_BUILTIN_ORIGINAL: WCCOverlayV3` — это «дефолтная» Phantom-тема (background gradient + минимальные `elements` для всех ключей из `buildThemeOverrides`, чтобы превью выглядело как сейчас по умолчанию). Возьму текущие визуальные дефолты из `phantom-layout.json` + safe-палитру.
+- Экспортирует массив `PHANTOM_PRESETS: Array<{ id, name, description, coverUrl, themeData?: WCCOverlayV3, isPlaceholder: boolean }>` длиной **20**:
+  - первый — `{ id: 'phantom-original', name: 'Original', themeData: PHANTOM_BUILTIN_ORIGINAL, isPlaceholder: false }`;
+  - остальные 19 — `{ id: 'phantom-soon-N', name: 'Coming Soon', isPlaceholder: true, coverUrl: '/placeholder.svg' }`.
 
-Сейчас функция:
-- грузит `metadata` из IPFS
-- ищет `themeData` через `properties.theme` / `theme` / `wcc_theme_uri`
-- валидирует наличие `homeLayer` + `lockLayer` (WCC-структура)
-- вызывает `setTheme(themeData)` из `useThemeStore`
+### 2. `src/components/customization/ThemeSelectorCoverflow.tsx`
+- Добавить локальный стейт `kind: 'wcc' | 'phantom'` (default `'wcc'`).
+- Справа от заголовка `Choose Your Theme` — новый компонент-toggle (две круглые иконки/пилюлька): `[WCC] [Phantom]`. Реализую inline через `Button` + tailwind (semantic tokens, без новых цветов).
+- Если `kind === 'wcc'` — отрисовываем существующую карусель и логику без изменений.
+- Если `kind === 'phantom'` — отрисовываем ту же визуальную карусель Embla, но source = `PHANTOM_PRESETS`. `activeThemeId` для этой ветки берём из локального стейта `phantomActiveId` (default `'phantom-original'`).
+- Клик по Phantom-карточке:
+  - если `isPlaceholder` → `toast.info('Coming soon')`, ничего не применяем;
+  - иначе → `usePhantomThemeStore.getState().setPhantomTheme(theme.themeData)` + `setPhantomActiveId(theme.id)` + `toast.success(...)`. Никаких записей в `user_themes` (это built-in превью, не пользовательский WCC-слот).
+- Плейсхолдер-карточки рендерим с opacity 0.4, бейджем "Soon", `cursor-not-allowed`.
+- Подпись "Active: ..." и dots под каруселью используют активный список (WCC или Phantom) в зависимости от `kind`.
 
-Меняем сигнатуру на `handleApplyTheme(item)` и внутри:
-
-- **Если `item.skin_kind === 'phantom'`** → ветка Phantom:
-  1. Сначала пробуем взять тему из БД-колонки `item.theme_data` (она уже сохраняется при минте — видно в `ExportToIpfsButton.tsx:302`). Это убирает лишний IPFS-роунд-трип.
-  2. Если `theme_data` пустой (легаси Phantom-NFT без поля) — фоллбек на IPFS: грузим `metadata`, ищем `metadata.properties.theme` (там тоже WCCOverlayV3 для Phantom).
-  3. Валидируем как Phantom: `theme.version === 3 && theme.wallet === 'phantom' && theme.global && theme.elements`. Если структура невалидна — toast.error с понятным текстом.
-  4. Применяем: `usePhantomThemeStore.getState().setPhantomTheme(theme)`. `WalletPreviewContainer` сам подхватит — у него уже есть `useEffect`, который переключает `previewMode` на `'phantom'` при появлении `phantomTheme`.
-  5. `window.scrollTo({ top: 0, behavior: 'smooth' })` — как и в WCC-ветке.
-  6. Toast: `"✨ Phantom skin '<name>' applied — see preview above"`.
-
-- **Иначе** (`skin_kind === 'wcc'` или legacy без поля) → существующая WCC-логика без изменений.
-
-### 2. Передача `item` в обработчик
-
-Обновить вызов на строке ~1094:
-```tsx
-onClick={() => handleApplyTheme(item)}
-```
-вместо текущего `handleApplyTheme(item.metadata_uri, item.theme_name || ...)`.
-
-### 3. Импорт
-
-Добавить импорт `usePhantomThemeStore` из `@/stores/phantomThemeStore` (тип `WCCOverlayV3` уже есть в стора).
-
-## Что НЕ трогаем
-
-- БД, RLS, edge-функции — без изменений.
-- Минт-флоу (`ExportToIpfsButton.tsx`) — без изменений, он уже сохраняет `theme_data` и `skin_kind`.
-- WCC-ветка `handleApplyTheme` — без изменений.
-- `NftThemeApplier`, `ThemeChat`, `WalletPreviewContainer` — без изменений (переиспользуем существующий механизм).
+### 3. Что НЕ трогаем
+- `useThemeSelector`, `useThemeStore`, `usePresetsLoader` — без изменений.
+- БД, edge-функции, минт-флоу, `MintedGallerySection` — без изменений.
+- `WalletPreviewContainer` — без изменений; он уже сам реагирует на `phantomTheme` (есть `useEffect` switch на 'phantom').
 
 ## Edge cases
-
-- Если у Phantom-NFT нет ни `theme_data`, ни `properties.theme` в IPFS — показываем toast с инструкцией пересоздать NFT (как сейчас для WCC).
-- Если пользователь применяет Phantom-NFT, а до этого был активен WCC-preview — `WalletPreviewContainer.useEffect` переключит режим автоматически.
+- При первом переключении на Phantom без клика по Original — превью не меняется (никакой авто-apply, только когда юзер кликнул карточку).
+- Возврат на WCC: визуально просто меняется содержимое карусели, активная WCC-тема в макете остаётся та же (если пользователь до этого её менял в Phantom-режиме — `phantomTheme` остаётся в сторе, и превью продолжает показывать Phantom; чтобы вернуться к WCC, юзер кликает WCC-карточку — это поведение `WalletPreviewModeSelector` уже есть отдельно).
 
 ## Verification
-
-1. Открыть `/` (gallery), найти существующий Phantom-NFT (с зелёным фоном) — кликнуть Apply → проверить что превью переключилось на Phantom-макет с правильным фоном/цветами.
-2. Кликнуть Apply на WCC-NFT → убедиться что WCC-превью применилось как раньше (регрессия).
+1. Открыть customization-страницу → секция "Choose Your Theme" → справа от заголовка появился toggle WCC/Phantom.
+2. Клик Phantom → карусель показывает 20 карточек, первая "Original" подсвечена.
+3. Клик Original → Phantom-макет в превью обновился, тост "Applied: Original".
+4. Клик любой "Coming Soon" → тост "Coming soon", макет не меняется.
+5. Клик WCC → карусель вернулась к старому списку без регрессий.
