@@ -1,78 +1,56 @@
-## Проблема
+## Goal
 
-При минте Phantom-скина в `minted_themes` сохраняется не картинка фона, а 1×1 пиксель placeholder (растягивается как зелёный/однотонный фон). Заодно edge function `upload-to-ipfs` иногда падает с "Failed upload image" — потому что:
+В `MintedGallerySection` кнопка **Apply** сейчас работает только для WCC-NFT (вызывает `setTheme` для WCC-макета). Для Phantom-NFT (`skin_kind === 'phantom'`) нужно реализовать аналогичное поведение: при клике на Apply тема накидывается на **Phantom-макет** через `usePhantomThemeStore.setPhantomTheme(...)`, а превью переключается в Phantom режим — точно так же, как это делает `NftThemeApplier` и `ThemeChat`.
 
-1. **`resolvePreviewImageUrl`** в `ExportToIpfsButton.tsx` ищет фон только в **WCC-структуре** (`theme.lockLayer.backgroundImage`, `homeLayer.backgroundImage` и т.д.).
-2. У **Phantom-темы совершенно другая структура** — фон лежит в `phantomTheme.global.background.url` (из `usePhantomThemeStore`).
-3. В минт-флоу всегда берётся `useThemeStore.getState().theme` (WCC), и Phantom-стор вообще не опрашивается на предмет картинки. Для Phantom-минтов мы передаём WCC-тему + WCC-фон (или placeholder).
-4. Deno `fetch()` на `data:image/png;base64,...` URL отдаёт нестабильный результат → "Failed to download preview image" в логах edge function.
-5. В БД `image_url` записывается тот же placeholder → в Minted Gallery видно зелёный/однотонный фон.
+## Что меняем
 
-## Что делаем
+Только presentation-слой — один файл: `src/components/wallet/MintedGallerySection.tsx`.
 
-### 1. `src/components/wallet/ExportToIpfsButton.tsx`
+### 1. Разветвление `handleApplyTheme` по `skin_kind`
 
-- Определять `skinKind` **в начале** Solana-флоу (а не только перед insert).
-- Если `skinKind === 'phantom'`:
-  - брать тему из `usePhantomThemeStore.getState().phantomTheme` (а не из WCC store);
-  - резолвить `previewImageUrl` из `phantomTheme.global.background.url`;
-  - если в `global.background` нет `url` (только gradient/color) — ничего не выдумываем, передаём `null` и пропускаем шаг загрузки картинки в IPFS (см. п.2), а в БД пишем `image_url: null`, чтобы галерея не показывала растянутый placeholder.
-- Добавить отдельный `resolvePhantomPreviewImageUrl(phantomTheme)`.
-- В `themeData`, который уходит и в IPFS, и в metadata, для Phantom-минтов передавать **phantom-тему**, а не WCC.
-- Логировать `[ExportToIpfs] skinKind / previewImageUrl / source` для диагностики.
+Сейчас функция:
+- грузит `metadata` из IPFS
+- ищет `themeData` через `properties.theme` / `theme` / `wcc_theme_uri`
+- валидирует наличие `homeLayer` + `lockLayer` (WCC-структура)
+- вызывает `setTheme(themeData)` из `useThemeStore`
 
-### 2. `supabase/functions/upload-to-ipfs/index.ts`
+Меняем сигнатуру на `handleApplyTheme(item)` и внутри:
 
-- Сделать `previewImageUrl` опциональным:
-  - если он отсутствует / является data: URL 1×1 / fetch упал — не падаем всем минтом, а возвращаем `imageCid: null` и в metadata кладём пустой `image: ""` (или дефолтную WCC-обложку, которая лежит в Lighthouse — TBD, спросим у юзера, ниже один вопрос об этом).
-- Перестать пытаться `fetch()` на `data:` URL: если строка начинается с `data:`, декодировать base64 локально и заливать байты напрямую в Lighthouse.
-- Чёткое сообщение об ошибке в `message`, а не общее "Failed upload image".
+- **Если `item.skin_kind === 'phantom'`** → ветка Phantom:
+  1. Сначала пробуем взять тему из БД-колонки `item.theme_data` (она уже сохраняется при минте — видно в `ExportToIpfsButton.tsx:302`). Это убирает лишний IPFS-роунд-трип.
+  2. Если `theme_data` пустой (легаси Phantom-NFT без поля) — фоллбек на IPFS: грузим `metadata`, ищем `metadata.properties.theme` (там тоже WCCOverlayV3 для Phantom).
+  3. Валидируем как Phantom: `theme.version === 3 && theme.wallet === 'phantom' && theme.global && theme.elements`. Если структура невалидна — toast.error с понятным текстом.
+  4. Применяем: `usePhantomThemeStore.getState().setPhantomTheme(theme)`. `WalletPreviewContainer` сам подхватит — у него уже есть `useEffect`, который переключает `previewMode` на `'phantom'` при появлении `phantomTheme`.
+  5. `window.scrollTo({ top: 0, behavior: 'smooth' })` — как и в WCC-ветке.
+  6. Toast: `"✨ Phantom skin '<name>' applied — see preview above"`.
 
-### 3. Minted Gallery (`MintedGallerySection.tsx`)
+- **Иначе** (`skin_kind === 'wcc'` или legacy без поля) → существующая WCC-логика без изменений.
 
-- Если `image_url` пустой / совпадает с известным placeholder (1×1 PNG) — показывать **рендер превью из `metadata_uri`** (загружаем JSON, берём `properties.files[0]` или сам `image`) вместо однотонного фона.
-- Fallback: нейтральная плашка "No preview" с иконкой Phantom/WCC, а не зелёный градиент.
+### 2. Передача `item` в обработчик
 
-### 4. Self-healing для уже залитого Phantom-NFT
-
-- Тот конкретный mint, который сейчас показывает зелёный фон, имеет корректный `metadata_uri` на IPFS. Сделаем разовый UPDATE: после деплоя кода галерея сама подтянет картинку из metadata; **миграция БД не требуется**, но если хочешь — можно дополнительно перезаписать `image_url` из metadata через одноразовый скрипт в галерее (для всех записей с placeholder image_url).
-
-## Технические детали
-
-```ts
-// resolvePhantomPreviewImageUrl
-function resolvePhantomPreviewImageUrl(pt: PhantomTheme | null): string | null {
-  const url = pt?.global?.background?.url;
-  if (!url) return null;
-  // отсечь 1×1 placeholder
-  if (url.startsWith('data:image/png;base64,iVBORw0KGgo')) return null;
-  return url;
-}
+Обновить вызов на строке ~1094:
+```tsx
+onClick={() => handleApplyTheme(item)}
 ```
+вместо текущего `handleApplyTheme(item.metadata_uri, item.theme_name || ...)`.
 
-```ts
-// в Solana-флоу
-const phantomTheme = usePhantomThemeStore.getState().phantomTheme;
-const skinKind: 'wcc' | 'phantom' = phantomTheme ? 'phantom' : 'wcc';
-const themeForMint = skinKind === 'phantom' ? phantomTheme : useThemeStore.getState().theme;
-const previewImageUrl = skinKind === 'phantom'
-  ? resolvePhantomPreviewImageUrl(phantomTheme)
-  : resolvePreviewImageUrl(themeForMint);
-```
+### 3. Импорт
 
-```ts
-// edge function: data: URL handling
-if (previewImageUrl?.startsWith('data:')) {
-  const [, b64] = previewImageUrl.split(',');
-  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  imageBlob = new Blob([bytes], { type: 'image/png' });
-} else if (previewImageUrl) {
-  const r = await fetch(previewImageUrl);
-  if (!r.ok) { /* graceful fallback, не throw */ }
-  imageBlob = await r.blob();
-}
-```
+Добавить импорт `usePhantomThemeStore` из `@/stores/phantomThemeStore` (тип `WCCOverlayV3` уже есть в стора).
 
-## Один вопрос перед стартом
+## Что НЕ трогаем
 
-Нужно решить, что показывать в галерее, если у Phantom-скина в `global.background` вообще нет картинки (только gradient/color) — это валидный случай.
+- БД, RLS, edge-функции — без изменений.
+- Минт-флоу (`ExportToIpfsButton.tsx`) — без изменений, он уже сохраняет `theme_data` и `skin_kind`.
+- WCC-ветка `handleApplyTheme` — без изменений.
+- `NftThemeApplier`, `ThemeChat`, `WalletPreviewContainer` — без изменений (переиспользуем существующий механизм).
+
+## Edge cases
+
+- Если у Phantom-NFT нет ни `theme_data`, ни `properties.theme` в IPFS — показываем toast с инструкцией пересоздать NFT (как сейчас для WCC).
+- Если пользователь применяет Phantom-NFT, а до этого был активен WCC-preview — `WalletPreviewContainer.useEffect` переключит режим автоматически.
+
+## Verification
+
+1. Открыть `/` (gallery), найти существующий Phantom-NFT (с зелёным фоном) — кликнуть Apply → проверить что превью переключилось на Phantom-макет с правильным фоном/цветами.
+2. Кликнуть Apply на WCC-NFT → убедиться что WCC-превью применилось как раньше (регрессия).
