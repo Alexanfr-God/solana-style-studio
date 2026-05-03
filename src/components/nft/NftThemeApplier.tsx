@@ -1,8 +1,9 @@
-import React from 'react';
-import { Ghost, RefreshCw, Loader2, Gem } from 'lucide-react';
+import React, { useState } from 'react';
+import { Ghost, RefreshCw, Loader2, Gem, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNftOwnership } from '@/hooks/useNftOwnership';
 import { usePhantomThemeStore } from '@/stores/phantomThemeStore';
+import { pushThemeToPhantom } from '@/utils/wccToLayoutDocument';
 import { toast } from 'sonner';
 
 interface NftThemeApplierProps {
@@ -13,9 +14,38 @@ interface NftThemeApplierProps {
 export const NftThemeApplier: React.FC<NftThemeApplierProps> = ({ compact = false }) => {
   const { ownedThemes, isLoading, hasNftThemes, refetch } = useNftOwnership();
   const { setPhantomTheme } = usePhantomThemeStore();
+  const [pushingId, setPushingId] = useState<string | null>(null);
 
   // Don't render if wallet has no NFT themes (silent hide)
   if (!isLoading && !hasNftThemes) return null;
+
+  const handleApplyPreview = (mintAddress: string, themeData: typeof ownedThemes[0]['themeData'], themeName: string) => {
+    setPhantomTheme(themeData);
+    toast.success(
+      `✨ NFT Theme "${themeName}" applied!`,
+      { description: 'Preview updated — click ⚡ to push to real Phantom' }
+    );
+  };
+
+  const handlePushToPhantom = async (mintAddress: string, themeData: typeof ownedThemes[0]['themeData'], themeName: string) => {
+    setPushingId(mintAddress);
+    try {
+      await pushThemeToPhantom(themeData);
+      toast.success(
+        `⚡ "${themeName}" pushed to Phantom!`,
+        { description: 'Your real Phantom wallet now has the NFT overlay' }
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error('Could not reach Phantom overlay server', {
+        description: msg.includes('3333')
+          ? 'Run: npm run dev:server (in Phantom Overlay Editor)'
+          : msg,
+      });
+    } finally {
+      setPushingId(null);
+    }
+  };
 
   return (
     <div className={`nft-theme-applier ${compact ? 'py-2' : 'py-4 px-3'}`}>
@@ -61,7 +91,7 @@ export const NftThemeApplier: React.FC<NftThemeApplierProps> = ({ compact = fals
                 bg-gradient-to-r from-violet-500/10 to-purple-500/10
                 hover:from-violet-500/20 hover:to-purple-500/20
                 transition-all duration-200
-                ${compact ? 'min-w-[160px] p-2' : 'p-2.5'}
+                ${compact ? 'min-w-[200px] p-2' : 'p-2.5'}
               `}
             >
               {/* NFT thumbnail */}
@@ -88,22 +118,42 @@ export const NftThemeApplier: React.FC<NftThemeApplierProps> = ({ compact = fals
                 </div>
               </div>
 
-              {/* Apply button */}
-              <Button
-                size="sm"
-                onClick={() => {
-                  setPhantomTheme(nft.themeData);
-                  toast.success(
-                    `✨ NFT Theme "${nft.themeName}" applied!`,
-                    { description: 'Your wallet overlay is now active' }
-                  );
-                }}
-                className="h-6 px-2 text-[10px] bg-violet-600 hover:bg-violet-500 text-white flex-shrink-0"
-              >
-                Apply
-              </Button>
+              {/* Buttons: Apply (preview) + Push (real wallet) */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {/* Apply to WCC preview */}
+                <Button
+                  size="sm"
+                  onClick={() => handleApplyPreview(nft.mintAddress, nft.themeData, nft.themeName)}
+                  className="h-6 px-2 text-[10px] bg-violet-600 hover:bg-violet-500 text-white"
+                  title="Apply to WCC preview"
+                >
+                  Apply
+                </Button>
+
+                {/* Push to real Phantom */}
+                <Button
+                  size="sm"
+                  onClick={() => handlePushToPhantom(nft.mintAddress, nft.themeData, nft.themeName)}
+                  disabled={pushingId === nft.mintAddress}
+                  className="h-6 px-2 text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50"
+                  title="Push overlay to real Phantom wallet (requires overlay server on port 3333)"
+                >
+                  {pushingId === nft.mintAddress
+                    ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                    : <Zap className="h-2.5 w-2.5" />
+                  }
+                </Button>
+              </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Legend */}
+      {!isLoading && hasNftThemes && (
+        <div className="flex items-center gap-3 mt-2 text-[10px] text-white/30">
+          <span><span className="text-violet-400">Apply</span> = WCC preview</span>
+          <span><span className="text-emerald-400">⚡</span> = real Phantom wallet</span>
         </div>
       )}
     </div>

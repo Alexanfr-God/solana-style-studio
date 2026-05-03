@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw, Loader2, Sparkles, Ghost } from 'lucide-react';
+import { Send, Upload, AlertCircle, CheckCircle2, Wallet, Bot, Palette, Wand2, RotateCcw, Loader2, Sparkles, Ghost, Zap } from 'lucide-react';
 import { useExtendedWallet } from '@/context/WalletContextProvider';
 import { FileUploadService } from '@/services/fileUploadService';
 import { LlmPatchService, type PatchRequest } from '@/services/llmPatchService';
@@ -19,6 +19,7 @@ import ColorSchemeCard from './ColorSchemeCard';
 import { ThemeInitButton } from './ThemeInitButton';
 import { usePhantomThemeStore, type WCCOverlayV3 } from '@/stores/phantomThemeStore';
 import { NftThemeApplier } from '@/components/nft/NftThemeApplier';
+import { pushThemeToPhantom } from '@/utils/wccToLayoutDocument';
 
 interface Message {
   id: string;
@@ -62,7 +63,8 @@ const ThemeChat = () => {
   const { elements } = useWalletElements();
   const { selectedElement, updateSelectedElement, isEditMode, setIsEditMode } = useSmartEdit();
   const { theme, applyPatch, setTheme } = useThemeStore();
-  const { setPhantomTheme } = usePhantomThemeStore();
+  const { setPhantomTheme, phantomTheme } = usePhantomThemeStore();
+  const [isPushingToPhantom, setIsPushingToPhantom] = useState(false);
 
   // Authentication check
   useEffect(() => {
@@ -1291,6 +1293,38 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
           >
             <Ghost className={`h-4 w-4 text-violet-400 ${isGeneratingPhantomTheme ? 'animate-pulse' : ''}`} />
           </Button>
+
+          {/* Push current phantom theme to real Phantom wallet via overlay server */}
+          {phantomTheme && (
+            <Button
+              onClick={async () => {
+                if (!phantomTheme) return;
+                setIsPushingToPhantom(true);
+                try {
+                  await pushThemeToPhantom(phantomTheme);
+                  toast.success('⚡ Theme pushed to real Phantom!', {
+                    description: 'Open your Phantom wallet to see the overlay',
+                  });
+                } catch (err) {
+                  toast.error('Overlay server not running', {
+                    description: 'Start it with: npm run dev:server (Phantom Overlay Editor)',
+                  });
+                } finally {
+                  setIsPushingToPhantom(false);
+                }
+              }}
+              disabled={isPushingToPhantom || authStatus !== 'authenticated'}
+              variant="outline"
+              size="icon"
+              className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-emerald-500/30 hover:from-emerald-500/30 hover:to-teal-500/30 disabled:opacity-50"
+              title="Push current theme to real Phantom wallet (requires overlay server)"
+            >
+              {isPushingToPhantom
+                ? <Loader2 className="h-4 w-4 text-emerald-400 animate-spin" />
+                : <Zap className="h-4 w-4 text-emerald-400" />
+              }
+            </Button>
+          )}
 
           <Button
             onClick={() => {
