@@ -296,7 +296,11 @@ const ExportToIpfsButton: React.FC<ExportToIpfsButtonProps> = ({ themeId }) => {
             network: 'devnet',
             blockchain: 'solana',
             is_verified: false,  // Will be set to true after confirmation
-            skin_kind: skinKind
+            skin_kind: skinKind,
+            // Store the full WCCOverlayV3 theme so useNftOwnership can
+            // serve the overlay back when the owner connects their wallet.
+            theme_data: skinKind === 'phantom' ? phantomTheme : null,
+            collection_name: 'WCC'
           })
           .select('id')
           .single();

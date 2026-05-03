@@ -200,6 +200,7 @@ export type Database = {
       minted_themes: {
         Row: {
           blockchain: string
+          collection_name: string | null
           created_at: string
           id: string
           image_url: string | null
@@ -214,12 +215,14 @@ export type Database = {
           rating_avg: number | null
           rating_count: number | null
           skin_kind: string
+          theme_data: Json | null
           theme_name: string | null
           tx_sig: string
           user_id: string | null
         }
         Insert: {
           blockchain?: string
+          collection_name?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
@@ -234,12 +237,14 @@ export type Database = {
           rating_avg?: number | null
           rating_count?: number | null
           skin_kind?: string
+          theme_data?: Json | null
           theme_name?: string | null
           tx_sig: string
           user_id?: string | null
         }
         Update: {
           blockchain?: string
+          collection_name?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
@@ -254,6 +259,7 @@ export type Database = {
           rating_avg?: number | null
           rating_count?: number | null
           skin_kind?: string
+          theme_data?: Json | null
           theme_name?: string | null
           tx_sig?: string
           user_id?: string | null
