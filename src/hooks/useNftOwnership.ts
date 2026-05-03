@@ -49,7 +49,7 @@ export function useNftOwnership() {
           mintAddress: t.mint_address,
           themeName: t.theme_name ?? 'WCC Theme',
           imageUrl: t.image_url ?? '',
-          themeData: t.theme_data as WCCOverlayV3,
+          themeData: t.theme_data as unknown as WCCOverlayV3,
           network: t.network ?? 'devnet',
           collectionName: t.collection_name ?? 'WCC',
         })));
@@ -71,7 +71,7 @@ export function useNftOwnership() {
         return;
       }
 
-      const RPC = (import.meta as Record<string, Record<string, string>>).env?.VITE_SOLANA_RPC
+      const RPC = (import.meta as unknown as Record<string, Record<string, string>>).env?.VITE_SOLANA_RPC
         ?? 'https://api.devnet.solana.com';
 
       const conn = new Connection(RPC, 'confirmed');
@@ -115,7 +115,7 @@ export function useNftOwnership() {
         mintAddress: t.mint_address,
         themeName: t.theme_name ?? 'WCC Theme',
         imageUrl: t.image_url ?? '',
-        themeData: t.theme_data as WCCOverlayV3,
+        themeData: t.theme_data as unknown as WCCOverlayV3,
         network: t.network ?? 'devnet',
         collectionName: t.collection_name ?? 'WCC',
       })));
