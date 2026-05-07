@@ -166,16 +166,24 @@ export function buildThemeOverrides(theme: WCCOverlayV3): Record<string, Record<
   // separator line → subtle accent tint
   overrides['header-line'] = { backgroundColor: `${ca.safe_accent}33` };
 
-  // Themed ghost logo (👻 emoji rendered as text). Use theme accent for glow
-  // and pick a font-size large enough to fill the 120×140 anchor.
+  // Themed Phantom-style ghost (rendered as <img> from a base64 SVG in
+  // wccToLayoutDocument). Theme customization happens entirely through CSS
+  // applied to the wrapping <div> + the <img>:
+  //   filter: drop-shadow chains create a coloured halo around the white
+  //           ghost — drives the "glow / neon" feel from the theme accent.
+  //   opacity: lets the ghost fade if the theme calls for it.
+  //   animation: optional pulse/aurora keyframe for animated themes.
   const logoAccent = els['btn-buy']?.icon?.tint ?? ca.safe_accent;
+  const logoFilter = [
+    `drop-shadow(0 0 12px ${logoAccent})`,
+    `drop-shadow(0 0 28px ${logoAccent}88)`,
+    `drop-shadow(0 6px 18px rgba(0,0,0,0.45))`,
+  ].join(' ');
   overrides['logo'] = {
-    fontSize:    '96px',
-    lineHeight:  '1',
-    textAlign:   'center',
-    color:       ca.safe_text,
-    textShadow:  `0 0 24px ${logoAccent}, 0 0 48px ${logoAccent}66`,
-    filter:      'drop-shadow(0 4px 12px rgba(0,0,0,0.35))',
+    backgroundColor: 'transparent',
+    borderRadius:    '0px',
+    objectFit:       'contain',
+    filter:          logoFilter,
   };
 
   // "Enter your Password" title → borrow font family + color from balance-sol,
