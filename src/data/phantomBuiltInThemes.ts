@@ -1,5 +1,5 @@
 import type { WCCOverlayV3 } from '@/stores/phantomThemeStore';
-import phantomOriginalCover from '@/assets/phantom-original-cover.jpg';
+import phantomOriginalCover from '@/assets/phantom-original-cover.png';
 
 /**
  * "Gold BTC" — recently minted Phantom skin (mint GzS4v8H6...).
@@ -182,6 +182,91 @@ export const PHANTOM_BUILTIN_ORIGINAL: WCCOverlayV3 = {
   },
 };
 
+/**
+ * "Phantom 2" — most recently minted Phantom skin (mint 4dGLLUTX...).
+ * Theme data inlined from on-chain NFT for instant apply.
+ */
+export const PHANTOM_BUILTIN_PHANTOM_2: WCCOverlayV3 = {
+  version: 3,
+  wallet: 'phantom',
+  theme_name: 'Phantom 2',
+  generated_at: '2026-05-06T23:54:54.832Z',
+  global: {
+    background: {
+      type: 'image',
+      url: 'https://opxordptvpvzmhakvdde.supabase.co/storage/v1/object/public/generated-images/backgrounds/49TycAdY/1778111665018.png',
+      opacity: 0.9,
+      blur: 0,
+      animated: true,
+      animation_preset: 'cosmic-pulse',
+    } as any,
+    color_analysis: {
+      dominant: ['#0a0e1a', '#1a2540', '#d94a3a'],
+      luminance: 'dark',
+      forbidden: ['#0a0e1a', '#0d1220', '#151b2e', '#1a2540', '#0f1423'],
+      safe_text: '#f5f5f5',
+      safe_accent: '#00d4ff',
+      safe_button_bg: '#4a90e2',
+      palette: {
+        primary: '#4a90e2',
+        secondary: '#00d4ff',
+        neutral: '#8a9bb0',
+        highlight: '#ff8c42',
+      },
+    } as any,
+  },
+  elements: {
+    'background-layer': {
+      style: { type: 'transparent', fill: 'transparent', fill_opacity: 0, border_radius: 0 } as any,
+    },
+    'header': {
+      style: { type: 'glassmorphism', fill: 'rgba(107, 70, 193, 0.05)', fill_opacity: 0.05, blur: 20, border_color: 'rgba(107, 70, 193, 0.10)', border_width: 1, border_radius: 0 } as any,
+      text: { color: '#f5f5f5', size: 14, weight: 500, opacity: 1 },
+    },
+    'network-badge': {
+      style: { type: 'solid', fill: 'rgba(107, 70, 193, 0.15)', fill_opacity: 0.15, border_color: 'rgba(107, 70, 193, 0.25)', border_width: 1, border_radius: 6 } as any,
+      text: { color: '#f5f5f5', size: 11, weight: 600, opacity: 1 } as any,
+    },
+    'balance-sol': {
+      style: { type: 'transparent', fill: 'rgba(0, 0, 0, 0)', fill_opacity: 0, border_radius: 0 } as any,
+      text: { color: '#f5f5f5', size: 42, weight: 700, opacity: 1 } as any,
+    },
+    'balance-usd': {
+      style: { type: 'transparent', fill: 'rgba(0, 0, 0, 0)', fill_opacity: 0, border_radius: 0 } as any,
+      text: { color: '#8a9bb0', size: 14, weight: 400, opacity: 0.55 },
+    },
+    'btn-buy': {
+      style: { type: 'solid', fill: '#7D5BD4', fill_opacity: 1, border_radius: 12 },
+      text: { color: '#ffffff', size: 13, weight: 600, opacity: 1 } as any,
+      icon: { tint: '#ffffff', opacity: 1 },
+    },
+    'btn-send': {
+      style: { type: 'solid', fill: '#6B46C1', fill_opacity: 1, border_radius: 12 },
+      text: { color: '#ffffff', size: 13, weight: 600, opacity: 1 } as any,
+      icon: { tint: '#ffffff', opacity: 1 },
+    },
+    'btn-swap': {
+      style: { type: 'solid', fill: '#6B46C1', fill_opacity: 1, border_radius: 12 },
+      text: { color: '#ffffff', size: 13, weight: 600, opacity: 1 } as any,
+      icon: { tint: '#ffffff', opacity: 1 },
+    },
+    'btn-receive': {
+      style: { type: 'solid', fill: '#6B46C1', fill_opacity: 1, border_radius: 12 },
+      text: { color: '#ffffff', size: 13, weight: 600, opacity: 1 } as any,
+      icon: { tint: '#ffffff', opacity: 1 },
+    },
+    'account-address': {
+      style: { type: 'transparent', fill: 'rgba(0, 0, 0, 0)', fill_opacity: 0, border_radius: 0 } as any,
+      text: { color: '#b8c5d6', size: 12, weight: 400, opacity: 0.75 },
+    },
+    'token-list-item': {
+      style: { type: 'glassmorphism', fill: 'rgba(107, 70, 193, 0.04)', fill_opacity: 0.04, blur: 16, border_color: 'rgba(107, 70, 193, 0.08)', border_width: 1, border_radius: 12 } as any,
+      text: { color: '#f5f5f5', size: 14, weight: 500, opacity: 1 },
+      icon: { tint: '#b8a3e8', opacity: 0.9 },
+    } as any,
+  } as any,
+};
+
 export interface PhantomPresetCard {
   id: string;
   name: string;
@@ -193,6 +278,14 @@ export interface PhantomPresetCard {
 
 export const PHANTOM_PRESETS: PhantomPresetCard[] = [
   {
+    id: 'phantom-original',
+    name: 'Original',
+    description: 'The default Phantom look',
+    coverUrl: phantomOriginalCover,
+    themeData: PHANTOM_BUILTIN_ORIGINAL,
+    isPlaceholder: false,
+  },
+  {
     id: 'phantom-gold-btc',
     name: 'Gold BTC',
     description: 'Recently minted Phantom skin',
@@ -201,14 +294,14 @@ export const PHANTOM_PRESETS: PhantomPresetCard[] = [
     isPlaceholder: false,
   },
   {
-    id: 'phantom-original',
-    name: 'Original',
-    description: 'The default Phantom look',
-    coverUrl: phantomOriginalCover,
-    themeData: PHANTOM_BUILTIN_ORIGINAL,
+    id: 'phantom-2',
+    name: 'Phantom 2',
+    description: 'Recently minted Phantom skin',
+    coverUrl: 'https://gateway.lighthouse.storage/ipfs/QmXJYdj93o5p94nbhkDMqyfuUkjdN3ynC8UqD7iPxUzuCM',
+    themeData: PHANTOM_BUILTIN_PHANTOM_2,
     isPlaceholder: false,
   },
-  ...Array.from({ length: 18 }, (_, i) => ({
+  ...Array.from({ length: 17 }, (_, i) => ({
     id: `phantom-soon-${i + 1}`,
     name: 'Coming Soon',
     description: 'New Phantom skin in the works',
