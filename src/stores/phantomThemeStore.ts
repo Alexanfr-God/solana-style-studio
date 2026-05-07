@@ -166,32 +166,44 @@ export function buildThemeOverrides(theme: WCCOverlayV3): Record<string, Record<
   // separator line → subtle accent tint
   overrides['header-line'] = { backgroundColor: `${ca.safe_accent}33` };
 
-  // ghost logo → tint via filter (hue trick on white SVG)
-  if (els['btn-buy']?.icon) {
-    const iconColor = els['btn-buy'].icon.tint;
-    // Convert accent color to a sepia-tint filter effect for white SVGs
-    overrides['logo'] = { filter: `drop-shadow(0 0 12px ${iconColor}) opacity(0.9)` };
-  } else {
-    overrides['logo'] = { filter: `drop-shadow(0 0 10px ${ca.safe_accent}) opacity(0.85)` };
-  }
+  // Themed ghost logo (👻 emoji rendered as text). Use theme accent for glow
+  // and pick a font-size large enough to fill the 120×140 anchor.
+  const logoAccent = els['btn-buy']?.icon?.tint ?? ca.safe_accent;
+  overrides['logo'] = {
+    fontSize:    '96px',
+    lineHeight:  '1',
+    textAlign:   'center',
+    color:       ca.safe_text,
+    textShadow:  `0 0 24px ${logoAccent}, 0 0 48px ${logoAccent}66`,
+    filter:      'drop-shadow(0 4px 12px rgba(0,0,0,0.35))',
+  };
 
-  // "Enter your Password" title → use balance-sol style (big prominent text)
+  // "Enter your Password" title → borrow font family + color from balance-sol,
+  // but cap size and remove glow — the label is not a big number display.
   if (els['balance-sol']) {
+    const balCSS = toCSS(els['balance-sol']);
     overrides['title'] = {
-      ...toCSS(els['balance-sol']),
-      // Don't carry the float animation to the title — just styling
-      '--anim': '',
+      color:      balCSS.color      ?? ca.safe_text,
+      fontFamily: balCSS.fontFamily ?? undefined,
+      fontSize:   '20px',      // cap — balance-sol sizing is for numbers, not labels
+      fontWeight: '600',
+      textShadow: 'none',      // no glow on a password label
     };
-    // Re-remove the empty anim key
-    if (!overrides['title']['--anim']) delete overrides['title']['--anim'];
+    if (!overrides['title'].fontFamily) delete overrides['title'].fontFamily;
   } else {
-    overrides['title'] = { color: ca.safe_text };
+    overrides['title'] = { color: ca.safe_text, fontSize: '20px', fontWeight: '600' };
   }
 
-  // password input → network-badge style (badge-like styling) with safe_text
-  if (els['network-badge']) {
-    overrides['password-input'] = { ...toCSS(els['network-badge']), color: ca.safe_text };
-  }
+  // password input → clean subtle glassmorphism regardless of theme
+  // (network-badge pulse/glow styling creates garish pulsing inputs)
+  overrides['password-input'] = {
+    backgroundColor:     'rgba(255,255,255,0.06)',
+    backdropFilter:      'blur(14px)',
+    WebkitBackdropFilter:'blur(14px)',
+    border:              `1px solid rgba(255,255,255,0.12)`,
+    borderRadius:        '16px',
+    color:               ca.safe_text,
+  };
 
   // unlock button → btn-buy (the hero CTA element)
   const btnEl = els['btn-buy'] ?? els['btn-send'];

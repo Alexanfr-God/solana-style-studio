@@ -103,7 +103,22 @@ const ThemeChat = () => {
   const applyJsonPatch = async (userPrompt: string, imageUrl?: string, targetElement?: WalletElement) => {
     try {
       console.log('🎨 Applying JSON patch for theme customization');
-      
+
+      const userId = walletProfile?.wallet_address || 'anonymous';
+
+      // llm-patch reads from user_themes — ensure the current in-memory theme is there.
+      // This handles the case where the user applied an image quickly (no orchestrator run)
+      // and user_themes was never populated for this wallet.
+      if (phantomTheme) {
+        const { supabase: sb } = await import('@/integrations/supabase/client');
+        await sb
+          .from('user_themes')
+          .upsert(
+            { user_id: userId, theme_data: phantomTheme as any, updated_at: new Date().toISOString() },
+            { onConflict: 'user_id' }
+          );
+      }
+
       let finalPrompt = userPrompt;
       if (imageUrl) {
         finalPrompt = `${userPrompt} Use this uploaded image: ${imageUrl}`;
@@ -131,10 +146,8 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
         }
       }
 
-      const userId = walletProfile?.wallet_address || 'anonymous';
-      
       const patchRequest: PatchRequest = {
-        userId: userId,
+        userId,
         pageId: currentLayer || 'homeLayer',
         userPrompt: finalPrompt
       };
@@ -552,9 +565,14 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
     toast.success('Image applied to Phantom preview!');
   };
 
-  // Run full AI pipeline using uploaded image (skip generation, analyze colors + design elements)
+  // Run full AI pipeline using uploaded image as background.
+  // The Designer agent will receive the image URL so it can craft a brief
+  // based on the actual visual content rather than a generic prompt.
   const handleAIStyleFromImage = async (imageUrl: string) => {
-    await handleGeneratePhantomTheme('custom uploaded image', { type: 'url', value: imageUrl });
+    await handleGeneratePhantomTheme(
+      `Style the wallet based on this uploaded image: ${imageUrl}`,
+      { type: 'url', value: imageUrl }
+    );
   };
 
   // Generate poster with AI
@@ -624,14 +642,15 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
     setIsGeneratingPhantomTheme(true);
 
     // Show pipeline start message
-    const pipelineMsgId = Date.now().toString();
     addMessage(
-      `👻 Starting 5-agent pipeline for: "${prompt}"…\n\n` +
-      `⏳ Step 1/5: Generating background\n` +
-      `⏳ Step 2/5: Analyzing colors\n` +
-      `⏳ Step 3/5: Designing UI elements\n` +
-      `⏳ Step 4/5: Validating theme\n` +
-      `⏳ Step 5/5: Applying`,
+      `👻 Starting 7-agent pipeline for: "${prompt}"…\n\n` +
+      `⏳ Step 1/7: 🎭 Designer — crafting visual brief\n` +
+      `⏳ Step 2/7: 🎨 Background — generating art\n` +
+      `⏳ Step 3/7: 🔍 Color Analyst — extracting palette\n` +
+      `⏳ Step 4/7: ✨ Element Designer — styling UI\n` +
+      `⏳ Step 5/7: ✅ Validator — checking contrast\n` +
+      `⏳ Step 6/7: 🚀 Applier — saving theme\n` +
+      `⏳ Step 7/7: 🏆 Director — evaluating result`,
       'assistant'
     );
 
@@ -663,11 +682,13 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
       const decoder = new TextDecoder();
       let buffer = '';
       const stepLabels: Record<string, string> = {
-        'background': '🎨 Background',
-        'color-analyst': '🔍 Colors',
-        'designer': '✨ Elements',
-        'validator': '✅ Validation',
-        'applier': '🚀 Applied',
+        'brief-designer':   '🎭 Designer',
+        'background':       '🎨 Background',
+        'color-analyst':    '🔍 Colors',
+        'element-designer': '✨ Elements',
+        'validator':        '✅ Validation',
+        'applier':          '🚀 Applied',
+        'director':         '🏆 Director',
       };
 
       while (true) {
@@ -690,9 +711,31 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
           if (eventName === 'progress') {
             const label = stepLabels[data.agent] ?? data.agent;
             if (data.status === 'done') {
-              if (data.agent === 'background' && data.result?.url) {
+              if (data.agent === 'brief-designer' && data.brief) {
+                // Show the Designer's visual brief
+                const b = data.brief;
+                addMessage(
+                  `✅ ${label}: brief ready\n\n` +
+                  `💡 _"${b.visual_concept}"_\n\n` +
+                  `🎨 Mood: **${b.background?.mood}** · Font: **${b.typography?.suggested_font}**\n` +
+                  `🎞️ Animation: ${b.animation_style}`,
+                  'assistant'
+                );
+              } else if (data.agent === 'background' && data.result?.url) {
                 addMessage('', 'system', undefined, undefined, data.result.url);
                 addMessage(`✅ ${label}: background ready`, 'assistant', data.result.url);
+              } else if (data.agent === 'director' && data.verdict) {
+                // Show Director verdict inline as progress
+                const v = data.verdict;
+                const bar = '█'.repeat(Math.round(v.similarity_score / 10)) + '░'.repeat(10 - Math.round(v.similarity_score / 10));
+                addMessage(
+                  `✅ ${label}: evaluation complete\n\n` +
+                  `📊 **${v.similarity_score}%** match  \`${bar}\`\n\n` +
+                  `✅ Matched: ${v.matched_aspects?.slice(0, 3).join(' · ')}\n` +
+                  `${v.missed_aspects?.length ? `⚠️ Missed: ${v.missed_aspects.slice(0, 2).join(' · ')}\n` : ''}` +
+                  `\n💬 _${v.verdict}_`,
+                  'assistant'
+                );
               } else {
                 addMessage(`✅ ${label}: done${data.warnings != null ? ` (${data.warnings} warnings, ${data.fixes} fixes)` : ''}`, 'assistant');
               }
@@ -702,13 +745,16 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
           if (eventName === 'complete' && data.theme) {
             const theme = data.theme as WCCOverlayV3;
             setPhantomTheme(theme);
+            const verdict = data.verdict;
+            const score = verdict?.similarity_score;
             addMessage(
               `🎉 **${theme.theme_name}** ready!\n\n` +
               `• Background: ${theme.global.background.type}\n` +
               `• Luminance: ${theme.global.color_analysis.luminance}\n` +
               `• Accent: ${theme.global.color_analysis.safe_accent}\n` +
               `• Elements: ${Object.keys(theme.elements).length} styled\n` +
-              `${data.warnings?.length ? `⚠️ ${data.warnings.length} auto-fixed issues` : ''}`,
+              `${data.warnings?.length ? `⚠️ ${data.warnings.length} auto-fixed issues\n` : ''}` +
+              `${score != null ? `\n🏆 Director score: **${score}%** — ${verdict.recommendation}` : ''}`,
               'assistant',
               theme.global.background.url
             );
@@ -816,6 +862,14 @@ IMPORTANT: This is PRECISE MODE - you should ONLY change the specified json_path
       
       addMessage(userMessage, 'user');
       await handleGeneratePoster(prompt);
+      return;
+    }
+
+    // No existing Phantom theme → llm-patch will fail (nothing to patch).
+    // Route directly to the orchestrator to generate a fresh theme instead.
+    if (!phantomTheme) {
+      addMessage(userMessage, 'user');
+      await handleGeneratePhantomTheme(userMessage);
       return;
     }
 

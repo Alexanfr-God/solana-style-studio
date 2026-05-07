@@ -18,12 +18,16 @@ import type { WCCOverlayV3 } from '@/stores/phantomThemeStore';
 import { supabase } from '@/integrations/supabase/client';
 
 // Anchor → position / type (mirrors PHANTOM_SCREENS["password"])
+// Logo lives at the top center where Phantom natively shows its ghost mascot;
+// our overlay paints its own themed glyph there (👻) so Phantom's logo never
+// has to "show through" the background.
 const PASSWORD_ANCHORS = [
   { id: 'background',     x: 0,   y: 0,   width: 400, height: 600, type: 'container', zIndex: 0, content: {} },
   { id: 'header',         x: 0,   y: 0,   width: 400, height: 48,  type: 'container', zIndex: 1, content: {} },
   { id: 'header-title',   x: 140, y: 10,  width: 120, height: 28,  type: 'text',      zIndex: 2, content: { text: 'phantom' } },
   { id: 'help-button',    x: 358, y: 10,  width: 28,  height: 28,  type: 'button',    zIndex: 2, content: { text: '?' } },
   { id: 'header-line',    x: 0,   y: 48,  width: 400, height: 1,   type: 'container', zIndex: 1, content: {} },
+  { id: 'logo',           x: 140, y: 110, width: 120, height: 140, type: 'text',      zIndex: 2, content: { text: '👻' } },
   { id: 'title',          x: 40,  y: 290, width: 320, height: 36,  type: 'text',      zIndex: 2, content: { text: 'Enter your Password' } },
   { id: 'password-input', x: 24,  y: 344, width: 352, height: 52,  type: 'input',     zIndex: 2, content: { placeholder: 'Password' } },
   { id: 'unlock-button',  x: 24,  y: 488, width: 352, height: 52,  type: 'button',    zIndex: 2, content: { text: 'Unlock' } },
@@ -87,6 +91,23 @@ export function wccToLayoutDocument(theme: WCCOverlayV3): SimpleLayoutDocument {
         bgStyles.background = bgCSS;
       } else {
         bgStyles.backgroundColor = bgCSS;
+      }
+
+      // Animated background support — CSS keyframes defined in AgentOverlay
+      const bgData = theme.global.background;
+      if (bgData.animated && bgData.animation_preset) {
+        if (bgData.animation_preset === 'gradient-shift') {
+          const ac = bgData.animation_colors;
+          if (ac && ac.length >= 3) {
+            bgStyles.background = `linear-gradient(-45deg, ${ac.join(', ')})`;
+          }
+          bgStyles.backgroundSize = '400% 400%';
+          bgStyles.animation = 'wcc-gradient-shift 12s ease infinite';
+        } else if (bgData.animation_preset === 'aurora') {
+          bgStyles.animation = 'wcc-aurora 14s ease-in-out infinite';
+        } else if (bgData.animation_preset === 'cosmic-pulse') {
+          bgStyles.animation = 'wcc-cosmic-pulse 6s ease-in-out infinite';
+        }
       }
 
       elements.push({

@@ -394,7 +394,7 @@ const WalletPreviewContainer: React.FC<WalletPreviewContainerProps> = ({
           <div
             ref={walletContainerRef}
             data-wallet-container
-            className="relative w-96 h-[650px] mx-auto rounded-2xl overflow-hidden"
+            className="relative w-96 h-[650px] mx-auto rounded-none overflow-hidden"
             style={{
               background: previewMode === 'phantom' && phantomTheme
                 ? buildContainerBackground(phantomTheme)
