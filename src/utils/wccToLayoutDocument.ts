@@ -94,7 +94,7 @@ export function wccToLayoutDocument(theme: WCCOverlayV3): SimpleLayoutDocument {
       }
 
       // Animated background support — CSS keyframes defined in AgentOverlay
-      const bgData = theme.global.background;
+      const bgData = theme.global.background as any;
       if (bgData.animated && bgData.animation_preset) {
         if (bgData.animation_preset === 'gradient-shift') {
           const ac = bgData.animation_colors;
