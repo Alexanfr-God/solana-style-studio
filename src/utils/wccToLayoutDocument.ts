@@ -27,7 +27,12 @@ const PASSWORD_ANCHORS = [
   { id: 'header-title',   x: 140, y: 10,  width: 120, height: 28,  type: 'text',      zIndex: 2, content: { text: 'phantom' } },
   { id: 'help-button',    x: 358, y: 10,  width: 28,  height: 28,  type: 'button',    zIndex: 2, content: { text: '?' } },
   { id: 'header-line',    x: 0,   y: 48,  width: 400, height: 1,   type: 'container', zIndex: 1, content: {} },
-  { id: 'logo',           x: 140, y: 110, width: 120, height: 140, type: 'text',      zIndex: 2, content: { text: '👻' } },
+  // Logo: type 'image' with no src so DynamicPhantomRenderer renders its
+  // built-in Phantom-style SVG fallback (purple ghost with white eyes). The
+  // overlay agent renders the same SVG markup, themed by color + textShadow
+  // from the override, so the live overlay is visually identical to the
+  // Lovable mockup. Future: AI-generated per-theme logo via content.src.
+  { id: 'logo',           x: 140, y: 110, width: 120, height: 140, type: 'image',     zIndex: 2, content: {} },
   { id: 'title',          x: 40,  y: 290, width: 320, height: 36,  type: 'text',      zIndex: 2, content: { text: 'Enter your Password' } },
   { id: 'password-input', x: 24,  y: 344, width: 352, height: 52,  type: 'input',     zIndex: 2, content: { placeholder: 'Password' } },
   { id: 'unlock-button',  x: 24,  y: 488, width: 352, height: 52,  type: 'button',    zIndex: 2, content: { text: 'Unlock' } },
