@@ -14,6 +14,12 @@ export interface BackgroundResult {
   blur?: number;
   gradient?: { from: string; to: string; angle: number };
   color?: string;
+  /** When true the background plays a CSS keyframe animation in the overlay */
+  animated?: boolean;
+  /** Which CSS animation preset to apply (defined in AgentOverlay keyframes) */
+  animation_preset?: "gradient-shift" | "aurora" | "cosmic-pulse";
+  /** Extra gradient stops used when animation_preset = "gradient-shift" */
+  animation_colors?: string[];
 }
 
 export interface ColorAnalysis {
@@ -92,4 +98,37 @@ export interface ValidationResult {
   theme: WCCOverlayV3;
   warnings: string[];
   fixes: number;
+}
+
+// ── Designer agent output ─────────────────────────────────────────────────────
+export interface DesignBrief {
+  visual_concept: string;
+  background: {
+    description: string;
+    mood: string;
+    key_colors: string[];
+  };
+  typography: {
+    style: string;
+    suggested_font: string;
+  };
+  elements: {
+    header: string;
+    buttons: string;
+    balance: string;
+    token_list: string;
+    overall_feel: string;
+  };
+  animation_style: string;
+  design_rationale: string;
+}
+
+// ── Director agent output ─────────────────────────────────────────────────────
+export interface DirectorVerdict {
+  similarity_score: number;        // 0–100
+  matched_aspects: string[];       // what was executed well
+  missed_aspects: string[];        // what diverged from brief
+  highlights: string;              // best element of the result
+  verdict: string;                 // one-sentence final judgment
+  recommendation: string;          // what to improve on next iteration
 }

@@ -1,22 +1,11 @@
 import type { BackgroundResult, ColorAnalysis } from "../shared/types.ts";
-
-function getAPIKey() {
-  return Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("OPENA_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY") ?? "";
-}
-function getAPIBase() {
-  if (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("OPENA_API_KEY")) return "https://api.openai.com/v1";
-  return "https://ai.gateway.lovable.dev/v1";
-}
-function getModel() {
-  if (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("OPENA_API_KEY")) return "gpt-4o";
-  return "google/gemini-2.5-flash";
-}
+import { callClaudeJSON } from "../shared/llm.ts";
 
 const SYSTEM_PROMPT = `You are a professional color analyst for UI/UX overlay design.
 Analyze the image and determine which colors are SAFE for UI elements overlaid on top.
-Return ONLY valid JSON — no markdown, no preamble.
+Return ONLY valid JSON — no markdown fences, no preamble, no explanation.
 
-JSON schema:
+JSON schema (return EXACTLY these keys):
 {
   "dominant": ["#hex", "#hex", "#hex"],
   "luminance": "dark" | "light" | "mixed",
@@ -38,10 +27,9 @@ CRITICAL RULES:
 1. forbidden[] must include any color within 30 RGB distance from dominant background
 2. safe_text MUST achieve contrast ratio ≥ 4.5:1 against center region
 3. safe_accent MUST be visually distinct from all dominant colors
-4. dark luminance → safe_text light (#F5F5F5+), light luminance → safe_text dark (#1a1a1a)
-5. NEVER safe_button_bg the same as background`;
+4. dark luminance → safe_text light (#F5F5F5+); light luminance → safe_text dark (#1a1a1a)
+5. NEVER set safe_button_bg the same as background`;
 
-// Fallback when no image URL available (gradient background)
 function buildFallbackAnalysis(prompt: string): ColorAnalysis {
   const lower = prompt.toLowerCase();
   if (lower.includes("gold") || lower.includes("bitcoin") || lower.includes("luxury")) {
@@ -66,7 +54,6 @@ function buildFallbackAnalysis(prompt: string): ColorAnalysis {
       mood: "cyberpunk neon",
     };
   }
-  // Default dark
   return {
     dominant: ["#131217", "#1a1a2e"],
     luminance: "dark", luminance_value: 12,
@@ -78,58 +65,35 @@ function buildFallbackAnalysis(prompt: string): ColorAnalysis {
   };
 }
 
-export async function runColorAnalyst(background: BackgroundResult, userPrompt: string): Promise<ColorAnalysis> {
-  // No image to analyze → keyword fallback
+export async function runColorAnalyst(
+  background: BackgroundResult,
+  userPrompt: string
+): Promise<ColorAnalysis> {
+  // No image (gradient/color background) → keyword fallback
   if (!background.url || background.type === "gradient") {
     console.log("[color-analyst] No image URL, using keyword fallback");
     return buildFallbackAnalysis(userPrompt);
   }
 
-  const apiKey = getAPIKey();
-  if (!apiKey) return buildFallbackAnalysis(userPrompt);
-
-  const messages: any[] = [
-    { role: "system", content: SYSTEM_PROMPT },
-    {
-      role: "user",
-      content: [
-        { type: "image_url", image_url: { url: background.url, detail: "high" } },
-        { type: "text", text: `Theme intent: "${userPrompt}". Analyze colors and return JSON.` },
-      ],
-    },
-  ];
-
-  // Gemini via Lovable gateway doesn't support image_url in messages the same way
-  // For non-OpenAI endpoints, use text-only with URL hint
-  const isOpenAI = getAPIBase().includes("openai.com");
-  if (!isOpenAI) {
-    messages[1].content = `Theme intent: "${userPrompt}". Image: ${background.url}. Infer colors from the theme name and return the JSON color analysis.`;
-  }
-
   try {
-    const res = await fetch(`${getAPIBase()}/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: getModel(),
-        max_tokens: 800,
-        temperature: 0.3,
-        messages,
-      }),
+    const result = await callClaudeJSON<ColorAnalysis>({
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "image", source: { type: "url", url: background.url } },
+            { type: "text", text: `Theme intent: "${userPrompt}". Analyze colors and return JSON.` },
+          ],
+        },
+      ],
+      maxTokens: 1000,
+      temperature: 0.3,
     });
-
-    if (!res.ok) throw new Error(`API ${res.status}`);
-    const data = await res.json();
-    const content: string = data.choices[0].message.content;
-
-    const match = content.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("No JSON in response");
-
-    const result = JSON.parse(match[0]) as ColorAnalysis;
     console.log("[color-analyst] Done. Luminance:", result.luminance, "Mood:", result.mood);
     return result;
   } catch (e) {
-    console.warn("[color-analyst] Failed:", e, "— using fallback");
+    console.warn("[color-analyst] Claude failed:", (e as Error).message, "— using fallback");
     return buildFallbackAnalysis(userPrompt);
   }
 }

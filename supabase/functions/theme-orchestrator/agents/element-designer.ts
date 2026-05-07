@@ -1,4 +1,6 @@
 import type { ColorAnalysis, BackgroundResult, ElementStyle } from "../shared/types.ts";
+import { callClaudeJSON } from "../shared/llm.ts";
+import type { DesignSystem } from "../design-systems/index.ts";
 
 const PHANTOM_ELEMENT_MAP: Record<string, { x: number; y: number; w: number; h: number }> = {
   "background-layer":  { x: 0,   y: 0,   w: 380, h: 600 },
@@ -14,27 +16,25 @@ const PHANTOM_ELEMENT_MAP: Record<string, { x: number; y: number; w: number; h: 
   "token-list-item":   { x: 0,   y: 300, w: 380, h: 56  },
 };
 
-// ── Font Catalog ──────────────────────────────────────────────────────────────
 const FONT_CATALOG = `
 FONT CATALOG — pick the family that fits the aesthetic:
-Crypto / Web3 : "Orbitron", "Space Grotesk", "Space Mono"
-Futuristic    : "Exo 2", "Rajdhani", "Audiowide"
-Gaming / Retro: "Press Start 2P", "VT323", "Silkscreen"
-Elegant       : "Playfair Display", "Cormorant Garamond"
-Urban / Bold  : "Bebas Neue", "Anton", "Black Ops One"
-Minimal/Clean : "DM Sans", "Manrope", "Syne"
-Default       : "Space Grotesk"
+Crypto / Web3  : "Orbitron", "Space Grotesk", "Space Mono"
+Futuristic     : "Exo 2", "Rajdhani", "Audiowide"
+Gaming / Retro : "Press Start 2P", "VT323", "Silkscreen"
+Elegant        : "Playfair Display", "Cormorant Garamond"
+Urban / Bold   : "Bebas Neue", "Anton", "Black Ops One"
+Minimal / Clean: "DM Sans", "Manrope", "Syne", "Inter", "Geist Sans"
+Default        : "Inter"
 `;
 
-// ── Mood → Font heuristic for fallback ────────────────────────────────────────
 const MOOD_FONTS: Record<string, string> = {
   cyberpunk: "Orbitron", neon: "Rajdhani", retro: "VT323",
   gaming: "Press Start 2P", pixel: "VT323",
   elegant: "Playfair Display", luxury: "Cormorant Garamond",
-  minimal: "DM Sans", clean: "Manrope",
+  minimal: "Inter", clean: "Inter",
   urban: "Bebas Neue", street: "Anton",
   space: "Audiowide", futuristic: "Exo 2",
-  default: "Space Grotesk",
+  default: "Inter",
 };
 
 function getMoodFont(mood?: string): string {
@@ -46,28 +46,17 @@ function getMoodFont(mood?: string): string {
   return MOOD_FONTS.default;
 }
 
-function getAPIKey() {
-  return Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("OPENA_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY") ?? "";
-}
-function getAPIBase() {
-  if (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("OPENA_API_KEY")) return "https://api.openai.com/v1";
-  return "https://ai.gateway.lovable.dev/v1";
-}
-function getModel() {
-  if (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("OPENA_API_KEY")) return "gpt-4o";
-  return "google/gemini-2.5-flash";
-}
-
 function buildFallbackElements(ca: ColorAnalysis): Record<string, ElementStyle> {
   const { safe_text, safe_accent, safe_button_bg, palette, luminance, mood } = ca;
   const font = getMoodFont(mood);
-  const glassAlpha = luminance === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
-  const borderAlpha = luminance === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)";
+  const glassAlpha = luminance === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
+  const borderAlpha = luminance === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.10)";
+  const subtleGlow = `0 0 14px ${safe_accent}40`;
 
   const glass: ElementStyle = {
     style: {
       type: "glassmorphism",
-      fill: glassAlpha, fill_opacity: 0.08, blur: 14,
+      fill: glassAlpha, fill_opacity: 0.05, blur: 18,
       border_color: borderAlpha, border_width: 1, border_radius: 12,
     },
     text: { color: safe_text, size: 14, weight: 400, opacity: 1, fontFamily: font },
@@ -76,15 +65,24 @@ function buildFallbackElements(ca: ColorAnalysis): Record<string, ElementStyle> 
 
   const btn: ElementStyle = {
     style: {
-      type: "solid", fill: safe_button_bg, fill_opacity: 1,
-      border_radius: 16, border_color: safe_accent, border_width: 1,
+      type: "gradient",
+      fill: safe_button_bg, fill_opacity: 1,
+      gradient: { from: safe_button_bg, to: palette.primary, angle: 135 },
+      border_radius: 22, border_color: borderAlpha, border_width: 1,
     },
-    text: { color: safe_text, size: 12, weight: 700, opacity: 1, fontFamily: font, textTransform: "uppercase" },
-    animation: { type: "shimmer", duration_ms: 2200, loop: true, color: safe_accent, easing: "ease-in-out" },
-    icon: { tint: safe_accent, opacity: 1 },
+    text: { color: "#ffffff", size: 12, weight: 600, opacity: 1, fontFamily: font, textTransform: "uppercase" },
+    animation: { type: "shimmer", duration_ms: 2400, loop: true, color: safe_accent, easing: "ease-in-out" },
+    icon: { tint: "#ffffff", opacity: 0.9 },
   };
 
-  const neonShadow = `0 0 8px ${safe_accent}, 0 0 20px ${safe_accent}80`;
+  const heroBtn: ElementStyle = {
+    ...btn,
+    style: {
+      ...btn.style,
+      gradient: { from: palette.primary, to: `${safe_accent}cc`, angle: 135 },
+    },
+    animation: { type: "glow", duration_ms: 2000, loop: true, color: safe_accent, intensity: 0.4, easing: "ease-in-out" },
+  };
 
   return {
     "background-layer": {
@@ -92,148 +90,169 @@ function buildFallbackElements(ca: ColorAnalysis): Record<string, ElementStyle> 
     },
     "header": {
       ...glass,
-      style: { ...glass.style, border_radius: 0, blur: 16 },
-      text: { ...glass.text!, textShadow: neonShadow },
+      style: { ...glass.style, border_radius: 0, blur: 20, fill: glassAlpha, fill_opacity: 0.04 },
     },
     "network-badge": {
-      style: { type: "solid", fill: palette.secondary, fill_opacity: 1, border_radius: 12, border_color: safe_accent, border_width: 1 },
-      text: { color: safe_accent, size: 11, weight: 600, opacity: 1, fontFamily: font, textTransform: "uppercase", letterSpacing: 0.05 },
-      animation: { type: "pulse", duration_ms: 2000, loop: true, color: safe_accent, delay_ms: 300 },
+      style: {
+        type: "solid",
+        fill: `${safe_accent}22`, fill_opacity: 0.13,
+        border_radius: 12, border_color: `${safe_accent}40`, border_width: 1,
+      },
+      text: { color: safe_accent, size: 11, weight: 600, opacity: 1, fontFamily: font, textTransform: "uppercase" },
+      animation: { type: "none", duration_ms: 0, loop: false },
     },
     "account-address": {
       style: { type: "transparent", fill: "transparent", fill_opacity: 0, border_radius: 8 },
-      text: { color: safe_text, size: 13, weight: 400, opacity: 0.65, fontFamily: "Space Mono", letterSpacing: 0.04 },
+      text: { color: safe_text, size: 12, weight: 400, opacity: 0.6, fontFamily: "Space Mono" },
     },
     "balance-sol": {
       style: { type: "transparent", fill: "transparent", fill_opacity: 0, border_radius: 0 },
-      text: { color: safe_text, size: 36, weight: 800, opacity: 1, fontFamily: font, textShadow: neonShadow, lineHeight: 1.1 },
-      animation: { type: "float", duration_ms: 3200, loop: true, easing: "ease-in-out" },
+      text: { color: safe_text, size: 40, weight: 800, opacity: 1, fontFamily: font, textShadow: subtleGlow, lineHeight: 1.1 },
+      animation: { type: "float", duration_ms: 3400, loop: true, easing: "ease-in-out" },
     },
     "balance-usd": {
       style: { type: "transparent", fill: "transparent", fill_opacity: 0, border_radius: 0 },
       text: { color: safe_text, size: 14, weight: 400, opacity: 0.55, fontFamily: font },
-      animation: { type: "float", duration_ms: 3200, loop: true, delay_ms: 160, easing: "ease-in-out" },
+      animation: { type: "float", duration_ms: 3400, loop: true, delay_ms: 160, easing: "ease-in-out" },
     },
-    "btn-send": { ...btn, animation: { ...btn.animation!, delay_ms: 0 } },
-    "btn-receive": { ...btn, animation: { ...btn.animation!, delay_ms: 100 } },
-    "btn-swap": {
-      ...btn,
-      style: { ...btn.style, fill: palette.primary, border_color: safe_text },
-      animation: { type: "ripple", duration_ms: 1800, loop: true, color: safe_accent, delay_ms: 200 },
-    },
-    "btn-buy": {
-      ...btn,
-      style: { ...btn.style, type: "neon", fill: safe_button_bg, border_color: safe_accent, border_width: 2 },
-      text: { ...btn.text!, textShadow: neonShadow },
-      animation: { type: "glow", duration_ms: 1600, loop: true, color: safe_accent, intensity: 0.9, delay_ms: 0 },
-    },
+    "btn-send":    { ...btn, animation: { ...btn.animation!, delay_ms: 0   } },
+    "btn-receive": { ...btn, animation: { ...btn.animation!, delay_ms: 120 } },
+    "btn-swap":    { ...btn, animation: { ...btn.animation!, delay_ms: 240 } },
+    "btn-buy":     heroBtn,
     "token-list-item": {
-      style: { type: "glassmorphism", fill: "rgba(255,255,255,0.04)", fill_opacity: 0.04, blur: 8, border_radius: 12, border_color: "rgba(255,255,255,0.08)", border_width: 1 },
-      text: { color: safe_text, size: 14, weight: 400, opacity: 1, fontFamily: font },
+      style: {
+        type: "glassmorphism", fill: "rgba(255,255,255,0.03)", fill_opacity: 0.03,
+        blur: 8, border_radius: 12, border_color: "rgba(255,255,255,0.07)", border_width: 1,
+      },
+      text: { color: safe_text, size: 14, weight: 400, opacity: 0.9, fontFamily: font },
       animation: { type: "none", duration_ms: 0, loop: false },
     },
   };
 }
 
-export async function runElementDesigner(
-  userPrompt: string,
-  colorAnalysis: ColorAnalysis,
-  background: BackgroundResult
-): Promise<Record<string, ElementStyle>> {
-  const apiKey = getAPIKey();
-  if (!apiKey) return buildFallbackElements(colorAnalysis);
+function buildSystemPrompt(colorAnalysis: ColorAnalysis, ds?: DesignSystem): string {
+  const dsBlock = ds
+    ? `\n# Reference Design System: ${ds.name}\n\nUse this as your PRIMARY reference. Color values, typography choices, component\nshapes, and motion principles below override your default instincts. Match this\nsystem's aesthetic precisely.\n\n\`\`\`md\n${ds.content}\n\`\`\`\n`
+    : "";
 
-  const systemPrompt = `You are an avant-garde Web3 UI designer creating EXPERIMENTAL overlay themes for the Phantom crypto wallet.
-Be BOLD and CREATIVE — don't default to generic dark/purple. Every theme should feel unique.
+  return `You are a Senior Product Designer at a top-tier fintech studio. Your work is inspired by Linear, Vercel, and Stripe — refined, cohesive, modern.
 
-PHANTOM ELEMENT MAP (380×600px frame):
+You design overlay themes for the Phantom crypto wallet (380×600px transparent skin layered on top of real wallet UI).
+
+PHANTOM ELEMENT MAP:
 ${JSON.stringify(PHANTOM_ELEMENT_MAP, null, 2)}
 
-COLOR ANALYSIS:
+COLOR ANALYSIS FROM IMAGE:
 ${JSON.stringify(colorAnalysis, null, 2)}
 
 ${FONT_CATALOG}
+${dsBlock}
+STYLE TYPES: glassmorphism | solid | gradient | transparent
+ANIMATIONS: none | shimmer | glow | float
 
-STYLE TYPES: glassmorphism | solid | gradient | neon | neumorphic | transparent
-ANIMATIONS : none | pulse | shimmer | glow | ripple | bounce | float
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚫  PROHIBITED — these patterns make themes look amateurish:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• "neon" style type — FORBIDDEN. Use gradient or glassmorphism instead.
+• Full-saturation fills: #FF00FF, #FF6600, #00FF00 etc.
+  → ALWAYS desaturate. Use rgba(r,g,b,0.15-0.25) for container fills.
+• textShadow on: header, network-badge, account-address, buttons, token-list-item
+• animation on: header, network-badge, account-address, token-list-item
+• fontSize > 16px for: header, network-badge, account-address, balance-usd, buttons
+• fontSize outside 32-46px range for balance-sol
+• Opaque borders: use rgba max 0.25 alpha for border_color
+• "pulse" animation — FORBIDDEN completely. Use shimmer, glow, or float only.
+• Bright orange, pink, or green as button background fill — use dark desaturated colors
 
-═══ DESIGN RULES ════════════════════════════════════════════════
-1. NEVER use forbidden colors: ${colorAnalysis.forbidden.join(", ")}
-2. All text → safe_text: ${colorAnalysis.safe_text} (contrast must pass)
-3. Buttons → safe_button_bg or safe_accent — must be VISUALLY DISTINCT from background
-4. background-layer MUST be type "transparent"
-5. Luminance is "${colorAnalysis.luminance}" → ${colorAnalysis.luminance === "dark" ? "light text/borders on dark bg" : "dark text/borders on light bg"}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅  MANDATORY DESIGN RULES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. COLOR DISCIPLINE (60-30-10 rule):
+   • 60% → near-transparent glassmorphism fills (rgba 0.04-0.08)
+   • 30% → desaturated palette colors for borders/secondary fills (rgba 0.10-0.20)
+   • 10% → accent tint ONLY on btn-buy glow + balance-sol textShadow
+   • Button fills: gradient between two DARK/DESATURATED palette variants
+   • NEVER use pure accent color as a solid fill for any container
 
-═══ TYPOGRAPHY RULES ════════════════════════════════════════════
-• Always set text.fontFamily from the FONT CATALOG — pick what fits the mood
-• balance-sol: large (32–48px), heavy weight (700–900), add textShadow for drama
-• Buttons: uppercase textTransform, weight 600–800
-• Monospace font (Space Mono) for account-address — crypto addresses look best mono
+2. TYPOGRAPHY SCALE (strictly enforce):
+   • balance-sol: 36-44px, weight 700-800, ONE subtle textShadow max: "0 0 14px {color}40"
+   • balance-usd: 13-15px, weight 400, opacity 0.55
+   • header: 14px, weight 500
+   • network-badge: 10-12px, weight 600, uppercase
+   • buttons: 11-13px, weight 600, uppercase
+   • account-address: 11-13px, weight 400, fontFamily "Space Mono" always
 
-═══ ANIMATION RULES — MINIMUM 4 ANIMATED ELEMENTS ═══════════════
-• btn-buy: "glow" — the hero CTA, most prominent
-• btn-send / btn-receive / btn-swap: "shimmer" with staggered delay_ms (0, 100, 200, 300)
-• balance-sol: "float" — gentle levitation
-• balance-usd: "float" with delay_ms:160 for slight stagger
-• network-badge: "pulse"
-• token-list-item: "ripple" or "none"
-• Use delay_ms to create staggered entrance feel
+3. BUTTONS — cohesive pill design:
+   • All 4 buttons: gradient style, border_radius ≥ 20 (pill shape)
+   • gradient: from darker palette color → to slightly lighter variant
+   • btn-send/receive/swap: same gradient, shimmer animation, delay_ms 0/100/200
+   • btn-buy: slightly more vibrant gradient + glow animation (intensity 0.35-0.50)
+   • All button text: color "#ffffff", weight 600, textTransform "uppercase"
 
-═══ EFFECT RULES ════════════════════════════════════════════════
-• neon style: add textShadow: "0 0 8px {color}, 0 0 20px {color}80"
-• glassmorphism: blur 14–24, border with alpha (rgba)
-• gradient style: use style.gradient with from/to/angle
-• For filter/transform (optional): style.filter e.g. "brightness(1.1) saturate(1.3)"
+4. HEADER: glassmorphism ONLY (blur 16-24), fill rgba 0.04-0.06
+   border_radius: 0, border rgba at 0.08-0.12
 
-═══ SCHEMA ══════════════════════════════════════════════════════
-Each element:
+5. ANIMATIONS: MAXIMUM 4 total — ALL others MUST be type "none":
+   • balance-sol  → float (3000-3600ms)
+   • balance-usd  → float (same ms, delay_ms 150-200)
+   • btn-buy      → glow  (1800-2200ms, intensity 0.35-0.5)
+   • btn-send     → shimmer (2000-2600ms)
+   • network-badge, header, account-address, token-list-item → "none" ALWAYS
+
+ELEMENT IDs to output (ALL 11 required):
+background-layer, header, network-badge, account-address,
+balance-sol, balance-usd, btn-send, btn-receive, btn-swap, btn-buy, token-list-item
+
+SCHEMA per element:
 {
-  "style": { "type":string, "fill":string, "fill_opacity":number, "blur"?:number,
-             "border_color"?:string, "border_width"?:number, "border_radius":number,
-             "shadow"?:{x,y,radius,spread,color}, "gradient"?:{from,to,angle},
-             "filter"?:string, "transform"?:string },
-  "text"?: { "color":string, "size":number, "weight":number, "opacity":number,
-              "fontFamily"?:string, "textTransform"?:string, "textShadow"?:string,
-              "lineHeight"?:number, "letter_spacing"?:number },
-  "animation"?: { "type":string, "duration_ms":number, "loop":boolean,
-                  "color"?:string, "delay_ms"?:number, "easing"?:string, "intensity"?:number },
-  "icon"?: { "tint":string, "opacity":number }
+  "style": { "type": string, "fill": string, "fill_opacity": number, "blur"?: number,
+             "border_color"?: string, "border_width"?: number, "border_radius": number,
+             "gradient"?: { "from": string, "to": string, "angle": number } },
+  "text"?: { "color": string, "size": number, "weight": number, "opacity": number,
+             "fontFamily"?: string, "textTransform"?: string, "textShadow"?: string,
+             "lineHeight"?: number },
+  "animation"?: { "type": string, "duration_ms": number, "loop": boolean,
+                  "color"?: string, "delay_ms"?: number, "easing"?: string, "intensity"?: number },
+  "icon"?: { "tint": string, "opacity": number }
 }
 
-Return ONLY a valid JSON object with ALL 11 element IDs. No markdown, no explanation.`;
+Return ONLY a valid JSON object with ALL 11 element IDs. No markdown fences, no explanation.`;
+}
+
+export interface ElementDesignerInput {
+  userPrompt: string;
+  colorAnalysis: ColorAnalysis;
+  background: BackgroundResult;
+  designSystem?: DesignSystem;
+}
+
+export async function runElementDesigner(
+  input: ElementDesignerInput
+): Promise<Record<string, ElementStyle>> {
+  const { userPrompt, colorAnalysis, background, designSystem } = input;
+
+  const userMsg =
+    `Design a professional "${userPrompt}" theme.\n` +
+    `Mood: ${colorAnalysis.mood ?? "custom"} | Background: ${background.type} | Luminance: ${colorAnalysis.luminance}\n` +
+    `Safe accent: ${colorAnalysis.safe_accent} | Button bg: ${colorAnalysis.safe_button_bg} | Text: ${colorAnalysis.safe_text}\n` +
+    (designSystem ? `Reference design system: ${designSystem.name} (use as primary inspiration).\n` : "") +
+    `\nCRITICAL: Refined, cohesive, elegant. Desaturated fills. 4 animations max (balance + 2 buttons only).\n` +
+    `Return ONLY the JSON object for all 11 elements.`;
 
   try {
-    const res = await fetch(`${getAPIBase()}/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: getModel(),
-        max_tokens: 4000,
-        temperature: 0.75,
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Design a "${userPrompt}" theme. Mood: ${colorAnalysis.mood ?? "custom"}. ` +
-              `Background type: ${background.type}, opacity: ${background.opacity}. ` +
-              `Be experimental — surprise me with the font and animation choices. ` +
-              `Return ONLY the JSON object for all 11 elements.`,
-          },
-        ],
-      }),
+    const elements = await callClaudeJSON<Record<string, ElementStyle>>({
+      system: buildSystemPrompt(colorAnalysis, designSystem),
+      messages: [{ role: "user", content: userMsg }],
+      maxTokens: 4000,
+      temperature: 0.45,
     });
-
-    if (!res.ok) throw new Error(`API ${res.status}`);
-    const data = await res.json();
-    const content: string = data.choices[0].message.content;
-    const match = content.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("No JSON in designer response");
-
-    const elements = JSON.parse(match[0]) as Record<string, ElementStyle>;
-    console.log("[element-designer] Done. Elements:", Object.keys(elements).join(", "));
+    console.log(
+      `[element-designer] ✓ Elements: ${Object.keys(elements).join(", ")}` +
+        (designSystem ? ` (using ${designSystem.id})` : "")
+    );
     return elements;
   } catch (e) {
-    console.warn("[element-designer] Failed:", e, "— using fallback");
+    console.warn("[element-designer] Claude failed:", (e as Error).message, "— using fallback");
     return buildFallbackElements(colorAnalysis);
   }
 }

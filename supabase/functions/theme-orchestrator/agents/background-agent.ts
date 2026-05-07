@@ -55,33 +55,42 @@ async function generateWithGemini(prompt: string, userId: string): Promise<Backg
   }
 
   const { data: { publicUrl } } = supabase.storage.from("generated-images").getPublicUrl(path);
-  return { type: "image", url: publicUrl, opacity: 0.9, blur: 0 };
+  // Subtle brightness-pulse animation makes AI-generated images feel alive
+  return { type: "image", url: publicUrl, opacity: 0.9, blur: 0, animated: true, animation_preset: "cosmic-pulse" };
 }
 
-// Keyword gradient fallback
-const GRADIENT_MAP: Record<string, [string, string]> = {
-  cyberpunk: ["#0d0221", "#4a0080"],
-  neon: ["#001a33", "#003366"],
-  glassmorphism: ["#dce8f8", "#a8c0e0"],
-  minimal: ["#f5f5f5", "#d0d0d0"],
-  dark: ["#0a0a0a", "#1a1a2e"],
-  gold: ["#1a0a00", "#3d2000"],
-  bitcoin: ["#1a0800", "#2d1500"],
-  luxury: ["#0d0d0d", "#2a1a00"],
-  space: ["#000010", "#0a0025"],
-  ocean: ["#001830", "#002850"],
-  fire: ["#1a0000", "#3d0500"],
-  synthwave: ["#1a0030", "#0d0040"],
-  vaporwave: ["#ff70d4", "#70d4ff"],
+// Keyword gradient fallback — 3-stop gradients for animated shift
+const GRADIENT_MAP: Record<string, [string, string, string]> = {
+  cyberpunk:    ["#0d0221", "#2a0050", "#0a1a3a"],
+  neon:         ["#001a33", "#002855", "#001040"],
+  glassmorphism:["#c8ddf0", "#a8c0e0", "#d8eaf8"],
+  minimal:      ["#f0f0f0", "#d8d8d8", "#e8e8e8"],
+  dark:         ["#0a0a0a", "#1a1a2e", "#0d0d1a"],
+  gold:         ["#1a0a00", "#3d2000", "#280f00"],
+  bitcoin:      ["#1a0800", "#2d1500", "#1f0d00"],
+  luxury:       ["#0d0d0d", "#2a1a00", "#181200"],
+  space:        ["#000010", "#0a0025", "#05001a"],
+  ocean:        ["#001830", "#002850", "#001240"],
+  fire:         ["#1a0000", "#3d0500", "#260200"],
+  synthwave:    ["#1a0030", "#0d0040", "#250040"],
+  vaporwave:    ["#cc50a8", "#a050cc", "#50a8cc"],
+  phantom:      ["#131217", "#1e1b2e", "#16122a"],
 };
 
 function gradientFallback(prompt: string): BackgroundResult {
   const lower = prompt.toLowerCase();
-  let colors: [string, string] = ["#131217", "#2a2832"];
-  for (const [kw, pair] of Object.entries(GRADIENT_MAP)) {
-    if (lower.includes(kw)) { colors = pair; break; }
+  let colors: [string, string, string] = ["#131217", "#1e1b2e", "#16122a"];
+  for (const [kw, trio] of Object.entries(GRADIENT_MAP)) {
+    if (lower.includes(kw)) { colors = trio; break; }
   }
-  return { type: "gradient", gradient: { from: colors[0], to: colors[1], angle: 135 }, opacity: 1 };
+  return {
+    type: "gradient",
+    gradient: { from: colors[0], to: colors[2], angle: 135 },
+    animation_colors: colors,
+    animated: true,
+    animation_preset: "gradient-shift",
+    opacity: 1,
+  };
 }
 
 export async function runBackgroundAgent(req: ThemeRequest): Promise<BackgroundResult> {
