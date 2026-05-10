@@ -17,14 +17,15 @@ import { buildThemeOverrides, buildContainerBackground } from '@/stores/phantomT
 import type { WCCOverlayV3 } from '@/stores/phantomThemeStore';
 import { supabase } from '@/integrations/supabase/client';
 
-// Phantom-style ghost SVG, base64-encoded as a data URL. Identical to the
-// asset in /public/phantom-layout.json so the Lovable mockup (DynamicPhantomRenderer)
-// and the macOS overlay agent render the SAME logo. Themed via CSS only —
-// theme.color → drop-shadow / hue-rotate filter, theme.textShadow → glow.
-// Source SVG: viewBox 0 0 267 222, fill #FFFDF8 (warm white).
-const PHANTOM_GHOST_DATA_URL =
-  'data:image/svg+xml;base64,' +
-  'PHN2ZyB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDI2NyAyMjIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHBhdGggZD0iTTMxLjU5NCAyMjJDNjUuNjY2IDIyMiA5MS4yNzEgMTkyLjQxNCAxMDYuNTUyIDE2OS4wMzRDMTA0LjY5NCAxNzQuMjA3IDEwMy42NjEgMTc5LjM3OSAxMDMuNjYxIDE4NC4zNDVDMTAzLjY2MSAxOTggMTExLjUwOCAyMDcuNzI0IDEyNi45OTUgMjA3LjcyNEMxNDguMjY1IDIwNy43MjQgMTcwLjk3OSAxODkuMTAzIDE4Mi43NDkgMTY5LjAzNEMxODEuOTIzIDE3MS45MzEgMTgxLjUxIDE3NC42MjEgMTgxLjUxIDE3Ny4xMDNDMTgxLjUxIDE4Ni42MjEgMTg2Ljg3OSAxOTIuNjIxIDE5Ny44MjQgMTkyLjYyMUMyMzIuMzA5IDE5Mi42MjEgMjY3IDEzMS41ODYgMjY3IDc4LjIwN0MyNjcgMzYuNjIxIDI0NS45MzcgMCAxOTMuMDc0IDBDMTAwLjE1MSAwIDAgMTEzLjM3OSAwIDE4Ni42MjFDMCAyMTUuMzc5IDE1LjQ4NyAyMjIgMzEuNTk0IDIyMlpNMTYxLjA2NyA3My42NTVDMTYxLjA2NyA2My4zMSAxNjYuODQ5IDU2LjA2OSAxNzUuMzE2IDU2LjA2OUMxODMuNTc1IDU2LjA2OSAxODkuMzU3IDYzLjMxIDE4OS4zNTcgNzMuNjU1QzE4OS4zNTcgODQgMTgzLjU3NSA5MS40NDggMTc1LjMxNiA5MS40NDhDMTY2Ljg0OSA5MS40NDggMTYxLjA2NyA4NCAxNjEuMDY3IDczLjY1NVpNMjA1LjI1OCA3My42NTVDMjA1LjI1OCA2My4zMSAyMTEuMDM5IDU2LjA2OSAyMTkuNTA2IDU2LjA2OUMyMjcuNzY2IDU2LjA2OSAyMzMuNTQ4IDYzLjMxIDIzMy41NDggNzMuNjU1QzIzMy41NDggODQgMjI3Ljc2NiA5MS40NDggMjE5LjUwNiA5MS40NDhDMjExLjAzOSA5MS40NDggMjA1LjI1OCA4NCAyMDUuMjU4IDczLjY1NVoiIGZpbGw9IiNGRkZERjgiLz4KPC9zdmc+Cg==';
+// Canonical Phantom-style ghost asset hosted on GitHub raw. The same file
+// lives in /public/phantom-ghost.svg and packages/desktop/src/assets/.
+// We point at the absolute GitHub URL so the broadcast layout works from
+// any rendering context — Lovable preview, macOS overlay agent, mobile
+// preview, etc. — without each surface needing its own copy at the right
+// path. Theme customization (glow / pulse / opacity) stacks on top via CSS
+// filter/animation/opacity from phantomThemeStore.overrides['logo'].
+const PHANTOM_GHOST_URL =
+  'https://raw.githubusercontent.com/Alexanfr-God/solana-style-studio/main/public/phantom-ghost.svg';
 
 // Anchor → position / type (mirrors phantom-layout.json so the Lovable mockup
 // and the live overlay receive the same shape + the same logo asset).
@@ -34,10 +35,11 @@ const PASSWORD_ANCHORS = [
   { id: 'header-title',   x: 140, y: 10,  width: 120, height: 28,  type: 'text',      zIndex: 2, content: { text: 'phantom' } },
   { id: 'help-button',    x: 358, y: 10,  width: 28,  height: 28,  type: 'button',    zIndex: 2, content: { text: '?' } },
   { id: 'header-line',    x: 0,   y: 48,  width: 400, height: 1,   type: 'container', zIndex: 1, content: {} },
-  // Logo: real Phantom-style ghost SVG embedded as base64. Theme styling
-  // (color → drop-shadow, textShadow → glow, animation → pulse/aurora)
-  // comes from phantomThemeStore overrides['logo'] and applies on top.
-  { id: 'logo',           x: 130, y: 100, width: 140, height: 150, type: 'image',     zIndex: 2, content: { src: PHANTOM_GHOST_DATA_URL } },
+  // Logo: canonical Phantom-style ghost asset (see PHANTOM_GHOST_URL above).
+  // Theme styling (color → drop-shadow, textShadow → glow, animation →
+  // pulse/aurora) comes from phantomThemeStore overrides['logo'] and stacks
+  // as CSS filter/animation on the rendered <img>.
+  { id: 'logo',           x: 130, y: 100, width: 140, height: 150, type: 'image',     zIndex: 2, content: { src: PHANTOM_GHOST_URL } },
   { id: 'title',          x: 40,  y: 290, width: 320, height: 36,  type: 'text',      zIndex: 2, content: { text: 'Enter your Password' } },
   { id: 'password-input', x: 24,  y: 344, width: 352, height: 52,  type: 'input',     zIndex: 2, content: { placeholder: 'Password' } },
   { id: 'unlock-button',  x: 24,  y: 488, width: 352, height: 52,  type: 'button',    zIndex: 2, content: { text: 'Unlock' } },
