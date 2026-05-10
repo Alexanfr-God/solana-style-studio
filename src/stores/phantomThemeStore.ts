@@ -25,7 +25,7 @@ interface ElementStyle {
     textShadow?: string;
     lineHeight?: number | string;
   };
-  animation?: { type: string; duration_ms: number; loop: boolean; color?: string };
+  animation?: { type: string; duration_ms: number; loop: boolean; color?: string; easing?: string; delay_ms?: number; intensity?: number };
   icon?: { tint: string; opacity: number };
 }
 
@@ -166,24 +166,34 @@ export function buildThemeOverrides(theme: WCCOverlayV3): Record<string, Record<
   // separator line → subtle accent tint
   overrides['header-line'] = { backgroundColor: `${ca.safe_accent}33` };
 
-  // Themed Phantom-style ghost (rendered as <img> from a base64 SVG in
-  // wccToLayoutDocument). Theme customization happens entirely through CSS
-  // applied to the wrapping <div> + the <img>:
-  //   filter: drop-shadow chains create a coloured halo around the white
-  //           ghost — drives the "glow / neon" feel from the theme accent.
-  //   opacity: lets the ghost fade if the theme calls for it.
-  //   animation: optional pulse/aurora keyframe for animated themes.
+  // Themed Phantom-style ghost — white SVG tinted via CSS filter chain on the
+  // <img>. Two paths:
+  //   1. AI emitted els['logo']: use its style.filter + animation directly.
+  //   2. Legacy theme: synthesize a drop-shadow halo from the button accent.
+  // Animation type strings come from element-designer rule 6 (glow | aurora |
+  // hue-shift) and map to the keyframes defined in AgentOverlay.tsx.
+  const logoEl = els['logo'];
   const logoAccent = els['btn-buy']?.icon?.tint ?? ca.safe_accent;
-  const logoFilter = [
+  const logoFilter = logoEl?.style?.filter ?? [
     `drop-shadow(0 0 12px ${logoAccent})`,
     `drop-shadow(0 0 28px ${logoAccent}88)`,
     `drop-shadow(0 6px 18px rgba(0,0,0,0.45))`,
   ].join(' ');
+  const LOGO_KEYFRAME: Record<string, string> = {
+    glow: 'wcc-cosmic-pulse',
+    aurora: 'wcc-aurora',
+    'hue-shift': 'wcc-aurora',
+  };
+  const animType = logoEl?.animation?.type;
+  const animDur = logoEl?.animation?.duration_ms ?? 0;
+  const animEase = logoEl?.animation?.easing ?? 'ease-in-out';
+  const keyframe = animType && animType !== 'none' && animDur > 0 ? LOGO_KEYFRAME[animType] : undefined;
   overrides['logo'] = {
     backgroundColor: 'transparent',
     borderRadius:    '0px',
     objectFit:       'contain',
     filter:          logoFilter,
+    ...(keyframe ? { animation: `${keyframe} ${animDur}ms ${animEase} infinite` } : {}),
   };
 
   // "Enter your Password" title → borrow font family + color from balance-sol,

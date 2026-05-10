@@ -14,6 +14,7 @@ const PHANTOM_ELEMENT_MAP: Record<string, { x: number; y: number; w: number; h: 
   "btn-swap":          { x: 200, y: 210, w: 80,  h: 72  },
   "btn-buy":           { x: 290, y: 210, w: 80,  h: 72  },
   "token-list-item":   { x: 0,   y: 300, w: 380, h: 56  },
+  "logo":              { x: 124, y: 100, w: 132, h: 150 },
 };
 
 const FONT_CATALOG = `
@@ -127,6 +128,13 @@ function buildFallbackElements(ca: ColorAnalysis): Record<string, ElementStyle> 
       text: { color: safe_text, size: 14, weight: 400, opacity: 0.9, fontFamily: font },
       animation: { type: "none", duration_ms: 0, loop: false },
     },
+    "logo": {
+      style: {
+        type: "transparent", fill: "transparent", fill_opacity: 0, border_radius: 0,
+        filter: `drop-shadow(0 0 12px ${safe_accent}) drop-shadow(0 0 28px ${safe_accent}88) drop-shadow(0 6px 18px rgba(0,0,0,0.45))`,
+      },
+      animation: { type: "glow", duration_ms: 3200, loop: true, color: safe_accent, intensity: 0.4, easing: "ease-in-out" },
+    },
   };
 }
 
@@ -148,7 +156,8 @@ ${JSON.stringify(colorAnalysis, null, 2)}
 ${FONT_CATALOG}
 ${dsBlock}
 STYLE TYPES: glassmorphism | solid | gradient | transparent
-ANIMATIONS: none | shimmer | glow | float
+ANIMATIONS: none | shimmer | glow | float | aurora | hue-shift
+  (aurora and hue-shift are LOGO-ONLY — see rule 6)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚫  PROHIBITED — these patterns make themes look amateurish:
@@ -192,21 +201,41 @@ ANIMATIONS: none | shimmer | glow | float
 4. HEADER: glassmorphism ONLY (blur 16-24), fill rgba 0.04-0.06
    border_radius: 0, border rgba at 0.08-0.12
 
-5. ANIMATIONS: MAXIMUM 4 total — ALL others MUST be type "none":
+5. ANIMATIONS: MAXIMUM 5 total — ALL others MUST be type "none":
    • balance-sol  → float (3000-3600ms)
    • balance-usd  → float (same ms, delay_ms 150-200)
    • btn-buy      → glow  (1800-2200ms, intensity 0.35-0.5)
    • btn-send     → shimmer (2000-2600ms)
+   • logo         → glow | aurora | hue-shift | "none"  (opt-in per theme; see rule 6)
    • network-badge, header, account-address, token-list-item → "none" ALWAYS
 
-ELEMENT IDs to output (ALL 11 required):
+6. LOGO — Phantom ghost (white SVG, tinted via CSS filters):
+   The ghost asset is a pure-white SVG. Color comes ENTIRELY from CSS filter chains
+   layered onto the <img> — the underlying pixels never change.
+   • style.filter (string) — chain these dials, in this preferred order:
+       drop-shadow(0 0 Xpx <accent>) drop-shadow(0 0 Ypx <accent>88) hue-rotate(Zdeg) saturate(N) brightness(N)
+     ◦ drop-shadow stack creates the halo glow — THIS is what colors the ghost visually
+       (2-3 stacked, increasing blur, decreasing alpha)
+     ◦ hue-rotate(0-360deg) shifts hue; HAS NO EFFECT on pure white alone
+     ◦ saturate(0.5-2.0); must be >1 to combine meaningfully with hue-rotate
+     ◦ brightness(0.8-1.4) for subtle luminance tweaks
+   • Recommended baseline: drop-shadow(0 0 12px <accent>) drop-shadow(0 0 28px <accent>88) drop-shadow(0 6px 18px rgba(0,0,0,0.45))
+   • animation: opt-in per theme aesthetic —
+       glow      → soft brightness/saturate oscillation (mystical / dark / luxury)
+       aurora    → hue-rotate sweep (cyberpunk / vapor / neon-adjacent)
+       hue-shift → slow hue cycle through palette (rainbow / playful)
+       none      → still ghost (minimal / corporate / fintech-clean)
+   • PROHIBITED: opacity < 0.4, display:none, hue-rotate without an accompanying saturate>1.
+
+ELEMENT IDs to output (ALL 12 required):
 background-layer, header, network-badge, account-address,
-balance-sol, balance-usd, btn-send, btn-receive, btn-swap, btn-buy, token-list-item
+balance-sol, balance-usd, btn-send, btn-receive, btn-swap, btn-buy, token-list-item, logo
 
 SCHEMA per element:
 {
   "style": { "type": string, "fill": string, "fill_opacity": number, "blur"?: number,
              "border_color"?: string, "border_width"?: number, "border_radius": number,
+             "filter"?: string,
              "gradient"?: { "from": string, "to": string, "angle": number } },
   "text"?: { "color": string, "size": number, "weight": number, "opacity": number,
              "fontFamily"?: string, "textTransform"?: string, "textShadow"?: string,
@@ -216,7 +245,7 @@ SCHEMA per element:
   "icon"?: { "tint": string, "opacity": number }
 }
 
-Return ONLY a valid JSON object with ALL 11 element IDs. No markdown fences, no explanation.`;
+Return ONLY a valid JSON object with ALL 12 element IDs. No markdown fences, no explanation.`;
 }
 
 export interface ElementDesignerInput {
@@ -236,8 +265,8 @@ export async function runElementDesigner(
     `Mood: ${colorAnalysis.mood ?? "custom"} | Background: ${background.type} | Luminance: ${colorAnalysis.luminance}\n` +
     `Safe accent: ${colorAnalysis.safe_accent} | Button bg: ${colorAnalysis.safe_button_bg} | Text: ${colorAnalysis.safe_text}\n` +
     (designSystem ? `Reference design system: ${designSystem.name} (use as primary inspiration).\n` : "") +
-    `\nCRITICAL: Refined, cohesive, elegant. Desaturated fills. 4 animations max (balance + 2 buttons only).\n` +
-    `Return ONLY the JSON object for all 11 elements.`;
+    `\nCRITICAL: Refined, cohesive, elegant. Desaturated fills. 5 animations max (balance ×2 + 2 buttons + optional logo).\n` +
+    `Return ONLY the JSON object for all 12 elements.`;
 
   try {
     const elements = await callClaudeJSON<Record<string, ElementStyle>>({
