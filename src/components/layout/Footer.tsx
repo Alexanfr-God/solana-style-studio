@@ -68,7 +68,7 @@ const Footer = () => {
           <div className="flex-1 text-center">
             <p className="text-white font-bold tracking-wider uppercase text-lg">
               <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                Wallet Coast Customs
+                Wacocu
               </span>
               <span className="text-purple-400 ml-2">2025</span>
             </p>
@@ -83,7 +83,7 @@ const Footer = () => {
           {/* Brand */}
           <p className="text-white font-bold tracking-wider uppercase text-base">
             <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-              Wallet Coast Customs
+              Wacocu
             </span>
             <span className="text-purple-400 ml-2">2025</span>
           </p>
