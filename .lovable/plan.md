@@ -1,35 +1,40 @@
-## Phantom Presets — Reorder & Update Covers
+## Rename "Wallet Coast Customs" → "Wacocu" (display-only)
 
-Reorder the Phantom preset list and refresh the "Original" cover with the uploaded screenshot.
+Заменяем бренд в UI/тексте. Никакой логики, ID, env, БД, контрактов и переменных не трогаем.
 
-### New order in `PHANTOM_PRESETS`
-1. **Original** — use the uploaded Phantom lock screen image as cover
-2. **Gold BTC** — keep existing (mint `GzS4v8H6…`)
-3. **Phantom 2** — new entry, last minted NFT (mint `4dGLLUTX…`, theme name "Ethereum / Cosmic Futuristic")
-4. 17 × "Coming Soon" placeholders (to keep total = 20)
+### Что меняем
 
-### Steps
+**1. Header (главная) — `src/components/layout/Header.tsx`**
+- Строка 29: `Wallet Coast Customs` → `Wacocu`
 
-1. **Save uploaded image as new Original cover**
-   - Copy `user-uploads://Снимок_экрана_2026-04-12_в_10.40.27.png` → `src/assets/phantom-original-cover.png`
-   - Update import in `src/data/phantomBuiltInThemes.ts` (replaces current `phantom-original-cover.jpg`)
-   - Delete the old generated `phantom-original-cover.jpg`
+**2. Footer — `src/components/layout/Footer.tsx`**
+- Строки 71 и 86: `Wallet Coast Customs` → `Wacocu`
 
-2. **Add Phantom 2 preset**
-   - Inline its `themeData` (WCCOverlayV3 from DB row, mint `4dGLLUTX5GvQcefqZehN6N5qE3Q57uYqY9XSLdMq8wy2`) as `PHANTOM_BUILTIN_PHANTOM_2`
-   - Cover: `https://gateway.lighthouse.storage/ipfs/QmXJYdj93o5p94nbhkDMqyfuUkjdN3ynC8UqD7iPxUzuCM`
-   - Name: `Phantom 2`, description: `Recently minted Phantom skin`
+**3. Editor header — `src/components/editor/EditorHeader.tsx`**
+- Строка 9: `Wallet Coast Customs ✨` → `Wacocu ✨`
 
-3. **Reorder `PHANTOM_PRESETS` array**
-   ```
-   [Original, Gold BTC, Phantom 2, ...17 placeholders]
-   ```
+**4. Mask upload подсказка — `src/components/editor/mask/mask-dialog/MaskUploadSection.tsx`**
+- Строка 58: `Wallet Coast masks` → `Wacocu masks`
 
-4. **Verify** the carousel in `ThemeSelectorCoverflow` renders new order with correct covers (no other code changes required — it reads from `PHANTOM_PRESETS`).
+**5. Documentation — `src/pages/Documentation.tsx`**
+- Заголовок и первый абзац: `Wallet Coast Customs (WCC)` оставляем как есть **один раз** в техническом описании, потому что аббревиатура WCC используется по всему коду. Меняем только заголовок секции `🌴 About Wallet Coast Customs` → `🌴 About Wacocu` и первое упоминание во фразе на `Wacocu (WCC)`.
 
-### Files touched
-- `src/assets/phantom-original-cover.png` (new, from upload)
-- `src/assets/phantom-original-cover.jpg` (delete)
-- `src/data/phantomBuiltInThemes.ts` (reorder + add Phantom 2 + new import)
+**6. SEO теги — `index.html`**
+- `<title>` → `Wacocu`
+- `og:title`, `twitter:title`, `author` meta → `Wacocu`
+- `og:description` / `twitter:description` оставляем (там Phantom).
 
-No DB changes required (Phantom 2 is already `is_verified=true`).
+### Что НЕ трогаем (потенциально критично)
+
+- `src/lib/appkit.ts` (`name: 'Wallet Coast Customs'`) — это metadata для **WalletConnect/AppKit**, отображается в модалке кошелька при подключении и используется в pairing-сессиях. Менять рискованно: может поломать существующие сессии у пользователей и кэш WC. Оставляем.
+- `supabase/functions/upload-to-ipfs/index.ts` (default description для NFT metadata) — пишется в он-чейн/IPFS метаданные минтов. Уже заминченные NFT не затронуты, но для консистентности истории оставляем. Не критично, но не UI.
+- `src/components/wallet/ExportToIpfsButton.tsx` — те же default-описания для IPFS-аплоада тем/нфт. Оставляем по той же причине (попадает в metadata минтов).
+- `src/utils/imageExport.ts` — default description при экспорте картинки темы (попадает в metadata). Оставляем.
+- `README.md` — техдока репозитория, не UI. Оставляем.
+- Аббревиатура **WCC** везде в коде/типах/компонентах (`WCCOverlay`, `WCCClient`, `wcc-bridge` и т.д.) — это идентификаторы, не трогаем.
+
+### Проверка после изменений
+
+- Визуально: главная (Header), футер, страница редактора (EditorHeader), Documentation, диалог Mask Upload.
+- Заголовок вкладки браузера должен стать `Wacocu`.
+- Подключение кошелька через AppKit должно по-прежнему показывать `Wallet Coast Customs` (намеренно).
