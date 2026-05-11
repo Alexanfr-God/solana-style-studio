@@ -6,7 +6,7 @@ const EditorHeader = () => {
   return (
     <header className="flex justify-between items-center mb-8">
       <h1 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-        Wallet Coast Customs ✨
+        Wacocu ✨
       </h1>
       
       <div className="flex items-center gap-2">
