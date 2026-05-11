@@ -503,45 +503,55 @@ npm run dev                # opens at http://localhost:8080`}</pre>
   content: <>
         <Card className="bg-black/40 border-white/5 shadow-lg">
           <CardContent className="p-6 max-h-[70vh] overflow-y-auto scrollbar-custom">
-            <h3 className={gradTitle}>🔐 We don't touch your money</h3>
+            <h3 className={gradTitle}>🧱 What we've built so far</h3>
 
-            <p className="mb-4">The single most important property of this architecture: WCC never sees a private key, never signs a transaction on behalf of the user, and never modifies the wallet's source code. The overlay is paint. The wallet is the wallet.</p>
+            <p className="mb-4">Today the overlay covers <strong>one screen</strong>: the Phantom password / lock screen. That's the foundation. We picked the simplest, most-visible surface to prove the architecture — and to show it can be safe by design. Everything beyond this screen is the next phase.</p>
 
-            <h3 className={gradTitleSm}>How input forwarding is designed</h3>
-
-            <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li><strong>Pass-through, not capture.</strong> Anything you type or click on the overlay is meant to land in the real wallet underneath. WCC's job is to paint; the wallet's job is to validate.</li>
-              <li><strong>No password persistence.</strong> Goal: nothing the user types stays inside WCC — no disk, no logs, no network. Implementation is open-source and being hardened; security review is on the next-phase roadmap before production use.</li>
-              <li><strong>Phantom owns auth.</strong> The wallet keeps doing its own password check, signing, and transaction logic with its own internal keys. WCC has zero visibility into the keypair, mnemonics, or signing process.</li>
+            <p className="mb-2 text-white/80 font-semibold">Layers ahead (Phantom wallet surface):</p>
+            <ul className="list-disc pl-5 mb-4 space-y-1 text-white/80">
+              <li>Home screen — balance, USD value, token quick-actions</li>
+              <li>Token list — your portfolio rendered in the themed palette</li>
+              <li>New asset containers — when you buy a new token, it appears in the same themed style</li>
+              <li>NFT collections view</li>
+              <li>Send / Receive flows</li>
+              <li>Swap flow</li>
+              <li>Settings + account dropdown</li>
             </ul>
 
-            <p className="mb-4 text-white/70 text-sm"><strong>Honest disclaimer:</strong> input forwarding is currently a working proof-of-concept — not a production-grade implementation. We recommend using the demo on devnet / test wallets only until the implementation is reviewed and hardened.</p>
+            <p className="mb-4 text-white/70 text-sm">Each new layer will inherit the same safety properties listed below, because they all live inside the same overlay-on-top architecture — none of them need to touch wallet internals.</p>
 
-            <h3 className={gradTitleSm}>On-chain ownership</h3>
-
-            <p className="mb-4">Themes are Metaplex NFTs on Solana. Owning the NFT means owning the theme — no centralized revoke, no licensing fine print. The theme JSON travels with the NFT (in <code>theme_data</code> + IPFS mirror), so an owner who walks away from the platform still keeps their mask.</p>
-
-            <h3 className={gradTitleSm}>Database-side security</h3>
+            <h3 className={gradTitleSm}>🔐 Safety by design (these don't change as we add layers)</h3>
 
             <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li><strong>Row Level Security (RLS)</strong> on every Supabase table — themes, mints, telemetry are user-scoped via wallet address.</li>
+              <li><strong>We never see your private keys.</strong> They live in Phantom's own storage. We don't read, intercept, or copy them.</li>
+              <li><strong>We never sign anything.</strong> Every signature stays with Phantom. Our overlay paints — it doesn't call wallet APIs.</li>
+              <li><strong>We never modify the wallet.</strong> Phantom's source is untouched. We sit on top in a transparent window; that's it.</li>
+              <li><strong>Everything runs locally.</strong> The overlay agent + sync-server run on your own Mac. Themes are pulled from Supabase Realtime, but your interactions with the wallet never leave your machine.</li>
+              <li><strong>You own the mask.</strong> Themes are Metaplex NFTs on Solana. Owning the NFT means owning the theme — the JSON travels with it (in <code>theme_data</code> + IPFS), so leaving the platform doesn't take your mask away.</li>
+            </ul>
+
+            <p className="mb-4 text-white/70 text-sm"><strong>Honest disclaimer:</strong> we've shown the architecture is safe in principle, but the implementation is a hackathon proof-of-concept — not yet audited or hardened for production use. We recommend devnet / test wallets only until a formal security review is done. That review is on the roadmap before production deployment.</p>
+
+            <h3 className={gradTitleSm}>Database-side hygiene</h3>
+
+            <ul className="list-disc pl-5 mb-4 space-y-2">
+              <li><strong>Row Level Security (RLS)</strong> on every Supabase table — themes, mints, telemetry are scoped to the owning wallet address.</li>
               <li><strong>Edge Function secrets</strong> live in Supabase Secrets — never embedded in the client.</li>
-              <li><strong>WS message validation</strong> via Zod schemas in <code>packages/shared</code>; malformed broadcasts are dropped before reaching the agent.</li>
+              <li><strong>WebSocket message validation</strong> via Zod schemas — malformed broadcasts are dropped before they reach the agent.</li>
               <li><strong>AI output validation</strong> — every <code>WCCOverlayV3</code> from the orchestrator is type-checked before being saved or broadcast.</li>
             </ul>
 
-            <h3 className={gradTitleSm}>Security boundaries (by design)</h3>
+            <h3 className={gradTitleSm}>What an attacker still can't do</h3>
 
             <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li>WCC cannot make Phantom sign a transaction — the overlay paints, it never calls wallet APIs.</li>
-              <li>WCC cannot read or tamper with your private keys — they live in Phantom's own storage; we don't touch it.</li>
-              <li>Your theme on-chain can't be replaced by anyone else — only the NFT owner can re-mint or transfer.</li>
-              <li>Compromising WCC's web app doesn't give an attacker your funds — they'd still need to break Phantom independently.</li>
+              <li>Steal your funds by compromising WCC — they'd still need to break Phantom independently.</li>
+              <li>Replace your theme on-chain — only the NFT owner can re-mint or transfer it.</li>
+              <li>Push a malicious theme that drains the wallet — themes are JSON describing visual styling; they cannot trigger transactions.</li>
             </ul>
 
-            <h3 className={gradTitleSm}>What we ask the user to grant</h3>
+            <h3 className={gradTitleSm}>One permission we ask for</h3>
 
-            <p className="mb-2 text-white/80">macOS Accessibility permission for Electron — required for <code>CGEvent</code> injection. We document this prominently in the overlay-editor README; it's the same permission Raycast, Rectangle, and other macOS productivity tools require.</p>
+            <p className="mb-2 text-white/80">macOS Accessibility permission for the overlay app — needed so the local agent can paint and forward your input to the real wallet. It's the same permission productivity tools like Raycast or Rectangle ask for. You grant it once in System Preferences → Privacy & Security → Accessibility, and only when you're running the demo locally.</p>
           </CardContent>
         </Card>
       </>
