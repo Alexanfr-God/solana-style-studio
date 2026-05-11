@@ -133,7 +133,7 @@ The orchestrator expects exactly `ANTHROPIC_API_KEY` (uppercase, no spaces) — 
 - **Real Phantom Chrome extension:** we overlay on top of the popup with a transparent window; we don't modify Phantom's source. Phantom can't tell our overlay exists.
 - **Wallet partnerships:** no wallet team has signed off on theme masks. Future integrations depend on wallet developers choosing to support an overlay protocol.
 - **Other wallets:** MetaMask, Solflare, Backpack, etc. are out of scope for the current demo. Architecture is wallet-agnostic in principle but only Phantom is wired up.
-- **Mainnet mint:** currently devnet only.
+- **Production-grade mint:** currently devnet only. Production deployment is a later phase after the demo is hardened.
 - **Platform other than macOS:** the overlay agent uses Swift CGEvent; Windows/Linux would need a parallel native implementation.
 
 ## License & contact

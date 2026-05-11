@@ -58,26 +58,25 @@ const sections = [{
 
             <div className="space-y-6">
               <div>
-                <p className="mb-2 text-lg font-semibold">🔹 <span className={gradTitle.replace('mb-4', '')}>Now — Hackathon demo (Q4 2025)</span></p>
+                <p className="mb-2 text-lg font-semibold">🔹 <span className={gradTitle.replace('mb-4', '')}>Now — Hackathon demo</span></p>
                 <p className="mb-2 italic text-white/70">"It actually works, just narrowly."</p>
                 <ul className="list-disc pl-5 mb-2 space-y-1">
                   <li>✅ macOS overlay agent paints the themed mask on Phantom's password screen</li>
-                  <li>✅ Password keystrokes forwarded to real Phantom via <code>CGEvent.postToPid</code></li>
-                  <li>✅ Unlock click forwarded as a real mouse event via <code>CGEvent.cghidEventTap</code></li>
                   <li>✅ AI orchestrator with Claude Sonnet 4.5 + 14 curated design systems</li>
                   <li>✅ NFT mint on Solana devnet — full theme JSON stored in <code>theme_data</code></li>
                   <li>✅ Minted Gallery with one-click "Apply" → Supabase Realtime → live overlay</li>
                   <li>✅ Auto-hide when Phantom navigates past the password screen</li>
+                  <li>⚙️ Input forwarding (keystrokes + Unlock click → real Phantom) — proof-of-concept working; not yet hardened for production use</li>
                 </ul>
               </div>
 
               <div>
-                <p className="mb-2 text-lg font-semibold">🔸 <span className={gradTitle.replace('mb-4', '')}>Next — Harden the overlay (Q1 2026)</span></p>
+                <p className="mb-2 text-lg font-semibold">🔸 <span className={gradTitle.replace('mb-4', '')}>Next — Harden the overlay</span></p>
                 <p className="mb-2 italic text-white/70">"Make the one screen we have rock-solid; add more screens."</p>
                 <ul className="list-disc pl-5 mb-2 space-y-1">
+                  <li>Stabilize input forwarding — make password typing + Unlock click reliable across edge cases (different popup sizes, dock placements, multi-monitor)</li>
                   <li>Masks for more Phantom screens: home (balance + tokens), send, receive, NFT view</li>
                   <li>Better element-by-element customization vocabulary in the AI orchestrator</li>
-                  <li>Mainnet NFT mint</li>
                   <li>Marketplace prototype for trading themes</li>
                   <li>Cleaner onboarding (drop the manual Accessibility permission step)</li>
                 </ul>
@@ -106,17 +105,17 @@ const sections = [{
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-white/80">
                   <span>Phantom password mask + mint demo</span>
-                  <span>Q4 2025</span>
+                  <span>Now</span>
                   <span>✅ Live (devnet)</span>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-white/80">
-                  <span>More Phantom screens + mainnet mint</span>
-                  <span>Q1 2026</span>
+                  <span>Stabilize input forwarding + more screens</span>
+                  <span>Next phase</span>
                   <span>⚙️ In progress</span>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-white/80">
-                  <span>Theme marketplace</span>
-                  <span>2026</span>
+                  <span>Theme marketplace + production-grade mint</span>
+                  <span>Later in 2026</span>
                   <span>📦 Designed, not built</span>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-white/80">
@@ -205,7 +204,7 @@ const sections = [{
             <ul className="list-disc pl-5 mb-4 space-y-2">
               <li>✅ Devnet mint working end-to-end</li>
               <li>✅ Apply ⚡ → overlay on Phantom popup</li>
-              <li>⚙️ Mainnet mint — Q1 2026</li>
+              <li>⚙️ Production-grade mint — next phase, after the demo is hardened</li>
               <li>⚪ Marketplace, royalty enforcement — designed but not built (see Royalties section)</li>
             </ul>
           </CardContent>
@@ -329,6 +328,32 @@ Supabase ───────────────────────�
 }`}</pre>
 
             <p className="mb-4 text-white/70 text-sm">The orchestrator emits this JSON. <code>buildThemeOverrides()</code> in <code>phantomThemeStore.ts</code> converts each element to a CSS object. <code>wccToLayoutDocument()</code> wraps it into the broadcast layout shape (anchor positions + CSS) that the overlay agent renders.</p>
+
+            <h3 className={gradTitleSm}>💻 Run it locally (hackathon judges)</h3>
+
+            <p className="mb-2 text-white/80">macOS only for now. Two repos, four commands total.</p>
+
+            <p className="mb-2 text-white/80 font-semibold">1. The overlay agent (runs on your Mac):</p>
+            <pre className="bg-black/60 border border-white/10 rounded-md p-3 mb-3 text-xs text-white/80 overflow-x-auto">{`git clone git@github.com:Alexanfr-God/phantom-overlay-editor.git
+cd phantom-overlay-editor
+npm install
+
+# In three terminals (or backgrounded):
+npm run dev:server    # sync-server on ws://localhost:3333
+npm run dev:agent     # macOS overlay (Swift compile ~30-60s first run)
+npm run dev:desktop   # admin window with opacity slider`}</pre>
+
+            <p className="mb-2 text-white/80 font-semibold">2. The web studio (already deployed on Lovable, but you can run it locally too):</p>
+            <pre className="bg-black/60 border border-white/10 rounded-md p-3 mb-3 text-xs text-white/80 overflow-x-auto">{`git clone git@github.com:Alexanfr-God/solana-style-studio.git
+cd solana-style-studio
+npm install
+cp .env.example .env       # paste VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+npm run dev                # opens at http://localhost:8080`}</pre>
+
+            <p className="mb-2 text-white/70 text-sm"><strong>First run gotcha:</strong> the first time the agent tries to inject a keystroke, macOS pops the Accessibility permission dialog. Approve <code>Electron</code> in System Preferences → Privacy & Security → Accessibility, then restart <code>npm run dev:agent</code>.</p>
+
+            <p className="mb-2 text-white/70 text-sm">Once both sides are running: open Phantom popup in Chrome → click ⚡ on any minted theme in the WCC gallery → the overlay paints on top of Phantom. Full instructions and troubleshooting are in each repo's README.</p>
+
           </CardContent>
         </Card>
       </>
@@ -427,14 +452,14 @@ Supabase ───────────────────────�
 
             <ul className="list-disc pl-5 mb-4 space-y-2">
               <li>✅ Devnet mint flow is live; the SOL "fee" right now is just transaction cost on devnet.</li>
-              <li>⚙️ Mainnet mint with a real platform fee — Q1 2026.</li>
+              <li>⚙️ Production-grade mint with a real platform fee — next phase, after the demo is hardened.</li>
               <li>📦 Marketplace + secondary fees — designed (data model exists), not built.</li>
               <li>⚪ Wallet partner fees — depend on partnerships that haven't happened. We won't activate this revenue tier until we have an actual wallet integration agreement.</li>
             </ul>
 
             <h3 className={gradTitleSm}>📈 Unit economics (back-of-envelope)</h3>
 
-            <p className="mb-2">Per theme generation cost ≈ ~$0.13 in AI tokens (Claude pipeline) + ~$0.04 for the background image (Gemini) + Supabase + IPFS pinning ≈ <strong>under $0.20 marginal cost</strong>. Mint fee target: somewhere between $0.50 and $2 in SOL equivalent — comfortably profitable per mint at the operating-cost layer, before factoring in fixed costs.</p>
+            <p className="mb-2">Per theme generation cost ≈ ~$0.13 in AI tokens (Claude pipeline) + ~$0.04 for the background image (Gemini) + Supabase + IPFS pinning ≈ <strong>under $0.20 marginal cost</strong>. Target mint fee: somewhere between <strong>$5 and $8</strong> in SOL equivalent — that's the price point that funds the platform (AI inference + infra + creator support) while staying affordable for users minting their wallet identity. Healthy margin per mint at the operating-cost layer; fixed costs (engineering, AI ops) covered out of that margin at meaningful volume.</p>
           </CardContent>
         </Card>
       </>
@@ -482,13 +507,15 @@ Supabase ───────────────────────�
 
             <p className="mb-4">The single most important property of this architecture: WCC never sees a private key, never signs a transaction on behalf of the user, and never modifies the wallet's source code. The overlay is paint. The wallet is the wallet.</p>
 
-            <h3 className={gradTitleSm}>How input forwarding stays safe</h3>
+            <h3 className={gradTitleSm}>How input forwarding is designed</h3>
 
             <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li><strong>Keystrokes</strong> typed into the overlay's themed input are forwarded to the real Phantom popup via <code>CGEvent.keyboardSetUnicodeString</code> + <code>postToPid</code>. The overlay never persists the password to disk, never logs it, never sends it over the network. The overlay's <code>{`<input type=password>`}</code> stays mounted in the renderer process and its value goes nowhere except to <code>injectText()</code> in the agent main process.</li>
-              <li><strong>Unlock clicks</strong> are real <code>CGEvent.leftMouseDown</code>/<code>Up</code> at the actual screen coordinates of Phantom's button. We don't bypass Phantom's auth logic — we trigger it.</li>
-              <li><strong>Phantom signs transactions</strong> using its own internal keys. WCC has zero visibility into the keypair, mnemonics, or signing process.</li>
+              <li><strong>Pass-through, not capture.</strong> Anything you type or click on the overlay is meant to land in the real wallet underneath. WCC's job is to paint; the wallet's job is to validate.</li>
+              <li><strong>No password persistence.</strong> Goal: nothing the user types stays inside WCC — no disk, no logs, no network. Implementation is open-source and being hardened; security review is on the next-phase roadmap before production use.</li>
+              <li><strong>Phantom owns auth.</strong> The wallet keeps doing its own password check, signing, and transaction logic with its own internal keys. WCC has zero visibility into the keypair, mnemonics, or signing process.</li>
             </ul>
+
+            <p className="mb-4 text-white/70 text-sm"><strong>Honest disclaimer:</strong> input forwarding is currently a working proof-of-concept — not a production-grade implementation. We recommend using the demo on devnet / test wallets only until the implementation is reviewed and hardened.</p>
 
             <h3 className={gradTitleSm}>On-chain ownership</h3>
 
@@ -503,13 +530,13 @@ Supabase ───────────────────────�
               <li><strong>AI output validation</strong> — every <code>WCCOverlayV3</code> from the orchestrator is type-checked before being saved or broadcast.</li>
             </ul>
 
-            <h3 className={gradTitleSm}>What an attacker can NOT do</h3>
+            <h3 className={gradTitleSm}>Security boundaries (by design)</h3>
 
             <ul className="list-disc pl-5 mb-4 space-y-2">
-              <li>Read your password — keystrokes are forwarded but never buffered or logged by WCC.</li>
-              <li>Make Phantom sign a transaction it shouldn't — the overlay paints, it doesn't call Phantom APIs.</li>
-              <li>Tamper with your wallet's keys — they live in Phantom's own storage, which we don't touch.</li>
-              <li>Replace your theme on-chain — only the NFT owner can re-mint or transfer.</li>
+              <li>WCC cannot make Phantom sign a transaction — the overlay paints, it never calls wallet APIs.</li>
+              <li>WCC cannot read or tamper with your private keys — they live in Phantom's own storage; we don't touch it.</li>
+              <li>Your theme on-chain can't be replaced by anyone else — only the NFT owner can re-mint or transfer.</li>
+              <li>Compromising WCC's web app doesn't give an attacker your funds — they'd still need to break Phantom independently.</li>
             </ul>
 
             <h3 className={gradTitleSm}>What we ask the user to grant</h3>
