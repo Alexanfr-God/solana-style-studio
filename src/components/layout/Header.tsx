@@ -26,7 +26,7 @@ const Header = () => {
               className="text-white font-bold text-xl tracking-wider uppercase transition-all duration-300 hover:text-shadow-glow hover:scale-105"
             >
               <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                Wallet Coast Customs
+                Wacocu
               </span>
             </Link>
           </div>
